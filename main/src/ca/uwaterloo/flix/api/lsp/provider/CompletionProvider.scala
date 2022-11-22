@@ -325,7 +325,7 @@ object CompletionProvider {
 
   private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
-      val args = if (isUnitFunction(fparams)) 
+      val args = if (isUnitFunction(fparams))
         Nil
       else
         fparams.map {
@@ -421,7 +421,7 @@ object CompletionProvider {
 
   private def sigCompletion(decl: TypedAst.Sig)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     val name = decl.sym.toString
-    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+    getApplySnippet(name, decl.spec.fparams).map(snippet =>
       CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
         sortText = Priority.normal(name),
         filterText = Some(getFilterTextForName(name)),
@@ -435,7 +435,7 @@ object CompletionProvider {
   private def opCompletion(decl: TypedAst.Op)(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Option[CompletionItem] = {
     // NB: priority is high because only an op can come after `do`
     val name = decl.sym.toString
-    getApplySnippet(name, decl.spec.fparams).map(snippet => 
+    getApplySnippet(name, decl.spec.fparams).map(snippet =>
       CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
         sortText = Priority.high(name),
         filterText = Some(getFilterTextForName(name)),
@@ -768,7 +768,7 @@ object CompletionProvider {
       * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
       * with an equivalent variable symbol with the given `newText`.
       */
-    def replaceText(tvar: Symbol.TypeVarSym, tpe: Type, newText: String): Type = tpe match {
+    def replaceText(tvar: Symbol.KindedTypeVarSym, tpe: Type, newText: String): Type = tpe match {
       case Type.Var(sym, loc) if tvar == sym => Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
       case Type.Var(_, _) => tpe
       case Type.Cst(_, _) => tpe
@@ -870,7 +870,7 @@ object CompletionProvider {
     }
 
     def getInternalPriority(loc: SourceLocation, ns: List[String]): String => String = {
-      if (loc.source.name == context.uri) 
+      if (loc.source.name == context.uri)
         Priority.boost _
       else if (ns.isEmpty)
         Priority.normal _
@@ -991,7 +991,7 @@ object CompletionProvider {
         // 5: path, item and tag/sig i.e A/B.Foo.Bar
 
         val segments = ns.split('.');
-        segments.toList match { 
+        segments.toList match {
           // case 0
           case Nil => nsCompletionsAfterPrefix(Nil) ++ getItemUseCompletions(Nil)
           // case 1/2
@@ -1001,12 +1001,12 @@ object CompletionProvider {
             val prefix2 = x.split('/').dropRight(1).toList;
             // case 1
             nsCompletionsAfterPrefix(prefix1) ++
-              nsCompletionsAfterPrefix(prefix2) ++ 
+              nsCompletionsAfterPrefix(prefix2) ++
               getItemUseCompletions(prefix1) ++
               getItemUseCompletions(prefix2) ++
               // case 2
               getEnumTagCompletions(Nil, x) ++
-              getClassSigCompletions(Nil, x) 
+              getClassSigCompletions(Nil, x)
           }
           // case 3/4
           case x :: y :: Nil => {
@@ -1041,7 +1041,7 @@ object CompletionProvider {
       root.enums.keySet.map(_.namespace) ++
       root.classes.keySet.map(_.namespace) ++
       root.typeAliases.keySet.map(_.namespace);
-    
+
     nss.flatMap(ns => getFirstAfterGivenPrefix(ns, prefix))
       .map(nextNs => {
         val name = prefix.appended(nextNs).mkString("/")
@@ -1064,7 +1064,7 @@ object CompletionProvider {
     * Gets completions for all items in a namespace
     */
   private def getItemUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getEnumUseCompletions(ns) ++ 
+    getEnumUseCompletions(ns) ++
       getClassUseCompletions(ns) ++
       getDefUseCompletions(ns) ++
       getTypeUseCompletions(ns)
@@ -1081,7 +1081,7 @@ object CompletionProvider {
 
   /**
     * Gets completions for classes in a given namespace
-    */ 
+    */
   private def getClassUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
     root.classes.filter{case (sym, clazz) => clazz.mod.isPublic}
       .keySet.filter(_.namespace == ns)
@@ -1198,7 +1198,7 @@ object CompletionProvider {
   }
 
   /**
-    * Convert methods of a class into completionitems 
+    * Convert methods of a class into completionitems
     */
   private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
     classFromDotSeperatedString(clazz) match {
@@ -1344,7 +1344,7 @@ object CompletionProvider {
   }
 
   /**
-    * Converts a Java Class Object into a string representing the type in flix syntax. 
+    * Converts a Java Class Object into a string representing the type in flix syntax.
     * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
     */
   private def convertJavaClassToFlixType(clazz: Class[_ <: Object]): String = {

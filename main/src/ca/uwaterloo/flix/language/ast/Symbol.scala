@@ -266,31 +266,32 @@ object Symbol {
     override def toString: String = text + Flix.Delimiter + id
   }
 
-  trait TypeVarSym extends Locatable with Sourceable with Symbol {
-    val id: Int
-    val text: Ast.VarText
-    val loc: SourceLocation
-    val isRegion: Boolean
-
+  /**
+    * Kinded type variable symbol.
+    */
+  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
 
     /**
-      * Returns `true` if `this` symbol is a wildcard.
+      * Returns `true` if `this` variable is non-synthetic.
       */
-    def isWild: Boolean = text match {
-      case VarText.Absent => false
-      case VarText.SourceText(s) => s.startsWith("_")
-      case VarText.FallbackText(s) => s.startsWith("_")
-    }
+    def isReal: Boolean = loc.locationKind == SourceKind.Real
 
     /**
-      * Returns the same symbol with the given text.
+      * Returns the same symbol with the given kind.
       */
-    def withText(text: Ast.VarText): TypeVarSym
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, loc)
 
-    override def src: Ast.Source = loc.source
+    /**
+      * Returns the same symbol without a kind.
+      */
+    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, loc)
+
+    def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, loc)
+
+    override def compare(that: KindedTypeVarSym): Int = that.id - this.id
 
     override def equals(that: Any): Boolean = that match {
-      case tvar: TypeVarSym => this.id == tvar.id
+      case tvar: KindedTypeVarSym => this.id == tvar.id
       case _ => false
     }
 
@@ -310,36 +311,9 @@ object Symbol {
   }
 
   /**
-    * Kinded type variable symbol.
-    */
-  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val loc: SourceLocation) extends TypeVarSym with Ordered[KindedTypeVarSym] with Symbol {
-
-    /**
-      * Returns `true` if `this` variable is non-synthetic.
-      */
-    def isReal: Boolean = loc.locationKind == SourceKind.Real
-
-    /**
-      * Returns the same symbol with the given kind.
-      */
-    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, loc)
-
-    /**
-      * Returns the same symbol without a kind.
-      */
-    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, loc)
-
-    override def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, loc)
-
-    override def compare(that: KindedTypeVarSym): Int = that.id - this.id
-  }
-
-  /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val loc: SourceLocation) extends TypeVarSym with Ordered[UnkindedTypeVarSym] with Symbol {
-
-    override def withText(newText: Ast.VarText): UnkindedTypeVarSym = new UnkindedTypeVarSym(id, newText, isRegion, loc)
+  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
@@ -347,6 +321,25 @@ object Symbol {
     def withKind(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, loc)
 
     override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
+
+    override def equals(that: Any): Boolean = that match {
+      case tvar: UnkindedTypeVarSym => this.id == tvar.id
+      case _ => false
+    }
+
+    override def hashCode: Int = id
+
+    /**
+      * Returns a string representation of the symbol.
+      */
+    override def toString: String = {
+      val string = text match {
+        case VarText.Absent => "tvar"
+        case VarText.SourceText(s) => s
+        case VarText.FallbackText(s) => s
+      }
+      string + Flix.Delimiter + id
+    }
   }
 
   /**
