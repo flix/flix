@@ -642,7 +642,7 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
 
-    case Expression.NewChannel(exp1, exp2, _, _, _, _, _) =>
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
