@@ -33,6 +33,7 @@ object TypedAst {
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   effects: Map[Symbol.EffectSym, TypedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
