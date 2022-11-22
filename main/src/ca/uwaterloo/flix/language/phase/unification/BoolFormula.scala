@@ -239,36 +239,29 @@ object BoolFormula {
       case BoolFormula.True => true
       case BoolFormula.False => false
       case BoolFormula.Var(_) => true
-      case _ =>
-        enumerateAssignmentsLazy(freeVars(f)).exists(a => checkAssignment(f, a))
+      case _ => checkAllAssignments(f, freeVars(f).toList, List.empty)
     }
 
     /**
-      * Enumerates all assignments to the boolean variables in `vars` in a lazy manner.
+      * Enumerates all assignments to `f` lazily and checks whether one is satisfiable
+      * `l` is the list of so-far-unbound variables
+      * `env` is the list of positively bound variables
       */
-    private def enumerateAssignmentsLazy(vars: SortedSet[Int]): LazyList[Map[Int, Boolean]] = {
-      LazyList.from(0)
-              .map(n => padBinaryStringToLength(n.toBinaryString, vars.size)
-                         .toCharArray
-                         .zip(vars)
-                         .foldLeft(Map.empty[Int,Boolean])((m,ci) => m ++ Map(ci._2 -> (ci._1 == '1'))))
-              .take(scala.math.pow(2,vars.size).toInt)
+    private def checkAllAssignments(f: BoolFormula, l: List[Int], env: List[Int]): Boolean = l match {
+      case Nil => // all variables bound:
+        checkAssignment(f, env)
+      case (x: Int) :: xs => // two recursive calls, note the use of || which is lazy/short circuit.
+        checkAllAssignments(f, xs, env) || checkAllAssignments(f, xs, x :: env)
     }
 
     /**
-      * Adds the prefix "0" until the string `s` has length `n`
+      * Checks the truth value of `f` given the assignment `a`,
+      * where the elements of `a` are the positive variables.
       */
-    private def padBinaryStringToLength(s: String, n: Int): String = {
-      "0" * (n - s.length) + s
-    }
-
-    /**
-      * Checks the truth value of `f` given the assignment `a`.
-      */
-    private def checkAssignment(f: BoolFormula, a: Map[Int, Boolean]): Boolean = f match {
+    private def checkAssignment(f: BoolFormula, a: List[Int]): Boolean = f match {
       case True => true
       case False => false
-      case Var(x) => a(x)
+      case Var(x) => a.contains(x)
       case Not(f1) => !checkAssignment(f1, a)
       case Or(f1, f2) => checkAssignment(f1, a) || checkAssignment(f2, a)
       case And(f1, f2) => checkAssignment(f1, a) && checkAssignment(f2, a)
