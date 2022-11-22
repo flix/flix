@@ -188,6 +188,9 @@ object Simplifier {
       case LoweredAst.Expression.Upcast(exp, _, _) =>
         visitExp(exp)
 
+      case LoweredAst.Expression.Supercast(exp, _, _) =>
+        visitExp(exp)
+
       case LoweredAst.Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {

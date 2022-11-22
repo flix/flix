@@ -62,7 +62,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet11(): Bool \ IO =
-        let (s, r): (Sender[Option[Int32]], Receiver[Option[Int32]]) = Channel.unbuffered();
+        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered();
         spawn Channel.send(None, s);
         None == Channel.recv(r)
 
@@ -74,27 +74,27 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet13(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.unbuffered();
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered();
         spawn Channel.send(Ok(123), s);
         Ok(123) == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet14(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String]], Receiver[Result[Int32, String]]) = Channel.unbuffered();
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered();
         spawn Channel.send(Err("Goodbye World!"), s);
         Err("Goodbye World!") == Channel.recv(r)
 
     @test
     def testUnbufferedChannelPutGet15(): Bool \ IO =
         let (s, r) = Channel.unbuffered();
-        spawn Channel.send([1, 2, 3], s);
+        spawn Channel.unsafeSend([1, 2, 3], s);
         2 == (Channel.recv(r))[1]
 
     @test
     def testUnbufferedChannelPutGet16(): Bool \ IO =
         let (s1, r1) = Channel.unbuffered();
         let (s2, r2) = Channel.unbuffered();
-        spawn Channel.send(r2, s1);
+        spawn Channel.unsafeSend(r2, s1);
         spawn Channel.send(42, s2);
         42 == Channel.recv(Channel.recv(r1))
 
@@ -160,7 +160,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelGetPut11(): Unit \ IO =
-        let (s, r) = Channel.unbuffered();
+        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered();
         spawn Channel.recv(r);
         Channel.send(None, s)
 
@@ -172,13 +172,13 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelGetPut13(): Unit \ IO =
-        let (s, r) = Channel.unbuffered();
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered();
         spawn Channel.recv(r);
         Channel.send(Ok(123), s)
 
     @test
     def testUnbufferedChannelGetPut14(): Unit \ IO =
-        let (s, r) = Channel.unbuffered();
+        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered();
         spawn Channel.recv(r);
         Channel.send(Err("Goodbye World!"), s)
 
@@ -186,13 +186,13 @@ namespace Test/Exp/Concurrency/Unbuffered {
     def testUnbufferedChannelGetPut15(): Unit \ IO =
         let (s, r) = Channel.unbuffered();
         spawn Channel.recv(r);
-        Channel.send([1, 2, 3], s)
+        Channel.unsafeSend([1, 2, 3], s)
 
     @test
     def testUnbufferedChannelGetPut16(): Unit \ IO =
         let (s1, r1) = Channel.unbuffered();
         let (s2, r2) = Channel.unbuffered();
         spawn Channel.recv(Channel.recv(r1));
-        spawn Channel.send(r2, s1);
+        spawn Channel.unsafeSend(r2, s1);
         Channel.send(42, s2)
 }

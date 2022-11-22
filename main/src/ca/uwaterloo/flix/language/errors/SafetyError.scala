@@ -1,11 +1,8 @@
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.Audience
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -121,13 +118,13 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    * An error raised to indicate an invalid use of upcast.
     *
-    * @param actual   the expression being upcast.
-    * @param expected the upcast expression itself.
+    * @param actual   the type of the expression being upcast.
+    * @param expected the type being cast to, i.e. the type of the upcast expression itself.
     * @param loc      the source location of the unsafe upcast.
     */
-  case class UnsafeUpcast(actual: Expression, expected: Expression, loc: SourceLocation) extends SafetyError {
+  case class UnsafeUpcast(actual: Type, expected: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe upcast."
 
     override def message(formatter: Formatter): String = {
@@ -137,12 +134,157 @@ object SafetyError {
          |
          |${code(loc, "the upcast occurs here.")}
          |
-         |Actual type:      ${actual.tpe}
-         |Tried casting to: ${expected.tpe}
+         |Actual type:      $actual
+         |Tried casting to: $expected
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an invalid use of supercast.
+    *
+    * @param from the type of the expression being supercast.
+    * @param to   the type being cast to, i.e. the type of the supercast expression itself.
+    * @param loc  the source location of the supercast.
+    */
+  case class UnsafeSupercast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast is unsafe and not allowed.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Actual type:      $from
+         |Tried casting to: $to
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate use of supercast on a non-Java type.
+    *
+    * @param nonJavaType the type that is **not** a Java type.
+    * @param javaType    the Java class.
+    * @param loc         the source location of the supercast.
+    */
+  case class FromNonJavaTypeSupercast(nonJavaType: Type, javaType: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast: Attempted to cast from a non-Java type to a Java type."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast tries to cast a non-Java to a Java type.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Non-Java type:    $nonJavaType
+         |Tried casting to: ${formatJavaType(javaType)}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate use of supercast to a non-Java type.
+    *
+    * @param javaType    the Java class.
+    * @param nonJavaType the type that is **not** a Java type.
+    * @param loc         the source location of the supercast.
+    */
+  case class ToNonJavaTypeSupercast(javaType: java.lang.Class[_], nonJavaType: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast: Attempted to cast from a Java type to a non-Java type."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast attempts to cast a Java type to a non-Java type.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Java type:        ${formatJavaType(javaType)}
+         |Tried casting to: $nonJavaType
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate use of supercast from a type variable,
+    * i.e. the actual type is not known, possibly caused by
+    * supercasting a type to a type also being supercast.
+    *
+    * @param tvar the type of the expression being supercast (in this case a type variable).
+    * @param to   the type being cast to, i.e. the type of the supercast expression itself.
+    * @param loc  the source location of the supercast.
+    */
+  case class FromTypeVariableSupercast(tvar: Type, to: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast: Attempted to cast from a type variable."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast attempts to cast from a type variable.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Type variable:    $tvar
+         |Tried casting to: ${formatIfJavaType(to)}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] =
+      Some({
+        s"""Did you try to supercast two types at the same time? e.g.
+           |
+           |  if (true) super_cast exp1 else super_cast exp2
+           |
+           |where exp1 and exp2 have Java types.
+           |""".stripMargin
+      })
+  }
+
+  /**
+    * An error raised to indicate use of supercast to a type variable,
+    * i.e. the expected type is not known, possibly caused by
+    * supercasting a type to a type also being supercast.
+    *
+    * @param from the type of the expression being supercast.
+    * @param tvar the type being cast to, i.e. the type of the supercast expression itself (in this case a type variable).
+    * @param loc  the source location of the supercast.
+    */
+  case class ToTypeVariableSupercast(from: Type, tvar: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast: Attempted to cast to a type variable."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast attempts to cast to a type variable.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Actual type:      ${formatIfJavaType(from)}
+         |Tried casting to: $tvar
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] =
+      Some({
+        s"""Did you try to supercast two types at the same time? e.g.
+           |
+           |  if (true) super_cast exp1 else super_cast exp2
+           |
+           |where exp1 and exp2 have Java types.
+           |""".stripMargin
+      })
   }
 
   /**
@@ -226,11 +368,20 @@ object SafetyError {
   /**
     * Format a Java type suitable for method implementation.
     */
-  private def formatJavaType(t: java.lang.Class[_]) = {
+  private def formatJavaType(t: java.lang.Class[_]): String = {
     if (t.isPrimitive || t.isArray)
       Type.getFlixType(t).toString
     else
       s"##${t.getName}"
+  }
+
+  /**
+    * Returns a formatted Java type if `t` is a Java type.
+    * Returns `t` as a string otherwise.
+    */
+  private def formatIfJavaType(t: Type): String = Type.eraseAliases(t).baseType match {
+    case Type.Cst(TypeConstructor.Native(clazz), _) => formatJavaType(clazz)
+    case _ => t.toString
   }
 
   /**
@@ -378,5 +529,35 @@ object SafetyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * Unable to derive Sendable error
+    *
+    * @param sym the enum for which we're trying to derive Sendable
+    * @param loc the location where the error occurred.
+    */
+  case class SendableError(tpe: Type, loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Cannot derive Sendable for ${tpe}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+        |>> Cannot derive 'Sendable' for type ${red(tpe.toString)}
+        |
+        |Because it takes a type parameter of kind 'Region'.
+        |
+        |${code(loc, "unable to derive Sendable.")}
+        |
+        |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some(
+      s"""
+        |An example of a type parameter of kind 'Region':
+        |
+        |enum MyEnum[r: Region] { ... }
+        |""".stripMargin
+    )
   }
 }

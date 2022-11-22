@@ -21,12 +21,8 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(classesAndEffects: Map[Name.NName, Map[String, NamedAst.ClassOrEffect]],
+  case class Root(symbols: Map[Name.NName, Map[String, NamedAst.NamedSymbol]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  defsAndSigs: Map[Name.NName, Map[String, NamedAst.DefOrSig]],
-                  enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  typeAliases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  ops: Map[Name.NName, Map[String, NamedAst.Op]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -36,18 +32,16 @@ object NamedAst {
 
   case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
-  sealed trait DefOrSig
+  sealed trait NamedSymbol
+  object NamedSymbol {
 
-  object DefOrSig {
-    case class Def(d: NamedAst.Def) extends NamedAst.DefOrSig
-
-    case class Sig(s: NamedAst.Sig) extends NamedAst.DefOrSig
-  }
-
-  sealed trait ClassOrEffect
-  object ClassOrEffect {
-    case class Effect(e: NamedAst.Effect) extends NamedAst.ClassOrEffect
-    case class Class(e: NamedAst.Class) extends NamedAst.ClassOrEffect
+    case class Class(c: NamedAst.Class) extends NamedAst.NamedSymbol
+    case class Def(d: NamedAst.Def) extends NamedAst.NamedSymbol
+    case class Effect(e: NamedAst.Effect) extends NamedAst.NamedSymbol
+    case class Enum(e: NamedAst.Enum) extends NamedAst.NamedSymbol
+    case class Op(o: NamedAst.Op) extends NamedAst.NamedSymbol
+    case class Sig(s: NamedAst.Sig) extends NamedAst.NamedSymbol
+    case class TypeAlias(a: NamedAst.TypeAlias) extends NamedAst.NamedSymbol
   }
 
   case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression])
@@ -161,6 +155,8 @@ object NamedAst {
     case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Supercast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 

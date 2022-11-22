@@ -40,8 +40,9 @@ object Resolver {
   private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
+  private val SendableSym = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
 
   /**
     * Java classes for primitives and Object
@@ -56,9 +57,16 @@ object Resolver {
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+    val typeAliases = root.symbols.map {
+      case (ns, map0) =>
+        val map = map0.collect {
+          case (name, NamedAst.NamedSymbol.TypeAlias(alias)) => (name, alias)
+        }
+        (ns, map)
+    }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(resolveTypeAliases(root.typeAliases, root)) {
+    flatMapN(resolveTypeAliases(typeAliases, root)) {
       case (taenv, taOrder) =>
 
         val classesVal = resolveClasses(root, taenv, oldRoot, changeSet)
@@ -73,17 +81,17 @@ object Resolver {
 
         val defsVal = resolveDefs(root, taenv, oldRoot, changeSet)
 
-        val enumsVal = root.enums.flatMap {
-          case (ns0, enums) => enums.map {
-            case (_, enum) => resolveEnum(enum, taenv, ns0, root) map {
+        val enumsVal = root.symbols.flatMap {
+          case (ns0, classesAndEffectsAndEnums) => classesAndEffectsAndEnums.collect {
+            case (_, NamedAst.NamedSymbol.Enum(enum)) => resolveEnum(enum, taenv, ns0, root) map {
               case d => d.sym -> d
             }
           }
         }
 
-        val effectsVal = root.classesAndEffects.flatMap {
+        val effectsVal = root.symbols.flatMap {
           case (ns0, classesAndEffects) => classesAndEffects.collect {
-            case (_, NamedAst.ClassOrEffect.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
+            case (_, NamedAst.NamedSymbol.Effect(effect)) => resolveEffect(effect, taenv, ns0, root) map {
               case e => e.sym -> e
             }
           }
@@ -276,8 +284,8 @@ object Resolver {
   private def resolveClasses(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, ResolvedAst.Class], ResolutionError] = {
 
     val rootClasses = for {
-      (ns, classesAndEffects) <- root.classesAndEffects
-      clazz <- classesAndEffects.collect { case (_, NamedAst.ClassOrEffect.Class(c)) => c }
+      (ns, classesAndEffects) <- root.symbols
+      clazz <- classesAndEffects.collect { case (_, NamedAst.NamedSymbol.Class(c)) => c }
     } yield clazz.sym -> (clazz, ns)
 
     val (staleClasses, freshClasses) = changeSet.partition(rootClasses, oldRoot.classes)
@@ -345,15 +353,15 @@ object Resolver {
     * Resolves all the definitions in the given root.
     */
   private def resolveDefs(root: NamedAst.Root, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, ResolvedAst.Def], ResolutionError] = {
-    def getDef(defOrSig: NamedAst.DefOrSig): Option[NamedAst.Def] = defOrSig match {
-      case NamedAst.DefOrSig.Def(d) => Some(d)
-      case NamedAst.DefOrSig.Sig(_) => None
+    def getDef(defOrSig: NamedAst.NamedSymbol): Option[NamedAst.Def] = defOrSig match {
+      case NamedAst.NamedSymbol.Def(d) => Some(d)
+      case _ => None
     }
 
     val rootDefs = for {
-      (ns, defsAndSigs) <- root.defsAndSigs
-      (_, defOrSig) <- defsAndSigs
-      defn <- getDef(defOrSig)
+      (ns, symbols) <- root.symbols
+      (_, symbol) <- symbols
+      defn <- getDef(symbol)
     } yield defn.sym -> (defn, ns)
 
     val (staleDefs, freshDefs) = changeSet.partition(rootDefs, oldRoot.defs)
@@ -598,8 +606,8 @@ object Resolver {
 
         case NamedAst.Expression.DefOrSig(qname, env, loc) =>
           mapN(lookupDefOrSig(qname, ns0, env, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitDef(defn, loc)
-            case NamedAst.DefOrSig.Sig(sig) => visitSig(sig, loc)
+            case DefOrSig.Def(defn) => visitDef(defn, loc)
+            case DefOrSig.Sig(sig) => visitSig(sig, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -613,21 +621,43 @@ object Resolver {
           // Lookup the used name to ensure that it exists.
           use match {
             case NamedAst.Use.UseDefOrSig(qname, _, _) =>
-              flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root))(_ => visitExp(exp, region))
+              flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root)) {
+                case DefOrSig.Def(defn) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(defn.sym, e, loc)
+                }
+                case DefOrSig.Sig(sig) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(sig.sym, e, loc)
+                }
+              }
 
             case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
-              flatMapN(resolveType(NamedAst.Type.Ambiguous(qname, loc), taenv, ns0, root))(_ => visitExp(exp, region))
+              lookupType(qname, ns0, root) match {
+                case TypeLookupResult.Enum(enum0) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
+                }
+                case TypeLookupResult.TypeAlias(typeAlias) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(typeAlias.sym, e, loc)
+                }
+                case TypeLookupResult.Effect(eff) => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(eff.sym, e, loc)
+                }
+                case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+              }
 
             case NamedAst.Use.UseTag(qname, tag, _, _) =>
-              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root))(_ => visitExp(exp, region))
+              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root)) {
+                case enum0 => mapN(visitExp(exp, region)) {
+                  case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
+                }
+              }
           }
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, env, innerLoc), exps, outerLoc) =>
           flatMapN(lookupDefOrSig(qname, ns0, env, root)) {
-            case NamedAst.DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
-            case NamedAst.DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
+            case DefOrSig.Def(defn) => visitApplyDef(app, defn, exps, region, innerLoc, outerLoc)
+            case DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -943,6 +973,11 @@ object Resolver {
         case NamedAst.Expression.Upcast(exp, loc) =>
           mapN(visitExp(exp, region)) {
             case e => ResolvedAst.Expression.Upcast(e, loc)
+          }
+
+        case NamedAst.Expression.Supercast(exp, loc) =>
+          mapN(visitExp(exp, region)) {
+            case e => ResolvedAst.Expression.Supercast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1502,9 +1537,9 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOpt = tryLookupName(qname, ns0, root.symbols)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.NamedSymbol.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
@@ -1518,9 +1553,9 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOpt = tryLookupName(qname, ns0, root.symbols)
     classOpt match {
-      case Some(NamedAst.ClassOrEffect.Class(clazz)) =>
+      case Some(NamedAst.NamedSymbol.Class(clazz)) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
@@ -1532,23 +1567,25 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, env: Map[String, Symbol.VarSym], root: NamedAst.Root): Validation[NamedAst.DefOrSig, ResolutionError] = {
-    val defOrSigOpt = tryLookupName(qname, ns0, root.defsAndSigs)
+  private def lookupDefOrSig(qname: Name.QName, ns0: Name.NName, env: Map[String, Symbol.VarSym], root: NamedAst.Root): Validation[DefOrSig, ResolutionError] = {
+    val defOrSigOpt = tryLookupName(qname, ns0, root.symbols)
 
     defOrSigOpt match {
       case None => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
-      case Some(d@NamedAst.DefOrSig.Def(defn)) =>
+      case Some(NamedAst.NamedSymbol.Def(defn)) =>
         if (isDefAccessible(defn, ns0)) {
-          d.toSuccess
+          DefOrSig.Def(defn).toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Some(s@NamedAst.DefOrSig.Sig(sig)) =>
+      case Some(NamedAst.NamedSymbol.Sig(sig)) =>
         if (isSigAccessible(sig, ns0)) {
-          s.toSuccess
+          DefOrSig.Sig(sig).toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
+      case Some(_) => ResolutionError.UndefinedName(qname, ns0, env, qname.loc).toFailure
+
     }
   }
 
@@ -1556,16 +1593,16 @@ object Resolver {
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupOp(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Op, ResolutionError] = {
-    val opOpt = tryLookupName(qname, ns0, root.ops)
+    val opOpt = tryLookupName(qname, ns0, root.symbols)
 
     opOpt match {
-      case None => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
-      case Some(op) =>
+      case Some(NamedAst.NamedSymbol.Op(op)) =>
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
         } else {
           ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc).toFailure
         }
+      case _ => ResolutionError.UndefinedOp(qname, qname.loc).toFailure
     }
   }
 
@@ -1594,12 +1631,13 @@ object Resolver {
 
         // Find all matching enums in the current namespace.
         val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-        for ((enumName, decl) <- root.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
-          for ((enumTag, caze) <- decl.cases) {
-            if (tag.name == enumTag) {
-              namespaceMatches += decl
+        root.symbols.getOrElse(ns0, Map.empty).collect {
+          case (enumName, NamedAst.NamedSymbol.Enum(decl)) =>
+            for ((enumTag, caze) <- decl.cases) {
+              if (tag.name == enumTag) {
+                namespaceMatches += decl
+              }
             }
-          }
         }
 
         // Case 1.1.1: Exact match found in the namespace.
@@ -1622,14 +1660,13 @@ object Resolver {
 
         // Find all matching enums in the root namespace.
         val globalMatches = mutable.Set.empty[NamedAst.Enum]
-        for (decls <- root.enums.get(Name.RootNS)) {
-          for ((enumName, decl) <- decls) {
+        root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
+          case (enumName, NamedAst.NamedSymbol.Enum(decl)) =>
             for ((enumTag, caze) <- decl.cases) {
               if (tag.name == enumTag) {
                 globalMatches += decl
               }
             }
-          }
         }
 
         // Case 1.2.1: Exact match found in the root namespace.
@@ -1656,8 +1693,10 @@ object Resolver {
       case Some(qname) =>
         // Case 2: The name is qualified.
 
-        def lookupEnumInNs(ns: Name.NName) = root.enums.get(ns) flatMap {
-          _.get(qname.ident.name)
+        def lookupEnumInNs(ns: Name.NName): Option[NamedAst.Enum] = {
+          root.symbols.get(ns).flatMap(_.get(qname.ident.name)).collect {
+            case NamedAst.NamedSymbol.Enum(e) => e
+          }
         }
 
         val enumOpt = if (qname.isUnqualified) {
@@ -1782,12 +1821,8 @@ object Resolver {
 
     case NamedAst.Type.SchemaRowExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
-      lookupTypeAlias(qname, ns0, root) match {
-        case None =>
-          // Case 1: The type alias was not found. Report an error.
-          ResolutionError.UndefinedName(qname, ns0, Map.empty, loc).toFailure
-        case Some(typeAlias) =>
-          // Case 2: The type alias was found. Use it.
+      flatMapN(lookupTypeAlias(qname, ns0, root)) {
+        typeAlias =>
           val tVal = getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           val tsVal = traverse(targs)(semiResolveType(_, ns0, root))
           val rVal = semiResolveType(rest, ns0, root)
@@ -2089,28 +2124,23 @@ object Resolver {
       * Looks up the type in the given namespace.
       */
     def lookupIn(ns: Name.NName): TypeLookupResult = {
-      val enumsInNamespace = root.enums.getOrElse(ns, Map.empty)
-      val aliasesInNamespace = root.typeAliases.getOrElse(ns, Map.empty)
-      val classesAndEffectsInNamespace = root.classesAndEffects.getOrElse(ns, Map.empty)
-      (enumsInNamespace.get(qname.ident.name), aliasesInNamespace.get(qname.ident.name), classesAndEffectsInNamespace.get(qname.ident.name)) match {
-        case (None, None, None) =>
+      val upperNamesInNamespace = root.symbols.getOrElse(ns, Map.empty)
+      upperNamesInNamespace.get(qname.ident.name) match {
+        case None =>
           // Case 1: name not found
           TypeLookupResult.NotFound
-        case (Some(enum), None, None) =>
-          // Case 2: found an enum
-          TypeLookupResult.Enum(enum)
-        case (None, Some(alias), None) =>
-          // Case 3: found a type alias
+        case Some(NamedAst.NamedSymbol.TypeAlias(alias)) =>
+          // Case 2: found a type alias
           TypeLookupResult.TypeAlias(alias)
-        case (None, None, Some(NamedAst.ClassOrEffect.Effect(effect))) =>
+        case Some(NamedAst.NamedSymbol.Enum(enum)) =>
+          // Case 3: found an enum
+          TypeLookupResult.Enum(enum)
+        case Some(NamedAst.NamedSymbol.Effect(effect)) =>
           // Case 4: found an effect
           TypeLookupResult.Effect(effect)
-        case (None, None, Some(NamedAst.ClassOrEffect.Class(clazz))) =>
-          // Case 5: found a class. Treat as not found.
-          TypeLookupResult.NotFound
         case _ =>
-          // Case 5: found multiple matches -- error
-          throw InternalCompilerException("Unexpected ambiguity: Duplicate types / classes should have been resolved.")
+          // Case 5: found a non-type sym. Treat as not found.
+          TypeLookupResult.NotFound
       }
     }
 
@@ -2129,18 +2159,12 @@ object Resolver {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
-    if (qname.isUnqualified) {
-      // Case 1: The name is unqualified. Lookup in the current namespace.
-      val typeAliasesInNamespace = root.typeAliases.getOrElse(ns0, Map.empty)
-      typeAliasesInNamespace.get(qname.ident.name) orElse {
-        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-        val typeAliasesInRootNS = root.typeAliases.getOrElse(Name.RootNS, Map.empty)
-        typeAliasesInRootNS.get(qname.ident.name)
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      root.typeAliases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+  private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.TypeAlias, ResolutionError] = {
+    val symOpt = tryLookupName(qname, ns0, root.symbols)
+
+    symOpt match {
+      case Some(NamedAst.NamedSymbol.TypeAlias(alias)) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+      case _ => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
     }
   }
 
@@ -2148,10 +2172,10 @@ object Resolver {
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupEffect(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Effect, ResolutionError] = {
-    val classOrEffOpt = tryLookupName(qname, ns0, root.classesAndEffects)
+    val classOrEffOrEnumOpt = tryLookupName(qname, ns0, root.symbols)
 
-    classOrEffOpt match {
-      case Some(NamedAst.ClassOrEffect.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
+    classOrEffOrEnumOpt match {
+      case Some(NamedAst.NamedSymbol.Effect(eff)) => getEffectIfAccessible(eff, ns0, qname.loc)
       case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
     }
   }
@@ -2762,5 +2786,14 @@ object Resolver {
     case object Opaque extends EnumAccessibility
 
     case object Inaccessible extends EnumAccessibility
+  }
+
+  /**
+    * Union of definitions and signatures.
+    */
+  private sealed trait DefOrSig
+  private object DefOrSig {
+    case class Def(defn: NamedAst.Def) extends DefOrSig
+    case class Sig(sig: NamedAst.Sig) extends DefOrSig
   }
 }

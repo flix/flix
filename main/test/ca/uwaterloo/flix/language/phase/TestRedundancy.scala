@@ -1330,4 +1330,38 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedVarSym](result)
   }
+
+  test("RedundantSupercast.01") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            super_cast newObject()
+        |        else
+        |            newObject();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantSupercast](result)
+  }
+
+  test("RedundantSupercast.02") {
+    val input =
+      """
+        |def f(): Unit \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
+        |    let _ =
+        |        if (true)
+        |            newStringBuilder()
+        |        else
+        |            super_cast newStringBuilder();
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantSupercast](result)
+  }
 }

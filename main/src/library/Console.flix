@@ -121,7 +121,7 @@ namespace Console {
                 let* g = String.slice(2, 4, hex) |> stringToHex;
                 let* b = String.slice(4, 6, hex) |> stringToHex;
                 Some(rgb((r, g, b), text, isFg = true))
-            } else None as Option[String]
+            } else Option.None
         };
         hexOpt |> Option.getWithDefault(text)
 
@@ -142,7 +142,7 @@ namespace Console {
             Some(parseInt(hexNo, 16))
         } catch {
             case _: ##java.lang.NumberFormatException =>
-                None as Option[Int32]
+                Option.None
         }
 
     ///
