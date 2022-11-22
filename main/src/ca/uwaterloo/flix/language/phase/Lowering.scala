@@ -337,6 +337,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.Use(_, exp, _) =>
+      visitExp(exp)
+
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
