@@ -230,6 +230,43 @@ object BoolFormula {
 
     override def isFalse(f: BoolFormula): Boolean = f == BoolFormula.False
 
+    override def isVar(f: BoolFormula): Boolean = f match {
+      case Var(_) => true
+      case _ => false
+    }
+
+    override def satisfiable(f: BoolFormula): Boolean = f match {
+      case BoolFormula.True => true
+      case BoolFormula.False => false
+      case BoolFormula.Var(_) => true
+      case _ => checkAllAssignments(f, freeVars(f).toList, List.empty)
+    }
+
+    /**
+      * Enumerates all assignments to `f` lazily and checks whether one is satisfiable
+      * `l` is the list of so-far-unbound variables
+      * `env` is the list of positively bound variables
+      */
+    private def checkAllAssignments(f: BoolFormula, l: List[Int], env: List[Int]): Boolean = l match {
+      case Nil => // all variables bound:
+        checkAssignment(f, env)
+      case (x: Int) :: xs => // two recursive calls, note the use of || which is lazy/short circuit.
+        checkAllAssignments(f, xs, env) || checkAllAssignments(f, xs, x :: env)
+    }
+
+    /**
+      * Checks the truth value of `f` given the assignment `a`,
+      * where the elements of `a` are the positive variables.
+      */
+    private def checkAssignment(f: BoolFormula, a: List[Int]): Boolean = f match {
+      case True => true
+      case False => false
+      case Var(x) => a.contains(x)
+      case Not(f1) => !checkAssignment(f1, a)
+      case Or(f1, f2) => checkAssignment(f1, a) || checkAssignment(f2, a)
+      case And(f1, f2) => checkAssignment(f1, a) && checkAssignment(f2, a)
+    }
+
     override def mkTrue: BoolFormula = True
 
     override def mkFalse: BoolFormula = False
@@ -257,6 +294,7 @@ object BoolFormula {
       case _ => BoolFormula.Not(f)
     }
 
+    @tailrec
     override def mkAnd(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∧ x => x
       case (BoolFormula.True, _) =>
