@@ -598,7 +598,7 @@ object Lowering {
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expression.NewChannel(reg, exp, tpe, elmTpe, pur, eff, loc) =>
+    case TypedAst.Expression.NewChannel(_, exp, tpe, elmTpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val chTpe = mkChannelTpe(elmTpe, loc)

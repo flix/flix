@@ -979,9 +979,9 @@ object Namer {
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
-    case WeededAst.Expression.NewChannel(reg, exp, loc) =>
-      mapN(visitExp(reg, env0, uenv0, tenv0, ns0, prog0), visitExp(exp, env0, uenv0, tenv0, ns0, prog0)) {
-        case (r, e) => NamedAst.Expression.NewChannel(r, e, loc)
+    case WeededAst.Expression.NewChannel(reg1, exp2, loc) =>
+      mapN(visitExp(reg1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, tenv0, ns0, prog0)) {
+        case (e1, e2) => NamedAst.Expression.NewChannel(e1, e2, loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>

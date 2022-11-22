@@ -2266,12 +2266,12 @@ object Typer {
         val ms = methods map visitJvmMethod
         TypedAst.Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
 
-      case KindedAst.Expression.NewChannel(reg, exp, elmTpe, loc) =>
-        val r = visitExp(reg, subst0)
-        val e = visitExp(exp, subst0)
+      case KindedAst.Expression.NewChannel(exp1, exp2, elmTpe, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         val pur = Type.Impure
-        val eff = e.eff
-        r.tpe match {
+        val eff = e2.eff
+        e1.tpe match {
           case Type.Apply(_, regVar, _) => 
             TypedAst.Expression.NewChannel(r, e, Type.mkTuple(List(Type.mkSender(elmTpe, regVar, loc), Type.mkReceiver(elmTpe, regVar, loc)), loc), elmTpe, pur, eff, loc)
           case _ => 

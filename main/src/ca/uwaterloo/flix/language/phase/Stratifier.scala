@@ -690,8 +690,8 @@ object Stratifier {
     case Expression.NewObject(_, _, _, _, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.NewChannel(reg, exp, _, _, _, _, _) =>
-      labelledGraphOfExp(reg) + labelledGraphOfExp(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)

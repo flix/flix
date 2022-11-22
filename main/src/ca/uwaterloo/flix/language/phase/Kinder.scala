@@ -697,11 +697,11 @@ object Kinder {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
-    case ResolvedAst.Expression.NewChannel(reg0, exp0, loc) =>
-      val regVal = visitExp(reg0, kenv0, senv, taenv, henv0, root)
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(regVal, expVal) {
-        case (reg, exp) => KindedAst.Expression.NewChannel(reg, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Expression.NewChannel(exp10, exp20, loc) =>
+      val exp1Val = visitExp(exp10, kenv0, senv, taenv, henv0, root)
+      val exp2Val = visitExp(exp20, kenv0, senv, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.NewChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>

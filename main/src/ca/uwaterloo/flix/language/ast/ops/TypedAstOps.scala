@@ -630,8 +630,8 @@ object TypedAstOps {
         case (acc, JvmMethod(_, fparams, exp, _, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.sym)
       }
 
-    case Expression.NewChannel(reg, exp, _, _, _, _, _) =>
-      freeVars(reg) ++ freeVars(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       freeVars(exp)
