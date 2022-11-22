@@ -1190,7 +1190,7 @@ namespace TestGraph {
 
     @test
     def withinDistanceOf02(): Bool = {
-        Graph.withinDistanceOf(1, -42, graphWithDist02()) == Set#{1}
+        Graph.withinDistanceOf(1, -42, graphWithDist02()) == Set#{}
     }
 
     @test
