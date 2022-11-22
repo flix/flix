@@ -1479,11 +1479,11 @@ object Weeder {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Cast(exp, declaredType, declaredEff, sp2) =>
+    case ParsedAst.Expression.Cast(sp1, exp, declaredType, declaredEff, sp2) =>
       val t = declaredType.map(visitType)
       val f = visitPurityAndEffect(declaredEff)
       mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+        case e => WeededAst.Expression.Cast(e, t, f, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Mask(sp1, exp, sp2) =>
