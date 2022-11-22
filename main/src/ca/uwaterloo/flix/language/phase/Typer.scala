@@ -63,7 +63,7 @@ object Typer {
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
     case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
-      val ops = effects.values.flatMap{ eff => eff.ops.map(_.sym) }
+      val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
       val syms = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
 
@@ -515,6 +515,8 @@ object Typer {
 
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
+
+      case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
         liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
@@ -1889,6 +1891,10 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      case KindedAst.Expression.Use(sym, exp, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.Use(sym, e, loc)
 
       // change null to Unit type
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Cst(Ast.Constant.Null, Type.Unit, loc)

@@ -95,6 +95,9 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
+      case Expression.Use(_, exp, _) =>
+        visit(exp)
+
       case Expression.Lambda(_, exp, _, _) =>
         visit(exp)
 

@@ -108,6 +108,14 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
+    case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = exp.tpe
+
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+    }
+
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = Type.Pure
 

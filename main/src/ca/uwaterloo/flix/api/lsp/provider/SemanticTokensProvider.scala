@@ -286,6 +286,8 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
+    case Expression.Use(_, _, _) => Iterator.empty // TODO add token for sym
+
     case Expression.Cst(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>

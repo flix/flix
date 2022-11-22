@@ -93,6 +93,8 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
+    case Expression.Use(_, exp, _) => visitExp(exp)
+
     case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>

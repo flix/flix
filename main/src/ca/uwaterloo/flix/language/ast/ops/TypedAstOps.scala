@@ -26,6 +26,8 @@ object TypedAstOps {
 
       case Expression.Hole(sym, tpe, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
+      case Expression.Use(_, exp, _) => visitExp(exp, env0)
+
       case Expression.Cst(_, _, _) => Map.empty
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -343,13 +345,14 @@ object TypedAstOps {
   /**
     * Creates a set of all the sigs used in the given `exp`.
     */
-  def sigSymsOf(exp: Expression): Set[Symbol.SigSym] = exp match {
+  def sigSymsOf(exp0: Expression): Set[Symbol.SigSym] = exp0 match {
     case Expression.Cst(_, _, _) => Set.empty
     case Expression.Wild(_, _) => Set.empty
     case Expression.Var(_, _, _) => Set.empty
     case Expression.Def(_, _, _) => Set.empty
     case Expression.Sig(sym, _, _) => Set(sym)
     case Expression.Hole(_, _, _) => Set.empty
+    case Expression.Use(_, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expression.Unary(_, exp, _, _, _, _) => sigSymsOf(exp)
@@ -455,6 +458,9 @@ object TypedAstOps {
     case Expression.Sig(_, _, _) => Map.empty
 
     case Expression.Hole(_, _, _) => Map.empty
+
+    case Expression.Use(_, exp, _) =>
+      freeVars(exp)
 
     case Expression.Lambda(fparam, exp, _, _) =>
       freeVars(exp) - fparam.sym
