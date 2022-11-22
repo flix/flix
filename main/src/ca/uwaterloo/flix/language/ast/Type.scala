@@ -389,7 +389,7 @@ object Type {
     /**
       * Returns the hash code of `this` type variable.
       */
-    override def hashCode(): Int = sym.hashCode()
+    override def hashCode(): Int = sym.hashCode
 
     /**
       * Compares `this` type variable to `that` type variable.
@@ -540,7 +540,7 @@ object Type {
   /**
     * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
     */
-  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type = 
+  def mkSender(tpe: Type, reg: Type, loc: SourceLocation): Type =
     Apply(Apply(Cst(TypeConstructor.Sender, loc), tpe, loc), reg, loc)
 
   /**

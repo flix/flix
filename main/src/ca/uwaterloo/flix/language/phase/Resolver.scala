@@ -1965,7 +1965,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, UnkindedType]
+      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val cst = Ast.AliasConstructor(alias.sym, cstLoc)
       UnkindedType.Alias(cst, args, tpe, tpe0.loc)

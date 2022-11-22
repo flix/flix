@@ -204,7 +204,7 @@ object Redundancy {
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
       case (acc, (_, decl)) =>
-        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.TypeVarSym]) {
+        val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
           case (sacc, (_, Case(_, tpe, _, _))) => sacc ++ tpe.typeVars.map(_.sym)
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.sym) && !tparam.name.name.startsWith("_"))
@@ -281,6 +281,8 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+    case Expression.Use(_, exp, _) =>
+      visitExp(exp, env0, rc) // TODO check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
