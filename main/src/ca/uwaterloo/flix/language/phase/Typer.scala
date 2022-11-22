@@ -81,7 +81,8 @@ object Typer {
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.TypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
       }
