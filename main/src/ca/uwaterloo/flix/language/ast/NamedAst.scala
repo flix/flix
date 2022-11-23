@@ -36,6 +36,8 @@ object NamedAst {
 
   object Declaration {
 
+    case class Namespace(sym: Symbol.ModuleSym, uses: List[NamedAst.Use], imports: List[NamedAst.Import], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
+
     case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
@@ -53,10 +55,13 @@ object NamedAst {
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation) extends NamedAst.Declaration
+  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
 
 
-  sealed trait Use
+  sealed trait Use {
+    def alias: Name.Ident
+    def loc: SourceLocation
+  }
 
   object Use {
 

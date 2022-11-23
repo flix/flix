@@ -506,6 +506,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = clazz.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = clazz.namespace :+ clazz.name
   }
 
   /**
@@ -633,6 +638,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = eff.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = eff.namespace :+ eff.name
   }
 
   /**
