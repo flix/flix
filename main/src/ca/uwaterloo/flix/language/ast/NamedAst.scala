@@ -23,6 +23,7 @@ object NamedAst {
 
   case class Root(symbols: Map[Name.NName, Map[String, NamedAst.NamedSymbol]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
+                  uses: Map[Name.NName, List[NamedAst.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])

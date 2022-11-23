@@ -37,6 +37,11 @@ trait BoolAlg[F] {
   def isFalse(f: F): Boolean
 
   /**
+    * Returns `true` if `f` represents a variable.
+    */
+  def isVar(f: F): Boolean
+
+  /**
     * Returns a representation of TRUE.
     */
   def mkTrue: F
@@ -82,12 +87,9 @@ trait BoolAlg[F] {
   def map(f: F)(fn: Int => F): F
 
   /**
-    * Optional operation. Returns `None` if not implemented.
-    *
-    * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
-    * Returns `Some(false)` otherwise.
+    * Returns `true` if formula is satisfiable and `false` otherwise.
     */
-  def satisfiable(f: F): Option[Boolean] = None
+  def satisfiable(f: F): Boolean
 
   /**
     * Returns a representation equivalent to `f` (but potentially smaller).
