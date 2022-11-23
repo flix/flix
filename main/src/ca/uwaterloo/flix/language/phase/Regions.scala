@@ -310,9 +310,9 @@ object Regions {
         case ms => checkType(tpe, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, _, _, _, loc) =>
-      flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
+    case Expression.NewChannel(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.GetChannel(exp, tpe, _, _, loc) =>

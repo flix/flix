@@ -133,6 +133,14 @@ namespace Concurrent/Channel {
             ),
             new MutDeque(Static)
         )
+    
+    /// 
+    /// Creates a new channel tuple (sender, receiver)
+    ///
+    @Internal
+    pub def newChannelTuple(bufferSize: Int32): (Mpmc[a], Mpmc[a]) \ IO =
+        let c = newChannel(bufferSize);
+        (c, c)
 
     ///
     /// Sends the element `e` on the channel `c`. This is blocking if the

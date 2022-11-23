@@ -662,7 +662,7 @@ object Weeder {
 
           case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expression.GetChannel(e1, loc).toSuccess
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
-          case ("CHANNEL_NEW", e1 :: Nil) => WeededAst.Expression.NewChannel(e1, loc).toSuccess
+          case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }

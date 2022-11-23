@@ -185,7 +185,7 @@ object NamedAst {
 
     case class NewObject(name: String, tpe: NamedAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class NewChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
