@@ -44,11 +44,16 @@ object Namer {
     val prog0 = NamedAst.Root(
       symbols = Map.empty,
       instances = Map.empty,
+      units = Map.empty,
       uses = Map.empty,
       entryPoint = program.entryPoint,
       sources = locations,
       names = program.names
     )
+
+    val units = traverse(program.units.values) {
+
+    }
 
     // collect all the declarations.
     val declarations = mapN(traverse(program.units.values) {
@@ -67,9 +72,26 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
+    */
+  private def visitUnit(unit: WeededAst.CompilationUnit, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.CompilationUnit, NameError] = unit match {
+    case WeededAst.CompilationUnit(uses0, imports0, decls0, loc) =>
+      val uenvVal = mergeUseEnvs(uses0, imports0, Name.RootNS, UseEnv.empty, prog0)
+      flatMapN(uenvVal) {
+        case uenv =>
+          val declsVal = traverse(decls0)(visitDecl(_, Name.RootNS, uenv))
+          val uses = uses0.map(visitUse)
+          val imports = imports0.map(visitImport)
+          mapN(declsVal) {
+            case decls => NamedAst.CompilationUnit(uses, imports, decls, loc)
+          }
+      }
+  }
+
+  /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = {
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = {
 
     decl0 match {
       /*
@@ -110,13 +132,13 @@ object Namer {
                 val sigsProgVal = Validation.fold(sigs, prog0) {
                   case (prog, sig) => lookupName(sig.sym.name, sigNs, prog, uenv0) match {
                     case LookupResult.NotDefined =>
-                      val symsInNs = prog.symbols.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.NamedSymbol.Sig(sig))
+                      val symsInNs = prog.symbols.getOrElse(sigNs, Map.empty) + (sig.sym.name -> NamedAst.Declaration.Sig(sig))
                       prog.copy(symbols = prog.symbols + (sigNs -> symsInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(sig.sym.name, sig.sym.loc, otherLoc)
                   }
                 }
                 sigsProgVal.map {
-                  prog => prog.copy(symbols = prog.symbols + (ns0 -> (symbols0 + (ident.name -> NamedAst.NamedSymbol.Class(clazz)))))
+                  prog => prog.copy(symbols = prog.symbols + (ns0 -> (symbols0 + (ident.name -> NamedAst.Declaration.Class(clazz)))))
                 }
             }
 
@@ -143,7 +165,7 @@ object Namer {
           // Case 1: Not used. Add it to the namespace
           case LookupResult.NotDefined =>
             mapN(visitDef(decl, uenv0, Map.empty, ns0, Nil, prog0)) {
-              defn => prog0.copy(symbols = prog0.symbols + (ns0 -> (syms + (ident.name -> NamedAst.NamedSymbol.Def(defn)))))
+              defn => prog0.copy(symbols = prog0.symbols + (ns0 -> (syms + (ident.name -> NamedAst.Declaration.Def(defn)))))
             }
           case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(ident.name, ident.loc, otherLoc)
         }
@@ -163,7 +185,7 @@ object Namer {
             // Case 1: The enum does not exist in the namespace. Update it.
             visitEnum(enum0, uenv0, ns0, prog0) map {
               enum =>
-                val enums = symbols0 + (ident.name -> NamedAst.NamedSymbol.Enum(enum))
+                val enums = symbols0 + (ident.name -> NamedAst.Declaration.Enum(enum))
                 prog0.copy(symbols = prog0.symbols + (ns0 -> enums))
             }
           // Case 2: The name is in use.
@@ -180,7 +202,7 @@ object Namer {
             // Case 1: The type alias does not exist in the namespace. Add it.
             visitTypeAlias(alias0, uenv0, ns0) map {
               alias =>
-                val typeAliases = symbols0 + (ident.name -> NamedAst.NamedSymbol.TypeAlias(alias))
+                val typeAliases = symbols0 + (ident.name -> NamedAst.Declaration.TypeAlias(alias))
                 prog0.copy(symbols = prog0.symbols + (ns0 -> typeAliases))
             }
           // Case 2: The name is in use.
@@ -199,13 +221,13 @@ object Namer {
                 val opsProgVal = Validation.fold(ops, prog0) {
                   case (prog, op) => lookupName(op.sym.name, opNs, prog, uenv0) match {
                     case LookupResult.NotDefined =>
-                      val lowerNamesInNs = prog.symbols.getOrElse(opNs, Map.empty) + (op.sym.name -> NamedAst.NamedSymbol.Op(op))
+                      val lowerNamesInNs = prog.symbols.getOrElse(opNs, Map.empty) + (op.sym.name -> NamedAst.Declaration.Op(op))
                       prog.copy(symbols = prog.symbols + (opNs -> lowerNamesInNs)).toSuccess
                     case LookupResult.AlreadyDefined(otherLoc) => mkDuplicateNamePair(op.sym.name, op.sym.loc, otherLoc)
                   }
                 }
                 opsProgVal.map {
-                  prog => prog.copy(symbols = prog.symbols + (ns0 -> (symbols0 + (ident.name -> NamedAst.NamedSymbol.Effect(eff)))))
+                  prog => prog.copy(symbols = prog.symbols + (ns0 -> (symbols0 + (ident.name -> NamedAst.Declaration.Effect(eff)))))
                 }
             }
           // Case 2: The name is in use. Error
@@ -1953,14 +1975,14 @@ object Namer {
   /**
     * Gets the location of the symbol of the given def or sig.
     */
-  private def getSymLocation(f: NamedAst.NamedSymbol): SourceLocation = f match {
-    case NamedAst.NamedSymbol.Def(d) => d.sym.loc
-    case NamedAst.NamedSymbol.Op(o) => o.sym.loc
-    case NamedAst.NamedSymbol.Sig(s) => s.sym.loc
-    case NamedAst.NamedSymbol.Class(c) => c.sym.loc
-    case NamedAst.NamedSymbol.Effect(e) => e.sym.loc
-    case NamedAst.NamedSymbol.Enum(e) => e.sym.loc
-    case NamedAst.NamedSymbol.TypeAlias(a) => a.sym.loc
+  private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
+    case NamedAst.Declaration.Def(d) => d.sym.loc
+    case NamedAst.Declaration.Op(o) => o.sym.loc
+    case NamedAst.Declaration.Sig(s) => s.sym.loc
+    case NamedAst.Declaration.Class(c) => c.sym.loc
+    case NamedAst.Declaration.Effect(e) => e.sym.loc
+    case NamedAst.Declaration.Enum(e) => e.sym.loc
+    case NamedAst.Declaration.TypeAlias(a) => a.sym.loc
   }
   /**
     * Creates a flexible unkinded type variable symbol from the given ident.
@@ -1976,6 +1998,13 @@ object Namer {
     case WeededAst.Use.UseLower(qname, alias, loc) => NamedAst.Use.UseDefOrSig(qname, alias, loc)
     case WeededAst.Use.UseUpper(qname, alias, loc) => NamedAst.Use.UseTypeOrClass(qname, alias, loc)
     case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
+  }
+
+  /**
+    * Performs naming on the given import `imp`.
+    */
+  private def visitImport(imp: WeededAst.Import): NamedAst.Import = imp match {
+    case WeededAst.Import(name, alias, loc) => NamedAst.Import(name, alias, loc)
   }
 
   /**

@@ -64,13 +64,7 @@ object WeededAst {
 
   }
 
-  sealed trait Import
-
-  object Import {
-
-    case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Import
-
-  }
+  case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
