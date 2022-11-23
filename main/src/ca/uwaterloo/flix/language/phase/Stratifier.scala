@@ -356,9 +356,9 @@ object Stratifier {
         case ms => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
       }
 
-    case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.NewChannel(e, tpe, elmTpe, pur, eff, loc)
+    case Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (r, e) => Expression.NewChannel(r, e, tpe, pur, eff, loc)
       }
 
     case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
@@ -690,8 +690,8 @@ object Stratifier {
     case Expression.NewObject(_, _, _, _, _, _, _) =>
       LabelledGraph.empty
 
-    case Expression.NewChannel(exp, _, _, _, _, _) =>
-      labelledGraphOfExp(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)

@@ -656,4 +656,9 @@ object Ast {
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
+  /**
+    * A use of a symbol in a `use` construct.
+    */
+  case class Use(sym: Symbol, loc: SourceLocation)
+
 }

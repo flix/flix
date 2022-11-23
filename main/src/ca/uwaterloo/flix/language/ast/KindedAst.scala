@@ -30,6 +30,7 @@ object KindedAst {
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -166,7 +167,7 @@ object KindedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[KindedAst.JvmMethod], loc: SourceLocation) extends KindedAst.Expression
 
-    case class NewChannel(exp: KindedAst.Expression, elmType: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class NewChannel(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class GetChannel(exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 

@@ -20,28 +20,28 @@ namespace Channel {
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
     ///
-    pub def buffered(n: Int32): (Sender[t, Static], Receiver[t, Static]) \ IO =
+    pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ IO =
         let m = if (n < 0) 0 else n;
-        $CHANNEL_NEW$(m)
+        $CHANNEL_NEW$(r, m)
         
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
-    pub def unbuffered(): (Sender[t, Static], Receiver[t, Static]) \ IO = buffered(0)
+    pub def unbuffered(r: Region[r]): (Sender[t, r], Receiver[t, r]) \ IO = buffered(r, 0)
 
     ///
     /// Receives a message from the given channel `r`.
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(receiver: Receiver[t, Static]): t \ IO = $CHANNEL_GET$(receiver)
+    pub def recv(receiver: Receiver[t, r]): t \ IO = $CHANNEL_GET$(receiver)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t, Static]): Unit \ IO with Sendable[t] = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t, r]): Unit \ IO with Sendable[t] = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Sends the message `m` on the given channel `s`.
@@ -52,13 +52,13 @@ namespace Channel {
     /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
     ///
     @Unsafe
-    pub def unsafeSend(m: t, sender: Sender[t, Static]): Unit \ IO = $CHANNEL_PUT$(sender, m)
+    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ IO = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(d: Duration): Receiver[Unit, Static] \ IO =
-        let (sender, receiver) = Channel.unbuffered();
+    pub def timeout(d: Duration): Receiver[Unit, Static] \ IO = 
+        let (sender, receiver) = Channel.unbuffered(Static);
         spawn { Thread.sleep(d); send((), sender) };
         receiver
 

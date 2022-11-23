@@ -100,7 +100,7 @@ object Kinder {
 
         mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.entryPoint, root.sources, root.names)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -697,10 +697,11 @@ object Kinder {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
-    case ResolvedAst.Expression.NewChannel(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expression.NewChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Expression.NewChannel(exp10, exp20, loc) =>
+      val exp1Val = visitExp(exp10, kenv0, senv, taenv, henv0, root)
+      val exp2Val = visitExp(exp20, kenv0, senv, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.NewChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>
