@@ -217,7 +217,7 @@ object TypedAstOps {
             macc ++ visitExp(exp, env0 ++ env1)
         }
 
-      case Expression.NewChannel(reg, exp, _, _, _, _) => visitExp(reg, env0) ++ visitExp(exp, env0)
+      case Expression.NewChannel(exp1, exp2, _, _, _, _) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, env0)
 
@@ -400,7 +400,7 @@ object TypedAstOps {
     case Expression.GetStaticField(_, _, _, _, _) => Set.empty
     case Expression.PutStaticField(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expression.NewChannel(reg, exp, _, _, _, _) => sigSymsOf(reg) ++ sigSymsOf(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)

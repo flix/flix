@@ -2270,7 +2270,7 @@ object Typer {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val pur = Type.Impure
-        val eff = e2.eff
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
         TypedAst.Expression.NewChannel(e1, e2, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.GetChannel(exp, tvar, loc) =>
