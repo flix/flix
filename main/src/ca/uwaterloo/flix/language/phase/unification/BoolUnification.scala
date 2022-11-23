@@ -21,7 +21,11 @@ import ca.uwaterloo.flix.language.phase.unification.BddFormula.BddFormula
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
 
+import java.util.concurrent.locks.ReentrantLock
+
 object BoolUnification {
+
+  val lock = new ReentrantLock()
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
@@ -76,9 +80,10 @@ object BoolUnification {
       case _ => // nop
     }
 
+    lock.lock()
     // translate the types into formulas
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
-    //implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
+    //implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+    implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
 
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
@@ -91,20 +96,25 @@ object BoolUnification {
     //
     UnificationCache.Global.lookup(f1, f2, renv) match {
       case None => // cache miss: must compute the unification.
-      case Some(subst) =>
+      case Some(subst) => {
         // cache hit: return the found substitution.
-        return subst.toTypeSubstitution(env).toOk
+        val res : Result[Substitution, UnificationError] = subst.toTypeSubstitution(env).toOk
+        lock.unlock()
+        return res
+      }
     }
 
     //
     // Run the expensive Boolean unification algorithm.
     //
-    booleanUnification(f1, f2, renv) match {
+    val res : Result[Substitution, UnificationError] = booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) =>
         UnificationCache.Global.put(f1, f2, renv, subst)
         subst.toTypeSubstitution(env).toOk
     }
+    lock.unlock()
+    res
   }
 
 

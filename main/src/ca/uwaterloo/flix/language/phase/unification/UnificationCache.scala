@@ -15,13 +15,15 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.phase.unification.BddFormula.BddFormula
+
 import java.util.concurrent.ConcurrentHashMap
 
 object UnificationCache {
   /**
     * A Global (per-JVM) cache of unification queries.
     */
-  val Global: UnificationCache[BoolFormula] = new UnificationCache()
+  val Global: UnificationCache[BddFormula] = new UnificationCache()
 }
 
 /**
