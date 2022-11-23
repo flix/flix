@@ -82,14 +82,14 @@ object BddFormula {
       * Returns a representation of the disjunction of `f1` and `f2`.
       */
     override def mkOr(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(f1.getDD().and(f2.getDD()))
+      new BddFormula(f1.getDD().or(f2.getDD()))
     }
 
     /**
       * Returns a representation of the conjunction of `f1` and `f2`.
       */
     override def mkAnd(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(f1.getDD().or(f2.getDD()))
+      new BddFormula(f1.getDD().and(f2.getDD()))
     }
 
     /**
@@ -121,13 +121,7 @@ object BddFormula {
       * Applies the function `fn` to every variable in `f`.
       */
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      /*println("New f")
-      f.getDD().printDot()*/
-      val res = mapAux(f.getDD())(fn)
-      /*println("Mapped f")
-      res.printDot()
-      println()*/
-      new BddFormula(res)
+      new BddFormula(mapAux(f.getDD())(fn))
     }
 
     private def mapAux(dd: BDD)(fn: Int => BddFormula): BDD = {
@@ -136,92 +130,18 @@ object BddFormula {
       } else {
         val currentVar = dd.`var`()
         val substDD = fn(currentVar).getDD()
-        /*println("var " + currentVar + " ->")
-        substDD.printDot()*/
 
         if(substDD.isOne()) {
-          val res = mapAux(dd.high())(fn)
-          /*println("Set " + currentVar + " to T")
-          res.printDot()*/
-          res
+          mapAux(dd.high())(fn)
         } else if(substDD.isZero()) {
-          val res = mapAux(dd.low())(fn)
-          /*println("Set " + currentVar + " to F")
-          res.printDot()*/
-          res
+          mapAux(dd.low())(fn)
         } else {
           val lowRes = mapAux(dd.low())(fn)
           val highRes = mapAux(dd.high())(fn)
-          val res = substDD.ite(highRes, lowRes)
-          /*println("Result after mapping " + currentVar)
-          res.printDot()*/
-
-          res
+          substDD.ite(highRes, lowRes)
         }
       }
     }
-
-    /**
-      * Applies the function `fn` to every variable in `f`.
-      */
-      //TODO: Check correctness
-    /*override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      if(f.getDD().isOne || f.getDD().isZero) {
-        f
-      } else {
-        val varSetF = freeVars(f)
-
-        var varSetFull = varSetF
-        for(i <- varSetF) {
-          val subst = fn(i)
-          val varSetI = freeVars(subst)
-          varSetFull = varSetFull ++ varSetI
-        }
-
-        //make x -> x' map
-        val maxVar = varSetFull.max
-        val noVars = varSetFull.size
-        val newVarNames = (maxVar+1 to maxVar+noVars).toList
-        val varMap = varSetFull.zip(newVarNames).foldLeft(Bimap.empty[Int, Int]) {
-          case (macc, (old_x, new_x)) => macc + (old_x -> new_x)
-        }
-
-        var res = f.getDD()
-
-        //for each i in varSet create BddFormula' with primed variables
-        //and compose f with BddFormula'
-        for (var_i <- varSetF) {
-          val subst = fn(var_i)
-          val substVarSet = freeVars(subst)
-
-          var substDD = subst.getDD()
-
-          //create the substitute BDD with the new names
-          for (var_j <- substVarSet) {
-            val j_prime = varMap.getForward(var_j) match {
-              case Some(j) => j
-              case None => ??? //should never happen
-            }
-            substDD = substDD.compose(factory.ithVar(j_prime), var_j)
-          }
-          res = res.compose(substDD, var_i)
-        }
-
-        val varSetPrime = freeVarsAux(res)
-
-        //for each x' map back to x in f
-        for (var_i_prime <- varSetPrime) {
-          val old_i = varMap.getBackward(var_i_prime) match {
-            case Some(i) => i
-            case None => ??? //should never happen
-          }
-          res = res.compose(factory.ithVar(old_i), var_i_prime)
-        }
-
-        val resForm = new BddFormula(res)
-        resForm
-      }
-    }*/
 
     /**
       * Returns a representation equivalent to `f` (but potentially smaller).
