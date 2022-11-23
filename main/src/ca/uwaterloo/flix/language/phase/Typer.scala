@@ -1607,12 +1607,12 @@ object Typer {
         val regionVar = Type.freshVar(Kind.Bool, loc, text = FallbackText("region"))
         val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
           _ <- expectTypeM(expected = regionType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
           resultTyp <- liftM(tvar)
-          resultPur = Type.Impure
+          resultPur = Type.mkAnd(pur1, pur2, regionVar, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
@@ -1622,10 +1622,10 @@ object Typer {
         val channelType = Type.mkReceiver(elmVar, regionVar, loc)
 
         for {
-          (constrs, tpe, _, eff) <- visitExp(exp)
+          (constrs, tpe, pur, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = channelType, actual = tpe, exp.loc)
           resultTyp <- unifyTypeM(tvar, elmVar, loc)
-          resultPur = Type.Impure
+          resultPur = Type.mkAnd(pur, regionVar, loc)
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
@@ -1635,12 +1635,12 @@ object Typer {
         val channelType = Type.mkSender(elmVar, regionVar, loc)
 
         for {
-          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
           resultTyp = Type.mkUnit(loc)
-          resultPur = Type.Impure
+          resultPur = Type.mkAnd(pur1, pur2, regionVar, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
@@ -1654,12 +1654,12 @@ object Typer {
         def inferSelectRule(sr0: KindedAst.SelectChannelRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
           sr0 match {
             case KindedAst.SelectChannelRule(sym, chan, body) => for {
-              (chanConstrs, chanType, _, chanEff) <- visitExp(chan)
-              (bodyConstrs, bodyType, _, bodyEff) <- visitExp(body)
+              (chanConstrs, chanType, pur1, chanEff) <- visitExp(chan)
+              (bodyConstrs, bodyType, pur2, bodyEff) <- visitExp(body)
               _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
-              resultPur = Type.Impure
+              resultPur = Type.mkAnd(pur1, pur2, loc)
               resultEff = Type.mkUnion(chanEff, bodyEff, loc)
             } yield (resultCon, resultTyp, resultPur, resultEff)
           }
@@ -1674,11 +1674,11 @@ object Typer {
           }
 
         for {
-          (ruleConstrs, ruleTypes, _, ruleEffs) <- traverseM(rules)(inferSelectRule).map(unzip4)
-          (defaultConstrs, defaultType, _, defaultEff) <- inferDefaultRule(default)
+          (ruleConstrs, ruleTypes, pur1, ruleEffs) <- traverseM(rules)(inferSelectRule).map(unzip4)
+          (defaultConstrs, defaultType, pur2, defaultEff) <- inferDefaultRule(default)
           resultCon = ruleConstrs.flatten ++ defaultConstrs
           resultTyp <- unifyTypeM(tvar :: defaultType :: ruleTypes, loc)
-          resultPur = Type.Impure
+          resultPur = Type.mkAnd(regionVar :: pur2 :: pur1, loc)
           resultEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultPur, resultEff)
 
