@@ -224,7 +224,7 @@ object BoolFormula {
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
   }
 
-  implicit val AsBoolAlgTrait: BoolAlg[BoolFormula] = new BoolAlg[BoolFormula] {
+  implicit val AsBoolAlg: BoolAlg[BoolFormula] = new BoolAlg[BoolFormula] {
 
     override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
 
@@ -479,14 +479,7 @@ object BoolFormula {
       }
     }
 
-    override def freeVars(f: BoolFormula): SortedSet[Int] = f match {
-      case True => SortedSet.empty
-      case False => SortedSet.empty
-      case And(f1, f2) => freeVars(f1) ++ freeVars(f2)
-      case Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
-      case Not(f1) => freeVars(f1)
-      case Var(id) => SortedSet(id)
-    }
+    override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
     override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
   }
