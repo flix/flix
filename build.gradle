@@ -29,7 +29,6 @@ dependencies {
     implementation files('lib/scopt_2.13-4.0.1.jar')
     implementation files('lib/shapeless-2.3.3.jar')
     implementation files('lib/com.github.javabdd-3.0.1-SNAPSHOT.jar')
-    implementation files('lib/com.github.javabdd-3.0.1-SNAPSHOT-sources.jar')
 }
 
 tasks.withType(ScalaCompile) {
