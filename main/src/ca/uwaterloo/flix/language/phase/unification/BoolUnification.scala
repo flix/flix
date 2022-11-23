@@ -76,7 +76,7 @@ object BoolUnification {
     }
 
     // translate the types into formulas
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlgTrait
+    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
 
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
@@ -137,7 +137,7 @@ object BoolUnification {
 
       Some(subst)
     } catch {
-      case ex: BooleanUnificationException => None
+      case ex: BoolUnificationException => None
     }
   }
 
@@ -170,7 +170,7 @@ object BoolUnification {
       if (!alg.satisfiable(f))
         BoolSubstitution.empty
       else
-        throw BooleanUnificationException()
+        throw BoolUnificationException()
 
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
@@ -181,10 +181,5 @@ object BoolUnification {
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
-
-  /**
-    * An exception thrown to indicate that boolean unification failed.
-    */
-  private case class BooleanUnificationException() extends RuntimeException
 
 }
