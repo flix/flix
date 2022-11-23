@@ -1,10 +1,10 @@
 # Changelog
 
 Version 0.34.0:
-- Library: Added new `Graph` namespace (thanks Jonathan!)
 - Language: Reworked channels into a `Sender` and `Receiver` part (thanks Paul!)
 - Language: Added `Sendable` type class and require it for messages sent on channels (thanks Paul!)
 - Language: Removed old deprecated record syntax (thanks Magnus!)
+- Library: Added new `Graph` namespace (thanks Jonathan!)
 - VSCode: Added support for auto-complete of fields (thanks Daniel!)
 - VSCode: Added support for auto-complete of uses (thanks Daniel!)
 - VSCode: Reworked prioritization of auto-complete suggestions (thanks Daniel!)
