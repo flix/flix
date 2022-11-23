@@ -81,8 +81,8 @@ object BoolUnification {
     }
 
     // translate the types into formulas
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
-    //implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
+    //implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+    implicit val alg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
 
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)

@@ -36,7 +36,7 @@ object BddFormula {
     def getDD(): DD = dd
   }
 
-  implicit val AsBoolAlgTrait: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
+  implicit val AsBoolAlg: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
     /**
       * Returns `true` if `f` represents TRUE.
       */
@@ -46,6 +46,12 @@ object BddFormula {
       * Returns `true` if `f` represents FALSE.
       */
     override def isFalse(f: BddFormula): Boolean = f.getDD().isFalse()
+
+    /**
+      * Returns `true` if `f` represents a variable.
+      */
+    override def isVar(f: BddFormula): Boolean =
+      f.getDD().equalsTo(f.getDD().getVariable, creator.makeFalse(), creator.makeTrue())
 
     /**
       * Returns a representation of TRUE.
@@ -119,7 +125,7 @@ object BddFormula {
       * Applies the function `fn` to every variable in `f`.
       */
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      val creator = Builders.bddBuilder().build()
+      /*val creator = Builders.bddBuilder().build()
       val x1 = creator.makeIthVar(1)
       val x2 = creator.makeIthVar(2)
       val bot = creator.makeFalse()
@@ -132,16 +138,16 @@ object BddFormula {
       println("If x1 then x2 else false by PJBDD")
       println(exp.bddToString(ite_pjbdd))
 
-      exit(-1)
+      exit(-1)*/
 
 
       //lock.lock()
-      println("f")
-      println(exp.bddToString(f.getDD()))
+      /*println("f")
+      println(exp.bddToString(f.getDD()))*/
       val res = new BddFormula(mapAux(f.getDD())(fn))
-      println("mapped f")
+      /*println("mapped f")
       println(exp.bddToString(res.getDD()))
-      println()
+      println()*/
       //lock.unlock()
       res
     }
@@ -153,15 +159,15 @@ object BddFormula {
         val currentVar = dd.getVariable()
         val substDD = fn(currentVar).getDD()
 
-        println(currentVar + " -> ")
-        println(exp.bddToString(substDD))
+        /*println(currentVar + " -> ")
+        println(exp.bddToString(substDD))*/
 
         val lowRes = mapAux(dd.getLow())(fn)
         val highRes = mapAux(dd.getHigh())(fn)
         val res = creator.makeIte(substDD, highRes, lowRes)
 
-        println("result after subst on " + currentVar)
-        println(exp.bddToString(res))
+        /*println("result after subst on " + currentVar)
+        println(exp.bddToString(res))*/
 
         res
       }
@@ -290,6 +296,7 @@ object BddFormula {
       * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
       * Returns `Some(false)` otherwise.
       */
-    override def satisfiable(f: BddFormula): Option[Boolean] = Some(!f.getDD().isFalse())
+    override def satisfiable(f: BddFormula): Boolean = !f.getDD().isFalse()
+
   }
 }
