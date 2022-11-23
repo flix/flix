@@ -53,7 +53,7 @@ object Typer {
       case (classes, instances, defs, enums, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -61,7 +61,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _) =>
+    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, _) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -81,7 +81,8 @@ object Typer {
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.TypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym")
         case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
       }
@@ -507,7 +508,7 @@ object Typer {
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc)
+        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -1161,7 +1162,7 @@ object Typer {
           val caze = decl.cases(symUse.sym)
 
           // Instantiate the type scheme of the case.
-          val (_, tagType) = Scheme.instantiate(caze.sc, loc)
+          val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
           //
           // The tag type is a function from the type of variant to the type of the enum.
@@ -2484,7 +2485,7 @@ object Typer {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc)
+        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.

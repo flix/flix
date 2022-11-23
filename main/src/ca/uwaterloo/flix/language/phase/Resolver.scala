@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.NamedAst.NamedSymbol
 import ca.uwaterloo.flix.language.ast.UnkindedType.{mkAnd, mkComplement, mkEffect, mkEnum, mkIntersection, mkNot, mkOr, mkPredicate, mkUncurriedArrowWithEffect, mkUnion}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -65,6 +66,13 @@ object Resolver {
         (ns, map)
     }
 
+    val usesVal = root.uses.map {
+      case (ns, uses0) =>
+        mapN(traverse(uses0)(visitUse(_, ns, root))) {
+          u => (new Symbol.ModuleSym(ns.parts) -> u)
+        }
+    }
+
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(resolveTypeAliases(typeAliases, root)) {
       case (taenv, taOrder) =>
@@ -97,10 +105,10 @@ object Resolver {
           }
         }
 
-        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal)) {
-          case (classes, instances, defs, enums, effects) =>
+        flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal), sequence(usesVal)) {
+          case (classes, instances, defs, enums, effects, uses) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, taOrder, root.entryPoint, root.sources, root.names)
+              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, combine(uses), taOrder, root.entryPoint, root.sources, root.names)
             }
         }
     }
@@ -1965,7 +1973,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.TypeVarSym, UnkindedType]
+      val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val cst = Ast.AliasConstructor(alias.sym, cstLoc)
       UnkindedType.Alias(cst, args, tpe, tpe0.loc)
@@ -2762,6 +2770,46 @@ object Resolver {
   }
 
   /**
+    * Gets the proper symbol from the given named symbol.
+    */
+  private def getSym(symbol: NamedAst.NamedSymbol): Symbol = symbol match {
+    case NamedSymbol.Class(c) => c.sym
+    case NamedSymbol.Def(d) => d.sym
+    case NamedSymbol.Effect(e) => e.sym
+    case NamedSymbol.Enum(e) => e.sym
+    case NamedSymbol.Op(o) => o.sym
+    case NamedSymbol.Sig(s) => s.sym
+    case NamedSymbol.TypeAlias(a) => a.sym
+  }
+
+  /**
+    * Resolves the given Use.
+    */
+  private def visitUse(use: NamedAst.Use, ns: Name.NName, root: NamedAst.Root): Validation[Ast.Use, ResolutionError] = use match {
+    case NamedAst.Use.UseDefOrSig(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+      case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+      case Some(value) =>
+        val sym = getSym(value)
+        Ast.Use(sym, loc).toSuccess
+    }
+    case NamedAst.Use.UseTypeOrClass(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+      case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+      case Some(value) =>
+        val sym = getSym(value)
+        Ast.Use(sym, loc).toSuccess
+    }
+
+    case NamedAst.Use.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+      case Some(NamedAst.NamedSymbol.Enum(e)) =>
+        e.cases.get(tag.name) match {
+          case Some(NamedAst.Case(sym, _)) => Ast.Use(sym, loc).toSuccess
+          case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
+        }
+      case _ => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+    }
+  }
+
+  /**
     * Enum describing the extent to which a class is accessible.
     */
   private sealed trait ClassAccessibility
@@ -2792,8 +2840,10 @@ object Resolver {
     * Union of definitions and signatures.
     */
   private sealed trait DefOrSig
+
   private object DefOrSig {
     case class Def(defn: NamedAst.Def) extends DefOrSig
+
     case class Sig(sig: NamedAst.Sig) extends DefOrSig
   }
 }
