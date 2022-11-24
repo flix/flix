@@ -1674,11 +1674,11 @@ object Typer {
           }
 
         for {
-          (ruleConstrs, ruleTypes, pur1, ruleEffs) <- traverseM(rules)(inferSelectRule).map(unzip4)
+          (ruleConstrs, ruleTypes, rulePurs, ruleEffs) <- traverseM(rules)(inferSelectRule).map(unzip4)
           (defaultConstrs, defaultType, pur2, defaultEff) <- inferDefaultRule(default)
           resultCon = ruleConstrs.flatten ++ defaultConstrs
           resultTyp <- unifyTypeM(tvar :: defaultType :: ruleTypes, loc)
-          resultPur = Type.mkAnd(regionVar :: pur2 :: pur1, loc)
+          resultPur = Type.mkAnd(regionVar :: pur2 :: rulePurs, loc)
           resultEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultPur, resultEff)
 
