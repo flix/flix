@@ -336,7 +336,7 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
-    case NamedAst.Declaration.Instance(doc, ann0, mod, clazz0, tpe0, tconstrs0, defs0, loc) =>
+    case NamedAst.Declaration.Instance(doc, ann0, mod, clazz0, tpe0, tconstrs0, defs0, ns, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, taenv, ns0, root))
       val clazzVal = lookupClassForImplementation(clazz0, ns0, root)
       val tpeVal = resolveType(tpe0, taenv, ns0, root)
@@ -345,7 +345,7 @@ object Resolver {
       mapN(annVal, clazzVal, tpeVal, tconstrsVal, defsVal) {
         case (ann, clazz, tpe, tconstrs, defs) =>
           val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-          ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns0, loc)
+          ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
       }
   }
 
@@ -2788,7 +2788,7 @@ object Resolver {
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case Declaration.Op(sym, spec) => sym
-    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, loc) => throw InternalCompilerException("unexpected instance")
+    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance")
   }
 
   /**

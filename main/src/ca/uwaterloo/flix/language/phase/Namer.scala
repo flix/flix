@@ -136,8 +136,8 @@ object Namer {
         }
       }
 
-    case inst@Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, loc) =>
-      addInstanceToTable(table0, clazz.namespace.parts, clazz.ident.name, inst).toSuccess
+    case inst@Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) =>
+      addInstanceToTable(table0, ns, clazz.ident.name, inst).toSuccess
 
     case Declaration.Sig(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
@@ -422,7 +422,7 @@ object Namer {
           val instTconstr = NamedAst.TypeConstraint(qualifiedClass, tpe, clazz.loc)
           val defsVal = traverse(defs0)(visitDef(_, uenv0, tenv, ns0, List(instTconstr)))
           mapN(defsVal) {
-            defs => NamedAst.Declaration.Instance(doc, ann, mod, qualifiedClass, tpe, tconstrs, defs, loc)
+            defs => NamedAst.Declaration.Instance(doc, ann, mod, qualifiedClass, tpe, tconstrs, defs, ns0.parts, loc)
           }
       }
   }
@@ -1972,7 +1972,7 @@ object Namer {
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case Declaration.Op(sym, spec) => sym.loc
-    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, loc) => throw InternalCompilerException("Unexpected instance")
+    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance")
     case Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace")
   }
 
