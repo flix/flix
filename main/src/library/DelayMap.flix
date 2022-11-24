@@ -455,7 +455,7 @@ namespace DelayMap {
             case Node(_, a, _, v, b) =>
                 let _ = seqLoop(a);
                 let _ = force v;
-                let _ = seqLoop(b)
+                seqLoop(b)
             case _ => ()
         };
         def parLoop(n, tt) = {
