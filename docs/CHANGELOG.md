@@ -1,5 +1,17 @@
 # Changelog
 
+Version 0.34.0:
+- Language: Reworked channels into a `Sender` and `Receiver` part (thanks Paul!)
+- Language: Added `Sendable` type class and require it for messages sent on channels (thanks Paul!)
+- Language: Removed old deprecated record syntax (thanks Magnus!)
+- Library: Added new `Graph` namespace (thanks Jonathan!)
+- VSCode: Added support for auto-complete of fields (thanks Daniel!)
+- VSCode: Added support for auto-complete of uses (thanks Daniel!)
+- VSCode: Reworked prioritization of auto-complete suggestions (thanks Daniel!)
+- Compiler: Improved performance of Boolean unification (thanks Magnus!)
+- Compiler: Flix closures are now instances of many Java function types (thanks Stephen!)
+- Compiler: Improved type errors reported for function applications (thanks Magnus!)
+
 Version 0.33.0:
 - Language: Added support for `BigDecimal` (thanks Stephen!)
 - Language: Simplified the channel API (thanks Magnus, Paul!)
@@ -363,4 +375,3 @@ HEAD (in progress, not released):
 - Inliner
 - Datalog abstraction
 - For and Forecah
-- Graph namespace.
