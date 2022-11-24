@@ -45,12 +45,12 @@ object Namer {
 
     flatMapN(unitsVal) {
       case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty)) {
+        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
           case (table, unit) => tableUnit(unit, table)
         }
 
         mapN(tableVal) {
-          case SymbolTable(symbols0, instances0) =>
+          case SymbolTable(symbols0, instances0, uses0) =>
             // TODO remove use of NName
             val symbols = symbols0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -58,7 +58,10 @@ object Namer {
             val instances = instances0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
             }
-            NamedAst.Root(symbols, instances, units, program.entryPoint, locations, program.names)
+            val uses = uses0.map {
+              case (k, v) => Name.mkUnlocatedNName(k) -> v
+            }
+            NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
         }
     }
   }
@@ -118,9 +121,10 @@ object Namer {
     case Declaration.Namespace(sym, usesAndImports, decls, loc) =>
       // reset the uenv
       val uenv = UseEnv.mk(usesAndImports)
-      fold(decls, table0) {
+      val table1 = fold(decls, table0) {
         case (table, d) => tableDecl(d, uenv, table)
       }
+      mapN(table1)(addUsesToTable(_, sym.ns, usesAndImports))
 
     case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
@@ -164,7 +168,7 @@ object Namer {
     */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration, uenv: UseEnv): Validation[SymbolTable, NameError] = {
     lookupName2(name, ns, table, uenv) match {
-      case LookupResult.NotDefined => addToTable(table, ns, name, decl).toSuccess
+      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl).toSuccess
       case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
     }
   }
@@ -172,12 +176,12 @@ object Namer {
   /**
     * Adds the given declaration to the table.
     */
-  private def addToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
-    case SymbolTable(symbols0, instances) =>
+  private def addDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
+    case SymbolTable(symbols0, instances, uses) =>
       val oldMap = symbols0.getOrElse(ns, Map.empty)
       val newMap = oldMap + (name -> decl)
       val symbols = symbols0 + (ns -> newMap)
-      SymbolTable(symbols, instances)
+      SymbolTable(symbols, instances, uses)
 
   }
 
@@ -185,14 +189,25 @@ object Namer {
     * Adds the given instance to the table.
     */
   private def addInstanceToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Instance): SymbolTable = table match {
-    case SymbolTable(symbols, instances0) =>
+    case SymbolTable(symbols, instances0, uses) =>
       val oldMap = instances0.getOrElse(ns, Map.empty)
       val newMap = oldMap.updatedWith(name) {
         case None => Some(List(decl))
         case Some(insts) => Some(decl :: insts)
       }
       val instances = instances0 + (ns -> newMap)
-      SymbolTable(symbols, instances)
+      SymbolTable(symbols, instances, uses)
+  }
+
+  /**
+    * Adds the given uses to the table.
+    */
+  private def addUsesToTable(table: SymbolTable, ns: List[String], usesAndImports: List[NamedAst.UseOrImport]): SymbolTable = table match {
+    case SymbolTable(symbols, instances, uses0) =>
+      val oldList = uses0.getOrElse(ns, Nil)
+      val newList = usesAndImports ::: oldList
+      val uses = uses0 + (ns -> newList)
+      SymbolTable(symbols, instances, uses)
   }
 
   /**
@@ -2033,5 +2048,5 @@ object Namer {
   /**
     * A structure holding the symbols and instances in the program.
     */
-  case class SymbolTable(symbols: Map[List[String], Map[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]])
+  case class SymbolTable(symbols: Map[List[String], Map[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
 }
