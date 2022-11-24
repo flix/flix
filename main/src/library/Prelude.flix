@@ -162,7 +162,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 /// `upcast` is safe to use anywhere.
 ///
 pub def upcast(f: a -> b): a -> b \ ef =
-    unsafe_cast x -> f(x) as \ ef
+    unsafe_cast (x -> f(x)) as \ ef
 
 ///
 /// Prints the argument unless it is ().

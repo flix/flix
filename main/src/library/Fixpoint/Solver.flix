@@ -766,7 +766,7 @@ namespace Fixpoint {
     /// Unsafely casts the given value `d` to a Datalog program.
     ///
     @Internal @Unsafe
-    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v: Datalog[Boxed]
+    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v as Datalog[Boxed]
 
     def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
