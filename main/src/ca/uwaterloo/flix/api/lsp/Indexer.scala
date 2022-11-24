@@ -176,6 +176,9 @@ object Indexer {
     case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
+    case Expression.Use(_, _, _) =>
+      Index.occurrenceOf(exp0) // TODO add use of sym
+
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -346,8 +349,8 @@ object Indexer {
           Index.traverse(fparams)(visitFormalParam) ++ visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ visitType(eff)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)

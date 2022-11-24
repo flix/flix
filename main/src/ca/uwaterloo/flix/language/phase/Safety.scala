@@ -95,6 +95,9 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
+      case Expression.Use(_, exp, _) =>
+        visit(exp)
+
       case Expression.Lambda(_, exp, _, _) =>
         visit(exp)
 
@@ -253,8 +256,8 @@ object Safety {
             case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
           }
 
-      case Expression.NewChannel(exp, _, _, _, _, _) =>
-        visit(exp)
+      case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
 
       case Expression.GetChannel(exp, _, _, _, _) =>
         visit(exp)

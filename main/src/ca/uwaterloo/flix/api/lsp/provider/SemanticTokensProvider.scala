@@ -286,6 +286,8 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
+    case Expression.Use(_, _, _) => Iterator.empty // TODO add token for sym
+
     case Expression.Cst(_, _, _) => Iterator.empty
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -471,7 +473,7 @@ object SemanticTokensProvider {
         case (acc, m) => acc ++ visitJvmMethod(m)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp)
 

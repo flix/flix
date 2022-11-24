@@ -136,6 +136,7 @@ object PatternExhaustiveness {
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
+      case Expression.Use(_, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
@@ -205,7 +206,7 @@ object PatternExhaustiveness {
       case Expression.GetStaticField(_, _, _, _, _) => Nil
       case Expression.PutStaticField(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.NewObject(_, _, _, _, _, methods, _) => methods.flatMap(m => visitExp(m.exp, root))
-      case Expression.NewChannel(exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.NewChannel(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.PutChannel(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
 

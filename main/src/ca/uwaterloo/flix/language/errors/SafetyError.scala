@@ -245,9 +245,9 @@ object SafetyError {
       Some({
         s"""Did you try to supercast two types at the same time? e.g.
            |
-           |  if (true) supercast(a) else supercast(b)
+           |  if (true) super_cast exp1 else super_cast exp2
            |
-           |where a and b are Java types
+           |where exp1 and exp2 have Java types.
            |""".stripMargin
       })
   }
@@ -280,9 +280,9 @@ object SafetyError {
       Some({
         s"""Did you try to supercast two types at the same time? e.g.
            |
-           |  if (true) supercast(a) else supercast(b)
+           |  if (true) super_cast exp1 else super_cast exp2
            |
-           |where a and b are Java types
+           |where exp1 and exp2 have Java types.
            |""".stripMargin
       })
   }

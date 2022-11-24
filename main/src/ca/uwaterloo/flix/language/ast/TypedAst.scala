@@ -33,6 +33,7 @@ object TypedAst {
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   effects: Map[Symbol.EffectSym, TypedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
@@ -106,6 +107,14 @@ object TypedAst {
       def pur: Type = Type.Pure
 
       def eff: Type = Type.Empty
+    }
+
+    case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = exp.tpe
+
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
     }
 
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
@@ -235,7 +244,7 @@ object TypedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, pur: Type, eff: Type, methods: List[TypedAst.JvmMethod], loc: SourceLocation) extends TypedAst.Expression
 
-    case class NewChannel(exp: TypedAst.Expression, tpe: Type, elmTpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class NewChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class GetChannel(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

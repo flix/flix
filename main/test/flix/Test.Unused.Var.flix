@@ -56,7 +56,7 @@ namespace Test/Unused/Var {
 
     @test
     def testUnusedVar10(): Int32 \ IO =
-        let (s, r) = Channel.buffered(1);
+        let (s, r) = Channel.buffered(Static, 1);
         Channel.send(0, s);
         select {
             case _foo <- recv(r) => 123
@@ -64,8 +64,8 @@ namespace Test/Unused/Var {
 
     @test
     def testUnusedVar11(): Int32 \ IO =
-        let (s1, r1) = Channel.buffered(1);
-        let (s2, r2) = Channel.buffered(1);
+        let (s1, r1) = Channel.buffered(Static, 1);
+        let (s2, r2) = Channel.buffered(Static, 1);
         Channel.send(0, s1);
         Channel.send(0, s2);
         select {
