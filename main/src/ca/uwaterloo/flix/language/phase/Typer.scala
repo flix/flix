@@ -336,6 +336,8 @@ object Typer {
                             TypeError.MissingOrder(tconstr.arg, tconstr.loc)
                           else if (tconstr.head.sym.name == "ToString")
                             TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                          else if (tconstr.head.sym.name == "Sendable")
+                            TypeError.MissingSendable(tconstr.arg, tconstr.loc)
                           else
                             TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
                       }
