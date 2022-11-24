@@ -186,7 +186,7 @@ object WeededAst {
 
     case class NewObject(tpe: WeededAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class NewChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

@@ -76,7 +76,7 @@ object BoolUnification {
     }
 
     // translate the types into formulas
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlgTrait
+    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
 
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
@@ -137,7 +137,7 @@ object BoolUnification {
 
       Some(subst)
     } catch {
-      case ex: BooleanUnificationException => None
+      case ex: BoolUnificationException => None
     }
   }
 
@@ -167,10 +167,10 @@ object BoolUnification {
   private def successiveVariableElimination[F](f: F, flexvs: List[Int])(implicit flix: Flix, alg: BoolAlg[F]): BoolSubstitution[F] = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(f))
+      if (!alg.satisfiable(f))
         BoolSubstitution.empty
       else
-        throw BooleanUnificationException()
+        throw BoolUnificationException()
 
     case x :: xs =>
       val t0 = BoolSubstitution.singleton(x, alg.mkFalse)(f)
@@ -182,38 +182,4 @@ object BoolUnification {
       st ++ se
   }
 
-  /**
-    * An exception thrown to indicate that boolean unification failed.
-    */
-  private case class BooleanUnificationException() extends RuntimeException
-
-  /**
-    * Returns `true` if the given boolean formula `f` is satisfiable
-    * when ALL variables in the formula are flexible.
-    */
-  private def satisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlg[F]): Boolean = {
-    if (alg.isTrue(f)) {
-      true
-    } else if (alg.isFalse(f)) {
-      false
-    } else {
-      alg.satisfiable(f) match {
-        case None => naiveSatisfiable(f)
-        case Some(sat) => sat
-      }
-    }
-  }
-
-  /**
-    * Naively computes if `f` is satisfiable using the SVE algorithm.
-    */
-  private def naiveSatisfiable[F](f: F)(implicit flix: Flix, alg: BoolAlg[F]): Boolean = {
-    val q = alg.mkXor(f, alg.mkTrue)
-    try {
-      successiveVariableElimination(q, alg.freeVars(q).toList)
-      true
-    } catch {
-      case ex: BooleanUnificationException => false
-    }
-  }
 }

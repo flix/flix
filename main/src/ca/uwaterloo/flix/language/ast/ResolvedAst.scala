@@ -29,6 +29,7 @@ object ResolvedAst {
                   enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                   effects: Map[Symbol.EffectSym, ResolvedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias],
+                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
                   taOrder: List[Symbol.TypeAliasSym],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -68,6 +69,8 @@ object ResolvedAst {
     case class Sig(sym: Symbol.SigSym, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -166,7 +169,7 @@ object ResolvedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[JvmMethod], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

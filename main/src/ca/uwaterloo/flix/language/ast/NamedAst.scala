@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(upperNames: Map[Name.NName, Map[String, NamedAst.UpperName]],
+  case class Root(symbols: Map[Name.NName, Map[String, NamedAst.NamedSymbol]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Instance]]],
-                  lowerNames: Map[Name.NName, Map[String, NamedAst.LowerName]],
+                  uses: Map[Name.NName, List[NamedAst.Use]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -33,22 +33,16 @@ object NamedAst {
 
   case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Def], loc: SourceLocation)
 
-  sealed trait LowerName
+  sealed trait NamedSymbol
+  object NamedSymbol {
 
-  object LowerName {
-    case class Def(d: NamedAst.Def) extends NamedAst.LowerName
-
-    case class Op(o: NamedAst.Op) extends NamedAst.LowerName
-
-    case class Sig(s: NamedAst.Sig) extends NamedAst.LowerName
-  }
-
-  sealed trait UpperName
-  object UpperName {
-    case class Class(c: NamedAst.Class) extends NamedAst.UpperName
-    case class Effect(e: NamedAst.Effect) extends NamedAst.UpperName
-    case class Enum(e: NamedAst.Enum) extends NamedAst.UpperName
-    case class TypeAlias(a: NamedAst.TypeAlias) extends NamedAst.UpperName
+    case class Class(c: NamedAst.Class) extends NamedAst.NamedSymbol
+    case class Def(d: NamedAst.Def) extends NamedAst.NamedSymbol
+    case class Effect(e: NamedAst.Effect) extends NamedAst.NamedSymbol
+    case class Enum(e: NamedAst.Enum) extends NamedAst.NamedSymbol
+    case class Op(o: NamedAst.Op) extends NamedAst.NamedSymbol
+    case class Sig(s: NamedAst.Sig) extends NamedAst.NamedSymbol
+    case class TypeAlias(a: NamedAst.TypeAlias) extends NamedAst.NamedSymbol
   }
 
   case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression])
@@ -191,7 +185,7 @@ object NamedAst {
 
     case class NewObject(name: String, tpe: NamedAst.Type, methods: List[JvmMethod], loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class NewChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

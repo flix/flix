@@ -512,7 +512,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            supercast(1 as \ Impure)
+        |            super_cast (1 as \ Impure)
         |        else
         |            newObject();
         |    ()
@@ -531,7 +531,7 @@ class TestSafety extends FunSuite with TestUtils {
         |        if (true)
         |            1 as \ Impure
         |        else
-        |            supercast(newObject());
+        |            super_cast newObject();
         |    ()
         |""".stripMargin
 
@@ -547,7 +547,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            supercast(newObject())
+        |            super_cast newObject()
         |        else
         |            newStringBuilder();
         |    ()
@@ -565,9 +565,9 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            supercast(newObject())
+        |            super_cast newObject()
         |        else
-        |            supercast(newStringBuilder());
+        |            super_cast newStringBuilder();
         |    ()
         |""".stripMargin
 
@@ -582,9 +582,9 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
         |    let _ =
         |        if (true)
-        |            supercast(newStringBuilder())
+        |            super_cast newStringBuilder()
         |        else
-        |            supercast(newStringBuilder());
+        |            super_cast newStringBuilder();
         |    ()
         |""".stripMargin
 
@@ -593,7 +593,7 @@ class TestSafety extends FunSuite with TestUtils {
   }
 
   test("TestSupercast.06") {
-    val input = "def f(): ##java.lang.Object = supercast(\"hello\")"
+    val input = "def f(): ##java.lang.Object = super_cast \"hello\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ToTypeVariableSupercast](result)
   }

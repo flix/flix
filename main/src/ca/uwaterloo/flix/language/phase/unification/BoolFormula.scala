@@ -224,11 +224,48 @@ object BoolFormula {
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
   }
 
-  implicit val AsBoolAlgTrait: BoolAlg[BoolFormula] = new BoolAlg[BoolFormula] {
+  implicit val AsBoolAlg: BoolAlg[BoolFormula] = new BoolAlg[BoolFormula] {
 
     override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
 
     override def isFalse(f: BoolFormula): Boolean = f == BoolFormula.False
+
+    override def isVar(f: BoolFormula): Boolean = f match {
+      case Var(_) => true
+      case _ => false
+    }
+
+    override def satisfiable(f: BoolFormula): Boolean = f match {
+      case BoolFormula.True => true
+      case BoolFormula.False => false
+      case BoolFormula.Var(_) => true
+      case _ => evaluateAll(f, freeVars(f).toList, List.empty)
+    }
+
+    /**
+      * Enumerates all assignments to `f` and checks if one of them is satisfiable.
+      */
+    private def evaluateAll(f: BoolFormula, l: List[Int], env: List[Int]): Boolean = l match {
+      case Nil =>
+        // All variables are bound. Compute the truth value.
+        evaluate(f, env)
+      case x :: xs =>
+        // Recurse on two cases: x = false and x = true.
+        evaluateAll(f, xs, env) || evaluateAll(f, xs, x :: env)
+    }
+
+    /**
+      * Computes the truth value of the formula `f` assuming the variables in `trueVars`
+      * are true and the rest are false.
+      */
+    private def evaluate(f: BoolFormula, trueVars: List[Int]): Boolean = f match {
+      case True => true
+      case False => false
+      case Var(x) => trueVars.contains(x)
+      case Not(f1) => !evaluate(f1, trueVars)
+      case Or(f1, f2) => evaluate(f1, trueVars) || evaluate(f2, trueVars)
+      case And(f1, f2) => evaluate(f1, trueVars) && evaluate(f2, trueVars)
+    }
 
     override def mkTrue: BoolFormula = True
 
@@ -246,17 +283,18 @@ object BoolFormula {
       case BoolFormula.Not(x) =>
         x
 
-//      // ¬(¬x ∨ y) => x ∧ ¬y
-//      case BoolFormula.Or(BoolFormula.Not(x), y) =>
-//        mkAnd(x, mkNot(y))
-//
-//      // ¬(x ∨ ¬y) => ¬x ∧ y
-//      case BoolFormula.Or(x, BoolFormula.Not(y)) =>
-//        mkAnd(mkNot(x), y)
+      //      // ¬(¬x ∨ y) => x ∧ ¬y
+      //      case BoolFormula.Or(BoolFormula.Not(x), y) =>
+      //        mkAnd(x, mkNot(y))
+      //
+      //      // ¬(x ∨ ¬y) => ¬x ∧ y
+      //      case BoolFormula.Or(x, BoolFormula.Not(y)) =>
+      //        mkAnd(mkNot(x), y)
 
       case _ => BoolFormula.Not(f)
     }
 
+    @tailrec
     override def mkAnd(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
       // T ∧ x => x
       case (BoolFormula.True, _) =>
@@ -274,9 +312,9 @@ object BoolFormula {
       case (_, BoolFormula.False) =>
         BoolFormula.False
 
-//      // ¬x ∧ (x ∨ y) => ¬x ∧ y
-//      case (BoolFormula.Not(x1), BoolFormula.Or(x2, y)) if x1 == x2 =>
-//        mkAnd(mkNot(x1), y)
+      //      // ¬x ∧ (x ∨ y) => ¬x ∧ y
+      //      case (BoolFormula.Not(x1), BoolFormula.Or(x2, y)) if x1 == x2 =>
+      //        mkAnd(mkNot(x1), y)
 
       // x ∧ ¬x => F
       case (x1, BoolFormula.Not(x2)) if x1 == x2 =>
@@ -286,13 +324,13 @@ object BoolFormula {
       case (BoolFormula.Not(x1), x2) if x1 == x2 =>
         BoolFormula.False
 
-//      // x ∧ (x ∧ y) => (x ∧ y)
-//      case (x1, BoolFormula.And(x2, y)) if x1 == x2 =>
-//        mkAnd(x1, y)
-//
-//      // x ∧ (y ∧ x) => (x ∧ y)
-//      case (x1, BoolFormula.And(y, x2)) if x1 == x2 =>
-//        mkAnd(x1, y)
+      //      // x ∧ (x ∧ y) => (x ∧ y)
+      //      case (x1, BoolFormula.And(x2, y)) if x1 == x2 =>
+      //        mkAnd(x1, y)
+      //
+      //      // x ∧ (y ∧ x) => (x ∧ y)
+      //      case (x1, BoolFormula.And(y, x2)) if x1 == x2 =>
+      //        mkAnd(x1, y)
 
       // (x ∧ y) ∧ x) => (x ∧ y)
       case (BoolFormula.And(x1, y), x2) if x1 == x2 =>
@@ -302,37 +340,37 @@ object BoolFormula {
       case (BoolFormula.And(x, y1), y2) if y1 == y2 =>
         mkAnd(x, y1)
 
-//      // x ∧ (x ∨ y) => x
-//      case (x1, BoolFormula.Or(x2, _)) if x1 == x2 =>
-//        x1
-//
-//      // (x ∨ y) ∧ x => x
-//      case (BoolFormula.Or(x1, _), x2) if x1 == x2 =>
-//        x1
-//
-//      // x ∧ (y ∧ ¬x) => F
-//      case (x1, BoolFormula.And(_, BoolFormula.Not(x2))) if x1 == x2 =>
-//        BoolFormula.False
-//
-//      // (¬x ∧ y) ∧ x => F
-//      case (BoolFormula.And(BoolFormula.Not(x1), _), x2) if x1 == x2 =>
-//        BoolFormula.False
-//
-//      // x ∧ ¬(x ∨ y) => F
-//      case (x1, BoolFormula.Not(BoolFormula.Or(x2, _))) if x1 == x2 =>
-//        BoolFormula.False
-//
-//      // ¬(x ∨ y) ∧ x => F
-//      case (BoolFormula.Not(BoolFormula.Or(x1, _)), x2) if x1 == x2 =>
-//        BoolFormula.False
-//
-//      // x ∧ (¬x ∧ y) => F
-//      case (x1, BoolFormula.And(BoolFormula.Not(x2), _)) if x1 == x2 =>
-//        BoolFormula.False
-//
-//      // (¬x ∧ y) ∧ x => F
-//      case (BoolFormula.And(BoolFormula.Not(x1), _), x2) if x1 == x2 =>
-//        BoolFormula.False
+      //      // x ∧ (x ∨ y) => x
+      //      case (x1, BoolFormula.Or(x2, _)) if x1 == x2 =>
+      //        x1
+      //
+      //      // (x ∨ y) ∧ x => x
+      //      case (BoolFormula.Or(x1, _), x2) if x1 == x2 =>
+      //        x1
+      //
+      //      // x ∧ (y ∧ ¬x) => F
+      //      case (x1, BoolFormula.And(_, BoolFormula.Not(x2))) if x1 == x2 =>
+      //        BoolFormula.False
+      //
+      //      // (¬x ∧ y) ∧ x => F
+      //      case (BoolFormula.And(BoolFormula.Not(x1), _), x2) if x1 == x2 =>
+      //        BoolFormula.False
+      //
+      //      // x ∧ ¬(x ∨ y) => F
+      //      case (x1, BoolFormula.Not(BoolFormula.Or(x2, _))) if x1 == x2 =>
+      //        BoolFormula.False
+      //
+      //      // ¬(x ∨ y) ∧ x => F
+      //      case (BoolFormula.Not(BoolFormula.Or(x1, _)), x2) if x1 == x2 =>
+      //        BoolFormula.False
+      //
+      //      // x ∧ (¬x ∧ y) => F
+      //      case (x1, BoolFormula.And(BoolFormula.Not(x2), _)) if x1 == x2 =>
+      //        BoolFormula.False
+      //
+      //      // (¬x ∧ y) ∧ x => F
+      //      case (BoolFormula.And(BoolFormula.Not(x1), _), x2) if x1 == x2 =>
+      //        BoolFormula.False
 
       // x ∧ x => x
       case _ if f1 == f2 => f1
@@ -364,13 +402,13 @@ object BoolFormula {
       case (_, BoolFormula.False) =>
         f1
 
-//      // x ∨ (y ∨ x) => x ∨ y
-//      case (x1, BoolFormula.Or(y, x2)) if x1 == x2 =>
-//        mkOr(x1, y)
-//
-//      // (x ∨ y) ∨ x => x ∨ y
-//      case (BoolFormula.Or(x1, y), x2) if x1 == x2 =>
-//        mkOr(x1, y)
+      //      // x ∨ (y ∨ x) => x ∨ y
+      //      case (x1, BoolFormula.Or(y, x2)) if x1 == x2 =>
+      //        mkOr(x1, y)
+      //
+      //      // (x ∨ y) ∨ x => x ∨ y
+      //      case (BoolFormula.Or(x1, y), x2) if x1 == x2 =>
+      //        mkOr(x1, y)
 
       // ¬x ∨ x => T
       case (BoolFormula.Not(x), y) if x == y =>
@@ -380,23 +418,23 @@ object BoolFormula {
       case (x, BoolFormula.Not(y)) if x == y =>
         BoolFormula.True
 
-//      // (¬x ∨ y) ∨ x) => T
-//      case (BoolFormula.Or(BoolFormula.Not(x), _), y) if x == y =>
-//        BoolFormula.True
-//
-//      // x ∨ (¬x ∨ y) => T
-//      case (x, BoolFormula.Or(BoolFormula.Not(y), _)) if x == y =>
-//        BoolFormula.True
-//
-//      // x ∨ (y ∧ x) => x
-//      case (x1, BoolFormula.And(_, x2)) if x1 == x2 => x1
-//
-//      // (y ∧ x) ∨ x => x
-//      case (BoolFormula.And(_, x1), x2) if x1 == x2 => x1
-//
-//      // x ∨ x => x
-//      case _ if f1 == f2 =>
-//        f1
+      //      // (¬x ∨ y) ∨ x) => T
+      //      case (BoolFormula.Or(BoolFormula.Not(x), _), y) if x == y =>
+      //        BoolFormula.True
+      //
+      //      // x ∨ (¬x ∨ y) => T
+      //      case (x, BoolFormula.Or(BoolFormula.Not(y), _)) if x == y =>
+      //        BoolFormula.True
+      //
+      //      // x ∨ (y ∧ x) => x
+      //      case (x1, BoolFormula.And(_, x2)) if x1 == x2 => x1
+      //
+      //      // (y ∧ x) ∨ x => x
+      //      case (BoolFormula.And(_, x1), x2) if x1 == x2 => x1
+      //
+      //      // x ∨ x => x
+      //      case _ if f1 == f2 =>
+      //        f1
 
       case _ =>
 
@@ -441,14 +479,7 @@ object BoolFormula {
       }
     }
 
-    override def freeVars(f: BoolFormula): SortedSet[Int] = f match {
-      case True => SortedSet.empty
-      case False => SortedSet.empty
-      case And(f1, f2) => freeVars(f1) ++ freeVars(f2)
-      case Or(f1, f2) => freeVars(f1) ++ freeVars(f2)
-      case Not(f1) => freeVars(f1)
-      case Var(id) => SortedSet(id)
-    }
+    override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
     override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
   }
