@@ -54,6 +54,7 @@ object Lowering {
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
 
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannel")
+    lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.newChannelTuple")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.put")
     lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.get")
     lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.mpmcAdmin")
@@ -337,6 +338,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.Use(_, exp, _) =>
+      visitExp(exp)
+
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
@@ -595,14 +599,10 @@ object Lowering {
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) =>
+    case TypedAst.Expression.NewChannel(_, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      val chTpe = mkChannelTpe(elmTpe, loc)
-      val ch = mkNewChannel(e, chTpe, pur, eff, loc)
-      val sym = mkLetSym("ch", loc)
-      val tuple = LoweredAst.Expression.Tuple(List(LoweredAst.Expression.Var(sym, chTpe, loc), LoweredAst.Expression.Var(sym, chTpe, loc)), t, pur, eff, loc)
-      LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), ch, tuple, chTpe, pur, eff, loc)
+      mkNewChannelTuple(e, t, pur, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -839,12 +839,14 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[_] and Receiver[_], both of which are rewritten to Concurrent/Channel.Mpmc
-      case Type.Cst(TypeConstructor.Sender, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(TypeConstructor.Receiver, loc) =>
-        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc)
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
+        val t = visitType(tpe)
+        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1303,6 +1305,14 @@ object Lowering {
     */
   private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
     val newChannel = LoweredAst.Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  }
+
+  /**
+    * Make a new channel tuple (sender, receiver) expression
+    */
+  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
     LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
   }
 

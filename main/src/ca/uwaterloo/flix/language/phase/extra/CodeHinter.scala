@@ -93,6 +93,8 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
+    case Expression.Use(_, exp, _) => visitExp(exp)
+
     case Expression.Cst(_, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _) =>
@@ -252,8 +254,8 @@ object CodeHinter {
         case JvmMethod(_, _, exp, _, _, _, _) => visitExp(exp)
       }
 
-    case Expression.NewChannel(exp, _, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.GetChannel(exp, _, _, _, _) =>
       visitExp(exp)

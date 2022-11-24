@@ -86,6 +86,7 @@ object Statistics {
       case Expression.Def(sym, tpe, loc) => Counter.empty
       case Expression.Sig(sym, tpe, loc) => Counter.empty
       case Expression.Hole(sym, tpe, loc) => Counter.empty
+      case Expression.Use(_, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, pur, eff, loc) => visitExp(exp)
@@ -133,7 +134,7 @@ object Statistics {
       case Expression.GetStaticField(field, tpe, pur, eff, loc) => Counter.empty
       case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) => Counter.merge(methods.map(visitJvmMethod))
-      case Expression.NewChannel(exp, tpe, elmTpe, pur, eff, loc) => visitExp(exp)
+      case Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.GetChannel(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) => Counter.merge(rules.map(visitSelectChannelRule)) ++ Counter.merge(default.map(visitExp))
