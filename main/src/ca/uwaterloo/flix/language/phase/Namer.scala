@@ -979,9 +979,9 @@ object Namer {
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }
 
-    case WeededAst.Expression.NewChannel(exp, loc) =>
-      mapN(visitExp(exp, env0, uenv0, tenv0, ns0, prog0)) {
-        case e => NamedAst.Expression.NewChannel(e, loc)
+    case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0, ns0, prog0), visitExp(exp2, env0, uenv0, tenv0, ns0, prog0)) {
+        case (e1, e2) => NamedAst.Expression.NewChannel(e1, e2, loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
@@ -1531,7 +1531,7 @@ object Namer {
     case WeededAst.Expression.GetStaticField(_, _, _) => Nil
     case WeededAst.Expression.PutStaticField(_, _, exp, _) => freeVars(exp)
     case WeededAst.Expression.NewObject(_, methods, _) => methods.flatMap(m => freeVars(m.exp))
-    case WeededAst.Expression.NewChannel(exp, _) => freeVars(exp)
+    case WeededAst.Expression.NewChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.GetChannel(exp, _) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, _) =>
