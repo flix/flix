@@ -647,6 +647,39 @@ object TypeError {
   }
 
   /**
+    * Missing `Sendable` instance.
+    *
+    * @param tpe the type of the instance.
+    * @param loc the location where the error occurred.
+    */
+  case class MissingSendable(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Sendable is not defined for '${formatType(tpe)}'. Define or derive instance of Sendable."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Sendable is not defined on ${red(formatType(tpe))}. Define or derive an instance of Sendable.
+         |
+         |${code(loc, s"missing Sendable instance")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""To define a string representation of '${formatType(tpe)}', either:
+         |
+         |  (a) define an instance of Sendable for '${formatType(tpe)}', or
+         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe)}', for example:.
+         |
+         |  enum Color with Sendable {
+         |    case Red, Green, Blue
+         |  }
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error indicating that a region variable escapes its scope.
     *
     * @param rvar the region variable.
