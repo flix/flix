@@ -628,7 +628,7 @@ object Resolver {
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
-            case NamedAst.Use.UseDefOrSig(qname, _, _) =>
+            case NamedAst.UseOrImport.UseDefOrSig(qname, _, _) =>
               flatMapN(lookupDefOrSig(qname, ns0, Map.empty, root)) {
                 case DefOrSig.Def(defn) => mapN(visitExp(exp, region)) {
                   case e => ResolvedAst.Expression.Use(defn.sym, e, loc)
@@ -638,7 +638,7 @@ object Resolver {
                 }
               }
 
-            case NamedAst.Use.UseTypeOrClass(qname, _, _) =>
+            case NamedAst.UseOrImport.UseTypeOrClass(qname, _, _) =>
               lookupType(qname, ns0, root) match {
                 case TypeLookupResult.Enum(enum0) => mapN(visitExp(exp, region)) {
                   case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
@@ -652,7 +652,7 @@ object Resolver {
                 case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
               }
 
-            case NamedAst.Use.UseTag(qname, tag, _, _) =>
+            case NamedAst.UseOrImport.UseTag(qname, tag, _, _) =>
               flatMapN(lookupEnumByTag(Some(qname), tag, ns0, root)) {
                 case enum0 => mapN(visitExp(exp, region)) {
                   case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
@@ -2786,21 +2786,21 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUse(use: NamedAst.Use, ns: Name.NName, root: NamedAst.Root): Validation[Ast.Use, ResolutionError] = use match {
-    case NamedAst.Use.UseDefOrSig(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+  private def visitUse(use: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root): Validation[Ast.Use, ResolutionError] = use match {
+    case NamedAst.UseOrImport.UseDefOrSig(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
         Ast.Use(sym, loc).toSuccess
     }
-    case NamedAst.Use.UseTypeOrClass(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+    case NamedAst.UseOrImport.UseTypeOrClass(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
         Ast.Use(sym, loc).toSuccess
     }
 
-    case NamedAst.Use.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
+    case NamedAst.UseOrImport.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case Some(NamedAst.Declaration.Enum(e)) =>
         e.cases.get(tag.name) match {
           case Some(NamedAst.Case(sym, _)) => Ast.Use(sym, loc).toSuccess

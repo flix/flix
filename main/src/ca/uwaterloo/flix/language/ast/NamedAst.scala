@@ -24,19 +24,19 @@ object NamedAst {
   case class Root(symbols: Map[Name.NName, Map[String, NamedAst.Declaration]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Declaration.Instance]]],
                   units: Map[Ast.Source, NamedAst.CompilationUnit],
-                  uses: Map[Name.NName, List[NamedAst.Use]],
+                  uses: Map[Name.NName, List[NamedAst.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class CompilationUnit(uses: List[NamedAst.Use], imports: List[NamedAst.Import], decls: List[NamedAst.Declaration], loc: SourceLocation)
+  case class CompilationUnit(usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation)
   // TODO change laws to NamedAst.Law
 
   sealed trait Declaration
 
   object Declaration {
 
-    case class Namespace(sym: Symbol.ModuleSym, uses: List[NamedAst.Use], imports: List[NamedAst.Import], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
+    case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
@@ -58,22 +58,21 @@ object NamedAst {
   case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
 
 
-  sealed trait Use {
+  sealed trait UseOrImport {
     def alias: Name.Ident
     def loc: SourceLocation
   }
 
-  object Use {
+  object UseOrImport {
 
-    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
-    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.Use
+    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
+    case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
   }
-
-  case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -89,7 +88,7 @@ object NamedAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Use(use: NamedAst.Use, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Use(use: NamedAst.UseOrImport, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Expression
 
