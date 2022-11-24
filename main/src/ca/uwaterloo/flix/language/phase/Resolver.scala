@@ -108,7 +108,9 @@ object Resolver {
         flatMapN(classesVal, sequence(instancesVal), defsVal, sequence(enumsVal), sequence(effectsVal), sequence(usesVal)) {
           case (classes, instances, defs, enums, effects, uses) =>
             mapN(checkSuperClassDag(classes)) {
-              _ => ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, combine(uses), taOrder, root.entryPoint, root.sources, root.names)
+              _ =>
+                val finalUses =
+                ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, combine(uses), taOrder, root.entryPoint, root.sources, root.names)
             }
         }
     }
@@ -658,6 +660,8 @@ object Resolver {
                   case e => ResolvedAst.Expression.Use(enum0.sym, e, loc)
                 }
               }
+
+            case NamedAst.UseOrImport.Import(_, _, _) => throw InternalCompilerException("unexpected import")
           }
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
@@ -2788,28 +2792,31 @@ object Resolver {
   /**
     * Resolves the given Use.
     */
-  private def visitUse(use: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root): Validation[Ast.Use, ResolutionError] = use match {
+  private def visitUse(use: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root): Validation[Option[Ast.Use], ResolutionError] = use match {
     case NamedAst.UseOrImport.UseDefOrSig(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
-        Ast.Use(sym, loc).toSuccess
+        Some(Ast.Use(sym, loc)).toSuccess
     }
     case NamedAst.UseOrImport.UseTypeOrClass(qname, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case None => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       case Some(value) =>
         val sym = getSym(value)
-        Ast.Use(sym, loc).toSuccess
+        Some(Ast.Use(sym, loc)).toSuccess
     }
 
     case NamedAst.UseOrImport.UseTag(qname, tag, _, loc) => tryLookupName(qname, ns, root.symbols) match {
       case Some(e: NamedAst.Declaration.Enum) =>
         e.cases.get(tag.name) match {
-          case Some(NamedAst.Case(sym, _)) => Ast.Use(sym, loc).toSuccess
+          case Some(NamedAst.Case(sym, _)) => Some(Ast.Use(sym, loc)).toSuccess
           case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
         }
       case _ => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
     }
+
+    // TODO: skipping import for now
+    case NamedAst.UseOrImport.Import(_, _, _) => None.toSuccess
   }
 
   /**
