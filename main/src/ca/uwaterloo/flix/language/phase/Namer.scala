@@ -2042,7 +2042,7 @@ object Namer {
     /**
       * Adds all the uses or imports to the UseEnv.
       */
-    def addAll(usesAndImports: List[NamedAst.UseOrImport]): UseEnv = usesAndImports.foldLeft(UseEnv.empty)(_.addUseOrImport(_))
+    def addAll(usesAndImports: List[NamedAst.UseOrImport]): UseEnv = usesAndImports.foldLeft(this)(_.addUseOrImport(_))
   }
 
   /**
