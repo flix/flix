@@ -109,8 +109,10 @@ object Resolver {
           case (classes, instances, defs, enums, effects, uses) =>
             mapN(checkSuperClassDag(classes)) {
               _ =>
-                val finalUses =
-                ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, combine(uses), taOrder, root.entryPoint, root.sources, root.names)
+                val flatUses = uses.map {
+                  case (sym, list) => (sym, list.flatten)
+                }
+                ResolvedAst.Root(classes, combine(instances), defs, enums.toMap, effects.toMap, taenv, combine(flatUses), taOrder, root.entryPoint, root.sources, root.names)
             }
         }
     }
