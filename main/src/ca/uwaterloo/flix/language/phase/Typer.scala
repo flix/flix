@@ -1661,7 +1661,7 @@ object Typer {
               _ <- unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
               resultCon = chanConstrs ++ bodyConstrs
               resultTyp = bodyType
-              resultPur = Type.mkAnd(pur1, pur2, loc)
+              resultPur = Type.mkAnd(pur1, pur2, regionVar, loc)
               resultEff = Type.mkUnion(chanEff, bodyEff, loc)
             } yield (resultCon, resultTyp, resultPur, resultEff)
           }
