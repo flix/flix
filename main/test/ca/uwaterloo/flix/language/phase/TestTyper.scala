@@ -153,7 +153,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def over(): String = f("hello", 123)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OverApplied](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestOverApplied.02") {
@@ -163,7 +163,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def over(): String = f("hello", 123, true)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.OverApplied](result)
+    expectError[TypeError.UnexpectedType](result)
   }
 
   test("TestUnderApplied.01") {

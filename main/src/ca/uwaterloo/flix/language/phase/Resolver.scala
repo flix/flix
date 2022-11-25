@@ -572,9 +572,8 @@ object Resolver {
         * Resolve the application expression, applying `defn` to `exps`.
         */
       def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expression], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        if (defn.spec.fparams.length <= exps.length) {
+        if (defn.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
-          // Note: If too many arguments are present, we leave the call unchanged. The typer will catch it.
           val esVal = traverse(exps)(visitExp(_, region))
           mapN(esVal) {
             es =>

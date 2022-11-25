@@ -241,11 +241,13 @@ object Unification {
 
     // Check for Under Application
     if (numberOfActualArguments < numberOfExpectedArguments) {
+      // Note: This case cannot really happen because of how partial applications are desugared.
       return InferMonad.errPoint(TypeError.UnderApplied(sym, numberOfExpectedArguments, numberOfActualArguments, loc))
     }
 
     // Check for Over Application
     if (numberOfActualArguments > numberOfExpectedArguments) {
+      // Note: This case cannot really happen because of how partial applications are desugared.
       return InferMonad.errPoint(TypeError.OverApplied(sym, numberOfExpectedArguments, numberOfActualArguments, loc))
     }
 
