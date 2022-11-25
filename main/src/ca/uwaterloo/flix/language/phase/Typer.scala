@@ -584,10 +584,15 @@ object Typer {
             val declaredArgTypes = typeArgs.drop(2).dropRight(1)
             val declaredResultType = typeArgs.last
 
+            val lambdaBodyType = Type.freshVar(Kind.Star, loc) // useless
+            val lambdaBodyPur = Type.freshVar(Kind.Bool, loc) // useless
+            val lambdaBodyEff = Type.freshVar(Kind.Effect, loc) // useless
+
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
               _ <- unifyTypesPairWiseM(tpes, declaredArgTypes, exps.map(_.loc))
               _ <- unifyTypeM(tvar2, defType, loc)
+              _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc) // Adding this line fixes the issue, but why?
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
               resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
               resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
