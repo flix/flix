@@ -943,41 +943,42 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.25") {
-    val input =
-      """
-        |namespace A {
-        |    use B.Statement
-        |    import java.sql.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateUpperName.26") {
-    val input =
-      """
-        |enum Statement
-        |namespace A {
-        |    use B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateUpperName.27") {
-    val input =
-      """
-        |enum Statement
-        |namespace A {
-        |    import B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
+  // TODO move these tests to Redundancy
+//  test("DuplicateUpperName.25") {
+//    val input =
+//      """
+//        |namespace A {
+//        |    use B.Statement
+//        |    import java.sql.Statement
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateUpperName.26") {
+//    val input =
+//      """
+//        |enum Statement
+//        |namespace A {
+//        |    use B.Statement
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateUpperName.27") {
+//    val input =
+//      """
+//        |enum Statement
+//        |namespace A {
+//        |    import B.Statement
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
 
   test("SuspiciousTypeVarName.01") {
     val input =
@@ -1154,49 +1155,50 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalSignature](result)
   }
 
-  test("DuplicateImport.01") {
-    val input =
-      """
-        |import java.lang.StringBuffer
-        |import java.lang.StringBuffer
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateImport.02") {
-    val input =
-      """
-        |import java.lang.{StringBuffer => StringThingy}
-        |import java.lang.{StringBuffer => StringThingy}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateImport.03") {
-    val input =
-      """
-        |namespace A {
-        |    import java.lang.StringBuffer
-        |    import java.lang.StringBuffer
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateImport.04") {
-    val input =
-      """
-        |namespace A {
-        |    import java.lang.{StringBuffer => StringThingy}
-        |    import java.lang.{StringBuilder => StringThingy}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
+  // TODO move these tests to Redundancy
+//  test("DuplicateImport.01") {
+//    val input =
+//      """
+//        |import java.lang.StringBuffer
+//        |import java.lang.StringBuffer
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateImport.02") {
+//    val input =
+//      """
+//        |import java.lang.{StringBuffer => StringThingy}
+//        |import java.lang.{StringBuffer => StringThingy}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateImport.03") {
+//    val input =
+//      """
+//        |namespace A {
+//        |    import java.lang.StringBuffer
+//        |    import java.lang.StringBuffer
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateImport.04") {
+//    val input =
+//      """
+//        |namespace A {
+//        |    import java.lang.{StringBuffer => StringThingy}
+//        |    import java.lang.{StringBuilder => StringThingy}
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
 
   test("IllegalWildType.01") {
     val input =

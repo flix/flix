@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.WeededAst.ChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
@@ -73,7 +72,7 @@ object Namer {
     case WeededAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val uenv = UseEnv.mk(usesAndImports)
-      val declsVal = traverse(decls0)(visitDecl2(_, uenv, Name.RootNS))
+      val declsVal = traverse(decls0)(visitDecl(_, uenv, Name.RootNS))
       mapN(declsVal) {
         case decls => NamedAst.CompilationUnit(usesAndImports, decls, loc)
       }
@@ -82,7 +81,7 @@ object Namer {
   /**
     * Performs naming on the given declaration.
     */
-  private def visitDecl2(decl0: WeededAst.Declaration, uenv: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
+  private def visitDecl(decl0: WeededAst.Declaration, uenv: UseEnv, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: WeededAst.Declaration.Namespace => visitNamespace(decl, ns0)
     // TODO remove needless tenvs from visitClass, visitInstance, visitEffect
     case decl: WeededAst.Declaration.Class => visitClass(decl, uenv, Map.empty, ns0)
@@ -102,7 +101,7 @@ object Namer {
       val ns = Name.NName(name.sp1, ns0.idents ::: name.idents, name.sp2)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val uenv = UseEnv.mk(usesAndImports)
-      val declsVal = traverse(decls0)(visitDecl2(_, uenv, ns))
+      val declsVal = traverse(decls0)(visitDecl(_, uenv, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
       mapN(declsVal) {
         case decls => NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
@@ -118,7 +117,7 @@ object Namer {
   }
 
   private def tableDecl(decl: NamedAst.Declaration, uenv0: UseEnv, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
-    case Declaration.Namespace(sym, usesAndImports, decls, loc) =>
+    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) =>
       // reset the uenv
       val uenv = UseEnv.mk(usesAndImports)
       val table1 = fold(decls, table0) {
@@ -126,7 +125,7 @@ object Namer {
       }
       mapN(table1)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
       // reset the uenv inside the class
       val uenv = UseEnv.empty
@@ -136,30 +135,32 @@ object Namer {
         }
       }
 
-    case inst@Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) =>
       addInstanceToTable(table0, ns, clazz.ident.name, inst).toSuccess
 
-    case Declaration.Sig(sym, spec, exp) =>
+    case NamedAst.Declaration.Sig(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
 
-    case Declaration.Def(sym, spec, exp) =>
+    case NamedAst.Declaration.Def(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
 
-    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) =>
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
 
-    case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
 
-    case Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
+    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
+      // reset the uenv inside the effect
+      val uenv = UseEnv.empty
       flatMapN(table1Val) {
         case table1 => fold(ops, table1) {
-          case (table, d) => tableDecl(d, uenv0, table)
+          case (table, d) => tableDecl(d, uenv, table)
         }
       }
 
-    case Declaration.Op(sym, spec) =>
+    case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl, uenv0)
   }
 
@@ -167,7 +168,7 @@ object Namer {
     * Tries to add the given declaration to the table.
     */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration, uenv: UseEnv): Validation[SymbolTable, NameError] = {
-    lookupName2(name, ns, table, uenv) match {
+    lookupName(name, ns, table, uenv) match {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl).toSuccess
       case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
     }
@@ -246,23 +247,7 @@ object Namer {
   /**
     * Looks up the uppercase name in the given namespace and root.
     */
-  private def lookupName(name: String, ns0: Name.NName, prog0: NamedAst.Root, uenv0: UseEnv): NameLookupResult = {
-    val symbols0 = prog0.symbols.getOrElse(ns0, Map.empty)
-    (symbols0.get(name), uenv0.upperNames.get(name), uenv0.imports.get(name)) match {
-      // Case 1: The name is unused.
-      case (None, None, None) => LookupResult.NotDefined
-      // Case 2: An symbol with the name already exists.
-      case (Some(upperName), None, None) => LookupResult.AlreadyDefined(getSymLocation(upperName))
-      // Case 3: A use with the same name already exists.
-      case (None, Some(use), None) => LookupResult.AlreadyDefined(use.loc)
-      // Case 4: An import with the same name already exists.
-      case (None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
-      // Impossible.
-      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
-    }
-  }
-
-  private def lookupName2(name: String, ns0: List[String], table: SymbolTable, uenv: UseEnv): NameLookupResult = {
+  private def lookupName(name: String, ns0: List[String], table: SymbolTable, uenv: UseEnv): NameLookupResult = {
     val symbols0 = table.symbols.getOrElse(ns0, Map.empty)
     (symbols0.get(name), uenv.lowerNames.get(name), uenv.upperNames.get(name), uenv.tags.get(name), uenv.imports.get(name)) match {
       // Case 1: The name is unused.
@@ -1965,15 +1950,15 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.loc
-    case Declaration.Sig(sym, spec, exp) => sym.loc
-    case Declaration.Def(sym, spec, exp) => sym.loc
-    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) => sym.loc
-    case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
-    case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
-    case Declaration.Op(sym, spec) => sym.loc
-    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance")
-    case Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace")
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.loc
+    case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
+    case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) => sym.loc
+    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
+    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
+    case NamedAst.Declaration.Op(sym, spec) => sym.loc
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance")
+    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace")
   }
 
   /**
