@@ -252,24 +252,19 @@ object TypeError {
   /**
     * Over-applied Function.
     *
-    * @param excessArgument the type of the excess argument.
-    * @param fullType1      the first full type.
-    * @param fullType2      the second full type.
-    * @param renv           the rigidity environment.
-    * @param loc            the location where the error occurred.
+    * @param sym      the function symbol.
+    * @param expected the expected number of arguments.
+    * @param actual   the actual number of arguments.
     */
-  case class OverApplied(excessArgument: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument, Some(renv))}'."
+  case class OverApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Function ${sym.name} expects $expected argument(s), but got $actual argument(s)."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument, Some(renv)))}'.
+         |>> Function ${sym.name} expects $expected argument(s), but got $actual argument(s).
          |
          |${code(loc, "over-applied function.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
 
@@ -279,24 +274,19 @@ object TypeError {
   /**
     * Under-applied Function.
     *
-    * @param missingArgument the type of the missing argument.
-    * @param fullType1       the first full type.
-    * @param fullType2       the second full type.
-    * @param renv            the rigidity environment.
-    * @param loc             the location where the error occurred.
+    * @param sym      the function symbol.
+    * @param expected the expected number of arguments.
+    * @param actual   the actual number of arguments.
     */
-  case class UnderApplied(missingArgument: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument, Some(renv))}'."
+  case class UnderApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Function ${sym.name} expects $expected argument(s), but got $actual argument(s)."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Under-applied function. Missing argument of type: '${red(formatType(missingArgument, Some(renv)))}'.
+         |>> Function ${sym.name} expects $expected argument(s), but got $actual argument(s).
          |
          |${code(loc, "under-applied function.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
 
@@ -746,19 +736,20 @@ object TypeError {
     * @param actual   the actual type.
     * @param loc      the location where the error occurred.
     */
-  case class UnexpectedArgumentToDef(sym: Symbol.DefnSym, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Function '$sym' expects an argument of type '${formatType(expected, Some(renv))}'."
+  case class UnexpectedArgument(sym: Symbol.DefnSym, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '${blue(sym.name)}' expects its ${ith}'th argument to have type: '${cyan(formatType(expected, Some(renv)))}'
-         |>> but was given an argument of type: '${red(formatType(actual, Some(renv)))}'.
+         |>> Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'.
          |
          |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
          |
+         |The function '${magenta(sym.name)}' expects its ${ith}th argument to be of type '${formatType(expected, Some(renv))}'.
+         |
          |Expected: ${formatType(expected, Some(renv))}
-         |Actual:   ${formatType(actual, Some(renv))}
+         |  Actual: ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
 

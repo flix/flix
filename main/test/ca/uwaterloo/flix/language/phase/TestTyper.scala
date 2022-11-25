@@ -1360,7 +1360,7 @@ class TestTyper extends FunSuite with TestUtils {
       |def g(): Bool = f(mkE)
       |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
   test("Test.UnexpectedType.ApplyVar.01") {
@@ -1373,7 +1373,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def g(): Box[Int32] = f(Box(123))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
   test("Test.UnexpectedType.Law.01") {
@@ -1384,7 +1384,7 @@ class TestTyper extends FunSuite with TestUtils {
         |law l: forall (x: Int32, y: Bool) . f(x, y)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
   test("Test.UnexpectedType.OpParam.01") {
@@ -1425,7 +1425,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit = noE(_ -> do E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
   test("Test.MismatchedEff.Apply.02") {
@@ -1455,7 +1455,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit = mustE(x -> x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
   test("Test.GeneralizationError.Eff.01") {
@@ -1661,7 +1661,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedArgumentToDef](result)
+    expectError[TypeError.UnexpectedArgument](result)
   }
 
 }
