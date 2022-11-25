@@ -456,7 +456,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.Arity1.02") {
@@ -477,7 +477,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.Arity1.03") {
@@ -498,7 +498,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.Arity1.04") {
@@ -519,7 +519,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentAbsent.01") {
@@ -540,7 +540,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentAbsent.02") {
@@ -561,7 +561,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentAbsent.03") {
@@ -582,7 +582,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentAbsent.IfThenElse.01") {
@@ -603,7 +603,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentAbsent.IfThenElse.02") {
@@ -624,7 +624,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentPresent.01") {
@@ -645,7 +645,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentPresent.02") {
@@ -666,7 +666,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentPresent.03") {
@@ -687,7 +687,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentPresent.IfThenElse.01") {
@@ -708,7 +708,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.AbsentPresent.IfThenElse.02") {
@@ -729,7 +729,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.TwoCases.01") {
@@ -751,7 +751,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.TwoCases.02") {
@@ -773,7 +773,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.TwoCases.03") {
@@ -795,7 +795,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.TwoCases.04") {
@@ -817,7 +817,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.ThreeCases.01") {
@@ -840,7 +840,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.ThreeCases.02") {
@@ -863,7 +863,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.01") {
@@ -885,7 +885,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.02") {
@@ -907,7 +907,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.03") {
@@ -929,7 +929,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.04") {
@@ -951,7 +951,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.05") {
@@ -973,7 +973,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("TestChoose.If.06") {
@@ -995,7 +995,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.Choice.Param.01") {
@@ -1055,7 +1055,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.Choice.Empty.02") {
@@ -1079,7 +1079,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.ChooseStar.01") {
@@ -1104,7 +1104,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.ChooseStar.02") {
@@ -1128,7 +1128,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    isAbsent(f(Absent))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.ChooseStar.03") {
@@ -1152,7 +1152,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    isAbsent(f(Present(123), Present(456)))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.ImpureDeclaredAsPure.01") {
@@ -1425,7 +1425,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit = noE(_ -> do E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.MismatchedEff.Apply.02") {
@@ -1440,7 +1440,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit = disjoint(_ -> do E.op(), _ -> do E.op())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.MismatchedEff.Apply.03") {
@@ -1455,7 +1455,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit = mustE(x -> x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedBools](result)
+    expectError[TypeError.MismatchedArrowBools](result)
   }
 
   test("Test.GeneralizationError.Eff.01") {
