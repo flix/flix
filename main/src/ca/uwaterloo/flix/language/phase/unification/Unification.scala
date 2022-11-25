@@ -257,12 +257,11 @@ object Unification {
 
     def visit(i: Int, expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
       (expected, actual, locs) match {
-        case (Nil, _, _) => InferMonad.point(())
-        case (_, Nil, _) => InferMonad.point(())
         case (x :: xs, y :: ys, l :: ls) =>
           for {
             _ <- unifyTypeM(x, y, l).transformError(handler(i))
           } yield visit(i + 1, xs, ys, ls)
+        case (_, _, _) => InferMonad.point(())
       }
 
     visit(1, expectedTypes, actualTypes, actualLocs)
