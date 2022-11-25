@@ -588,7 +588,7 @@ object Typer {
 
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-              _ <- expectTypeArguments(sym, tpes, argumentTypesOf(declaredType), exps.map(_.loc), loc)
+              _ <- expectTypeArguments(sym, argumentTypesOf(declaredType), tpes, exps.map(_.loc), loc)
               _ <- unifyTypeM(innerTvar, declaredType, loc)
               _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, purOf(declaredType), effOf(declaredType), resultTypeOf(declaredType), loc), loc) // Adding this line fixes the issue, but why?
               resultTyp <- unifyTypeM(tvar, resultTypeOf(declaredType), loc)

@@ -257,12 +257,12 @@ object TypeError {
     * @param actual   the actual number of arguments.
     */
   case class OverApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Function ${sym.name} expects $expected argument(s), but got $actual argument(s)."
+    def summary: String = s"Function '${sym.name}' expects $expected argument(s), but got $actual argument(s)."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function ${sym.name} expects $expected argument(s), but got $actual argument(s).
+         |>> Function '${sym.name}' expects $expected argument(s), but got $actual argument(s).
          |
          |${code(loc, "over-applied function.")}
          |""".stripMargin
@@ -279,12 +279,12 @@ object TypeError {
     * @param actual   the actual number of arguments.
     */
   case class UnderApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Function ${sym.name} expects $expected argument(s), but got $actual argument(s)."
+    def summary: String = s"Function '${sym.name}' expects $expected argument(s), but got $actual argument(s)."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function ${sym.name} expects $expected argument(s), but got $actual argument(s).
+         |>> Function '${sym.name}' expects $expected argument(s), but got $actual argument(s).
          |
          |${code(loc, "under-applied function.")}
          |""".stripMargin
