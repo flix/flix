@@ -330,19 +330,7 @@ object TypeError {
       case _ => "" // nop
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""If the Boolean formula describes purity:
-         |
-         |  (1) Did you forget to mark the function as impure?
-         |  (2) Are you trying to pass a pure function where an impure is required?
-         |  (3) Are you trying to pass an impure function where a pure is required?
-         |
-         |If the Boolean formula describes nullability:
-         |
-         |  (1) Are you trying to pass null where a non-null value is required?
-         |
-         |""".stripMargin
-    })
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
