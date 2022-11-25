@@ -236,6 +236,16 @@ object Unification {
     } yield r
   }
 
+  // TODO: DOC
+  // TODO: Uneven length
+  def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = (expected, actual) match {
+    case (Nil, Nil) => InferMonad.point(())
+    case (x :: xs, y :: ys) =>
+      for {
+        _ <- expectTypeM(expected = x, actual = y, loc)
+      } yield unifyTypesPairWiseM(xs, ys, loc)
+  }
+
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */

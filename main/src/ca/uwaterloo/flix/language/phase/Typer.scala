@@ -569,19 +569,51 @@ object Typer {
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
-        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-        val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
-        val lambdaBodyEff = Type.freshVar(Kind.Effect, loc)
-        for {
-          (constrs1, tpe, pur, eff) <- visitExp(exp)
-          (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
-          resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-          resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
-          _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
-          _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
-        } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+        exp match {
+          case KindedAst.Expression.Def(sym, tpe, loc) if (sym.toString.contains("impure")) => // TODO
+            //
+            // Special Case: Def.
+            //
+
+            val defn = root.defs(sym)
+            val (constrs1, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+
+            val typeArgs = defType.typeArguments
+            val declaredPur = typeArgs.head
+            val declaredEff = typeArgs.drop(1).head
+            val declaredArgTypes = typeArgs.drop(2).dropRight(1)
+            val declaredResultType = typeArgs.last
+
+            if (sym.toString.contains("impure")) {
+              println("meeep!")
+            }
+
+            for {
+              (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
+              _ <- unifyTypesPairWiseM(tpes, declaredArgTypes, loc)
+              resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+
+          case _ =>
+            //
+            // Default Case: Any Expression.
+            //
+            val lambdaBodyType = Type.freshVar(Kind.Star, loc)
+            val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
+            val lambdaBodyEff = Type.freshVar(Kind.Effect, loc)
+            for {
+              (constrs1, tpe, pur, eff) <- visitExp(exp)
+              (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
+              _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
+              resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
+              _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
+              _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+        }
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>
