@@ -721,19 +721,19 @@ object TypeError {
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Region variable '${formatType(rvar, Some(renv))}' escapes its scope."
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The region variable '${red(formatType(rvar, Some(renv)))}' escapes its scope.
+         |>> The region variable '${red(formatType(rvar))}' escapes its scope.
          |
          |${code(loc, "region variable escapes.")}
          |
          |The escaping expression has type:
          |
-         |  ${red(formatType(tpe, Some(renv)))}
+         |  ${red(formatType(tpe))}
          |
          |which contains the region variable.
          |
