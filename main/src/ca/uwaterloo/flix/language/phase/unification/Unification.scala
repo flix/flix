@@ -236,33 +236,36 @@ object Unification {
     } yield r
   }
 
-  // TODO: DOC
-  // TODO: Uneven length
-  def unifyTypesPairWiseM(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = {
+  /**
+    * Unifies the `expectedTypes` types with the `actualTypes`.
+    */
+  def expectTypeArguments(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = {
+    // TODO: Uneven length
+
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
-    def handler(e: TypeError): TypeError = e match {
+    def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArgumentToDef(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedArrowBools(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArgumentToDef(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArgumentToDef(sym, i, fullType1, fullType2, renv, loc)
       case e => e
     }
 
-    def visit(expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
+    def visit(i: Int, expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
       (expected, actual, locs) match {
-        case (Nil, Nil, _) => InferMonad.point(())
+        case (Nil, _, _) => InferMonad.point(())
+        case (_, Nil, _) => InferMonad.point(())
         case (x :: xs, y :: ys, l :: ls) =>
           for {
-            _ <- unifyTypeM(x, y, l)
-          } yield unifyTypesPairWiseM(sym, xs, ys, ls)
-        case _ => ??? // TODO
+            _ <- unifyTypeM(x, y, l).transformError(handler(i))
+          } yield visit(i + 1, xs, ys, ls)
       }
 
-    visit(expectedTypes, actualTypes, actualLocs).transformError(handler)
+    visit(1, expectedTypes, actualTypes, actualLocs)
   }
 
   /**

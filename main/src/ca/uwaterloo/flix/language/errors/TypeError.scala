@@ -741,22 +741,24 @@ object TypeError {
     * An error indicating an unexpected argument passed to a def.
     *
     * @param sym      the def symbol.
+    * @param ith      the index of the unexpected argument.
     * @param expected the expected type.
     * @param actual   the actual type.
     * @param loc      the location where the error occurred.
     */
-  case class UnexpectedArgumentToDef(sym: Symbol.DefnSym, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedArgumentToDef(sym: Symbol.DefnSym, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Function '$sym' expects an argument of type '${formatType(expected, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '${blue(sym.name)}' expects an argument of type '${cyan(formatType(expected, Some(renv)))}'.
+         |>> Function '${blue(sym.name)}' expects its ${ith}'th argument to have type: '${cyan(formatType(expected, Some(renv)))}'
+         |>> but was given an argument of type: '${red(formatType(actual, Some(renv)))}'.
          |
-         |${code(loc, s"actual type: '${red(formatType(actual, Some(renv)))}'")}
+         |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
          |
-         |Expected Type:  ${formatType(expected, Some(renv))}
-         |Actual Type  : ${formatType(actual, Some(renv))}
+         |Expected: ${formatType(expected, Some(renv))}
+         |Actual:   ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
 
