@@ -569,34 +569,36 @@ object Typer {
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
-      // TODO: Add ApplyDef and ApplySig
-      exp match {
-          case KindedAst.Expression.Def(sym, tvar2, loc2)  =>
+        def purOf(tpe: Type): Type = tpe.typeArguments.head
+
+        def effOf(tpe: Type): Type = tpe.typeArguments.drop(1).head
+
+        def argumentTypesOf(tpe: Type): List[Type] = tpe.typeArguments.drop(2).dropRight(1)
+
+        def resultTypeOf(tpe: Type): Type = tpe.typeArguments.last
+
+        exp match {
+          case KindedAst.Expression.Def(sym, innerTvar, loc2) =>
             //
-            // Special Case: Def.
+            // Special Case: ApplyDef.
             //
             val defn = root.defs(sym)
-            val (constrs1, defType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic) // TODO: constrs1 loc
-
-            val typeArgs = defType.typeArguments
-            val declaredPur = typeArgs.head
-            val declaredEff = typeArgs.drop(1).head
-            val declaredArgTypes = typeArgs.drop(2).dropRight(1)
-            val declaredResultType = typeArgs.last
+            val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val constrs1 = tconstrs1.map(_.copy(loc = loc))
 
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-              _ <- expectTypeArguments(sym, tpes, declaredArgTypes, exps.map(_.loc))
-              _ <- unifyTypeM(tvar2, defType, loc)
-              _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredEff, declaredResultType, loc), loc) // Adding this line fixes the issue, but why?
-              resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
-              resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
-              resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-            } yield (constrs1.map(_.copy(loc = loc)) ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+              _ <- expectTypeArguments(sym, tpes, argumentTypesOf(declaredType), exps.map(_.loc))
+              _ <- unifyTypeM(innerTvar, declaredType, loc)
+              _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, purOf(declaredType), effOf(declaredType), resultTypeOf(declaredType), loc), loc) // Adding this line fixes the issue, but why?
+              resultTyp <- unifyTypeM(tvar, resultTypeOf(declaredType), loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(purOf(declaredType) :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(effOf(declaredType) :: effs, loc), loc)
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
           case _ =>
             //
-            // Default Case: Any Expression.
+            // Default Case: Apply.
             //
             val lambdaBodyType = Type.freshVar(Kind.Star, loc)
             val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
