@@ -718,7 +718,6 @@ object TypeError {
     *
     * @param rvar the region variable.
     * @param tpe  the type wherein the region variable escapes.
-    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
   case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {

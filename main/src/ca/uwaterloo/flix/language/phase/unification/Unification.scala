@@ -396,7 +396,7 @@ object Unification {
 
       // Check whether the region variable is essential to the type.
       if (Regions.essentialTo(rvar, t)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, renv, rvar.loc))
+        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
       } else
         Ok((s, renv, ()))
     }
