@@ -327,18 +327,18 @@ object Typer {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
+                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                         case _ =>
                           if (tconstr.head.sym.name == "Eq")
-                            TypeError.MissingEq(tconstr.arg, tconstr.loc)
+                            TypeError.MissingEq(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Order")
-                            TypeError.MissingOrder(tconstr.arg, tconstr.loc)
+                            TypeError.MissingOrder(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "ToString")
-                            TypeError.MissingToString(tconstr.arg, tconstr.loc)
+                            TypeError.MissingToString(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Sendable")
-                            TypeError.MissingSendable(tconstr.arg, tconstr.loc)
+                            TypeError.MissingSendable(tconstr.arg, renv0, tconstr.loc)
                           else
-                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, tconstr.loc)
+                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                       }
                   }
                   // Case 2: non instance error

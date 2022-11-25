@@ -167,32 +167,36 @@ object Unification {
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
             case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
-            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
           }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), loc))
+          (tpe1.typeConstructor, tpe2.typeConstructor) match {
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), renv, loc))
+          }
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
-          Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
+          Err(TypeError.MismatchedArity(tpe1, tpe2, renv, loc))
 
         case Result.Err(UnificationError.RigidVar(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
-          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
+          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.UndefinedField(fieldName, fieldType, recordType)) =>
-          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
+          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, renv, loc))
 
         case Result.Err(UnificationError.NonRecordType(tpe)) =>
-          Err(TypeError.NonRecordType(tpe, loc))
+          Err(TypeError.NonRecordType(tpe, renv, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
-          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, loc))
+          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, renv, loc))
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
-          Err(TypeError.NonSchemaType(tpe, loc))
+          Err(TypeError.NonSchemaType(tpe, renv, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
@@ -209,12 +213,12 @@ object Unification {
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
-      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, _) =>
+      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
         (baseType1.typeConstructor, baseType2.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-            TypeError.PossibleUpcast(expected, actual, loc)
+            TypeError.PossibleUpcast(expected, actual, renv, loc)
           case _ =>
-            TypeError.UnexpectedType(baseType1, baseType2, baseType2.loc)
+            TypeError.UnexpectedType(baseType1, baseType2, renv, baseType2.loc)
         }
       case e => e
     }
@@ -236,19 +240,19 @@ object Unification {
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
   private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, loc)
+    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
       case Type.Apply(_, resultType, _) =>
         if (Unification.unifiesWith(resultType, argType, renv)) {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, loc)
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, renv, loc)
           }
         } else {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, loc)
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, renv, loc)
           }
         }
       case _ => default
@@ -303,7 +307,7 @@ object Unification {
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
-            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, loc))
+            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, renv, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
         }
