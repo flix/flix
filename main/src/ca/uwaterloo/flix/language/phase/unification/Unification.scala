@@ -171,7 +171,11 @@ object Unification {
           }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), renv, loc))
+          (tpe1.typeConstructor, tpe2.typeConstructor) match {
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), renv, loc))
+          }
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))

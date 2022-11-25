@@ -210,12 +210,12 @@ object TypeError {
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
-        |
-        |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
-        |
-        |    let s = "Hello World";
-        |    let o: ##java.lang.Object = upcast s;
-        |""".stripMargin
+         |
+         |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
+         |
+         |    let s = "Hello World";
+         |    let o: ##java.lang.Object = upcast s;
+         |""".stripMargin
     )
   }
 
@@ -328,6 +328,33 @@ object TypeError {
            |Type Two: ${magenta(formatType(ft2))}
            |""".stripMargin
       case _ => "" // nop
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * Mismatched Pure and Effectful Arrows.
+    *
+    * @param baseType1 the first boolean formula.
+    * @param baseType2 the second boolean formula.
+    * @param fullType1 the first full type in which the first boolean formula occurs.
+    * @param fullType2 the second full type in which the second boolean formula occurs.
+    * @param loc       the location where the error occurred.
+    */
+  case class MismatchedArrowBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, env: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Mismatched Pure and Effectful Functions."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched Pure and Effectful Functions.
+         |
+         |${code(loc, "mismatched pure and effectful functions.")}
+         |
+         |Type One: ${cyan(formatType(fullType1))}
+         |Type Two: ${magenta(formatType(fullType2))}
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
@@ -701,10 +728,11 @@ object TypeError {
 
   /**
     * An error indicating the number of effect operation arguments does not match the expected number.
-    * @param op the effect operation symbol.
+    *
+    * @param op       the effect operation symbol.
     * @param expected the expected number of arguments.
-    * @param actual the actual number of arguments.
-    * @param loc the location where the error occurred.
+    * @param actual   the actual number of arguments.
+    * @param loc      the location where the error occurred.
     */
   case class InvalidOpParamCount(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends TypeError {
     override def summary: String = s"Expected $expected parameter(s) but found $actual."
