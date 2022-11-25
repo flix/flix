@@ -252,17 +252,16 @@ object TypeError {
   /**
     * Over-applied Function.
     *
-    * @param sym      the function symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
+    * @param excessArgument the type of the excess argument.
+    * @param loc            the location where the error occurred.
     */
-  case class OverApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Function '${sym.name}' expects $expected argument(s), but got $actual argument(s)."
+  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '${sym.name}' expects $expected argument(s), but got $actual argument(s).
+         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
          |
          |${code(loc, "over-applied function.")}
          |""".stripMargin
@@ -274,17 +273,16 @@ object TypeError {
   /**
     * Under-applied Function.
     *
-    * @param sym      the function symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
+    * @param missingArgument the type of the missing argument.
+    * @param loc             the location where the error occurred.
     */
-  case class UnderApplied(sym: Symbol.DefnSym, expected: Int, actual: Int, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Function '${sym.name}' expects $expected argument(s), but got $actual argument(s)."
+  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '${sym.name}' expects $expected argument(s), but got $actual argument(s).
+         |>> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
          |
          |${code(loc, "under-applied function.")}
          |""".stripMargin

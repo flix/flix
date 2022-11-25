@@ -164,7 +164,11 @@ object Unification {
           Ok((subst, renv, subst(tpe1)))
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
+          (baseType1.typeConstructor, baseType2.typeConstructor) match {
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
+            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
+          }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
           (tpe1.typeConstructor, tpe2.typeConstructor) match {
@@ -236,21 +240,6 @@ object Unification {
     * Unifies the `expectedTypes` types with the `actualTypes`.
     */
   def expectTypeArguments(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
-    val numberOfExpectedArguments = expectedTypes.length
-    val numberOfActualArguments = actualTypes.length
-
-    // Check for Under Application
-    if (numberOfActualArguments < numberOfExpectedArguments) {
-      // Note: This case cannot really happen because of how partial applications are desugared.
-      return InferMonad.errPoint(TypeError.UnderApplied(sym, numberOfExpectedArguments, numberOfActualArguments, loc))
-    }
-
-    // Check for Over Application
-    if (numberOfActualArguments > numberOfExpectedArguments) {
-      // Note: This case cannot really happen because of how partial applications are desugared.
-      return InferMonad.errPoint(TypeError.OverApplied(sym, numberOfExpectedArguments, numberOfActualArguments, loc))
-    }
-
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
@@ -266,14 +255,39 @@ object Unification {
 
     def visit(i: Int, expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
       (expected, actual, locs) match {
+        case (Nil, Nil, Nil) => InferMonad.point(())
         case (x :: xs, y :: ys, l :: ls) =>
           for {
             _ <- unifyTypeM(x, y, l).transformError(handler(i))
           } yield visit(i + 1, xs, ys, ls)
-        case (_, _, _) => InferMonad.point(())
+        case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
+        case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
       }
 
     visit(1, expectedTypes, actualTypes, actualLocs)
+  }
+
+  /**
+    * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
+    */
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
+
+    arrowType match {
+      case Type.Apply(_, resultType, _) =>
+        if (Unification.unifiesWith(resultType, argType, renv)) {
+          arrowType.typeArguments.lift(2) match {
+            case None => default
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
+          }
+        } else {
+          arrowType.typeArguments.lift(2) match {
+            case None => default
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
+          }
+        }
+      case _ => default
+    }
   }
 
   /**
