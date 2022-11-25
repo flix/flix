@@ -289,7 +289,7 @@ object FormatType {
       case SimpleType.PureArrow(arg, ret) =>
         val argString = delimitFunctionArg(arg)
         val retString = delimit(ret, Mode.Type)
-        s"$argString -> $retString \\ {}"
+        s"$argString -> $retString"
       case SimpleType.PolyEffArrow(arg, eff, ret) =>
         val argString = delimitFunctionArg(arg)
         val effString = visit(eff, Mode.Type)

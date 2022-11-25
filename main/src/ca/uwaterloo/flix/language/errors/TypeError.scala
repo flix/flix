@@ -307,7 +307,7 @@ object TypeError {
     * @param fullType2 the second optional full type in which the second boolean formula occurs.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], env: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1)}' and '${formatType(baseType2)}'."
 
     def message(formatter: Formatter): String = {
@@ -342,7 +342,7 @@ object TypeError {
     * @param fullType2 the second full type in which the second boolean formula occurs.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedArrowBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, env: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedArrowBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Mismatched Pure and Effectful Functions."
 
     def message(formatter: Formatter): String = {
