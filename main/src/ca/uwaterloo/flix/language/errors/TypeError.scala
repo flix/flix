@@ -308,12 +308,12 @@ object TypeError {
     *
     * @param baseType1 the first boolean formula.
     * @param baseType2 the second boolean formula.
-    * @param fullType1 the first optional full type in which the first boolean formula occurs.
-    * @param fullType2 the second optional full type in which the second boolean formula occurs.
+    * @param fullType1 the first full type in which the first boolean formula occurs.
+    * @param fullType2 the second full type in which the second boolean formula occurs.
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -323,17 +323,9 @@ object TypeError {
          |
          |${code(loc, "mismatched boolean formulas.")}
          |
-         |${appendMismatchedBooleans(formatter)}
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
-    }
-
-    private def appendMismatchedBooleans(formatter: Formatter): String = (fullType1, fullType2) match {
-      case (Some(ft1), Some(ft2)) =>
-        import formatter._
-        s"""Type One: ${cyan(formatType(ft1, Some(renv)))}
-           |Type Two: ${magenta(formatType(ft2, Some(renv)))}
-           |""".stripMargin
-      case _ => "" // nop
     }
 
     def explain(formatter: Formatter): Option[String] = None
@@ -739,6 +731,32 @@ object TypeError {
          |The region variable was declared here:
          |
          |${code(rvar.loc, "region variable declared here.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error indicating an unexpected argument passed to a def.
+    *
+    * @param sym      the def symbol.
+    * @param expected the expected type.
+    * @param actual   the actual type.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnexpectedArgumentToDef(sym: Symbol.DefnSym, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Function '$sym' expects an argument of type '${formatType(expected, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Function '$sym' expects an argument of type '${blue(formatType(expected, Some(renv)))}', but found: '${red(formatType(actual, Some(renv)))}'.
+         |
+         |${code(loc, "unexpected argument.")}
+         |
+         |Expected:  ${formatType(expected, Some(renv))}
+         |But Found: ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
 

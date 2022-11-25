@@ -174,7 +174,7 @@ object Unification {
           (tpe1.typeConstructor, tpe2.typeConstructor) match {
             case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
             case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
-            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), renv, loc))
+            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, type1, type2, renv, loc))
           }
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
@@ -240,13 +240,30 @@ object Unification {
   // TODO: Uneven length
   // TODO: Custom error message
   // TODO: List of locs.
-  def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = (expected, actual, locs) match {
-    case (Nil, Nil, _) => InferMonad.point(())
-    case (x :: xs, y :: ys, l :: ls) =>
-      for {
-        _ <- expectTypeM(expected = x, actual = y, l)
-      } yield unifyTypesPairWiseM(xs, ys, ls)
-    case _ => ??? // TODO
+  def unifyTypesPairWiseM(sym: Symbol.DefnSym, expected: List[Type], actual: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = {
+    // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
+    def handler(e: TypeError): TypeError = e match {
+      case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedArrowBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
+      case e => e
+    }
+
+    // TODO: Visitor
+
+    (expected, actual, locs) match {
+      case (Nil, Nil, _) => InferMonad.point(())
+      case (x :: xs, y :: ys, l :: ls) =>
+        for {
+          _ <- unifyTypeM(x, y, l).transformError(handler)
+        } yield unifyTypesPairWiseM(sym, xs, ys, ls).transformError(handler)
+      case _ => ??? // TODO
+    }
   }
 
   /**
@@ -320,7 +337,7 @@ object Unification {
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
-            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, renv, loc))
+            Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
         }
