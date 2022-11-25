@@ -23,10 +23,17 @@ import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimizat
 object FormatType {
   /**
     * Transforms the given well-kinded type into a string.
+    *
+    * Minimizes the given type.
+    *
+    * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: RigidityEnv = RigidityEnv.empty)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
     val minimized = TypeMinimization.minimizeType(tpe)
-    val renamed = alphaRename(minimized, renv)
+    val renamed = renv match {
+      case None => minimized
+      case Some(env) => alphaRename(minimized, env)
+    }
     formatTypeWithOptions(renamed, flix.getFormatOptions)
   }
 
