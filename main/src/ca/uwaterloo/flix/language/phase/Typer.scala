@@ -571,7 +571,7 @@ object Typer {
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
       // TODO: Add ApplyDef and ApplySig
       exp match {
-          case KindedAst.Expression.Def(sym, tvar2, loc2)  if sym.toString.startsWith("List") =>
+          case KindedAst.Expression.Def(sym, tvar2, loc2)  =>
             //
             // Special Case: Def.
             //
