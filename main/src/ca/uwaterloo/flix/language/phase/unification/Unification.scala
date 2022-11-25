@@ -238,6 +238,8 @@ object Unification {
 
   // TODO: DOC
   // TODO: Uneven length
+  // TODO: Custom error message
+  // TODO: List of locs.
   def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = (expected, actual) match {
     case (Nil, Nil) => InferMonad.point(())
     case (x :: xs, y :: ys) =>

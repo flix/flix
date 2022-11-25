@@ -570,10 +570,12 @@ object Typer {
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
         exp match {
-          case KindedAst.Expression.Def(sym, tpe, loc) if (sym.toString.contains("impure")) => // TODO
+          case KindedAst.Expression.Def(sym, tpe, loc) if (sym.toString.contains("apply2")) => // TODO
             //
             // Special Case: Def.
             //
+
+            // TODO: Add ApplyDef and ApplySig
 
             val defn = root.defs(sym)
             val (constrs1, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
@@ -584,7 +586,7 @@ object Typer {
             val declaredArgTypes = typeArgs.drop(2).dropRight(1)
             val declaredResultType = typeArgs.last
 
-            if (sym.toString.contains("impure")) {
+            if (sym.toString.contains("apply2")) {
               println("meeep!")
             }
 
