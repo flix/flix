@@ -571,12 +571,12 @@ object Typer {
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
       // TODO: Add ApplyDef and ApplySig
       exp match {
-          case KindedAst.Expression.Def(sym, tpe, loc) if false =>
+          case KindedAst.Expression.Def(sym, tvar2, loc2) =>
             //
             // Special Case: Def.
             //
             val defn = root.defs(sym)
-            val (constrs1, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+            val (constrs1, defType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic) // TODO: constrs1 loc
 
             val typeArgs = defType.typeArguments
             val declaredPur = typeArgs.head
@@ -587,6 +587,7 @@ object Typer {
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
               _ <- unifyTypesPairWiseM(tpes, declaredArgTypes, exps.map(_.loc))
+              _ <- unifyTypeM(tvar2, defType, loc)
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
               resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
               resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
