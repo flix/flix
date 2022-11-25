@@ -304,7 +304,6 @@ object Symbol {
       val string = text match {
         case VarText.Absent => "tvar"
         case VarText.SourceText(s) => s
-        case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
     }
@@ -315,7 +314,6 @@ object Symbol {
     def isWild: Boolean = text match {
       case VarText.Absent => false
       case VarText.SourceText(s) => s.startsWith("_")
-      case VarText.FallbackText(_) => false
     }
   }
 
@@ -345,7 +343,6 @@ object Symbol {
       val string = text match {
         case VarText.Absent => "tvar"
         case VarText.SourceText(s) => s
-        case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
     }
@@ -506,6 +503,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = clazz.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = clazz.namespace :+ clazz.name
   }
 
   /**
@@ -633,6 +635,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = eff.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = eff.namespace :+ eff.name
   }
 
   /**

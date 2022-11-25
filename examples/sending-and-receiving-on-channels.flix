@@ -16,7 +16,7 @@ def recvN(n: Int32, r: Receiver[Int32, Static]): List[Int32] \ IO =
 /// Spawn a process for send and wait, and print the result.
 def main(): Unit \ IO = {
     let l = 1 :: 2 :: 3 :: Nil;
-    let (s, r) = Channel.buffered(100);
+    let (s, r) = Channel.buffered(Static, 100);
     spawn sendAll(l, s);
     spawn recvN(List.length(l), r)
 }

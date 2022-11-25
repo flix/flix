@@ -17,7 +17,7 @@ def recvWithDefault(r: Receiver[Int32, Static]): Int32 \ IO =
 /// Returns the default value `2` if after a timeout.
 def recvWithTimeout(c: Receiver[Int32, Static]): Int32 \ IO =
     use Time/Duration.fromSeconds;
-    let t = Channel.timeout(fromSeconds(1));
+    let t = Channel.timeout(Static, fromSeconds(1));
     select {
         case x <- recv(c) => x
         case _ <- recv(t) => 2
@@ -27,8 +27,8 @@ def recvWithTimeout(c: Receiver[Int32, Static]): Int32 \ IO =
 /// Sends values on both after one minute.
 /// Receives from both using defaults and timeouts.
 def main(): Unit \ IO = {
-    let (s1, r1) = Channel.buffered(1);
-    let (s2, r2) = Channel.buffered(1);
+    let (s1, r1) = Channel.buffered(Static, 1);
+    let (s2, r2) = Channel.buffered(Static, 1);
     spawn slow(123, s1);
     spawn slow(456, s2);
     (recvWithDefault(r1) + recvWithTimeout(r2)) |> println

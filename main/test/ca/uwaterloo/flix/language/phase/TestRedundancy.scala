@@ -48,7 +48,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       raw"""
            |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.buffered(1);
+           |    let (_, r) = Channel.buffered(Static, 1);
            |    select {
            |        case _x <- recv(r) => _x
            |    }
@@ -257,7 +257,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def f(): Int32 \ IO =
         |    let x = 123;
-        |    let (s, r) = Channel.buffered(1);
+        |    let (s, r) = Channel.buffered(Static, 1);
         |    Channel.send(456, s);
         |    select {
         |        case y <- recv(r) => y
@@ -739,7 +739,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       raw"""
            |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered();
+           |    let (_, r) = Channel.unbuffered(Static);
            |    select {
            |        case x <- recv(r) => 123
            |    }
@@ -753,7 +753,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       raw"""
            |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered();
+           |    let (_, r) = Channel.unbuffered(Static);
            |    select {
            |        case x <- recv(r) => x
            |        case x <- recv(r) => 123

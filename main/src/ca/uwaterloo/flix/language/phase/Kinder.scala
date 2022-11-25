@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -697,10 +696,11 @@ object Kinder {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
       }
 
-    case ResolvedAst.Expression.NewChannel(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expression.NewChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+    case ResolvedAst.Expression.NewChannel(exp10, exp20, loc) =>
+      val exp1Val = visitExp(exp10, kenv0, senv, taenv, henv0, root)
+      val exp2Val = visitExp(exp20, kenv0, senv, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.NewChannel(exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.GetChannel(exp0, loc) =>
@@ -1137,7 +1137,7 @@ object Kinder {
     */
   private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
     case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+      val tpe = Type.freshVar(Kind.Predicate, loc)
       KindedAst.PredicateParam(pred, tpe, loc).toSuccess
 
     case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
@@ -1522,7 +1522,6 @@ object Kinder {
   private def prime(text: Ast.VarText): Ast.VarText = text match {
     case Ast.VarText.Absent => Ast.VarText.Absent
     case Ast.VarText.SourceText(s) => Ast.VarText.SourceText(s + "'")
-    case Ast.VarText.FallbackText(s) => Ast.VarText.FallbackText(s + "'")
   }
 
   /**

@@ -21,9 +21,9 @@ def hiss(s: Sender[String, Static], n: Int32): Unit \ IO =
 
 /// Start the animal farm...
 def main(): Unit \ IO = {
-    let (s1, r1) = Channel.buffered(10);
-    let (s2, r2) = Channel.buffered(10);
-    let (s3, r3) = Channel.buffered(10);
+    let (s1, r1) = Channel.buffered(Static, 10);
+    let (s2, r2) = Channel.buffered(Static, 10);
+    let (s3, r3) = Channel.buffered(Static, 10);
     spawn mooo(s1, 0);
     spawn meow(s2, 3);
     spawn hiss(s3, 7);
