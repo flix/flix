@@ -385,7 +385,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable(NotSendable(42)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    expectError[TypeError.MissingSendable](result)
   }
 
   test("MissingSendable.02") {
@@ -399,7 +399,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable(NotSendable(42), NotSendable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    expectError[TypeError.MissingSendable](result)
   }
 
   test("MissingOrder.01") {

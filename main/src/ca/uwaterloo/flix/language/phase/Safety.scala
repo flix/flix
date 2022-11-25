@@ -256,8 +256,8 @@ object Safety {
             case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
           }
 
-      case Expression.NewChannel(exp, _, _, _, _, _) =>
-        visit(exp)
+      case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
 
       case Expression.GetChannel(exp, _, _, _, _) =>
         visit(exp)
