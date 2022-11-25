@@ -604,7 +604,6 @@ object Ast {
       */
     private def precision: Int = this match {
       case VarText.Absent => 0
-      case VarText.FallbackText(_) => 1
       case VarText.SourceText(_) => 2
     }
 
@@ -627,11 +626,6 @@ object Ast {
       * The variable is associated with the string `s` taken directly from the source code.
       */
     case class SourceText(s: String) extends VarText
-
-    /**
-      * The variable is associated string `s`, used as a fallback since no source text is available.
-      */
-    case class FallbackText(s: String) extends VarText
   }
 
   /**

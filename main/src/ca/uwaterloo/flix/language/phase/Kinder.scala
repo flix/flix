@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.Ast.VarText.FallbackText
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -1138,7 +1137,7 @@ object Kinder {
     */
   private def visitPredicateParam(pparam0: ResolvedAst.PredicateParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.PredicateParam, KindError] = pparam0 match {
     case ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      val tpe = Type.freshVar(Kind.Predicate, loc, text = FallbackText(pred.name))
+      val tpe = Type.freshVar(Kind.Predicate, loc)
       KindedAst.PredicateParam(pred, tpe, loc).toSuccess
 
     case ResolvedAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
@@ -1523,7 +1522,6 @@ object Kinder {
   private def prime(text: Ast.VarText): Ast.VarText = text match {
     case Ast.VarText.Absent => Ast.VarText.Absent
     case Ast.VarText.SourceText(s) => Ast.VarText.SourceText(s + "'")
-    case Ast.VarText.FallbackText(s) => Ast.VarText.FallbackText(s + "'")
   }
 
   /**

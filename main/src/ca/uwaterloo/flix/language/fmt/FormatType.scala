@@ -314,7 +314,6 @@ object FormatType {
           case FormatOptions.VarName.NameBased => text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
-            case VarText.FallbackText(s) => "?" + s + id.toString
           }
         }
 
