@@ -242,12 +242,11 @@ object Unification {
   // TODO: List of locs.
   def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = (expected, actual, locs) match {
     case (Nil, Nil, _) => InferMonad.point(())
-    case (Nil, _, _) => ???
-    case (_, Nil, _) => ???
     case (x :: xs, y :: ys, l :: ls) =>
       for {
         _ <- expectTypeM(expected = x, actual = y, l)
       } yield unifyTypesPairWiseM(xs, ys, ls)
+    case _ => ??? // TODO
   }
 
   /**
