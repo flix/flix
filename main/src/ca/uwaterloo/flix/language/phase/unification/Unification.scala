@@ -240,12 +240,14 @@ object Unification {
   // TODO: Uneven length
   // TODO: Custom error message
   // TODO: List of locs.
-  def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = (expected, actual) match {
-    case (Nil, Nil) => InferMonad.point(())
-    case (x :: xs, y :: ys) =>
+  def unifyTypesPairWiseM(expected: List[Type], actual: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = (expected, actual, locs) match {
+    case (Nil, Nil, _) => InferMonad.point(())
+    case (Nil, _, _) => ???
+    case (_, Nil, _) => ???
+    case (x :: xs, y :: ys, l :: ls) =>
       for {
-        _ <- expectTypeM(expected = x, actual = y, loc)
-      } yield unifyTypesPairWiseM(xs, ys, loc)
+        _ <- expectTypeM(expected = x, actual = y, l)
+      } yield unifyTypesPairWiseM(xs, ys, ls)
   }
 
   /**
