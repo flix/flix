@@ -453,7 +453,7 @@ namespace DelayMap {
         use RedBlackTree.RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
-                seqLoop(a);
+                let _ = seqLoop(a);
                 let _ = force v;
                 seqLoop(b)
             case _ => ()
@@ -464,19 +464,17 @@ namespace DelayMap {
             else
                 match tt {
                     case Node(_, a, _, v, b) =>
-                        let (sL, rL) = Channel.buffered(Static, 1);
-                        let (sR, rR) = Channel.buffered(Static, 1);
-                        spawn (Channel.send(parLoop((n - 2) / 2, a), sL)); // We divide the rest of the threads as follows:
-                        spawn (Channel.send(parLoop((n - 2) / 2, b), sR)); // We spawn two new threads leaving us with n - 2
-                        let _ = force v;                                   // that we distribute over the two spanned threads.
-                        Channel.recv(rL);
-                        Channel.recv(rR)
+                        par (
+                            _ <- parLoop((n - 2) / 2, a); // We divide the rest of the threads as follows:
+                            _ <- parLoop((n - 2) / 2, b); // We spawn two new threads leaving us with n - 2
+                            _ <- force v                  // that we distribute over the two spanned threads.
+                        ) yield ()
                     case _ => ()
                 }
         };
         let DMap(t) = m;
         if (useParallelEvaluation(m))
-            parLoop(threads() - 1, t) as \ {}
+            parLoop(threads() - 1, t)
         else
             seqLoop(t)
 

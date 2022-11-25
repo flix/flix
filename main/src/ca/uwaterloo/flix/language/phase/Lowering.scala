@@ -1687,7 +1687,7 @@ object Lowering {
     * Returns a wildcard (match anything) pattern.
     */
   def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
+    LoweredAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc)
   }
 
   /**

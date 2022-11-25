@@ -304,7 +304,6 @@ object Symbol {
       val string = text match {
         case VarText.Absent => "tvar"
         case VarText.SourceText(s) => s
-        case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
     }
@@ -315,7 +314,6 @@ object Symbol {
     def isWild: Boolean = text match {
       case VarText.Absent => false
       case VarText.SourceText(s) => s.startsWith("_")
-      case VarText.FallbackText(_) => false
     }
   }
 
@@ -345,7 +343,6 @@ object Symbol {
       val string = text match {
         case VarText.Absent => "tvar"
         case VarText.SourceText(s) => s
-        case VarText.FallbackText(s) => s
       }
       string + Flix.Delimiter + id
     }
