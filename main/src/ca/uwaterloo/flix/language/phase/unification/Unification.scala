@@ -238,10 +238,8 @@ object Unification {
 
   // TODO: DOC
   // TODO: Uneven length
-  // TODO: Custom error message
-  // TODO: List of locs.
-  def unifyTypesPairWiseM(sym: Symbol.DefnSym, expected: List[Type], actual: List[Type], locs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = {
-    // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
+  def unifyTypesPairWiseM(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation])(implicit flix: Flix): InferMonad[Unit] = {
+    // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
         TypeError.UnexpectedArgumentToDef(sym, fullType1, fullType2, renv, loc)
@@ -254,16 +252,17 @@ object Unification {
       case e => e
     }
 
-    // TODO: Visitor
+    def visit(expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
+      (expected, actual, locs) match {
+        case (Nil, Nil, _) => InferMonad.point(())
+        case (x :: xs, y :: ys, l :: ls) =>
+          for {
+            _ <- unifyTypeM(x, y, l)
+          } yield unifyTypesPairWiseM(sym, xs, ys, ls)
+        case _ => ??? // TODO
+      }
 
-    (expected, actual, locs) match {
-      case (Nil, Nil, _) => InferMonad.point(())
-      case (x :: xs, y :: ys, l :: ls) =>
-        for {
-          _ <- unifyTypeM(x, y, l).transformError(handler)
-        } yield unifyTypesPairWiseM(sym, xs, ys, ls).transformError(handler)
-      case _ => ??? // TODO
-    }
+    visit(expectedTypes, actualTypes, actualLocs).transformError(handler)
   }
 
   /**
