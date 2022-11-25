@@ -571,7 +571,7 @@ object Typer {
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
       // TODO: Add ApplyDef and ApplySig
       exp match {
-          case KindedAst.Expression.Def(sym, tvar2, loc2) =>
+          case KindedAst.Expression.Def(sym, tvar2, loc2)  if sym.toString.startsWith("List") =>
             //
             // Special Case: Def.
             //
@@ -591,7 +591,7 @@ object Typer {
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
               resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
               resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
-            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+            } yield (constrs1.map(_.copy(loc = loc)) ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
           case _ =>
             //
