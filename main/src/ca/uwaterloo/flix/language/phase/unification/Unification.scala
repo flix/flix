@@ -190,13 +190,13 @@ object Unification {
           Err(TypeError.UndefinedField(fieldName, fieldType, recordType, renv, loc))
 
         case Result.Err(UnificationError.NonRecordType(tpe)) =>
-          Err(TypeError.NonRecordType(tpe, loc))
+          Err(TypeError.NonRecordType(tpe, renv, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
           Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, renv, loc))
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
-          Err(TypeError.NonSchemaType(tpe, loc))
+          Err(TypeError.NonSchemaType(tpe, renv, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
@@ -396,7 +396,7 @@ object Unification {
 
       // Check whether the region variable is essential to the type.
       if (Regions.essentialTo(rvar, t)) {
-        Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
+        Err(TypeError.RegionVarEscapes(rvar, t, renv, rvar.loc))
       } else
         Ok((s, renv, ()))
     }

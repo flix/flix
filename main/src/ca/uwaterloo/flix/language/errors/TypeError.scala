@@ -484,16 +484,17 @@ object TypeError {
   /**
     * Unexpected non-record type error.
     *
-    * @param tpe the unexpected non-record type.
-    * @param loc the location where the error occurred.
+    * @param tpe  the unexpected non-record type.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class NonRecordType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class NonRecordType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unexpected non-record type '$tpe'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-record type: '${red(formatType(tpe))}'.
+         |>> Unexpected non-record type: '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, "unexpected non-record type.")}
          |""".stripMargin
@@ -505,16 +506,17 @@ object TypeError {
   /**
     * Unexpected non-schema type error.
     *
-    * @param tpe the unexpected non-schema type.
-    * @param loc the location where the error occurred.
+    * @param tpe  the unexpected non-schema type.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class NonSchemaType(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class NonSchemaType(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unexpected non-schema type '$tpe'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected non-schema type: '${red(formatType(tpe))}'.
+         |>> Unexpected non-schema type: '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, "unexpected non-schema type.")}
          |
@@ -529,15 +531,16 @@ object TypeError {
     *
     * @param clazz the class of the instance.
     * @param tpe   the type of the instance.
+    * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe)}'."
+  case class MissingArrowInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe))}'.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
          |
@@ -554,15 +557,16 @@ object TypeError {
     *
     * @param clazz the class of the instance.
     * @param tpe   the type of the instance.
+    * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe)}'."
+  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe))}'.
+         |>> No instance of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing instance")}
          |
@@ -575,16 +579,17 @@ object TypeError {
   /**
     * Missing `Eq` instance.
     *
-    * @param tpe the type of the instance.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingEq(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Equality is not defined on '${formatType(tpe)}'. Define or derive instance of Eq."
+  case class MissingEq(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Equality is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Eq."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Equality is not defined on ${red(formatType(tpe))}. Define or derive an instance of Eq.
+         |>> Equality is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Eq.
          |
          |${code(loc, s"missing Eq instance")}
          |
@@ -592,10 +597,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define equality on '${formatType(tpe)}', either:
+      s"""To define equality on '${formatType(tpe, Some(renv))}', either:
          |
-         |  (a) define an instance of Eq for '${formatType(tpe)}', or
-         |  (b) use 'with' to derive an instance of Eq for '${formatType(tpe)}', for example:.
+         |  (a) define an instance of Eq for '${formatType(tpe, Some(renv))}', or
+         |  (b) use 'with' to derive an instance of Eq for '${formatType(tpe, Some(renv))}', for example:.
          |
          |  enum Color with Eq {
          |    case Red, Green, Blue
@@ -608,16 +613,17 @@ object TypeError {
   /**
     * Missing `Order` instance.
     *
-    * @param tpe the type of the instance.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingOrder(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Order is not defined on '${formatType(tpe)}'. Define or derive instance of Order."
+  case class MissingOrder(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Order is not defined on '${formatType(tpe, Some(renv))}'. Define or derive instance of Order."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Order is not defined on ${red(formatType(tpe))}. Define or derive an instance of Order.
+         |>> Order is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Order.
          |
          |${code(loc, s"missing Order instance")}
          |
@@ -625,10 +631,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define an order on '${formatType(tpe)}', either:
+      s"""To define an order on '${formatType(tpe, Some(renv))}', either:
          |
-         |  (a) define an instance of Order for '${formatType(tpe)}', or
-         |  (b) use 'with' to derive an instance of Order for '${formatType(tpe)}', for example:.
+         |  (a) define an instance of Order for '${formatType(tpe, Some(renv))}', or
+         |  (b) use 'with' to derive an instance of Order for '${formatType(tpe, Some(renv))}', for example:.
          |
          |  enum Color with Eq, Order {
          |    case Red, Green, Blue
@@ -642,16 +648,17 @@ object TypeError {
   /**
     * Missing `ToString` instance.
     *
-    * @param tpe the type of the instance.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingToString(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"ToString is not defined for '${formatType(tpe)}'. Define or derive instance of ToString."
+  case class MissingToString(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"ToString is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of ToString."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ToString is not defined on ${red(formatType(tpe))}. Define or derive an instance of ToString.
+         |>> ToString is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of ToString.
          |
          |${code(loc, s"missing ToString instance")}
          |
@@ -659,10 +666,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe)}', either:
+      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
          |
-         |  (a) define an instance of ToString for '${formatType(tpe)}', or
-         |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe)}', for example:.
+         |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
+         |  (b) use 'with' to derive an instance of ToString for '${formatType(tpe, Some(renv))}', for example:.
          |
          |  enum Color with ToString {
          |    case Red, Green, Blue
@@ -675,16 +682,17 @@ object TypeError {
   /**
     * Missing `Sendable` instance.
     *
-    * @param tpe the type of the instance.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the instance.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
     */
-  case class MissingSendable(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Sendable is not defined for '${formatType(tpe)}'. Define or derive instance of Sendable."
+  case class MissingSendable(tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Sendable is not defined for '${formatType(tpe, Some(renv))}'. Define or derive instance of Sendable."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Sendable is not defined on ${red(formatType(tpe))}. Define or derive an instance of Sendable.
+         |>> Sendable is not defined on ${red(formatType(tpe, Some(renv)))}. Define or derive an instance of Sendable.
          |
          |${code(loc, s"missing Sendable instance")}
          |
@@ -692,10 +700,10 @@ object TypeError {
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""To define a string representation of '${formatType(tpe)}', either:
+      s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
          |
-         |  (a) define an instance of Sendable for '${formatType(tpe)}', or
-         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe)}', for example:.
+         |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
+         |  (b) use 'with' to derive an instance of Sendable for '${formatType(tpe, Some(renv))}', for example:.
          |
          |  enum Color with Sendable {
          |    case Red, Green, Blue
@@ -710,21 +718,22 @@ object TypeError {
     *
     * @param rvar the region variable.
     * @param tpe  the type wherein the region variable escapes.
+    * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Region variable '${formatType(rvar, Some(renv))}' escapes its scope."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The region variable '${red(formatType(rvar))}' escapes its scope.
+         |>> The region variable '${red(formatType(rvar, Some(renv)))}' escapes its scope.
          |
          |${code(loc, "region variable escapes.")}
          |
          |The escaping expression has type:
          |
-         |  ${red(formatType(tpe))}
+         |  ${red(formatType(tpe, Some(renv)))}
          |
          |which contains the region variable.
          |
