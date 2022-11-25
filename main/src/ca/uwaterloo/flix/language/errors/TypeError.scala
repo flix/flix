@@ -751,12 +751,12 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Function '$sym' expects an argument of type '${blue(formatType(expected, Some(renv)))}', but found: '${red(formatType(actual, Some(renv)))}'.
+         |>> Function '${blue(sym.name)}' expects an argument of type '${cyan(formatType(expected, Some(renv)))}'.
          |
-         |${code(loc, "unexpected argument.")}
+         |${code(loc, s"actual type: '${red(formatType(actual, Some(renv)))}'")}
          |
-         |Expected:  ${formatType(expected, Some(renv))}
-         |But Found: ${formatType(actual, Some(renv))}
+         |Expected Type:  ${formatType(expected, Some(renv))}
+         |Actual Type  : ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
 
