@@ -23,13 +23,13 @@ object WeededAst {
 
   case class Root(units: Map[Ast.Source, WeededAst.CompilationUnit], entryPoint: Option[Symbol.DefnSym], names: MultiMap[List[String], String])
 
-  case class CompilationUnit(uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation)
+  case class CompilationUnit(usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
   sealed trait Declaration
 
   object Declaration {
 
-    case class Namespace(name: Name.NName, uses: List[WeededAst.Use], imports: List[WeededAst.Import], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(name: Name.NName, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
     case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
@@ -52,25 +52,19 @@ object WeededAst {
 
   }
 
-  sealed trait Use
+  sealed trait UseOrImport
 
-  object Use {
+  object UseOrImport {
 
-    case class UseLower(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseLower(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
 
-    case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
 
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
 
+    case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
   }
 
-  sealed trait Import
-
-  object Import {
-
-    case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Import
-
-  }
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -86,7 +80,7 @@ object WeededAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Use(uses: List[WeededAst.UseOrImport], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
 
