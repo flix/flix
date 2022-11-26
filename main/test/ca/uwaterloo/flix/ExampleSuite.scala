@@ -22,9 +22,7 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
 
   mkTestDir("examples")
-  mkTestDir("examples/analysis")
-  mkTestDir("examples/datalog")
-  mkTestDir("examples/koans")
-  mkTestDir("examples/misc")
+  mkTestDir("examples/larger-examples/datalog")
+  mkTestDir("examples/larger-examples/program-analysis")
 
 }
