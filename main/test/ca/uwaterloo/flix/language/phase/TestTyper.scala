@@ -1040,10 +1040,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        choose x {
-        |            case Absent     => 1 as \ IO
+        |            case Absent     => unsafe_cast 1 as \ IO
         |        };
         |        choose x {
-        |            case Present(_) => 2 as \ IO
+        |            case Present(_) => unsafe_cast 2 as \ IO
         |        }
         |    };
         |    f(Absent)
@@ -1158,7 +1158,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.01") {
     val input =
       """
-        |pub def f(): Int32 = 123 as \ IO
+        |pub def f(): Int32 = unsafe_cast 123 as \ IO
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1168,7 +1168,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 & Pure = 123 as \ IO
+        |def f(): Int32 & Pure = unsafe_cast 123 as \ IO
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1412,7 +1412,7 @@ class TestTyper extends FunSuite with TestUtils {
         |def f(): Unit & ef =
         |    let f =
         |        if (true)
-        |            upcast x -> (x + 1 as & ef)
+        |            upcast x -> (unsafe_cast x + 1 as & ef)
         |        else
         |            x -> x + 1;
         |    let _ = f(1);
@@ -1553,7 +1553,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { 1 as \ Impure }) yield x;
+        |     let _ = par (x <- { unsafe_cast 1 as \ Impure }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1564,7 +1564,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1; b <- { 1 as \ Impure }) yield (a, b);
+        |     let _ = par (a <- 1; b <- { unsafe_cast 1 as \ Impure }) yield (a, b);
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
