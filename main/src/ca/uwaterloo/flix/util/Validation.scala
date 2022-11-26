@@ -115,6 +115,15 @@ object Validation {
   def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
   /**
+    * Traverses the given map, applying the function `f` to each value.
+    */
+  def traverseValues[K, V1, V2, E](xs: Map[K, V1])(f: V1 => Validation[V2, E]): Validation[Map[K, V2], E] = {
+    traverse(xs) {
+      case (k, v0) => mapN(f(v0))(v => k -> v)
+    }.map(_.toMap)
+  }
+
+  /**
     * Traverses `o` applying the function `f` to the value, if it exists.
     */
   def traverseOpt[T, S, E](o: Option[T])(f: T => Validation[S, E]): Validation[Option[S], E] = o match {
