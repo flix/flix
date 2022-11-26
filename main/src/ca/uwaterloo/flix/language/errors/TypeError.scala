@@ -728,13 +728,13 @@ object TypeError {
   /**
     * An error indicating an unexpected argument.
     *
-    * @param sym      the def symbol.
+    * @param sym      the symbol.
     * @param ith      the index of the unexpected argument.
     * @param expected the expected type.
     * @param actual   the actual type.
     * @param loc      the location where the error occurred.
     */
-  case class UnexpectedArgument(sym: Symbol.DefnSym, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedArgument(sym: Symbol, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -744,7 +744,7 @@ object TypeError {
          |
          |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
          |
-         |The function '${magenta(sym.name)}' expects its ${ith}th argument to be of type '${formatType(expected, Some(renv))}'.
+         |The function '${magenta(sym.toString)}' expects its ${ith}th argument to be of type '${formatType(expected, Some(renv))}'.
          |
          |Expected: ${formatType(expected, Some(renv))}
          |  Actual: ${formatType(actual, Some(renv))}
