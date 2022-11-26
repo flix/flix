@@ -65,7 +65,7 @@ namespace TestDelayMap {
     def insertWithInsertWith02(): Bool \ IO =
         (("a", 1) :: Nil)                                                        |>
             List.toDelayMap                                                      |>
-            DelayMap.insertWith((v1, v2) -> unsafe_cast v1 + v2, "b" as \ IO, 1) |>
+            DelayMap.insertWith((v1, v2) -> v1 + v2, unsafe_cast "b" as \ IO, 1) |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 3)                     |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
     @test
@@ -73,15 +73,15 @@ namespace TestDelayMap {
         (("a", 1) :: Nil)                                                        |>
             List.toDelayMap                                                      |>
             DelayMap.insertWith((v1, v2) -> v1 + v2, "b", 1)                     |>
-            DelayMap.insertWith((v1, v2) -> unsafe_cast v1 + v2, "b" as \ IO, 3) |>
+            DelayMap.insertWith((v1, v2) -> v1 + v2, unsafe_cast "b" as \ IO, 3) |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
 
     @test
     def insertWithInsertWith04(): Bool \ IO =
         (("a", 1) :: Nil)                                                        |>
             List.toDelayMap                                                      |>
-            DelayMap.insertWith((v1, v2) -> unsafe_cast v1 + v2, "b" as \ IO, 1) |>
-            DelayMap.insertWith((v1, v2) -> unsafe_cast v1 + v2, "b" as \ IO, 3) |>
+            DelayMap.insertWith((v1, v2) -> v1 + v2, unsafe_cast "b" as \ IO, 1) |>
+            DelayMap.insertWith((v1, v2) -> v1 + v2, unsafe_cast "b" as \ IO, 3) |>
             DelayMap.toList == ("a", 1) :: ("b", 4) :: Nil
 
 

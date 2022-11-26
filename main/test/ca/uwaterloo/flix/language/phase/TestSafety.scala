@@ -335,7 +335,7 @@ class TestSafety extends FunSuite with TestUtils {
         |
         |def f(): Unit =
         |    let f = () -> ();
-        |    let g = () -> unsafe_cast unsafe_cast () as \ { A, B, C };
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            f

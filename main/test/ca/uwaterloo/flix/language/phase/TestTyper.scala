@@ -1064,10 +1064,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        choose x {
-        |            case Absent     => 1 as \ IO
+        |            case Absent     => unsafe_cast 1 as \ IO
         |        };
         |        choose x {
-        |            case Present(_) => 2 as \ IO
+        |            case Present(_) => unsafe_cast 2 as \ IO
         |        }
         |    };
         |    f(Present(123))
@@ -1542,7 +1542,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { 1 as & Impure }) yield x;
+        |     let _ = par (x <- { unsafe_cast 1 as & Impure }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

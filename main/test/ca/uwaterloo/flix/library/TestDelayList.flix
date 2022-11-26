@@ -437,7 +437,7 @@ namespace TestDelayList {
     @test
     def mapFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> unsafe_cast { l := "a" :: deref l; x } as \ {}) |>
         DelayList.map(x -> unsafe_cast { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
@@ -554,7 +554,7 @@ namespace TestDelayList {
     @test
     def filterFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
         DelayList.filter(_x -> unsafe_cast { l := "a" :: deref l; true } as \ {}) |>
         DelayList.filter(_x -> unsafe_cast { l := "b" :: deref l; true } as \ {}) |>
         DelayList.toList as \ IO;
@@ -576,7 +576,7 @@ namespace TestDelayList {
     @test
     def mapFilterFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> unsafe_cast { l := "a" :: deref l; x }    as \ {}) |>
         DelayList.filter(_ -> unsafe_cast { l := "b" :: deref l; true } as \ {}) |>
         DelayList.toList as \ IO;
@@ -598,7 +598,7 @@ namespace TestDelayList {
     @test
     def filterThenMapFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> unsafe_cast { l := "a" :: deref l; true } as \ {}) |>
         DelayList.map(   x -> unsafe_cast { l := "b" :: deref l; x    } as \ {}) |>
         DelayList.toList as \ IO;
@@ -1483,7 +1483,7 @@ namespace TestDelayList {
     @test
     def zipWithFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> unsafe_cast { l := "a" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> unsafe_cast { l := "b" :: deref l; (x, y) } as \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.toList as \ IO;
@@ -1746,8 +1746,8 @@ namespace TestDelayList {
 
     @test
     def flatMapFlatMap02(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                        |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) |>
+        ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
+        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as \ IO) |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
@@ -1755,9 +1755,9 @@ namespace TestDelayList {
 
     @test
     def flatMapFlatMap03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                        |>
+        ECons(1, ECons(2, ECons(3, ENil)))                                           |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i) as \ IO) ==
+        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as \ IO) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
@@ -1787,9 +1787,9 @@ namespace TestDelayList {
     @test
     def flatMapFusion02(): Bool \ IO =
         let l = ref Nil;
-        discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) } as \ {}) |>
-        DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) } as \ {}) |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.flatMap(i -> unsafe_cast { l := "a" :: deref l; ECons(i, ENil) } as \ {}) |>
+        DelayList.flatMap(i -> unsafe_cast { l := "b" :: deref l; ECons(i, ENil) } as \ {}) |>
         DelayList.toList as \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
 
@@ -2045,7 +2045,7 @@ namespace TestDelayList {
     @test
     def mapWithIndexFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "a" :: deref l; x } as \ {}) |>
         DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "b" :: deref l; x } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2244,7 +2244,7 @@ namespace TestDelayList {
 
     @test
     def takeWhileTakeWhile02(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))             |>
+        ECons(4, ECons(5, ECons(1, ENil)))                      |>
             DelayList.takeWhile(i -> unsafe_cast i > 3 as \ IO) |>
             DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
 
@@ -2276,7 +2276,7 @@ namespace TestDelayList {
     @test
     def takeWhileFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 4 } as \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2285,7 +2285,7 @@ namespace TestDelayList {
     @test
     def takeWhileFusion03(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 2 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2294,7 +2294,7 @@ namespace TestDelayList {
     @test
     def takeWhileFusion04(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2427,7 +2427,7 @@ namespace TestDelayList {
     @test
     def dropWhileFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2436,7 +2436,7 @@ namespace TestDelayList {
     @test
     def dropWhileFusion03(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 1 } as \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2445,7 +2445,7 @@ namespace TestDelayList {
     @test
     def dropWhileFusion04(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 2 } as \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as \ {}) |>
         DelayList.toList as \ IO;
@@ -2633,7 +2633,7 @@ namespace TestDelayList {
     @test
     def filterMapFusion02(): Bool \ IO =
         let l = ref Nil;
-        unsafe_cast discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> unsafe_cast { l := "a" :: deref l; Some(x) } as \ {}) |>
         DelayList.filterMap(x -> unsafe_cast { l := "b" :: deref l; Some(x) } as \ {}) |>
         DelayList.toList as \ IO;
