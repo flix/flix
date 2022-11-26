@@ -174,7 +174,7 @@ object Unification {
           (tpe1.typeConstructor, tpe2.typeConstructor) match {
             case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
             case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
-            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), renv, loc))
+            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, type1, type2, renv, loc))
           }
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
@@ -237,6 +237,38 @@ object Unification {
   }
 
   /**
+    * Unifies the `expectedTypes` types with the `actualTypes`.
+    */
+  def expectTypeArguments(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+    // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
+    def handler(i: Int)(e: TypeError): TypeError = e match {
+      case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedArrowBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+      case e => e
+    }
+
+    def visit(i: Int, expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
+      (expected, actual, locs) match {
+        case (Nil, Nil, Nil) => InferMonad.point(())
+        case (x :: xs, y :: ys, l :: ls) =>
+          for {
+            _ <- unifyTypeM(x, y, l).transformError(handler(i))
+          } yield visit(i + 1, xs, ys, ls)
+        case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
+        case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
+        case _ => throw InternalCompilerException("Mismatched lists.")
+      }
+
+    visit(1, expectedTypes, actualTypes, actualLocs)
+  }
+
+  /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
   private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
@@ -247,12 +279,12 @@ object Unification {
         if (Unification.unifiesWith(resultType, argType, renv)) {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, renv, loc)
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
           }
         } else {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, renv, loc)
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
           }
         }
       case _ => default
@@ -307,7 +339,7 @@ object Unification {
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
-            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, renv, loc))
+            Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
         }

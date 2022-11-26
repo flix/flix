@@ -569,19 +569,52 @@ object Typer {
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
-        val lambdaBodyType = Type.freshVar(Kind.Star, loc)
-        val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
-        val lambdaBodyEff = Type.freshVar(Kind.Effect, loc)
-        for {
-          (constrs1, tpe, pur, eff) <- visitExp(exp)
-          (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-          _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
-          resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
-          resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
-          resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
-          _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
-          _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
-        } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+        def purOf(tpe: Type): Type = tpe.typeArguments.head
+
+        def effOf(tpe: Type): Type = tpe.typeArguments.drop(1).head
+
+        def argumentTypesOf(tpe: Type): List[Type] = tpe.typeArguments.drop(2).dropRight(1)
+
+        def resultTypeOf(tpe: Type): Type = tpe.typeArguments.last
+
+        exp match {
+          case KindedAst.Expression.Def(sym, innerTvar, loc2) =>
+            //
+            // Special Case: ApplyDef.
+            //
+            val defn = root.defs(sym)
+            val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val constrs1 = tconstrs1.map(_.copy(loc = loc))
+
+            for {
+              (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
+              _ <- expectTypeArguments(sym, argumentTypesOf(declaredType), tpes, exps.map(_.loc), loc)
+              _ <- unifyTypeM(innerTvar, declaredType, loc)
+              // The below line should not be needed, but it seems it is.
+              _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, purOf(declaredType), effOf(declaredType), resultTypeOf(declaredType), loc), loc)
+              resultTyp <- unifyTypeM(tvar, resultTypeOf(declaredType), loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(purOf(declaredType) :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(effOf(declaredType) :: effs, loc), loc)
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+
+          case _ =>
+            //
+            // Default Case: Apply.
+            //
+            val lambdaBodyType = Type.freshVar(Kind.Star, loc)
+            val lambdaBodyPur = Type.freshVar(Kind.Bool, loc)
+            val lambdaBodyEff = Type.freshVar(Kind.Effect, loc)
+            for {
+              (constrs1, tpe, pur, eff) <- visitExp(exp)
+              (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
+              _ <- expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyPur, lambdaBodyEff, lambdaBodyType, loc), loc)
+              resultTyp <- unifyTypeM(tvar, lambdaBodyType, loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(lambdaBodyPur :: pur :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
+              _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
+              _ <- unbindVar(lambdaBodyPur) // NB: Safe to unbind since the variable is not used elsewhere.
+            } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
+        }
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) => sop match {
         case SemanticOperator.BoolOp.Not =>

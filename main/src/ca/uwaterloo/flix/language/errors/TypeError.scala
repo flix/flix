@@ -253,23 +253,17 @@ object TypeError {
     * Over-applied Function.
     *
     * @param excessArgument the type of the excess argument.
-    * @param fullType1      the first full type.
-    * @param fullType2      the second full type.
-    * @param renv           the rigidity environment.
     * @param loc            the location where the error occurred.
     */
-  case class OverApplied(excessArgument: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument, Some(renv))}'."
+  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument, Some(renv)))}'.
+         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
          |
          |${code(loc, "over-applied function.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
 
@@ -280,23 +274,17 @@ object TypeError {
     * Under-applied Function.
     *
     * @param missingArgument the type of the missing argument.
-    * @param fullType1       the first full type.
-    * @param fullType2       the second full type.
-    * @param renv            the rigidity environment.
     * @param loc             the location where the error occurred.
     */
-  case class UnderApplied(missingArgument: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument, Some(renv))}'."
+  case class UnderApplied(missingArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Under-applied function. Missing argument of type: '${formatType(missingArgument)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Under-applied function. Missing argument of type: '${red(formatType(missingArgument, Some(renv)))}'.
+         |>> Under-applied function. Missing argument of type: '${red(formatType(missingArgument))}'.
          |
          |${code(loc, "under-applied function.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
 
@@ -308,12 +296,12 @@ object TypeError {
     *
     * @param baseType1 the first boolean formula.
     * @param baseType2 the second boolean formula.
-    * @param fullType1 the first optional full type in which the first boolean formula occurs.
-    * @param fullType2 the second optional full type in which the second boolean formula occurs.
+    * @param fullType1 the first full type in which the first boolean formula occurs.
+    * @param fullType2 the second full type in which the second boolean formula occurs.
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Option[Type], fullType2: Option[Type], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MismatchedBools(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the Boolean formulas '${formatType(baseType1, Some(renv))}' and '${formatType(baseType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -323,17 +311,9 @@ object TypeError {
          |
          |${code(loc, "mismatched boolean formulas.")}
          |
-         |${appendMismatchedBooleans(formatter)}
+         |Type One: ${cyan(formatType(fullType1, Some(renv)))}
+         |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
-    }
-
-    private def appendMismatchedBooleans(formatter: Formatter): String = (fullType1, fullType2) match {
-      case (Some(ft1), Some(ft2)) =>
-        import formatter._
-        s"""Type One: ${cyan(formatType(ft1, Some(renv)))}
-           |Type Two: ${magenta(formatType(ft2, Some(renv)))}
-           |""".stripMargin
-      case _ => "" // nop
     }
 
     def explain(formatter: Formatter): Option[String] = None
@@ -739,6 +719,35 @@ object TypeError {
          |The region variable was declared here:
          |
          |${code(rvar.loc, "region variable declared here.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error indicating an unexpected argument.
+    *
+    * @param sym      the def symbol.
+    * @param ith      the index of the unexpected argument.
+    * @param expected the expected type.
+    * @param actual   the actual type.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnexpectedArgument(sym: Symbol.DefnSym, ith: Int, expected: Type, actual: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected argument of type '${formatType(expected, Some(renv))}', but got '${formatType(actual, Some(renv))}'.
+         |
+         |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
+         |
+         |The function '${magenta(sym.name)}' expects its ${ith}th argument to be of type '${formatType(expected, Some(renv))}'.
+         |
+         |Expected: ${formatType(expected, Some(renv))}
+         |  Actual: ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
 
