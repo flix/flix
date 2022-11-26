@@ -569,35 +569,44 @@ object Typer {
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
-        def purOf(tpe: Type): Type = tpe.typeArguments.head
-
-        def effOf(tpe: Type): Type = tpe.typeArguments.drop(1).head
-
-        def argumentTypesOf(tpe: Type): List[Type] = tpe.typeArguments.drop(2).dropRight(1)
-
-        def resultTypeOf(tpe: Type): Type = tpe.typeArguments.last
-
-        exp match {
+        //
+        // Determine if there is a direct call to a Def or Sig.
+        //
+        val knownTarget = exp match {
           case KindedAst.Expression.Def(sym, innerTvar, loc2) =>
-            //
-            // Special Case: ApplyDef.
-            //
+            // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
             val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
+            Some((sym, innerTvar, constrs1, declaredType))
+
+          case _ =>
+            // Case 3: Unknown target.
+            None
+        }
+
+        knownTarget match {
+          case Some((sym, innerTvar, constrs1, declaredType)) =>
+            //
+            // Special Case: We are applying a Def or Sig and we break apart its declared type.
+            //
+            val declaredPur = declaredType.typeArguments.head
+            val declaredEff = declaredType.typeArguments.drop(1).head
+            val declaredArgumentTypes = declaredType.typeArguments.drop(2).dropRight(1)
+            val declaredResultType = declaredType.typeArguments.last
 
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
-              _ <- expectTypeArguments(sym, argumentTypesOf(declaredType), tpes, exps.map(_.loc), loc)
+              _ <- expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
               _ <- unifyTypeM(innerTvar, declaredType, loc)
               // The below line should not be needed, but it seems it is.
-              _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, purOf(declaredType), effOf(declaredType), resultTypeOf(declaredType), loc), loc)
-              resultTyp <- unifyTypeM(tvar, resultTypeOf(declaredType), loc)
-              resultPur <- unifyBoolM(pvar, Type.mkAnd(purOf(declaredType) :: purs, loc), loc)
-              resultEff <- unifyTypeM(evar, Type.mkUnion(effOf(declaredType) :: effs, loc), loc)
+              _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredEff, declaredResultType, loc), loc)
+              resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
+              resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
+              resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
             } yield (constrs1 ++ constrs2.flatten, resultTyp, resultPur, resultEff)
 
-          case _ =>
+          case None =>
             //
             // Default Case: Apply.
             //
