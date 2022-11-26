@@ -737,14 +737,14 @@ namespace TestDelayMap {
     def unionWithKeyUnionWithKey03(): Bool \ IO =
         Map.toDelayMap(Map#{1 => 5}) |>
             DelayMap.unionWithKey((k, v1, v2) -> k + v1 - v2, Map.toDelayMap(Map#{1 => 2})) |>
-            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 3})) |>
+            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 3})) |>
             DelayMap.toMap == Map#{1 => 6}
 
     @test
     def unionWithKeyUnionWithKey04(): Bool \ IO =
         Map.toDelayMap(Map#{1 => 5}) |>
-            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 2})) |>
-            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 3})) |>
+            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 2})) |>
+            DelayMap.unionWithKey((k, v1, v2) -> unsafe_cast k + v1 - v2 as \ IO, Map.toDelayMap(Map#{1 => 3})) |>
             DelayMap.toMap == Map#{1 => 6}
 
 
