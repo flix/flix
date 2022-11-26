@@ -1,4 +1,4 @@
 namespace Example/Test {
-    @test 
+    @Test 
     def exampleTest(): Bool = ???
 }
