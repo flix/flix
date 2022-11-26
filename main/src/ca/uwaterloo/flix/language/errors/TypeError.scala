@@ -726,7 +726,7 @@ object TypeError {
   }
 
   /**
-    * An error indicating an unexpected argument passed to a def.
+    * An error indicating an unexpected argument.
     *
     * @param sym      the def symbol.
     * @param ith      the index of the unexpected argument.
