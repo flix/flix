@@ -736,7 +736,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("unsafe_cast") ~ WS ~ Ascribe ~ WS ~ "as" ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast
+      SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast
     }
 
     def Upcast: Rule1[ParsedAst.Expression] = rule {
