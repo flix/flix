@@ -239,7 +239,7 @@ object Unification {
   /**
     * Unifies the `expectedTypes` types with the `actualTypes`.
     */
-  def expectTypeArguments(sym: Symbol.DefnSym, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>

@@ -573,12 +573,19 @@ object Typer {
         // Determine if there is a direct call to a Def or Sig.
         //
         val knownTarget = exp match {
-          case KindedAst.Expression.Def(sym, innerTvar, loc2) =>
+          case KindedAst.Expression.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
             val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, innerTvar, constrs1, declaredType))
+            Some((sym, tvar2, constrs1, declaredType))
+
+          case KindedAst.Expression.Sig(sym, tvar2, loc2) =>
+            // Case 2: Lookup the sym and instantiate its scheme.
+            val sig = root.classes(sym.clazz).sigs(sym)
+            val (tconstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val constrs1 = tconstrs1.map(_.copy(loc = loc))
+            Some((sym, tvar2, constrs1, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
@@ -586,7 +593,7 @@ object Typer {
         }
 
         knownTarget match {
-          case Some((sym, innerTvar, constrs1, declaredType)) =>
+          case Some((sym, tvar2, constrs1, declaredType)) =>
             //
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
@@ -598,9 +605,9 @@ object Typer {
             for {
               (constrs2, tpes, purs, effs) <- traverseM(exps)(visitExp).map(unzip4)
               _ <- expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
-              _ <- unifyTypeM(innerTvar, declaredType, loc)
+              _ <- unifyTypeM(tvar2, declaredType, loc)
               // The below line should not be needed, but it seems it is.
-              _ <- expectTypeM(innerTvar, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredEff, declaredResultType, loc), loc)
+              _ <- expectTypeM(tvar2, Type.mkUncurriedArrowWithEffect(tpes, declaredPur, declaredEff, declaredResultType, loc), loc)
               resultTyp <- unifyTypeM(tvar, declaredResultType, loc)
               resultPur <- unifyBoolM(pvar, Type.mkAnd(declaredPur :: purs, loc), loc)
               resultEff <- unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
