@@ -46,7 +46,7 @@ namespace Test/Exp/Cast {
     def testCast15(): Option[Int32] = unsafe_cast Some(42) as Option[Int32]
 
     @test
-    def testCastWithEff01(): Unit \ IO = (unsafe_cast ) as Unit \ IO
+    def testCastWithEff01(): Unit \ IO = unsafe_cast () as Unit \ IO
 
     @test
     def testCastWithEff02(): Bool \ IO = unsafe_cast true as Bool \ IO
