@@ -814,4 +814,13 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ImpossibleCast](result)
   }
 
+  test("ImpossibleCast.23") {
+    val input =
+      """
+        |def f(): String = unsafe_cast () as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
 }
