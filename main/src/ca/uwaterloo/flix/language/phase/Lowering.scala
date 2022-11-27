@@ -662,6 +662,7 @@ object Lowering {
       }
 
     case TypedAst.Expression.Spawn(exp, _, tpe, pur, eff, loc) =>
+      // Note: We explicitly ignore the region.
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Spawn(e, t, pur, eff, loc)
