@@ -46,7 +46,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         try {
             of1("end", ["p1", "p2", "p3"])
         } catch {
-            case _: ##java.nio.file.InvalidPathException => super_cast null
+            case _: ##java.nio.file.InvalidPathException => unsafe_cast null as ##java.nio.file.Path
         }
 
     @test
