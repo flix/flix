@@ -615,4 +615,22 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.SendableError](result)
   }
+
+  test("ImpossibleCast.01") {
+    val input =
+      """
+        |def f(): Int64 = unsafe_cast 1i8 as Int64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.02") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1i8 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
 }
