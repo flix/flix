@@ -416,9 +416,6 @@ object Safety {
     */
   private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubtypeResult = (tpe1.baseType, tpe2.baseType) match {
 
-    case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) =>
-      JavaSubtypeResult.Castable
-
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
 
