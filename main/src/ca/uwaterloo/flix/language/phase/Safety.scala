@@ -317,6 +317,10 @@ object Safety {
 
   }
 
+  /**
+    * Performs basic checks on the type cast `exp`. Returns a list of safety errors if there are
+    * any impossible casts.
+    */
   private def checkCastSafety(exp: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe).baseType
     val tpe2 = exp.declaredType.map(Type.eraseAliases).map(_.baseType)
