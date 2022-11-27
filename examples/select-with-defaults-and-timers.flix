@@ -29,7 +29,7 @@ def recvWithTimeout(r: Region[r], c: Receiver[Int32, r]): Int32 \ { Read(r), Wri
 def main(): Unit \ IO = region r {
     let (tx1, rx1) = Channel.buffered(r, 1);
     let (tx2, rx2) = Channel.buffered(r, 1);
-    spawn slow(123, tx1);
-    spawn slow(456, tx2);
+    spawn slow(123, tx1) @ r;
+    spawn slow(456, tx2) @ r;
     (recvWithDefault(rx1) + recvWithTimeout(r, rx2)) |> println
 }

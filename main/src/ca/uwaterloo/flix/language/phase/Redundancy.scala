@@ -684,8 +684,10 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
 
     case Expression.Par(exp, _) =>
       visitExp(exp, env0, rc)

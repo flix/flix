@@ -3,7 +3,7 @@ namespace Test/Exp/Concurrency/Select {
     @test
     def testSelectBuffered01(): Bool \ IO = region r {
         let (tx1, rx1) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
+        spawn Channel.send(1, tx1) @ r;
         select {
             case x <- recv(rx1) => x == 1
         }
@@ -13,8 +13,8 @@ namespace Test/Exp/Concurrency/Select {
     def testSelectBuffered02(): Bool \ IO = region r {
         let (tx1, rx1) = Channel.buffered(r, 1);
         let (tx2, rx2) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
-        spawn Channel.send(2, tx2);
+        spawn Channel.send(1, tx1) @ r;
+        spawn Channel.send(2, tx2) @ r;
         select {
             case x <- recv(rx1) => x == 1
             case x <- recv(rx2) => x == 2
@@ -26,9 +26,9 @@ namespace Test/Exp/Concurrency/Select {
         let (tx1, rx1) = Channel.buffered(r, 1);
         let (tx2, rx2) = Channel.buffered(r, 1);
         let (tx3, rx3) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
-        spawn Channel.send(2, tx2);
-        spawn Channel.send(3, tx3);
+        spawn Channel.send(1, tx1) @ r;
+        spawn Channel.send(2, tx2) @ r;
+        spawn Channel.send(3, tx3) @ r;
         select {
             case x <- recv(rx1) => x == 1
             case x <- recv(rx2) => x == 2
@@ -42,10 +42,10 @@ namespace Test/Exp/Concurrency/Select {
         let (tx2, rx2) = Channel.buffered(r, 1);
         let (tx3, rx3) = Channel.buffered(r, 1);
         let (tx4, rx4) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
-        spawn Channel.send(2, tx2);
-        spawn Channel.send(3, tx3);
-        spawn Channel.send(4, tx4);
+        spawn Channel.send(1, tx1) @ r;
+        spawn Channel.send(2, tx2) @ r;
+        spawn Channel.send(3, tx3) @ r;
+        spawn Channel.send(4, tx4) @ r;
         select {
             case x <- recv(rx1) => x == 1
             case x <- recv(rx1) => x == 1
@@ -64,10 +64,10 @@ namespace Test/Exp/Concurrency/Select {
         let (tx2, rx2) = Channel.buffered(r, 1);
         let (tx3, rx3) = Channel.buffered(r, 1);
         let (tx4, rx4) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
-        spawn Channel.send(2, tx2);
-        spawn Channel.send(3, tx3);
-        spawn Channel.send(4, tx4);
+        spawn Channel.send(1, tx1) @ r;
+        spawn Channel.send(2, tx2) @ r;
+        spawn Channel.send(3, tx3) @ r;
+        spawn Channel.send(4, tx4) @ r;
         select {
             case x <- recv(rx4) => x == 4
             case x <- recv(rx3) => x == 3
@@ -86,7 +86,7 @@ namespace Test/Exp/Concurrency/Select {
         let (tx2, rx2) = Channel.buffered(r, 1);
         let (_, rx3) = Channel.buffered(r, 1);
         let (_, rx4) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx2);
+        spawn Channel.send(1, tx2) @ r;
         select {
             case _ <- recv(rx4) => false
             case _ <- recv(rx3) => false
@@ -101,10 +101,10 @@ namespace Test/Exp/Concurrency/Select {
         let (tx2, rx2) = Channel.buffered(r, 1);
         let (tx3, rx3) = Channel.buffered(r, 1);
         let (tx4, rx4) = Channel.buffered(r, 1);
-        spawn Channel.send(1i8, tx1);
-        spawn Channel.send(2i16, tx2);
-        spawn Channel.send(3i32, tx3);
-        spawn Channel.send(4i64, tx4);
+        spawn Channel.send(1i8, tx1) @ r;
+        spawn Channel.send(2i16, tx2) @ r;
+        spawn Channel.send(3i32, tx3) @ r;
+        spawn Channel.send(4i64, tx4) @ r;
         select {
             case x <- recv(rx4) => x == 4i64
             case x <- recv(rx3) => x == 3i32
@@ -136,7 +136,7 @@ namespace Test/Exp/Concurrency/Select {
         let (tx11, rx11) = Channel.buffered(r, 0);
         let (tx12, rx12) = Channel.buffered(r, 0);
         let (tx13, rx13) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; spawn { Channel.send((), tx9) ; () } ; select {
+        spawn { Channel.send((), tx13) ; () } @ r; spawn { Channel.send((), tx12) ; () } @ r; spawn { Channel.send((), tx11) ; () } @ r; spawn { Channel.send((), tx10) ; () } @ r; spawn { Channel.send((), tx9) ; () } @ r; select {
         case _ <- recv(rx13) => select {
         case _ <- recv(rx11) => ()
         case _ <- recv(rx11) => ()
@@ -144,7 +144,7 @@ namespace Test/Exp/Concurrency/Select {
         let (tx43, rx43) = Channel.buffered(r, 0);
         let (tx44, rx44) = Channel.buffered(r, 0);
         let (tx45, rx45) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx45) ; () } ; spawn { Channel.send((), tx44) ; () } ; spawn { Channel.send((), tx43) ; () } ; spawn { Channel.send((), tx42) ; () } ; select {
+        spawn { Channel.send((), tx45) ; () } @ r; spawn { Channel.send((), tx44) ; () } @ r; spawn { Channel.send((), tx43) ; () } @ r; spawn { Channel.send((), tx42) ; () } @ r; select {
         case _ <- recv(rx43) => Channel.recv(rx42) ; Channel.recv(rx44) ; Channel.recv(rx45)
         case _ <- recv(rx42) => Channel.recv(rx45) ; Channel.recv(rx43) ; Channel.recv(rx44) ; ()
         }
@@ -155,7 +155,7 @@ namespace Test/Exp/Concurrency/Select {
         let (tx43, rx43) = Channel.buffered(r, 0);
         let (tx44, rx44) = Channel.buffered(r, 0);
         let (tx45, rx45) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx45) ; () } ; spawn { Channel.send((), tx44) ; () } ; spawn { Channel.send((), tx43) ; () } ; spawn { Channel.send((), tx42) ; () } ; select {
+        spawn { Channel.send((), tx45) ; () } @ r; spawn { Channel.send((), tx44) ; () } @ r; spawn { Channel.send((), tx43) ; () } @ r; spawn { Channel.send((), tx42) ; () } @ r; select {
         case _ <- recv(rx43) => Channel.recv(rx42) ; Channel.recv(rx44) ; Channel.recv(rx45) ; ()
         case _ <- recv(rx42) => Channel.recv(rx45) ; Channel.recv(rx43) ; Channel.recv(rx44)
         }
@@ -169,7 +169,7 @@ namespace Test/Exp/Concurrency/Select {
         let (tx11, rx11) = Channel.buffered(r, 0);
         let (tx12, rx12) = Channel.buffered(r, 0);
         let (tx13, rx13) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; if (false) { spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; if (true) { () } else { () } } else { spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; if (true) { () } else { () } } ; select {
+        spawn { Channel.send((), tx13) ; () } @ r; spawn { Channel.send((), tx12) ; () } @ r; if (false) { spawn { Channel.send((), tx11) ; () } @ r; spawn { Channel.send((), tx10) ; () } @ r; if (true) { () } else { () } } else { spawn { Channel.send((), tx11) ; () } @ r; spawn { Channel.send((), tx10) ; () } @ r; if (true) { () } else { () } } ; select {
         case _ <- recv(rx10) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx11)
         case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx10) ; Channel.recv(rx11) ; ()
         case _ <- recv(rx11) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx10) ; ()
@@ -184,21 +184,21 @@ namespace Test/Exp/Concurrency/Select {
         let (tx16, rx16) = Channel.buffered(r, 0);
         let (tx17, rx17) = Channel.buffered(r, 0);
         let (tx18, rx18) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; let (tx141, rx141) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; let (tx141, rx141) = Channel.buffered(r, 0);
         let (tx139, rx139) = Channel.buffered(r, 0);
         let (tx140, rx140) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { select {
+        spawn { Channel.send((), tx141) ; () } @ r; spawn { Channel.send((), tx140) ; () } @ r; spawn { Channel.send((), tx139) ; () } @ r; spawn { Channel.send((), tx141) ; () } @ r; spawn { Channel.send((), tx140) ; () } @ r; spawn { Channel.send((), tx139) ; () } @ r; spawn { Channel.send((), tx141) ; () } @ r; spawn { Channel.send((), tx140) ; () } @ r; spawn { Channel.send((), tx139) ; () } @ r; spawn { select {
         case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx139) => Channel.recv(rx140) ; Channel.recv(rx141) ; ()
         case _ <- recv(rx140) => Channel.recv(rx141) ; Channel.recv(rx139) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx139) => select {
         case _ <- recv(rx140) => ()
         case _ <- recv(rx140) => ()
         } ; Channel.recv(rx141) ; ()
         case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx15) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx14) ; ()
         case _ <- recv(rx14) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
         case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; select {
@@ -206,9 +206,9 @@ namespace Test/Exp/Concurrency/Select {
         case _ <- recv(rx16) => ()
         } ; Channel.recv(rx14)
         case _ <- recv(rx18) => Channel.recv(rx15) ; Channel.recv(rx14) ; Channel.recv(rx17) ; Channel.recv(rx16) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx16) => Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
-        } } ;
+        } } @ r;
         ()
     }
 
@@ -217,20 +217,20 @@ namespace Test/Exp/Concurrency/Select {
         let (tx10, rx10) = Channel.buffered(r, 0);
         let (tx11, rx11) = Channel.buffered(r, 0);
         let (tx12, rx12) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; let (tx40, rx40) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx12) ; () } @ r; spawn { Channel.send((), tx11) ; () } @ r; spawn { Channel.send((), tx10) ; () } @ r; let (tx40, rx40) = Channel.buffered(r, 0);
         let (tx41, rx41) = Channel.buffered(r, 0);
         let (tx42, rx42) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { select {
+        spawn { Channel.send((), tx42) ; () } @ r; spawn { Channel.send((), tx41) ; () } @ r; spawn { Channel.send((), tx40) ; () } @ r; spawn { Channel.send((), tx42) ; () } @ r; spawn { Channel.send((), tx41) ; () } @ r; spawn { Channel.send((), tx40) ; () } @ r; spawn { Channel.send((), tx42) ; () } @ r; spawn { Channel.send((), tx41) ; () } @ r; spawn { Channel.send((), tx40) ; () } @ r; spawn { Channel.send((), tx42) ; () } @ r; spawn { Channel.send((), tx41) ; () } @ r; spawn { Channel.send((), tx40) ; () } @ r; spawn { select {
         case _ <- recv(rx40) => Channel.recv(rx41) ; Channel.recv(rx42) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx40) => Channel.recv(rx42) ; Channel.recv(rx41) ; ()
         case _ <- recv(rx40) => Channel.recv(rx42) ; Channel.recv(rx41) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
         case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
-        } } ; select {
+        } } @ r; select {
         case _ <- recv(rx10) => Channel.recv(rx12) ; Channel.recv(rx11) ; ()
         };
         ()
@@ -242,34 +242,34 @@ namespace Test/Exp/Concurrency/Select {
         let (tx15, rx15) = Channel.buffered(r, 0);
         let (tx16, rx16) = Channel.buffered(r, 0);
         let (tx17, rx17) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { select {
+        spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { select {
         case _ <- recv(rx17) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16)
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx16) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx171, rx171) = Channel.buffered(r, 0);
         let (tx172, rx172) = Channel.buffered(r, 0);
         let (tx173, rx173) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { select {
+        spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { select {
         case _ <- recv(rx172) => Channel.recv(rx173) ; Channel.recv(rx171) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
         case _ <- recv(rx173) => Channel.recv(rx172) ; Channel.recv(rx171) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
         case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
         case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx171) => Channel.recv(rx173) ; select {
         case _ <- recv(rx172) => ()
         case _ <- recv(rx172) => ()
         } ; ()
         case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
-        } } ; ()
+        } } @ r; ()
         case _ <- recv(rx14) => Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx17) => Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
-        } } ;
+        } } @ r;
         ()
     }
 
@@ -277,14 +277,14 @@ namespace Test/Exp/Concurrency/Select {
     def testSelectRandom06(): Unit \ IO = region r {
         let (tx2, rx2) = Channel.buffered(r, 0);
         let (tx3, rx3) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx3) ; () } ; spawn { Channel.send((), tx2) ; () } ; Channel.recv(rx3) ; select {
+        spawn { Channel.send((), tx3) ; () } @ r; spawn { Channel.send((), tx2) ; () } @ r; Channel.recv(rx3) ; select {
         case _ <- recv(rx2) => ()
         case _ <- recv(rx2) => ()
         } ; let (tx24, rx24) = Channel.buffered(r, 0);
         spawn { select {
         case _ <- recv(rx24) => ()
         case _ <- recv(rx24) => ()
-        } } ; Channel.send((), tx24) ;
+        } } @ r; Channel.send((), tx24) ;
         ()
     }
 
@@ -295,28 +295,28 @@ namespace Test/Exp/Concurrency/Select {
         let (tx14, rx14) = Channel.buffered(r, 0);
         let (tx15, rx15) = Channel.buffered(r, 0);
         let (tx16, rx16) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { select {
+        spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx13) ; () } @ r; spawn { Channel.send((), tx12) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx13) ; () } @ r; spawn { Channel.send((), tx12) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx13) ; () } @ r; spawn { Channel.send((), tx12) ; () } @ r; spawn { select {
         case _ <- recv(rx14) => Channel.recv(rx12) ; Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx16) => Channel.recv(rx13) ; Channel.recv(rx14) ; Channel.recv(rx12) ; Channel.recv(rx15) ; ()
         case _ <- recv(rx15) => Channel.recv(rx14) ; Channel.recv(rx13) ; Channel.recv(rx16) ; Channel.recv(rx12) ; ()
         case _ <- recv(rx12) => Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx180, rx180) = Channel.buffered(r, 0);
         let (tx178, rx178) = Channel.buffered(r, 0);
         let (tx179, rx179) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx180) ; () } ; spawn { Channel.send((), tx179) ; () } ; spawn { Channel.send((), tx178) ; () } ; spawn { Channel.send((), tx180) ; () } ; spawn { Channel.send((), tx179) ; () } ; spawn { Channel.send((), tx178) ; () } ; spawn { select {
+        spawn { Channel.send((), tx180) ; () } @ r; spawn { Channel.send((), tx179) ; () } @ r; spawn { Channel.send((), tx178) ; () } @ r; spawn { Channel.send((), tx180) ; () } @ r; spawn { Channel.send((), tx179) ; () } @ r; spawn { Channel.send((), tx178) ; () } @ r; spawn { select {
         case _ <- recv(rx178) => Channel.recv(rx180) ; Channel.recv(rx179)
         case _ <- recv(rx179) => select {
         case _ <- recv(rx178) => ()
         case _ <- recv(rx178) => ()
         } ; Channel.recv(rx180) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx178) => Channel.recv(rx179) ; Channel.recv(rx180) ; ()
         case _ <- recv(rx180) => Channel.recv(rx178) ; Channel.recv(rx179) ; ()
-        } } ; ()
-        } } ; spawn { select {
+        } } @ r; ()
+        } } @ r; spawn { select {
         case _ <- recv(rx14) => Channel.recv(rx15) ; Channel.recv(rx12) ; Channel.recv(rx16) ; Channel.recv(rx13) ; ()
         case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
-        } } ;
+        } } @ r;
         ()
     }
 
@@ -327,19 +327,19 @@ namespace Test/Exp/Concurrency/Select {
         let (tx17, rx17) = Channel.buffered(r, 0);
         let (tx18, rx18) = Channel.buffered(r, 0);
         let (tx19, rx19) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { select {
+        spawn { Channel.send((), tx19) ; () } @ r; spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx19) ; () } @ r; spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx19) ; () } @ r; spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx19) ; () } @ r; spawn { Channel.send((), tx18) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { select {
         case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx15) => Channel.recv(rx19) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
         case _ <- recv(rx18) => Channel.recv(rx19) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
         case _ <- recv(rx19) => Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx15) ; ()
         case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
         case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx16) ; Channel.recv(rx18) ; Channel.recv(rx19) ; ()
         case _ <- recv(rx16) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx19) ; ()
         case _ <- recv(rx19) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
-        } } ; spawn { select {
+        } } @ r; spawn { select {
         case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; Channel.recv(rx15) ; ()
         case _ <- recv(rx16) => Channel.recv(rx18) ; select {
         case _ <- recv(rx15) => ()
@@ -348,12 +348,12 @@ namespace Test/Exp/Concurrency/Select {
         let (tx215, rx215) = Channel.buffered(r, 0);
         let (tx216, rx216) = Channel.buffered(r, 0);
         let (tx217, rx217) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx217) ; () } ; spawn { Channel.send((), tx216) ; () } ; spawn { Channel.send((), tx215) ; () } ; spawn { Channel.send((), tx214) ; () } ; select {
+        spawn { Channel.send((), tx217) ; () } @ r; spawn { Channel.send((), tx216) ; () } @ r; spawn { Channel.send((), tx215) ; () } @ r; spawn { Channel.send((), tx214) ; () } @ r; select {
         case _ <- recv(rx215) => Channel.recv(rx214) ; Channel.recv(rx216) ; Channel.recv(rx217) ; ()
         case _ <- recv(rx214) => Channel.recv(rx216) ; Channel.recv(rx215) ; Channel.recv(rx217) ; ()
         case _ <- recv(rx216) => Channel.recv(rx214) ; Channel.recv(rx217) ; Channel.recv(rx215)
         }
-        } } ;
+        } } @ r;
         ()
     }
 
@@ -366,10 +366,10 @@ namespace Test/Exp/Concurrency/Select {
         spawn { select {
         case _ <- recv(rx8) => ()
         case _ <- recv(rx8) => ()
-        } ; Channel.send((), tx9) ; () } ; spawn { Channel.recv(rx7) ; Channel.send((), tx8) ; () } ; spawn { select {
+        } ; Channel.send((), tx9) ; () } @ r; spawn { Channel.recv(rx7) ; Channel.send((), tx8) ; () } @ r; spawn { select {
         case _ <- recv(rx6) => ()
         case _ <- recv(rx6) => ()
-        } ; Channel.send((), tx7) ; () } ; Channel.send((), tx6) ; Channel.recv(rx9);
+        } ; Channel.send((), tx7) ; () } @ r; Channel.send((), tx6) ; Channel.recv(rx9);
         ()
     }
 
@@ -379,10 +379,10 @@ namespace Test/Exp/Concurrency/Select {
         let (tx11, rx11) = Channel.buffered(r, 0);
         let (tx12, rx12) = Channel.buffered(r, 0);
         let (tx13, rx13) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx13) ; () } ;
-        spawn { Channel.send((), tx12) ; () } ;
-        spawn { Channel.send((), tx11) ; () } ;
-        spawn { Channel.send((), tx10) ; () } ;
+        spawn { Channel.send((), tx13) ; () } @ r;
+        spawn { Channel.send((), tx12) ; () } @ r;
+        spawn { Channel.send((), tx11) ; () } @ r;
+        spawn { Channel.send((), tx10) ; () } @ r;
         select {
             case _ <- recv(rx10) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx11)
             case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx10) ; Channel.recv(rx11)
@@ -435,7 +435,7 @@ namespace Test/Exp/Concurrency/Select {
     @test
     def testSelectOptionalSyntax01(): Bool \ IO = region r {
         let (tx1, rx1) = Channel.buffered(r, 1);
-        spawn Channel.send(1, tx1);
+        spawn Channel.send(1, tx1) @ r;
         select {
             case x <- Channel.recv(rx1) => x == 1
         }

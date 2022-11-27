@@ -1732,13 +1732,17 @@ object Typer {
           resultEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Spawn(exp, loc) =>
+      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs, tpe, _, eff) <- visitExp(exp)
+          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultPur = Type.Impure
-          resultEff = eff
-        } yield (constrs, resultTyp, resultPur, resultEff)
+          resultPur = Type.mkAnd(Type.Impure, regionVar, loc)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Par(exp, _) =>
         for {
@@ -2350,12 +2354,13 @@ object Typer {
         val eff = Type.mkUnion(effs, loc)
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), pur, eff, loc)
 
-      case KindedAst.Expression.Spawn(exp, loc) =>
-        val e = visitExp(exp, subst0)
+      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
-        val pur = e.pur
-        val eff = e.eff
-        TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+        val pur = Type.Impure
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+        TypedAst.Expression.Spawn(e1, e2, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)

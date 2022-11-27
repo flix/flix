@@ -992,7 +992,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ keyword("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+      SP ~ keyword("spawn") ~ WS ~ Expression ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
     }
 
     def Par: Rule1[ParsedAst.Expression.Par] = rule {

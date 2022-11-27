@@ -271,8 +271,8 @@ object Safety {
         } :::
           default.map(visit).getOrElse(Nil)
 
-      case Expression.Spawn(exp, _, _, _, _) =>
-        visit(exp)
+      case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Par(exp, _) =>
         // Only tuple expressions are allowed to be parallelized with `par`.

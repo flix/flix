@@ -196,7 +196,7 @@ object NamedAst {
 
     case class SelectChannel(rules: List[NamedAst.SelectChannelRule], default: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Spawn(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Spawn(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

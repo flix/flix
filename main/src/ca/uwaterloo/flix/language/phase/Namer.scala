@@ -1012,9 +1012,10 @@ object Namer {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, loc)
       }
 
-    case WeededAst.Expression.Spawn(exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0, ns0) map {
-        case e => NamedAst.Expression.Spawn(e, loc)
+    case WeededAst.Expression.Spawn(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0, ns0), visitExp(exp2, env0, uenv0, tenv0, ns0)) {
+        case (e1, e2) =>
+          NamedAst.Expression.Spawn(e1, e2, loc)
       }
 
     case WeededAst.Expression.Par(exp, loc) =>
@@ -1537,7 +1538,7 @@ object Namer {
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Spawn(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.ParYield(frags, exp, _) => frags.flatMap(f => freeVars(f.exp)) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)

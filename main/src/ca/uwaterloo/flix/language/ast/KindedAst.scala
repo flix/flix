@@ -175,7 +175,7 @@ object KindedAst {
 
     case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Spawn(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Spawn(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 

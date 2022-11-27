@@ -232,7 +232,7 @@ object TypedAstOps {
 
         rs ++ d
 
-      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
+      case Expression.Spawn(exp1, exp2, _, _, _, _) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Par(exp, _) => visitExp(exp, env0)
 
@@ -404,7 +404,7 @@ object TypedAstOps {
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
-    case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
@@ -645,8 +645,8 @@ object TypedAstOps {
         case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      freeVars(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Par(exp, _) =>
       freeVars(exp)
