@@ -197,8 +197,9 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        visit(exp)
+      case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
+        val errors = checkCastSafety(e)
+        visit(exp) ::: errors
 
       case Expression.Mask(exp, _, _, _, _) =>
         visit(exp)
@@ -314,6 +315,20 @@ object Safety {
 
     visit(e0)
 
+  }
+
+  private def checkCastSafety(exp: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.tpe).baseType
+    val tpe2 = exp.declaredType.map(Type.eraseAliases).map(_.baseType)
+
+    (tpe1, tpe2) match {
+
+      case (Type.Int8, Some(Type.Int8)) => Nil
+
+      case (Type.Int8, Some(t)) => ImpossibleCast(Type.Int8, t, exp.loc) :: Nil
+
+      case _ => Nil
+    }
   }
 
   /**
