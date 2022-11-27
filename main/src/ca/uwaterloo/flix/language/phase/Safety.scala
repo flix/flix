@@ -323,9 +323,37 @@ object Safety {
 
     (tpe1, tpe2) match {
 
-      case (Type.Int8, Some(Type.Int8)) => Nil
+      case (Type.Unit, Some(Type.Unit)) => Nil
+      case (Type.Unit, Some(t)) => ImpossibleCast(Type.Unit, t, exp.loc) :: Nil
 
+      case (Type.Bool, Some(Type.Bool)) => Nil
+      case (Type.Bool, Some(t)) => ImpossibleCast(Type.Bool, t, exp.loc) :: Nil
+
+      case (Type.Int8, Some(Type.Int8)) => Nil
       case (Type.Int8, Some(t)) => ImpossibleCast(Type.Int8, t, exp.loc) :: Nil
+
+      case (Type.Int16, Some(Type.Int16)) => Nil
+      case (Type.Int16, Some(t)) => ImpossibleCast(Type.Int16, t, exp.loc) :: Nil
+
+      case (Type.Int32, Some(Type.Int32)) => Nil
+      case (Type.Int32, Some(t)) => ImpossibleCast(Type.Int32, t, exp.loc) :: Nil
+
+      case (Type.Int64, Some(Type.Int64)) => Nil
+      case (Type.Int64, Some(t)) => ImpossibleCast(Type.Int64, t, exp.loc) :: Nil
+
+      case (Type.BigInt, Some(Type.BigInt)) => Nil
+      case (Type.BigInt, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+      case (Type.BigInt, Some(t)) => ImpossibleCast(Type.BigInt, t, exp.loc) :: Nil
+
+      case (Type.Float32, Some(Type.Float32)) => Nil
+      case (Type.Float32, Some(t)) => ImpossibleCast(Type.Float32, t, exp.loc) :: Nil
+
+      case (Type.Float64, Some(Type.Float64)) => Nil
+      case (Type.Float64, Some(t)) => ImpossibleCast(Type.Float64, t, exp.loc) :: Nil
+
+      case (Type.BigDecimal, Some(Type.BigDecimal)) => Nil
+      case (Type.BigDecimal, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+      case (Type.BigDecimal, Some(t)) => ImpossibleCast(Type.BigDecimal, t, exp.loc) :: Nil
 
       case _ => Nil
     }
