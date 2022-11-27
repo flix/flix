@@ -633,4 +633,167 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
   }
+
+  test("ImpossibleCast.03") {
+    val input =
+      """
+        |def f(): Int64 = unsafe_cast 1i16 as Int64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.04") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1i16 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.05") {
+    val input =
+      """
+        |def f(): Int64 = unsafe_cast 1i32 as Int64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.06") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1i32 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.07") {
+    val input =
+      """
+        |def f(): Int8 = unsafe_cast 1i64 as Int8
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.08") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1i64 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.09") {
+    val input =
+      """
+        |def f(): Float64 = unsafe_cast 1i64 as Float64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.10") {
+    val input =
+      """
+        |def f(): Int8 = unsafe_cast 1ii as Int8
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.11") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1ii as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.12") {
+    val input =
+      """
+        |def f(): Int8 = unsafe_cast 1.0f32 as Int8
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.13") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1.0f32 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.14") {
+    val input =
+      """
+        |def f(): Float64 = unsafe_cast 1.0f32 as Float64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.15") {
+    val input =
+      """
+        |def f(): Int64 = unsafe_cast 1.0f64 as Int64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.16") {
+    val input =
+      """
+        |def f(): String = unsafe_cast 1.0f64 as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.17") {
+    val input =
+      """
+        |def f(): Char = unsafe_cast 1.0f64 as Char
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.18") {
+    val input =
+      """
+        |def f(): Char = unsafe_cast "aaa" as Char
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.19") {
+    val input =
+      """
+        |def f(): Unit = unsafe_cast "a" as Unit
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.20") {
+    val input =
+      """
+        |def f(): Float64 = unsafe_cast -1.0ff as Float64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
 }
