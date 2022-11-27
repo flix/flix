@@ -554,7 +554,7 @@ namespace Graph {
     ///
     /// Returns the value inside the `d` value.
     ///
-    pub def destructDown(d: Down[a]): a = {
+    def destructDown(d: Down[a]): a = {
         let Down(a) = d;
         a
     }
