@@ -305,7 +305,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         // Cast the println to allow escaping effects
         val src =
           s"""def ${main.name}(): Unit \\ IO =
-             |println($s) as \\ IO
+             |unsafe_cast println($s) as \\ IO
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
         run(main)
