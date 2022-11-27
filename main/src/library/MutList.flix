@@ -30,7 +30,7 @@ instance Newable[MutList[a]] {
 }
 
 instance Scoped[MutList[a]] {
-    pub def regionOf(_: MutList[a, r]): Region[r] = () as Region[r]
+    pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 instance Iterable[MutList] {

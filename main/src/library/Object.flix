@@ -29,7 +29,7 @@ namespace Object {
             case _: Int16 => false
             case _: Int32 => false
             case _: Int64 => false
-            case _: _ => isNull(x as ##java.lang.Object)
+            case _: _ => isNull(unsafe_cast x as ##java.lang.Object)
         }
 
     ///
@@ -44,6 +44,6 @@ namespace Object {
     @Unsafe
     pub def toString(x: a): String =
         import static java.util.Objects.toString(##java.lang.Object): String \ {};
-        toString(x as ##java.lang.Object)
+        toString(unsafe_cast x as ##java.lang.Object)
 
 }

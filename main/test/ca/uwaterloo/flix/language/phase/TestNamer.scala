@@ -1232,7 +1232,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("IllegalWildType.04") {
     val input =
       """
-        |def foo(): String = 123 as _
+        |def foo(): String = unsafe_cast 123 as _
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.IllegalWildType](result)

@@ -1,12 +1,12 @@
 namespace Test/Exp/Jvm/NewObject {
 
   import java.lang.Object
-  import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface, 
-                    TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods, 
-                    TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface, 
-                    TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface, 
-                    TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface, 
-                    TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods, 
+  import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface,
+                    TestClass, TestClassWithDefaultConstructor, TestClassWithNonDefaultConstructor, TestDefaultMethods,
+                    TestFloat32ArrayInterface, TestFloat32Interface, TestFloat64ArrayInterface, TestFloat64Interface,
+                    TestFunctionalInterface, TestGenericInterface, TestGenericMethod, TestInt8ArrayInterface,
+                    TestInt16ArrayInterface, TestInt16Interface, TestInt32ArrayInterface, TestInt32Interface,
+                    TestInt64ArrayInterface, TestInt64Interface, TestNonPublicInterface, TestOverloadedMethods,
                     TestStackOffsets, TestThrowingInterface, TestVarargsInterface, TestVoidInterface}
 
   def implementSerializable(): ##java.io.Serializable \ IO =
@@ -18,38 +18,38 @@ namespace Test/Exp/Jvm/NewObject {
   @test
   def testImplementInterface01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
-    let anon = implementSerializable() as ##java.lang.Object;
+    let anon = unsafe_cast implementSerializable() as ##java.lang.Object;
     toString(anon) |> String.startsWith(prefix = "Anon")
 
   @test
   def testImplementInterface02(): Bool \ IO =
     import java.lang.Object.hashCode(): Int32 \ {};
-    let anon = implementSerializable() as ##java.lang.Object;
-    let anon2 = implementSerializable() as ##java.lang.Object;
+    let anon = unsafe_cast implementSerializable() as ##java.lang.Object;
+    let anon2 = unsafe_cast implementSerializable() as ##java.lang.Object;
     hashCode(anon) != hashCode(anon2)
 
   @test
   def testImplementInterface03(): Bool \ IO =
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = implementSerializable() as ##java.lang.Object;
-    let anon2 = implementSerializable() as ##java.lang.Object;
+    let anon = unsafe_cast implementSerializable() as ##java.lang.Object;
+    let anon2 = unsafe_cast implementSerializable() as ##java.lang.Object;
     not equals(anon, anon2)
 
   @test
   def testImplementInterface04(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = implementSerializable() as ##java.lang.Object;
-    let anon2 = implementSerializable() as ##java.lang.Object;
-    equals(getClass(anon) as ##java.lang.Object, getClass(anon2) as ##java.lang.Object)
+    let anon = unsafe_cast implementSerializable() as ##java.lang.Object;
+    let anon2 = unsafe_cast implementSerializable() as ##java.lang.Object;
+    equals(unsafe_cast getClass(anon) as ##java.lang.Object, unsafe_cast getClass(anon2) as ##java.lang.Object)
 
   @test
   def testImplementInterface05(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = implementSerializable() as ##java.lang.Object;
-    let anon2 = implementSerializableAgain() as ##java.lang.Object;
-    not equals(getClass(anon) as ##java.lang.Object, getClass(anon2) as ##java.lang.Object)
+    let anon = unsafe_cast implementSerializable() as ##java.lang.Object;
+    let anon2 = unsafe_cast implementSerializableAgain() as ##java.lang.Object;
+    not equals(unsafe_cast getClass(anon) as ##java.lang.Object, unsafe_cast getClass(anon2) as ##java.lang.Object)
 
   @test
   def testVoidInterface01(): Bool \ IO =
@@ -230,8 +230,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: ##java.lang.Object): ##java.lang.Object =
-        let str = x as String;
-        "${str}, ${str}" as ##java.lang.Object
+        let str = unsafe_cast x as String;
+        unsafe_cast "${str}, ${str}" as ##java.lang.Object
     };
     runTest(anon)
 
@@ -240,8 +240,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericMethod.runTest(TestGenericMethod): Bool;
     let anon = new TestGenericMethod {
       def testMethod(_this: TestGenericMethod, x: ##java.lang.Object): ##java.lang.Object =
-        let str = x as String;
-        "${str}, ${str}" as ##java.lang.Object
+        let str = unsafe_cast x as String;
+        unsafe_cast "${str}, ${str}" as ##java.lang.Object
     };
     runTest(anon)
 
@@ -250,8 +250,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: Object): Object =
-        let str = x as String;
-        "${str}, ${str}" as Object
+        let str = unsafe_cast x as String;
+        unsafe_cast "${str}, ${str}" as Object
     };
     runTest(anon)
 
@@ -286,7 +286,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new ##java.util.Comparator {
       def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
     };
-    compare(anon, "foo" as Object, "bar" as Object) == 0
+    compare(anon, unsafe_cast "foo" as Object, unsafe_cast "bar" as Object) == 0
 
   @test
   def testClassWithDefaultConstructor01(): Bool \ IO =
