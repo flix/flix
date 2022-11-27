@@ -318,46 +318,50 @@ object Safety {
   }
 
   /**
-    * Performs basic checks on the type cast `exp`. Returns a list of safety errors if there are
+    * Performs basic checks on the type cast `cast`. Returns a list of safety errors if there are
     * any impossible casts.
     */
-  private def checkCastSafety(exp: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe).baseType
-    val tpe2 = exp.declaredType.map(Type.eraseAliases).map(_.baseType)
+  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
+    val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
     (tpe1, tpe2) match {
 
       case (Type.Unit, Some(Type.Unit)) => Nil
-      case (Type.Unit, Some(t)) => ImpossibleCast(Type.Unit, t, exp.loc) :: Nil
+      case (Type.Unit, Some(t)) => ImpossibleCast(Type.Unit, t, cast.loc) :: Nil
 
       case (Type.Bool, Some(Type.Bool)) => Nil
-      case (Type.Bool, Some(t)) => ImpossibleCast(Type.Bool, t, exp.loc) :: Nil
+      case (Type.Bool, Some(t)) => ImpossibleCast(Type.Bool, t, cast.loc) :: Nil
 
       case (Type.Int8, Some(Type.Int8)) => Nil
-      case (Type.Int8, Some(t)) => ImpossibleCast(Type.Int8, t, exp.loc) :: Nil
+      case (Type.Int8, Some(t)) => ImpossibleCast(Type.Int8, t, cast.loc) :: Nil
 
       case (Type.Int16, Some(Type.Int16)) => Nil
-      case (Type.Int16, Some(t)) => ImpossibleCast(Type.Int16, t, exp.loc) :: Nil
+      case (Type.Int16, Some(t)) => ImpossibleCast(Type.Int16, t, cast.loc) :: Nil
 
       case (Type.Int32, Some(Type.Int32)) => Nil
-      case (Type.Int32, Some(t)) => ImpossibleCast(Type.Int32, t, exp.loc) :: Nil
+      case (Type.Int32, Some(t)) => ImpossibleCast(Type.Int32, t, cast.loc) :: Nil
 
       case (Type.Int64, Some(Type.Int64)) => Nil
-      case (Type.Int64, Some(t)) => ImpossibleCast(Type.Int64, t, exp.loc) :: Nil
+      case (Type.Int64, Some(t)) => ImpossibleCast(Type.Int64, t, cast.loc) :: Nil
 
       case (Type.BigInt, Some(Type.BigInt)) => Nil
       case (Type.BigInt, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
-      case (Type.BigInt, Some(t)) => ImpossibleCast(Type.BigInt, t, exp.loc) :: Nil
+      case (Type.BigInt, Some(t)) => ImpossibleCast(Type.BigInt, t, cast.loc) :: Nil
 
       case (Type.Float32, Some(Type.Float32)) => Nil
-      case (Type.Float32, Some(t)) => ImpossibleCast(Type.Float32, t, exp.loc) :: Nil
+      case (Type.Float32, Some(t)) => ImpossibleCast(Type.Float32, t, cast.loc) :: Nil
 
       case (Type.Float64, Some(Type.Float64)) => Nil
-      case (Type.Float64, Some(t)) => ImpossibleCast(Type.Float64, t, exp.loc) :: Nil
+      case (Type.Float64, Some(t)) => ImpossibleCast(Type.Float64, t, cast.loc) :: Nil
 
       case (Type.BigDecimal, Some(Type.BigDecimal)) => Nil
       case (Type.BigDecimal, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
-      case (Type.BigDecimal, Some(t)) => ImpossibleCast(Type.BigDecimal, t, exp.loc) :: Nil
+      case (Type.BigDecimal, Some(t)) => ImpossibleCast(Type.BigDecimal, t, cast.loc) :: Nil
+
+      case (Type.Str, Some(Type.Str)) => Nil
+      case (Type.Str, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+      case (Type.Str, Some(t)) => ImpossibleCast(Type.Str, t, cast.loc) :: Nil
 
       case _ => Nil
     }
