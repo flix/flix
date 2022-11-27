@@ -993,12 +993,13 @@ object ParsedAst {
     /**
       * Cast Expression.
       *
+      * @param sp1       the position of the first character in the expression.
       * @param exp       the expression.
       * @param tpe       the optional type.
       * @param purAndEff the optional purity and effect.
       * @param sp2       the position of the last character in the expression.
       */
-    case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Cast(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Mask expression
