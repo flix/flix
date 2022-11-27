@@ -136,9 +136,9 @@ namespace Environment {
         import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
         import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
         if (hasNext(iter))
-            let entry = next(iter) as ##java.util.Map$Entry;
-            let key = getKey(entry) as String;
-            let value = getValue(entry) as String;
+            let entry = unsafe_cast next(iter) as ##java.util.Map$Entry;
+            let key = unsafe_cast getKey(entry) as String;
+            let value = unsafe_cast getValue(entry) as String;
             getEnvHelper(iter, Map.insert(key, value, m))
         else
             m

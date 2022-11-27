@@ -28,7 +28,7 @@ namespace Fixpoint/Tuple {
         pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
             let Tuple(a) = x;
             let Tuple(b) = y;
-            Array.sameElements(a, b) as \ {}
+            unsafe_cast Array.sameElements(a, b) as \ {}
     }
 
     // NB: Unsafe instance.
@@ -36,19 +36,19 @@ namespace Fixpoint/Tuple {
         pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
             let Tuple(a) = x;
             let Tuple(b) = y;
-            Array.compare(a, b) as \ {}
+            unsafe_cast Array.compare(a, b) as \ {}
     }
 
     ///
     /// Creates an empty tuple consisting of the elements in `l`.
     ///
     pub def new(l: f[v]): Tuple[v] with Foldable[f] =
-        Tuple(Foldable.toArray(Static, l)) as \ {}
+        unsafe_cast Tuple(Foldable.toArray(Static, l)) as \ {}
 
     ///
     /// Converts `t` to a list.
     ///
-    pub def toList(t: Tuple[v]): List[v] = {
+    pub def toList(t: Tuple[v]): List[v] = unsafe_cast {
         let Tuple(a) = t;
         Array.toList(a)
     } as \ {}
@@ -64,7 +64,7 @@ namespace Fixpoint/Tuple {
     /// Returns the value at index `i` in `t`.
     /// Throws a runtime exception if `v` is out of bounds.
     ///
-    pub def valueAt(t: Tuple[v], v: Int32): v = {
+    pub def valueAt(t: Tuple[v], v: Int32): v = unsafe_cast {
         let Tuple(a) = t;
         a[v]
     } as \ {}

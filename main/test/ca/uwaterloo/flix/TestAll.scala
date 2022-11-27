@@ -33,5 +33,4 @@ class TestAll extends Suites(
   new ToolsSuite,
   new UtilSuite,
   new TestMain,
-  new TestTutorials
 )
