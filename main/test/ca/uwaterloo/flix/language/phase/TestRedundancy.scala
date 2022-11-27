@@ -47,11 +47,12 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.buffered(Static, 1);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.buffered(r, 1);
            |    select {
-           |        case _x <- recv(r) => _x
+           |        case _x <- recv(rx) => _x
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -255,14 +256,15 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.02") {
     val input =
       """
-        |def f(): Int32 \ IO =
+        |def f(): Int32 = region r {
         |    let x = 123;
-        |    let (s, r) = Channel.buffered(Static, 1);
-        |    Channel.send(456, s);
+        |    let (tx, rx) = Channel.buffered(r, 1);
+        |    Channel.send(456, tx);
         |    select {
-        |        case y <- recv(r) => y
-        |        case x <- recv(r) => x
+        |        case y <- recv(rx) => y
+        |        case x <- recv(rx) => x
         |    }
+        |}
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -738,11 +740,12 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered(Static);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.unbuffered(r);
            |    select {
-           |        case x <- recv(r) => 123
+           |        case x <- recv(rx) => 123
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -752,12 +755,13 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered(Static);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.unbuffered(r);
            |    select {
-           |        case x <- recv(r) => x
-           |        case x <- recv(r) => 123
+           |        case x <- recv(rx) => x
+           |        case x <- recv(rx) => 123
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

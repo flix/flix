@@ -55,23 +55,25 @@ namespace Test/Unused/Var {
         }
 
     @test
-    def testUnusedVar10(): Int32 \ IO =
-        let (s, r) = Channel.buffered(Static, 1);
-        Channel.send(0, s);
+    def testUnusedVar10(): Int32 = region r {
+        let (tx, rx) = Channel.buffered(r, 1);
+        Channel.send(0, tx);
         select {
-            case _foo <- recv(r) => 123
+            case _foo <- recv(rx) => 123
         }
-
+    }
+    
     @test
-    def testUnusedVar11(): Int32 \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        Channel.send(0, s1);
-        Channel.send(0, s2);
+    def testUnusedVar11(): Int32 = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        Channel.send(0, tx1);
+        Channel.send(0, tx2);
         select {
-            case _foo <- recv(r1) => 123
-            case _bar <- recv(r2) => 456
+            case _foo <- recv(rx1) => 123
+            case _bar <- recv(rx2) => 456
         }
+    }
 
     // NB: Compile, but not execute.
     pub def testUnusedVar12(): Int32 =
