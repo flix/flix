@@ -17,8 +17,8 @@
 ///
 /// A library of functions that operates on graphs, represented as foldable
 /// collections of either pairs or triples, for unweighted and weighted graphs
-/// repsectively. These pairs, or triples, represent directed edges while
-/// nodes(vertices) are given implicitely.
+/// respectively. These pairs, or triples, represent directed edges while
+/// nodes(vertices) are given implicitly.
 ///
 namespace Graph {
 
@@ -73,7 +73,7 @@ namespace Graph {
     ///
     /// Returns the strongly connected components of the directed graph `g`.
     /// Two nodes are in the same component if and only if they can both
-    /// reach eachother.
+    /// reach each other.
     ///
     pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
@@ -83,7 +83,7 @@ namespace Graph {
             Connected(n1; Set#{n2}) :- Reachable(n1, n2), Reachable(n2, n1).
         };
         let components = #{
-            // After the full computation of `Connected`, dublicates are removed
+            // After the full computation of `Connected`, duplicates are removed
             // by checking that `n` is the minimum in the strongly connected
             // component.
             Components(s) :- fix Connected(n; s), if Some(n) == Set.minimum(s).
@@ -166,8 +166,8 @@ namespace Graph {
             NodeRank(x, rank(x, ns)) :- Node(x), fix Nodes(;ns).
             // `Dist(x, y, k; w)` says that `x` can reach `y` with a path of
             // length `w` using only intermediate nodes of rank less than
-            // `k`. The `k` parameter is to control the nuber of iterations.
-            // Direct paths use no intermediate vetices.
+            // `k`. The `k` parameter is to control the number of iterations.
+            // Direct paths use no intermediate vertices.
             Dist(x, x, 0; Down(0)) :- Node(x).
             Dist(x, y, 0; Down(w)) :- Edge(x, w, y).
             // If there exists a path of length `w` without using node `k+1`
@@ -327,7 +327,7 @@ namespace Graph {
             After(x, y) :- Edge(y, x).
             After(x, y) :- After(z, y), Edge(z, x).
 
-            // Find a consistent index for each node, not nessecarily unique.
+            // Find a consistent index for each node, not necessarily unique.
             Index(x; 0) :- Node(x), not EdgeSecond(x), EdgeFirst(x).
             Index(x; i+1) :- Before(y, x), not Before(x, y),
                                After(x, y), Index(y; i).
@@ -554,7 +554,7 @@ namespace Graph {
     ///
     /// Returns the value inside the `d` value.
     ///
-    pub def destructDown(d: Down[a]): a = {
+    def destructDown(d: Down[a]): a = {
         let Down(a) = d;
         a
     }
