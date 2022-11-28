@@ -619,7 +619,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.01") {
     val input =
       """
-        |def f(): Int64 = unsafe_cast 1i8 as Int64
+        |def f(): Int16 = unsafe_cast 1i8 as Int16
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -628,7 +628,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.02") {
     val input =
       """
-        |def f(): String = unsafe_cast 1i8 as String
+        |def f(): Int32 = unsafe_cast 1i8 as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -637,16 +637,17 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.03") {
     val input =
       """
-        |def f(): Int64 = unsafe_cast 1i16 as Int64
+        |def f(): Int64 = unsafe_cast 1i8 as Int64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
   }
 
+
   test("ImpossibleCast.04") {
     val input =
       """
-        |def f(): String = unsafe_cast 1i16 as String
+        |def f(): Int64 = unsafe_cast 1i16 as Int8
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -655,7 +656,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.05") {
     val input =
       """
-        |def f(): Int64 = unsafe_cast 1i32 as Int64
+        |def f(): Int32 = unsafe_cast 1i16 as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -664,7 +665,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.06") {
     val input =
       """
-        |def f(): String = unsafe_cast 1i32 as String
+        |def f(): Int64 = unsafe_cast 1i16 as Int64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -673,7 +674,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.07") {
     val input =
       """
-        |def f(): Int8 = unsafe_cast 1i64 as Int8
+        |def f(): Int8 = unsafe_cast 1i32 as Int8
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -682,7 +683,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.08") {
     val input =
       """
-        |def f(): String = unsafe_cast 1i64 as String
+        |def f(): Int16 = unsafe_cast 1i32 as Int16
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -691,7 +692,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.09") {
     val input =
       """
-        |def f(): Float64 = unsafe_cast 1i64 as Float64
+        |def f(): Int64 = unsafe_cast 1i32 as Int64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -700,7 +701,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.10") {
     val input =
       """
-        |def f(): Int8 = unsafe_cast 1ii as Int8
+        |def f(): String = unsafe_cast 1i32 as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -709,7 +710,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.11") {
     val input =
       """
-        |def f(): String = unsafe_cast 1ii as String
+        |def f(): Int8 = unsafe_cast 1i64 as Int8
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -718,7 +719,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.12") {
     val input =
       """
-        |def f(): Int8 = unsafe_cast 1.0f32 as Int8
+        |def f(): Int16 = unsafe_cast 1i64 as Int16
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -727,7 +728,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.13") {
     val input =
       """
-        |def f(): String = unsafe_cast 1.0f32 as String
+        |def f(): Int32 = unsafe_cast 1i64 as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -736,7 +737,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.14") {
     val input =
       """
-        |def f(): Float64 = unsafe_cast 1.0f32 as Float64
+        |def f(): String = unsafe_cast 1i64 as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -745,7 +746,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.15") {
     val input =
       """
-        |def f(): Int64 = unsafe_cast 1.0f64 as Int64
+        |def f(): Float64 = unsafe_cast 1.0f32 as Float64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -754,7 +755,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.16") {
     val input =
       """
-        |def f(): String = unsafe_cast 1.0f64 as String
+        |def f(): Float64 = unsafe_cast 1i64 as Float64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -763,7 +764,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.17") {
     val input =
       """
-        |def f(): Char = unsafe_cast 1.0f64 as Char
+        |def f(): Int8 = unsafe_cast 1ii as Int8
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -772,7 +773,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.18") {
     val input =
       """
-        |def f(): Char = unsafe_cast "aaa" as Char
+        |def f(): String = unsafe_cast 1ii as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -781,7 +782,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.19") {
     val input =
       """
-        |def f(): Unit = unsafe_cast "a" as Unit
+        |def f(): Int8 = unsafe_cast 1.0f32 as Int8
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -790,7 +791,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.20") {
     val input =
       """
-        |def f(): Float64 = unsafe_cast -1.0ff as Float64
+        |def f(): String = unsafe_cast 1.0f32 as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -799,7 +800,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.21") {
     val input =
       """
-        |def f(): Bool = unsafe_cast "true" as Bool
+        |def f(): Int64 = unsafe_cast 1.0f64 as Int64
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -808,7 +809,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.22") {
     val input =
       """
-        |def f(): String = unsafe_cast true as String
+        |def f(): String = unsafe_cast 1.0f64 as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -817,7 +818,106 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.23") {
     val input =
       """
+        |def f(): Char = unsafe_cast 1.0f64 as Char
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.24") {
+    val input =
+      """
+        |def f(): Float32 = unsafe_cast 1.0f64 as Float32
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.25") {
+    val input =
+      """
+        |def f(): Char = unsafe_cast "aaa" as Char
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.26") {
+    val input =
+      """
+        |def f(): Unit = unsafe_cast "a" as Unit
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.27") {
+    val input =
+      """
+        |def f(): Float64 = unsafe_cast -1.0ff as Float64
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.28") {
+    val input =
+      """
+        |def f(): Bool = unsafe_cast "true" as Bool
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.29") {
+    val input =
+      """
+        |def f(): String = unsafe_cast true as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.30") {
+    val input =
+      """
         |def f(): String = unsafe_cast () as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.31") {
+    val input =
+      """
+        |def f(): Ref[Unit] = unsafe_cast () as Ref[Unit]
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.32") {
+    val input =
+      """
+        |def f(): Ref[String] = unsafe_cast () as Ref[String]
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.33") {
+    val input =
+      """
+        |def f(): Ref[String] = unsafe_cast "a" as Ref[String]
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.34") {
+    val input =
+      """
+        |def f(): Int32 = unsafe_cast { ref 1 @ Static } as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
