@@ -890,7 +890,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.31") {
     val input =
       """
-        |def f(): Ref[Unit, Static] \ Impure = unsafe_cast () as Ref[Unit, Static] \ Impure
+        |def f(): Ref[Unit, False] \ Impure = unsafe_cast () as Ref[Unit, False] \ Impure
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -899,7 +899,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.32") {
     val input =
       """
-        |def f(): Ref[String, Static] \ Impure = unsafe_cast () as Ref[String, Static] \ Impure
+        |def f(): Ref[String, False] \ Impure = unsafe_cast () as Ref[String, False] \ Impure
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -908,7 +908,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.33") {
     val input =
       """
-        |def f(): Ref[String, Static] \ Impure = unsafe_cast "a" as Ref[String, Static] \ Impure
+        |def f(): Ref[String, False] \ Impure = unsafe_cast "a" as Ref[String, False] \ Impure
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
