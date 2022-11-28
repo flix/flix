@@ -334,14 +334,29 @@ object Safety {
         Type.Float32 :: Type.Float64 :: Type.Int8 ::
         Type.Int16 :: Type.Int32 :: Type.Int64 ::
         Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
-    }
+    }.toSet
 
     (tpe1, tpe2) match {
 
+      // Reference types
       case (t1, Some(Type.Cst(TypeConstructor.Ref, _))) if primitives.contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case (Type.Cst(TypeConstructor.Ref, _), Some(t2)) if primitives.contains(t2) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      // Boolean types
+      case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      // String types
+      case (Type.Str, Some(Type.Char)) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Char, Some(Type.Str)) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
