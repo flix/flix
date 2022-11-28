@@ -325,46 +325,20 @@ object Safety {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
-    (tpe1, tpe2) match {
-
-      case (Type.Unit, Some(Type.Unit)) => Nil
-      case (Type.Unit, Some(t)) => ImpossibleCast(Type.Unit, t, cast.loc) :: Nil
-
-      case (Type.Bool, Some(Type.Bool)) => Nil
-      case (Type.Bool, Some(t)) => ImpossibleCast(Type.Bool, t, cast.loc) :: Nil
-
-      case (Type.Int8, Some(Type.Int8)) => Nil
-      case (Type.Int8, Some(t)) => ImpossibleCast(Type.Int8, t, cast.loc) :: Nil
-
-      case (Type.Int16, Some(Type.Int16)) => Nil
-      case (Type.Int16, Some(t)) => ImpossibleCast(Type.Int16, t, cast.loc) :: Nil
-
-      case (Type.Int32, Some(Type.Int32)) => Nil
-      case (Type.Int32, Some(t)) => ImpossibleCast(Type.Int32, t, cast.loc) :: Nil
-
-      case (Type.Int64, Some(Type.Int64)) => Nil
-      case (Type.Int64, Some(t)) => ImpossibleCast(Type.Int64, t, cast.loc) :: Nil
-
-      case (Type.BigInt, Some(Type.BigInt)) => Nil
-      case (Type.BigInt, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
-      case (Type.BigInt, Some(t)) => ImpossibleCast(Type.BigInt, t, cast.loc) :: Nil
-
-      case (Type.Float32, Some(Type.Float32)) => Nil
-      case (Type.Float32, Some(t)) => ImpossibleCast(Type.Float32, t, cast.loc) :: Nil
-
-      case (Type.Float64, Some(Type.Float64)) => Nil
-      case (Type.Float64, Some(t)) => ImpossibleCast(Type.Float64, t, cast.loc) :: Nil
-
-      case (Type.BigDecimal, Some(Type.BigDecimal)) => Nil
-      case (Type.BigDecimal, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
-      case (Type.BigDecimal, Some(t)) => ImpossibleCast(Type.BigDecimal, t, cast.loc) :: Nil
-
-      case (Type.Str, Some(Type.Str)) => Nil
-      case (Type.Str, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
-      case (Type.Str, Some(t)) => ImpossibleCast(Type.Str, t, cast.loc) :: Nil
-
-      case _ => Nil
+    val builtinTypes = {
+      Type.Unit :: Type.Bool :: Type.Int8 ::
+        Type.Int16 :: Type.Int32 :: Type.Int64 ::
+        Type.Float32 :: Type.Float64 :: Type.BigInt ::
+        Type.BigDecimal :: Type.Str :: Type.Char :: Nil
     }
+
+    val tpe1IsBuiltin = builtinTypes.contains(tpe1)
+    val tpe2IsBuiltin = tpe2.map(builtinTypes.contains).isDefined
+
+    if (tpe1IsBuiltin && tpe2IsBuiltin && (tpe1 != tpe2.get))
+      ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+    else
+      Nil
   }
 
   /**
