@@ -320,48 +320,29 @@ object Safety {
   /**
     * Performs basic checks on the type cast `cast`. Returns a list of safety errors if there are
     * any impossible casts.
+    *
+    * No primitive type can be cast to a reference type and vice-versa.
+    *
+    * No Bool type can be cast to a non-Bool type  and vice-versa.
     */
   private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
+    val primitives = {
+      Type.Unit :: Type.Bool :: Type.Char ::
+        Type.Float32 :: Type.Float64 :: Type.Int8 ::
+        Type.Int16 :: Type.Int32 :: Type.Int64 ::
+        Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
+    }
+
     (tpe1, tpe2) match {
 
-      case (Type.Unit, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Unit, cast.declaredType.get, cast.loc) :: Nil
+      case (t1, Some(Type.Cst(TypeConstructor.Ref, _))) if primitives.contains(t1) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      case (Type.Bool, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Bool, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Char, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Char, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Float32, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Float32, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Float64, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Float64, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Int8, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Int8, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Int16, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Int16, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Int32, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Int32, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Int64, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Int64, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.Str, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.Str, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.BigInt, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.BigInt, cast.declaredType.get, cast.loc) :: Nil
-
-      case (Type.BigDecimal, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(Type.BigDecimal, cast.declaredType.get, cast.loc) :: Nil
+      case (Type.Cst(TypeConstructor.Ref, _), Some(t2)) if primitives.contains(t2) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
     }
