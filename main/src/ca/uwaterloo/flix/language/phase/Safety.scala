@@ -325,20 +325,16 @@ object Safety {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
-    val builtinTypes = {
-      Type.Unit :: Type.Bool :: Type.Int8 ::
-        Type.Int16 :: Type.Int32 :: Type.Int64 ::
-        Type.Float32 :: Type.Float64 :: Type.BigInt ::
-        Type.BigDecimal :: Type.Str :: Type.Char :: Nil
+    (tpe1, tpe2) match {
+
+      // No non-reference can be cast to a reference
+      case (Type.Cst(TypeConstructor.Ref, _), Some(Type.Cst(TypeConstructor.Ref, _))) => Nil
+
+      case (_, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      case _ => Nil
     }
-
-    val tpe1IsBuiltin = builtinTypes.contains(tpe1)
-    val tpe2IsBuiltin = tpe2.map(builtinTypes.contains).isDefined
-
-    if (tpe1IsBuiltin && tpe2IsBuiltin && (tpe1 != tpe2.get))
-      ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
-    else
-      Nil
   }
 
   /**
