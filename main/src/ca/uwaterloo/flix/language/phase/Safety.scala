@@ -327,11 +327,41 @@ object Safety {
 
     (tpe1, tpe2) match {
 
-      // No non-reference can be cast to a reference
-      case (Type.Cst(TypeConstructor.Ref, _), Some(Type.Cst(TypeConstructor.Ref, _))) => Nil
+      case (Type.Unit, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Unit, cast.declaredType.get, cast.loc) :: Nil
 
-      case (_, Some(Type.Cst(TypeConstructor.Ref, _))) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+      case (Type.Bool, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Bool, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Char, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Char, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Float32, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Float32, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Float64, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Float64, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Int8, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Int8, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Int16, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Int16, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Int32, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Int32, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Int64, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Int64, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.Str, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.Str, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.BigInt, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.BigInt, cast.declaredType.get, cast.loc) :: Nil
+
+      case (Type.BigDecimal, Some(Type.Cst(TypeConstructor.Ref, _))) =>
+        ImpossibleCast(Type.BigDecimal, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
     }
