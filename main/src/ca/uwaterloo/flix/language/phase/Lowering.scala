@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -1386,9 +1386,9 @@ object Lowering {
     * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
     */
   private def mkSelectDefaultCase(default: Option[LoweredAst.Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[LoweredAst.MatchRule] = {
-    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
     default match {
       case Some(defaultExp) =>
+        val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
@@ -1682,13 +1682,6 @@ object Lowering {
     */
   def mkTuplePattern(patterns: List[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
     LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
-  }
-
-  /**
-    * Returns a wildcard (match anything) pattern.
-    */
-  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc)
   }
 
   /**
