@@ -111,7 +111,6 @@ object BoolUnification {
     }
   }
 
-
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
