@@ -368,7 +368,7 @@ namespace Int64 {
         (valueOf(x) |> floatValue)
 
     ///
-    /// Convert `x` to a Float32.
+    /// Convert `x` to a Float64.
     ///
     /// Warning: The numeric value of `x` may lose precision.
     ///
@@ -378,7 +378,7 @@ namespace Int64 {
         (valueOf(x) |> doubleValue)
 
     ///
-    /// Convert `x` to a Float32.
+    /// Convert `x` to a BigDecimal.
     ///
     /// Warning: The numeric value of `x` may lose precision.
     ///
