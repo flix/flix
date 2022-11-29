@@ -1,198 +1,230 @@
 namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
-    def testUnbufferedChannelPutGet01(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send((), s);
-        () == Channel.recv(r)
+    def testUnbufferedChannelPutGet01(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send((), tx);
+        () == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet02(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(true, s);
-        true == Channel.recv(r)
+    def testUnbufferedChannelPutGet02(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(true, tx);
+        true == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet03(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(123.456f32, s);
-        123.456f32 == Channel.recv(r)
+    def testUnbufferedChannelPutGet03(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(123.456f32, tx);
+        123.456f32 == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet04(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(123.456f64, s);
-        123.456f64 == Channel.recv(r)
+    def testUnbufferedChannelPutGet04(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(123.456f64, tx);
+        123.456f64 == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet05(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(42i8, s);
-        42i8 == Channel.recv(r)
+    def testUnbufferedChannelPutGet05(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(42i8, tx);
+        42i8 == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet06(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(42i16, s);
-        42i16 == Channel.recv(r)
+    def testUnbufferedChannelPutGet06(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(42i16, tx);
+        42i16 == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet07(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(42i32, s);
-        42i32 == Channel.recv(r)
+    def testUnbufferedChannelPutGet07(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(42i32, tx);
+        42i32 == Channel.recv(rx)
+    }
+    
+    @test
+    def testUnbufferedChannelPutGet08(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(42i64, tx);
+        42i64 == Channel.recv(rx)
+    }
 
     @test
-    def testUnbufferedChannelPutGet08(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(42i64, s);
-        42i64 == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet09(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(42ii, tx);
+        42ii == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet09(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(42ii, s);
-        42ii == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet10(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send("Hello World!", tx);
+        "Hello World!" == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet10(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send("Hello World!", s);
-        "Hello World!" == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet11(): Bool \ IO = region r {
+        let (tx, rx): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered(r);
+        spawn Channel.send(None, tx);
+        None == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet11(): Bool \ IO =
-        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered(Static);
-        spawn Channel.send(None, s);
-        None == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet12(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.send(Some(123), tx);
+        Some(123) == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet12(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.send(Some(123), s);
-        Some(123) == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet13(): Bool \ IO = region r {
+        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(r);
+        spawn Channel.send(Ok(123), tx);
+        Ok(123) == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet13(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(Static);
-        spawn Channel.send(Ok(123), s);
-        Ok(123) == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet14(): Bool \ IO = region r {
+        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(r);
+        spawn Channel.send(Err("Goodbye World!"), tx);
+        Err("Goodbye World!") == Channel.recv(rx)
+    }
+    
     @test
-    def testUnbufferedChannelPutGet14(): Bool \ IO =
-        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(Static);
-        spawn Channel.send(Err("Goodbye World!"), s);
-        Err("Goodbye World!") == Channel.recv(r)
-
+    def testUnbufferedChannelPutGet15(): Bool \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.unsafeSend([1, 2, 3], tx);
+        2 == (Channel.recv(rx))[1]
+    }
+    
     @test
-    def testUnbufferedChannelPutGet15(): Bool \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.unsafeSend([1, 2, 3], s);
-        2 == (Channel.recv(r))[1]
-
+    def testUnbufferedChannelPutGet16(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.unbuffered(r);
+        let (tx2, rx2) = Channel.unbuffered(r);
+        spawn Channel.unsafeSend(rx2, tx1);
+        spawn Channel.send(42, tx2);
+        42 == Channel.recv(Channel.recv(rx1))
+    }
+    
     @test
-    def testUnbufferedChannelPutGet16(): Bool \ IO =
-        let (s1, r1) = Channel.unbuffered(Static);
-        let (s2, r2) = Channel.unbuffered(Static);
-        spawn Channel.unsafeSend(r2, s1);
-        spawn Channel.send(42, s2);
-        42 == Channel.recv(Channel.recv(r1))
-
+    def testUnbufferedChannelGetPut01(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send((), tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut01(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send((), s)
-
+    def testUnbufferedChannelGetPut02(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(true, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut02(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(true, s)
-
+    def testUnbufferedChannelGetPut03(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(123.456f32, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut03(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(123.456f32, s)
-
+    def testUnbufferedChannelGetPut04(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(123.456f64, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut04(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(123.456f64, s)
-
+    def testUnbufferedChannelGetPut05(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(42i8, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut05(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(42i8, s)
+    def testUnbufferedChannelGetPut06(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(42i16, tx)
+    }
+    
     @test
-
-    def testUnbufferedChannelGetPut06(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(42i16, s)
-
+    def testUnbufferedChannelGetPut07(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(42i32, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut07(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(42i32, s)
-
+    def testUnbufferedChannelGetPut08(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(42i64, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut08(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(42i64, s)
-
+    def testUnbufferedChannelGetPut09(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(42ii, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut09(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(42ii, s)
-
+    def testUnbufferedChannelGetPut10(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send("Hello World!", tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut10(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send("Hello World!", s)
-
+    def testUnbufferedChannelGetPut11(): Unit \ IO = region r {
+        let (tx, rx): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(None, tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut11(): Unit \ IO =
-        let (s, r): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(None, s)
-
+    def testUnbufferedChannelGetPut12(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(Some(123), tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut12(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(Some(123), s)
-
+    def testUnbufferedChannelGetPut13(): Unit \ IO = region r {
+        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(Ok(123), tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut13(): Unit \ IO =
-        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(Ok(123), s)
-
+    def testUnbufferedChannelGetPut14(): Unit \ IO = region r {
+        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.send(Err("Goodbye World!"), tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut14(): Unit \ IO =
-        let (s, r): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.send(Err("Goodbye World!"), s)
-
+    def testUnbufferedChannelGetPut15(): Unit \ IO = region r {
+        let (tx, rx) = Channel.unbuffered(r);
+        spawn Channel.recv(rx);
+        Channel.unsafeSend([1, 2, 3], tx)
+    }
+    
     @test
-    def testUnbufferedChannelGetPut15(): Unit \ IO =
-        let (s, r) = Channel.unbuffered(Static);
-        spawn Channel.recv(r);
-        Channel.unsafeSend([1, 2, 3], s)
-
-    @test
-    def testUnbufferedChannelGetPut16(): Unit \ IO =
-        let (s1, r1) = Channel.unbuffered(Static);
-        let (s2, r2) = Channel.unbuffered(Static);
-        spawn Channel.recv(Channel.recv(r1));
-        spawn Channel.unsafeSend(r2, s1);
-        Channel.send(42, s2)
+    def testUnbufferedChannelGetPut16(): Unit \ IO = region r {
+        let (tx1, rx1) = Channel.unbuffered(r);
+        let (tx2, rx2) = Channel.unbuffered(r);
+        spawn Channel.recv(Channel.recv(rx1));
+        spawn Channel.unsafeSend(rx2, tx1);
+        Channel.send(42, tx2)
+    }
 }

@@ -10,11 +10,11 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.language.phase.unification.Unification
-import ca.uwaterloo.flix.util.{Validation, InternalCompilerException}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+import java.math.BigInteger
 import scala.annotation.tailrec
-import ca.uwaterloo.flix.language.errors.DerivationError
 
 /**
   * Performs safety and well-formedness checks on:
@@ -389,58 +389,33 @@ object Safety {
   }
 
   /**
-    * ADT to indicate what the result of checking a java subtype was.
-    */
-  private sealed trait JavaSubtypeResult
-
-  private object JavaSubtypeResult {
-    case object Castable extends JavaSubtypeResult
-
-    case object NonCastable extends JavaSubtypeResult
-
-    case class NonJavaTypeLeft(clazz: java.lang.Class[_]) extends JavaSubtypeResult
-
-    case class NonJavaTypeRight(clazz: java.lang.Class[_]) extends JavaSubtypeResult
-
-    case object TypeVariableLeft extends JavaSubtypeResult
-
-    case object TypeVariableRight extends JavaSubtypeResult
-
-  }
-
-  /**
     * Returns true if `tpe1` and `tpe2` are both Java types
     * and `tpe1` is a subtype of `tpe2`.
     * Note that `tpe1` is also allowed to be a Flix string
     * or BigInt/BigDecimal while `tpe2` is a supertype of this.
     */
-  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): JavaSubtypeResult = (tpe1.baseType, tpe2.baseType) match {
+  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(left)) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+      if (right.isAssignableFrom(left)) true else false
 
     case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.lang.String])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+      if (right.isAssignableFrom(classOf[java.lang.String])) true else false
 
     case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigInteger])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+      if (right.isAssignableFrom(classOf[java.math.BigInteger])) true else false
 
     case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) JavaSubtypeResult.Castable else JavaSubtypeResult.NonCastable
+      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) true else false
 
-    case (Type.Var(_, _), _) =>
-      JavaSubtypeResult.TypeVariableLeft
+    case (Type.Var(_, _), _) | (_, Type.Var(_, _)) =>
+      false
 
-    case (_, Type.Var(_, _)) =>
-      JavaSubtypeResult.TypeVariableRight
+    case (Type.Cst(TypeConstructor.Native(_), _), _) | (_, Type.Cst(TypeConstructor.Native(_), _)) =>
+      false
 
-    case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-      JavaSubtypeResult.NonJavaTypeRight(clazz)
+    case _ => false
 
-    case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-      JavaSubtypeResult.NonJavaTypeLeft(clazz)
-
-    case _ => JavaSubtypeResult.NonCastable
   }
 
   /**
@@ -461,13 +436,47 @@ object Safety {
   private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    isJavaSubtypeOf(tpe1, tpe2) match {
-      case JavaSubtypeResult.Castable => Nil
-      case JavaSubtypeResult.NonCastable => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubtypeResult.NonJavaTypeLeft(c) => FromNonJavaTypeSupercast(exp.tpe, c, loc) :: Nil
-      case JavaSubtypeResult.NonJavaTypeRight(c) => ToNonJavaTypeSupercast(c, tpe, loc) :: Nil
-      case JavaSubtypeResult.TypeVariableLeft => FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
-      case JavaSubtypeResult.TypeVariableRight => ToTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+    if (isJavaSubtypeOf(tpe1, tpe2))
+      Nil
+    else
+      collectSupercastErrors(exp, tpe, loc)
+  }
+
+  /**
+    * Returns a list of supercast errors.
+    */
+  private def collectSupercastErrors(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.tpe)
+    val tpe2 = Type.eraseAliases(tpe)
+
+    (tpe1.baseType, tpe2.baseType) match {
+
+      case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(left)) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[String])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (Type.Var(_, _), _) =>
+        FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (_, Type.Var(_, _)) =>
+        ToTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
+
+      case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
+        ToNonJavaTypeSupercast(clazz, tpe, loc) :: Nil
+
+      case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        FromNonJavaTypeSupercast(exp.tpe, clazz, loc) :: Nil
+
+      case _ => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+
     }
   }
 

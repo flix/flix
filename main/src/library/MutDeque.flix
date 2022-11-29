@@ -36,7 +36,7 @@ instance Newable[MutDeque[a]] {
 }
 
 instance Scoped[MutDeque[a]] {
-    pub def regionOf(_: MutDeque[a, r]): Region[r] = () as Region[r]
+    pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 instance Iterable[MutDeque] {

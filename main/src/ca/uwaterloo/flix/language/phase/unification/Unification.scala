@@ -167,32 +167,36 @@ object Unification {
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
             case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
-            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+            case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
           }
 
         case Result.Err(UnificationError.MismatchedBools(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedBools(baseType1, baseType2, Some(type1), Some(type2), loc))
+          (tpe1.typeConstructor, tpe2.typeConstructor) match {
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(TypeError.MismatchedArrowBools(baseType1, baseType2, type1, type2, renv, loc))
+            case _ => Err(TypeError.MismatchedBools(baseType1, baseType2, type1, type2, renv, loc))
+          }
 
         case Result.Err(UnificationError.MismatchedArity(_, _)) =>
-          Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
+          Err(TypeError.MismatchedArity(tpe1, tpe2, renv, loc))
 
         case Result.Err(UnificationError.RigidVar(baseType1, baseType2)) =>
-          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
-          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
+          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.UndefinedField(fieldName, fieldType, recordType)) =>
-          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
+          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, renv, loc))
 
         case Result.Err(UnificationError.NonRecordType(tpe)) =>
-          Err(TypeError.NonRecordType(tpe, loc))
+          Err(TypeError.NonRecordType(tpe, renv, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
-          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, loc))
+          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, renv, loc))
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
-          Err(TypeError.NonSchemaType(tpe, loc))
+          Err(TypeError.NonSchemaType(tpe, renv, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err")
@@ -209,12 +213,12 @@ object Unification {
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
-      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, _) =>
+      case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
         (baseType1.typeConstructor, baseType2.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-            TypeError.PossibleUpcast(expected, actual, loc)
+            TypeError.PossibleUpcast(expected, actual, renv, loc)
           case _ =>
-            TypeError.UnexpectedType(baseType1, baseType2, baseType2.loc)
+            TypeError.UnexpectedType(baseType1, baseType2, renv, baseType2.loc)
         }
       case e => e
     }
@@ -233,22 +237,54 @@ object Unification {
   }
 
   /**
+    * Unifies the `expectedTypes` types with the `actualTypes`.
+    */
+  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+    // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
+    def handler(i: Int)(e: TypeError): TypeError = e match {
+      case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedArrowBools(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+
+      case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
+        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+      case e => e
+    }
+
+    def visit(i: Int, expected: List[Type], actual: List[Type], locs: List[SourceLocation]): InferMonad[Unit] =
+      (expected, actual, locs) match {
+        case (Nil, Nil, Nil) => InferMonad.point(())
+        case (x :: xs, y :: ys, l :: ls) =>
+          for {
+            _ <- unifyTypeM(x, y, l).transformError(handler(i))
+          } yield visit(i + 1, xs, ys, ls)
+        case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
+        case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
+        case _ => throw InternalCompilerException("Mismatched lists.")
+      }
+
+    visit(1, expectedTypes, actualTypes, actualLocs)
+  }
+
+  /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
   private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
-    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, loc)
+    val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
       case Type.Apply(_, resultType, _) =>
         if (Unification.unifiesWith(resultType, argType, renv)) {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(excessArgument) => TypeError.OverApplied(excessArgument, fullType1, fullType2, loc)
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
           }
         } else {
           arrowType.typeArguments.lift(2) match {
             case None => default
-            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, fullType1, fullType2, loc)
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
           }
         }
       case _ => default
@@ -303,7 +339,7 @@ object Unification {
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
-            Err(TypeError.MismatchedBools(baseType1, baseType2, None, None, loc))
+            Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
 
           case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
         }

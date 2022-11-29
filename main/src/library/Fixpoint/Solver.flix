@@ -41,7 +41,7 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = unsafe_cast {
         notifyPreSolve(d, stf);
         let compiler = cs ->
             compile(cs, stf) |>
@@ -113,7 +113,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = unsafe_cast {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
@@ -129,9 +129,9 @@ namespace Fixpoint {
                 // Case 1: Do not rename. Do not extend the map.
                 macc
             } else {
-                // Case 2: Introduce a fresh name (index) for the prediate symbol.
+                // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, (newId() + 1i64) as \ {}); // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as \ {}); // We add one because the counter starts at zero.
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -516,7 +516,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
-        factsOf(_ -> () as v, p, d)
+        factsOf(_ -> unsafe_cast () as v, p, d)
 
 
     ///
@@ -766,7 +766,7 @@ namespace Fixpoint {
     /// Unsafely casts the given value `d` to a Datalog program.
     ///
     @Internal @Unsafe
-    pub def unsafeCast(v: a): Datalog[Boxed] = v as Datalog[Boxed]
+    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v as Datalog[Boxed]
 
     def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>

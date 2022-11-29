@@ -24,7 +24,7 @@ instance Newable[MutSet[t]] {
 }
 
 instance Scoped[MutSet[t]] {
-    pub def regionOf(_: MutSet[t, r]): Region[r] = () as Region[r]
+    pub def regionOf(_: MutSet[t, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 instance Iterable[MutSet] {

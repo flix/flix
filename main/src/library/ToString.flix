@@ -195,8 +195,8 @@ instance ToString[Array[a, r]] with ToString[a] {
     pub def toString(a: Array[a, r]): String =
         def loop(i, acc) =
             if (i < a.length) {
-                if (i == 0) loop(i + 1, "${a[i]}") as \ {}
-                else loop(i + 1, "${acc}, ${a[i]}") as \ {}
+                if (i == 0) unsafe_cast loop(i + 1, "${a[i]}") as \ {}
+                else unsafe_cast loop(i + 1, "${acc}, ${a[i]}") as \ {}
             } else {
                 "[${acc}]"
             };
