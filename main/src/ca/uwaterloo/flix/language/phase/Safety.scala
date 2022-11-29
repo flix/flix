@@ -334,29 +334,32 @@ object Safety {
         Type.Float32 :: Type.Float64 :: Type.Int8 ::
         Type.Int16 :: Type.Int32 :: Type.Int64 ::
         Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
-    }.toSet
+    }
 
     (tpe1, tpe2) match {
 
-      // Reference types
-      case (t1, Some(Type.Cst(TypeConstructor.Ref, _))) if primitives.contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+      // Allow anything with type variables
+      case (Type.Var(_, _), _) => Nil
+      case (_, Some(Type.Var(_, _))) => Nil
 
-      case (Type.Cst(TypeConstructor.Ref, _), Some(t2)) if primitives.contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+      // Allow anything with Java interop
+      case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
+      case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
 
-      // Boolean types
+      // Boolean primitive to other primitives
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
+      // Symmetric case
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // String types
-      case (Type.Str, Some(Type.Char)) =>
+      // JVM Reference types and primitives
+      case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      case (Type.Char, Some(Type.Str)) =>
+      // Symmetric case
+      case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
