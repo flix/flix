@@ -1,393 +1,402 @@
 namespace Test/Exp/Concurrency/Select {
 
     @test
-    def testSelectBuffered01(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
+    def testSelectBuffered01(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
         select {
-            case x <- recv(r1) => x == 1
+            case x <- recv(rx1) => x == 1
         }
+    }
 
     @test
-    def testSelectBuffered02(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
-        spawn Channel.send(2, s2);
+    def testSelectBuffered02(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
+        spawn Channel.send(2, tx2);
         select {
-            case x <- recv(r1) => x == 1
-            case x <- recv(r2) => x == 2
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx2) => x == 2
         }
+    }
 
     @test
-    def testSelectBuffered03(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        let (s3, r3) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
-        spawn Channel.send(2, s2);
-        spawn Channel.send(3, s3);
+    def testSelectBuffered03(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        let (tx3, rx3) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
+        spawn Channel.send(2, tx2);
+        spawn Channel.send(3, tx3);
         select {
-            case x <- recv(r1) => x == 1
-            case x <- recv(r2) => x == 2
-            case x <- recv(r3) => x == 3
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx3) => x == 3
         }
+    }
 
     @test
-    def testSelectBuffered04(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        let (s3, r3) = Channel.buffered(Static, 1);
-        let (s4, r4) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
-        spawn Channel.send(2, s2);
-        spawn Channel.send(3, s3);
-        spawn Channel.send(4, s4);
+    def testSelectBuffered04(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        let (tx3, rx3) = Channel.buffered(r, 1);
+        let (tx4, rx4) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
+        spawn Channel.send(2, tx2);
+        spawn Channel.send(3, tx3);
+        spawn Channel.send(4, tx4);
         select {
-            case x <- recv(r1) => x == 1
-            case x <- recv(r1) => x == 1
-            case x <- recv(r2) => x == 2
-            case x <- recv(r2) => x == 2
-            case x <- recv(r3) => x == 3
-            case x <- recv(r3) => x == 3
-            case x <- recv(r4) => x == 4
-            case x <- recv(r4) => x == 4
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx4) => x == 4
         }
+    }
 
     @test
-    def testSelectBuffered05(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        let (s3, r3) = Channel.buffered(Static, 1);
-        let (s4, r4) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
-        spawn Channel.send(2, s2);
-        spawn Channel.send(3, s3);
-        spawn Channel.send(4, s4);
+    def testSelectBuffered05(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        let (tx3, rx3) = Channel.buffered(r, 1);
+        let (tx4, rx4) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
+        spawn Channel.send(2, tx2);
+        spawn Channel.send(3, tx3);
+        spawn Channel.send(4, tx4);
         select {
-            case x <- recv(r4) => x == 4
-            case x <- recv(r3) => x == 3
-            case x <- recv(r2) => x == 2
-            case x <- recv(r1) => x == 1
-            case x <- recv(r4) => x == 4
-            case x <- recv(r3) => x == 3
-            case x <- recv(r2) => x == 2
-            case x <- recv(r1) => x == 1
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx1) => x == 1
+            case x <- recv(rx4) => x == 4
+            case x <- recv(rx3) => x == 3
+            case x <- recv(rx2) => x == 2
+            case x <- recv(rx1) => x == 1
         }
+    }
 
     @test
-    def testSelectBuffered06(): Bool \ IO =
-        let (_, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        let (_, r3) = Channel.buffered(Static, 1);
-        let (_, r4) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s2);
+    def testSelectBuffered06(): Bool \ IO = region r {
+        let (_, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        let (_, rx3) = Channel.buffered(r, 1);
+        let (_, rx4) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx2);
         select {
-            case _ <- recv(r4) => false
-            case _ <- recv(r3) => false
-            case x <- recv(r2) => x == 1
-            case _ <- recv(r1) => false
+            case _ <- recv(rx4) => false
+            case _ <- recv(rx3) => false
+            case x <- recv(rx2) => x == 1
+            case _ <- recv(rx1) => false
         }
+    }
 
     @test
-    def testSelectBuffered07(): Bool \ IO =
-        let (s1, r1) = Channel.buffered(Static, 1);
-        let (s2, r2) = Channel.buffered(Static, 1);
-        let (s3, r3) = Channel.buffered(Static, 1);
-        let (s4, r4) = Channel.buffered(Static, 1);
-        spawn Channel.send(1i8, s1);
-        spawn Channel.send(2i16, s2);
-        spawn Channel.send(3i32, s3);
-        spawn Channel.send(4i64, s4);
+    def testSelectBuffered07(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        let (tx2, rx2) = Channel.buffered(r, 1);
+        let (tx3, rx3) = Channel.buffered(r, 1);
+        let (tx4, rx4) = Channel.buffered(r, 1);
+        spawn Channel.send(1i8, tx1);
+        spawn Channel.send(2i16, tx2);
+        spawn Channel.send(3i32, tx3);
+        spawn Channel.send(4i64, tx4);
         select {
-            case x <- recv(r4) => x == 4i64
-            case x <- recv(r3) => x == 3i32
-            case x <- recv(r2) => x == 2i16
-            case x <- recv(r1) => x == 1i8
+            case x <- recv(rx4) => x == 4i64
+            case x <- recv(rx3) => x == 3i32
+            case x <- recv(rx2) => x == 2i16
+            case x <- recv(rx1) => x == 1i8
         }
+    }
+    
+    @test
+    def testSelectDefault01(): Bool = region r {
+        select {
+            case x <- recv({let (_, rx) = Channel.buffered(r, 1); rx}) => x
+            case _                                                     => true
+        }
+    }
 
     @test
-    def testSelectDefault01(): Bool \ IO =
-        select {
-            case x <- recv({let (_, r) = Channel.buffered(Static, 1); r}) => x
-            case _                                                => true
-        }
-
-    @test
-    def testSelectDefault02(): Bool \ IO =
+    def testSelectDefault02(): Bool = region r {
         (1 + select {
-            case _ <- recv({let (_, r) = Channel.buffered(Static, 2); r}) => 2
-            case _                                                => 1
+            case _ <- recv({let (_, rx) = Channel.buffered(r, 2); rx}) => 2
+            case _                                                     => 1
         }) == 2
+    }
 
     @test
-    def testSelectRandom01(): Unit \ IO = {
-        let (s9, r9) = Channel.buffered(Static, 0);
-        let (s10, r10) = Channel.buffered(Static, 0);
-        let (s11, r11) = Channel.buffered(Static, 0);
-        let (s12, r12) = Channel.buffered(Static, 0);
-        let (s13, r13) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s13) ; () } ; spawn { Channel.send((), s12) ; () } ; spawn { Channel.send((), s11) ; () } ; spawn { Channel.send((), s10) ; () } ; spawn { Channel.send((), s9) ; () } ; select {
-        case _ <- recv(r13) => select {
-        case _ <- recv(r11) => ()
-        case _ <- recv(r11) => ()
-        } ; Channel.recv(r9) ; Channel.recv(r10) ; Channel.recv(r12) ; let (s42, r42) = Channel.buffered(Static, 0);
-        let (s43, r43) = Channel.buffered(Static, 0);
-        let (s44, r44) = Channel.buffered(Static, 0);
-        let (s45, r45) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s45) ; () } ; spawn { Channel.send((), s44) ; () } ; spawn { Channel.send((), s43) ; () } ; spawn { Channel.send((), s42) ; () } ; select {
-        case _ <- recv(r43) => Channel.recv(r42) ; Channel.recv(r44) ; Channel.recv(r45)
-        case _ <- recv(r42) => Channel.recv(r45) ; Channel.recv(r43) ; Channel.recv(r44) ; ()
+    def testSelectRandom01(): Unit \ IO = region r {
+        let (tx9, rx9) = Channel.buffered(r, 0);
+        let (tx10, rx10) = Channel.buffered(r, 0);
+        let (tx11, rx11) = Channel.buffered(r, 0);
+        let (tx12, rx12) = Channel.buffered(r, 0);
+        let (tx13, rx13) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; spawn { Channel.send((), tx9) ; () } ; select {
+        case _ <- recv(rx13) => select {
+        case _ <- recv(rx11) => ()
+        case _ <- recv(rx11) => ()
+        } ; Channel.recv(rx9) ; Channel.recv(rx10) ; Channel.recv(rx12) ; let (tx42, rx42) = Channel.buffered(r, 0);
+        let (tx43, rx43) = Channel.buffered(r, 0);
+        let (tx44, rx44) = Channel.buffered(r, 0);
+        let (tx45, rx45) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx45) ; () } ; spawn { Channel.send((), tx44) ; () } ; spawn { Channel.send((), tx43) ; () } ; spawn { Channel.send((), tx42) ; () } ; select {
+        case _ <- recv(rx43) => Channel.recv(rx42) ; Channel.recv(rx44) ; Channel.recv(rx45)
+        case _ <- recv(rx42) => Channel.recv(rx45) ; Channel.recv(rx43) ; Channel.recv(rx44) ; ()
         }
-        case _ <- recv(r13) => select {
-        case _ <- recv(r11) => ()
-        case _ <- recv(r11) => ()
-        } ; Channel.recv(r9) ; Channel.recv(r10) ; Channel.recv(r12) ; let (s42, r42) = Channel.buffered(Static, 0);
-        let (s43, r43) = Channel.buffered(Static, 0);
-        let (s44, r44) = Channel.buffered(Static, 0);
-        let (s45, r45) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s45) ; () } ; spawn { Channel.send((), s44) ; () } ; spawn { Channel.send((), s43) ; () } ; spawn { Channel.send((), s42) ; () } ; select {
-        case _ <- recv(r43) => Channel.recv(r42) ; Channel.recv(r44) ; Channel.recv(r45) ; ()
-        case _ <- recv(r42) => Channel.recv(r45) ; Channel.recv(r43) ; Channel.recv(r44)
+        case _ <- recv(rx13) => select {
+        case _ <- recv(rx11) => ()
+        case _ <- recv(rx11) => ()
+        } ; Channel.recv(rx9) ; Channel.recv(rx10) ; Channel.recv(rx12) ; let (tx42, rx42) = Channel.buffered(r, 0);
+        let (tx43, rx43) = Channel.buffered(r, 0);
+        let (tx44, rx44) = Channel.buffered(r, 0);
+        let (tx45, rx45) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx45) ; () } ; spawn { Channel.send((), tx44) ; () } ; spawn { Channel.send((), tx43) ; () } ; spawn { Channel.send((), tx42) ; () } ; select {
+        case _ <- recv(rx43) => Channel.recv(rx42) ; Channel.recv(rx44) ; Channel.recv(rx45) ; ()
+        case _ <- recv(rx42) => Channel.recv(rx45) ; Channel.recv(rx43) ; Channel.recv(rx44)
         }
         };
         ()
     }
 
     @test
-    def testSelectRandom02(): Unit \ IO = {
-        let (s10, r10) = Channel.buffered(Static, 0);
-        let (s11, r11) = Channel.buffered(Static, 0);
-        let (s12, r12) = Channel.buffered(Static, 0);
-        let (s13, r13) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s13) ; () } ; spawn { Channel.send((), s12) ; () } ; if (false) { spawn { Channel.send((), s11) ; () } ; spawn { Channel.send((), s10) ; () } ; if (true) { () } else { () } } else { spawn { Channel.send((), s11) ; () } ; spawn { Channel.send((), s10) ; () } ; if (true) { () } else { () } } ; select {
-        case _ <- recv(r10) => Channel.recv(r13) ; Channel.recv(r12) ; Channel.recv(r11)
-        case _ <- recv(r13) => Channel.recv(r12) ; Channel.recv(r10) ; Channel.recv(r11) ; ()
-        case _ <- recv(r11) => Channel.recv(r13) ; Channel.recv(r12) ; Channel.recv(r10) ; ()
+    def testSelectRandom02(): Unit \ IO = region r {
+        let (tx10, rx10) = Channel.buffered(r, 0);
+        let (tx11, rx11) = Channel.buffered(r, 0);
+        let (tx12, rx12) = Channel.buffered(r, 0);
+        let (tx13, rx13) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; if (false) { spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; if (true) { () } else { () } } else { spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; if (true) { () } else { () } } ; select {
+        case _ <- recv(rx10) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx11)
+        case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx10) ; Channel.recv(rx11) ; ()
+        case _ <- recv(rx11) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx10) ; ()
         };
         ()
     }
 
     @test
-    def testSelectRandom03(): Unit \ IO = {
-        let (s14, r14) = Channel.buffered(Static, 0);
-        let (s15, r15) = Channel.buffered(Static, 0);
-        let (s16, r16) = Channel.buffered(Static, 0);
-        let (s17, r17) = Channel.buffered(Static, 0);
-        let (s18, r18) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; let (s141, r141) = Channel.buffered(Static, 0);
-        let (s139, r139) = Channel.buffered(Static, 0);
-        let (s140, r140) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s141) ; () } ; spawn { Channel.send((), s140) ; () } ; spawn { Channel.send((), s139) ; () } ; spawn { Channel.send((), s141) ; () } ; spawn { Channel.send((), s140) ; () } ; spawn { Channel.send((), s139) ; () } ; spawn { Channel.send((), s141) ; () } ; spawn { Channel.send((), s140) ; () } ; spawn { Channel.send((), s139) ; () } ; spawn { select {
-        case _ <- recv(r141) => Channel.recv(r140) ; Channel.recv(r139) ; ()
+    def testSelectRandom03(): Unit \ IO = region r {
+        let (tx14, rx14) = Channel.buffered(r, 0);
+        let (tx15, rx15) = Channel.buffered(r, 0);
+        let (tx16, rx16) = Channel.buffered(r, 0);
+        let (tx17, rx17) = Channel.buffered(r, 0);
+        let (tx18, rx18) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; let (tx141, rx141) = Channel.buffered(r, 0);
+        let (tx139, rx139) = Channel.buffered(r, 0);
+        let (tx140, rx140) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { Channel.send((), tx141) ; () } ; spawn { Channel.send((), tx140) ; () } ; spawn { Channel.send((), tx139) ; () } ; spawn { select {
+        case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
         } } ; spawn { select {
-        case _ <- recv(r139) => Channel.recv(r140) ; Channel.recv(r141) ; ()
-        case _ <- recv(r140) => Channel.recv(r141) ; Channel.recv(r139) ; ()
+        case _ <- recv(rx139) => Channel.recv(rx140) ; Channel.recv(rx141) ; ()
+        case _ <- recv(rx140) => Channel.recv(rx141) ; Channel.recv(rx139) ; ()
         } } ; spawn { select {
-        case _ <- recv(r139) => select {
-        case _ <- recv(r140) => ()
-        case _ <- recv(r140) => ()
-        } ; Channel.recv(r141) ; ()
-        case _ <- recv(r141) => Channel.recv(r140) ; Channel.recv(r139) ; ()
+        case _ <- recv(rx139) => select {
+        case _ <- recv(rx140) => ()
+        case _ <- recv(rx140) => ()
+        } ; Channel.recv(rx141) ; ()
+        case _ <- recv(rx141) => Channel.recv(rx140) ; Channel.recv(rx139) ; ()
         } } ; spawn { select {
-        case _ <- recv(r15) => Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r17) ; Channel.recv(r14) ; ()
-        case _ <- recv(r14) => Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r15) ; Channel.recv(r17) ; ()
-        case _ <- recv(r17) => Channel.recv(r15) ; Channel.recv(r18) ; select {
-        case _ <- recv(r16) => ()
-        case _ <- recv(r16) => ()
-        } ; Channel.recv(r14)
-        case _ <- recv(r18) => Channel.recv(r15) ; Channel.recv(r14) ; Channel.recv(r17) ; Channel.recv(r16) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx14) ; ()
+        case _ <- recv(rx14) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; select {
+        case _ <- recv(rx16) => ()
+        case _ <- recv(rx16) => ()
+        } ; Channel.recv(rx14)
+        case _ <- recv(rx18) => Channel.recv(rx15) ; Channel.recv(rx14) ; Channel.recv(rx17) ; Channel.recv(rx16) ; ()
         } } ; spawn { select {
-        case _ <- recv(r16) => Channel.recv(r18) ; Channel.recv(r17) ; Channel.recv(r15) ; Channel.recv(r14) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
         } } ;
         ()
     }
 
     @test
-    def testSelectRandom04(): Unit \ IO = {
-        let (s10, r10) = Channel.buffered(Static, 0);
-        let (s11, r11) = Channel.buffered(Static, 0);
-        let (s12, r12) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s12) ; () } ; spawn { Channel.send((), s11) ; () } ; spawn { Channel.send((), s10) ; () } ; let (s40, r40) = Channel.buffered(Static, 0);
-        let (s41, r41) = Channel.buffered(Static, 0);
-        let (s42, r42) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s42) ; () } ; spawn { Channel.send((), s41) ; () } ; spawn { Channel.send((), s40) ; () } ; spawn { Channel.send((), s42) ; () } ; spawn { Channel.send((), s41) ; () } ; spawn { Channel.send((), s40) ; () } ; spawn { Channel.send((), s42) ; () } ; spawn { Channel.send((), s41) ; () } ; spawn { Channel.send((), s40) ; () } ; spawn { Channel.send((), s42) ; () } ; spawn { Channel.send((), s41) ; () } ; spawn { Channel.send((), s40) ; () } ; spawn { select {
-        case _ <- recv(r40) => Channel.recv(r41) ; Channel.recv(r42) ; ()
+    def testSelectRandom04(): Unit \ IO = region r {
+        let (tx10, rx10) = Channel.buffered(r, 0);
+        let (tx11, rx11) = Channel.buffered(r, 0);
+        let (tx12, rx12) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx11) ; () } ; spawn { Channel.send((), tx10) ; () } ; let (tx40, rx40) = Channel.buffered(r, 0);
+        let (tx41, rx41) = Channel.buffered(r, 0);
+        let (tx42, rx42) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { Channel.send((), tx42) ; () } ; spawn { Channel.send((), tx41) ; () } ; spawn { Channel.send((), tx40) ; () } ; spawn { select {
+        case _ <- recv(rx40) => Channel.recv(rx41) ; Channel.recv(rx42) ; ()
         } } ; spawn { select {
-        case _ <- recv(r40) => Channel.recv(r42) ; Channel.recv(r41) ; ()
-        case _ <- recv(r40) => Channel.recv(r42) ; Channel.recv(r41) ; ()
+        case _ <- recv(rx40) => Channel.recv(rx42) ; Channel.recv(rx41) ; ()
+        case _ <- recv(rx40) => Channel.recv(rx42) ; Channel.recv(rx41) ; ()
         } } ; spawn { select {
-        case _ <- recv(r42) => Channel.recv(r40) ; Channel.recv(r41) ; ()
+        case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
         } } ; spawn { select {
-        case _ <- recv(r42) => Channel.recv(r40) ; Channel.recv(r41) ; ()
-        case _ <- recv(r42) => Channel.recv(r40) ; Channel.recv(r41) ; ()
+        case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
+        case _ <- recv(rx42) => Channel.recv(rx40) ; Channel.recv(rx41) ; ()
         } } ; select {
-        case _ <- recv(r10) => Channel.recv(r12) ; Channel.recv(r11) ; ()
+        case _ <- recv(rx10) => Channel.recv(rx12) ; Channel.recv(rx11) ; ()
         };
         ()
     }
 
     @test
-    def testSelectRandom05(): Unit \ IO = {
-        let (s14, r14) = Channel.buffered(Static, 0);
-        let (s15, r15) = Channel.buffered(Static, 0);
-        let (s16, r16) = Channel.buffered(Static, 0);
-        let (s17, r17) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { select {
-        case _ <- recv(r17) => Channel.recv(r14) ; Channel.recv(r15) ; Channel.recv(r16)
+    def testSelectRandom05(): Unit \ IO = region r {
+        let (tx14, rx14) = Channel.buffered(r, 0);
+        let (tx15, rx15) = Channel.buffered(r, 0);
+        let (tx16, rx16) = Channel.buffered(r, 0);
+        let (tx17, rx17) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { select {
+        case _ <- recv(rx17) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16)
         } } ; spawn { select {
-        case _ <- recv(r16) => Channel.recv(r14) ; Channel.recv(r15) ; Channel.recv(r17) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
         } } ; spawn { select {
-        case _ <- recv(r17) => Channel.recv(r15) ; Channel.recv(r16) ; Channel.recv(r14) ; let (s171, r171) = Channel.buffered(Static, 0);
-        let (s172, r172) = Channel.buffered(Static, 0);
-        let (s173, r173) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s173) ; () } ; spawn { Channel.send((), s172) ; () } ; spawn { Channel.send((), s171) ; () } ; spawn { Channel.send((), s173) ; () } ; spawn { Channel.send((), s172) ; () } ; spawn { Channel.send((), s171) ; () } ; spawn { Channel.send((), s173) ; () } ; spawn { Channel.send((), s172) ; () } ; spawn { Channel.send((), s171) ; () } ; spawn { Channel.send((), s173) ; () } ; spawn { Channel.send((), s172) ; () } ; spawn { Channel.send((), s171) ; () } ; spawn { select {
-        case _ <- recv(r172) => Channel.recv(r173) ; Channel.recv(r171) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx171, rx171) = Channel.buffered(r, 0);
+        let (tx172, rx172) = Channel.buffered(r, 0);
+        let (tx173, rx173) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { Channel.send((), tx173) ; () } ; spawn { Channel.send((), tx172) ; () } ; spawn { Channel.send((), tx171) ; () } ; spawn { select {
+        case _ <- recv(rx172) => Channel.recv(rx173) ; Channel.recv(rx171) ; ()
         } } ; spawn { select {
-        case _ <- recv(r171) => Channel.recv(r173) ; Channel.recv(r172) ; ()
-        case _ <- recv(r173) => Channel.recv(r172) ; Channel.recv(r171) ; ()
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx173) => Channel.recv(rx172) ; Channel.recv(rx171) ; ()
         } } ; spawn { select {
-        case _ <- recv(r171) => Channel.recv(r173) ; Channel.recv(r172) ; ()
-        case _ <- recv(r173) => Channel.recv(r171) ; Channel.recv(r172) ; ()
-        case _ <- recv(r171) => Channel.recv(r173) ; Channel.recv(r172) ; ()
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
+        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
         } } ; spawn { select {
-        case _ <- recv(r171) => Channel.recv(r173) ; select {
-        case _ <- recv(r172) => ()
-        case _ <- recv(r172) => ()
+        case _ <- recv(rx171) => Channel.recv(rx173) ; select {
+        case _ <- recv(rx172) => ()
+        case _ <- recv(rx172) => ()
         } ; ()
-        case _ <- recv(r173) => Channel.recv(r171) ; Channel.recv(r172) ; ()
+        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
         } } ; ()
-        case _ <- recv(r14) => Channel.recv(r17) ; Channel.recv(r15) ; Channel.recv(r16) ; ()
+        case _ <- recv(rx14) => Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
         } } ; spawn { select {
-        case _ <- recv(r17) => Channel.recv(r16) ; Channel.recv(r15) ; Channel.recv(r14) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
         } } ;
         ()
     }
 
     @test
-    def testSelectRandom06(): Unit \ IO = {
-        let (s2, r2) = Channel.buffered(Static, 0);
-        let (s3, r3) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s3) ; () } ; spawn { Channel.send((), s2) ; () } ; Channel.recv(r3) ; select {
-        case _ <- recv(r2) => ()
-        case _ <- recv(r2) => ()
-        } ; let (s24, r24) = Channel.buffered(Static, 0);
+    def testSelectRandom06(): Unit \ IO = region r {
+        let (tx2, rx2) = Channel.buffered(r, 0);
+        let (tx3, rx3) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx3) ; () } ; spawn { Channel.send((), tx2) ; () } ; Channel.recv(rx3) ; select {
+        case _ <- recv(rx2) => ()
+        case _ <- recv(rx2) => ()
+        } ; let (tx24, rx24) = Channel.buffered(r, 0);
         spawn { select {
-        case _ <- recv(r24) => ()
-        case _ <- recv(r24) => ()
-        } } ; Channel.send((), s24) ;
+        case _ <- recv(rx24) => ()
+        case _ <- recv(rx24) => ()
+        } } ; Channel.send((), tx24) ;
         ()
     }
 
     @test
-    def testSelectRandom07(): Unit \ IO = {
-        let (s12, r12) = Channel.buffered(Static, 0);
-        let (s13, r13) = Channel.buffered(Static, 0);
-        let (s14, r14) = Channel.buffered(Static, 0);
-        let (s15, r15) = Channel.buffered(Static, 0);
-        let (s16, r16) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s13) ; () } ; spawn { Channel.send((), s12) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s13) ; () } ; spawn { Channel.send((), s12) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s14) ; () } ; spawn { Channel.send((), s13) ; () } ; spawn { Channel.send((), s12) ; () } ; spawn { select {
-        case _ <- recv(r14) => Channel.recv(r12) ; Channel.recv(r13) ; Channel.recv(r15) ; Channel.recv(r16) ; ()
+    def testSelectRandom07(): Unit \ IO = region r {
+        let (tx12, rx12) = Channel.buffered(r, 0);
+        let (tx13, rx13) = Channel.buffered(r, 0);
+        let (tx14, rx14) = Channel.buffered(r, 0);
+        let (tx15, rx15) = Channel.buffered(r, 0);
+        let (tx16, rx16) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx14) ; () } ; spawn { Channel.send((), tx13) ; () } ; spawn { Channel.send((), tx12) ; () } ; spawn { select {
+        case _ <- recv(rx14) => Channel.recv(rx12) ; Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
         } } ; spawn { select {
-        case _ <- recv(r16) => Channel.recv(r13) ; Channel.recv(r14) ; Channel.recv(r12) ; Channel.recv(r15) ; ()
-        case _ <- recv(r15) => Channel.recv(r14) ; Channel.recv(r13) ; Channel.recv(r16) ; Channel.recv(r12) ; ()
-        case _ <- recv(r12) => Channel.recv(r13) ; Channel.recv(r15) ; Channel.recv(r16) ; Channel.recv(r14) ; let (s180, r180) = Channel.buffered(Static, 0);
-        let (s178, r178) = Channel.buffered(Static, 0);
-        let (s179, r179) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s180) ; () } ; spawn { Channel.send((), s179) ; () } ; spawn { Channel.send((), s178) ; () } ; spawn { Channel.send((), s180) ; () } ; spawn { Channel.send((), s179) ; () } ; spawn { Channel.send((), s178) ; () } ; spawn { select {
-        case _ <- recv(r178) => Channel.recv(r180) ; Channel.recv(r179)
-        case _ <- recv(r179) => select {
-        case _ <- recv(r178) => ()
-        case _ <- recv(r178) => ()
-        } ; Channel.recv(r180) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx13) ; Channel.recv(rx14) ; Channel.recv(rx12) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx14) ; Channel.recv(rx13) ; Channel.recv(rx16) ; Channel.recv(rx12) ; ()
+        case _ <- recv(rx12) => Channel.recv(rx13) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx180, rx180) = Channel.buffered(r, 0);
+        let (tx178, rx178) = Channel.buffered(r, 0);
+        let (tx179, rx179) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx180) ; () } ; spawn { Channel.send((), tx179) ; () } ; spawn { Channel.send((), tx178) ; () } ; spawn { Channel.send((), tx180) ; () } ; spawn { Channel.send((), tx179) ; () } ; spawn { Channel.send((), tx178) ; () } ; spawn { select {
+        case _ <- recv(rx178) => Channel.recv(rx180) ; Channel.recv(rx179)
+        case _ <- recv(rx179) => select {
+        case _ <- recv(rx178) => ()
+        case _ <- recv(rx178) => ()
+        } ; Channel.recv(rx180) ; ()
         } } ; spawn { select {
-        case _ <- recv(r178) => Channel.recv(r179) ; Channel.recv(r180) ; ()
-        case _ <- recv(r180) => Channel.recv(r178) ; Channel.recv(r179) ; ()
+        case _ <- recv(rx178) => Channel.recv(rx179) ; Channel.recv(rx180) ; ()
+        case _ <- recv(rx180) => Channel.recv(rx178) ; Channel.recv(rx179) ; ()
         } } ; ()
         } } ; spawn { select {
-        case _ <- recv(r14) => Channel.recv(r15) ; Channel.recv(r12) ; Channel.recv(r16) ; Channel.recv(r13) ; ()
-        case _ <- recv(r13) => Channel.recv(r12) ; Channel.recv(r14) ; Channel.recv(r15) ; Channel.recv(r16) ; ()
+        case _ <- recv(rx14) => Channel.recv(rx15) ; Channel.recv(rx12) ; Channel.recv(rx16) ; Channel.recv(rx13) ; ()
+        case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
         } } ;
         ()
     }
 
     @test
-    def testSelectRandom08(): Unit \ IO = {
-        let (s15, r15) = Channel.buffered(Static, 0);
-        let (s16, r16) = Channel.buffered(Static, 0);
-        let (s17, r17) = Channel.buffered(Static, 0);
-        let (s18, r18) = Channel.buffered(Static, 0);
-        let (s19, r19) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s19) ; () } ; spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s19) ; () } ; spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s19) ; () } ; spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { Channel.send((), s19) ; () } ; spawn { Channel.send((), s18) ; () } ; spawn { Channel.send((), s17) ; () } ; spawn { Channel.send((), s16) ; () } ; spawn { Channel.send((), s15) ; () } ; spawn { select {
-        case _ <- recv(r15) => Channel.recv(r17) ; Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r19) ; ()
+    def testSelectRandom08(): Unit \ IO = region r {
+        let (tx15, rx15) = Channel.buffered(r, 0);
+        let (tx16, rx16) = Channel.buffered(r, 0);
+        let (tx17, rx17) = Channel.buffered(r, 0);
+        let (tx18, rx18) = Channel.buffered(r, 0);
+        let (tx19, rx19) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { Channel.send((), tx19) ; () } ; spawn { Channel.send((), tx18) ; () } ; spawn { Channel.send((), tx17) ; () } ; spawn { Channel.send((), tx16) ; () } ; spawn { Channel.send((), tx15) ; () } ; spawn { select {
+        case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
         } } ; spawn { select {
-        case _ <- recv(r15) => Channel.recv(r19) ; Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r17) ; ()
-        case _ <- recv(r18) => Channel.recv(r19) ; Channel.recv(r15) ; Channel.recv(r16) ; Channel.recv(r17) ; ()
-        case _ <- recv(r19) => Channel.recv(r16) ; Channel.recv(r17) ; Channel.recv(r18) ; Channel.recv(r15) ; ()
-        case _ <- recv(r17) => Channel.recv(r15) ; Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r19) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx19) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx18) => Channel.recv(rx19) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
+        case _ <- recv(rx19) => Channel.recv(rx16) ; Channel.recv(rx17) ; Channel.recv(rx18) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
         } } ; spawn { select {
-        case _ <- recv(r17) => Channel.recv(r18) ; Channel.recv(r15) ; Channel.recv(r16) ; Channel.recv(r19) ; ()
-        case _ <- recv(r15) => Channel.recv(r17) ; Channel.recv(r16) ; Channel.recv(r18) ; Channel.recv(r19) ; ()
-        case _ <- recv(r16) => Channel.recv(r15) ; Channel.recv(r18) ; Channel.recv(r17) ; Channel.recv(r19) ; ()
-        case _ <- recv(r19) => Channel.recv(r15) ; Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r17) ; ()
+        case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx15) => Channel.recv(rx17) ; Channel.recv(rx16) ; Channel.recv(rx18) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx17) ; Channel.recv(rx19) ; ()
+        case _ <- recv(rx19) => Channel.recv(rx15) ; Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx17) ; ()
         } } ; spawn { select {
-        case _ <- recv(r17) => Channel.recv(r18) ; Channel.recv(r16) ; Channel.recv(r19) ; Channel.recv(r15) ; ()
-        case _ <- recv(r16) => Channel.recv(r18) ; select {
-        case _ <- recv(r15) => ()
-        case _ <- recv(r15) => ()
-        } ; Channel.recv(r17) ; Channel.recv(r19) ; let (s214, r214) = Channel.buffered(Static, 0);
-        let (s215, r215) = Channel.buffered(Static, 0);
-        let (s216, r216) = Channel.buffered(Static, 0);
-        let (s217, r217) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s217) ; () } ; spawn { Channel.send((), s216) ; () } ; spawn { Channel.send((), s215) ; () } ; spawn { Channel.send((), s214) ; () } ; select {
-        case _ <- recv(r215) => Channel.recv(r214) ; Channel.recv(r216) ; Channel.recv(r217) ; ()
-        case _ <- recv(r214) => Channel.recv(r216) ; Channel.recv(r215) ; Channel.recv(r217) ; ()
-        case _ <- recv(r216) => Channel.recv(r214) ; Channel.recv(r217) ; Channel.recv(r215)
+        case _ <- recv(rx17) => Channel.recv(rx18) ; Channel.recv(rx16) ; Channel.recv(rx19) ; Channel.recv(rx15) ; ()
+        case _ <- recv(rx16) => Channel.recv(rx18) ; select {
+        case _ <- recv(rx15) => ()
+        case _ <- recv(rx15) => ()
+        } ; Channel.recv(rx17) ; Channel.recv(rx19) ; let (tx214, rx214) = Channel.buffered(r, 0);
+        let (tx215, rx215) = Channel.buffered(r, 0);
+        let (tx216, rx216) = Channel.buffered(r, 0);
+        let (tx217, rx217) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx217) ; () } ; spawn { Channel.send((), tx216) ; () } ; spawn { Channel.send((), tx215) ; () } ; spawn { Channel.send((), tx214) ; () } ; select {
+        case _ <- recv(rx215) => Channel.recv(rx214) ; Channel.recv(rx216) ; Channel.recv(rx217) ; ()
+        case _ <- recv(rx214) => Channel.recv(rx216) ; Channel.recv(rx215) ; Channel.recv(rx217) ; ()
+        case _ <- recv(rx216) => Channel.recv(rx214) ; Channel.recv(rx217) ; Channel.recv(rx215)
         }
         } } ;
         ()
     }
 
     @test
-    def testSelectRandom09(): Unit \ IO = {
-        let (s6, r6) = Channel.buffered(Static, 0);
-        let (s7, r7) = Channel.buffered(Static, 0);
-        let (s8, r8) = Channel.buffered(Static, 0);
-        let (s9, r9) = Channel.buffered(Static, 0);
+    def testSelectRandom09(): Unit \ IO = region r {
+        let (tx6, rx6) = Channel.buffered(r, 0);
+        let (tx7, rx7) = Channel.buffered(r, 0);
+        let (tx8, rx8) = Channel.buffered(r, 0);
+        let (tx9, rx9) = Channel.buffered(r, 0);
         spawn { select {
-        case _ <- recv(r8) => ()
-        case _ <- recv(r8) => ()
-        } ; Channel.send((), s9) ; () } ; spawn { Channel.recv(r7) ; Channel.send((), s8) ; () } ; spawn { select {
-        case _ <- recv(r6) => ()
-        case _ <- recv(r6) => ()
-        } ; Channel.send((), s7) ; () } ; Channel.send((), s6) ; Channel.recv(r9);
+        case _ <- recv(rx8) => ()
+        case _ <- recv(rx8) => ()
+        } ; Channel.send((), tx9) ; () } ; spawn { Channel.recv(rx7) ; Channel.send((), tx8) ; () } ; spawn { select {
+        case _ <- recv(rx6) => ()
+        case _ <- recv(rx6) => ()
+        } ; Channel.send((), tx7) ; () } ; Channel.send((), tx6) ; Channel.recv(rx9);
         ()
     }
 
     @test
-    def testSelectRandom10(): Unit \ IO = {
-        let (s10, r10) = Channel.buffered(Static, 0);
-        let (s11, r11) = Channel.buffered(Static, 0);
-        let (s12, r12) = Channel.buffered(Static, 0);
-        let (s13, r13) = Channel.buffered(Static, 0);
-        spawn { Channel.send((), s13) ; () } ;
-        spawn { Channel.send((), s12) ; () } ;
-        spawn { Channel.send((), s11) ; () } ;
-        spawn { Channel.send((), s10) ; () } ;
+    def testSelectRandom10(): Unit \ IO = region r {
+        let (tx10, rx10) = Channel.buffered(r, 0);
+        let (tx11, rx11) = Channel.buffered(r, 0);
+        let (tx12, rx12) = Channel.buffered(r, 0);
+        let (tx13, rx13) = Channel.buffered(r, 0);
+        spawn { Channel.send((), tx13) ; () } ;
+        spawn { Channel.send((), tx12) ; () } ;
+        spawn { Channel.send((), tx11) ; () } ;
+        spawn { Channel.send((), tx10) ; () } ;
         select {
-            case _ <- recv(r10) => Channel.recv(r13) ; Channel.recv(r12) ; Channel.recv(r11)
-            case _ <- recv(r13) => Channel.recv(r12) ; Channel.recv(r10) ; Channel.recv(r11)
-            case _ <- recv(r11) => Channel.recv(r13) ; Channel.recv(r12) ; Channel.recv(r10)
+            case _ <- recv(rx10) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx11)
+            case _ <- recv(rx13) => Channel.recv(rx12) ; Channel.recv(rx10) ; Channel.recv(rx11)
+            case _ <- recv(rx11) => Channel.recv(rx13) ; Channel.recv(rx12) ; Channel.recv(rx10)
         };
         ()
     }
 
     @test
-    def testSelectSideEffecting01(): Bool \ IO = {
-        def mkChan(): Channel[Int32] \ IO = {
-            let (s, r) = Channel.buffered(Static, 1);
-            Channel.send(42, s);
-            r
+    def testSelectSideEffecting01(): Bool = region r {
+        def mkChan(): Channel[Int32] = {
+            let (tx, rx) = Channel.buffered(r, 1);
+            Channel.send(42, tx);
+            rx
         };
 
         select {
@@ -396,38 +405,39 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectSideEffecting02(): Bool \ IO = {
-        let (s1, r1) = Channel.buffered(Static, 10);
-        let (s2, r2) = Channel.buffered(Static, 10);
-        let (s3, r3) = Channel.buffered(Static, 10);
+    def testSelectSideEffecting02(): Bool = region r {
+        let (tx1, rx1) = Channel.buffered(r, 10);
+        let (tx2, rx2) = Channel.buffered(r, 10);
+        let (tx3, rx3) = Channel.buffered(r, 10);
 
         select {
-            case x <- recv({Channel.send(1, s3); r1}) => x + (Channel.recv(r2)) + (Channel.recv(r3)) == 6
-            case x <- recv({Channel.send(2, s2); r2}) => x + (Channel.recv(r1)) + (Channel.recv(r3)) == 6
-            case x <- recv({Channel.send(3, s1); r3}) => x + (Channel.recv(r1)) + (Channel.recv(r2)) == 6
+            case x <- recv({Channel.send(1, tx3); rx1}) => x + (Channel.recv(rx2)) + (Channel.recv(rx3)) == 6
+            case x <- recv({Channel.send(2, tx2); rx2}) => x + (Channel.recv(rx1)) + (Channel.recv(rx3)) == 6
+            case x <- recv({Channel.send(3, tx1); rx3}) => x + (Channel.recv(rx1)) + (Channel.recv(rx2)) == 6
         }
     }
 
-    type alias MyReceiver = Receiver[Int32, Static]
+    type alias MyReceiver[a: Type, r: Region] = Receiver[a, r]
 
     @test
-    def testSelectAliasedChannel(): Bool \ IO = {
-        let (s, r) = Channel.buffered(Static, 1);
+    def testSelectAliasedChannel(): Bool = region r {
+        let (tx, rx) = Channel.buffered(r, 1);
 
-        def useChan(mr: MyReceiver) : Bool =
+        def useChan(mr: MyReceiver[Int32, r]) : Bool =
             select {
                 case x <- recv(mr) => x == 42
             };
 
-        Channel.send(42, s);
-        useChan(r)
+        Channel.send(42, tx);
+        useChan(rx)
     }
 
     @test
-    def testSelectOptionalSyntax01(): Bool \ IO = 
-        let (s1, r1) = Channel.buffered(Static, 1);
-        spawn Channel.send(1, s1);
+    def testSelectOptionalSyntax01(): Bool \ IO = region r {
+        let (tx1, rx1) = Channel.buffered(r, 1);
+        spawn Channel.send(1, tx1);
         select {
-            case x <- Channel.recv(r1) => x == 1
+            case x <- Channel.recv(rx1) => x == 1
         }
+    }
 }

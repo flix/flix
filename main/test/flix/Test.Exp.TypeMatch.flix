@@ -276,37 +276,37 @@ namespace Test/Exp/ReifyType {
     def matchTypeEff01(): Bool = hof(_ -> 123)
 
     @Test
-    def matchTypeEff02(): Bool = not hof(_ -> 123 as \ IO)
+    def matchTypeEff02(): Bool = not hof(_ -> unsafe_cast 123 as \ IO)
 
     @Test
-    def matchTypeEff03(): Bool = not hof(_ -> 123 as \ E)
+    def matchTypeEff03(): Bool = not hof(_ -> unsafe_cast 123 as \ E)
 
     @Test
     def matchTypeEff04(): Bool = hof((x -> x) >> (y -> y))
 
     @Test
-    def matchTypeEff05(): Bool = not hof((x -> x) >> (y -> y as \ IO))
+    def matchTypeEff05(): Bool = not hof((x -> x) >> (y -> unsafe_cast y as \ IO))
 
     @Test
-    def matchTypeEff06(): Bool = not hof((x -> x as \ IO) >> (y -> y))
+    def matchTypeEff06(): Bool = not hof((x -> unsafe_cast x as \ IO) >> (y -> y))
 
     @Test
-    def matchTypeEff07(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ IO))
+    def matchTypeEff07(): Bool = not hof((x -> unsafe_cast x as \ IO) >> (y -> unsafe_cast y as \ IO))
 
     @Test
-    def matchTypeEff08(): Bool = not hof((x -> x) >> (y -> y as \ E))
+    def matchTypeEff08(): Bool = not hof((x -> x) >> (y -> unsafe_cast y as \ E))
 
     @Test
-    def matchTypeEff09(): Bool = not hof((x -> x as \ E) >> (y -> y))
+    def matchTypeEff09(): Bool = not hof((x -> unsafe_cast x as \ E) >> (y -> y))
 
     @Test
-    def matchTypeEff10(): Bool = not hof((x -> x as \ E) >> (y -> y as \ E))
+    def matchTypeEff10(): Bool = not hof((x -> unsafe_cast x as \ E) >> (y -> unsafe_cast y as \ E))
 
     @Test
-    def matchTypeEff11(): Bool = not hof((x -> x as \ E) >> (y -> y as \ IO))
+    def matchTypeEff11(): Bool = not hof((x -> unsafe_cast x as \ E) >> (y -> unsafe_cast y as \ IO))
 
     @Test
-    def matchTypeEff12(): Bool = not hof((x -> x as \ IO) >> (y -> y as \ E))
+    def matchTypeEff12(): Bool = not hof((x -> unsafe_cast x as \ IO) >> (y -> unsafe_cast y as \ E))
 
     def hof(f: a -> b \ ef): Bool = typematch f {
         case _: _ -> _ \ {} => true
@@ -600,7 +600,7 @@ namespace Test/Exp/ReifyType {
 
     @Test
     def applyThePureOne02(): Bool \ IO = {
-        let f1 = _ -> false as \ IO;
+        let f1 = _ -> unsafe_cast false as \ IO;
         let f2 = _ -> true;
         applyThePureOne(f1, f2, 123)
     }
@@ -608,14 +608,14 @@ namespace Test/Exp/ReifyType {
     @Test
     def applyThePureOne03(): Bool = {
         let f1 = _ -> true;
-        let f2 = _ -> false as \ IO;
+        let f2 = _ -> unsafe_cast false as \ IO;
         applyThePureOne(f1, f2, 123)
     }
 
     @Test
     def applyThePureOne05(): Bool \ IO = {
-        let f1 = _ -> true as \ IO;
-        let f2 = _ -> false as \ IO;
+        let f1 = _ -> unsafe_cast true as \ IO;
+        let f2 = _ -> unsafe_cast false as \ IO;
         applyThePureOne(f1, f2, 123)
     }
 
@@ -661,7 +661,7 @@ namespace Test/Exp/ReifyType {
     def magicList(n: Int32): List[a] = typematch (Proxy: Proxy[a]) {
         case _: Proxy[Int32] =>
             if (n > 0) {
-                (n :: magicList(n - 1)) as List[a]
+                unsafe_cast (n :: magicList(n - 1)) as List[a]
             } else {
                 Nil
             }
