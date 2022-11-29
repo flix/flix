@@ -441,17 +441,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.UnsafeUpcast](result)
   }
 
-  test("TestUpcast.12") {
-    val input =
-      """
-        |def f(g: a -> b): (a -> b \ ef) =
-        |    upcast g: a -> b
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
   test("TestNonDefaultConstructor.01") {
     val input =
       """
