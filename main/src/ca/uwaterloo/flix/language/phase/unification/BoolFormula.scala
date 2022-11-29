@@ -25,7 +25,7 @@ import scala.collection.immutable.SortedSet
 /**
   * A common super-type for Boolean algebras.
   */
-sealed trait BoolFormula {
+sealed trait BoolFormula extends Formula {
 
   /**
     * Returns the free variables in `this` expression.
@@ -454,17 +454,6 @@ object BoolFormula {
       case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
       case Not(f1) => mkNot(map(f1)(fn))
       case Var(sym) => fn(sym)
-    }
-
-    override def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
-      // Compute the variables in `tpe`.
-      val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
-
-      // Construct a bi-directional map from type variables to indices.
-      // The idea is that the first variable becomes x0, the next x1, and so forth.
-      tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
-        case (macc, (sym, x)) => macc + (sym -> x)
-      }
     }
 
     override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {

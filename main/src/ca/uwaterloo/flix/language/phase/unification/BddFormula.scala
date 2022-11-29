@@ -21,18 +21,12 @@ import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
 import org.sosy_lab.pjbdd.api.{Builders, DD}
-import org.sosy_lab.pjbdd.util.parser.DotExporter
-
-import java.util.concurrent.locks.ReentrantLock
-import scala.sys.exit
 
 object BddFormula {
 
   val creator = Builders.bddBuilder().build()
-  val lock = new ReentrantLock()
-  val exp = new DotExporter
 
-  class BddFormula(val dd: DD) {
+  class BddFormula(val dd: DD) extends Formula {
     def getDD(): DD = dd
   }
 
@@ -143,23 +137,6 @@ object BddFormula {
       * Returns a representation equivalent to `f` (but potentially smaller).
       */
     override def minimize(f: BddFormula): BddFormula = f
-
-    /**
-      * Returns an environment built from the given types mapping between type variables and formula variables.
-      *
-      * This environment should be used in the functions [[toType]] and [[fromType]].
-      */
-    override def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] =
-    {
-      // Compute the variables in `tpe`.
-      val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
-
-      // Construct a bi-directional map from type variables to indices.
-      // The idea is that the first variable becomes x0, the next x1, and so forth.
-      tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
-        case (macc, (sym, x)) => macc + (sym -> x)
-      }
-    }
 
     /**
       * Converts the given formula f into a type.
