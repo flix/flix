@@ -25,7 +25,7 @@ import scala.collection.immutable.SortedSet
 /**
   * A common super-type for Boolean algebras.
   */
-sealed trait BoolFormula extends Formula {
+sealed trait BoolFormula {
 
   /**
     * Returns the free variables in `this` expression.

@@ -27,82 +27,67 @@ object BddFormula {
   //Thread-safe factory for creating BDDs
   private val GlobalBddBuilder: Creator = Builders.bddBuilder().build()
 
-  class BddFormula(val dd: DD) extends Formula { }
+  implicit val AsBoolAlg: BoolAlg[DD] = new BoolAlg[DD] {
+    override def isTrue(f: DD): Boolean = f.isTrue
 
-  implicit val AsBoolAlg: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
-    override def isTrue(f: BddFormula): Boolean = f.dd.isTrue
+    override def isFalse(f: DD): Boolean = f.isFalse
 
-    override def isFalse(f: BddFormula): Boolean = f.dd.isFalse
+    //Checks that the children of f are F (low child) and T (high child)
+    override def isVar(f: DD): Boolean =
+      f.equalsTo(f.getVariable, GlobalBddBuilder.makeFalse(), GlobalBddBuilder.makeTrue())
 
-    override def isVar(f: BddFormula): Boolean =
-      f.dd.equalsTo(f.dd.getVariable, GlobalBddBuilder.makeFalse(), GlobalBddBuilder.makeTrue())
+    override def mkTrue: DD = GlobalBddBuilder.makeTrue()
 
-    override def mkTrue: BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeTrue())
-    }
+    override def mkFalse: DD = GlobalBddBuilder.makeFalse()
 
-    override def mkFalse: BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeFalse())
-    }
+    override def mkVar(id: Int): DD = GlobalBddBuilder.makeIthVar(id)
 
-    override def mkVar(id: Int): BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeIthVar(id))
-    }
+    override def mkNot(f: DD): DD = GlobalBddBuilder.makeNot(f)
 
-    override def mkNot(f: BddFormula): BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeNot(f.dd))
-    }
+    override def mkOr(f1: DD, f2: DD): DD = GlobalBddBuilder.makeOr(f1, f2)
 
-    override def mkOr(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeOr(f1.dd, f2.dd))
-    }
+    override def mkAnd(f1: DD, f2: DD): DD = GlobalBddBuilder.makeAnd(f1, f2)
 
-    override def mkAnd(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeAnd(f1.dd, f2.dd))
-    }
+    override def mkXor(f1: DD, f2: DD): DD = GlobalBddBuilder.makeXor(f1, f2)
 
-    override def mkXor(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(GlobalBddBuilder.makeXor(f1.dd, f2.dd))
-    }
-
-    override def freeVars(f: BddFormula): SortedSet[Int] = {
-      freeVarsAux(f.dd)
-    }
-
-    private def freeVarsAux(dd: DD): SortedSet[Int] = {
-      if (dd.isLeaf) {
+    //Traverses the entire BDD and collects its variables
+    override def freeVars(f: DD): SortedSet[Int] = {
+      if (f.isLeaf) {
         SortedSet.empty
       } else {
-        SortedSet(dd.getVariable) ++
-          freeVarsAux(dd.getLow) ++
-          freeVarsAux(dd.getHigh)
+        SortedSet(f.getVariable) ++
+          freeVars(f.getLow) ++
+          freeVars(f.getHigh)
       }
     }
 
-    override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      new BddFormula(mapAux(f.dd)(fn andThen (f => f.dd)))
-    }
-
-    private def mapAux(dd: DD)(fn: Int => DD): DD = {
-      if (dd.isLeaf) {
-        dd
+    //Replaces each node v in the BDD with an ITE:
+    //if fn(v) then map(v.high)(fn) else map(v.low)(fn)
+    override def map(f: DD)(fn: Int => DD): DD = {
+      if (f.isLeaf) {
+        f
       } else {
-        val currentVar = dd.getVariable
+        val currentVar = f.getVariable
         val substDD = fn(currentVar)
 
-        val lowRes = mapAux(dd.getLow)(fn)
-        val highRes = mapAux(dd.getHigh)(fn)
+        val lowRes = map(f.getLow)(fn)
+        val highRes = map(f.getHigh)(fn)
         GlobalBddBuilder.makeIte(substDD, highRes, lowRes)
       }
     }
 
-    override def minimize(f: BddFormula): BddFormula = f
+    //BDDs are always minimal
+    override def minimize(f: DD): DD = f
 
-    override def toType(f: BddFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      createTypeFromBDDAux(f.dd, Type.True, env)
+    override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+      createTypeFromBDDAux(f, Type.True, env)
     }
 
     //TODO: Optimize (2-level minimization)
+    //Collects true paths in the BDD and ORs them together:
+    //Traverses every path through the BDD and keeps track of the variables encountered.
+    //When a leaf is hit, if it is true return the path, otherwise return false.
+    //OR all returned paths together.
     private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
       if (dd.isLeaf) {
         return if (dd.isTrue) tpe else Type.False
@@ -127,7 +112,8 @@ object BddFormula {
       }
     }
 
-    override def satisfiable(f: BddFormula): Boolean = !f.dd.isFalse
+    //A BDD is satisfiable if it is not F (since BDDs are always minimal)
+    override def satisfiable(f: DD): Boolean = !f.isFalse
 
   }
 }

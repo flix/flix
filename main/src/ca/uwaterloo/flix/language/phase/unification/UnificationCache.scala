@@ -15,15 +15,15 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.HybridFormula.HybridFormula
-
+import org.sosy_lab.pjbdd.api.DD
 import java.util.concurrent.ConcurrentHashMap
 
 object UnificationCache {
   /**
     * A Global (per-JVM) cache of unification queries.
     */
-  val Global: UnificationCache[HybridFormula] = new UnificationCache()
+  val GlobalBdd: UnificationCache[DD] = new UnificationCache()
+  val GlobalBool: UnificationCache[BoolFormula] = new UnificationCache()
 }
 
 /**

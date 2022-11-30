@@ -103,7 +103,8 @@ trait BoolAlg[F] {
     */
   def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
     // Compute the variables in `tpe`.
-    val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
