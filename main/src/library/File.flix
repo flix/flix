@@ -431,7 +431,7 @@ namespace File {
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException => {
-                        line := null as String;
+                        line := unsafe_cast null as String;
                         import java.lang.Throwable.getMessage(): String \ IO;
                         Err(getMessage(ex))
                     }
@@ -470,7 +470,7 @@ namespace File {
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException => {
-                        line := null as String;
+                        line := unsafe_cast null as String;
                         import java.lang.Throwable.getMessage(): String \ IO;
                         Err(getMessage(ex))
                     }

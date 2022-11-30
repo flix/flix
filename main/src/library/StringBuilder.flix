@@ -24,7 +24,7 @@ instance Newable[StringBuilder] {
 }
 
 instance Scoped[StringBuilder] {
-    pub def regionOf(_: StringBuilder[r]): Region[r] = () as Region[r]
+    pub def regionOf(_: StringBuilder[r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 namespace StringBuilder {
@@ -112,7 +112,7 @@ namespace StringBuilder {
         let StringBuilder(msb) = sb;
         let len = length(sb);
         let i = ref 0 @ r1;
-        let done = () -> { deref i >= len } as \ {r1, r2};
+        let done = () -> unsafe_cast { deref i >= len } as \ { r1, r2 };
         let next = () -> {
             let x = charAt(msb, deref i);
             i := deref i + 1;

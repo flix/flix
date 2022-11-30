@@ -1,35 +1,35 @@
  /// Mooo's `n` times on channel `c`.
-def mooo(s: Sender[String, Static], n: Int32): Unit \ IO =
+def mooo(tx: Sender[String, r], n: Int32): Unit \ IO =
     match n {
         case 0 => ()
-        case x => Channel.send("Mooo!", s); mooo(s, x - 1)
+        case x => Channel.send("Mooo!", tx); mooo(tx, x - 1)
     }
 
 /// Meow's `n` times on channel `c`.
-def meow(s: Sender[String, Static], n: Int32): Unit \ IO =
+def meow(tx: Sender[String, r], n: Int32): Unit \ IO =
     match n {
         case 0 => ()
-        case x => Channel.send("Meow!", s); meow(s, x - 1)
+        case x => Channel.send("Meow!", tx); meow(tx, x - 1)
     }
 
 /// Hiss'es `n` times on channel `c`.
-def hiss(s: Sender[String, Static], n: Int32): Unit \ IO =
+def hiss(tx: Sender[String, r], n: Int32): Unit \ IO =
     match n {
         case 0 => ()
-        case x => Channel.send("Hiss!", s); hiss(s, x - 1)
+        case x => Channel.send("Hiss!", tx); hiss(tx, x - 1)
     }
 
 /// Start the animal farm...
-def main(): Unit \ IO = {
-    let (s1, r1) = Channel.buffered(Static, 10);
-    let (s2, r2) = Channel.buffered(Static, 10);
-    let (s3, r3) = Channel.buffered(Static, 10);
-    spawn mooo(s1, 0);
-    spawn meow(s2, 3);
-    spawn hiss(s3, 7);
+def main(): Unit \ IO = region r {
+    let (tx1, rx1) = Channel.buffered(r, 10);
+    let (tx2, rx2) = Channel.buffered(r, 10);
+    let (tx3, rx3) = Channel.buffered(r, 10);
+    spawn mooo(tx1, 0);
+    spawn meow(tx2, 3);
+    spawn hiss(tx3, 7);
     select {
-        case m <- recv(r1) => m |> println
-        case m <- recv(r2) => m |> println
-        case m <- recv(r3) => m |> println
+        case m <- recv(rx1) => m |> println
+        case m <- recv(rx2) => m |> println
+        case m <- recv(rx3) => m |> println
     }
 }
