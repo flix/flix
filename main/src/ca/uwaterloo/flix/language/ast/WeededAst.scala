@@ -80,6 +80,8 @@ object WeededAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
+    case class HoleWithExp(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Use(uses: List[WeededAst.UseOrImport], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Expression
@@ -188,7 +190,7 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Spawn(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

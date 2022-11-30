@@ -59,7 +59,7 @@ namespace Channel {
     ///
     pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { Read(r), Write(r), IO } = 
         let (tx, rx) = Channel.unbuffered(r);
-        spawn { Thread.sleep(d); send((), tx) };
+        spawn { Thread.sleep(d); send((), tx) } @ r;
         rx
 
 }

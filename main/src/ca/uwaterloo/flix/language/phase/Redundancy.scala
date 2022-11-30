@@ -281,6 +281,9 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+    case Expression.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Use(_, exp, _) =>
       visitExp(exp, env0, rc) // TODO check for unused syms
 
@@ -384,7 +387,7 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isImpureDiscardedValue(exp1)) {
+      } else if (isImpureDiscardedValue(exp1) && !isHole(exp1)) {
         (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
@@ -684,8 +687,10 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
 
     case Expression.Par(exp, _) =>
       visitExp(exp, env0, rc)
@@ -937,6 +942,15 @@ object Redundancy {
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
     !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
+
+  /**
+    * Returns true if the expression is a hole.
+    */
+  private def isHole(exp: Expression): Boolean = exp match {
+    case Expression.Hole(_, _, _) => true
+    case Expression.HoleWithExp(_, _, _, _, _) => true
+    case _ => false
+  }
 
   /**
     * Returns the free variables in the pattern `p0`.

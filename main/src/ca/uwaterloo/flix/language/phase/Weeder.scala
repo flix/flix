@@ -472,6 +472,11 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
 
+    case ParsedAst.Expression.HolyName(ident, sp2) =>
+      val loc = mkSL(ident.sp1, sp2)
+      val exp = WeededAst.Expression.VarOrDefOrSig(ident, ident.loc)
+      WeededAst.Expression.HoleWithExp(exp, loc).toSuccess
+
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
@@ -1563,9 +1568,12 @@ object Weeder {
         case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.Spawn(sp1, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val exp1Val = visitExp(exp1, senv)
+      val exp2Val = visitExp(exp2, senv)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => WeededAst.Expression.Spawn(e1, e2, loc)
       }
 
     case ParsedAst.Expression.Par(sp1, exp, sp2) =>
@@ -2955,6 +2963,7 @@ object Weeder {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
+    case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
@@ -3010,7 +3019,7 @@ object Weeder {
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lazy(sp1, _, _) => sp1

@@ -595,6 +595,11 @@ object Namer {
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
 
+    case WeededAst.Expression.HoleWithExp(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0, ns0)) {
+        case e => NamedAst.Expression.HoleWithExp(e, loc)
+      }
+
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
       val uenv = uenv0.addAll(uses)
@@ -1012,9 +1017,10 @@ object Namer {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, loc)
       }
 
-    case WeededAst.Expression.Spawn(exp, loc) =>
-      visitExp(exp, env0, uenv0, tenv0, ns0) map {
-        case e => NamedAst.Expression.Spawn(e, loc)
+    case WeededAst.Expression.Spawn(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, uenv0, tenv0, ns0), visitExp(exp2, env0, uenv0, tenv0, ns0)) {
+        case (e1, e2) =>
+          NamedAst.Expression.Spawn(e1, e2, loc)
       }
 
     case WeededAst.Expression.Par(exp, loc) =>
@@ -1452,6 +1458,7 @@ object Namer {
     case WeededAst.Expression.VarOrDefOrSig(ident, _) => List(ident)
     case WeededAst.Expression.DefOrSig(_, _) => Nil
     case WeededAst.Expression.Hole(_, _) => Nil
+    case WeededAst.Expression.HoleWithExp(exp, _) => freeVars(exp)
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Cst(Ast.Constant.Unit, _) => Nil
     case WeededAst.Expression.Cst(Ast.Constant.Null, _) => Nil
@@ -1537,7 +1544,7 @@ object Namer {
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.Spawn(exp, _) => freeVars(exp)
+    case WeededAst.Expression.Spawn(exp1, exp2, _) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Par(exp, _) => freeVars(exp)
     case WeededAst.Expression.ParYield(frags, exp, _) => frags.flatMap(f => freeVars(f.exp)) ::: freeVars(exp)
     case WeededAst.Expression.Lazy(exp, _) => freeVars(exp)

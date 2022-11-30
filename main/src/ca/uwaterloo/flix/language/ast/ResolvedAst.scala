@@ -70,6 +70,8 @@ object ResolvedAst {
 
     case class Hole(sym: Symbol.HoleSym, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class HoleWithExp(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
@@ -177,7 +179,7 @@ object ResolvedAst {
 
     case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Spawn(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Spawn(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Par(exp: Expression, loc: SourceLocation) extends ResolvedAst.Expression
 

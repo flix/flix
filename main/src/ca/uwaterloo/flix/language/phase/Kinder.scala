@@ -357,6 +357,16 @@ object Kinder {
 
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
+    case ResolvedAst.Expression.HoleWithExp(exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc)
+      }
+
     case ResolvedAst.Expression.Use(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
@@ -723,10 +733,11 @@ object Kinder {
         case (rules, default) => KindedAst.Expression.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.Spawn(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expression.Spawn(exp, loc)
+    case ResolvedAst.Expression.Spawn(exp1, exp2, loc) =>
+      val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
+      val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) => KindedAst.Expression.Spawn(e1, e2, loc)
       }
 
     case ResolvedAst.Expression.Par(exp, loc) =>

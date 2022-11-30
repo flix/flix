@@ -629,6 +629,12 @@ object Resolver {
           }
           ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
+        case NamedAst.Expression.HoleWithExp(exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.HoleWithExp(e, loc)
+          }
+
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {
@@ -1178,10 +1184,13 @@ object Resolver {
             case (rs, d) => ResolvedAst.Expression.SelectChannel(rs, d, loc)
           }
 
-        case NamedAst.Expression.Spawn(exp, loc) =>
-          val eVal = visitExp(exp, region)
-          mapN(eVal) {
-            e => ResolvedAst.Expression.Spawn(e, loc)
+        case NamedAst.Expression.Spawn(exp1, exp2, loc) =>
+          val e1Val = visitExp(exp1, region)
+          val e2Val = visitExp(exp2, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) =>
+              val reg = getExplicitOrImplicitRegion(Some(e2), region, loc)
+              ResolvedAst.Expression.Spawn(e1, reg, loc)
           }
 
         case NamedAst.Expression.Par(exp, loc) =>
