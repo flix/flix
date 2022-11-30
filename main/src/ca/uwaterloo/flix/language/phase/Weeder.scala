@@ -472,6 +472,11 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
 
+    case ParsedAst.Expression.HolyName(ident, sp2) =>
+      val loc = mkSL(ident.sp1, sp2)
+      val exp = WeededAst.Expression.VarOrDefOrSig(ident, ident.loc)
+      WeededAst.Expression.HoleWithExp(exp, loc).toSuccess
+
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
@@ -2955,6 +2960,7 @@ object Weeder {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
+    case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
