@@ -262,7 +262,7 @@ object Unification {
           } yield visit(i + 1, xs, ys, ls)
         case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
         case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
-        case _ => throw InternalCompilerException("Mismatched lists.")
+        case _ => throw InternalCompilerException("Mismatched lists.", loc)
       }
 
     visit(1, expectedTypes, actualTypes, actualLocs)
