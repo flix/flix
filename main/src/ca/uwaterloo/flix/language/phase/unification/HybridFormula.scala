@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ trait Formula {}
 
 object HybridFormula {
 
-  val var_threshold = 4
+  //The max. number of variables in a BoolFormula
+  //Larger formulas are represented by BddFormulas
+  private val VarThreshold = 3
 
   implicit val boolAlg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
   implicit val bddAlg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
@@ -54,17 +56,17 @@ object HybridFormula {
   }
 
   def convertBddFormToBoolForm(dd: DD, acc: BoolFormula): BoolFormula = {
-    if (dd.isLeaf()) {
-      return if (dd.isTrue()) acc else boolAlg.mkFalse
+    if (dd.isLeaf) {
+      return if (dd.isTrue) acc else boolAlg.mkFalse
     }
 
-    val currentVar = dd.getVariable()
+    val currentVar = dd.getVariable
     val varForm = boolAlg.mkVar(currentVar)
 
     val lowForm = boolAlg.mkAnd(acc, boolAlg.mkNot(varForm))
-    val lowRes = convertBddFormToBoolForm(dd.getLow(), lowForm)
+    val lowRes = convertBddFormToBoolForm(dd.getLow, lowForm)
     val highForm = boolAlg.mkAnd(acc, varForm)
-    val highRes = convertBddFormToBoolForm(dd.getHigh(), highForm)
+    val highRes = convertBddFormToBoolForm(dd.getHigh, highForm)
 
     (lowRes, highRes) match {
       case (BoolFormula.False, BoolFormula.False) => BoolFormula.False
@@ -74,9 +76,7 @@ object HybridFormula {
     }
   }
 
-  class HybridFormula(val formula: Formula, val vars: SortedSet[Int]) extends Formula {
-    val size = vars.size
-  }
+  class HybridFormula(val formula: Formula, val vars: SortedSet[Int]) { }
 
   implicit val AsBoolAlg: BoolAlg[HybridFormula] = new BoolAlg[HybridFormula] {
     override def isTrue(f: HybridFormula): Boolean = f.formula match {
@@ -107,7 +107,7 @@ object HybridFormula {
 
     override def mkOr(f1: HybridFormula, f2: HybridFormula): HybridFormula = {
       val collectedVars = f1.vars ++ f2.vars
-      if(collectedVars.size > var_threshold) {
+      if(collectedVars.size > VarThreshold) {
         //convert to BDDFormulas
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
@@ -124,14 +124,14 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkOr(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $var_threshold variables")
+          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $VarThreshold variables")
         }
       }
     }
 
     override def mkAnd(f1: HybridFormula, f2: HybridFormula): HybridFormula = {
       val collectedVars = f1.vars ++ f2.vars
-      if (collectedVars.size > var_threshold) {
+      if (collectedVars.size > VarThreshold) {
         //convert to BDDFormulas
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
@@ -148,7 +148,7 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkAnd(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $var_threshold variables")
+          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $VarThreshold variables")
         }
       }
     }
@@ -159,13 +159,13 @@ object HybridFormula {
       case boolForm: BoolFormula =>
         val mapRes = boolAlg.map(boolForm)(fn andThen (g => convertToBoolFormula(g.formula)))
         val newVars =  boolAlg.freeVars(mapRes)
-        if(newVars.size > var_threshold)
+        if(newVars.size > VarThreshold)
           new HybridFormula(convertToBddFormula(mapRes), newVars)
         else new HybridFormula(mapRes, newVars)
       case bddForm: BddFormula =>
         val mapRes = bddAlg.map(bddForm)(fn andThen (g => convertToBddFormula(g.formula)))
         val newVars = bddAlg.freeVars(mapRes)
-        if (newVars.size > var_threshold)
+        if (newVars.size > VarThreshold)
           new HybridFormula(mapRes, newVars)
         else new HybridFormula(convertToBoolFormula(mapRes), newVars)
     }

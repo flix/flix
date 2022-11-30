@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,161 +20,114 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.collection.immutable.SortedSet
-import org.sosy_lab.pjbdd.api.{Builders, DD}
+import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
 
 object BddFormula {
 
-  val creator = Builders.bddBuilder().build()
+  //Thread-safe factory for creating BDDs
+  private val GlobalBddBuilder: Creator = Builders.bddBuilder().build()
 
   class BddFormula(val dd: DD) extends Formula { }
 
   implicit val AsBoolAlg: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
-    /**
-      * Returns `true` if `f` represents TRUE.
-      */
-    override def isTrue(f: BddFormula): Boolean = f.dd.isTrue()
+    override def isTrue(f: BddFormula): Boolean = f.dd.isTrue
 
-    /**
-      * Returns `true` if `f` represents FALSE.
-      */
-    override def isFalse(f: BddFormula): Boolean = f.dd.isFalse()
+    override def isFalse(f: BddFormula): Boolean = f.dd.isFalse
 
-    /**
-      * Returns `true` if `f` represents a variable.
-      */
     override def isVar(f: BddFormula): Boolean =
-      f.dd.equalsTo(f.dd.getVariable, creator.makeFalse(), creator.makeTrue())
+      f.dd.equalsTo(f.dd.getVariable, GlobalBddBuilder.makeFalse(), GlobalBddBuilder.makeTrue())
 
-    /**
-      * Returns a representation of TRUE.
-      */
     override def mkTrue: BddFormula = {
-      new BddFormula(creator.makeTrue())
+      new BddFormula(GlobalBddBuilder.makeTrue())
     }
 
-    /**
-      * Returns a representation of FALSE.
-      */
     override def mkFalse: BddFormula = {
-      new BddFormula(creator.makeFalse())
+      new BddFormula(GlobalBddBuilder.makeFalse())
     }
 
-    /**
-      * Returns a representation of the variable with the given `id`.
-      */
     override def mkVar(id: Int): BddFormula = {
-      new BddFormula(creator.makeIthVar(id))
+      new BddFormula(GlobalBddBuilder.makeIthVar(id))
     }
 
-    /**
-      * Returns a representation of the complement of `f`.
-      */
     override def mkNot(f: BddFormula): BddFormula = {
-      new BddFormula(creator.makeNot(f.dd))
+      new BddFormula(GlobalBddBuilder.makeNot(f.dd))
     }
 
-    /**
-      * Returns a representation of the disjunction of `f1` and `f2`.
-      */
     override def mkOr(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeOr(f1.dd, f2.dd))
+      new BddFormula(GlobalBddBuilder.makeOr(f1.dd, f2.dd))
     }
 
-    /**
-      * Returns a representation of the conjunction of `f1` and `f2`.
-      */
     override def mkAnd(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeAnd(f1.dd, f2.dd))
+      new BddFormula(GlobalBddBuilder.makeAnd(f1.dd, f2.dd))
     }
 
-    /**
-      * Returns a representation of the formula `f1 == f2`.
-      */
     override def mkXor(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeXor(f1.dd, f2.dd))
+      new BddFormula(GlobalBddBuilder.makeXor(f1.dd, f2.dd))
     }
 
-    /**
-      * Returns the set of free variables in `f`.
-      */
     override def freeVars(f: BddFormula): SortedSet[Int] = {
       freeVarsAux(f.dd)
     }
 
     private def freeVarsAux(dd: DD): SortedSet[Int] = {
-      if (dd.isLeaf()) {
+      if (dd.isLeaf) {
         SortedSet.empty
       } else {
-        SortedSet(dd.getVariable()) ++
+        SortedSet(dd.getVariable) ++
           freeVarsAux(dd.getLow) ++
           freeVarsAux(dd.getHigh)
       }
     }
 
-    /**
-      * Applies the function `fn` to every variable in `f`.
-      */
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      new BddFormula(mapAux(f.dd)(fn))
+      new BddFormula(mapAux(f.dd)(fn andThen (f => f.dd)))
     }
 
-    private def mapAux(dd: DD)(fn: Int => BddFormula): DD = {
-      if (dd.isLeaf()) {
+    private def mapAux(dd: DD)(fn: Int => DD): DD = {
+      if (dd.isLeaf) {
         dd
       } else {
-        val currentVar = dd.getVariable()
-        val substDD = fn(currentVar).dd
+        val currentVar = dd.getVariable
+        val substDD = fn(currentVar)
 
-        val lowRes = mapAux(dd.getLow())(fn)
-        val highRes = mapAux(dd.getHigh())(fn)
-        creator.makeIte(substDD, highRes, lowRes)
+        val lowRes = mapAux(dd.getLow)(fn)
+        val highRes = mapAux(dd.getHigh)(fn)
+        GlobalBddBuilder.makeIte(substDD, highRes, lowRes)
       }
     }
 
-    /**
-      * Returns a representation equivalent to `f` (but potentially smaller).
-      */
     override def minimize(f: BddFormula): BddFormula = f
 
-    /**
-      * Converts the given formula f into a type.
-      */
     override def toType(f: BddFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
       createTypeFromBDDAux(f.dd, Type.True, env)
     }
 
-    //TODO: Optimize
+    //TODO: Optimize (2-level minimization)
     private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      if (dd.isLeaf()) {
-        return if (dd.isTrue()) tpe else Type.False
+      if (dd.isLeaf) {
+        return if (dd.isTrue) tpe else Type.False
       }
 
-      val currentVar = dd.getVariable()
+      val currentVar = dd.getVariable
       val typeVar = env.getBackward(currentVar) match {
-        case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
+        case Some(sym) => Type.Var(sym, sym.loc)
         case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar")
       }
 
-      val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, SourceLocation.Unknown)), SourceLocation.Unknown)
-      val lowRes = createTypeFromBDDAux(dd.getLow(), lowType, env)
-      val highType = Type.mkApply(Type.And, List(tpe, typeVar), SourceLocation.Unknown)
-      val highRes = createTypeFromBDDAux(dd.getHigh(), highType, env)
+      val lowType = Type.mkApply(Type.And, List(tpe, Type.Apply(Type.Not, typeVar, typeVar.loc)), typeVar.loc)
+      val lowRes = createTypeFromBDDAux(dd.getLow, lowType, env)
+      val highType = Type.mkApply(Type.And, List(tpe, typeVar), typeVar.loc)
+      val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
       (lowRes, highRes) match {
         case (Type.False, Type.False) => Type.False
         case (Type.False, _) => highRes
         case (_, Type.False) => lowRes
-        case (_, _) => Type.mkApply(Type.Or, List(lowRes, highRes), SourceLocation.Unknown)
+        case (t1, _) => Type.mkApply(Type.Or, List(lowRes, highRes), t1.loc)
       }
     }
 
-    /**
-      * Optional operation. Returns `None` if not implemented.
-      *
-      * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
-      * Returns `Some(false)` otherwise.
-      */
-    override def satisfiable(f: BddFormula): Boolean = !f.dd.isFalse()
+    override def satisfiable(f: BddFormula): Boolean = !f.dd.isFalse
 
   }
 }

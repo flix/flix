@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.phase.unification.BddFormula.BddFormula
 import ca.uwaterloo.flix.language.phase.unification.HybridFormula.HybridFormula
 
 import java.util.concurrent.ConcurrentHashMap
