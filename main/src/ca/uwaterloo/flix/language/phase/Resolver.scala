@@ -629,6 +629,12 @@ object Resolver {
           }
           ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
+        case NamedAst.Expression.HoleWithExp(exp, loc) =>
+          val eVal = visitExp(exp, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.HoleWithExp(e, loc)
+          }
+
         case NamedAst.Expression.Use(use, exp, loc) =>
           // Lookup the used name to ensure that it exists.
           use match {

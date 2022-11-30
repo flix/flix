@@ -176,6 +176,9 @@ object Indexer {
     case Expression.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)
 
+    case Expression.HoleWithExp(exp, _, _, _, _) =>
+      Index.occurrenceOf(exp0) ++ visitExp(exp)
+
     case Expression.Use(_, _, _) =>
       Index.occurrenceOf(exp0) // TODO add use of sym
 

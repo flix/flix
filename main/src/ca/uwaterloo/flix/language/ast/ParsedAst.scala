@@ -537,6 +537,14 @@ object ParsedAst {
     case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Ident with Hole Expression.
+      *
+      * @param ident the ident of the expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class HolyName(ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Use Expression.
       *
       * @param sp1 the position of the first character in the expression.

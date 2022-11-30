@@ -518,6 +518,18 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          // result type is whatever is needed for the hole
+          resultTpe = tvar
+          // purity/effect type is AT LEAST the inner expression's purity/effect
+          atLeastPur = Type.mkAnd(pur, Type.freshVar(Kind.Bool, loc.asSynthetic), loc.asSynthetic)
+          resultPur <- unifyTypeM(atLeastPur, pvar, loc)
+          atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Effect, loc.asSynthetic), loc.asSynthetic)
+          resultEff <- unifyTypeM(atLeastEff, evar, loc)
+        } yield (tconstrs, resultTpe, resultPur, resultEff)
+
       case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
@@ -1946,6 +1958,10 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
       case KindedAst.Expression.Use(sym, exp, loc) =>
         val e = visitExp(exp, subst0)

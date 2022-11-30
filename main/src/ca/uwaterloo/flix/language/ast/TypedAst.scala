@@ -109,6 +109,8 @@ object TypedAst {
       def eff: Type = Type.Empty
     }
 
+    case class HoleWithExp(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = exp.tpe
 
