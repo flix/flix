@@ -780,7 +780,7 @@ object Stratifier {
 
     Type.eraseAliases(tpe) match {
       case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
-      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
+      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'", other.loc)
     }
   }
 
@@ -820,7 +820,7 @@ object Stratifier {
       val den = tc match {
         case TypeConstructor.Relation => Denotation.Relational
         case TypeConstructor.Lattice => Denotation.Latticenal
-        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'")
+        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'", tpe.loc)
       }
       t.baseType match {
         case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
@@ -830,7 +830,7 @@ object Stratifier {
     case _: Type.Var =>
       // This could occur when querying or projecting a non-existent predicate
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**

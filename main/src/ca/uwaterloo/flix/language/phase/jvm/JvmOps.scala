@@ -77,7 +77,7 @@ object JvmOps {
       val fqn = clazz.getName.replace('.', '/')
       JvmType.Reference(JvmName.mk(fqn))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
 
@@ -125,7 +125,7 @@ object JvmOps {
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
   /**
@@ -153,7 +153,7 @@ object JvmOps {
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
   /**
@@ -181,7 +181,7 @@ object JvmOps {
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
   /**
@@ -224,7 +224,7 @@ object JvmOps {
       // The enum resides in its namespace package.
       JvmType.Reference(JvmName(sym.namespace, name))
 
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
   /**
@@ -347,7 +347,7 @@ object JvmOps {
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
 
@@ -403,7 +403,7 @@ object JvmOps {
 
       // The type resides in the ca.uwaterloo.flix.api.cell package.
       JvmType.Reference(JvmName(Nil, name))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
   /**
@@ -746,7 +746,7 @@ object JvmOps {
     case MonoType.RecordExtend(field, value, rest) => Type.mkRecordRowExtend(Name.Field(field, SourceLocation.Unknown), hackMonoType2Type(value), hackMonoType2RecordRowType(rest), SourceLocation.Unknown)
     case MonoType.RecordEmpty() => Type.RecordRowEmpty
     case MonoType.Var(id) => Type.Var(hackId2TypeVarSym(id), SourceLocation.Unknown)
-    case _ => throw InternalCompilerException("Unexpected non-row type.")
+    case _ => throw InternalCompilerException("Unexpected non-row type.", SourceLocation.Unknown)
   }
 
   // TODO: Remove
@@ -754,7 +754,7 @@ object JvmOps {
     case MonoType.SchemaExtend(sym, t, rest) => Type.mkSchemaRowExtend(Name.Pred(sym, SourceLocation.Unknown), hackMonoType2Type(t), hackMonoType2SchemaRowType(rest), SourceLocation.Unknown)
     case MonoType.SchemaEmpty() => Type.SchemaRowEmpty
     case MonoType.Var(id) => Type.Var(hackId2TypeVarSym(id), SourceLocation.Unknown)
-    case _ => throw InternalCompilerException("Unexpected non-row type.")
+    case _ => throw InternalCompilerException("Unexpected non-row type.", SourceLocation.Unknown)
   }
 
   // TODO: Remove
@@ -771,7 +771,7 @@ object JvmOps {
     case MonoType.Enum(_, _) =>
       val tags = getTagsOf(tpe)
       tags.find(_.tag == tag).get
-    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe", SourceLocation.Unknown)
   }
 
   /**
@@ -1271,17 +1271,17 @@ object JvmOps {
     if (Files.exists(path)) {
       // Check that the file is a regular file.
       if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-        throw InternalCompilerException(s"Unable to write to non-regular file: '$path'.")
+        throw InternalCompilerException(s"Unable to write to non-regular file: '$path'.", SourceLocation.Unknown)
       }
 
       // Check if the file is writable.
       if (!Files.isWritable(path)) {
-        throw InternalCompilerException(s"Unable to write to read-only file: '$path'.")
+        throw InternalCompilerException(s"Unable to write to read-only file: '$path'.", SourceLocation.Unknown)
       }
 
       // Check that the file is empty or a class file.
       if (!(isEmpty(path) || isClassFile(path))) {
-        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.")
+        throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.", SourceLocation.Unknown)
       }
     }
 

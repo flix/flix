@@ -65,7 +65,7 @@ object Lowering {
       * Returns the definition associated with the given symbol `sym`.
       */
     def lookup(sym: Symbol.DefnSym)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def = root.defs.get(sym) match {
-      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
+      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?", sym.loc)
       case Some(d) => d
     }
   }
@@ -674,7 +674,7 @@ object Lowering {
         LoweredAst.Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
       case _ =>
-        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
+        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp", loc0)
     }
 
     case TypedAst.Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
@@ -735,7 +735,7 @@ object Lowering {
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
-        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
+        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
       }
 
       // Compute the symbol of the function.
@@ -758,7 +758,7 @@ object Lowering {
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
-        case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.")
+        case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.", loc)
       }
 
       // Compute the symbol of the function.
@@ -1055,15 +1055,15 @@ object Lowering {
     case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       mkBodyTermLit(box(LoweredAst.Expression.Cst(cst, tpe, loc)))
 
-    case TypedAst.Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Array(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayTailSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
@@ -1126,7 +1126,7 @@ object Lowering {
 
     case Latticenal =>
       tpeOpt match {
-        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
+        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
         case Some(tpe) =>
           // The type `Denotation[tpe]`.
           val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, loc)
@@ -1211,7 +1211,7 @@ object Lowering {
 
     // Check that we have <= 5 free variables.
     if (arity > 5) {
-      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
     }
 
     // Special case: No free variables.
@@ -1261,7 +1261,7 @@ object Lowering {
 
     // Check that we have <= 5 free variables.
     if (arity > 5) {
-      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
     }
 
     // Special case: No free variables.
@@ -1372,7 +1372,7 @@ object Lowering {
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
           case Type.Apply(_, t, _) => t
-          case _ => throw InternalCompilerException("Unexpected channel type found.")
+          case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
         }
         val get = LoweredAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = LoweredAst.Expression.Apply(get, List(LoweredAst.Expression.Var(chSym, chan.tpe, loc), LoweredAst.Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)

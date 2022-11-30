@@ -185,7 +185,7 @@ object Resolver {
       case _: UnkindedType.Arrow => Nil
       case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
       case _: UnkindedType.Enum => Nil
-      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias")
+      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", tpe0.loc)
     }
 
     /**
@@ -663,7 +663,7 @@ object Resolver {
                 }
               }
 
-            case NamedAst.UseOrImport.Import(_, _, _) => throw InternalCompilerException("unexpected import")
+            case NamedAst.UseOrImport.Import(_, _, loc) => throw InternalCompilerException("unexpected import", loc)
           }
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
@@ -2043,8 +2043,8 @@ object Resolver {
           case (t, ts) => UnkindedType.mkApply(UnkindedType.Ascribe(t, kind, loc), ts, tpe0.loc)
         }
 
-      case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application")
-      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias")
+      case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
+      case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
     }
   }
 
@@ -2690,8 +2690,8 @@ object Resolver {
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
 
-        case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t")
-        case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t")
+        case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
 
       }
 
@@ -2732,9 +2732,9 @@ object Resolver {
       case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
 
       // Case 6: Unexpected type. Crash.
-      case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t")
-      case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t")
-      case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t")
+      case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
+      case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
+      case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
     }
   }
 
@@ -2788,7 +2788,7 @@ object Resolver {
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case Declaration.Op(sym, spec) => sym
-    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance")
+    case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 
   /**

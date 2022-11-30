@@ -345,7 +345,7 @@ object Finalize {
       base match {
         case None => t0 match {
           case Type.Var(sym, _) => MonoType.Var(sym.id)
-          case _ => throw InternalCompilerException(s"Unexpected type: $t0")
+          case _ => throw InternalCompilerException(s"Unexpected type: $t0", t0.loc)
         }
 
         case Some(tc) =>
@@ -378,9 +378,9 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender")
+            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender", tpe0.loc)
 
-            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver")
+            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver", tpe0.loc)
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
@@ -426,19 +426,19 @@ object Finalize {
             case TypeConstructor.All => MonoType.Unit
 
             case TypeConstructor.Relation =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.Lattice =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.SchemaRowEmpty =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.SchemaRowExtend(pred) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.Schema =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
           }
       }
     }
