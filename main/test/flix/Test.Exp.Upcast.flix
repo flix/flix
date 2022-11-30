@@ -189,6 +189,13 @@ namespace Test/Exp/Upcast {
         let f = (_: ##java.lang.Number) -> ();
         f(upcast 1.23ff)
 
+    @test
+    def testUpcast20(): Int32 = region r {
+        let _ = r; // Use r in the scope to avoid redundancy error
+        let f = (g: Int32 -> Int32 \ r) -> x -> g(x);
+        f(upcast x -> x + 1: Int32, 1)
+    }
+
     pub eff A
     pub eff B
     pub eff C

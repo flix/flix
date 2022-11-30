@@ -95,6 +95,9 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
+      case Expression.HoleWithExp(exp, _, _, _, _) =>
+        visitExp(exp, renv)
+
       case Expression.Use(_, exp, _) =>
         visit(exp)
 
@@ -387,8 +390,8 @@ object Safety {
     *
     */
   private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.True, Type.Var(_, _)) => true
-    case (Type.True, Type.False) => true
+    case (Type.Empty, _) => true
+    case (Type.True, _) => true
     case (Type.Var(_, _), Type.False) => true
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
