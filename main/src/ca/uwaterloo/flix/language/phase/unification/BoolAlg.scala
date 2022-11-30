@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 
 /**
-  * A type class for Boolean Fs.
+  * A type class for Boolean Formulas.
   */
 trait BoolAlg[F] {
 

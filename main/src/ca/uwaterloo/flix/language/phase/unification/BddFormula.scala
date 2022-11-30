@@ -26,26 +26,24 @@ object BddFormula {
 
   val creator = Builders.bddBuilder().build()
 
-  class BddFormula(val dd: DD) extends Formula {
-    def getDD(): DD = dd
-  }
+  class BddFormula(val dd: DD) extends Formula { }
 
   implicit val AsBoolAlg: BoolAlg[BddFormula] = new BoolAlg[BddFormula] {
     /**
       * Returns `true` if `f` represents TRUE.
       */
-    override def isTrue(f: BddFormula): Boolean = f.getDD().isTrue()
+    override def isTrue(f: BddFormula): Boolean = f.dd.isTrue()
 
     /**
       * Returns `true` if `f` represents FALSE.
       */
-    override def isFalse(f: BddFormula): Boolean = f.getDD().isFalse()
+    override def isFalse(f: BddFormula): Boolean = f.dd.isFalse()
 
     /**
       * Returns `true` if `f` represents a variable.
       */
     override def isVar(f: BddFormula): Boolean =
-      f.getDD().equalsTo(f.getDD().getVariable, creator.makeFalse(), creator.makeTrue())
+      f.dd.equalsTo(f.dd.getVariable, creator.makeFalse(), creator.makeTrue())
 
     /**
       * Returns a representation of TRUE.
@@ -72,35 +70,35 @@ object BddFormula {
       * Returns a representation of the complement of `f`.
       */
     override def mkNot(f: BddFormula): BddFormula = {
-      new BddFormula(creator.makeNot(f.getDD()))
+      new BddFormula(creator.makeNot(f.dd))
     }
 
     /**
       * Returns a representation of the disjunction of `f1` and `f2`.
       */
     override def mkOr(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeOr(f1.getDD(), f2.getDD()))
+      new BddFormula(creator.makeOr(f1.dd, f2.dd))
     }
 
     /**
       * Returns a representation of the conjunction of `f1` and `f2`.
       */
     override def mkAnd(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeAnd(f1.getDD(), f2.getDD()))
+      new BddFormula(creator.makeAnd(f1.dd, f2.dd))
     }
 
     /**
       * Returns a representation of the formula `f1 == f2`.
       */
     override def mkXor(f1: BddFormula, f2: BddFormula): BddFormula = {
-      new BddFormula(creator.makeXor(f1.getDD(), f2.getDD()))
+      new BddFormula(creator.makeXor(f1.dd, f2.dd))
     }
 
     /**
       * Returns the set of free variables in `f`.
       */
     override def freeVars(f: BddFormula): SortedSet[Int] = {
-      freeVarsAux(f.getDD())
+      freeVarsAux(f.dd)
     }
 
     private def freeVarsAux(dd: DD): SortedSet[Int] = {
@@ -117,7 +115,7 @@ object BddFormula {
       * Applies the function `fn` to every variable in `f`.
       */
     override def map(f: BddFormula)(fn: Int => BddFormula): BddFormula = {
-      new BddFormula(mapAux(f.getDD())(fn))
+      new BddFormula(mapAux(f.dd)(fn))
     }
 
     private def mapAux(dd: DD)(fn: Int => BddFormula): DD = {
@@ -125,7 +123,7 @@ object BddFormula {
         dd
       } else {
         val currentVar = dd.getVariable()
-        val substDD = fn(currentVar).getDD()
+        val substDD = fn(currentVar).dd
 
         val lowRes = mapAux(dd.getLow())(fn)
         val highRes = mapAux(dd.getHigh())(fn)
@@ -142,7 +140,7 @@ object BddFormula {
       * Converts the given formula f into a type.
       */
     override def toType(f: BddFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-      createTypeFromBDDAux(f.getDD(), Type.True, env)
+      createTypeFromBDDAux(f.dd, Type.True, env)
     }
 
     //TODO: Optimize
@@ -176,7 +174,7 @@ object BddFormula {
       * Returns `Some(true)` if `f` is satisfiable (i.e. has a satisfying assignment).
       * Returns `Some(false)` otherwise.
       */
-    override def satisfiable(f: BddFormula): Boolean = !f.getDD().isFalse()
+    override def satisfiable(f: BddFormula): Boolean = !f.dd.isFalse()
 
   }
 }

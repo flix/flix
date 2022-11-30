@@ -27,6 +27,8 @@ trait Formula {}
 
 object HybridFormula {
 
+  val var_threshold = 4
+
   implicit val boolAlg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
   implicit val bddAlg: BoolAlg[BddFormula] = BddFormula.AsBoolAlg
 
@@ -48,7 +50,7 @@ object HybridFormula {
 
   def convertToBoolFormula(f: Formula): BoolFormula = f match {
     case boolForm: BoolFormula => boolForm
-    case bddForm: BddFormula => convertBddFormToBoolForm(bddForm.getDD(), boolAlg.mkTrue)
+    case bddForm: BddFormula => convertBddFormToBoolForm(bddForm.dd, boolAlg.mkTrue)
   }
 
   def convertBddFormToBoolForm(dd: DD, acc: BoolFormula): BoolFormula = {
@@ -105,7 +107,7 @@ object HybridFormula {
 
     override def mkOr(f1: HybridFormula, f2: HybridFormula): HybridFormula = {
       val collectedVars = f1.vars ++ f2.vars
-      if(collectedVars.size > 4) {
+      if(collectedVars.size > var_threshold) {
         //convert to BDDFormulas
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
@@ -122,14 +124,14 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkOr(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException("Unexpected BDD formula with < 4 variables")
+          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $var_threshold variables")
         }
       }
     }
 
     override def mkAnd(f1: HybridFormula, f2: HybridFormula): HybridFormula = {
       val collectedVars = f1.vars ++ f2.vars
-      if (collectedVars.size > 4) {
+      if (collectedVars.size > var_threshold) {
         //convert to BDDFormulas
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
@@ -146,7 +148,7 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkAnd(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException("Unexpected BDD formula with < 4 variables")
+          case _ => throw InternalCompilerException(s"Unexpected BDD formula with < $var_threshold variables")
         }
       }
     }
@@ -157,13 +159,13 @@ object HybridFormula {
       case boolForm: BoolFormula =>
         val mapRes = boolAlg.map(boolForm)(fn andThen (g => convertToBoolFormula(g.formula)))
         val newVars =  boolAlg.freeVars(mapRes)
-        if(newVars.size > 4)
+        if(newVars.size > var_threshold)
           new HybridFormula(convertToBddFormula(mapRes), newVars)
         else new HybridFormula(mapRes, newVars)
       case bddForm: BddFormula =>
         val mapRes = bddAlg.map(bddForm)(fn andThen (g => convertToBddFormula(g.formula)))
         val newVars = bddAlg.freeVars(mapRes)
-        if (newVars.size > 4)
+        if (newVars.size > var_threshold)
           new HybridFormula(mapRes, newVars)
         else new HybridFormula(convertToBoolFormula(mapRes), newVars)
     }
