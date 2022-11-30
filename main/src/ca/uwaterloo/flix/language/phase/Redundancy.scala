@@ -387,7 +387,7 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isImpureDiscardedValue(exp1)) {
+      } else if (isImpureDiscardedValue(exp1) && !isHole(exp1)) {
         (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
@@ -942,6 +942,15 @@ object Redundancy {
     */
   private def isImpureDiscardedValue(exp: Expression): Boolean =
     !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
+
+  /**
+    * Returns true if the expression is a hole.
+    */
+  private def isHole(exp: Expression): Boolean = exp match {
+    case Expression.Hole(_, _, _) => true
+    case Expression.HoleWithExp(_, _, _, _, _) => true
+    case _ => false
+  }
 
   /**
     * Returns the free variables in the pattern `p0`.
