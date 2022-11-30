@@ -714,6 +714,17 @@ object Resolver {
             case DefOrSig.Sig(sig) => visitApplySig(app, sig, exps, uenv0, region, innerLoc, outerLoc)
           }
 
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.UnqualifiedDefOrSig(ident, env, innerLoc), exps, outerLoc) =>
+          tryLookupName2(Name.mkQName(ident), uenv0, ns0, root) match {
+            // If the name is a declaration or sig, use it.
+            case DeclarationOrJavaClass.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
+              visitApplyDef(app, defn, exps, uenv0, region, innerLoc, outerLoc)
+            case DeclarationOrJavaClass.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
+              visitApplySig(app, sig, exps, uenv0, region, innerLoc, outerLoc)
+            // If not, assume it's a lambda and visit normally.
+            case _ => visitApply(app, uenv0, region)
+          }
+
         case app@NamedAst.Expression.Apply(_, _, _) =>
           visitApply(app, uenv0, region)
 
