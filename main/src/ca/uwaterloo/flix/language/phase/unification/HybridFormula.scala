@@ -122,7 +122,7 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkOr(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException("Big mistake. Big. Huge!")
+          case _ => throw InternalCompilerException("Unexpected BDD formula with < 4 variables")
         }
       }
     }
@@ -146,7 +146,7 @@ object HybridFormula {
         (f1.formula, f2.formula) match {
           case (boolForm1: BoolFormula, boolForm2: BoolFormula) =>
             new HybridFormula(boolAlg.mkAnd(boolForm1, boolForm2), collectedVars)
-          case _ => throw InternalCompilerException("Big mistake. Big. Huge!")
+          case _ => throw InternalCompilerException("Unexpected BDD formula with < 4 variables")
         }
       }
     }
