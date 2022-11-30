@@ -70,7 +70,7 @@ object FormatExpression {
     case TypedAst.Expression.GetChannel(exp, _, _, _, _) => s"GetChannel($exp)"
     case TypedAst.Expression.PutChannel(exp1, exp2, _, _, _, _) => s"PutChannel($exp1, $exp2)"
     case TypedAst.Expression.SelectChannel(rules, default, _, _, _, _) => s"SelectChannel(${rules.mkString(", ")}, $default)"
-    case TypedAst.Expression.Spawn(exp, _, _, _, _) => s"Spawn($exp)"
+    case TypedAst.Expression.Spawn(exp1, exp2, _, _, _, _) => s"Spawn($exp1, $exp2)"
     case TypedAst.Expression.Par(exp, _) => s"Par($exp)"
     case TypedAst.Expression.ParYield(frags, exp, _, _, _, _) => s"ParYield(${frags.mkString(",")}, $exp)"
 

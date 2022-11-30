@@ -216,7 +216,7 @@ object PatternExhaustiveness {
         val chans = rules.map(_.chan)
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp(_, root))
 
-      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Spawn(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Par(exp, _) => visitExp(exp, root)
 
       case Expression.ParYield(frags, exp, _, _, _, loc) =>

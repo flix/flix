@@ -118,6 +118,31 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate an impossible cast.
+    *
+    * @param from the type of the expression being cast.
+    * @param to   the type being cast to, i.e. the declared type or effect of the cast.
+    * @param loc  the source location of the cast.
+    */
+  case class ImpossibleCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Impossible cast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following cast is impossible and will never succeed.
+         |
+         |${code(loc, "the cast occurs here.")}
+         |
+         |Actual type:      ${formatIfJavaType(from)}
+         |Tried casting to: ${formatIfJavaType(to)}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an invalid use of upcast.
     *
     * @param actual   the type of the expression being upcast.
