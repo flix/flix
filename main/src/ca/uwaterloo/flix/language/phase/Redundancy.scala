@@ -281,6 +281,9 @@ object Redundancy {
 
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
+    case Expression.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Use(_, exp, _) =>
       visitExp(exp, env0, rc) // TODO check for unused syms
 
