@@ -95,6 +95,9 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
+      case Expression.HoleWithExp(exp, _, _, _, _) =>
+        visitExp(exp, renv)
+
       case Expression.Use(_, exp, _) =>
         visit(exp)
 
