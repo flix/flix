@@ -11,9 +11,9 @@
 
 ## Wishes for Visual Studio Code
 
-
+- Collapse/Expand uses/imports.
 - Add Flixify-Bright theme.
-- Automated Testing of Extension
+- Automated Testing of Extension.
 
 ## Non-Wishes
 
