@@ -351,7 +351,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
         let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
-        s |> Foldable.foldRight(f1, upcast(x1 -> Applicative.point(x1)), t)
+        s |> Foldable.foldRight(f1, upcast x1 -> Applicative.point(x1): m[b], t)
 
     ///
     /// A monadic version of `foldRight`.
