@@ -93,6 +93,8 @@ object CodeHinter {
 
     case Expression.Hole(_, _, _) => Nil
 
+    case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
@@ -268,8 +270,8 @@ object CodeHinter {
         case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
       } ++ default.map(visitExp).getOrElse(Nil)
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Par(exp, _) =>
       visitExp(exp)

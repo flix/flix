@@ -732,7 +732,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
@@ -992,7 +992,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ keyword("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+      SP ~ keyword("spawn") ~ WS ~ Expression ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
     }
 
     def Par: Rule1[ParsedAst.Expression.Par] = rule {
@@ -1134,6 +1134,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
+      Names.Variable ~ "?" ~ SP ~> ParsedAst.Expression.HolyName
     }
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {

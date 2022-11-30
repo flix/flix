@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -335,6 +335,11 @@ object Lowering {
       LoweredAst.Expression.Sig(sym, t, loc)
 
     case TypedAst.Expression.Hole(sym, tpe, loc) =>
+      val t = visitType(tpe)
+      LoweredAst.Expression.Hole(sym, t, loc)
+
+    case TypedAst.Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+      val sym = Symbol.freshHoleSym(loc)
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
@@ -661,7 +666,8 @@ object Lowering {
         case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
       }
 
-    case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Spawn(exp, _, tpe, pur, eff, loc) =>
+      // Note: We explicitly ignore the region.
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Spawn(e, t, pur, eff, loc)
@@ -1388,7 +1394,8 @@ object Lowering {
   private def mkSelectDefaultCase(default: Option[LoweredAst.Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[LoweredAst.MatchRule] = {
     default match {
       case Some(defaultExp) =>
-        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
+        val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1681,13 +1688,6 @@ object Lowering {
     */
   def mkTuplePattern(patterns: List[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
     LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
-  }
-
-  /**
-    * Returns a wildcard (match anything) pattern.
-    */
-  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc)
   }
 
   /**

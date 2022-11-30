@@ -286,6 +286,8 @@ object SemanticTokensProvider {
 
     case Expression.Hole(_, _, _) => Iterator.empty
 
+    case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
+
     case Expression.Use(_, _, _) => Iterator.empty // TODO add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
@@ -488,7 +490,7 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
-    case Expression.Spawn(exp, _, _, _, _) => visitExp(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Par(exp, _) => visitExp(exp)
 

@@ -374,7 +374,7 @@ namespace Int32 {
         (valueOf(x) |> doubleValue)
 
     ///
-    /// Convert `x` to a Float64.
+    /// Convert `x` to a BigDecimal.
     ///
     /// The numeric value of `x` is preserved exactly.
     ///

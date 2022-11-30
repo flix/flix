@@ -88,6 +88,8 @@ object NamedAst {
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
+    case class HoleWithExp(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Use(use: NamedAst.UseOrImport, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Expression
@@ -196,7 +198,7 @@ object NamedAst {
 
     case class SelectChannel(rules: List[NamedAst.SelectChannelRule], default: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Spawn(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Spawn(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Par(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
