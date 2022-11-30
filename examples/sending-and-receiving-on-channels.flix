@@ -17,6 +17,6 @@ def recvN(n: Int32, r: Receiver[Int32, r]): List[Int32] \ IO =
 def main(): Unit \ IO = region r {
     let l = 1 :: 2 :: 3 :: Nil;
     let (tx, rx) = Channel.buffered(r, 100);
-    spawn sendAll(l, tx);
-    spawn recvN(List.length(l), rx)
+    spawn sendAll(l, tx) @ r;
+    spawn recvN(List.length(l), rx) @ r
 }

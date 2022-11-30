@@ -666,7 +666,8 @@ object Lowering {
         case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
       }
 
-    case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Spawn(exp, _, tpe, pur, eff, loc) =>
+      // Note: We explicitly ignore the region.
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Spawn(e, t, pur, eff, loc)

@@ -1,57 +1,57 @@
 namespace Test/Exp/Concurrency/Spawn {
 
     @test
-    def testSpawn01(): Unit \ IO = spawn ()
+    def testSpawn01(): Unit \ IO = spawn () @ Static
 
     @test
-    def testSpawn02(): Unit \ IO = spawn true
+    def testSpawn02(): Unit \ IO = spawn true @ Static
 
     @test
-    def testSpawn03(): Unit \ IO = spawn 'a'
+    def testSpawn03(): Unit \ IO = spawn 'a' @ Static
 
     @test
-    def testSpawn04(): Unit \ IO = spawn 1.0f32 + 2.0f32
+    def testSpawn04(): Unit \ IO = spawn 1.0f32 + 2.0f32 @ Static
 
     @test
-    def testSpawn05(): Unit \ IO = spawn 1.0f64 + 2.0f64
+    def testSpawn05(): Unit \ IO = spawn 1.0f64 + 2.0f64 @ Static
 
     @test
-    def testSpawn06(): Unit \ IO = spawn 1i8 + 2i8
+    def testSpawn06(): Unit \ IO = spawn 1i8 + 2i8 @ Static
 
     @test
-    def testSpawn07(): Unit \ IO = spawn 1i16 + 2i16
+    def testSpawn07(): Unit \ IO = spawn 1i16 + 2i16 @ Static
 
     @test
-    def testSpawn08(): Unit \ IO = spawn 1i32 + 2i32
+    def testSpawn08(): Unit \ IO = spawn 1i32 + 2i32 @ Static
 
     @test
-    def testSpawn09(): Unit \ IO = spawn 1i64 + 2i64
+    def testSpawn09(): Unit \ IO = spawn 1i64 + 2i64 @ Static
 
     @test
-    def testSpawn10(): Unit \ IO = spawn 1ii + 2ii
+    def testSpawn10(): Unit \ IO = spawn 1ii + 2ii @ Static
 
     @test
-    def testSpawn11(): Unit \ IO = spawn "Hello World!"
+    def testSpawn11(): Unit \ IO = spawn "Hello World!" @ Static
 
     @test
-    def testSpawn12(): Unit \ IO = spawn (123, 456)
+    def testSpawn12(): Unit \ IO = spawn (123, 456) @ Static
 
     @test
-    def testSpawn13(): Unit \ IO = spawn None
+    def testSpawn13(): Unit \ IO = spawn None @ Static
 
     @test
-    def testSpawn14(): Unit \ IO = spawn Some(42)
+    def testSpawn14(): Unit \ IO = spawn Some(42) @ Static
 
     @test
-    def testSpawn15(): Unit \ IO = spawn Ok(42)
+    def testSpawn15(): Unit \ IO = spawn Ok(42) @ Static
 
     @test
-    def testSpawn16(): Unit \ IO = spawn Err(42)
+    def testSpawn16(): Unit \ IO = spawn Err(42) @ Static
 
     @test
-    def testSpawn17(): Unit \ IO = spawn spawn 123
+    def testSpawn17(): Unit \ IO = spawn spawn 123 @ Static @ Static
 
     @test
-    def testSpawn18(): Unit \ IO = spawn spawn spawn 123
+    def testSpawn18(): Unit \ IO = spawn spawn spawn 123 @ Static @ Static @ Static
 
 }

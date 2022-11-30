@@ -369,8 +369,8 @@ object Indexer {
       }
       i0 ++ i1 ++ Index.occurrenceOf(exp0)
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.Par(exp, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
