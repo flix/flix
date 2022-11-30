@@ -595,6 +595,11 @@ object Namer {
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
 
+    case WeededAst.Expression.HoleWithExp(exp, loc) =>
+      mapN(visitExp(exp, env0, uenv0, tenv0, ns0)) {
+        case e => NamedAst.Expression.HoleWithExp(e, loc)
+      }
+
     case WeededAst.Expression.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
       val uenv = uenv0.addAll(uses)
@@ -1452,6 +1457,7 @@ object Namer {
     case WeededAst.Expression.VarOrDefOrSig(ident, _) => List(ident)
     case WeededAst.Expression.DefOrSig(_, _) => Nil
     case WeededAst.Expression.Hole(_, _) => Nil
+    case WeededAst.Expression.HoleWithExp(exp, _) => freeVars(exp)
     case WeededAst.Expression.Use(_, exp, _) => freeVars(exp)
     case WeededAst.Expression.Cst(Ast.Constant.Unit, _) => Nil
     case WeededAst.Expression.Cst(Ast.Constant.Null, _) => Nil

@@ -338,6 +338,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+      val sym = Symbol.freshHoleSym(loc)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Hole(sym, t, loc)
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 

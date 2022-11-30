@@ -62,6 +62,11 @@ object Regions {
 
     case Expression.Hole(_, _, _) => ().toSuccess
 
+    case Expression.HoleWithExp(exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Use(_, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
