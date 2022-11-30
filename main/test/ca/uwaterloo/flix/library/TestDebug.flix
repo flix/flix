@@ -199,19 +199,19 @@ namespace TestDebug {
 
      @test
      def testNullStringify02(): Bool = {
-         let s = stringify(null as String);
+         let s = stringify(unsafe_cast null as String);
          s == "null"
      }
 
      @test
      def testNullStringify03(): Bool = {
-         let s = stringify(null as BigInt);
+         let s = stringify(unsafe_cast null as BigInt);
          s == "null"
      }
 
     @test
     def testNullStringify04(): Bool = {
-        let s = stringify(This(null as String));
+        let s = stringify(This(unsafe_cast null as String));
         s == "This"
     }
 
@@ -223,13 +223,13 @@ namespace TestDebug {
 
     @test
     def testNullStringify06(): Bool = region r {
-        let s = stringify([null as String, "42"] @ r);
+        let s = stringify([unsafe_cast null as String, "42"] @ r);
         s == "[null, 42]"
     }
 
     @test
     def testNullStringify07(): Bool = {
-        let s = stringify({field = null as String});
+        let s = stringify({field = unsafe_cast null as String});
         s == "{field = null}"
     }
 }

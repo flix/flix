@@ -51,7 +51,7 @@ def main(): Unit \ IO =
                  exp2 = Cst({value = 123}),
                  exp3 = Cst({value = 456})});
     let _h = typeOf(typeCheck(e));
-    () as \ IO // exit code
+    unsafe_cast () as \ IO // exit code
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:

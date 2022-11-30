@@ -21,5 +21,5 @@ namespace Test/Eff/Simplification {
     def pure(): Unit \ {} = ()
 
     /// an impure function
-    def impure(): Unit & Impure \ {} = () as \ IO
+    def impure(): Unit & Impure \ {} = unsafe_cast () as \ IO
 }

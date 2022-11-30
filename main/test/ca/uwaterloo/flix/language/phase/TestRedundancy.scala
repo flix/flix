@@ -47,11 +47,12 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.buffered(Static, 1);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.buffered(r, 1);
            |    select {
-           |        case _x <- recv(r) => _x
+           |        case _x <- recv(rx) => _x
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -255,14 +256,15 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.02") {
     val input =
       """
-        |def f(): Int32 \ IO =
+        |def f(): Int32 = region r {
         |    let x = 123;
-        |    let (s, r) = Channel.buffered(Static, 1);
-        |    Channel.send(456, s);
+        |    let (tx, rx) = Channel.buffered(r, 1);
+        |    Channel.send(456, tx);
         |    select {
-        |        case y <- recv(r) => y
-        |        case x <- recv(r) => x
+        |        case y <- recv(rx) => y
+        |        case x <- recv(rx) => x
         |    }
+        |}
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -738,11 +740,12 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered(Static);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.unbuffered(r);
            |    select {
-           |        case x <- recv(r) => 123
+           |        case x <- recv(rx) => 123
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -752,12 +755,13 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       raw"""
-           |def f(): Int32 \ IO =
-           |    let (_, r) = Channel.unbuffered(Static);
+           |def f(): Int32 = region r {
+           |    let (_, rx) = Channel.unbuffered(r);
            |    select {
-           |        case x <- recv(r) => x
-           |        case x <- recv(r) => 123
+           |        case x <- recv(rx) => x
+           |        case x <- recv(rx) => 123
            |    }
+           |}
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -875,7 +879,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantPurityCast.01") {
     val input =
       s"""
-         |pub def f(): Int32 = 123 as & Pure
+         |pub def f(): Int32 = unsafe_cast 123 as & Pure
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -887,7 +891,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       raw"""
            |pub def f(): Array[Int32, false] \ IO =
            |  let x = [1, 2, 3];
-           |  x as & Pure
+           |  unsafe_cast x as & Pure
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -897,7 +901,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantEffectCast.01") {
     val input =
       raw"""
-           |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = g(123) as \ ef
+           |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast g(123) as \ ef
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1077,7 +1081,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |namespace N {
         |    eff E
-        |    def foo(): Unit \ E = ??? as \ E
+        |    def foo(): Unit \ E = unsafe_cast ??? as \ E
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1264,8 +1268,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> () as \ { A, B, C };
-        |    let g = () -> () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as \ { A, B, C };
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f

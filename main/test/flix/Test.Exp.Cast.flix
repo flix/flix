@@ -1,138 +1,138 @@
 namespace Test/Exp/Cast {
 
     @test
-    def testCast01(): Unit = () as Unit
+    def testCast01(): Unit = unsafe_cast () as Unit
 
     @test
-    def testCast02(): Bool = true as Bool
+    def testCast02(): Bool = unsafe_cast true as Bool
 
     @test
-    def testCast03(): Bool = not false as Bool
+    def testCast03(): Bool = unsafe_cast not false as Bool
 
     @test
-    def testCast04(): Char = 'a' as Char
+    def testCast04(): Char = unsafe_cast 'a' as Char
 
     @test
-    def testCast05(): Float32 = 0.0f32 as Float32
+    def testCast05(): Float32 = unsafe_cast 0.0f32 as Float32
 
     @test
-    def testCast06(): Float64 = 0.0f64 as Float64
+    def testCast06(): Float64 = unsafe_cast 0.0f64 as Float64
 
     @test
-    def testCast07(): Int8 = 0i8 as Int8
+    def testCast07(): Int8 = unsafe_cast 0i8 as Int8
 
     @test
-    def testCast08(): Int16 = 0i16 as Int16
+    def testCast08(): Int16 = unsafe_cast 0i16 as Int16
 
     @test
-    def testCast09(): Int32 = 0i32 as Int32
+    def testCast09(): Int32 = unsafe_cast 0i32 as Int32
 
     @test
-    def testCast10(): Int64 = 0i64 as Int64
+    def testCast10(): Int64 = unsafe_cast 0i64 as Int64
 
     @test
-    def testCast11(): BigInt = 0ii as BigInt
+    def testCast11(): BigInt = unsafe_cast 0ii as BigInt
 
     @test
-    def testCast12(): BigDecimal = 0.0ff as BigDecimal
+    def testCast12(): BigDecimal = unsafe_cast 0.0ff as BigDecimal
 
     @test
-    def testCast13(): String = "hello world" as String
+    def testCast13(): String = unsafe_cast "hello world" as String
 
     @test
-    def testCast14(): (Int32, Int32, Int32) = (1, 2, 3) as (Int32, Int32, Int32)
+    def testCast14(): (Int32, Int32, Int32) = unsafe_cast (1, 2, 3) as (Int32, Int32, Int32)
 
     @test
-    def testCast15(): Option[Int32] = Some(42) as Option[Int32]
+    def testCast15(): Option[Int32] = unsafe_cast Some(42) as Option[Int32]
 
     @test
-    def testCastWithEff01(): Unit \ IO = () as Unit \ IO
+    def testCastWithEff01(): Unit \ IO = unsafe_cast () as Unit \ IO
 
     @test
-    def testCastWithEff02(): Bool \ IO = true as Bool \ IO
+    def testCastWithEff02(): Bool \ IO = unsafe_cast true as Bool \ IO
 
     @test
-    def testCastWithEff03(): Bool \ IO = not false as Bool \ IO
+    def testCastWithEff03(): Bool \ IO = unsafe_cast not false as Bool \ IO
 
     @test
-    def testCastWithEff04(): Char \ IO = 'a' as Char \ IO
+    def testCastWithEff04(): Char \ IO = unsafe_cast 'a' as Char \ IO
 
     @test
-    def testCastWithEff05(): Float32 \ IO = 0.0f32 as Float32 \ IO
+    def testCastWithEff05(): Float32 \ IO = unsafe_cast 0.0f32 as Float32 \ IO
 
     @test
-    def testCastWithEff06(): Float64 \ IO = 0.0f64 as Float64 \ IO
+    def testCastWithEff06(): Float64 \ IO = unsafe_cast 0.0f64 as Float64 \ IO
 
     @test
-    def testCastWithEff07(): Int8 \ IO = 0i8 as Int8 \ IO
+    def testCastWithEff07(): Int8 \ IO = unsafe_cast 0i8 as Int8 \ IO
 
     @test
-    def testCastWithEff08(): Int16 \ IO = 0i16 as Int16 \ IO
+    def testCastWithEff08(): Int16 \ IO = unsafe_cast 0i16 as Int16 \ IO
 
     @test
-    def testCastWithEff09(): Int32 \ IO = 0i32 as Int32 \ IO
+    def testCastWithEff09(): Int32 \ IO = unsafe_cast 0i32 as Int32 \ IO
 
     @test
-    def testCastWithEff10(): Int64 \ IO = 0i64 as Int64 \ IO
+    def testCastWithEff10(): Int64 \ IO = unsafe_cast 0i64 as Int64 \ IO
 
     @test
-    def testCastWithEff11(): BigInt \ IO = 0ii as BigInt \ IO
+    def testCastWithEff11(): BigInt \ IO = unsafe_cast 0ii as BigInt \ IO
 
     @test
-    def testCastWithEff12(): BigDecimal \ IO = 0.0ff as BigDecimal \ IO
+    def testCastWithEff12(): BigDecimal \ IO = unsafe_cast 0.0ff as BigDecimal \ IO
 
     @test
-    def testCastWithEff13(): String \ IO = "hello world" as String \ IO
+    def testCastWithEff13(): String \ IO = unsafe_cast "hello world" as String \ IO
 
     @test
-    def testCastWithEff14(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as (Int32, Int32, Int32) \ IO
+    def testCastWithEff14(): (Int32, Int32, Int32) \ IO = unsafe_cast (1, 2, 3) as (Int32, Int32, Int32) \ IO
 
     @test
-    def testCastWithEff15(): Option[Int32] \ IO = Some(42) as Option[Int32] \ IO
+    def testCastWithEff15(): Option[Int32] \ IO = unsafe_cast Some(42) as Option[Int32] \ IO
 
     @test
-    def testCastWithWildAndEff01(): Unit \ IO = () as \ IO
+    def testCastWithWildAndEff01(): Unit \ IO = unsafe_cast () as \ IO
 
     @test
-    def testCastWithWildAndEff02(): Bool \ IO = true as \ IO
+    def testCastWithWildAndEff02(): Bool \ IO = unsafe_cast true as \ IO
 
     @test
-    def testCastWithWildAndEff03(): Bool \ IO = not false as \ IO
+    def testCastWithWildAndEff03(): Bool \ IO = unsafe_cast not false as \ IO
 
     @test
-    def testCastWithWildAndEff04(): Char \ IO = 'a' as \ IO
+    def testCastWithWildAndEff04(): Char \ IO = unsafe_cast 'a' as \ IO
 
     @test
-    def testCastWithWildAndEff05(): Float32 \ IO = 0.0f32 as \ IO
+    def testCastWithWildAndEff05(): Float32 \ IO = unsafe_cast 0.0f32 as \ IO
 
     @test
-    def testCastWithWildAndEff06(): Float64 \ IO = 0.0f64 as \ IO
+    def testCastWithWildAndEff06(): Float64 \ IO = unsafe_cast 0.0f64 as \ IO
 
     @test
-    def testCastWithWildAndEff07(): Int8 \ IO = 0i8 as \ IO
+    def testCastWithWildAndEff07(): Int8 \ IO = unsafe_cast 0i8 as \ IO
 
     @test
-    def testCastWithWildAndEff08(): Int16 \ IO = 0i16 as \ IO
+    def testCastWithWildAndEff08(): Int16 \ IO = unsafe_cast 0i16 as \ IO
 
     @test
-    def testCastWithWildAndEff09(): Int32 \ IO = 0i32 as \ IO
+    def testCastWithWildAndEff09(): Int32 \ IO = unsafe_cast 0i32 as \ IO
 
     @test
-    def testCastWithWildAndEff10(): Int64 \ IO = 0i64 as \ IO
+    def testCastWithWildAndEff10(): Int64 \ IO = unsafe_cast 0i64 as \ IO
 
     @test
-    def testCastWithWildAndEff11(): BigInt \ IO = 0ii as \ IO
+    def testCastWithWildAndEff11(): BigInt \ IO = unsafe_cast 0ii as \ IO
 
     @test
-    def testCastWithWildAndEff12(): BigDecimal \ IO = 0.0ff as \ IO
+    def testCastWithWildAndEff12(): BigDecimal \ IO = unsafe_cast 0.0ff as \ IO
 
     @test
-    def testCastWithWildAndEff13(): String \ IO = "hello world" as \ IO
+    def testCastWithWildAndEff13(): String \ IO = unsafe_cast "hello world" as \ IO
 
     @test
-    def testCastWithWildAndEff14(): (Int32, Int32, Int32) \ IO = (1, 2, 3) as \ IO
+    def testCastWithWildAndEff14(): (Int32, Int32, Int32) \ IO = unsafe_cast (1, 2, 3) as \ IO
 
     @test
-    def testCastWithWildAndEff15(): Option[Int32] \ IO = Some(42) as \ IO
+    def testCastWithWildAndEff15(): Option[Int32] \ IO = unsafe_cast Some(42) as \ IO
 
 }

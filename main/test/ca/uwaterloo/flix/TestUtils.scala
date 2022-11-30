@@ -46,10 +46,10 @@ trait TestUtils {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass)
+      val actuals = errors.map(_.getClass).toList
 
       if (!actuals.exists(expected.isAssignableFrom(_)))
-        fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${errorString(errors)}.")
+        fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(_.getName)}.")
       else if (errors.exists(e => e.loc == SourceLocation.Unknown))
         fail("Error contains unknown source location.")
   }
