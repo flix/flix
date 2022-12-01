@@ -1,18 +1,20 @@
 # Wish List
 
-## Wished For
+## Wishes for the Language
 
-- Termination checker.
-- QuickCheck framework.
 - Semicolon inference.
-- Machine-learning based auto-completion suggestions.
 - Integrate websites with CI.
 - The Flix compiler written in Flix.
-- A machine-checked compiler.
 - A purple unicorn.
 - A fearsome dragon.
 - World peace.
 
-## Not Wished For
+## Wishes for Visual Studio Code
+
+- Collapse/Expand uses/imports.
+- Add Flixify-Bright theme.
+- Automated Testing of Extension.
+
+## Non-Wishes
 
 - async / await
