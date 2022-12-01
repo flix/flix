@@ -39,6 +39,7 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xallowredundancies = false,
+    xbddthreshold = 1_000,
     xnobooltable = false,
     xstatistics = false,
     xstrictmono = false,
@@ -86,6 +87,7 @@ object Options {
   * @param threads            selects the number of threads to use.
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param xallowredundancies disables the redundancy checker.
+  * @param xbddthreshold      the threshold for when to use BDDs for SVE.
   * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xstatistics        enables statistics collection.
   * @param xstrictmono        enables strict monomorphization.
@@ -104,6 +106,7 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
+                   xbddthreshold: Int,
                    xnobooltable: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
