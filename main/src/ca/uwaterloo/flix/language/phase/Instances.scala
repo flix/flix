@@ -170,7 +170,7 @@ object Instances {
             case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => List(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
-              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe)
+              val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
               if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
                 // Case 5.1: the schemes match. Success!
                 Nil
@@ -221,7 +221,7 @@ object Instances {
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
                       case Validation.Failure(errors) => errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, sym.loc)
-                        case _ => throw InternalCompilerException("Unexpected unification error")
+                        case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
                       case Validation.Success(_) => Nil
                     }

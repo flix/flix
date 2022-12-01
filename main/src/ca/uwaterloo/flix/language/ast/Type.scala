@@ -154,7 +154,7 @@ sealed trait Type {
     */
   def arrowArgTypes: List[Type] = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.drop(2).dropRight(1)
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
   /**
@@ -164,7 +164,7 @@ sealed trait Type {
     */
   def arrowResultType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.last
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
   /**
@@ -174,7 +174,7 @@ sealed trait Type {
     */
   def arrowPurityType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments.head
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
   /**
@@ -184,7 +184,7 @@ sealed trait Type {
     */
   def arrowEffectType: Type = typeConstructor match {
     case Some(TypeConstructor.Arrow(n)) => typeArguments(1)
-    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.")
+    case _ => throw InternalCompilerException(s"Unexpected non-arrow type: '$this'.", loc)
   }
 
   /**
@@ -431,7 +431,7 @@ object Type {
           //            }
           //          }
           k2
-        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.")
+        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.", loc)
       }
     }
 

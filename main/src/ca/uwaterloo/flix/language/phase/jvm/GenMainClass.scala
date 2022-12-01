@@ -49,7 +49,7 @@ object GenMainClass {
     */
   private def checkMainType(defn: Def): Unit = defn.tpe match {
     case MonoType.Arrow(List(MonoType.Unit), MonoType.Unit) => ()
-    case other => throw InternalCompilerException(s"Entrypoint function should have type Unit -> Unit not '$other'")
+    case other => throw InternalCompilerException(s"Entrypoint function should have type Unit -> Unit not '$other'", defn.loc)
   }
 
   /**

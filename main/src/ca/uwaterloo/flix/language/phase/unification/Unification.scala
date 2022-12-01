@@ -199,10 +199,10 @@ object Unification {
           Err(TypeError.NonSchemaType(tpe, renv, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
-          throw InternalCompilerException(s"Unexpected unification error: $err")
+          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
 
         case Result.Err(err: UnificationError.MultipleMatchingInstances) =>
-          throw InternalCompilerException(s"Unexpected unification error: $err")
+          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
       }
     })
   }
@@ -262,7 +262,7 @@ object Unification {
           } yield visit(i + 1, xs, ys, ls)
         case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
         case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
-        case _ => throw InternalCompilerException("Mismatched lists.")
+        case _ => throw InternalCompilerException("Mismatched lists.", loc)
       }
 
     visit(1, expectedTypes, actualTypes, actualLocs)
@@ -341,7 +341,7 @@ object Unification {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
             Err(TypeError.MismatchedBools(baseType1, baseType2, tpe1, tpe2, renv, loc))
 
-          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
+          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.", loc)
         }
       }
     }
@@ -394,7 +394,7 @@ object Unification {
     case None => tpe match {
       case t: Type.Var =>
         if (tvar.sym == t.sym) Type.True else tpe
-      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.")
+      case _ => throw InternalCompilerException(s"Unexpected type constructor: '$tpe'.", tpe.loc)
     }
 
     case Some(tc) => tc match {
@@ -414,7 +414,7 @@ object Unification {
         val List(t1, t2) = tpe.typeArguments
         Type.mkOr(purify(tvar, t1), purify(tvar, t2), tpe.loc)
 
-      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.")
+      case _ => throw InternalCompilerException(s"Unexpected non-Boolean type constructor: '$tc'.", tpe.loc)
     }
   }
 

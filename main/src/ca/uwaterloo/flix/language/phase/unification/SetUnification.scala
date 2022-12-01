@@ -73,7 +73,7 @@ object SetUnification {
     case tpe: Type.Var => tpe
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
 
-    case _: Type.Alias => throw InternalCompilerException("unexpected type alias")
+    case _: Type.Alias => throw InternalCompilerException("unexpected type alias", t.loc)
   }
 
   /**
@@ -491,7 +491,7 @@ object SetUnification {
     case INTERSECTION(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
     case Type.Empty => Nnf.Empty
     case Type.All => Nnf.All
-    case _ => throw InternalCompilerException(s"unexpected type: $t")
+    case _ => throw InternalCompilerException(s"unexpected type: $t", t.loc)
   }
 
   /**
@@ -509,7 +509,7 @@ object SetUnification {
       nnf(mkComplement(tpe1)),
       nnf(mkComplement(tpe2))
     )
-    case _ => throw InternalCompilerException(s"unexpected type: $t")
+    case _ => throw InternalCompilerException(s"unexpected type: $t", t.loc)
   }
 
   /**

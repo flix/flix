@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.mutable
 
@@ -25,7 +24,7 @@ import scala.collection.mutable
   * A custom class loader to load generated class files.
   *
   * @param classes A map from internal names (strings) to JvmClasses.
-  * 
+  *
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
@@ -71,8 +70,8 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
     }
   } catch {
     case ex: ClassFormatError =>
-      throw InternalRuntimeException(s"Unable to load: '$name' class due to class format error: ${ex.getMessage}")
+      throw new RuntimeException(s"Unable to load: '$name' class due to class format error: ${ex.getMessage}")
     case ex: NoClassDefFoundError =>
-      throw InternalRuntimeException(s"Unable to load: '$name' class not found: ${ex.getMessage}")
+      throw new RuntimeException(s"Unable to load: '$name' class not found: ${ex.getMessage}")
   }
 }

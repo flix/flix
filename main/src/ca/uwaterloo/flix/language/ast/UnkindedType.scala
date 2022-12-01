@@ -394,7 +394,7 @@ object UnkindedType {
     case ReadWrite(tpe, loc) => ReadWrite(eraseAliases(tpe), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case UnappliedAlias(_, _) => throw InternalCompilerException("unexpected unapplied alias")
+    case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
   }
 
   // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer

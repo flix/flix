@@ -92,7 +92,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     case _: InternalCompilerException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
-    case _: InternalRuntimeException =>
+    case _: RuntimeException =>
       log(s"Unexpected error: ${e.getMessage}")(ws)
       e.printStackTrace()
     case ex => throw ex

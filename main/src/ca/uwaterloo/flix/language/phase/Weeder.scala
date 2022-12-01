@@ -2306,7 +2306,7 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
+      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
     }
 
     //
@@ -2695,7 +2695,7 @@ object Weeder {
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
           WeederError.InconsistentTypeParameters(loc).toFailure
         // Case 4: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
+        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
@@ -2716,7 +2716,7 @@ object Weeder {
         // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
         // Case 3: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
+        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 

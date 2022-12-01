@@ -1152,8 +1152,8 @@ object GenExpression {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(visitor, sop)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor, sop)
+      case UnaryOperator.Minus => compileUnaryMinusExpr(visitor, sop, e.loc)
+      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor, sop, e.loc)
     }
   }
 
@@ -1175,7 +1175,7 @@ object GenExpression {
    * Note that in Java semantics, the unary minus operator returns an Int32 (int), so the programmer must explicitly
    * cast to an Int8 (byte).
    */
-  private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
+  private def compileUnaryMinusExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
     case Float32Op.Neg => visitor.visitInsn(FNEG)
     case Float64Op.Neg => visitor.visitInsn(DNEG)
     case BigDecimalOp.Neg =>
@@ -1192,7 +1192,7 @@ object GenExpression {
     case BigIntOp.Neg =>
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
   /*
@@ -1210,7 +1210,7 @@ object GenExpression {
    *
    * Note that sign extending and then negating a value is equal to negating and then sign extending it.
    */
-  private def compileUnaryNegateExpr(visitor: MethodVisitor, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
+  private def compileUnaryNegateExpr(visitor: MethodVisitor, sop: SemanticOperator, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = sop match {
     case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
       visitor.visitInsn(ICONST_M1)
       visitor.visitInsn(IXOR)
@@ -1221,7 +1221,7 @@ object GenExpression {
     case BigIntOp.Not =>
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
         AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
   /*
@@ -1262,7 +1262,7 @@ object GenExpression {
         case Float64Op.Exp => (NOP, NOP) // already a double
         case Int8Op.Exp | Int16Op.Exp | Int32Op.Exp => (I2D, D2I)
         case Int64Op.Exp => (L2D, D2L)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       visitor.visitInsn(castToDouble)
@@ -1275,7 +1275,7 @@ object GenExpression {
         case Int8Op.Exp => visitor.visitInsn(I2B)
         case Int16Op.Exp => visitor.visitInsn(I2S)
         case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1286,7 +1286,7 @@ object GenExpression {
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply", "multiply")
         case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder", "remainder")
         case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide", "divide")
-        case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
+        case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.", e1.loc)
       }
       sop match {
         case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div => visitor.visitInsn(floatOp)
@@ -1308,7 +1308,7 @@ object GenExpression {
         case StringOp.Concat =>
           visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
             AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
     }
   }
@@ -1374,7 +1374,7 @@ object GenExpression {
       case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
       case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
       case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
-      case BinaryOperator.Spaceship => throw InternalCompilerException("Unexpected operator.")
+      case BinaryOperator.Spaceship => throw InternalCompilerException("Unexpected operator.", e1.loc)
     }
     sop match {
       case StringOp.Eq | StringOp.Neq =>
@@ -1409,7 +1409,7 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.PrimInt), false)
         visitor.visitInsn(ICONST_0)
         visitor.visitJumpInsn(intOp, condElse)
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -1529,7 +1529,7 @@ object GenExpression {
       case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
         visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
           bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
     }
   }
 
