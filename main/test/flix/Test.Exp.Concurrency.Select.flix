@@ -112,7 +112,7 @@ namespace Test/Exp/Concurrency/Select {
             case x <- recv(rx1) => x == 1i8
         }
     }
-    
+
     @test
     def testSelectDefault01(): Bool = region r {
         select {
@@ -127,6 +127,27 @@ namespace Test/Exp/Concurrency/Select {
             case _ <- recv({let (_, rx) = Channel.buffered(r, 2); rx}) => 2
             case _                                                     => 1
         }) == 2
+    }
+
+    def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ { Read(r), Write(r) } = {
+        select {
+            case x <- Channel.recv(rx) => x
+            case _                     => 1
+        }
+    }
+
+    @test
+    def testSelectDefault03(): Bool = region r {
+        let (_, rx) = Channel.buffered(Static, 1);
+        // The helper function here triggered a bug previously
+        recvWithDefault(rx)
+    }
+
+    @test
+    def testSelectDefault04(): Bool = region r {
+        let (_, rx) = Channel.buffered(Static, 1);
+        // The helper function here triggered a bug previously
+        recvWithDefault(rx)
     }
 
     @test
