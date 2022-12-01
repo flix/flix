@@ -106,6 +106,9 @@ object Namer {
       }
   }
 
+  /**
+    * Adds symbols from the compilation unit to the table.
+    */
   private def tableUnit(unit: NamedAst.CompilationUnit, table0: SymbolTable): Validation[SymbolTable, NameError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports, decls, loc) =>
       fold(decls, table0) {
