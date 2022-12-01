@@ -136,12 +136,15 @@ namespace Test/Exp/Concurrency/Select {
         }
     }
 
-    @test
-    def testSelectDefault03(): Bool = region r {
-        let (_, rx) = Channel.buffered(Static, 1);
-        // The helper function here triggered a bug previously
-        recvWithDefault(rx)
+    def mainx(): Int32 \ IO = {
+      let (_, rx) = Channel.buffered(Static, 1);
+      recvWithDefault(rx)
     }
+
+    @test
+    def testSelectDefault03(): Unit \ IO =
+      // This test is from a bug report so its form is subtle and intentional
+      unsafe_cast println(mainx()) as \ IO
 
     @test
     def testSelectRandom01(): Unit \ IO = region r {
