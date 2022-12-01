@@ -144,13 +144,6 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectDefault04(): Bool = region r {
-        let (_, rx) = Channel.buffered(Static, 1);
-        // The helper function here triggered a bug previously
-        recvWithDefault(rx)
-    }
-
-    @test
     def testSelectRandom01(): Unit \ IO = region r {
         let (tx9, rx9) = Channel.buffered(r, 0);
         let (tx10, rx10) = Channel.buffered(r, 0);
