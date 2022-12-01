@@ -23,33 +23,35 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  test("AmbiguousVarOrUse.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    f(123)
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
+  // TODO move these to Redundancy
 
-  test("AmbiguousVarOrUse.02") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    use Foo.g;
-         |    let g = _ -> true;
-         |    f(g(123))
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
+//  test("AmbiguousVarOrUse.01") {
+//    val input =
+//      s"""
+//         |def foo(): Bool =
+//         |    use Foo.f;
+//         |    let f = _ -> true;
+//         |    f(123)
+//         |
+//       """.stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.AmbiguousVarOrUse](result)
+//  }
+//
+//  test("AmbiguousVarOrUse.02") {
+//    val input =
+//      s"""
+//         |def foo(): Bool =
+//         |    use Foo.f;
+//         |    let f = _ -> true;
+//         |    use Foo.g;
+//         |    let g = _ -> true;
+//         |    f(g(123))
+//         |
+//       """.stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.AmbiguousVarOrUse](result)
+//  }
 
   test("DuplicateLowerName.01") {
     val input =
@@ -901,16 +903,17 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.21") {
-    val input =
-      """
-        |import java.sql.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
+  // TODO move to redundancy
+//  test("DuplicateUpperName.21") {
+//    val input =
+//      """
+//        |import java.sql.Statement
+//        |enum Statement
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
   test("DuplicateUpperName.22") {
     val input =
       """
@@ -921,27 +924,28 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.23") {
-    val input =
-      """
-        |use A.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  test("DuplicateUpperName.24") {
-    val input =
-      """
-        |namespace A {
-        |    import java.sql.Statement
-        |    enum Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
+  // TODO move to Redundancy
+//  test("DuplicateUpperName.23") {
+//    val input =
+//      """
+//        |use A.Statement
+//        |enum Statement
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
+//
+//  test("DuplicateUpperName.24") {
+//    val input =
+//      """
+//        |namespace A {
+//        |    import java.sql.Statement
+//        |    enum Statement
+//        |}
+//        |""".stripMargin
+//    val result = compile(input, Options.TestWithLibNix)
+//    expectError[NameError.DuplicateUpperName](result)
+//  }
 
   // TODO move these tests to Redundancy
 //  test("DuplicateUpperName.25") {
