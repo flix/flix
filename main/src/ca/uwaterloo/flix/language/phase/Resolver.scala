@@ -95,10 +95,16 @@ object Resolver {
     }
   }
 
+  /**
+    * Builds a symbol table from the compilation unit.
+    */
   private def tableUnit(unit: ResolvedAst.CompilationUnit): SymbolTable = unit match {
     case ResolvedAst.CompilationUnit(_, decls, _) => SymbolTable.traverse(decls)(tableDecl)
   }
 
+  /**
+    * Builds a symbol table from the declaration.
+    */
   private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
     case ResolvedAst.Namespace(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
     case clazz: ResolvedAst.Class => SymbolTable.empty.addClass(clazz)
@@ -111,6 +117,9 @@ object Resolver {
     case ResolvedAst.Sig(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym")
   }
 
+  /**
+    * Semi-resolves the type aliases in the root.
+    */
   private def semiResolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
     fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
       case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, root)) {
@@ -121,6 +130,9 @@ object Resolver {
     }
   }
 
+  /**
+    * Semi-resolves the type aliases in the unit.
+    */
   private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
@@ -141,6 +153,9 @@ object Resolver {
       }
   }
 
+  /**
+    * Semi-resolves the type aliases in the namespace.
+    */
   private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, loc) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
@@ -252,6 +267,9 @@ object Resolver {
     }
   }
 
+  /**
+    * Performs name resolution on the compilation unit.
+    */
   private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
@@ -265,6 +283,9 @@ object Resolver {
       }
   }
 
+  /**
+    * Performs name resolution on the declaration.
+    */
   private def visitDecl(decl: NamedAst.Declaration, uenv0: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO move to helper for consistency
@@ -2885,8 +2906,9 @@ object Resolver {
     case Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 
-  // TODO limit the set of symbols that can be in useOrImport
-  // MATT docs
+  /**
+    * Resolves the symbol where the symbol is known to point to a valid declaration.
+    */
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): NamedAst.Declaration = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
