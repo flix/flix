@@ -694,9 +694,8 @@ object Resolver {
               }
 
             case NamedAst.UseOrImport.UseTag(qname, tag, alias, _) =>
-              flatMapN(lookupEnumByTag(Some(qname), tag, uenv0, ns0, root)) {
-                case enum0 =>
-                  val caze = enum0.cases(tag.name)
+              flatMapN(lookupTag(Some(qname), tag, uenv0, ns0, root)) {
+                case caze =>
                   val uenv = uenv0 + (alias.name -> DeclarationOrJavaClass.Declaration(caze))
                   mapN(visitExp(exp, uenv, region)) {
                     case e => ResolvedAst.Expression.Use(caze.sym, e, loc)
@@ -847,10 +846,8 @@ object Resolver {
             // Either it is implicitly Unit or the tag is used as a function.
 
             // Lookup the enum to determine the type of the tag.
-            lookupEnumByTag(enum, tag, uenv0, ns0, root) map {
-              case decl =>
-                // Retrieve the relevant case.
-                val caze = decl.cases(tag.name)
+            lookupTag(enum, tag, uenv0, ns0, root) map {
+              case caze =>
 
                 // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
@@ -879,14 +876,12 @@ object Resolver {
             }
           case Some(exp) =>
             // Case 2: The tag has an expression. Perform resolution on it.
-            val dVal = lookupEnumByTag(enum, tag, uenv0, ns0, root)
+            val cVal = lookupTag(enum, tag, uenv0, ns0, root)
             val eVal = visitExp(exp, uenv0, region)
-            mapN(dVal, eVal) {
-              case (d, e) =>
-                // Retrieve the relevant case.
-                val caze = d.cases(tag.name)
+            mapN(cVal, eVal) {
+              case (c, e) =>
 
-                ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), e, loc)
+                ResolvedAst.Expression.Tag(Ast.CaseSymUse(c.sym, tag.loc), e, loc)
             }
         }
 
@@ -1349,12 +1344,11 @@ object Resolver {
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
         case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
-          val dVal = lookupEnumByTag(enum, tag, uenv, ns0, root)
+          val cVal = lookupTag(enum, tag, uenv, ns0, root)
           val pVal = visit(pat)
-          mapN(dVal, pVal) {
-            case (d, p) =>
-              val caze = d.cases(tag.name)
-              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(caze.sym, tag.loc), p, loc)
+          mapN(cVal, pVal) {
+            case (c, p) =>
+              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, tag.loc), p, loc)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1695,7 +1689,7 @@ object Resolver {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, uenv: ListMap[String, DeclarationOrJavaClass], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  def lookupTag(qnameOpt: Option[Name.QName], tag: Name.Ident, uenv: ListMap[String, DeclarationOrJavaClass], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
     // Determine whether the name is qualified.
     qnameOpt match {
       case None =>
@@ -1704,67 +1698,64 @@ object Resolver {
         // Case 1.1. The name is in the uenv.
         uenv(tag.name) collectFirst {
           case DeclarationOrJavaClass.Declaration(caze: NamedAst.Declaration.Case) =>
-            root.symbols.getOrElse(Name.mkUnlocatedNName(caze.sym.enumSym.namespace), Map.empty).get(caze.sym.enumSym.name) match {
-              case Some(enum: NamedAst.Declaration.Enum) => return enum.toSuccess
-              case _ => throw InternalCompilerException("Unexpected missing enum")
-            }
+            return caze.toSuccess
         }
 
         // Find all matching enums in the current namespace.
-        val namespaceMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
+        val namespaceMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
         root.symbols.getOrElse(ns0, Map.empty).collect {
-          case (enumName, decl: NamedAst.Declaration.Enum) =>
-            for ((enumTag, caze) <- decl.cases) {
+          case (enumName, enum: NamedAst.Declaration.Enum) =>
+            for ((enumTag, caze) <- enum.cases) {
               if (tag.name == enumTag) {
-                namespaceMatches += decl
+                namespaceMatches += ((enum, caze))
               }
             }
         }
 
         // Case 1.1.1: Exact match found in the namespace.
         if (namespaceMatches.size == 1) {
-          val decl = namespaceMatches.head
-          return getEnumAccessibility(decl, ns0) match {
-            case EnumAccessibility.Accessible => decl.toSuccess
+          val (enum, caze) = namespaceMatches.head
+          return getEnumAccessibility(enum, ns0) match {
+            case EnumAccessibility.Accessible => caze.toSuccess
             case EnumAccessibility.Opaque =>
-              ResolutionError.OpaqueEnum(decl.sym, ns0, tag.loc).toFailure
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
             case EnumAccessibility.Inaccessible =>
-              ResolutionError.InaccessibleEnum(decl.sym, ns0, tag.loc).toFailure
+              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
         }
 
         // Case 1.1.2: Multiple matches found in the namespace.
         if (namespaceMatches.size > 1) {
-          val locs = namespaceMatches.map(_.sym.loc).toList.sorted
+          val locs = namespaceMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
           return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
         }
 
         // Find all matching enums in the root namespace.
-        val globalMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
+        val globalMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
         root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
-          case (enumName, decl: NamedAst.Declaration.Enum) =>
-            for ((enumTag, caze) <- decl.cases) {
+          case (enumName, enum: NamedAst.Declaration.Enum) =>
+            for ((enumTag, caze) <- enum.cases) {
               if (tag.name == enumTag) {
-                globalMatches += decl
+                globalMatches += ((enum, caze))
               }
             }
         }
 
         // Case 1.2.1: Exact match found in the root namespace.
         if (globalMatches.size == 1) {
-          val decl = globalMatches.head
-          return getEnumAccessibility(decl, ns0) match {
-            case EnumAccessibility.Accessible => decl.toSuccess
+          val (enum, caze) = globalMatches.head
+          return getEnumAccessibility(enum, ns0) match {
+            case EnumAccessibility.Accessible => caze.toSuccess
             case EnumAccessibility.Opaque =>
-              ResolutionError.OpaqueEnum(decl.sym, ns0, tag.loc).toFailure
+              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
             case EnumAccessibility.Inaccessible =>
-              ResolutionError.InaccessibleEnum(decl.sym, ns0, tag.loc).toFailure
+              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
         }
 
         // Case 1.2.2: Multiple matches found in the root namespace.
         if (globalMatches.size > 1) {
-          val locs = globalMatches.map(_.sym.loc).toList.sorted
+          val locs = globalMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
           return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
         }
 
@@ -1807,7 +1798,7 @@ object Resolver {
               if (tag.name == enumTag) {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
-                  case EnumAccessibility.Accessible => enum.toSuccess
+                  case EnumAccessibility.Accessible => caze.toSuccess
                   case EnumAccessibility.Opaque =>
                     ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
                   case EnumAccessibility.Inaccessible =>
