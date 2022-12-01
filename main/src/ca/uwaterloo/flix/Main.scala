@@ -390,10 +390,6 @@ object Main {
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
 
-      // Xno-bool-table
-      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
-        text("[experimental] disables Boolean minimization via tabling.")
-
       // Xstatistics
       opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
         text("[experimental] prints compilation statistics.")
@@ -409,6 +405,10 @@ object Main {
       // Xno-bool-effects
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
         text("[experimental] disables bool effects.")
+
+      // Xno-bool-table
+      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
+        text("[experimental] disables Boolean minimization via tabling.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
