@@ -673,4 +673,25 @@ namespace Test/Exp/ReifyType {
 
     @Test
     def testMagicList02(): Bool = magicList(3) |> List.isEmpty
+
+    //////////////////////////////////////
+    // Record tests                     //
+    //////////////////////////////////////
+
+    def hasCookie(x: {| _}): Bool = typematch x {
+        case _: {cookie = _ | _} => true
+        case _: _ => false
+    }
+
+    @Test
+    def testCookie01(): Bool = hasCookie({cookie = "woohoo"})
+
+    @Test
+    def testCookie02(): Bool = hasCookie({cookie = 123})
+
+    @Test
+    def testCookie03(): Bool = not hasCookie({})
+
+    @Test
+    def testCookie04(): Bool = not hasCookie({blah = 'h'})
 }
