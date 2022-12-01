@@ -96,6 +96,7 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       xallowredundancies = Options.Default.xallowredundancies,
+      xbddthreshold = cmdOpts.xbddthreshold,
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -216,6 +217,7 @@ object Main {
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
+                     xbddthreshold: Int = 1_000,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -372,9 +374,17 @@ object Main {
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
 
+      // Xbdd-threshold
+      opt[Int]("Xbdd-threshold").action((v, c) => c.copy(xbddthreshold = v)).
+        text("[experimental] sets the threshold for when to use BDDs.")
+
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables compiler debugging output.")
+
+      // Xflexible-regions
+      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
+        text("[experimental] uses flexible variables for regions")
 
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
@@ -407,10 +417,6 @@ object Main {
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
-
-      // Xvirtual-threads
-      opt[Unit]("Xflexible-regions").action((_, c) => c.copy(xflexibleregions = true)).
-        text("[experimental] uses flexible variables for regions")
 
       note("")
 

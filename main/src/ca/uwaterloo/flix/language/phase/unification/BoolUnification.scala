@@ -84,6 +84,8 @@ object BoolUnification {
 
     val renv = alg.liftRigidityEnv(renv0, env)
 
+    println(flix.options.xbddthreshold)
+
     //
     // Lookup the query to see if it is already in unification cache.
     //
