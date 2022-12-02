@@ -78,6 +78,10 @@ object OccurrenceAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
+    case class Region(tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = Pure
+    }
+
     case class Is(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression {
       def tpe: Type = Type.Bool
     }

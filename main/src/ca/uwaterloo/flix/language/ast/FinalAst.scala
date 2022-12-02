@@ -72,6 +72,8 @@ object FinalAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
+    case class Region(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }

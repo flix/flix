@@ -90,6 +90,10 @@ object SimplifiedAst {
 
     case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Region(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
+
     case class Is(sym: Symbol.CaseSym, exp: SimplifiedAst.Expression, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
