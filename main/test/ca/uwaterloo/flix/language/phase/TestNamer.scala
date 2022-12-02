@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  // TODO move these to Redundancy
+  // TODO NS-REFACTOR move these to Redundancy
 
 //  test("AmbiguousVarOrUse.01") {
 //    val input =
@@ -233,7 +233,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateLowerName](result)
   }
 
-  // TODO these errors will be moved to Redundancy
+  // TODO NS-REFACTOR these errors will be moved to Redundancy
 //  test("DuplicateUseLower.01") {
 //    val input =
 //      s"""
@@ -903,7 +903,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  // TODO move to redundancy
+  // TODO NS-REFACTOR move to redundancy
 //  test("DuplicateUpperName.21") {
 //    val input =
 //      """
@@ -924,7 +924,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  // TODO move to Redundancy
+  // TODO NS-REFACTOR move to Redundancy
 //  test("DuplicateUpperName.23") {
 //    val input =
 //      """
@@ -947,7 +947,7 @@ class TestNamer extends FunSuite with TestUtils {
 //    expectError[NameError.DuplicateUpperName](result)
 //  }
 
-  // TODO move these tests to Redundancy
+  // TODO NS-REFACTOR move these tests to Redundancy
 //  test("DuplicateUpperName.25") {
 //    val input =
 //      """
@@ -1159,7 +1159,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalSignature](result)
   }
 
-  // TODO move these tests to Redundancy
+  // TODO NS-REFACTOR move these tests to Redundancy
 //  test("DuplicateImport.01") {
 //    val input =
 //      """

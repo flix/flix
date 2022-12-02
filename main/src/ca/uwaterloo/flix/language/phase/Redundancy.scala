@@ -285,7 +285,7 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.Use(_, exp, _) =>
-      visitExp(exp, env0, rc) // TODO check for unused syms
+      visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.

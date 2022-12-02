@@ -50,7 +50,7 @@ object Namer {
 
         mapN(tableVal) {
           case SymbolTable(symbols0, instances0, uses0) =>
-            // TODO remove use of NName
+            // TODO NS-REFACTOR remove use of NName
             val symbols = symbols0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
             }
@@ -82,7 +82,7 @@ object Namer {
     */
   private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: WeededAst.Declaration.Namespace => visitNamespace(decl, ns0)
-    // TODO remove needless tenvs from visitClass, visitInstance, visitEffect
+    // TODO NS-REFACTOR remove needless tenvs from visitClass, visitInstance, visitEffect
     case decl: WeededAst.Declaration.Class => visitClass(decl, Map.empty, ns0)
     case decl: WeededAst.Declaration.Instance => visitInstance(decl, Map.empty, ns0)
     case decl: WeededAst.Declaration.Def => visitDef(decl, Map.empty, ns0, Nil)
@@ -564,7 +564,7 @@ object Namer {
       // the ident name.
       val name = ident.name
 
-      // TODO move this lookup to Resolver
+      // TODO NS-REFACTOR move this lookup to Resolver
       // lookup the name in the var environment
       env0.get(name) match {
         // Case 1: not found, assume it is a function
@@ -1237,7 +1237,7 @@ object Namer {
               // Case 1: the name is not a variable, resolve it later
               NamedAst.Type.Ambiguous(qname, loc).toSuccess
             case Some(tvar) =>
-              // TODO resolve this in Resolver instead
+              // TODO NS-REFACTOR resolve this in Resolver instead
               // Case 2: the name is a type variable.
               NamedAst.Type.Var(tvar, loc).toSuccess
           }

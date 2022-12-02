@@ -79,7 +79,7 @@ object Resolver {
               case () =>
                 ResolvedAst.Root(
                   table.classes,
-                  table.instances.m, // TODO use ListMap elsewhere for this too
+                  table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
                   table.effects,
@@ -288,7 +288,7 @@ object Resolver {
     */
   private def visitDecl(decl: NamedAst.Declaration, uenv0: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
-      // TODO move to helper for consistency
+      // TODO NS-REFACTOR move to helper for consistency
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
@@ -488,7 +488,7 @@ object Resolver {
     */
   private def resolveEffect(eff0: NamedAst.Declaration.Effect, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Effect, ResolutionError] = eff0 match {
     case NamedAst.Declaration.Effect(doc, ann0, mod, sym, ops0, loc) =>
-      // TODO maybe start a new uenv
+      // TODO NS-REFACTOR maybe start a new uenv
       val annVal = traverse(ann0)(visitAnnotation(_, uenv, taenv, ns0, root))
       val opsVal = traverse(ops0)(resolveOp(_, uenv, taenv, ns0, root))
       mapN(annVal, opsVal) {
@@ -1704,8 +1704,6 @@ object Resolver {
       case Some(op) => op.toSuccess
     }
   }
-
-  // TODO can replace uses of this by direct case lookup later
 
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.

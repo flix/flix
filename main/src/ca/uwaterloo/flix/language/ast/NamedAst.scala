@@ -88,7 +88,7 @@ object NamedAst {
 
     case class DefOrSig(name: Name.QName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
 
-    // TODO remove after moving var resolution to Resolver
+    // TODO NS-REFACTOR remove after moving var resolution to Resolver
     case class UnqualifiedDefOrSig(name: Name.Ident, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression

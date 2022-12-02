@@ -288,7 +288,7 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
-    case Expression.Use(_, _, _) => Iterator.empty // TODO add token for sym
+    case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
 
