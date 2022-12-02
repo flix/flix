@@ -377,15 +377,7 @@ object NamedAst {
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
-  sealed trait ConstraintParam
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.ConstraintParam
-
-  }
+  case class ConstraintParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
 
