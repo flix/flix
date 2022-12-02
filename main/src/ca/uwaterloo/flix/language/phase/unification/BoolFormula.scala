@@ -482,5 +482,7 @@ object BoolFormula {
     override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
     override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
+
+    override def reset(): Unit = {}
   }
 }

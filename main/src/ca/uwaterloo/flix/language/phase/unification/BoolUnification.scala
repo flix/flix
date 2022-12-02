@@ -94,15 +94,16 @@ object BoolUnification {
     //
     // Lookup the query to see if it is already in unification cache.
     //
-    UnificationCache.Global.lookup(f1, f2, renv) match {
+    /*UnificationCache.Global.lookup(f1, f2, renv) match {
       case None => // cache miss: must compute the unification.
       case Some(subst) => {
         // cache hit: return the found substitution.
         val res : Result[Substitution, UnificationError] = subst.toTypeSubstitution(env).toOk
+        alg.reset()
         lock.unlock()
         return res
       }
-    }
+    }*/
 
     //
     // Run the expensive Boolean unification algorithm.
@@ -110,9 +111,11 @@ object BoolUnification {
     val res : Result[Substitution, UnificationError] = booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) =>
-        UnificationCache.Global.put(f1, f2, renv, subst)
+        //UnificationCache.Global.put(f1, f2, renv, subst)
         subst.toTypeSubstitution(env).toOk
     }
+
+    alg.reset()
     lock.unlock()
     res
   }

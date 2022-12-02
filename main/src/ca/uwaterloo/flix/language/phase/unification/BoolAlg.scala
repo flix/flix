@@ -131,4 +131,6 @@ trait BoolAlg[F] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
+  def reset(): Unit
+
 }
