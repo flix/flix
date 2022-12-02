@@ -76,66 +76,47 @@ object BoolUnification {
       case _ => // nop
     }
 
+    //Choose the BoolAlg to use based on number of variables
     val typeVars = tpe1.typeVars ++ tpe2.typeVars
-    val varThreshold = 4
+    val varThreshold = flix.options.xbddthreshold
     if(typeVars.size > varThreshold) {
       implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
-
-      // translate the types into formulas
-      val env = alg.getEnv(List(tpe1, tpe2))
-      val f1 = alg.fromType(tpe1, env)
-      val f2 = alg.fromType(tpe2, env)
-
-      val renv = alg.liftRigidityEnv(renv0, env)
-
-      //
-      // Lookup the query to see if it is already in unification cache.
-      //
-      UnificationCache.GlobalBdd.lookup(f1, f2, renv) match {
-        case None => // cache miss: must compute the unification.
-        case Some(subst) =>
-          // cache hit: return the found substitution.
-          return subst.toTypeSubstitution(env).toOk
-      }
-
-      //
-      // Run the expensive Boolean unification algorithm.
-      //
-      booleanUnification(f1, f2, renv) match {
-        case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-        case Some(subst) =>
-          UnificationCache.GlobalBdd.put(f1, f2, renv, subst)
-          subst.toTypeSubstitution(env).toOk
-      }
+      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
+      lookupOrSolve(tpe1, tpe2, renv0)
     } else {
       implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    }
+  }
 
-      // translate the types into formulas
-      val env = alg.getEnv(List(tpe1, tpe2))
-      val f1 = alg.fromType(tpe1, env)
-      val f2 = alg.fromType(tpe2, env)
+  private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
+                              (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
+    // translate the types into formulas
+    val env = alg.getEnv(List(tpe1, tpe2))
+    val f1 = alg.fromType(tpe1, env)
+    val f2 = alg.fromType(tpe2, env)
 
-      val renv = alg.liftRigidityEnv(renv0, env)
+    val renv = alg.liftRigidityEnv(renv0, env)
 
-      //
-      // Lookup the query to see if it is already in unification cache.
-      //
-      UnificationCache.GlobalBool.lookup(f1, f2, renv) match {
-        case None => // cache miss: must compute the unification.
-        case Some(subst) =>
-          // cache hit: return the found substitution.
-          return subst.toTypeSubstitution(env).toOk
-      }
+    //
+    // Lookup the query to see if it is already in unification cache.
+    //
+    cache.lookup(f1, f2, renv) match {
+      case None => // cache miss: must compute the unification.
+      case Some(subst) =>
+        // cache hit: return the found substitution.
+        return subst.toTypeSubstitution(env).toOk
+    }
 
-      //
-      // Run the expensive Boolean unification algorithm.
-      //
-      booleanUnification(f1, f2, renv) match {
-        case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
-        case Some(subst) =>
-          UnificationCache.GlobalBool.put(f1, f2, renv, subst)
-          subst.toTypeSubstitution(env).toOk
-      }
+    //
+    // Run the expensive Boolean unification algorithm.
+    //
+    booleanUnification(f1, f2, renv) match {
+      case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
+      case Some(subst) =>
+        cache.put(f1, f2, renv, subst)
+        subst.toTypeSubstitution(env).toOk
     }
   }
 
