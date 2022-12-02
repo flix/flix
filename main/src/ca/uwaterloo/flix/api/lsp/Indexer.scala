@@ -458,7 +458,7 @@ object Indexer {
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) // MATT terms
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Loop(_, exp, _) => visitExp(exp)
   }

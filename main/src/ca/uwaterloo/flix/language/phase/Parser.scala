@@ -1333,7 +1333,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ Predicates.VarList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
@@ -1361,8 +1361,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Expression) ~ optWS ~ ")"
     }
 
-    def PatternList: Rule2[Seq[ParsedAst.Pattern], Option[ParsedAst.Pattern]] = rule {
-      "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Pattern) ~ optWS ~ ")"
+    def VarList: Rule2[Seq[Name.Ident], Option[Name.Ident]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Names.Variable) ~ optWS ~ ")"
     }
 
   }

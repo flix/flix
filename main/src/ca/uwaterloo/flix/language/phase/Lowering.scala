@@ -988,7 +988,7 @@ object Lowering {
   private def visitBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = p0 match {
     case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tvar), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
       val termsExp = mkList(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
@@ -1045,31 +1045,17 @@ object Lowering {
   /**
     * Lowers the given body term `pat0`.
     */
-  private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], pat0: TypedAst.Pattern)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = pat0 match {
-    case TypedAst.Pattern.Wild(_, loc) =>
-      mkBodyTermWild(loc)
-
-    case TypedAst.Pattern.Var(sym, tpe, loc) =>
-      if (isQuantifiedVar(sym, cparams0)) {
-        // Case 1: Quantified variable.
-        mkBodyTermVar(sym)
-      } else {
-        // Case 2: Lexically bound variable *expression*.
-        mkBodyTermLit(box(LoweredAst.Expression.Var(sym, tpe, loc)))
-      }
-
-    case TypedAst.Pattern.Cst(cst, tpe, loc) =>
-      mkBodyTermLit(box(LoweredAst.Expression.Cst(cst, tpe, loc)))
-
-    case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.Array(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayTailSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+  private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], sym: Symbol.VarSym)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
+    if (sym.isWild) {
+      // Case 0: Wildcard
+      mkBodyTermWild(sym.loc)
+    } else if (isQuantifiedVar(sym, cparams0)) {
+      // Case 1: Quantified variable.
+      mkBodyTermVar(sym)
+    } else {
+      // Case 2: Lexically bound variable *expression*.
+      mkBodyTermLit(box(LoweredAst.Expression.Var(sym, sym.tvar, sym.loc)))
+    }
   }
 
   /**

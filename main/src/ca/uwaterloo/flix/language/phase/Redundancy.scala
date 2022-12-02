@@ -856,7 +856,7 @@ object Redundancy {
   private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
-        case (acc, term) => acc ++ Used.of(freeVars(term))
+        case (acc, term) => acc // MATT terms
       }
 
     case Body.Guard(exp, _) =>

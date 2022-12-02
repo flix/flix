@@ -974,11 +974,8 @@ object Kinder {
     * Performs kinding on the given body predicate under the given kind environment.
     */
   private def visitBodyPredicate(pred0: ResolvedAst.Predicate.Body, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Predicate.Body, KindError] = pred0 match {
-    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
-      val termsVal = traverse(terms0)(visitPattern(_, kenv, root))
-      mapN(termsVal) {
-        terms => KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
-      }
+    case ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
+        KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc).toSuccess
 
     case ResolvedAst.Predicate.Body.Guard(exp0, loc) =>
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)

@@ -1381,7 +1381,7 @@ object ParsedAst {
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[Name.Ident], term: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.

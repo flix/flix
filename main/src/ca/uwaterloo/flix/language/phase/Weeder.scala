@@ -2184,17 +2184,17 @@ object Weeder {
 
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
-      mapN(traverse(terms)(visitPattern)) {
-        case ts =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
+      mapN(traverseX(terms)(visitName)) {
+        case _ =>
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, terms.toList, loc)
       }
 
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
-      mapN(traverse(terms)(visitPattern), visitPattern(term)) {
-        case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
+      mapN(traverseX(terms)(visitName), visitName(term)) {
+        case (_, _) =>
+          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, terms.toList ::: term :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>

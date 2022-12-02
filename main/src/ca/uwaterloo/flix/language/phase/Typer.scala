@@ -2668,8 +2668,8 @@ object Typer {
   private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
+      val termTypes = terms.map(_.tvar)
       for {
-        termTypes <- traverseM(terms)(inferPattern(_, root))
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
@@ -2699,8 +2699,7 @@ object Typer {
     */
   private def reassembleBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
-      val ts = terms.map(t => reassemblePattern(t, root, subst0))
-      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, subst0(tvar), loc)
 
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
