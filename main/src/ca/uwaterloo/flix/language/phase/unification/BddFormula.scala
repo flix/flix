@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -27,7 +27,7 @@ object BddFormula {
   /**
     * Thread-safe factory for creating BDDs
     */
-  private val GlobalBddBuilder: Creator = Builders.bddBuilder().build()
+  val GlobalBddBuilder: Creator = Builders.bddBuilder().build()
 
   implicit val AsBoolAlg: BoolAlg[DD] = new BoolAlg[DD] {
     override def isTrue(f: DD): Boolean = f.isTrue
