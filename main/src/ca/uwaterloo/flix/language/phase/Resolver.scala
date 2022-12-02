@@ -1450,15 +1450,10 @@ object Resolver {
       * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
       */
     def resolve(cparam0: NamedAst.ConstraintParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      case NamedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
+      case NamedAst.ConstraintParam(sym, tpe0, loc) =>
         val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
         mapN(tpeVal) {
-          case tpe => ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc)
-        }
-      case NamedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
-        val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
-        mapN(tpeVal) {
-          case tpe => ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+          case tpe => ResolvedAst.ConstraintParam(sym, tpe, loc)
         }
     }
 
