@@ -229,7 +229,7 @@ object Symbol {
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
     def getStackOffset: Int = stackOffset match {
-      case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.")
+      case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
       case Some(offset) => offset
     }
 
@@ -239,7 +239,7 @@ object Symbol {
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
       case Some(_) =>
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.")
+        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString' near ${loc.format}.", loc)
     }
 
     /**

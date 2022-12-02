@@ -62,6 +62,11 @@ object Regions {
 
     case Expression.Hole(_, _, _) => ().toSuccess
 
+    case Expression.HoleWithExp(exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Use(_, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
@@ -343,9 +348,9 @@ object Regions {
         case (rs, d) => checkType(tpe, loc)
       }
 
-    case Expression.Spawn(exp, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
+    case Expression.Spawn(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
       }
 
     case Expression.Par(exp, loc) =>
@@ -485,7 +490,7 @@ object Regions {
       case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
       case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
       case tvar: Type.Var => trueVars.contains(tvar)
-      case _ => throw InternalCompilerException(s"unexpected type $tpe")
+      case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
 
     val subsets = tvars.subsets()

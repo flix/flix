@@ -25,7 +25,7 @@ sealed trait SimpleType
 
 object SimpleType {
 
-  private class OverAppliedType extends InternalCompilerException("Unexpected over-applied type.")
+  private class OverAppliedType(loc: SourceLocation) extends InternalCompilerException("Unexpected over-applied type.", loc)
 
   ///////
   // Hole
@@ -375,7 +375,7 @@ object SimpleType {
             // Case 3: Fully applied. Dispatch to proper record handler.
             case _ :: _ :: Nil => fromRecordRow(t)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(field.loc)
           }
 
         case TypeConstructor.Record =>
@@ -390,7 +390,7 @@ object SimpleType {
               case nonRecord => RecordConstructor(nonRecord)
             }
             // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.SchemaRowEmpty => SchemaRow(Nil)
@@ -410,7 +410,7 @@ object SimpleType {
             // Case 5: Fully applied. Dispatch to proper schema handler.
             case _ :: _ :: Nil => fromSchemaRow(t)
             // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(pred.loc)
           }
 
         case TypeConstructor.Schema =>
@@ -425,7 +425,7 @@ object SimpleType {
               case nonSchema => SchemaConstructor(nonSchema)
             }
             // Case 3: Too many args. Error.
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
@@ -442,7 +442,7 @@ object SimpleType {
           args match {
             case Nil => RelationConstructor
             case tpe :: Nil => Relation(destructTuple(tpe))
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Lattice =>
           val args = t.typeArguments.map(visit)
@@ -455,7 +455,7 @@ object SimpleType {
               val tpes = tpesAndLat.init
               val lat = tpesAndLat.last
               Lattice(tpes, lat)
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.True => True
         case TypeConstructor.False => False
@@ -463,7 +463,7 @@ object SimpleType {
           t.typeArguments.map(visit) match {
             case Nil => Not(Hole)
             case arg :: Nil => Not(arg)
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.And =>
@@ -476,7 +476,7 @@ object SimpleType {
             // Case 3: Multiple args. Concatenate them: tpe1 and tpe2 and tpe3 and tpe4
             case args1 :: args2 :: Nil => And(args1 ++ args2)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Or =>
@@ -489,14 +489,14 @@ object SimpleType {
             // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
             case args1 :: args2 :: Nil => Or(args1 ++ args2)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
             case arg :: Nil => Complement(arg)
-            case _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Union =>
@@ -509,7 +509,7 @@ object SimpleType {
             // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
             case args1 :: args2 :: Nil => Union(args1 ++ args2)
             // Case 4: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Intersection =>
@@ -526,7 +526,7 @@ object SimpleType {
             // Case 5: Multiple args. Concatenate them: tpe1 & tpe2 & tpe3 & tpe4
             case args1 :: args2 :: Nil => Intersection(args1 ++ args2)
             // Case 6: Too many args. Error.
-            case _ :: _ :: _ :: _ => throw new OverAppliedType
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
@@ -663,7 +663,7 @@ object SimpleType {
     * and leaves singletons as non-intersection types.
     */
   private def joinIntersection(tpes: List[SimpleType]): SimpleType = tpes match {
-    case Nil => throw InternalCompilerException("unexpected empty type list")
+    case Nil => throw InternalCompilerException("unexpected empty type list", SourceLocation.Unknown)
     case t :: Nil => t
     case ts => Intersection(ts)
   }

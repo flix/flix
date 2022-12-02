@@ -173,7 +173,7 @@ object LambdaLift {
             } else
               LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
-          case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.")
+          case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
         }
 
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
@@ -320,9 +320,9 @@ object LambdaLift {
       case SimplifiedAst.Expression.MatchError(tpe, loc) =>
         LiftedAst.Expression.MatchError(tpe, loc)
 
-      case SimplifiedAst.Expression.Def(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.Apply(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Def(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.Apply(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
     }
 
     def visitJvmMethod(method: SimplifiedAst.JvmMethod): LiftedAst.JvmMethod = method match {

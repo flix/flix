@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
@@ -289,7 +290,7 @@ object BoolFormulaTable {
     // Return the table.
     table
   } catch {
-    case ex: IOException => throw InternalCompilerException(s"Unable to load Boolean minimization table: '$Path'.")
+    case ex: IOException => throw InternalCompilerException(s"Unable to load Boolean minimization table: '$Path'.", SourceLocation.Unknown)
   }
 
   /**
@@ -328,7 +329,7 @@ object BoolFormulaTable {
       case ('n' :: rest, f :: stack) => parse(rest, Not(f) :: stack)
       case ('a' :: rest, f2 :: f1 :: stack) => parse(rest, And(f1, f2) :: stack)
       case ('o' :: rest, f2 :: f1 :: stack) => parse(rest, Or(f1, f2) :: stack)
-      case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.")
+      case _ => throw InternalCompilerException(s"Parse Error. input = ${input.mkString(" :: ")}, stack = $stack.", SourceLocation.Unknown)
     }
 
     parse(l.trim().toList, Nil)

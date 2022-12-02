@@ -111,7 +111,7 @@ object BoolFormula {
     case True => True
     case False => False
     case Var(x) => m.getForward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
       case Some(y) => Var(y)
     }
     case Not(f1) => Not(substitute(f1, m))
@@ -126,7 +126,7 @@ object BoolFormula {
     */
   def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
     case Type.True => True
@@ -134,7 +134,7 @@ object BoolFormula {
     case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => Not(fromBoolType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => And(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => Or(fromBoolType(tpe1, m), fromBoolType(tpe2, m))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
   /**
@@ -144,11 +144,11 @@ object BoolFormula {
     */
   def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
     case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEff.Eff(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
     case Type.All => True
@@ -156,7 +156,7 @@ object BoolFormula {
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
   /**
@@ -167,7 +167,7 @@ object BoolFormula {
   def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
     case Kind.Bool => toBoolType(f, m, loc)
     case Kind.Effect => toEffType(f, m, loc)
-    case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.")
+    case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
   }
 
   /**
@@ -179,9 +179,9 @@ object BoolFormula {
     case True => Type.True
     case False => Type.False
     case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.")
+      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
     }
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
@@ -197,7 +197,7 @@ object BoolFormula {
     case True => Type.All
     case False => Type.Empty
     case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
     }
@@ -475,7 +475,7 @@ object BoolFormula {
       case Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
       case Var(id) => env.getBackward(id) match {
         case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
-        case None => throw InternalCompilerException(s"unexpected unknown ID: $id")
+        case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
       }
     }
 

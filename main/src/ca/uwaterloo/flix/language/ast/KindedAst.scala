@@ -30,7 +30,7 @@ object KindedAst {
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
+                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -68,6 +68,8 @@ object KindedAst {
     case class Sig(sym: Symbol.SigSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Use(sym: Symbol, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
@@ -175,7 +177,7 @@ object KindedAst {
 
     case class SelectChannel(rules: List[KindedAst.SelectChannelRule], default: Option[KindedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Spawn(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class Spawn(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Par(exp: Expression, loc: SourceLocation) extends KindedAst.Expression
 

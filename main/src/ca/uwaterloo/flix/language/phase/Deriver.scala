@@ -66,7 +66,7 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
-        case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym")
+        case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym", SourceLocation.Unknown)
       })
   }
 

@@ -60,7 +60,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, _) =>
+    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, loc) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -76,14 +76,14 @@ object Typer {
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
 
-        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym")
-        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym")
+        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
+        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
+        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
+        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
       }
 
       groups.map {
@@ -518,6 +518,18 @@ object Typer {
       case KindedAst.Expression.Hole(_, tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+        for {
+          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          // result type is whatever is needed for the hole
+          resultTpe = tvar
+          // purity/effect type is AT LEAST the inner expression's purity/effect
+          atLeastPur = Type.mkAnd(pur, Type.freshVar(Kind.Bool, loc.asSynthetic), loc.asSynthetic)
+          resultPur <- unifyTypeM(atLeastPur, pvar, loc)
+          atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Effect, loc.asSynthetic), loc.asSynthetic)
+          resultEff <- unifyTypeM(atLeastEff, evar, loc)
+        } yield (tconstrs, resultTpe, resultPur, resultEff)
+
       case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
@@ -705,7 +717,7 @@ object Typer {
             resultEff = eff
           } yield (constrs, resultTyp, resultPur, resultEff)
 
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop' near ${loc.format}.")
+        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expression.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -885,7 +897,7 @@ object Typer {
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop' near ${loc.format}.")
+        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1198,7 +1210,7 @@ object Typer {
             } yield (constrs, resultTyp, resultPur, resultEff)
           } else {
             // Case 1.3: Unknown tag.
-            throw InternalCompilerException(s"Unexpected choice tag: '${symUse.sym}' near ${loc.format}.")
+            throw InternalCompilerException(s"Unexpected choice tag: '${symUse.sym}'.", loc)
           }
         } else {
           //
@@ -1517,7 +1529,7 @@ object Typer {
       case KindedAst.Expression.Do(op, args, loc) =>
         val effect = root.effects(op.sym.eff)
         val operation = effect.ops.find(_.sym == op.sym)
-          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}"))
+          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
         val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
 
         def visitArg(arg: KindedAst.Expression, fparam: KindedAst.FormalParam): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
@@ -1732,13 +1744,17 @@ object Typer {
           resultEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Spawn(exp, loc) =>
+      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs, tpe, _, eff) <- visitExp(exp)
+          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultPur = Type.Impure
-          resultEff = eff
-        } yield (constrs, resultTyp, resultPur, resultEff)
+          resultPur = Type.mkAnd(Type.Impure, regionVar, loc)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Par(exp, _) =>
         for {
@@ -1942,6 +1958,10 @@ object Typer {
 
       case KindedAst.Expression.Hole(sym, tpe, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), loc)
+
+      case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
       case KindedAst.Expression.Use(sym, exp, loc) =>
         val e = visitExp(exp, subst0)
@@ -2350,12 +2370,13 @@ object Typer {
         val eff = Type.mkUnion(effs, loc)
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), pur, eff, loc)
 
-      case KindedAst.Expression.Spawn(exp, loc) =>
-        val e = visitExp(exp, subst0)
+      case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
-        val pur = e.pur
-        val eff = e.eff
-        TypedAst.Expression.Spawn(e, tpe, pur, eff, loc)
+        val pur = Type.Impure
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+        TypedAst.Expression.Spawn(e1, e2, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Par(exp, loc) =>
         TypedAst.Expression.Par(visitExp(exp, subst0), loc)
@@ -2530,7 +2551,7 @@ object Typer {
 
       case KindedAst.Pattern.Cst(Ast.Constant.Str(s), loc) => liftM(Type.Str)
 
-      case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+      case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.

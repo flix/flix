@@ -537,6 +537,14 @@ object ParsedAst {
     case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Ident with Hole Expression.
+      *
+      * @param ident the ident of the expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class HolyName(ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Use Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1079,11 +1087,12 @@ object ParsedAst {
     /**
       * Spawn Expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the spawned expression (i.e. the expression to run in a new thread).
+      * @param exp2 the region expression (i.e. the region in which to create the thread).
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Spawn(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Parallel expression.

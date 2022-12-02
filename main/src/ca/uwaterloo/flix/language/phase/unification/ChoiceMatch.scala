@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.KindedAst.ChoicePattern
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
@@ -53,7 +54,7 @@ object ChoiceMatch {
   private def leq(r1: List[ChoicePattern], r2: List[ChoicePattern]): Boolean = (r1, r2) match {
     case (Nil, Nil) => true
     case (x :: xs, y :: ys) => leq(x, y) && leq(xs, ys)
-    case (xs, ys) => throw InternalCompilerException(s"Mismatched rows: '$xs' and '$ys'.")
+    case (xs, ys) => throw InternalCompilerException(s"Mismatched rows: '$xs' and '$ys'.", SourceLocation.Unknown)
   }
 
   /**
@@ -100,7 +101,7 @@ object ChoiceMatch {
           // We know that x and y are incomparable, consequent they are either A and P (or vise versa).
           // Thus we can combine them with a wildcard.
           after(ChoicePattern.Wild(x.loc) :: acc, xs, ys)
-        case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
+        case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.", SourceLocation.Unknown)
       }
 
     @tailrec
@@ -113,7 +114,7 @@ object ChoiceMatch {
           // We know that x and y are incomparable. However we have "already spent" our wildcard.
           // Thus we cannot generalize the pattern.
           None
-        case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.")
+        case (xs, ys) => throw InternalCompilerException(s"Mismatched lists: '$xs' and '$ys'.", SourceLocation.Unknown)
       }
 
     before(Nil, r1, r2)

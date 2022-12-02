@@ -95,6 +95,9 @@ object Safety {
 
       case Expression.Hole(_, _, _) => Nil
 
+      case Expression.HoleWithExp(exp, _, _, _, _) =>
+        visitExp(exp, renv)
+
       case Expression.Use(_, exp, _) =>
         visit(exp)
 
@@ -197,8 +200,9 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        visit(exp)
+      case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
+        val errors = checkCastSafety(e)
+        visit(exp) ::: errors
 
       case Expression.Mask(exp, _, _, _, _) =>
         visit(exp)
@@ -271,8 +275,8 @@ object Safety {
         } :::
           default.map(visit).getOrElse(Nil)
 
-      case Expression.Spawn(exp, _, _, _, _) =>
-        visit(exp)
+      case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
 
       case Expression.Par(exp, _) =>
         // Only tuple expressions are allowed to be parallelized with `par`.
@@ -317,6 +321,55 @@ object Safety {
   }
 
   /**
+    * Performs basic checks on the type cast `cast`. Returns a list of safety errors if there are
+    * any impossible casts.
+    *
+    * No primitive type can be cast to a reference type and vice-versa.
+    *
+    * No Bool type can be cast to a non-Bool type  and vice-versa.
+    */
+  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
+    val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
+
+    val primitives = {
+      Type.Unit :: Type.Bool :: Type.Char ::
+        Type.Float32 :: Type.Float64 :: Type.Int8 ::
+        Type.Int16 :: Type.Int32 :: Type.Int64 ::
+        Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
+    }
+
+    (tpe1, tpe2) match {
+
+      // Allow anything with type variables
+      case (Type.Var(_, _), _) => Nil
+      case (_, Some(Type.Var(_, _))) => Nil
+
+      // Allow anything with Java interop
+      case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
+      case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+
+      // Boolean primitive to other primitives
+      case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      // Symmetric case
+      case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      // JVM Reference types and primitives
+      case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      // Symmetric case
+      case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+
+      case _ => Nil
+    }
+  }
+
+  /**
     * Checks that `tpe1` is a subtype of `tpe2`.
     *
     * `tpe1` is a subtype of `tpe2` if:
@@ -337,8 +390,8 @@ object Safety {
     *
     */
   private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.True, Type.Var(_, _)) => true
-    case (Type.True, Type.False) => true
+    case (Type.Empty, _) => true
+    case (Type.True, _) => true
     case (Type.Var(_, _), Type.False) => true
 
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>

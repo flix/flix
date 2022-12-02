@@ -9,308 +9,6 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 object TypedAstOps {
 
   /**
-    * Returns a map of the holes in the given ast `root`.
-    */
-  def holesOf(root: Root): Map[Symbol.HoleSym, HoleContext] = {
-    /**
-      * Finds the holes and hole contexts in the given expression `exp0`.
-      */
-    def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
-      case Expression.Wild(tpe, loc) => Map.empty
-
-      case Expression.Var(sym, tpe, loc) => Map.empty
-
-      case Expression.Def(sym, tpe, loc) => Map.empty
-
-      case Expression.Sig(sym, tpe, loc) => Map.empty
-
-      case Expression.Hole(sym, tpe, loc) => Map(sym -> HoleContext(sym, tpe, env0))
-
-      case Expression.Use(_, exp, _) => visitExp(exp, env0)
-
-      case Expression.Cst(_, _, _) => Map.empty
-
-      case Expression.Lambda(fparam, exp, tpe, loc) =>
-        val env1 = Map(fparam.sym -> fparam.tpe)
-        visitExp(exp, env0 ++ env1)
-
-      case Expression.Apply(exp, exps, _, _, _, _) =>
-        val init = visitExp(exp, env0)
-        exps.foldLeft(init) {
-          case (acc, exp) => acc ++ visitExp(exp, env0)
-        }
-
-      case Expression.Unary(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.Let(sym, _, exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0 + (sym -> exp1.tpe))
-
-      case Expression.LetRec(sym, _, exp1, exp2, _, _, _, _) =>
-        val env1 = env0 + (sym -> exp1.tpe)
-        visitExp(exp1, env1) ++ visitExp(exp2, env1)
-
-      case Expression.Region(_, _) =>
-        Map.empty
-
-      case Expression.Scope(_, _, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
-
-      case Expression.Stm(exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.Discard(exp, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Match(matchExp, rules, _, _, _, _) =>
-        val m = visitExp(matchExp, env0)
-        rules.foldLeft(m) {
-          case (macc, MatchRule(pat, guard, exp)) =>
-            macc ++ guard.map(visitExp(_, binds(pat) ++ env0)).getOrElse(Map.empty) ++ visitExp(exp, binds(pat) ++ env0)
-        }
-
-      case Expression.TypeMatch(matchExp, rules, _, _, _, _) =>
-        val m = visitExp(matchExp, env0)
-        rules.foldLeft(m) {
-          case (macc, MatchTypeRule(sym, tpe, exp)) =>
-            macc ++ visitExp(exp, Map(sym -> tpe) ++ env0)
-        }
-
-      case Expression.Choose(exps, rules, _, _, _, _) =>
-        val m1 = exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (acc, exp) => acc ++ visitExp(exp, env0)
-        }
-        val m2 = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (acc, ChoiceRule(pat, exp)) =>
-            val env1 = pat.zip(exps).foldLeft(Map.empty[Symbol.VarSym, Type]) {
-              case (acc, (ChoicePattern.Wild(_), exp)) => acc
-              case (acc, (ChoicePattern.Absent(_), exp)) => acc
-              case (acc, (ChoicePattern.Present(sym, _, _), exp)) => acc + (sym -> exp.tpe)
-            }
-            acc ++ visitExp(exp, env0 ++ env1)
-        }
-        m1 ++ m2
-
-      case Expression.Tag(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Tuple(elms, _, _, _, _) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, elm) => macc ++ visitExp(elm, env0)
-        }
-
-      case Expression.RecordEmpty(tpe, loc) => Map.empty
-
-      case Expression.RecordSelect(base, _, _, _, _, _) =>
-        visitExp(base, env0)
-
-      case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
-        visitExp(rest, env0) ++ visitExp(value, env0)
-
-      case Expression.RecordRestrict(_, rest, _, _, _, _) =>
-        visitExp(rest, env0)
-
-      case Expression.ArrayLit(exps, exp, _, _, _, _) =>
-        exps.foldLeft(visitExp(exp, env0)) {
-          case (acc, e) => acc ++ visitExp(e, env0)
-        }
-
-      case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
-
-      case Expression.ArrayLoad(base, index, _, _, _, _) =>
-        visitExp(base, env0) ++ visitExp(index, env0)
-
-      case Expression.ArrayStore(base, index, elm, _, _, _) =>
-        visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(elm, env0)
-
-      case Expression.ArrayLength(base, _, _, _) =>
-        visitExp(base, env0)
-
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-        visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
-
-      case Expression.Ref(exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.Deref(exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Assign(exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.Ascribe(exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Mask(exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Upcast(exp, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Supercast(exp, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.Without(exp, _, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.TryCatch(exp, rules, _, _, _, loc) =>
-        rules.foldLeft(visitExp(exp, env0)) {
-          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.mkNative(null, loc)))
-        }
-
-      case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-        rules.foldLeft(visitExp(exp, env0)) {
-          case (macc, HandlerRule(_, fparams, body)) =>
-            val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
-            macc ++ visitExp(body, env0 ++ env1)
-        }
-
-      case Expression.Do(_, exps, _, _, _) =>
-        exps.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, exp) => macc ++ visitExp(exp, env0)
-        }
-
-      case Expression.Resume(exp, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.InvokeConstructor(_, args, _, _, _, _) =>
-        args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, arg) => macc ++ visitExp(arg, env0)
-        }
-
-      case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
-        args.foldLeft(visitExp(exp, env0)) {
-          case (macc, arg) => macc ++ visitExp(arg, env0)
-        }
-
-      case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
-        args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, arg) => macc ++ visitExp(arg, env0)
-        }
-
-      case Expression.GetField(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.GetStaticField(_, _, _, _, _) =>
-        Map.empty
-
-      case Expression.PutStaticField(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.NewObject(_, _, _, _, _, methods, _) =>
-        methods.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, JvmMethod(_, fparams, exp, _, _, _, _)) =>
-            val env1 = fparams.map(fparam => fparam.sym -> fparam.tpe)
-            macc ++ visitExp(exp, env0 ++ env1)
-        }
-
-      case Expression.NewChannel(exp1, exp2, _, _, _, _) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.GetChannel(exp, _, _, _, _) => visitExp(exp, env0)
-
-      case Expression.PutChannel(exp1, exp2, _, _, _, _) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.SelectChannel(rules, default, _, _, _, _) =>
-        val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
-        }
-
-        val d = default.map(visitExp(_, env0)).getOrElse(Map.empty)
-
-        rs ++ d
-
-      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, env0)
-
-      case Expression.Par(exp, _) => visitExp(exp, env0)
-
-      case Expression.ParYield(frags, exp, _, _, _, _) =>
-        val boundEnv = frags.foldLeft(env0) {
-          case (acc, ParYieldFragment(p, _, _)) =>
-            binds(p) ++ acc
-        }
-        visitExp(exp, boundEnv) ++ frags.flatMap {
-          case ParYieldFragment(_, e, _) => visitExp(e, env0)
-        }
-
-      case Expression.Lazy(exp, tpe, loc) => visitExp(exp, env0)
-
-      case Expression.Force(exp, _, _, _, _) => visitExp(exp, env0)
-
-      case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
-        cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, c) => macc ++ visitConstraint(c, env0)
-        }
-
-      case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.FixpointSolve(exp, _, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.FixpointFilter(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.FixpointInject(exp, _, _, _, _, _) =>
-        visitExp(exp, env0)
-
-      case Expression.FixpointProject(_, exp, _, _, _, _) =>
-        visitExp(exp, env0)
-    }
-
-    /**
-      * Finds the holes and hole contexts in the given constraint `c0`.
-      */
-    def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = c0 match {
-      case Constraint(cparams, head, body, loc) => visitHead(head, env0) ++ body.flatMap(visitBody(_, env0))
-    }
-
-    /**
-      * Finds the holes and hole contexts in the given head predicate `h0`.
-      */
-    def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
-      case Predicate.Head.Atom(pred, den, terms, tpe, loc) => Map.empty
-    }
-
-    /**
-      * Finds the holes and hole contexts in the given body predicate `b0`.
-      */
-    def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(_, _, _, _, _, _, _) => Map.empty
-      case Predicate.Body.Guard(exp, _) => visitExp(exp, env0)
-      case Predicate.Body.Loop(_, exp, _) => visitExp(exp, env0)
-    }
-
-    /**
-      * Returns the set of variables bound by the given list of formal parameters `fparams`.
-      */
-    def getEnvFromParams(fparams: List[FormalParam]): Map[Symbol.VarSym, Type] =
-      fparams.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, FormalParam(sym, mod, tpe, src, loc)) => macc + (sym -> tpe)
-      }
-
-    // Visit every definition.
-    root.defs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-      case (macc, (sym, defn)) => macc ++ visitExp(defn.impl.exp, getEnvFromParams(defn.spec.fparams))
-    }
-  }
-
-  /**
     * Returns the free variables in the given pattern `pat0`.
     */
   def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = binds(pat0).keySet
@@ -352,6 +50,7 @@ object TypedAstOps {
     case Expression.Def(_, _, _) => Set.empty
     case Expression.Sig(sym, _, _) => Set(sym)
     case Expression.Hole(_, _, _) => Set.empty
+    case Expression.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Use(_, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
@@ -404,7 +103,7 @@ object TypedAstOps {
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
-    case Expression.Spawn(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expression.Lazy(exp, _, _) => sigSymsOf(exp)
@@ -458,6 +157,9 @@ object TypedAstOps {
     case Expression.Sig(_, _, _) => Map.empty
 
     case Expression.Hole(_, _, _) => Map.empty
+
+    case Expression.HoleWithExp(exp, _, _, _, _) =>
+      freeVars(exp)
 
     case Expression.Use(_, exp, _) =>
       freeVars(exp)
@@ -645,8 +347,8 @@ object TypedAstOps {
         case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      freeVars(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Par(exp, _) =>
       freeVars(exp)

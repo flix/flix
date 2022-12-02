@@ -357,6 +357,16 @@ object Kinder {
 
     case ResolvedAst.Expression.Hole(sym, loc) => KindedAst.Expression.Hole(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
+    case ResolvedAst.Expression.HoleWithExp(exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc)
+      }
+
     case ResolvedAst.Expression.Use(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
@@ -646,7 +656,7 @@ object Kinder {
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       // Extract the type variable from the henv
       // Missing henv should have been caught previously
-      val (argTvar, retTvar) = henv0.getOrElse(throw InternalCompilerException("Unexpected missing handler env."))
+      val (argTvar, retTvar) = henv0.getOrElse(throw InternalCompilerException("Unexpected missing handler env.", loc))
       mapN(expVal) {
         case exp => KindedAst.Expression.Resume(exp, argTvar, retTvar, loc)
       }
@@ -723,10 +733,11 @@ object Kinder {
         case (rules, default) => KindedAst.Expression.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.Spawn(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        exp => KindedAst.Expression.Spawn(exp, loc)
+    case ResolvedAst.Expression.Spawn(exp1, exp2, loc) =>
+      val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
+      val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) => KindedAst.Expression.Spawn(e1, e2, loc)
       }
 
     case ResolvedAst.Expression.Par(exp, loc) =>
@@ -1022,7 +1033,7 @@ object Kinder {
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
-      flatMapN(visitTypeConstructor(cst, root)) {
+      flatMapN(visitTypeConstructor(cst, root, loc)) {
         tycon =>
           val kind = tycon.kind
           unify(expectedKind, kind) match {
@@ -1083,7 +1094,7 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
-    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias")
+    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 
 
   }
@@ -1102,8 +1113,8 @@ object Kinder {
   /**
     * Performs kinding on the given type constructor under the given kind environment.
     */
-  private def visitTypeConstructor(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): Validation[TypeConstructor, KindError] = tycon match {
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
+  private def visitTypeConstructor(tycon: TypeConstructor, root: ResolvedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[TypeConstructor, KindError] = tycon match {
+    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.", loc)
     case t => t.toSuccess
   }
 
@@ -1298,8 +1309,8 @@ object Kinder {
         }
       }
 
-    case UnkindedType.Cst(cst, _) =>
-      val tyconKind = getTyconKind(cst, root)
+    case UnkindedType.Cst(cst, loc) =>
+      val tyconKind = getTyconKind(cst, root, loc)
       val args = Kind.kindArgs(tyconKind)
 
       Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
@@ -1343,8 +1354,8 @@ object Kinder {
         }
       }
 
-    case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application")
-    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias")
+    case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
+    case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
   }
 
   /**
@@ -1449,8 +1460,8 @@ object Kinder {
   /**
     * Gets the kind associated with the type constructor.
     */
-  private def getTyconKind(tycon: TypeConstructor, root: ResolvedAst.Root)(implicit flix: Flix): Kind = tycon match {
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.")
+  private def getTyconKind(tycon: TypeConstructor, root: ResolvedAst.Root, loc: SourceLocation)(implicit flix: Flix): Kind = tycon match {
+    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.", loc)
     case t => t.kind
   }
 

@@ -107,6 +107,11 @@ object Stratifier {
 
     case Expression.Hole(_, _, _) => exp0.toSuccess
 
+    case Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.HoleWithExp(e, tpe, pur, eff, loc)
+      }
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -389,9 +394,9 @@ object Stratifier {
         case (rs, d) => Expression.SelectChannel(rs, d, tpe, pur, eff, loc)
       }
 
-    case Expression.Spawn(exp, tpe, pur, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Spawn(e, tpe, pur, eff, loc)
+    case Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (r, e) => Expression.Spawn(r, e, tpe, pur, eff, loc)
       }
 
     case Expression.Par(exp, loc) =>
@@ -514,6 +519,9 @@ object Stratifier {
     case Expression.Sig(_, _, _) => LabelledGraph.empty
 
     case Expression.Hole(_, _, _) => LabelledGraph.empty
+
+    case Expression.HoleWithExp(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Use(_, exp, _) =>
       labelledGraphOfExp(exp)
@@ -709,8 +717,8 @@ object Stratifier {
         case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
       }
 
-    case Expression.Spawn(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
+    case Expression.Spawn(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Par(exp, _) =>
       labelledGraphOfExp(exp)
@@ -780,7 +788,7 @@ object Stratifier {
 
     Type.eraseAliases(tpe) match {
       case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
-      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'")
+      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'", other.loc)
     }
   }
 
@@ -820,7 +828,7 @@ object Stratifier {
       val den = tc match {
         case TypeConstructor.Relation => Denotation.Relational
         case TypeConstructor.Lattice => Denotation.Latticenal
-        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'")
+        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'", tpe.loc)
       }
       t.baseType match {
         case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
@@ -830,7 +838,7 @@ object Stratifier {
     case _: Type.Var =>
       // This could occur when querying or projecting a non-existent predicate
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**

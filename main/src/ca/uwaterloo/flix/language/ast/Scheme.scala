@@ -27,10 +27,10 @@ object Scheme {
   /**
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
-  def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type)(implicit flix: Flix): Scheme = sc match {
+  def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = sc match {
     case Scheme(quantifiers, constraints, base) =>
       if (!quantifiers.contains(quantifier)) {
-        throw InternalCompilerException("Quantifier not in scheme.")
+        throw InternalCompilerException("Quantifier not in scheme.", loc)
       }
       val subst = Substitution.singleton(quantifier, value)
       val newConstraints = constraints.map(subst.apply)

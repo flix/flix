@@ -105,7 +105,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   def apply(sc: Scheme): Scheme = sc match {
     case Scheme(quantifiers, constraints, base) =>
       if (sc.quantifiers.exists(m.contains)) {
-        throw InternalCompilerException("Quantifier in substitution.")
+        throw InternalCompilerException("Quantifier in substitution.", base.loc)
       }
       Scheme(quantifiers, constraints.map(apply), apply(base))
   }
