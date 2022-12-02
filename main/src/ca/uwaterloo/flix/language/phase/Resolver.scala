@@ -113,8 +113,8 @@ object Resolver {
     case enum: ResolvedAst.Enum => SymbolTable.empty.addEnum(enum)
     case alias: ResolvedAst.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Effect => SymbolTable.empty.addEffect(effect)
-    case ResolvedAst.Op(sym, _) => throw InternalCompilerException(s"Unexpected declaration: $sym")
-    case ResolvedAst.Sig(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym")
+    case ResolvedAst.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
   }
 
   /**
@@ -220,7 +220,7 @@ object Resolver {
     case _: UnkindedType.Arrow => Nil
     case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
     case _: UnkindedType.Enum => Nil
-    case _: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias")
+    case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
   }
 
   /**
@@ -317,7 +317,7 @@ object Resolver {
       resolveEffect(eff, uenv0, taenv, ns0, root)
     case op@Declaration.Op(sym, spec) =>
       resolveOp(op, uenv0, taenv, ns0, root)
-    case Declaration.Case(sym, tpe) => throw InternalCompilerException("unexpected case")
+    case Declaration.Case(sym, tpe) => throw InternalCompilerException("unexpected case", sym.loc)
   }
 
   /**
@@ -693,7 +693,7 @@ object Resolver {
                   }
               }
 
-            case NamedAst.UseOrImport.UseTypeOrClass(qname, alias, _) =>
+            case NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc) =>
               lookupType(qname, uenv0, ns0, root) match {
                 case TypeLookupResult.Enum(enum0) =>
                   val uenv = uenv0 + (alias.name -> DeclarationOrJavaClass.Declaration(enum0))
@@ -711,7 +711,7 @@ object Resolver {
                     case e => ResolvedAst.Expression.Use(eff.sym, e, loc)
                   }
                 case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-                case TypeLookupResult.JavaClass(_) => throw InternalCompilerException("unexpected Java class")
+                case TypeLookupResult.JavaClass(_) => throw InternalCompilerException("unexpected Java class", loc)
               }
 
             case NamedAst.UseOrImport.UseTag(qname, tag, alias, _) =>
@@ -2918,13 +2918,13 @@ object Resolver {
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym")
-    case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol $sym")
+    case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
+    case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
+    case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
+    case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
   }
 
   /**
@@ -2937,7 +2937,7 @@ object Resolver {
       // Case 2: A match. Map it to a use.
       case DeclarationOrJavaClass.Declaration(d) :: Nil => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
       // Case 3: Impossible. Hard error.
-      case _ => throw InternalCompilerException("unexpected conflicted imports")
+      case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
     case NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc) => tryLookupName2(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
@@ -2945,7 +2945,7 @@ object Resolver {
       // Case 2: A match. Map it to a use.
       case DeclarationOrJavaClass.Declaration(d) :: Nil => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
       // Case 3: Impossible. Hard error.
-      case _ => throw InternalCompilerException("unexpected conflicted imports")
+      case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
     case NamedAst.UseOrImport.UseTag(qname, tag, alias, loc) => tryLookupName2(qname, ListMap.empty, ns, root) match {
@@ -2958,7 +2958,7 @@ object Resolver {
           case Some(NamedAst.Declaration.Case(sym, _)) => Ast.UseOrImport.Use(sym, alias, loc).toSuccess
           case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
         }
-      case _ => throw InternalCompilerException("unexpected non-enum")
+      case _ => throw InternalCompilerException("unexpected non-enum", loc)
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
