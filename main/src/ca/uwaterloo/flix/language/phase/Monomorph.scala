@@ -640,9 +640,9 @@ object Monomorph {
       // Case 2: No instance implementation, but a default implementation exists. Use it.
       case (Some(impl), Nil) => specializeDef(sigToDef(sig.sym, sig.spec, impl), tpe, def2def, defQueue)
       // Case 3: Multiple matching defs. Should have been caught previously.
-      case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.")
+      case (_, _ :: _ :: _) => throw InternalCompilerException(s"Expected at most one matching definition for '$sym', but found ${defns.size} signatures.", sym.loc)
       // Case 4: No matching defs and no default. Should have been caught previously.
-      case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.")
+      case (None, Nil) => throw InternalCompilerException(s"No default or matching definition found for '$sym'.", sym.loc)
     }
   }
 
@@ -754,7 +754,7 @@ object Monomorph {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.")
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }
   }
 

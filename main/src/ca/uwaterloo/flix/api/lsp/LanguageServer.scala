@@ -139,7 +139,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case t: InternalCompilerException =>
       t.printStackTrace(System.err)
       System.exit(1)
-    case t: InternalRuntimeException =>
+    case t: RuntimeException =>
       t.printStackTrace(System.err)
       System.exit(2)
     case t: Throwable =>

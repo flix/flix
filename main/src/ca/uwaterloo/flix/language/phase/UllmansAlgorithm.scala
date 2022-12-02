@@ -195,7 +195,7 @@ object UllmansAlgorithm {
       @tailrec
       def unrollHelper(s: Name.Pred, acc: List[(Name.Pred, SourceLocation)]): List[(Name.Pred, SourceLocation)] = {
         if (s == to) return acc
-        pred.getOrElse(s, throw InternalCompilerException("Stratification cycle malformed")) match {
+        pred.getOrElse(s, throw InternalCompilerException("Stratification cycle malformed", s.loc)) match {
           case (prev, loc) => unrollHelper(prev, (prev, loc) :: acc)
         }
       }
@@ -218,7 +218,7 @@ object UllmansAlgorithm {
               (body, loc) :: unroll(body, head, pred) ::: (body, loc) :: Nil
           }
       }
-      case Nil => throw InternalCompilerException("Stratification error without a strong cycle")
+      case Nil => throw InternalCompilerException("Stratification error without a strong cycle", SourceLocation.Unknown)
     }
 
     // We do not know where the cycle is but often it includes the edge

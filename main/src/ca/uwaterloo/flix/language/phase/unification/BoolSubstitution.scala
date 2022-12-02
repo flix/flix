@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -126,7 +126,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
   def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): Substitution = {
     val map = m.map {
       case (k0, v0) =>
-        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0"))
+        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
         val v = alg.toType(v0, env)
         (k, v)
     }

@@ -90,7 +90,7 @@ object Namer {
     case decl: WeededAst.Declaration.Enum => visitEnum(decl, uenv, ns0)
     case decl: WeededAst.Declaration.TypeAlias => visitTypeAlias(decl, uenv, ns0)
     case decl: WeededAst.Declaration.Effect => visitEffect(decl, uenv, Map.empty, ns0)
-    case _: WeededAst.Declaration.Law => throw InternalCompilerException("unexpected law")
+    case decl: WeededAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
   /**
@@ -263,7 +263,7 @@ object Namer {
       // Case 4: An import with the same name already exists.
       case (None, None, None, None, Some(imp)) => LookupResult.AlreadyDefined(SourceLocation.mk(imp.sp1, imp.sp2))
       // Impossible.
-      case _ => throw InternalCompilerException("Unexpected duplicate name found.")
+      case _ => throw InternalCompilerException("Unexpected duplicate name found.", SourceLocation.Unknown)
     }
   }
 
@@ -1283,7 +1283,7 @@ object Namer {
 
             case _ =>
               // Case 4: the name is ambiguous.
-              throw InternalCompilerException(s"Unexpected ambiguous type.")
+              throw InternalCompilerException(s"Unexpected ambiguous type.", loc)
           }
         }
         else
@@ -1577,7 +1577,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
-    case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern")
+    case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
@@ -1964,8 +1964,8 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance")
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace")
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
+    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**

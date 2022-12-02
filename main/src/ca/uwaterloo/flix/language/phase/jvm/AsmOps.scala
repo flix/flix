@@ -33,7 +33,7 @@ object AsmOps {
     case JvmTarget.Version16 => V1_6
     case JvmTarget.Version17 => V1_7
     case JvmTarget.Version18 => V1_8
-    case JvmTarget.Version19 => throw InternalCompilerException(s"Unsupported Java version: '1.9'.")
+    case JvmTarget.Version19 => throw InternalCompilerException(s"Unsupported Java version: '1.9'.", SourceLocation.Unknown)
   }
 
   /**
@@ -51,7 +51,7 @@ object AsmOps {
     * Returns the stack size of a variable of type `tpe` in jvm.
     */
   def getStackSize(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => 1
     case JvmType.PrimChar => 1
     case JvmType.PrimFloat => 1
@@ -67,7 +67,7 @@ object AsmOps {
     * Returns the load instruction for the value of the type specified by `tpe`
     */
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
     case JvmType.PrimLong => LLOAD
     case JvmType.PrimFloat => FLOAD
@@ -79,7 +79,7 @@ object AsmOps {
     * Returns the store instruction for the value of the type specified by `tpe`
     */
   def getStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
     case JvmType.PrimLong => LSTORE
     case JvmType.PrimFloat => FSTORE
@@ -91,7 +91,7 @@ object AsmOps {
     * Returns the array load instruction for arrays of the given JvmType tpe
     */
   def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => BALOAD
     case JvmType.PrimChar => CALOAD
     case JvmType.PrimByte => BALOAD
@@ -107,7 +107,7 @@ object AsmOps {
     * Returns the array store instruction for arrays of the given JvmType tpe
     */
   def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => BASTORE
     case JvmType.PrimChar => CASTORE
     case JvmType.PrimByte => BASTORE
@@ -123,7 +123,7 @@ object AsmOps {
     * Returns the array type code for the value of the type specified by `tpe`
     */
   def getArrayTypeCode(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => T_BOOLEAN
     case JvmType.PrimChar => T_CHAR
     case JvmType.PrimFloat => T_FLOAT
@@ -132,14 +132,14 @@ object AsmOps {
     case JvmType.PrimShort => T_SHORT
     case JvmType.PrimInt => T_INT
     case JvmType.PrimLong => T_LONG
-    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
+    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe", SourceLocation.Unknown)
   }
 
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
   def getArrayType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => "[Z"
     case JvmType.PrimChar => "[C"
     case JvmType.PrimByte => "[B"
@@ -156,7 +156,7 @@ object AsmOps {
     * Returns the Array fill type for the value of the type specified by `tpe`
     */
   def getArrayFillType(tpe: JvmType): String = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => "([ZZ)V"
     case JvmType.PrimChar => "([CC)V"
     case JvmType.PrimByte => "([BB)V"
@@ -173,7 +173,7 @@ object AsmOps {
     * Returns the load instruction corresponding to the given type `tpe`
     */
   def getReturnInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
     case JvmType.PrimLong => LRETURN
     case JvmType.PrimFloat => FRETURN
@@ -200,7 +200,7 @@ object AsmOps {
     * if the value is a primitive then since there is no boxing, then no casting is necessary.
     */
   def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     case JvmType.PrimBool => ()
     case JvmType.PrimChar => ()
     case JvmType.PrimFloat => ()
@@ -405,7 +405,7 @@ object AsmOps {
 
     // based on the type of the field, we pick the appropriate class that boxes the primitive
     fieldType match {
-      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType")
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType", SourceLocation.Unknown)
       case JvmType.PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
       case JvmType.PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
       case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))
@@ -445,7 +445,7 @@ object AsmOps {
 
     // based on the type of the field, we pick the appropriate class that boxes the primitive
     fieldType match {
-      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType")
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType", SourceLocation.Unknown)
       case JvmType.PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
       case JvmType.PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
       case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))

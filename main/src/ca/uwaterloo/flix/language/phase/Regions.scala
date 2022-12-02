@@ -490,7 +490,7 @@ object Regions {
       case Type.Apply(Type.Apply(Type.And, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
       case Type.Apply(Type.Apply(Type.Or, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
       case tvar: Type.Var => trueVars.contains(tvar)
-      case _ => throw InternalCompilerException(s"unexpected type $tpe")
+      case _ => throw InternalCompilerException(s"unexpected type $tpe", tpe.loc)
     }
 
     val subsets = tvars.subsets()

@@ -264,13 +264,13 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => exp0
 
-    case Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**
@@ -420,13 +420,13 @@ object ClosureConv {
 
     case Expression.MatchError(_, _) => SortedSet.empty
 
-    case Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
 
-    case Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.")
+    case Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression: '$exp0'.", loc)
   }
 
   /**

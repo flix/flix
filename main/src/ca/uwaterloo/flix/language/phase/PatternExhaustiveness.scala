@@ -597,7 +597,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
   /**
@@ -664,7 +664,7 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern")
+    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {
         case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)

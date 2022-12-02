@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalRuntimeException, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 import java.lang.reflect.InvocationTargetException
 
@@ -275,7 +275,7 @@ object JvmBackend {
       ///
       val argsArray = if (args.isEmpty) Array(null) else args
       if (argsArray.length != defn.method.getParameterCount) {
-        throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${argsArray.length} for method ${defn.method.getName}.")
+        throw new RuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${argsArray.length} for method ${defn.method.getName}.")
       }
 
       ///
