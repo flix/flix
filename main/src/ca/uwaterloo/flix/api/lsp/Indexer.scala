@@ -180,7 +180,7 @@ object Indexer {
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
     case Expression.Use(_, _, _) =>
-      Index.occurrenceOf(exp0) // TODO add use of sym
+      Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)

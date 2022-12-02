@@ -651,8 +651,20 @@ object Ast {
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /**
-    * A use of a symbol in a `use` construct.
+    * A use of a Flix symbol or import of a Java class.
     */
-  case class Use(sym: Symbol, loc: SourceLocation)
+  sealed trait UseOrImport
+  object UseOrImport {
+
+    /**
+      * A use of a Flix declaration symbol.
+      */
+    case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+
+    /**
+      * An import of a Java class.
+      */
+    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+  }
 
 }
