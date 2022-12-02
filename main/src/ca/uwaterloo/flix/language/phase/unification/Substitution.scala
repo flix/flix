@@ -25,7 +25,7 @@ object Substitution {
   /**
     * Returns the empty substitution.
     */
-  val empty: Substitution = Substitution(Map.empty)
+  val empty: Substitution = Substitution(Map.empty, Set.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
@@ -34,9 +34,10 @@ object Substitution {
     // Ensure that we do not add any x -> x mappings.
     tpe match {
       case y: Type.Var if x.id == y.sym.id => empty
-      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)))
-      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y))
-      case _ => Substitution(Map(x -> tpe))
+      case y: Type.Var if y.sym.text isStrictlyLessPreciseThan x.text => Substitution(Map(x -> y.withText(x.text)), Set.empty)
+      case y: Type.Var if x.text isStrictlyLessPreciseThan y.sym.text => Substitution(Map(x.withText(y.sym.text) -> y), Set.empty)
+      case Type.Cst(TypeConstructor.True, _) => Substitution(Map.empty, Set(x))
+      case _ => Substitution(Map(x -> tpe), Set.empty)
     }
   }
 
@@ -45,12 +46,12 @@ object Substitution {
 /**
   * A substitution is a map from type variables to types.
   */
-case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
+case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type], trueVars: Set[Symbol.KindedTypeVarSym]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
     */
-  val isEmpty: Boolean = m.isEmpty
+  val isEmpty: Boolean = m.isEmpty && trueVars.isEmpty
 
   /**
     * Applies `this` substitution to the given type `tpe0`.
@@ -59,7 +60,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // NB: The order of cases has been determined by code coverage analysis.
     def visit(t: Type): Type =
       t match {
-        case x: Type.Var => m.getOrElse(x.sym, x)
+        case x: Type.Var => m.getOrElse(x.sym, if(trueVars.contains(x.sym)) Type.True else x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           val y = visit(t2)
@@ -113,7 +114,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
-  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
+  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar, trueVars - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -125,7 +126,8 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       this
     } else {
       Substitution(
-        this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
+        this.m ++ that.m.filter(kv => !(this.m.contains(kv._1) || this.trueVars.contains(kv._1))),
+        this.trueVars ++ that.trueVars.filter(v => !(this.m.contains(v) || this.trueVars.contains(v)))
       )
     }
   }
@@ -149,19 +151,28 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
     val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
+    val newTrueVars = mutable.Set.empty[Symbol.KindedTypeVarSym]
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
       newTypeMap.update(x, this.apply(t))
     }
+    for (x <- that.trueVars) {
+      newTrueVars.add(x)
+    }
 
     // Add all bindings in `this` that are not in `that`.
     for ((x, t) <- this.m) {
-      if (!that.m.contains(x)) {
+      if (!(that.m.contains(x) || that.trueVars.contains(x))) {
         newTypeMap.update(x, t)
       }
     }
+    for (x <- this.trueVars) {
+      if (!(that.m.contains(x) || that.trueVars.contains(x))) {
+        newTrueVars.add(x)
+      }
+    }
 
-    Substitution(newTypeMap.toMap) ++ this
+    Substitution(newTypeMap.toMap, newTrueVars.toSet) ++ this
   }
 }

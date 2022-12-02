@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -130,6 +130,8 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
         val v = alg.toType(v0, env)
         (k, v)
     }
-    Substitution(map)
+    val map0 = map.filter(kv => !(kv._2 == Type.True))
+    val trueVars = map.filter(kv => kv._2 == Type.True).keySet
+    Substitution(map0, trueVars)
   }
 }

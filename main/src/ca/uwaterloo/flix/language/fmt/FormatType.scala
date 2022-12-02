@@ -54,7 +54,7 @@ object FormatType {
       case (tvar@Type.Var(sym, loc), index) =>
         sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
     }
-    val s = Substitution(m.toMap)
+    val s = Substitution(m.toMap, Set.empty)
 
     // Apply the substitution to the type.
     s(tpe)
