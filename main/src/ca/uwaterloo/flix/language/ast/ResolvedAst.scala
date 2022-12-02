@@ -56,8 +56,7 @@ object ResolvedAst {
 
   case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec) extends Declaration
 
-  // MATT make Declaration object
-  // MATT or maybe kill this if unneeded
+  // TODO NS-REFACTOR make Declaration object
   sealed trait Declaration
 
   sealed trait Expression {

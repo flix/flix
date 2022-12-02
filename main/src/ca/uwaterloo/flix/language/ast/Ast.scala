@@ -655,7 +655,15 @@ object Ast {
     */
   sealed trait UseOrImport
   object UseOrImport {
+
+    /**
+      * A use of a Flix declaration symbol.
+      */
     case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+
+    /**
+      * An import of a Java class.
+      */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
 
