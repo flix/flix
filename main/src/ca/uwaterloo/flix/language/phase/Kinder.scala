@@ -952,15 +952,10 @@ object Kinder {
     * Performs kinding on the given constraint param under the given kind environment.
     */
   private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
-    case ResolvedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
+    case ResolvedAst.ConstraintParam(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
       mapN(tpeVal) {
-        case tpe => KindedAst.ConstraintParam.HeadParam(sym, tpe, loc)
-      }
-    case ResolvedAst.ConstraintParam.RuleParam(sym, tpe0, loc) =>
-      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
-      mapN(tpeVal) {
-        case tpe => KindedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+        case tpe => KindedAst.ConstraintParam(sym, tpe, loc)
       }
   }
 

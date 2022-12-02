@@ -296,15 +296,7 @@ object ResolvedAst {
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
 
-  sealed trait ConstraintParam
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.ConstraintParam
-
-  }
+  case class ConstraintParam(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: UnkindedType, src: Ast.TypeSource, loc: SourceLocation)
 
