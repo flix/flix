@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.PrettierPrettyPrinting.Simple
+package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Simple
 
 object TreeExample {
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.PrettierPrettyPrinting.grouped
+package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.grouped
 
 import scala.annotation.tailrec
 import scala.collection.mutable

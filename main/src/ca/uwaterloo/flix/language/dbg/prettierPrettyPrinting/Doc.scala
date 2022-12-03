@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.PrettierPrettyPrinting
+package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import scala.collection.immutable
 
