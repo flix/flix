@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.PrettierPrettyPrinting
 
-import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.immutable
 
 trait Doc
 
@@ -27,83 +26,74 @@ object Doc {
     def <>(d: Doc): Doc = Doc.<>(this.d, d)
 
     def <+>(d: Doc): Doc = Doc.<+>(this.d, d)
+
+    def <\>(d: Doc): Doc = Doc.<\>(this.d, d)
+
+    def <+\>(d: Doc): Doc = Doc.<+\>(this.d, d)
+
+    def :<>(d: Doc): Doc = Doc.:<>(this.d, d)
+
+    def :<|>(d: Doc): Doc = Doc.:<|>(this.d, d)
   }
 
-  case object Nix extends Doc
+  case object Nil extends Doc
 
-  class Text(val s: String, dd: => Doc) extends Doc {
-    lazy val d: Doc = dd
-  }
-
-  object Text {
-    def apply(s: String, d: => Doc): Text = new Text(s, d)
-    def unapply(t: Text): Option[(String, Doc)] = Some(t.s, t.d)
-  }
-
-  class Line(val i: Int, dd: => Doc) extends Doc {
-    lazy val d: Doc = dd
-  }
-
-  object Line {
-    def apply(i: Int, d: => Doc): Line = new Line(i, d)
-    def unapply(l: Line): Option[(Int, Doc)] = Some(l.i, l.d)
-  }
-
-  class Union(dd1: => Doc, dd2: => Doc) extends Doc {
+  class :<>(dd1: => Doc, dd2: => Doc) extends Doc {
     lazy val d1: Doc = dd1
     lazy val d2: Doc = dd2
   }
 
-  object Union {
-    def apply(d1: => Doc, d2: => Doc): Union = new Union(d1, d2)
-    def unapply(u: Union): Option[(Doc, Doc)] = Some(u.d1, u.d2)
+  object :<> {
+    def apply(d1: => Doc, d2: => Doc): :<> = new :<>(d1, d2)
+
+    def unapply(c: :<>): Option[(Doc, Doc)] = Some(c.d1, c.d2)
   }
 
-  def nil: Doc = Nix
-
-  def text(s: String): Doc = Text(s, Nix)
-
-  def line: Doc = Line(0, Nix)
-
-  def <>(d1: Doc, d2: Doc): Doc = (d1, d2) match {
-    case (Text(s, x), y) => Text(s, x <> y)
-    case (Line(i, x), y) => Line(i, x <> y)
-    case (Nix, y) => y
-    case (Union(x, y), z) => Union(x <> z, y <> z)
+  class Nest(val i: Int, dd: => Doc) extends Doc {
+    lazy val d: Doc = dd
   }
 
-  def nest(indent: Int, d: Doc): Doc = (indent, d) match {
-    case (i, Text(s, x)) => Text(s, nest(i, x))
-    case (i, Line(j, x)) => Line(i + j, nest(i, x))
-    case (i, Nix) => Nix
-    case (k, Union(x, y)) => Union(nest(k, x), nest(k, y))
+  object Nest {
+    def apply(i: Int, d: => Doc): Nest = new Nest(i, d)
+
+    def unapply(t: Nest): Option[(Int, Doc)] = Some(t.i, t.d)
   }
 
-  private def layout(d: Doc): String = {
-    val sb = new mutable.StringBuilder()
-    @tailrec
-    def aux(d: Doc): Unit = d match {
-      case Doc.Text(s, x) => sb.append(s); aux(x)
-      case Doc.Line(i, x) => sb.append("\n"); sb.append(" " * i); aux(x)
-      case Doc.Nix => ()
-      case Union(_, _) => throw new AssertionError("fits was called on union")
-    }
-    aux(d)
-    sb.toString
+  case class Text(s: String) extends Doc
+
+  case object Line extends Doc
+
+  class :<|>(dd1: => Doc, dd2: => Doc) extends Doc {
+    lazy val d1: Doc = dd1
+    lazy val d2: Doc = dd2
   }
 
-  def group(d: Doc, to: String = " "): Doc = d match {
-    case Nix => Nix
-    case Line(i, x) => Union(Text(to, flatten(x, to)), Line(i, x))
-    case Text(s, x) => Text(s, group(x, to))
-    case Union(x, y) => Union(group(x, to), y)
+  object :<|> {
+    def apply(d1: => Doc, d2: => Doc): :<|> = new :<|>(d1, d2)
+
+    def unapply(u: :<|>): Option[(Doc, Doc)] = Some(u.d1, u.d2)
   }
+
+
+  def nil: Doc = Nil
+
+  def <>(d1: Doc, d2: Doc): Doc = d1 :<> d2
+
+  def nest(x: Doc)(implicit indent: Int): Doc = Nest(indent, x)
+
+  def text(s: String): Doc = Text(s)
+
+  def line: Doc = Line
+
+  def group(x: Doc, to: String = " "): Doc = flatten(x :<|> x, to)
 
   private def flatten(d: Doc, to: String = " "): Doc = d match {
-    case Nix => Nix
-    case Line(i, x) => Text(to, flatten(x, to))
-    case Text(s, x) => Text(s, flatten(x, to))
-    case Union(x, y) => flatten(x, to)
+    case Nil => Nil
+    case x :<> y => flatten(x, to) :<> flatten(y, to)
+    case Nest(i, x) => Nest(i, flatten(x, to))
+    case Text(s) => Text(s)
+    case Line => Text(to)
+    case x :<|> y => flatten(x, to)
   }
 
   /**
@@ -111,33 +101,53 @@ object Doc {
     * @param w available width
     * @param k chars already placed
     */
-  private def best(w: Int, k: Int, d: Doc): Doc = d match {
-    case Nix => Nix
-    case Line(i, x) => Line(i, best(w, i, x))
-    case Text(s, x) => Text(s, best(w, k + s.length, x))
-    case Union(x, y) => better(w, k, best(w, k, x), best(w, k, y))
+  private def best(w: Int, k: Int, x: Doc): SDoc = be(w, k, List((0, x)))
+
+  private def be(w: Int, k: Int, x: List[(Int, Doc)]): SDoc = x match {
+    case immutable.Nil => SDoc.Nil
+    case (i, Nil) :: z => be(w, k, z)
+    case (i, x :<> y) :: z => be(w, k, (i, x) :: (i, y) :: z)
+    case (i, Nest(j, x)) :: z => be(w, k, (i + j, x) :: z)
+    case (i, Text(s)) :: z => SDoc.Text(s, be(w, k + s.length, z))
+    case (i, Line) :: z => SDoc.Line(i, be(w, i, z))
+    case (i, x :<|> y) :: z =>
+      SDoc.better(w, k, be(w, k, (i, x) :: z), be(w, k, (i, y) :: z))
   }
 
-  private def better(w: Int, k: Int, x: => Doc, y: => Doc): Doc =
-    if (fits(w-k, x)) x else y
-
-  @tailrec
-  private def fits(diff: Int, d: Doc): Boolean = (diff, d) match {
-    case (w, x) if w < 0 => false
-    case (w, Nix) => true
-    case (w, Text(s, x)) => fits(w - s.length, x)
-    case (w, Line(i, d)) => true
-    case (_, Union(_, _)) => throw new AssertionError("fits was called on union")
-  }
-
-  def pretty(w: Int, d: Doc): String = layout (best(w, 0, d))
+  def pretty(w: Int, x: Doc): String = SDoc.layout(best(w, 0, x))
 
 
   // aux
   def <+>(d1: Doc, d2: Doc): Doc = d1 <> text(" ") <> d2
 
-  def parens(d: Doc): Doc = text("(") <> d <> text(")")
+  def <\>(d1: Doc, d2: Doc): Doc = d1 <> line <> d2
 
-  def indent(d: Doc)(implicit indent: Int): Doc = nest(indent, d)
+  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+    case immutable.Nil => Nil
+    case x :: immutable.Nil => x
+    case x :: xs => f(x, fold(f, xs))
+  }
+
+  def spread(d: List[Doc]): Doc = fold(_ <+> _, d)
+
+  def stack(d: List[Doc]): Doc = fold(_ <\> _, d)
+
+  def bracket(l: String, x: Doc, r: String)(implicit indent: Int): Doc = group(
+    text(l) <> nest(line <> x) <\> text(r)
+  )
+
+  def <+\>(x: Doc, y: Doc): Doc = x <> (text(" ") :<|> line) <> y
+
+  def fillWords(s: String): Doc = fold(_ <+\> _, s.split(" ").map(text).toList)
+
+  def fill(d: List[Doc]): Doc = d match {
+    case immutable.Nil => nil
+    case x :: immutable.Nil => x
+    case x :: y :: zs =>
+      (flatten(x) <+> fill(flatten(y) :: zs)) :<|> (x <\> fill(y :: zs))
+  }
+
+  def parens(d: Doc)(implicit indent: Int): Doc = bracket("(", d, ")")
+
 }
 
