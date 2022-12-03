@@ -544,6 +544,8 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expression.Region(_, _) => Set.empty
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -892,6 +894,8 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expression.Region(_, _) => Set.empty
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -1134,6 +1138,8 @@ object JvmOps {
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Region(_, _) => Set.empty
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 

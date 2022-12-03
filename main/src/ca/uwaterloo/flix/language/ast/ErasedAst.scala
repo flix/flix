@@ -70,6 +70,8 @@ object ErasedAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
+    case class Region(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }

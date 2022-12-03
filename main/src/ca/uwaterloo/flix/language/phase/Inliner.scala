@@ -248,6 +248,9 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
+    case OccurrenceAst.Expression.Region(tpe, loc) =>
+      LiftedAst.Expression.Region(tpe, loc)
+
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
       val enum0 = root.enums(sym.enumSym)
@@ -583,6 +586,9 @@ object Inliner {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expression.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Region(tpe, loc) =>
+      LiftedAst.Expression.Region(tpe, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)

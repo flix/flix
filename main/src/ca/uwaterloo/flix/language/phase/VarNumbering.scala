@@ -113,6 +113,9 @@ object VarNumbering {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
+      case Expression.Region(_, _) =>
+        i0
+
       case Expression.Is(_, exp, _, _) =>
         visitExp(exp, i0)
 
