@@ -30,7 +30,7 @@ object KindedAst {
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
-                  uses: Map[Symbol.ModuleSym, List[Ast.Use]],
+                  uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
@@ -275,15 +275,7 @@ object KindedAst {
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
-  sealed trait ConstraintParam
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.ConstraintParam
-
-  }
+  case class ConstraintParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 

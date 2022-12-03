@@ -146,6 +146,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
+      case LiftedAst.Expression.Region(tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.Region(t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)

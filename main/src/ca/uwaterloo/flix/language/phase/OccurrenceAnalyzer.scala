@@ -251,6 +251,9 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
+    case Expression.Region(tpe, loc) =>
+      (OccurrenceAst.Expression.Region(tpe, loc), OccurInfo.One)
+
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       if (sym.name == "Choice")
