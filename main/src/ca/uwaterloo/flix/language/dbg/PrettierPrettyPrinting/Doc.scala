@@ -32,7 +32,7 @@ object Doc {
   case object Nix extends Doc
 
   class Text(val s: String, dd: => Doc) extends Doc {
-    def d: Doc = dd
+    lazy val d: Doc = dd
   }
 
   object Text {
@@ -41,7 +41,7 @@ object Doc {
   }
 
   class Line(val i: Int, dd: => Doc) extends Doc {
-    def d: Doc = dd
+    lazy val d: Doc = dd
   }
 
   object Line {
@@ -50,8 +50,8 @@ object Doc {
   }
 
   class Union(dd1: => Doc, dd2: => Doc) extends Doc {
-    def d1: Doc = dd1
-    def d2: Doc = dd2
+    lazy val d1: Doc = dd1
+    lazy val d2: Doc = dd2
   }
 
   object Union {
