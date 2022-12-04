@@ -124,14 +124,19 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
     * Converts this formula substitution into a type substitution
     */
   def toTypeSubstitution(env: Bimap[Symbol.KindedTypeVarSym, Int])(implicit alg: BoolAlg[F]): Substitution = {
-    val map = m.map {
-      case (k0, v0) =>
-        val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
-        val v = alg.toType(v0, env)
-        (k, v)
+    import scala.collection.mutable
+    val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
+    val newTrueVars = mutable.Set.empty[Symbol.KindedTypeVarSym]
+    for ((k0, v0) <- m) {
+      val k = env.getBackward(k0).getOrElse(throw InternalCompilerException(s"missing key $k0", SourceLocation.Unknown))
+      val v = alg.toType(v0, env)
+      if(v == Type.True) {
+        newTrueVars.add(k)
+      } else {
+        newTypeMap.update(k, v)
+      }
     }
-    val map0 = map.filter(kv => !(kv._2 == Type.True))
-    val trueVars = map.filter(kv => kv._2 == Type.True).keySet
-    Substitution(map0, trueVars)
+
+    Substitution(newTypeMap.toMap, newTrueVars.toSet)
   }
 }
