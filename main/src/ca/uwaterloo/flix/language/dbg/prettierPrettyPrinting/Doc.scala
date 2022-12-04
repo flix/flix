@@ -136,5 +136,7 @@ object Doc {
       (flatten(x, " ") <+> fill(flatten(y, " ") :: zs)) :<|> (x <\> fill(y :: zs))
   }
 
+  val INDENT: Int = 4
+
 }
 
