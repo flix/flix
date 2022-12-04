@@ -82,6 +82,8 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
+    case class Scope(sym: Symbol.VarSym, exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: OccurrenceAst.Expression, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression {
       def tpe: Type = Type.Bool
     }
