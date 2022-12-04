@@ -544,6 +544,8 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expression.Region(_, _) => Set.empty
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -732,8 +734,6 @@ object JvmOps {
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
     case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
-    case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
-    case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Tuple(_) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
     case MonoType.RecordEmpty() => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
     case MonoType.RecordExtend(_, _, _) => Type.mkRecord(hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
@@ -891,6 +891,8 @@ object JvmOps {
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Region(_, _) => Set.empty
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
@@ -1066,8 +1068,6 @@ object JvmOps {
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
-      case MonoType.Relation(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Lattice(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }
@@ -1134,6 +1134,8 @@ object JvmOps {
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Region(_, _) => Set.empty
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 

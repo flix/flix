@@ -309,6 +309,9 @@ object Monomorph {
         val env1 = env0 + (sym -> freshSym)
         Expression.LetRec(freshSym, mod, visitExp(exp1, env1, subst), visitExp(exp2, env1, subst), subst(tpe), pur, eff, loc)
 
+      case Expression.Region(tpe, loc) =>
+        Expression.Region(tpe, loc)
+
       case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
         val freshSym = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshSym)

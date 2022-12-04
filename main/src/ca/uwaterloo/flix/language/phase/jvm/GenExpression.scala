@@ -278,6 +278,10 @@ object GenExpression {
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
+    case Expression.Region(tpe, loc) =>
+      //!TODO: For now, just emit unit
+      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+
     case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

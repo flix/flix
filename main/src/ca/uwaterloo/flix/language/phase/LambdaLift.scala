@@ -176,6 +176,9 @@ object LambdaLift {
           case _ => throw InternalCompilerException(s"Unexpected expression: '$e1'.", loc)
         }
 
+      case SimplifiedAst.Expression.Region(tpe, loc) =>
+        LiftedAst.Expression.Region(tpe, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Is(sym, e, purity, loc)

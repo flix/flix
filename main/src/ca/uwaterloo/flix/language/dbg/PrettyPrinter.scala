@@ -202,6 +202,11 @@ object PrettyPrinter {
             .append(visitExp(exp2))
             .toString()
 
+        case Expression.Region(tpe, loc) =>
+          val sb = new mutable.StringBuilder
+          sb.append(formatter.bold("region"))
+            .toString()
+
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 
         case Expression.Tag(sym, exp, tpe, _, loc) => exp match {
