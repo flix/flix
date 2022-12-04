@@ -492,10 +492,10 @@ namespace String {
 
     ///
     /// Split the string `s` at the position `n` returning the left and
-    /// right parts.
+    /// right (inclusive `n`) parts.
     ///
     /// If `n` exceeds the length of string `s`, return the whole string
-    /// paired with the empty string.
+    /// paired with the empty string. Symmetrically for `n` less than 0.
     ///
     pub def splitAt(n: Int32, s: String): (String, String) =
         match length(s) {
