@@ -151,7 +151,7 @@ class TestMain extends FunSuite {
   test("--Xbdd-threshold") {
     val args = Array("--Xbdd-threshold", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbddthreshold == 42)
+    assert(opts.xbddthreshold == Some(42))
   }
 
   test("--Xdebug") {
