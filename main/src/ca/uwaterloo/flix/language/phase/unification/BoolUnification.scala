@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
+import org.sosy_lab.pjbdd.api.DD
 
 object BoolUnification {
 
@@ -75,9 +76,23 @@ object BoolUnification {
       case _ => // nop
     }
 
-    // translate the types into formulas
-    implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+    //Choose the BoolAlg to use based on number of variables
+    val typeVars = tpe1.typeVars ++ tpe2.typeVars
+    val varThreshold = flix.options.xbddthreshold
+    if(typeVars.size > varThreshold) {
+      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
+      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else {
+      implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    }
+  }
 
+  private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
+                              (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
+    // translate the types into formulas
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
     val f2 = alg.fromType(tpe2, env)
@@ -87,7 +102,7 @@ object BoolUnification {
     //
     // Lookup the query to see if it is already in unification cache.
     //
-    UnificationCache.Global.lookup(f1, f2, renv) match {
+    cache.lookup(f1, f2, renv) match {
       case None => // cache miss: must compute the unification.
       case Some(subst) =>
         // cache hit: return the found substitution.
@@ -100,11 +115,10 @@ object BoolUnification {
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) =>
-        UnificationCache.Global.put(f1, f2, renv, subst)
+        cache.put(f1, f2, renv, subst)
         subst.toTypeSubstitution(env).toOk
     }
   }
-
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.

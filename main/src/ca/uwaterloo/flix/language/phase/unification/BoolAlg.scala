@@ -101,7 +101,17 @@ trait BoolAlg[F] {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
+  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+    // Compute the variables in `tpe`.
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
+    }
+  }
 
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
