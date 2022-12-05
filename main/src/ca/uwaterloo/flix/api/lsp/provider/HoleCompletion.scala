@@ -27,7 +27,7 @@ object HoleCompletion {
     * For example, for source type `List[String]` and target type `String`,
     * the candidates would include `List.toString : List[a] -> String` and  `List.join : (String, List[String]) -> String`
     */
-  def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): Set[Symbol.DefnSym] = {
+  def candidates(sourceType: Type, targetType: Type, root: TypedAst.Root)(implicit flix: Flix): List[Symbol.DefnSym] = {
     val matchType = Type.mkArrowWithEffect(
       sourceType,
       Type.freshVar(Kind.Bool, SourceLocation.Unknown),
@@ -36,7 +36,7 @@ object HoleCompletion {
       SourceLocation.Unknown
     )
 
-    root.defs.values.flatMap {
+    val matches = root.defs.values.flatMap {
       case TypedAst.Def(sym, spec, _) =>
         val lastArrow = Type.mkArrowWithEffect(
           spec.fparams.last.tpe,
@@ -47,10 +47,23 @@ object HoleCompletion {
         )
         // TODO modify to take renv as a parameter
         if (Unification.unifiesWith(matchType, lastArrow, RigidityEnv.empty)) {
-          Some(sym)
+          Some((sym, spec))
         } else {
           None
         }
-    }.toSet
+    }.toList
+
+    //
+    // Sort the matched symbols by:
+    // - The number of parameters (fewer is better) followed by:
+    // - The number of type variables (fewer is better) followed by:
+    // - The symbol.
+    //
+    matches.sortBy {
+      case (sym, spec) => (spec.fparams.length, spec.declaredScheme.quantifiers.length, sym.toString)
+    } map {
+      case (sym, _) => sym
+    }
   }
+
 }
