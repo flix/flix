@@ -456,17 +456,6 @@ object BoolFormula {
       case Var(sym) => fn(sym)
     }
 
-    override def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
-      // Compute the variables in `tpe`.
-      val tvars = fs.flatMap(_.typeVars).map(_.sym).to(SortedSet)
-
-      // Construct a bi-directional map from type variables to indices.
-      // The idea is that the first variable becomes x0, the next x1, and so forth.
-      tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
-        case (macc, (sym, x)) => macc + (sym -> x)
-      }
-    }
-
     override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
       case True => Type.True
       case False => Type.False
