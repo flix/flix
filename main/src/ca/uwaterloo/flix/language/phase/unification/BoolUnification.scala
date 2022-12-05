@@ -81,16 +81,17 @@ object BoolUnification {
       case _ => // nop
     }
 
-    // Choose the BoolAlg to use based on number of variables.
-    val typeVars = tpe1.typeVars ++ tpe2.typeVars
-    val varThreshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
-    if (typeVars.size >= varThreshold) {
-      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
-      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
-      lookupOrSolve(tpe1, tpe2, renv0)
-    } else {
+    // Choose the SVE implementation based on the number of variables.
+    val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
+    val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
+
+    if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else {
+      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
+      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
       lookupOrSolve(tpe1, tpe2, renv0)
     }
   }
