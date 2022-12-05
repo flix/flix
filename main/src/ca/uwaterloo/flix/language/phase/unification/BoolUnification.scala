@@ -84,7 +84,7 @@ object BoolUnification {
     // Choose the BoolAlg to use based on number of variables.
     val typeVars = tpe1.typeVars ++ tpe2.typeVars
     val varThreshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
-    if (typeVars.size > varThreshold) {
+    if (typeVars.size >= varThreshold) {
       implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
       implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
       lookupOrSolve(tpe1, tpe2, renv0)
