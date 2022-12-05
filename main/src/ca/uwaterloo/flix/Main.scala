@@ -217,7 +217,7 @@ object Main {
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xbddthreshold: Int = 1_000,
+                     xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -375,7 +375,7 @@ object Main {
         text("[experimental] benchmarks the performance of the entire compiler.")
 
       // Xbdd-threshold
-      opt[Int]("Xbdd-threshold").action((v, c) => c.copy(xbddthreshold = v)).
+      opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
         text("[experimental] sets the threshold for when to use BDDs.")
 
       // Xdebug.
