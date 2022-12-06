@@ -150,6 +150,11 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Region(t, loc)
 
+      case LiftedAst.Expression.Scope(sym, exp, tpe, _, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Scope(sym, e, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
