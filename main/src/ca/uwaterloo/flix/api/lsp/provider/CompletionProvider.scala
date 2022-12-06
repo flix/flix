@@ -125,6 +125,7 @@ object CompletionProvider {
 
   private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // If we match one of the we know what type of completion we need
+    val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*[^\s]*".r
     val effectRegex = raw".*[\\]\s*[^\s]*".r
     val importRegex = raw"\s*import\s+.*".r
@@ -142,6 +143,7 @@ object CompletionProvider {
 
     // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
     context.prefix match {
+      case withRegex() => getWithCompletions()
       case typeRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
       case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() => Nil
@@ -156,7 +158,6 @@ object CompletionProvider {
         getSnippetCompletions() ++
         getVarCompletions() ++
         getDefAndSigCompletions() ++
-        getWithCompletions() ++
         getPredicateCompletions() ++
         getFieldCompletions() ++
         getTypeCompletions() ++

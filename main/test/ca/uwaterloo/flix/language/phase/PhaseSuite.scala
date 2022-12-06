@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.phase.unification.{TestBoolFormulaTable, TestSetUnification, TestUnification}
+import ca.uwaterloo.flix.language.phase.unification.{TestBdd, TestBoolFormulaTable, TestSetUnification, TestUnification}
 import org.scalatest.Suites
 
 class PhaseSuite extends Suites(
@@ -36,6 +36,7 @@ class PhaseSuite extends Suites(
   new TestWeeder,
 
   // helpers
+  new TestBdd,
   new TestBoolFormulaTable,
   new TestIncremental,
   new TestSetUnification,
