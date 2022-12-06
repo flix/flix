@@ -84,7 +84,7 @@ object CodeLensProvider {
     * Returns `true` if the given `spec` is an entry point.
     */
   private def isEntryPoint(s: Spec): Boolean = s.fparams match {
-    case fparam :: Nil => isUnitType(fparam.tpe)
+    case fparam :: Nil => isUnitType(fparam.tpe) && isPublic(s)
     case _ => false
   }
 
@@ -102,6 +102,13 @@ object CodeLensProvider {
   private def isUnitType(tpe: Type): Boolean = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => true
     case _ => false
+  }
+
+  /**
+    * Returns `true` if the given `defn` is marked as public
+    */
+  private def isPublic(spec: Spec): Boolean = {
+    spec.mod.isPublic
   }
 
   /**
