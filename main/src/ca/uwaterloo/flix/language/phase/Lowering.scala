@@ -1629,7 +1629,7 @@ object Lowering {
     val (complex, simple) = frags.partition(spawnable)
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val (fs, last) = complex.splitAt(frags.length - 1)
+    val (fs, last) = complex.splitAt(complex.length - 1)
 
     // Generate symbols for each channel.
     val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
