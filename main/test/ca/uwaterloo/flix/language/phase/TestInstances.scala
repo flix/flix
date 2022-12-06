@@ -352,7 +352,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as \ IO
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as _ \ IO
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -367,7 +367,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as \ IO
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as _ \ IO
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
