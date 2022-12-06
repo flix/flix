@@ -252,7 +252,6 @@ object Inliner {
       LiftedAst.Expression.Region(tpe, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
-      //!TODO: Do we need to do something here analogous to `let` above?
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 

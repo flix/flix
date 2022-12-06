@@ -256,7 +256,7 @@ object OccurrenceAnalyzer {
 
     case Expression.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.increaseSizeByOne())
+      (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
