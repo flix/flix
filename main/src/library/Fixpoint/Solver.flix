@@ -61,7 +61,7 @@ namespace Fixpoint {
         };
         notifyPostSolve(model);
         model
-    } as \ {} // This casts away the impure effect of notify
+    } as _ \ {} // This casts away the impure effect of notify
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -131,7 +131,7 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as \ {}); // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as _ \ {}); // We add one because the counter starts at zero.
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -149,7 +149,7 @@ namespace Fixpoint {
 
         // Return the result.
         r
-    } as \ {} // This casts away the impure effect of debugging
+    } as _ \ {} // This casts away the impure effect of debugging
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
