@@ -24,6 +24,11 @@ import org.sosy_lab.pjbdd.api.DD
 object BoolUnification {
 
   /**
+    * The number of variables required before we switch to using BDDs for SVE.
+    */
+  private val DefaultThreshold: Int = 1_000
+
+  /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
@@ -41,22 +46,22 @@ object BoolUnification {
     (tpe1, tpe2) match {
       case (Type.Var(x, _), Type.Var(y, _)) =>
         if (renv0.isFlexible(x)) {
-          return Ok(Substitution.singleton(x, tpe2))       // 9000 hits
+          return Ok(Substitution.singleton(x, tpe2)) // 9000 hits
         }
         if (renv0.isFlexible(y)) {
-          return Ok(Substitution.singleton(y, tpe1))       // 1000 hits
+          return Ok(Substitution.singleton(y, tpe1)) // 1000 hits
         }
         if (x == y) {
-          return Ok(Substitution.empty)                    // 1000 hits
+          return Ok(Substitution.empty) // 1000 hits
         }
       // else nop
 
       case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
-        return Ok(Substitution.empty)                      // 6000 hits
+        return Ok(Substitution.empty) // 6000 hits
 
       case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
         case TypeConstructor.True =>
-          return Ok(Substitution.singleton(x, Type.True))  // 9000 hits
+          return Ok(Substitution.singleton(x, Type.True)) // 9000 hits
         case TypeConstructor.False =>
           return Ok(Substitution.singleton(x, Type.False)) // 1000 hits
         case _ => // nop
@@ -64,35 +69,41 @@ object BoolUnification {
 
       case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
         case TypeConstructor.True =>
-          return Ok(Substitution.singleton(y, Type.True))  // 7000 hits
+          return Ok(Substitution.singleton(y, Type.True)) // 7000 hits
         case TypeConstructor.False =>
           return Ok(Substitution.singleton(y, Type.False)) //  500 hits
         case _ => // nop
       }
 
       case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
-        return Ok(Substitution.empty)                      //  100 hits
+        return Ok(Substitution.empty) //  100 hits
 
       case _ => // nop
     }
 
-    //Choose the BoolAlg to use based on number of variables
-    val typeVars = tpe1.typeVars ++ tpe2.typeVars
-    val varThreshold = flix.options.xbddthreshold
-    if(typeVars.size > varThreshold) {
-      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
-      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
-      lookupOrSolve(tpe1, tpe2, renv0)
-    } else {
+    // Choose the SVE implementation based on the number of variables.
+    val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
+    val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
+
+    if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else {
+      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
+      implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
       lookupOrSolve(tpe1, tpe2, renv0)
     }
   }
 
+  /**
+    * Lookup the unifier of `tpe1` and `tpe2` or solve them.
+    */
   private def lookupOrSolve[F](tpe1: Type, tpe2: Type, renv0: RigidityEnv)
                               (implicit flix: Flix, alg: BoolAlg[F], cache: UnificationCache[F]): Result[Substitution, UnificationError] = {
-    // translate the types into formulas
+    //
+    // Translate the types into formulas.
+    //
     val env = alg.getEnv(List(tpe1, tpe2))
     val f1 = alg.fromType(tpe1, env)
     val f2 = alg.fromType(tpe2, env)
