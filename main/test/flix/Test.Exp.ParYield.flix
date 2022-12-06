@@ -115,4 +115,18 @@ namespace Test/Exp/ParYield {
             i <- 8               // Simple variable
         ) yield a + b + d + e + f + g + h + i
 
+    @test
+    def testParYield20(): Int32 =
+        let c = 2;
+        par (
+            a <- 1;              // Simple variable
+            b <- c;              // Simple variable
+            d <- (let a = 3; a); // Spawn into thread
+            f <- 4;              // Simple variable
+            e <- (let b = 5; b); // Spawn into thread
+            g <- 6;              // Simple variable
+            h <- (let b = 7; b); // Last complex expression
+            i <- 8               // Simple variable
+        ) yield a + b + d + e + f + g + h + i
+
 }
