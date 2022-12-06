@@ -1626,17 +1626,19 @@ object Lowering {
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
     // Partition fragments into simple and complex exps.
-    val (simple, complex) = frags.map(_.exp).partition(isSimple)
+    val (simple, complex) = frags.partition(spawnable)
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val (fs, last :: Nil) = frags.splitAt(frags.length - 1)
+    val (fs, last) = complex.splitAt(frags.length - 1)
 
     // Generate symbols for each channel.
     val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
 
-    // Make expression that evaluates the last fragment before proceeding to wait for channels.
+    // Make `GetChannel` exps for the spawnable exps.
     val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
-    val desugaredYieldExp = mkLetMatch(last.pat, last.exp, waitExps)
+
+    // Make expression that evaluates simple exps and the last fragment before proceeding to wait for channels.
+    val desugaredYieldExp = mkParYieldMainThread(simple ::: last, waitExps)
 
     // Generate channels and spawn exps.
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
@@ -1645,6 +1647,20 @@ object Lowering {
     // Wrap everything in a purity cast,
     LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
   }
+
+  /**
+    * Returns the expression of a `ParYield` expression that should be evaluated in the calling thread.
+    */
+  private def mkParYieldMainThread(exps: List[LoweredAst.ParYieldFragment], waitExps: LoweredAst.Expression): LoweredAst.Expression = {
+    exps.foldRight(waitExps) {
+      case (exp, acc) => mkLetMatch(exp.pat, exp.exp, acc)
+    }
+  }
+
+  /**
+    * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isSimple`.
+    */
+  private def spawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isSimple(frag.exp)
 
   /**
     * Returns `true` if `exp0` is either a literal or a variable.
