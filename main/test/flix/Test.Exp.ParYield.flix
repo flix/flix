@@ -122,8 +122,8 @@ namespace Test/Exp/ParYield {
             a <- 1;              // Simple variable
             b <- c;              // Simple variable
             d <- (let a = 3; a); // Spawn into thread
-            f <- 4;              // Simple variable
-            e <- (let b = 5; b); // Spawn into thread
+            e <- 4;              // Simple variable
+            f <- (let b = 5; b); // Spawn into thread
             g <- 6;              // Simple variable
             h <- (let b = 7; b); // Last complex expression
             i <- 8               // Simple variable
