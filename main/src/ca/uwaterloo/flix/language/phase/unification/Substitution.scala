@@ -127,7 +127,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type], trueVars: Set[Sym
     } else {
       Substitution(
         this.m ++ that.m.filter(kv => !(this.m.contains(kv._1) || this.trueVars.contains(kv._1))),
-        this.trueVars ++ that.trueVars.filter(v => !(this.m.contains(v) || this.trueVars.contains(v)))
+        this.trueVars ++ that.trueVars.filter(v => !this.m.contains(v))
       )
     }
   }
@@ -151,28 +151,23 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type], trueVars: Set[Sym
     // NB: Use of mutability improve performance.
     import scala.collection.mutable
     val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
-    val newTrueVars = mutable.Set.empty[Symbol.KindedTypeVarSym]
 
-    // Add all bindings in `that`. (Applying the current substitution).
+
+    // Add all bindings in `that.m`. (Applying the current substitution).
     for ((x, t) <- that.m) {
       newTypeMap.update(x, this.apply(t))
     }
-    for (x <- that.trueVars) {
-      newTrueVars.add(x)
-    }
 
-    // Add all bindings in `this` that are not in `that`.
+    // Add all bindings in `this.m` that are not in `that`.
     for ((x, t) <- this.m) {
       if (!(that.m.contains(x) || that.trueVars.contains(x))) {
         newTypeMap.update(x, t)
       }
     }
-    for (x <- this.trueVars) {
-      if (!(that.m.contains(x) || that.trueVars.contains(x))) {
-        newTrueVars.add(x)
-      }
-    }
 
-    Substitution(newTypeMap.toMap, newTrueVars.toSet) ++ this
+    //Add all trueVars that are not in `that.m`
+    val newTrueVars = that.trueVars ++ this.trueVars.filter(x => !that.m.contains(x))
+
+    Substitution(newTypeMap.toMap, newTrueVars) ++ this
   }
 }
