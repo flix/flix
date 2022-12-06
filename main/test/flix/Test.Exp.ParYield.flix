@@ -72,8 +72,8 @@ namespace Test/Exp/ParYield {
         par (
             a <- 1;              // Simple variable
             b <- c;              // Simple variable
-            d <- (let a = 1; a); // Spawn into thread
-            e <- (let b = 1; b)  // Last complex expression
+            d <- (let a = 3; a); // Spawn into thread
+            e <- (let b = 4; b)  // Last complex expression
         ) yield a + b + d + e
 
     @test
@@ -82,10 +82,10 @@ namespace Test/Exp/ParYield {
         par (
             a <- 1;              // Simple variable
             b <- c;              // Simple variable
-            d <- (let a = 1; a); // Spawn into thread
-            e <- (let b = 1; b); // Last complex expression
-            f <- 1;              // Simple variable
-            g <- 1               // Simple variable
+            d <- (let a = 3; a); // Spawn into thread
+            e <- (let b = 4; b); // Last complex expression
+            f <- 5;              // Simple variable
+            g <- 6               // Simple variable
         ) yield a + b + d + e + f + g
 
     @test
@@ -94,11 +94,11 @@ namespace Test/Exp/ParYield {
         par (
             a <- 1;              // Simple variable
             b <- c;              // Simple variable
-            d <- (let a = 1; a); // Spawn into thread
-            e <- (let b = 1; b); // Spawn into thread
-            f <- 1;              // Simple variable
-            g <- 1;              // Simple variable
-            h <- (let b = 1; b)  // Last complex expression
+            d <- (let a = 3; a); // Spawn into thread
+            e <- (let b = 4; b); // Spawn into thread
+            f <- 5;              // Simple variable
+            g <- 6;              // Simple variable
+            h <- (let b = 7; b)  // Last complex expression
         ) yield a + b + d + e + f + g + h
 
     @test
@@ -107,12 +107,12 @@ namespace Test/Exp/ParYield {
         par (
             a <- 1;              // Simple variable
             b <- c;              // Simple variable
-            d <- (let a = 1; a); // Spawn into thread
-            e <- (let b = 1; b); // Spawn into thread
-            f <- 1;              // Simple variable
-            g <- 1;              // Simple variable
-            h <- (let b = 1; b); // Last complex expression
-            i <- 1               // Simple variable
+            d <- (let a = 3; a); // Spawn into thread
+            e <- (let b = 4; b); // Spawn into thread
+            f <- 5;              // Simple variable
+            g <- 6;              // Simple variable
+            h <- (let b = 7; b); // Last complex expression
+            i <- 8               // Simple variable
         ) yield a + b + d + e + f + g + h + i
 
 }
