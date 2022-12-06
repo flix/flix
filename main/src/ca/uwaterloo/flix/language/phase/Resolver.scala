@@ -309,7 +309,7 @@ object Resolver {
       resolveSig(sig, uenv0, taenv, ns0, root)
     case defn@Declaration.Def(sym, spec, exp) =>
       resolveDef(defn, uenv0, taenv, ns0, root)
-    case enum@Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) =>
+    case enum@Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, uenv0, taenv, ns0, root)
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       taenv(sym).toSuccess
@@ -460,15 +460,14 @@ object Resolver {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolveEnum(e0: NamedAst.Declaration.Enum, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = e0 match {
-    case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, tpe0, loc) =>
+    case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, uenv, taenv, ns0, root))
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val derivesVal = resolveDerivations(derives0, uenv, ns0, root)
       val casesVal = traverse(cases0.values)(resolveCase(_, uenv, taenv, ns0, root))
-      val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
-      mapN(annVal, derivesVal, casesVal, tpeVal) {
-        case (ann, derives, cases, tpe) =>
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      mapN(annVal, derivesVal, casesVal) {
+        case (ann, derives, cases) =>
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 
@@ -1889,9 +1888,6 @@ object Resolver {
         case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
 
-    case NamedAst.Type.Enum(sym, loc) =>
-      mkEnum(sym, loc).toSuccess
-
     case NamedAst.Type.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(tpe => semiResolveType(tpe, uenv, ns0, root))
       mapN(elmsVal) {
@@ -2891,7 +2887,7 @@ object Resolver {
     case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym
     case Declaration.Sig(sym, spec, exp) => sym
     case Declaration.Def(sym, spec, exp) => sym
-    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) => sym
+    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case Declaration.Op(sym, spec) => sym
