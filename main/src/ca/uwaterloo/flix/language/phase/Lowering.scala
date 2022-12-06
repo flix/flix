@@ -1673,7 +1673,6 @@ object Lowering {
     case _ => false
   }
 
-
   /**
     * Returns a tuple expression that is evaluated in parallel.
     *
