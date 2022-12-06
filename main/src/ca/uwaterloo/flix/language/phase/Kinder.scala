@@ -109,15 +109,16 @@ object Kinder {
     * Performs kinding on the given enum.
     */
   private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
-    case ResolvedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
+    case ResolvedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
       val annVal = traverse(ann0)(visitAnnotation(_, kenv, Map.empty, taenv, None, root))
-      val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
 
-      flatMapN(annVal, tparamsVal, tpeVal) {
-        case (ann, tparams, tpe) =>
+      flatMapN(annVal, tparamsVal) {
+        case (ann, tparams) =>
+          val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+          val tpe = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
           val casesVal = traverse(cases0) {
             case case0 => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
               caze => caze.sym -> caze
@@ -1437,7 +1438,7 @@ object Kinder {
     * Gets the kind of the enum.
     */
   private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
-    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _) =>
+    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc

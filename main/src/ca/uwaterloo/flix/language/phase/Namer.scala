@@ -142,7 +142,7 @@ object Namer {
     case NamedAst.Declaration.Def(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) =>
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
@@ -311,11 +311,6 @@ object Namer {
       val tparams = getTypeParams(tparams0)
 
       val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
-      val quantifiers = tparams.tparams.map(_.sym).map(sym => NamedAst.Type.Var(sym, sym.loc))
-      val base = NamedAst.Type.Enum(sym, ident.loc)
-      val enumType = quantifiers.foldLeft(base: NamedAst.Type) {
-        case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, tvar.loc)
-      }
 
       val annVal = traverse(ann0)(visitAnnotation(_, Map.empty, tenv, ns0))
       val mod = visitModifiers(mod0, ns0)
@@ -326,7 +321,7 @@ object Namer {
           val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Declaration.Case]) {
             case (acc, caze) => acc + (caze.sym.name -> caze)
           }
-          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, caseMap, enumType, loc)
+          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, caseMap, loc)
       }
   }
 
@@ -1866,7 +1861,7 @@ object Namer {
     case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.loc
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
-    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) => sym.loc
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc

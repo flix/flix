@@ -72,6 +72,8 @@ object ErasedAst {
 
     case class Region(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
+    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }
