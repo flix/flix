@@ -988,7 +988,7 @@ object Lowering {
   private def visitBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = p0 match {
     case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
-      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tvar), loc)
+      val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
       val termsExp = mkList(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
@@ -1045,7 +1045,8 @@ object Lowering {
   /**
     * Lowers the given body term `pat0`.
     */
-  private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], sym: Symbol.VarSym)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
+  private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], term: TypedAst.Predicate.BodyTerm)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = term match {
+    case TypedAst.Predicate.BodyTerm(sym, _, _) =>
     if (sym.isWild) {
       // Case 0: Wildcard
       mkBodyTermWild(sym.loc)

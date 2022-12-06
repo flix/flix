@@ -2668,8 +2668,8 @@ object Typer {
   private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
-      val termTypes = terms.map(_.tvar)
       for {
+        termTypes <- traverseM(terms)(inferBodyTerm)
         predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
       } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
@@ -2695,10 +2695,18 @@ object Typer {
   }
 
   /**
+    * Infers the type of the given body term.
+    */
+  private def inferBodyTerm(term: KindedAst.Predicate.BodyTerm)(implicit flix: Flix): InferMonad[Type] = term match {
+    case KindedAst.Predicate.BodyTerm(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
+  }
+
+  /**
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
+    case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms0, tvar, loc) =>
+      val terms = terms0.map(reassembleBodyTerm(_, subst0))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, subst0(tvar), loc)
 
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
@@ -2709,6 +2717,13 @@ object Typer {
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Loop(varSyms, e, loc)
 
+  }
+
+  /**
+    * Applies the given substitution `subst0` to the given body term `term`.
+    */
+  private def reassembleBodyTerm(term: KindedAst.Predicate.BodyTerm, subst0: Substitution): TypedAst.Predicate.BodyTerm = term match {
+    case KindedAst.Predicate.BodyTerm(sym, tvar, loc) => TypedAst.Predicate.BodyTerm(sym, subst0(tvar), loc)
   }
 
   /**

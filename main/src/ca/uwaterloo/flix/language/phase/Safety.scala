@@ -586,9 +586,9 @@ object Safety {
         case Polarity.Positive => Nil
         case Polarity.Negative =>
           // Compute the free variables in the terms which are *not* bound by the lexical scope.
-          val freeVars = terms.toSet intersect quantVars
+          val freeVars = terms.map(_.sym).toSet intersect quantVars
           val wildcardNegErrors = terms.flatMap {
-            case t => if (t.isWild) Some(IllegalNegativelyBoundWildcard(t.loc)) else None
+            case t => if (t.sym.isWild) Some(IllegalNegativelyBoundWildcard(t.loc)) else None
           }
 
           // Check if any free variables are not positively bound.
@@ -602,7 +602,7 @@ object Safety {
         case Denotation.Relational => terms
         case Denotation.Latticenal => terms.dropRight(1)
       }
-      val err2 = relTerms.filter(latVars.contains).map(
+      val err2 = relTerms.map(_.sym).filter(latVars.contains).map(
         s => IllegalRelationalUseOfLatticeVariable(s, loc)
       )
 
@@ -635,7 +635,7 @@ object Safety {
     case Predicate.Body.Atom(_, _, polarity, _, terms, _, _) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
-        terms.toSet
+        terms.map(_.sym).toSet
       case Polarity.Negative =>
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
@@ -658,7 +658,7 @@ object Safety {
     */
   private def fixedLatticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
-      terms.lastOption.map(t => Set(t)).getOrElse(Set.empty)
+      terms.lastOption.map(t => Set(t.sym)).getOrElse(Set.empty)
 
     case _ => Set.empty
   }
@@ -675,7 +675,7 @@ object Safety {
     */
   private def latticenalVariablesOf(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
-      terms.lastOption.map(t => Set(t)).getOrElse(Set.empty)
+      terms.lastOption.map(t => Set(t.sym)).getOrElse(Set.empty)
 
     case _ => Set.empty
   }

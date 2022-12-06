@@ -1167,7 +1167,14 @@ object Namer {
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val env = (outerEnv ++ ruleEnv0)
-      val ts = terms.map(t => env.apply(t.name))
+      val ts = terms.map {
+        case t if t.isWild =>
+          val sym = Symbol.freshVarSym(t, BoundBy.Constraint)
+          NamedAst.Predicate.BodyTerm(sym, t.loc)
+        case t =>
+          val sym = env(t.name)
+          NamedAst.Predicate.BodyTerm(sym, t.loc)
+      }
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>

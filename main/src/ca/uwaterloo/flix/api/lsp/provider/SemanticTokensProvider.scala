@@ -736,7 +736,8 @@ object SemanticTokensProvider {
   private def visitBodyPredicate(b0: TypedAst.Predicate.Body): Iterator[SemanticToken] = b0 match {
     case Body.Atom(pred, _, _, _, terms, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
-      Iterator(t) // MATT terms
+      val ts = terms.iterator.map(term => SemanticToken(SemanticTokenType.Variable, Nil, term.loc))
+      Iterator(t) ++ ts
 
     case Body.Guard(exp, _) =>
       visitExp(exp)

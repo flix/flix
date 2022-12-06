@@ -1422,8 +1422,11 @@ object Resolver {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-            ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc).toSuccess
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms0, loc) =>
+          val terms = terms0.map {
+            case NamedAst.Predicate.BodyTerm(sym, termLoc) => ResolvedAst.Predicate.BodyTerm(sym, termLoc)
+          }
+          ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc).toSuccess
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           val eVal = Expressions.resolve(exp, uenv, taenv, ns0, root)

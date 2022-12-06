@@ -445,7 +445,7 @@ object TypedAstOps {
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, term) => acc // MATT terms
+        case (acc, term) => acc - term.sym
       }
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Loop(_, exp, _) => freeVars(exp)
