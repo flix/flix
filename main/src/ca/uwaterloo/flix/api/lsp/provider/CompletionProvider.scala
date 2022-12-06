@@ -140,7 +140,8 @@ object CompletionProvider {
         HoleCompletion.candidates(sourceType, targetType, root)
           .map((root.defs(_)))
           .filter(_.spec.mod.isPublic)
-          .map(holeDefCompletion(uri, loc, sym, _, root))
+          .zipWithIndex
+          .map{case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
       case _ => Nil
     }
   }
@@ -148,25 +149,16 @@ object CompletionProvider {
   /**
     * Creates a completion item from a hole with expression and a def.
     */
-  private def holeDefCompletion(uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): CompletionItem = {
+  private def holeDefCompletion(priority: String, uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): CompletionItem = {
     val name = decl.sym.toString
     val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
     } ::: sym.text :: Nil
     val params = args.mkString(", ")
     val snippet = s"$name($params)"
-    // converts the number of parameters 0-25 to a-z in order to have correct lexicographic order
-    val noOfParametersAsChar = (decl.spec.fparams.length + 97).toChar
-    val noOfPolymorphicAsChar = decl.spec.fparams.last.tpe.typeConstructor match {
-      case Some(_) => 'a'
-      case None => 'b'
-    }
-    val uriPriority = if (decl.sym.loc.source.name == uri) Priority.high _
-      else Priority.low _
-    val priority: String => String = s => uriPriority(s"$noOfParametersAsChar$noOfPolymorphicAsChar$s")
     CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
       filterText = Some(s"${sym.text}?$name"),
-      sortText = priority(name),
+      sortText = priority,
       textEdit = TextEdit(Range.from(loc), snippet),
       detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
       documentation = Some(decl.spec.doc.text),
