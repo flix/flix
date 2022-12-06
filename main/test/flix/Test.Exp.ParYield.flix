@@ -66,4 +66,53 @@ namespace Test/Exp/ParYield {
     def testParYield15(): Bool =
         (par (a <- 5; b <- (let a = 1; a); c <- 6) yield a + b + c) == 12
 
+    @test
+    def testParYield16(): Int32 =
+        let c = 2;
+        par (
+            a <- 1;              // Simple variable
+            b <- c;              // Simple variable
+            d <- (let a = 1; a); // Spawn into thread
+            e <- (let b = 1; b)  // Last complex expression
+        ) yield a + b + d + e
+
+    @test
+    def testParYield17(): Int32 =
+        let c = 2;
+        par (
+            a <- 1;              // Simple variable
+            b <- c;              // Simple variable
+            d <- (let a = 1; a); // Spawn into thread
+            e <- (let b = 1; b); // Last complex expression
+            f <- 1;              // Simple variable
+            g <- 1               // Simple variable
+        ) yield a + b + d + e + f + g
+
+    @test
+    def testParYield18(): Int32 =
+        let c = 2;
+        par (
+            a <- 1;              // Simple variable
+            b <- c;              // Simple variable
+            d <- (let a = 1; a); // Spawn into thread
+            e <- (let b = 1; b); // Spawn into thread
+            f <- 1;              // Simple variable
+            g <- 1;              // Simple variable
+            h <- (let b = 1; b)  // Last complex expression
+        ) yield a + b + d + e + f + g + h
+
+    @test
+    def testParYield19(): Int32 =
+        let c = 2;
+        par (
+            a <- 1;              // Simple variable
+            b <- c;              // Simple variable
+            d <- (let a = 1; a); // Spawn into thread
+            e <- (let b = 1; b); // Spawn into thread
+            f <- 1;              // Simple variable
+            g <- 1;              // Simple variable
+            h <- (let b = 1; b); // Last complex expression
+            i <- 1               // Simple variable
+        ) yield a + b + d + e + f + g + h + i
+
 }
