@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, Sour
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * This phase translates AST expressions related to the Datalog subset of the
   * language into `Fixpoint/Ast` values (which are ordinary Flix values).
@@ -1620,9 +1622,12 @@ object Lowering {
     }
 
   /**
-    * Returns a desugared [[TypedAst.Expression.ParYield]] expression.
+    * Returns a desugared [[TypedAst.Expression.ParYield]] expression as a nested match-expression.
     */
-  def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+  private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+    // Partition fragments into simple and complex exps.
+    val (simple, complex) = frags.map(_.exp).partition(isSimple)
+
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
     val (fs, last :: Nil) = frags.splitAt(frags.length - 1)
 
@@ -1640,6 +1645,18 @@ object Lowering {
     // Wrap everything in a purity cast,
     LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
   }
+
+  /**
+    * Returns `true` if `exp0` is either a literal or a variable.
+    */
+  @tailrec
+  private def isSimple(exp0: LoweredAst.Expression): Boolean = exp0 match {
+    case LoweredAst.Expression.Var(_, _, _) => true
+    case LoweredAst.Expression.Cst(_: Ast.Constant, _, _) => true
+    case LoweredAst.Expression.Scope(_, _, exp, _, _, _, _) => isSimple(exp)
+    case _ => false
+  }
+
 
   /**
     * Returns a tuple expression that is evaluated in parallel.
