@@ -157,7 +157,6 @@ object CompletionProvider {
     val snippet = s"$name($params)"
     // converts the number of parameters 0-25 to a-z in order to have correct lexicographic order
     val noOfParametersAsChar = (decl.spec.fparams.length + 97).toChar
-    //val noOfPolymorphicAsChar = (decl.spec.declaredScheme.quantifiers.length + 97).toChar
     val noOfPolymorphicAsChar = decl.spec.fparams.last.tpe.typeConstructor match {
       case Some(_) => 'a'
       case None => 'b'
