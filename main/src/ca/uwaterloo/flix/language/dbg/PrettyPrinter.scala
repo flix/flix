@@ -207,6 +207,16 @@ object PrettyPrinter {
           sb.append(formatter.bold("region"))
             .toString()
 
+        case Expression.Scope(sym, exp, tpe, _, loc) =>
+          val sb = new mutable.StringBuilder
+          sb.append(formatter.bold("region"))
+            .append(fmtSym(sym, formatter))
+            .append(": ")
+            .append(formatType(exp.tpe))
+            .append(" = ")
+            .append(visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
+            .toString
+
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 
         case Expression.Tag(sym, exp, tpe, _, loc) => exp match {

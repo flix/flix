@@ -126,6 +126,9 @@ object ClosureConv {
     case Expression.Region(tpe, loc) =>
       Expression.Region(tpe, loc)
 
+    case Expression.Scope(sym, e, tpe, purity, loc) =>
+      Expression.Scope(sym, visitExp(e), tpe, purity, loc)
+
     case Expression.Is(sym, e, purity, loc) =>
       Expression.Is(sym, visitExp(e), purity, loc)
 
@@ -353,6 +356,8 @@ object ClosureConv {
     case Expression.Region(tpe, loc) =>
       SortedSet.empty
 
+    case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
+
     case Expression.Is(_, exp, _, _) => freeVars(exp)
 
     case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
@@ -538,6 +543,11 @@ object ClosureConv {
 
       case Expression.Region(tpe, loc) =>
         Expression.Region(tpe, loc)
+
+      case Expression.Scope(sym, exp, tpe, purity, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
+        val e = visitExp(exp)
+        Expression.Scope(newSym, e, tpe, purity, loc)
 
       case Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)

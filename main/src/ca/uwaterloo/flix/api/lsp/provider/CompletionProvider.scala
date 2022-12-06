@@ -110,6 +110,12 @@ object CompletionProvider {
     * Process a completion request.
     */
   def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+    val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
+    // If we are currently on a hole the only useful completion is a hole completion.
+    if (holeCompletions.nonEmpty) {
+      return ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
+    }
+
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -118,9 +124,46 @@ object CompletionProvider {
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
       case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
-    }
+    } 
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
+  }
+
+  /**
+    * Gets completions for when the cursor position is on a hole expression with an expression
+    */
+  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[CompletionItem] = {
+    if (root == null) return Nil
+    val entity = index.query(uri, pos)
+    entity match {
+      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) => 
+        HoleCompletion.candidates(sourceType, targetType, root)
+          .map((root.defs(_)))
+          .filter(_.spec.mod.isPublic)
+          .zipWithIndex
+          .map{case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Creates a completion item from a hole with expression and a def.
+    */
+  private def holeDefCompletion(priority: String, uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): CompletionItem = {
+    val name = decl.sym.toString
+    val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+    } ::: sym.text :: Nil
+    val params = args.mkString(", ")
+    val snippet = s"$name($params)"
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      filterText = Some(s"${sym.text}?$name"),
+      sortText = priority,
+      textEdit = TextEdit(Range.from(loc), snippet),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Function)
   }
 
   private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
@@ -132,7 +175,7 @@ object CompletionProvider {
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
-    // if the following are match we do not want any completions
+    // if any of the following matches we do not want any completions
     val defRegex = raw"\s*def\s+.*".r
     val enumRegex = raw"\s*enum\s+.*".r
     val typeAliasRegex = raw"\s*type\s+alias\s+.*".r

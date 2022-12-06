@@ -141,6 +141,9 @@ object LateTreeShaker {
     case Expression.Region(_, _) =>
       Set.empty
 
+    case Expression.Scope(_, exp, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Is(_, exp, _, _) =>
       visitExp(exp)
 

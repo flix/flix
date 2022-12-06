@@ -123,6 +123,9 @@ object Eraser {
     case FinalAst.Expression.Region(tpe, loc) =>
       ErasedAst.Expression.Region(tpe, loc)
 
+    case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
+      ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
+
     case FinalAst.Expression.Is(sym, exp, loc) =>
       ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 
