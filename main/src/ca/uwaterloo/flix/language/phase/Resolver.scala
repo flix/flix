@@ -1450,7 +1450,7 @@ object Resolver {
       */
     def resolve(cparam0: NamedAst.ConstraintParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
       // TODO NS-REFACTOR no validation needed
-      case NamedAst.ConstraintParam(sym, loc) => ResolvedAst.ConstraintParam(sym, loc)
+      case NamedAst.ConstraintParam(sym, loc) => ResolvedAst.ConstraintParam(sym, loc).toSuccess
     }
 
     /**

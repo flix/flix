@@ -951,7 +951,7 @@ object Kinder {
     */
   private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
     // TODO NS-REFACTOR no validation needed
-    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc)
+    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc).toSuccess
   }
 
   /**
