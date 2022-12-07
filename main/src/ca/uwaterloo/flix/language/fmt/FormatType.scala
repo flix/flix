@@ -17,14 +17,47 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.VarText
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
 
 object FormatType {
   /**
     * Transforms the given well-kinded type into a string.
+    *
+    * Minimizes the given type.
+    *
+    * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type)(implicit flix: Flix): String = {
-    formatTypeWithOptions(tpe, flix.getFormatOptions)
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None)(implicit flix: Flix): String = {
+    val minimized = TypeMinimization.minimizeType(tpe)
+    val renamed = renv match {
+      case None => minimized
+      case Some(env) => alphaRename(minimized, env)
+    }
+    formatTypeWithOptions(renamed, flix.getFormatOptions)
+  }
+
+  /**
+    * Renames all flexible variables in the given `tpe` to fresh consecutively numbered variables.
+    *
+    * NOTE: This function should *ONLY* be used for pretty printing.
+    */
+  private def alphaRename(tpe: Type, renv: RigidityEnv): Type = {
+    // Compute the free type variables.
+    val freeVars = tpe.typeVars.toList.sortBy(_.sym.id)
+
+    // Compute the flexible variables (i.e. the free variables that are not rigid).
+    val flexibleVars = renv.getFlexibleVarsOf(freeVars)
+
+    // Compute a substitution that maps the first flexible variable to id 1 and so forth.
+    val m = flexibleVars.zipWithIndex.map {
+      case (tvar@Type.Var(sym, loc), index) =>
+        sym -> (Type.Var(new Symbol.KindedTypeVarSym(index, sym.text, sym.kind, sym.isRegion, loc), loc): Type)
+    }
+    val s = Substitution(m.toMap)
+
+    // Apply the substitution to the type.
+    s(tpe)
   }
 
   /**
@@ -314,7 +347,6 @@ object FormatType {
           case FormatOptions.VarName.NameBased => text match {
             case VarText.Absent => string
             case VarText.SourceText(s) => s
-            case VarText.FallbackText(s) => "?" + s + id.toString
           }
         }
 

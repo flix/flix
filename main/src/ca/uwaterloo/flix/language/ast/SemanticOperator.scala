@@ -875,14 +875,14 @@ object SemanticOperatorOps {
     * @param sop The semantic operator.
     * @return The appropriate unary operator.
     */
-  def toUnaryOp(sop: SemanticOperator): UnaryOperator = sop match {
+  def toUnaryOp(sop: SemanticOperator, loc: SourceLocation): UnaryOperator = sop match {
     case SemanticOperator.BoolOp.Not => UnaryOperator.LogicalNot
     case SemanticOperator.Float32Op.Neg | SemanticOperator.Float64Op.Neg | SemanticOperator.BigDecimalOp.Neg
          | SemanticOperator.Int8Op.Neg | SemanticOperator.Int16Op.Neg | SemanticOperator.Int32Op.Neg | SemanticOperator.Int64Op.Neg
          | SemanticOperator.BigIntOp.Neg => UnaryOperator.Minus
     case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not | SemanticOperator.Int64Op.Not
          | SemanticOperator.BigIntOp.Not => UnaryOperator.BitwiseNegate
-    case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.")
+    case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
   }
 
   /**
@@ -891,7 +891,7 @@ object SemanticOperatorOps {
     * @param sop The semantic operator.
     * @return The appropriate binary operator.
     */
-  def toBinaryOp(sop: SemanticOperator): BinaryOperator = sop match {
+  def toBinaryOp(sop: SemanticOperator, loc: SourceLocation): BinaryOperator = sop match {
     case SemanticOperator.BoolOp.And => BinaryOperator.LogicalAnd
     case SemanticOperator.BoolOp.Or => BinaryOperator.LogicalOr
 
@@ -968,7 +968,7 @@ object SemanticOperatorOps {
 
     case SemanticOperator.StringOp.Concat => BinaryOperator.Plus
 
-    case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.")
+    case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
   }
 
 }

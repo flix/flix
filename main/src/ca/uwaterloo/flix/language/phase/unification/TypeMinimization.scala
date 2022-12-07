@@ -76,7 +76,7 @@ object TypeMinimization {
 
     // Check that the `tpe` argument is a Boolean formula.
     if (tpe0.kind != Kind.Bool && tpe0.kind != Kind.Effect) {
-      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.")
+      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
     // Erase aliases to get a processable type
@@ -104,7 +104,7 @@ object TypeMinimization {
     val input = tpe.kind match {
       case Kind.Bool => fromBoolType(tpe, m)
       case Kind.Effect => fromEffType(tpe, m)
-      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.")
+      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.", tpe.loc)
     }
 
     // Minimize the Boolean formula.

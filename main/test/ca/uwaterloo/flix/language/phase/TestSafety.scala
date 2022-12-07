@@ -265,7 +265,7 @@ class TestSafety extends FunSuite with TestUtils {
         |def f(): Unit & ef =
         |    let f =
         |        if (true)
-        |            upcast x -> (x + 1 as & ef)
+        |            upcast x -> (unsafe_cast x + 1 as & ef)
         |        else
         |            upcast x -> x + 1;
         |    let _ = f(1);
@@ -335,7 +335,7 @@ class TestSafety extends FunSuite with TestUtils {
         |
         |def f(): Unit =
         |    let f = () -> ();
-        |    let g = () -> () as \ { A, B, C };
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            f
@@ -357,8 +357,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> () as \ A;
-        |    let g = () -> () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as \ A;
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            f
@@ -380,8 +380,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> () as & Impure \ A;
-        |    let g = () -> () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as & Impure \ A;
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -403,8 +403,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> () as \ A;
-        |    let g = () -> () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as \ A;
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -426,8 +426,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> () as & Impure \ A;
-        |    let g = () -> () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as & Impure \ A;
+        |    let g = () -> unsafe_cast () as \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -512,7 +512,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            super_cast (1 as \ Impure)
+        |            super_cast (unsafe_cast 1 as \ Impure)
         |        else
         |            newObject();
         |    ()
@@ -529,7 +529,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            1 as \ Impure
+        |            unsafe_cast 1 as \ Impure
         |        else
         |            super_cast newObject();
         |    ()
@@ -615,4 +615,83 @@ class TestSafety extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.SendableError](result)
   }
+
+  test("ImpossibleCast.01") {
+    val input =
+      """
+        |def f(): Bool = unsafe_cast "true" as Bool
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.02") {
+    val input =
+      """
+        |def f(): String = unsafe_cast true as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.03") {
+    val input =
+      """
+        |enum A(Bool)
+        |def f(): A = unsafe_cast true as A
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.04") {
+    val input =
+      """
+        |enum A(Bool)
+        |def f(): Bool = unsafe_cast A(false) as Bool
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.05") {
+    val input =
+      """
+        |enum A(Int32)
+        |def f(): A = unsafe_cast 1 as A
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.06") {
+    val input =
+      """
+        |enum A(Int32)
+        |def f(): Int32 = unsafe_cast A(1) as Int32
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.07") {
+    val input =
+      """
+        |enum A(String)
+        |def f(): A = unsafe_cast "a" as A
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  test("ImpossibleCast.08") {
+    val input =
+      """
+        |enum A(String)
+        |def f(): String = unsafe_cast A("a") as String
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
 }

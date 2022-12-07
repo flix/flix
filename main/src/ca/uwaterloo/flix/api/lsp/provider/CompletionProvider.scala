@@ -110,6 +110,12 @@ object CompletionProvider {
     * Process a completion request.
     */
   def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+    val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
+    // If we are currently on a hole the only useful completion is a hole completion.
+    if (holeCompletions.nonEmpty) {
+      return ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = false, holeCompletions).toJSON)
+    }
+
     //
     // To the best of my knowledge, completions should never be Nil. It could only happen if source was None
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
@@ -118,21 +124,58 @@ object CompletionProvider {
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
       case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
-    }
+    } 
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
 
+  /**
+    * Gets completions for when the cursor position is on a hole expression with an expression
+    */
+  private def getHoleExpCompletions(pos: Position, uri: String, index: Index, root: TypedAst.Root)(implicit flix: Flix): Iterable[CompletionItem] = {
+    if (root == null) return Nil
+    val entity = index.query(uri, pos)
+    entity match {
+      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) => 
+        HoleCompletion.candidates(sourceType, targetType, root)
+          .map((root.defs(_)))
+          .filter(_.spec.mod.isPublic)
+          .zipWithIndex
+          .map{case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Creates a completion item from a hole with expression and a def.
+    */
+  private def holeDefCompletion(priority: String, uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): CompletionItem = {
+    val name = decl.sym.toString
+    val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
+      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
+    } ::: sym.text :: Nil
+    val params = args.mkString(", ")
+    val snippet = s"$name($params)"
+    CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
+      filterText = Some(s"${sym.text}?$name"),
+      sortText = priority,
+      textEdit = TextEdit(Range.from(loc), snippet),
+      detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
+      documentation = Some(decl.spec.doc.text),
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Function)
+  }
+
   private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // If we match one of the we know what type of completion we need
+    val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*[^\s]*".r
     val effectRegex = raw".*[\\]\s*[^\s]*".r
     val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
-    val caseRegex = raw"(?:|.*\s+)case\s+[^s]*".r
 
-    // if the following are match we do not want any completions
+    // if any of the following matches we do not want any completions
     val defRegex = raw"\s*def\s+.*".r
     val enumRegex = raw"\s*enum\s+.*".r
     val typeAliasRegex = raw"\s*type\s+alias\s+.*".r
@@ -143,13 +186,13 @@ object CompletionProvider {
 
     // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
     context.prefix match {
+      case withRegex() => getWithCompletions()
       case typeRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
       case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
-      case caseRegex() => getCaseCompletions()
         //
         // The order of this list doesn't matter because suggestions are ordered
         // through sortText
@@ -158,14 +201,12 @@ object CompletionProvider {
         getSnippetCompletions() ++
         getVarCompletions() ++
         getDefAndSigCompletions() ++
-        getWithCompletions() ++
         getPredicateCompletions() ++
         getFieldCompletions() ++
         getTypeCompletions() ++
         getOpCompletions() ++
         getEffectCompletions() ++
-        getMatchCompletitions() ++
-        getCaseCompletions()
+        getMatchCompletitions()
     }
   }
 
@@ -571,67 +612,6 @@ object CompletionProvider {
     } else {
       Nil
     }
-  }
-
-  /**
-    * Returns a list of completion items based on case keyword in match expressions
-    */
-  private def getCaseCompletions()(implicit context: Context, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    val casePattern = raw"\s*ca?s?e?\s?.*".r
-
-    if (!(casePattern matches context.prefix)) {
-      return Nil
-    }
-
-    //Checks if the current word is case or not. This prevents "case r" to be completed to "case case red"
-    val wordPattern = "ca?s?e?".r
-    val currentWordIsCase = wordPattern matches context.word
-
-    val enums = root.enums.values
-    enums.foldLeft[List[CompletionItem]](Nil)((acc, enm) => enumCompletionAcc(acc, enm, currentWordIsCase))
-  }
-
-  /**
-    * Extends a list of completion items with completion items for the cases of an enum.
-    */
-  private def enumCompletionAcc(acc: List[CompletionItem], enm: TypedAst.Enum, currentWordIsCase: Boolean)(implicit context: Context, flix: Flix): List[CompletionItem] = {
-    //Selects priority high if enum is in the same source file and boost if not.
-    val priority: String => String = if (enm.loc.source.name == context.uri) Priority.high else Priority.boost
-    enm.cases.foldLeft(acc)({
-      case (acc, (sym , cas)) => {
-        val name = sym.name
-        val tpe = cas.tpe
-        val typeString = tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => ""
-          case Some(TypeConstructor.Tuple(_)) => FormatType.formatType(tpe)
-          case _ => s"(${FormatType.formatType(tpe)})"
-        }
-        val typeCompletion = tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => ""
-          case Some(TypeConstructor.Tuple(arity)) => List.range(1, arity + 1).map(elem => s"$$$elem").mkString("(", ", ", ")")
-          case _ => "($1)"
-        }
-        val label = if (currentWordIsCase) s"case $name$typeString => " else s"$name$typeString => "
-        val completion = if (currentWordIsCase) s"case $name$typeCompletion => $${0:???}" else s"$name$typeCompletion => $${0:???}"
-        caseCompletion(label, completion, priority) :: acc
-      }
-    })
-  }
-
-  /**
-    * Returns a completion item based on a label and a completion for an enum case.
-    */
-  private def caseCompletion(label: String, completion: String, priority: String => String)(implicit context: Context): CompletionItem = {
-    CompletionItem(label = label,
-        sortText = priority(label),
-        textEdit = TextEdit(context.range, completion),
-        documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.EnumMember)
   }
 
   /**

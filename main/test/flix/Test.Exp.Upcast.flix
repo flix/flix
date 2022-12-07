@@ -6,7 +6,7 @@ namespace Test/Exp/Upcast {
             if (true)
                 upcast x -> x + 1
             else
-                (x -> (x as & ef));
+                (x -> unsafe_cast x as & ef);
         let _ = f(1);
         ()
 
@@ -16,7 +16,7 @@ namespace Test/Exp/Upcast {
             if (true)
                 upcast x -> x + 1
             else
-                x -> x + 1 as & Impure;
+                x -> unsafe_cast x + 1 as & Impure;
         let _ = f(1);
         ()
 
@@ -131,7 +131,7 @@ namespace Test/Exp/Upcast {
     @test
     def testUpcast13(): Unit =
         let f = () -> 1;
-        let g = () -> 1 as \ A;
+        let g = () -> unsafe_cast 1 as \ A;
         let _ =
             if (true)
                 upcast f
@@ -155,7 +155,7 @@ namespace Test/Exp/Upcast {
     @test
     def testUpcast15(): Unit =
         let f = () -> ();
-        let g = () -> () as \ { A, B, C };
+        let g = () -> unsafe_cast () as \ { A, B, C };
         let _ =
             if (true)
                 upcast f
@@ -165,8 +165,8 @@ namespace Test/Exp/Upcast {
 
     @test
     def testUpcast16(): Unit =
-        let f = () -> () as \ A;
-        let g = () -> () as \ { A, B, C };
+        let f = () -> unsafe_cast () as \ A;
+        let g = () -> unsafe_cast () as \ { A, B, C };
         let _ =
             if (true)
                 upcast f
@@ -188,6 +188,13 @@ namespace Test/Exp/Upcast {
     def testUpcast19(): Unit =
         let f = (_: ##java.lang.Number) -> ();
         f(upcast 1.23ff)
+
+    @test
+    def testUpcast20(): Int32 = region r {
+        let _ = r; // Use r in the scope to avoid redundancy error
+        let f = (g: Int32 -> Int32 \ r) -> x -> g(x);
+        f(upcast x -> x + 1: Int32, 1)
+    }
 
     pub eff A
     pub eff B

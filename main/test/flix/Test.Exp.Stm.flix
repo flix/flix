@@ -88,10 +88,10 @@ namespace Test/Exp/Stm {
         h();
         x
 
-    def f(): Unit \ IO = () as \ IO
+    def f(): Unit \ IO = unsafe_cast () as \ IO
 
-    def g(): Unit \ IO = () as \ IO
+    def g(): Unit \ IO = unsafe_cast () as \ IO
 
-    def h(): Unit \ IO = () as \ IO
+    def h(): Unit \ IO = unsafe_cast () as \ IO
 
 }

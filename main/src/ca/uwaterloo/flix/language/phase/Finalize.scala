@@ -146,6 +146,15 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.LetRec(varSym, index, defSym, e1, e2, t, loc)
 
+      case LiftedAst.Expression.Region(tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.Region(t, loc)
+
+      case LiftedAst.Expression.Scope(sym, exp, tpe, _, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Scope(sym, e, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
@@ -345,7 +354,7 @@ object Finalize {
       base match {
         case None => t0 match {
           case Type.Var(sym, _) => MonoType.Var(sym.id)
-          case _ => throw InternalCompilerException(s"Unexpected type: $t0")
+          case _ => throw InternalCompilerException(s"Unexpected type: $t0", t0.loc)
         }
 
         case Some(tc) =>
@@ -378,9 +387,9 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender")
+            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender", tpe0.loc)
 
-            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver")
+            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver", tpe0.loc)
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
@@ -426,19 +435,19 @@ object Finalize {
             case TypeConstructor.All => MonoType.Unit
 
             case TypeConstructor.Relation =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.Lattice =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.SchemaRowEmpty =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.SchemaRowExtend(pred) =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
 
             case TypeConstructor.Schema =>
-              throw InternalCompilerException(s"Unexpected type: '$t0'.")
+              throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)
           }
       }
     }

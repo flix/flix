@@ -113,6 +113,13 @@ object VarNumbering {
         val i2 = visitExp(exp1, i1)
         visitExp(exp2, i2)
 
+      case Expression.Region(_, _) =>
+        i0
+
+      case Expression.Scope(sym, exp, _, _, _) =>
+        val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
+        visitExp(exp, i1)
+
       case Expression.Is(_, exp, _, _) =>
         visitExp(exp, i0)
 

@@ -15,7 +15,7 @@
  */
 
 instance Scoped[Array[a]] {
-    pub def regionOf(_: Array[a, r]): Region[r] = () as Region[r]
+    pub def regionOf(_: Array[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 instance Iterable[Array] {
@@ -1663,43 +1663,43 @@ namespace Array {
         typematch a {
             case arr: Array[Unit, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
             case arr: Array[Bool, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Char, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Float32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Float64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[BigDecimal, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
             case arr: Array[Int8, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Int16, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Int32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[Int64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr, b, e) as Array[a, r2]
+                unsafe_cast copy(arr, b, e) as Array[a, r2]
             case arr: Array[BigInt, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
             case arr: Array[String, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
             case arr: Array[a, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                copy(arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
             case _: _ => unreachable!()
         }
 

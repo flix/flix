@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ErasedAst.Root
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -48,16 +49,16 @@ object Bootstrap {
         val nsJvmName = JvmOps.getNamespaceClassType(nsInfo).name
 
         // Retrieve the reflective class object.
-        val nsClass = loadedClasses.getOrElse(nsJvmName, throw InternalCompilerException(s"Unknown namespace: '$nsJvmName'."))
+        val nsClass = loadedClasses.getOrElse(nsJvmName, throw InternalCompilerException(s"Unknown namespace: '$nsJvmName'.", sym.loc))
 
         // Retrieve the method name of the symbol.
         val methodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
 
         // Retrieve the method object.
         val method = allMethods.get(nsClass) match {
-          case None => throw InternalCompilerException(s"Class not found: '$nsClass'.")
+          case None => throw InternalCompilerException(s"Class not found: '$nsClass'.", sym.loc)
           case Some(m) => m.get(methodName) match {
-            case None => throw InternalCompilerException(s"Method not found: '$methodName'.")
+            case None => throw InternalCompilerException(s"Method not found: '$methodName'.", sym.loc)
             case Some(r) => r
           }
         }
@@ -68,9 +69,9 @@ object Bootstrap {
 
       if (shouldMainExist) {
         val mainName = JvmOps.getMainClassType().name
-        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'."))
-        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found."))
-        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'"))
+        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'.", SourceLocation.Unknown))
+        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found.", SourceLocation.Unknown))
+        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'", SourceLocation.Unknown))
 
         // This is a specialized version of the link function in JvmBackend
         def mainFunction(args: Array[String]): Unit = {

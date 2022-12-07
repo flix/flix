@@ -120,6 +120,12 @@ object Eraser {
       val e2 = visitExp(exp2)
       ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
+    case FinalAst.Expression.Region(tpe, loc) =>
+      ErasedAst.Expression.Region(tpe, loc)
+
+    case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
+      ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
+
     case FinalAst.Expression.Is(sym, exp, loc) =>
       ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 

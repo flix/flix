@@ -604,7 +604,6 @@ object Ast {
       */
     private def precision: Int = this match {
       case VarText.Absent => 0
-      case VarText.FallbackText(_) => 1
       case VarText.SourceText(_) => 2
     }
 
@@ -627,11 +626,6 @@ object Ast {
       * The variable is associated with the string `s` taken directly from the source code.
       */
     case class SourceText(s: String) extends VarText
-
-    /**
-      * The variable is associated string `s`, used as a fallback since no source text is available.
-      */
-    case class FallbackText(s: String) extends VarText
   }
 
   /**
@@ -657,8 +651,20 @@ object Ast {
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /**
-    * A use of a symbol in a `use` construct.
+    * A use of a Flix symbol or import of a Java class.
     */
-  case class Use(sym: Symbol, loc: SourceLocation)
+  sealed trait UseOrImport
+  object UseOrImport {
+
+    /**
+      * A use of a Flix declaration symbol.
+      */
+    case class Use(sym: Symbol, alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+
+    /**
+      * An import of a Java class.
+      */
+    case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
+  }
 
 }

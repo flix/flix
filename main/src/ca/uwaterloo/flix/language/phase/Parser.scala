@@ -696,20 +696,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Cast ~ optional(WS ~ keyword("without") ~ WS ~ Effects ~ SP ~> ParsedAst.Expression.Without)
+        Ascribe ~ optional(WS ~ keyword("without") ~ WS ~ Effects ~ SP ~> ParsedAst.Expression.Without)
       }
-    }
-
-    def Cast: Rule1[ParsedAst.Expression] = rule {
-      Ascribe ~ optional(WS ~ keyword("as") ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast)
-    }
-
-    def Upcast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("upcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Upcast
-    }
-
-    def Supercast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("super_cast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
@@ -740,10 +728,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
         Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
-        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
+        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
         FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | FName | Tag | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
+    }
+
+    def Cast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast
+    }
+
+    def Upcast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("upcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Upcast
+    }
+
+    def Supercast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("super_cast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -991,7 +992,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ keyword("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+      SP ~ keyword("spawn") ~ WS ~ Expression ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
     }
 
     def Par: Rule1[ParsedAst.Expression.Par] = rule {
@@ -1133,6 +1134,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
+      Names.Variable ~ "?" ~ SP ~> ParsedAst.Expression.HolyName
     }
 
     def Hole: Rule1[ParsedAst.Expression.Hole] = {

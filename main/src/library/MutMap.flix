@@ -20,7 +20,7 @@
 enum MutMap[k: Type, v: Type, r: Region](Ref[Map[k, v], r])
 
 instance Scoped[MutMap[k, v]] {
-    pub def regionOf(_: MutMap[k, v, r]): Region[r] = () as Region[r]
+    pub def regionOf(_: MutMap[k, v, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 instance Newable[MutMap[k, v]] {

@@ -47,7 +47,7 @@ object RecordUnification {
           }
       }
 
-    case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)")
+    case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }
 
   /**

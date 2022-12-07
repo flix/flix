@@ -75,12 +75,12 @@ object Simplifier {
 
       case LoweredAst.Expression.Unary(sop, e, tpe, pur, eff, loc) =>
         // TODO: Remove when we have the new backend
-        val op = SemanticOperatorOps.toUnaryOp(sop)
+        val op = SemanticOperatorOps.toUnaryOp(sop, loc)
         SimplifiedAst.Expression.Unary(sop, op, visitExp(e), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Binary(sop, e1, e2, tpe, pur, eff, loc) =>
         // TODO: Remove when we have the new backend
-        val op = SemanticOperatorOps.toBinaryOp(sop)
+        val op = SemanticOperatorOps.toBinaryOp(sop, loc)
 
         SimplifiedAst.Expression.Binary(sop, op, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
 
@@ -101,8 +101,11 @@ object Simplifier {
       case LoweredAst.Expression.LetRec(sym, mod, e1, e2, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, simplifyPurity(pur), loc)
 
+      case LoweredAst.Expression.Region(tpe, loc) =>
+        SimplifiedAst.Expression.Region(tpe, loc)
+
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
-        SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), visitExp(exp), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -251,23 +254,23 @@ object Simplifier {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
 
-      case LoweredAst.Expression.Wild(_, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.Wild(_, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Without(_, _, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.Without(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.TryWith(_, _, _, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.TryWith(_, _, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Do(_, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.Do(_, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Resume(_, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.Resume(_, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression: $exp0.")
+      case LoweredAst.Expression.TypeMatch(_, _, _, _, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
     }
 
     /**
@@ -298,7 +301,7 @@ object Simplifier {
         val es = elms.map(pat2exp)
         val purity = combineAll(es.map(_.purity))
         SimplifiedAst.Expression.Tuple(es, tpe, purity, loc)
-      case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
+      case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
     }
 
     /**
@@ -338,7 +341,7 @@ object Simplifier {
         case Some(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
         case Some(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Eq
         case Some(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
-        case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+        case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
       }
       val purity = combine(e1.purity, e2.purity)
       SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, purity, loc)
@@ -659,7 +662,7 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity2, loc)
 
 
-        case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
+        case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs(0).loc)
       }
 
     /**
@@ -825,6 +828,12 @@ object Simplifier {
       case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, purity, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
+      case SimplifiedAst.Expression.Region(tpe, loc) =>
+        SimplifiedAst.Expression.Region(tpe, loc)
+
+      case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
 
@@ -947,10 +956,10 @@ object Simplifier {
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.Closure(_, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.ApplyClo(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
-      case SimplifiedAst.Expression.ApplyDef(_, _, _, _, _) => throw InternalCompilerException(s"Unexpected expression.")
+      case SimplifiedAst.Expression.Closure(_, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.LambdaClosure(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.ApplyClo(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+      case SimplifiedAst.Expression.ApplyDef(_, _, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
     }
 
     def visitJvmMethod(method: SimplifiedAst.JvmMethod) = method match {

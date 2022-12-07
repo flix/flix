@@ -77,22 +77,13 @@ object Weeder {
     * Weeds the given abstract syntax tree.
     */
   private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
-    val allUses = unit.usesOrImports.collect {
-      case u: ParsedAst.Use => u
-    }
-    val usesVal = traverse(allUses)(visitUse)
-
-    val allImports = unit.usesOrImports.collect {
-      case i: ParsedAst.Import => i
-    }
-    val importsVal = traverse(allImports)(visitImport)
-
+    val usesAndImportsVal = traverse(unit.usesOrImports)(visitUseOrImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
 
-    mapN(usesVal, importsVal, declarationsVal) {
-      case (uses, imports, decls) =>
-        src -> WeededAst.CompilationUnit(uses.flatten, imports.flatten, decls.flatten, loc)
+    mapN(usesAndImportsVal, declarationsVal) {
+      case (usesAndImports, decls) =>
+        src -> WeededAst.CompilationUnit(usesAndImports.flatten, decls.flatten, loc)
     }
   }
 
@@ -101,20 +92,12 @@ object Weeder {
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
     case ParsedAst.Declaration.Namespace(sp1, name, usesOrImports, decls, sp2) =>
-      val allUses = usesOrImports.collect {
-        case u: ParsedAst.Use => u
-      }
-      val usesVal = traverse(allUses)(visitUse)
-
-      val allImports = usesOrImports.collect {
-        case i: ParsedAst.Import => i
-      }
-      val importsVal = traverse(allImports)(visitImport)
+      val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
 
       val declarationsVal = traverse(decls)(visitDecl)
 
-      mapN(usesVal, importsVal, declarationsVal) {
-        case (us, is, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, is.flatten, ds.flatten, mkSL(sp1, sp2)))
+      mapN(usesAndImportsVal, declarationsVal) {
+        case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
       }
 
     case d: ParsedAst.Declaration.Def => visitTopDef(d)
@@ -422,44 +405,42 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given use `u0`.
+    * Performs weeding on the given use or import `u0`.
     */
-  private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
+  private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
       if (ident.isUpper)
-        List(WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.UseOrImport.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
       else
-        List(WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+        List(WeededAst.UseOrImport.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      val us = names.foldRight(Nil: List[WeededAst.Use]) {
+      val us = names.foldRight(Nil: List[WeededAst.UseOrImport]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
           if (ident.isUpper)
-            WeededAst.Use.UseUpper(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.UseOrImport.UseUpper(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
           else
-            WeededAst.Use.UseLower(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+            WeededAst.UseOrImport.UseLower(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
 
     case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
-      List(WeededAst.Use.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
+      List(WeededAst.UseOrImport.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseManyTag(_, qname, tags, _) =>
-      val us = tags.foldRight(Nil: List[WeededAst.Use]) {
+      val us = tags.foldRight(Nil: List[WeededAst.UseOrImport]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
-          WeededAst.Use.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
+          WeededAst.UseOrImport.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
-  }
 
-  private def visitImport(i0: ParsedAst.Import): Validation[List[WeededAst.Import], WeederError] = i0 match {
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
       val alias = name.fqn.last
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
-        List(WeededAst.Import.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
+        List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
         WeederError.IllegalJavaClass(alias, loc).toFailure
       }
@@ -470,7 +451,7 @@ object Weeder {
         case ParsedAst.Imports.NameAndAlias(_, name, alias, _) =>
           val fqn = Name.JavaName(pkg.sp1, pkg.fqn :+ name, pkg.sp2)
           val ident = alias.getOrElse(Name.Ident(sp1, name, sp2))
-          WeededAst.Import.Import(fqn, ident, loc)
+          WeededAst.UseOrImport.Import(fqn, ident, loc)
       }
       is.toList.toSuccess
   }
@@ -491,8 +472,13 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
 
+    case ParsedAst.Expression.HolyName(ident, sp2) =>
+      val loc = mkSL(ident.sp1, sp2)
+      val exp = WeededAst.Expression.VarOrDefOrSig(ident, ident.loc)
+      WeededAst.Expression.HoleWithExp(exp, loc).toSuccess
+
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
-      mapN(visitUse(use), visitExp(exp, senv)) {
+      mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
       }
 
@@ -1479,11 +1465,11 @@ object Weeder {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Cast(exp, declaredType, declaredEff, sp2) =>
+    case ParsedAst.Expression.Cast(sp1, exp, declaredType, declaredEff, sp2) =>
       val t = declaredType.map(visitType)
       val f = visitPurityAndEffect(declaredEff)
       mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+        case e => WeededAst.Expression.Cast(e, t, f, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Mask(sp1, exp, sp2) =>
@@ -1582,9 +1568,12 @@ object Weeder {
         case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+    case ParsedAst.Expression.Spawn(sp1, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val exp1Val = visitExp(exp1, senv)
+      val exp2Val = visitExp(exp2, senv)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => WeededAst.Expression.Spawn(e1, e2, loc)
       }
 
     case ParsedAst.Expression.Par(sp1, exp, sp2) =>
@@ -2317,7 +2306,7 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
+      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
     }
 
     //
@@ -2706,7 +2695,7 @@ object Weeder {
           val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
           WeederError.InconsistentTypeParameters(loc).toFailure
         // Case 4: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
+        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
@@ -2727,7 +2716,7 @@ object Weeder {
         // Case 2: only kinded type parameters
         case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
         // Case 3: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.")
+        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
@@ -2974,6 +2963,7 @@ object Weeder {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
+    case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
@@ -3020,7 +3010,7 @@ object Weeder {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Cast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Mask(sp1, _, _) => sp1
     case ParsedAst.Expression.Upcast(sp1, _, _) => sp1
     case ParsedAst.Expression.Supercast(sp1, _, _) => sp1
@@ -3029,7 +3019,7 @@ object Weeder {
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Par(sp1, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lazy(sp1, _, _) => sp1

@@ -136,6 +136,7 @@ object PatternExhaustiveness {
       case Expression.Def(_, _, _) => Nil
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
+      case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Use(_, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
@@ -215,7 +216,7 @@ object PatternExhaustiveness {
         val chans = rules.map(_.chan)
         (ruleExps ::: chans ::: default.toList).flatMap(visitExp(_, root))
 
-      case Expression.Spawn(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Spawn(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Par(exp, _) => visitExp(exp, root)
 
       case Expression.ParYield(frags, exp, _, _, _, loc) =>
@@ -596,7 +597,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
   /**
@@ -663,7 +664,7 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
-    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern")
+    case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {
         case Pattern.Cst(Ast.Constant.Unit, _, _) => (List.empty[TyCon], 0)

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Denotation, Fixity, Modifiers, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -65,7 +65,7 @@ object Lowering {
       * Returns the definition associated with the given symbol `sym`.
       */
     def lookup(sym: Symbol.DefnSym)(implicit root: TypedAst.Root, flix: Flix): TypedAst.Def = root.defs.get(sym) match {
-      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?")
+      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?", sym.loc)
       case Some(d) => d
     }
   }
@@ -338,6 +338,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+      val sym = Symbol.freshHoleSym(loc)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Hole(sym, t, loc)
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 
@@ -376,9 +381,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.LetRec(sym, mod, e1, e2, t, pur, eff, loc)
 
-    case TypedAst.Expression.Region(_, loc) =>
-      // Introduce a Unit value to represent the Region value.
-      LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
+    case TypedAst.Expression.Region(tpe, loc) =>
+      val t = visitType(tpe)
+      LoweredAst.Expression.Region(t, loc)
 
     case TypedAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -661,7 +666,8 @@ object Lowering {
         case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
       }
 
-    case TypedAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.Spawn(exp, _, tpe, pur, eff, loc) =>
+      // Note: We explicitly ignore the region.
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Spawn(e, t, pur, eff, loc)
@@ -674,7 +680,7 @@ object Lowering {
         LoweredAst.Expression.Cast(e, None, Some(Type.Pure), Some(Type.Empty), t, pur, eff, loc0)
 
       case _ =>
-        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp")
+        throw InternalCompilerException(s"Unexpected par expression near ${exp.loc.format}: $exp", loc0)
     }
 
     case TypedAst.Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
@@ -735,7 +741,7 @@ object Lowering {
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
-        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.")
+        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
       }
 
       // Compute the symbol of the function.
@@ -758,7 +764,7 @@ object Lowering {
           case Some(TypeConstructor.Unit) => 0
           case _ => 1
         }
-        case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.")
+        case _ => throw InternalCompilerException(s"Unexpected non-list type: '$tpe'.", loc)
       }
 
       // Compute the symbol of the function.
@@ -1055,15 +1061,15 @@ object Lowering {
     case TypedAst.Pattern.Cst(cst, tpe, loc) =>
       mkBodyTermLit(box(LoweredAst.Expression.Cst(cst, tpe, loc)))
 
-    case TypedAst.Pattern.Tag(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Tuple(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Array(_, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.Array(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.ArrayTailSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayTailSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, _) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.")
+    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
@@ -1126,7 +1132,7 @@ object Lowering {
 
     case Latticenal =>
       tpeOpt match {
-        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.")
+        case None => throw InternalCompilerException("Unexpected nullary lattice predicate.", loc)
         case Some(tpe) =>
           // The type `Denotation[tpe]`.
           val unboxedDenotationType = Type.mkEnum(Enums.Denotation, tpe :: Nil, loc)
@@ -1211,7 +1217,7 @@ object Lowering {
 
     // Check that we have <= 5 free variables.
     if (arity > 5) {
-      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
     }
 
     // Special case: No free variables.
@@ -1261,7 +1267,7 @@ object Lowering {
 
     // Check that we have <= 5 free variables.
     if (arity > 5) {
-      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.")
+      throw InternalCompilerException("Cannot lift functions with more than 5 free variables.", loc)
     }
 
     // Special case: No free variables.
@@ -1372,7 +1378,7 @@ object Lowering {
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
           case Type.Apply(_, t, _) => t
-          case _ => throw InternalCompilerException("Unexpected channel type found.")
+          case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
         }
         val get = LoweredAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = LoweredAst.Expression.Apply(get, List(LoweredAst.Expression.Var(chSym, chan.tpe, loc), LoweredAst.Expression.Var(locksSym, locksType, loc)), getTpe, pur, eff, loc)
@@ -1388,7 +1394,8 @@ object Lowering {
   private def mkSelectDefaultCase(default: Option[LoweredAst.Expression], t: Type, loc: SourceLocation)(implicit flix: Flix): List[LoweredAst.MatchRule] = {
     default match {
       case Some(defaultExp) =>
-        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), mkWildPattern(loc)), loc)
+        val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Wild(locksType, loc)), loc)
         val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>
@@ -1684,13 +1691,6 @@ object Lowering {
   }
 
   /**
-    * Returns a wildcard (match anything) pattern.
-    */
-  def mkWildPattern(loc: SourceLocation)(implicit flix: Flix): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Wild(Type.freshVar(Kind.Star, loc, text = Ast.VarText.FallbackText("wild")), loc)
-  }
-
-  /**
     * Return a list of quantified variables in the given expression `exp0`.
     *
     * A variable is quantified (i.e. *NOT* lexically bound) if it occurs in the expression `exp0`
@@ -1761,6 +1761,9 @@ object Lowering {
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
       LoweredAst.Expression.LetRec(s, mod, e1, e2, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.Region(tpe, loc) =>
+      LoweredAst.Expression.Region(tpe, loc)
 
     case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
       val s = subst.getOrElse(sym, sym)

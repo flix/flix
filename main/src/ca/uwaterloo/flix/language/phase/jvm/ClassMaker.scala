@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
@@ -32,12 +33,12 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 // TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
   def mkStaticConstructor(c: StaticConstructorMethod): Unit = {
-    if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+    if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
     makeMethod(c.ins, c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
   }
 
   def mkStaticMethod(m: StaticMethod): Unit = {
-    if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+    if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
     makeMethod(m.ins, m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
   }
 
@@ -94,7 +95,7 @@ object ClassMaker {
     }
 
     def mkMethod(m: InstanceMethod): Unit = {
-      if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+      if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
   }
@@ -103,12 +104,12 @@ object ClassMaker {
     protected val visitor: ClassWriter = cw
 
     def mkConstructor(c: ConstructorMethod): Unit = {
-      if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+      if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
     def mkMethod(m: InstanceMethod): Unit = {
-      if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class")
+      if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
 

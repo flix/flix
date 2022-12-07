@@ -66,6 +66,14 @@ object Name {
   def extendNName(ns: NName, ident: Ident): NName = NName(ident.sp1, ns.idents :+ ident, ident.sp2)
 
   /**
+    * Builds an unlocated name from the given namespace parts.
+    */
+  def mkUnlocatedNName(parts: List[String]): NName = {
+    val idents = parts.map(Ident(SourcePosition.Unknown, _, SourcePosition.Unknown))
+    NName(SourcePosition.Unknown, idents, SourcePosition.Unknown)
+  }
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

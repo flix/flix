@@ -23,7 +23,8 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  test("AmbiguousVarOrUse.01") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("AmbiguousVarOrUse.01") {
     val input =
       s"""
          |def foo(): Bool =
@@ -36,7 +37,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousVarOrUse](result)
   }
 
-  test("AmbiguousVarOrUse.02") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("AmbiguousVarOrUse.02") {
     val input =
       s"""
          |def foo(): Bool =
@@ -231,7 +233,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateLowerName](result)
   }
 
-  test("DuplicateUseLower.01") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.01") {
     val input =
       s"""
          |def foo(): Bool =
@@ -251,7 +254,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.02") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.02") {
     val input =
       s"""
          |use A.f
@@ -272,7 +276,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.03") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.03") {
     val input =
       s"""
          |use A.f
@@ -293,7 +298,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.04") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.04") {
     val input =
       s"""
          |def foo(): Bool =
@@ -309,7 +315,7 @@ class TestNamer extends FunSuite with TestUtils {
   }
 
 
-  test("DuplicateUseLower.05") {
+  ignore("DuplicateUseLower.05") {
     val input =
       s"""
          |namespace T {
@@ -331,7 +337,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.06") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.06") {
     val input =
       s"""
          |namespace T {
@@ -353,7 +360,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.07") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.07") {
     val input =
       s"""
          |namespace T {
@@ -370,7 +378,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseLower.08") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseLower.08") {
     val input =
       s"""
          |namespace T {
@@ -392,7 +401,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseLower](result)
   }
 
-  test("DuplicateUseUpper.01") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseUpper.01") {
     val input =
       s"""
          |def foo(): Bool =
@@ -416,7 +426,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUseUpper.02") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseUpper.02") {
     val input =
       s"""
          |use A.Color
@@ -441,7 +452,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUseUpper.03") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseUpper.03") {
     val input =
       s"""
          |namespace T {
@@ -467,7 +479,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUseTag.01") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.01") {
     val input =
       s"""
          |def foo(): Bool =
@@ -491,7 +504,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.02") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.02") {
     val input =
       s"""
          |use A.Color.Red
@@ -515,7 +529,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.03") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.03") {
     val input =
       s"""
          |
@@ -540,7 +555,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.04") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.04") {
     val input =
       s"""
          |def foo(): Bool =
@@ -559,7 +575,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.05") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.05") {
     val input =
       s"""
          |namespace T {
@@ -590,7 +607,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.06") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.06") {
     val input =
       s"""
          |namespace T {
@@ -616,7 +634,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
-  test("DuplicateUseTag.07") {
+  // TODO NS-REFACTOR move to redundancy
+  ignore("DuplicateUseTag.07") {
     val input =
       s"""
          |namespace T {
@@ -900,7 +919,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.21") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.21") {
     val input =
       """
         |import java.sql.Statement
@@ -920,7 +940,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.23") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.23") {
     val input =
       """
         |use A.Statement
@@ -930,7 +951,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.24") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.24") {
     val input =
       """
         |namespace A {
@@ -942,7 +964,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.25") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.25") {
     val input =
       """
         |namespace A {
@@ -954,7 +977,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.26") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.26") {
     val input =
       """
         |enum Statement
@@ -966,7 +990,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateUpperName.27") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateUpperName.27") {
     val input =
       """
         |enum Statement
@@ -1153,7 +1178,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalSignature](result)
   }
 
-  test("DuplicateImport.01") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.01") {
     val input =
       """
         |import java.lang.StringBuffer
@@ -1163,7 +1189,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateImport.02") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.02") {
     val input =
       """
         |import java.lang.{StringBuffer => StringThingy}
@@ -1173,7 +1200,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateImport.03") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.03") {
     val input =
       """
         |namespace A {
@@ -1185,7 +1213,8 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  test("DuplicateImport.04") {
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.04") {
     val input =
       """
         |namespace A {
@@ -1229,7 +1258,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("IllegalWildType.04") {
     val input =
       """
-        |def foo(): String = 123 as _
+        |def foo(): String = unsafe_cast 123 as _
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.IllegalWildType](result)

@@ -101,7 +101,17 @@ trait BoolAlg[F] {
     *
     * This environment should be used in the functions [[toType]] and [[fromType]].
     */
-  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int]
+  def getEnv(fs: List[Type]): Bimap[Symbol.KindedTypeVarSym, Int] = {
+    // Compute the variables in `tpe`.
+    val tvars =
+      fs.foldLeft(SortedSet.empty[Symbol.KindedTypeVarSym])((acc, tpe) => acc ++ tpe.typeVars.map(_.sym))
+
+    // Construct a bi-directional map from type variables to indices.
+    // The idea is that the first variable becomes x0, the next x1, and so forth.
+    tvars.zipWithIndex.foldLeft(Bimap.empty[Symbol.KindedTypeVarSym, Int]) {
+      case (macc, (sym, x)) => macc + (sym -> x)
+    }
+  }
 
   /**
     * Returns a rigidity environment on formulas that is equivalent to the given one on types.
@@ -120,7 +130,7 @@ trait BoolAlg[F] {
     */
   def fromType(t: Type, env: Bimap[Symbol.KindedTypeVarSym, Int]): F = Type.eraseTopAliases(t) match {
     case Type.Var(sym, _) => env.getForward(sym) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.")
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
     case Type.True => mkTrue
@@ -128,7 +138,7 @@ trait BoolAlg[F] {
     case Type.Apply(Type.Cst(TypeConstructor.Not, _), tpe1, _) => mkNot(fromType(tpe1, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.")
+    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
 }
