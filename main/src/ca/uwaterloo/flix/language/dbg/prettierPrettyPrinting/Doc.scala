@@ -1,24 +1,9 @@
-/*
- * Copyright 2022 Jonathan Lindegaard Starup
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
-import scala.collection.immutable
+import scala.annotation.tailrec
+import scala.collection.{immutable, mutable}
 
-trait Doc
+sealed trait Doc
 
 object Doc {
 
@@ -27,116 +12,142 @@ object Doc {
 
     def <+>(d: Doc): Doc = Doc.<+>(this.d, d)
 
-    def <\>(d: Doc): Doc = Doc.<\>(this.d, d)
-
     def <+\>(d: Doc): Doc = Doc.<+\>(this.d, d)
 
-    def <+\\>(d: Doc)(implicit indent: Int): Doc = Doc.<+\\>(this.d, d)
+    def <\>(d: Doc): Doc = Doc.<\>(this.d, d)
 
-    def :<>(d: Doc): Doc = Doc.:<>(this.d, d)
+    def <+\?>(d: Doc): Doc = Doc.<+\?>(this.d, d)
 
-    def :<|>(d: Doc): Doc = Doc.:<|>(this.d, d)
+    def <\?>(d: Doc): Doc = Doc.<\?>(this.d, d)
+
+    def <\?>>(d: Doc)(implicit i: Indent): Doc = Doc.<\?>>(this.d, d)
+
+    def <+\?>>(d: Doc)(implicit i: Indent): Doc = Doc.<+\?>>(this.d, d)
   }
 
   private case object Nil extends Doc
 
-  private class :<>(dd1: => Doc, dd2: => Doc) extends Doc {
-    lazy val d1: Doc = dd1
-    lazy val d2: Doc = dd2
-  }
-
-  private object :<> {
-    def apply(d1: => Doc, d2: => Doc): :<> = new :<>(d1, d2)
-
-    def unapply(c: :<>): Option[(Doc, Doc)] = Some(c.d1, c.d2)
-  }
-
-  private class Nest(val i: Int, dd: => Doc) extends Doc {
-    lazy val d: Doc = dd
-  }
-
-  private object Nest {
-    def apply(i: Int, d: => Doc): Nest = new Nest(i, d)
-
-    def unapply(t: Nest): Option[(Int, Doc)] = Some(t.i, t.d)
-  }
+  private case class Cons(d1: Doc, d2: Doc) extends Doc
 
   private case class Text(s: String) extends Doc
 
-  private case object Line extends Doc
+  private case class Nest(i: Int, d: Doc) extends Doc
 
-  private class :<|>(dd1: => Doc, dd2: => Doc) extends Doc {
-    lazy val d1: Doc = dd1
-    lazy val d2: Doc = dd2
+  private case class Break(s: String) extends Doc
+
+  private case class Group(d: Doc) extends Doc
+
+  sealed trait Indent
+
+  private case class Indentation(i: Int) extends Indent
+
+  private def indentI(i: Indent): Int = i match {
+    case Indentation(i) => i
   }
 
-  private object :<|> {
-    def apply(d1: => Doc, d2: => Doc): :<|> = new :<|>(d1, d2)
+  def indentationLevel(i: Int): Indent = Indentation(i)
 
-    def unapply(u: :<|>): Option[(Doc, Doc)] = Some(u.d1, u.d2)
-  }
 
-  def nil: Doc = Nil
+  def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
 
-  def <>(d1: Doc, d2: Doc): Doc = d1 :<> d2
+  def <>(d1: Doc, d2: Doc): Doc = concat(d1, d2)
 
-  def nest(x: Doc)(implicit indent: Int): Doc = Nest(indent, x)
+  def empty: Doc = Nil
 
   def text(s: String): Doc = Text(s)
 
-  def line: Doc = Line
+  def nest(x: Doc)(implicit i: Indent): Doc = Nest(indentI(i), x)
 
-  def group(to: String)(x: Doc): Doc = flatten(x, to) :<|> x
+  def break: Doc = Break(" ")
 
-  private def flatten(d: Doc, to: String): Doc = d match {
-    case Nil => Nil
-    case x :<> y => flatten(x, to) :<> flatten(y, to)
-    case Nest(i, x) => Nest(i, flatten(x, to))
-    case Text(s) => Text(s)
-    case Line => Text(to)
-    case x :<|> y => flatten(x, to)
+  def breakWith(s: String): Doc = Break(s)
+
+  def group(d: Doc): Doc = Group(d)
+
+  private sealed trait SDoc
+
+  private case object SNil extends SDoc
+
+  private case class SText(s: String, d: SDoc) extends SDoc
+
+  private case class SLine(i: Int, d: SDoc) extends SDoc
+
+
+  private def sdocToString(d: SDoc): String = {
+    val sb = new mutable.StringBuilder()
+
+    @tailrec
+    def aux(d: SDoc): Unit = d match {
+      case SNil => ()
+      case SText(s, x) => sb.append(s); aux(x)
+      case SLine(i, x) => sb.append("\n"); sb.append(" " * i); aux(x)
+    }
+
+    aux(d)
+    sb.toString
   }
 
-  /**
-    *
-    * @param w available width
-    * @param k chars already placed
-    */
-  private def best(w: Int, x: Doc): SDoc = be(w, 0, List((0, x)))
+  private sealed trait Mode
+  private case object MFlat extends Mode
+  private case object MBreak extends Mode
 
-  private def be(w: Int, k: Int, x: List[(Int, Doc)]): SDoc = x match {
-    case immutable.Nil => SDoc.Nil
-    case (i, Nil) :: z => be(w, k, z)
-    case (i, x :<> y) :: z => be(w, k, (i, x) :: (i, y) :: z)
-    case (i, Nest(j, x)) :: z => be(w, k, (i + j, x) :: z)
-    case (i, Text(s)) :: z => SDoc.Text(s, be(w, k + s.length, z))
-    case (i, Line) :: z => SDoc.Line(i, be(w, i, z))
-    case (i, x :<|> y) :: z =>
-      SDoc.better(w, k, be(w, k, (i, x) :: z), be(w, k, (i, y) :: z))
-    case _ => ??? // unreachable
+  @tailrec
+  private def fits(w: Int, l: List[(Int, Mode, Doc)]): Boolean = l match {
+    case _ if w < 0 => false
+    case immutable.Nil => true
+    case (i, m, Nil) :: z => fits(w, z)
+    case (i, m, Cons(x, y)) :: z =>
+      fits(w, (i, m, x) :: (i, m, y) :: z)
+    case (i, m, Nest(j, x)) :: z => fits(w, (i+j, m, x) :: z)
+    case (i, m, Text(s)) :: z => fits(w - s.length, z)
+    case (i, MFlat, Break(s)) :: z => fits(w - s.length, z)
+    case (i, MBreak, Break(_)) :: z => true // impossible
+    case (i, m, Group(x)) :: z => fits(w, (i, MFlat, x) :: z)
   }
 
-  def pretty(w: Int, x: Doc): String = SDoc.layout(best(w, x))
+  @tailrec
+  private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
+    case immutable.Nil =>
+      cont(SNil)
+    case (i, m, Nil) :: z =>
+      format(w, k, z, cont)
+    case (i, m, Cons(x, y)) :: z =>
+      format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
+    case (i, m, Nest(j, x)) :: z =>
+      format(w, k, (i+j, m, x) :: z, cont)
+    case (i, m, Text(s)) :: z =>
+      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+    case (i, MFlat, Break(s)) :: z =>
+      format(w, k + s.length, z, v1 => cont(SText(s, v1)))
+    case (i, MBreak, Break(s)) :: z =>
+      format(w, i, z, v1 => cont(SLine(i, v1)))
+    case (i, m, Group(x)) :: z =>
+      if (fits(w-k, (i, MFlat, x) :: z)) {
+        format(w, k, (i, MFlat, x) :: z, cont)
+      } else {
+        format(w, k, (i, MBreak, x) :: z, cont)
+      }
+  }
+
+  def pretty(w: Int, d: Doc): String = sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
 
   // aux
 
   def <+>(d1: Doc, d2: Doc): Doc = d1 <> text(" ") <> d2
 
-  def <\>(d1: Doc, d2: Doc): Doc = d1 <> line <> d2
+  def <+\>(d1: Doc, d2: Doc): Doc = d1 <> breakWith(" ") <> d2
 
-  def <+\>(x: Doc, y: Doc): Doc = x <> group(" ")(line) <> y
+  def <\>(d1: Doc, d2: Doc): Doc = d1 <> breakWith("") <> d2
 
-  def <+\\>(x: Doc, y: Doc)(implicit indent: Int): Doc =
-    x <> group(" ")(nest(line <> y))
+  def <+\?>(d1: Doc, d2: Doc): Doc = d1 <> group(breakWith(" ")) <> d2
 
-  def fill(d: List[Doc]): Doc = d match {
-    case immutable.Nil => nil
-    case x :: immutable.Nil => x
-    case x :: y :: zs =>
-      (flatten(x, " ") <+> fill(flatten(y, " ") :: zs)) :<|> (x <\> fill(y :: zs))
-  }
+  def <\?>(d1: Doc, d2: Doc): Doc = d1 <> group(breakWith("")) <> d2
 
-  val INDENT: Int = 4
+  def <\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(""))) <> d2
+
+  def <+\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(" "))) <> d2
+
+  val INDENT: Indent = indentationLevel(4)
 
 }
 

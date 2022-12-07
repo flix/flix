@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 
 object MonoTypePrinter {
 
-  implicit val indent: Int = INDENT
+  implicit val indent: Indent = INDENT
 
   def doc(tpe: MonoType): Doc = {
     def tapp(tpeS: Doc, args: List[MonoType]): Doc =

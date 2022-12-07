@@ -10,11 +10,11 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
 
 object ErasedPrinter {
 
-  implicit val indent: Int = INDENT
+  implicit val indent: Indent = INDENT
 
   def doc(root: Root): Doc = {
-    val defs = root.defs.map { case (_, defn) => doc(defn) }.toList
-    fold(_ <> line <> line <> _, defs)
+    val defs = root.defs.filter{ case (sym, _) => sym.namespace == List("One")}.map { case (_, defn) => doc(defn) }.toList
+    group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
   }
 
   def doc(defn: Def): Doc = {
