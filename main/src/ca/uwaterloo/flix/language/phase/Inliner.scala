@@ -251,6 +251,10 @@ object Inliner {
     case OccurrenceAst.Expression.Region(tpe, loc) =>
       LiftedAst.Expression.Region(tpe, loc)
 
+    case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+      val e = visitExp(exp, subst0)
+      LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
+
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
       val enum0 = root.enums(sym.enumSym)
@@ -589,6 +593,10 @@ object Inliner {
 
     case OccurrenceAst.Expression.Region(tpe, loc) =>
       LiftedAst.Expression.Region(tpe, loc)
+
+    case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+      val e = substituteExp(exp, env0)
+      LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)

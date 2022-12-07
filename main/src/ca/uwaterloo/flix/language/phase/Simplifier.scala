@@ -105,7 +105,7 @@ object Simplifier {
         SimplifiedAst.Expression.Region(tpe, loc)
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
-        SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), visitExp(exp), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -830,6 +830,9 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Region(tpe, loc) =>
         SimplifiedAst.Expression.Region(tpe, loc)
+
+      case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
