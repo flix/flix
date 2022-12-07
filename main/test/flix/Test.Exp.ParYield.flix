@@ -70,8 +70,8 @@ namespace Test/Exp/ParYield {
     def testParYield16(): Int32 =
         let c = 2;
         par (
-            a <- 1;              // Simple variable
-            b <- c;              // Simple variable
+            a <- 1;              // Constant
+            b <- c;              // Variable lookup
             d <- (let a = 3; a); // Spawn into thread
             e <- (let b = 4; b)  // Last complex expression
         ) yield a + b + d + e
@@ -80,24 +80,24 @@ namespace Test/Exp/ParYield {
     def testParYield17(): Int32 =
         let c = 2;
         par (
-            a <- 1;              // Simple variable
-            b <- c;              // Simple variable
+            a <- 1;              // Constant
+            b <- c;              // Variable lookup
             d <- (let a = 3; a); // Spawn into thread
             e <- (let b = 4; b); // Last complex expression
-            f <- 5;              // Simple variable
-            g <- 6               // Simple variable
+            f <- 5;              // Constant
+            g <- 6               // Constant
         ) yield a + b + d + e + f + g
 
     @test
     def testParYield18(): Int32 =
         let c = 2;
         par (
-            a <- 1;              // Simple variable
-            b <- c;              // Simple variable
+            a <- 1;              // Constant
+            b <- c;              // Variable lookup
             d <- (let a = 3; a); // Spawn into thread
             e <- (let b = 4; b); // Spawn into thread
-            f <- 5;              // Simple variable
-            g <- 6;              // Simple variable
+            f <- 5;              // Constant
+            g <- 6;              // Constant
             h <- (let b = 7; b)  // Last complex expression
         ) yield a + b + d + e + f + g + h
 
@@ -105,28 +105,28 @@ namespace Test/Exp/ParYield {
     def testParYield19(): Int32 =
         let c = 2;
         par (
-            a <- 1;              // Simple variable
-            b <- c;              // Simple variable
+            a <- 1;              // Constant
+            b <- c;              // Variable lookup
             d <- (let a = 3; a); // Spawn into thread
             e <- (let b = 4; b); // Spawn into thread
-            f <- 5;              // Simple variable
-            g <- 6;              // Simple variable
+            f <- 5;              // Constant
+            g <- 6;              // Constant
             h <- (let b = 7; b); // Last complex expression
-            i <- 8               // Simple variable
+            i <- 8               // Constant
         ) yield a + b + d + e + f + g + h + i
 
     @test
     def testParYield20(): Int32 =
         let c = 2;
         par (
-            a <- 1;              // Simple variable
-            b <- c;              // Simple variable
+            a <- 1;              // Constant
+            b <- c;              // Variable lookup
             d <- (let a = 3; a); // Spawn into thread
-            e <- 4;              // Simple variable
+            e <- 4;              // Constant
             f <- (let b = 5; b); // Spawn into thread
-            g <- 6;              // Simple variable
+            g <- 6;              // Constant
             h <- (let b = 7; b); // Last complex expression
-            i <- 8               // Simple variable
+            i <- 8               // Constant
         ) yield a + b + d + e + f + g + h + i
 
 }
