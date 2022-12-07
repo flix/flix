@@ -1626,10 +1626,10 @@ object Lowering {
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
     // Partition fragments into complex and simple exps.
-    val (complex, simple) = frags.partition(isSpawnable)
+    val (complex, varOrCsts) = frags.partition(isSpawnable)
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val (fs, last) = complex.splitAt(complex.length - 1)
+    val (fs, lastComplex) = complex.splitAt(complex.length - 1)
 
     // Generate symbols for each channel.
     val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
@@ -1638,7 +1638,7 @@ object Lowering {
     val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
 
     // Make expression that evaluates simple exps and the last fragment before proceeding to wait for channels.
-    val desugaredYieldExp = mkParYieldMainThread(simple ::: last, waitExps)
+    val desugaredYieldExp = mkParYieldCurrentThread(varOrCsts ::: lastComplex, waitExps)
 
     // Generate channels and spawn exps.
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
@@ -1649,9 +1649,9 @@ object Lowering {
   }
 
   /**
-    * Returns the expression of a `ParYield` expression that should be evaluated in the calling thread.
+    * Returns the expression of a `ParYield` expression that should be evaluated in the current thread.
     */
-  private def mkParYieldMainThread(exps: List[LoweredAst.ParYieldFragment], waitExps: LoweredAst.Expression): LoweredAst.Expression = {
+  private def mkParYieldCurrentThread(exps: List[LoweredAst.ParYieldFragment], waitExps: LoweredAst.Expression): LoweredAst.Expression = {
     exps.foldRight(waitExps) {
       case (exp, acc) => mkLetMatch(exp.pat, exp.exp, acc)
     }
