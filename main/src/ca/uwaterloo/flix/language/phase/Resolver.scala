@@ -2871,7 +2871,7 @@ object Resolver {
       currentRegion match {
         case Some(sym) =>
           // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, sym.loc)
+          ResolvedAst.Expression.Var(sym, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
           val tpe = Type.mkRegion(Type.False, loc)
