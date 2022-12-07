@@ -1626,7 +1626,7 @@ object Lowering {
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
     // Partition fragments into complex and simple exps.
-    val (complex, simple) = frags.partition(spawnable)
+    val (complex, simple) = frags.partition(isSpawnable)
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
     val (fs, last) = complex.splitAt(complex.length - 1)
@@ -1660,12 +1660,11 @@ object Lowering {
   /**
     * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isSimple`.
     */
-  private def spawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isSimple(frag.exp)
+  private def isSpawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isSimple(frag.exp)
 
   /**
     * Returns `true` if `exp0` is either a literal or a variable.
     */
-  @tailrec
   private def isSimple(exp0: LoweredAst.Expression): Boolean = exp0 match {
     case LoweredAst.Expression.Var(_, _, _) => true
     case LoweredAst.Expression.Cst(_: Ast.Constant, _, _) => true
