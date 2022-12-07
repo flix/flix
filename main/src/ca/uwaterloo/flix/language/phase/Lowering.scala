@@ -1658,14 +1658,14 @@ object Lowering {
   }
 
   /**
-    * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isSimple`.
+    * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isVarOrCst`.
     */
-  private def isSpawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isSimple(frag.exp)
+  private def isSpawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isVarOrCst(frag.exp)
 
   /**
     * Returns `true` if `exp0` is either a literal or a variable.
     */
-  private def isSimple(exp0: LoweredAst.Expression): Boolean = exp0 match {
+  private def isVarOrCst(exp0: LoweredAst.Expression): Boolean = exp0 match {
     case LoweredAst.Expression.Var(_, _, _) => true
     case LoweredAst.Expression.Cst(_: Ast.Constant, _, _) => true
     case _ => false
