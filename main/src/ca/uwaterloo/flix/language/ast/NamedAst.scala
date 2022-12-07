@@ -84,12 +84,9 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
+    case class VarOrDefOrSig(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Expression
 
-    case class DefOrSig(name: Name.QName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
-
-    // TODO NS-REFACTOR remove after moving var resolution to Resolver
-    case class UnqualifiedDefOrSig(name: Name.Ident, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
+    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -285,7 +282,7 @@ object NamedAst {
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -297,7 +294,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -371,13 +368,11 @@ object NamedAst {
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
-
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Option[NamedAst.Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 
