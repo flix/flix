@@ -1669,7 +1669,6 @@ object Lowering {
   private def isSimple(exp0: LoweredAst.Expression): Boolean = exp0 match {
     case LoweredAst.Expression.Var(_, _, _) => true
     case LoweredAst.Expression.Cst(_: Ast.Constant, _, _) => true
-    case LoweredAst.Expression.Scope(_, _, exp, _, _, _, _) => isSimple(exp)
     case _ => false
   }
 
