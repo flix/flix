@@ -67,7 +67,7 @@ object ResolvedAst {
 
     case class Wild(loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: UnkindedType, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -273,8 +273,6 @@ object ResolvedAst {
     }
 
   }
-
-  case class Scheme(quantifiers: List[Symbol.UnkindedTypeVarSym], constraints: List[ResolvedAst.TypeConstraint], base: UnkindedType)
 
   sealed trait TypeParams {
     val tparams: List[ResolvedAst.TypeParam]

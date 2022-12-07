@@ -541,7 +541,7 @@ object Resolver {
         val l = loc.asSynthetic
 
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar.withoutKind, l))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, l))
 
         // The apply expression inside the lambda.
         val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
@@ -647,7 +647,7 @@ object Resolver {
           ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) =>
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, loc).toSuccess
+          ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.UnqualifiedDefOrSig(ident, env, loc) =>
           mapN(lookupDefOrSig(Name.mkQName(ident), uenv0, ns0, env, root)) {
@@ -885,7 +885,7 @@ object Resolver {
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc), Ast.TypeSource.Inferred, loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar.withoutKind, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
