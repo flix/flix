@@ -27,7 +27,7 @@ object ErasedPrinter {
   }
 
   def doc(f: FormalParam): Doc = {
-    ascf(doc(f.sym), MonoTypePrinter.doc(f.tpe))
+    paramf(doc(f.sym), MonoTypePrinter.doc(f.tpe))
   }
 
   def doc(sym: VarSym): Doc = text(sym.toString)
@@ -48,7 +48,8 @@ object ErasedPrinter {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => text("<IfThenElse>")
       case Expression.Branch(exp, branches, tpe, loc) => text("<Branch>")
       case Expression.JumpTo(sym, tpe, loc) => text("<JumpTo>")
-      case Expression.Let(sym, exp1, exp2, tpe, loc) => text("<Let>")
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        par(letf(doc(sym), None, doc(exp1, parenthesis = false), doc(exp2, parenthesis = false)))
       case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => text("<LetRec>")
       case Expression.Region(tpe, loc) => text("<Region>")
       case Expression.Is(sym, exp, loc) => text("<Is>")
@@ -66,8 +67,10 @@ object ErasedPrinter {
       case Expression.ArrayStore(base, index, elm, tpe, loc) => text("<ArrayStore>")
       case Expression.ArrayLength(base, tpe, loc) => text("<ArrayLength>")
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => text("<ArraySlice>")
-      case Expression.Ref(exp, tpe, loc) => text("<Ref>")
-      case Expression.Deref(exp, tpe, loc) => text("<Deref>")
+      case Expression.Ref(exp, _, _) =>
+        par(text("ref") <+> doc(exp))
+      case Expression.Deref(exp, tpe, loc) =>
+        par(text("deref") <+> doc(exp))
       case Expression.Assign(exp1, exp2, tpe, loc) => text("<Assign>")
       case Expression.Cast(exp, tpe, loc) => text("<Cast>")
       case Expression.TryCatch(exp, rules, tpe, loc) => text("<TryCatch>")

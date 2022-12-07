@@ -143,9 +143,9 @@ object Doc {
 
   def <\?>(d1: Doc, d2: Doc): Doc = d1 <> group(breakWith("")) <> d2
 
-  def <\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(""))) <> d2
+  def <\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith("") <> d2))
 
-  def <+\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(" "))) <> d2
+  def <+\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(" ") <> d2))
 
   val INDENT: Indent = indentationLevel(4)
 

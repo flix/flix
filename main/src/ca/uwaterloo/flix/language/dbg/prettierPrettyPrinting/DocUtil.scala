@@ -37,8 +37,17 @@ object DocUtil {
       body
   }
 
+  // TODO lets should really be formatted as a block of lets
+  def letf(v: Doc, tpe: Option[Doc], body: Doc, rest: Doc)(implicit i: Indent): Doc = {
+    val varPart = tpe match {
+      case Some(value) => ascf(v, value)
+      case None => v
+    }
+    text("let") <+> varPart <+> text("=") <> nest(breakWith(" ") <> body) <> text(";") <+\?> rest
+  }
+
   def arrowf(args: List[Doc], res: Doc)(implicit i: Indent): Doc = {
-    selectiveTuplef(args) <+> text("->") <+\?> res
+    selectiveTuplef(args) <+> text("->") <+\?>> res
   }
 
   def eqf(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
@@ -56,8 +65,11 @@ object DocUtil {
     tpe <> bracket("[", commaSep(args),"]")
   }
 
-  def ascf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
+  def paramf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
     exp <> text(":") <+\?> tpe
+
+  def ascf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
+    exp <> text(":") <+> tpe
 
   def commaSep(d: List[Doc]): Doc = groupSep(",", d)
 
