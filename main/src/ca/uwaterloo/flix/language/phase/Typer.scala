@@ -2476,8 +2476,8 @@ object Typer {
 
       // Reassemble the constraint parameters.
       val cparams = cparams0.map {
-        case KindedAst.ConstraintParam(sym, tpe, l) =>
-          TypedAst.ConstraintParam(sym, subst0(tpe), l)
+        case KindedAst.ConstraintParam(sym, l) =>
+          TypedAst.ConstraintParam(sym, subst0(sym.tvar), l)
       }
 
       // Reassemble the constraint.

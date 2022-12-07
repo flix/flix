@@ -375,7 +375,7 @@ object NamedAst {
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
 

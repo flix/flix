@@ -275,7 +275,7 @@ object KindedAst {
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 
