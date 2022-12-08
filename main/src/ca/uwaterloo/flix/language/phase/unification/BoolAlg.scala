@@ -141,4 +141,9 @@ trait BoolAlg[F] {
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 
+  /**
+    * Converts the given formula f into a BoolFormula.
+    */
+  def toBoolFormula(f: F): BoolFormula
+
 }

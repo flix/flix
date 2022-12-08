@@ -468,6 +468,8 @@ object BoolFormula {
       }
     }
 
+    override def toBoolFormula(f: BoolFormula): BoolFormula = f
+
     override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
     override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)

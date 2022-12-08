@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.immutable.SortedSet
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
 
+import scala.sys.exit
+
 object BddFormula {
 
   /**
@@ -143,8 +145,60 @@ object BddFormula {
       */
     override def satisfiable(f: DD): Boolean = !f.isFalse
 
+    override def toBoolFormula(f: DD): BoolFormula = {
+      toBoolFormulaQMC(f)
+    }
+
     //Mutability is needed for parts of the QMC algorithm
     import scala.collection.mutable
+
+    /**
+      * Converting a BDD to a BoolFormula using the Quine-McCluskey algorithm
+      */
+    private def toBoolFormulaQMC(f: DD): BoolFormula = {
+      //Easy shortcuts if formula is true, false or a variable
+      if (f.isLeaf) {
+        if (f.isTrue) {
+          return BoolFormula.True
+        } else {
+          return BoolFormula.False
+        }
+      }
+      if (isVar(f)) {
+        val id = f.getVariable
+        return BoolFormula.Var(id)
+      }
+
+      //Otherwise find the cover and convert it to a BoolFormula
+      val cover = qmc(f)
+      coverToBoolFormula(cover)
+    }
+
+    /**
+      * Converting a cover to a BoolFormula by making each
+      * prime implicant into an AND and OR'ing them together
+      */
+    private def coverToBoolFormula(cover: Set[Map[Int, Int]]): BoolFormula = {
+      val formList = cover.foldLeft(List.empty[BoolFormula])((acc, m) => acc ++ List(primeImpToBoolFormula(m)))
+      formList.reduce((bf1, bf2) => BoolFormula.Or(bf1, bf2))
+    }
+
+    /**
+      * Converting a prime implicant to a conjunctive Formula
+      * "Don't care"'s are thrown away, 0's are mapped to
+      * NOTs of vars and 1's are mapped to vars
+      */
+    private def primeImpToBoolFormula(primeImp: Map[Int, Int]): BoolFormula = {
+      val formVars = primeImp.filter(kv => kv._2 != 2).map[BoolFormula](kv => {
+        val formVar = BoolFormula.Var(kv._1)
+        if (kv._2 == 0) {
+          BoolFormula.Not(formVar)
+        } else {
+          formVar
+        }
+      })
+      formVars.reduce((bf1, bf2) => BoolFormula.And(bf1, bf2))
+    }
 
     /**
       * Converting a BDD to a Type using the Quine-McCluskey algorithm

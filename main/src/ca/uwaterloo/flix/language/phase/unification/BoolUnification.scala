@@ -26,7 +26,7 @@ object BoolUnification {
   /**
     * The number of variables required before we switch to using BDDs for SVE.
     */
-  private val DefaultThreshold: Int = 5
+  private val DefaultThreshold: Int = 4
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
@@ -134,7 +134,8 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
+                                   (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[BoolFormula]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkXor(tpe1, tpe2)
 
@@ -149,7 +150,7 @@ object BoolUnification {
 
     // Eliminate all variables.
     try {
-      val subst = successiveVariableElimination(query, freeVars)
+      val subst = successiveVariableElimination(query, freeVars).toBoolFormulaSubstitution()
 
       //    if (!subst.isEmpty) {
       //      val s = subst.toString
