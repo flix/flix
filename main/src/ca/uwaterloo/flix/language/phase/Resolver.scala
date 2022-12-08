@@ -531,7 +531,7 @@ object Resolver {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar.withoutKind, Ast.TypeSource.Inferred, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, None, loc))
       }
 
       /**
@@ -541,7 +541,7 @@ object Resolver {
         val l = loc.asSynthetic
 
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar.withoutKind, l))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, l))
 
         // The apply expression inside the lambda.
         val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
@@ -647,7 +647,7 @@ object Resolver {
           ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) =>
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, loc).toSuccess
+          ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.UnqualifiedDefOrSig(ident, env, loc) =>
           mapN(lookupDefOrSig(Name.mkQName(ident), uenv0, ns0, env, root)) {
@@ -882,10 +882,10 @@ object Resolver {
                   val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc), Ast.TypeSource.Inferred, loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar.withoutKind, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
@@ -1449,20 +1449,17 @@ object Resolver {
       * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
       */
     def resolve(cparam0: NamedAst.ConstraintParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      case NamedAst.ConstraintParam(sym, tpe0, loc) =>
-        val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
-        mapN(tpeVal) {
-          case tpe => ResolvedAst.ConstraintParam(sym, tpe, loc)
-        }
+      // TODO NS-REFACTOR no validation needed
+      case NamedAst.ConstraintParam(sym, loc) => ResolvedAst.ConstraintParam(sym, loc).toSuccess
     }
 
     /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
     def resolve(fparam0: NamedAst.FormalParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-      val tVal = resolveType(fparam0.tpe, uenv, taenv, ns0, root)
+      val tVal = traverseOpt(fparam0.tpe)(resolveType(_, uenv, taenv, ns0, root))
       mapN(tVal) {
-        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.src, fparam0.loc)
+        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
       }
     }
 
@@ -2871,7 +2868,7 @@ object Resolver {
       currentRegion match {
         case Some(sym) =>
           // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, sym.loc)
+          ResolvedAst.Expression.Var(sym, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
           val tpe = Type.mkRegion(Type.False, loc)

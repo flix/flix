@@ -347,10 +347,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
-    case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
-      mapN(visitType(tpe0, Kind.Star, kenv0, senv, taenv, root)) {
-        tpe => KindedAst.Expression.Var(sym, tpe, loc)
-      }
+    case ResolvedAst.Expression.Var(sym, loc) => KindedAst.Expression.Var(sym, loc).toSuccess
 
     case ResolvedAst.Expression.Def(sym, loc) => KindedAst.Expression.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
@@ -953,11 +950,8 @@ object Kinder {
     * Performs kinding on the given constraint param under the given kind environment.
     */
   private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
-    case ResolvedAst.ConstraintParam(sym, tpe0, loc) =>
-      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
-      mapN(tpeVal) {
-        case tpe => KindedAst.ConstraintParam(sym, tpe, loc)
-      }
+    // TODO NS-REFACTOR no validation needed
+    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc).toSuccess
   }
 
   /**
@@ -1133,8 +1127,12 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, src, loc) =>
-      mapN(visitType(tpe0, Kind.Star, kenv, senv, taenv, root)) {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      val (tpeVal, src) = tpe0 match {
+        case None => (sym.tvar.toSuccess, Ast.TypeSource.Inferred)
+        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, senv, taenv, root), Ast.TypeSource.Ascribed)
+      }
+      mapN(tpeVal) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, src, loc)
       }
   }
@@ -1266,7 +1264,10 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
+      case None => KindEnv.empty.toSuccess
+      case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)
+    }
   }
 
   /**
