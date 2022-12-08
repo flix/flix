@@ -309,7 +309,7 @@ object Resolver {
       resolveSig(sig, uenv0, taenv, ns0, root)
     case defn@Declaration.Def(sym, spec, exp) =>
       resolveDef(defn, uenv0, taenv, ns0, root)
-    case enum@Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) =>
+    case enum@Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
       resolveEnum(enum, uenv0, taenv, ns0, root)
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       taenv(sym).toSuccess
@@ -460,15 +460,14 @@ object Resolver {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolveEnum(e0: NamedAst.Declaration.Enum, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = e0 match {
-    case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, tpe0, loc) =>
+    case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, uenv, taenv, ns0, root))
       val tparams = resolveTypeParams(tparams0, ns0, root)
       val derivesVal = resolveDerivations(derives0, uenv, ns0, root)
       val casesVal = traverse(cases0.values)(resolveCase(_, uenv, taenv, ns0, root))
-      val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
-      mapN(annVal, derivesVal, casesVal, tpeVal) {
-        case (ann, derives, cases, tpe) =>
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      mapN(annVal, derivesVal, casesVal) {
+        case (ann, derives, cases) =>
+          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 
@@ -532,7 +531,7 @@ object Resolver {
         val varSyms = (0 until arity).map(i => Symbol.freshVarSym(Flix.Delimiter + i, BoundBy.FormalParam, loc)).toList
 
         // Introduce a formal parameter for each variable symbol.
-        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, sym.tvar.withoutKind, Ast.TypeSource.Inferred, loc))
+        varSyms.map(sym => ResolvedAst.FormalParam(sym, Ast.Modifiers.Empty, None, loc))
       }
 
       /**
@@ -542,7 +541,7 @@ object Resolver {
         val l = loc.asSynthetic
 
         // The arguments passed to the definition (i.e. the fresh variable symbols).
-        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, fparam.sym.tvar.withoutKind, l))
+        val argExps = fparams.map(fparam => ResolvedAst.Expression.Var(fparam.sym, l))
 
         // The apply expression inside the lambda.
         val applyExp = ResolvedAst.Expression.Apply(baseExp, argExps, l)
@@ -648,7 +647,7 @@ object Resolver {
           ResolvedAst.Expression.Wild(loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) =>
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, loc).toSuccess
+          ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.UnqualifiedDefOrSig(ident, env, loc) =>
           mapN(lookupDefOrSig(Name.mkQName(ident), uenv0, ns0, env, root)) {
@@ -883,10 +882,10 @@ object Resolver {
                   val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, UnkindedType.freshVar(loc), Ast.TypeSource.Inferred, loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar.withoutKind, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
@@ -1450,20 +1449,17 @@ object Resolver {
       * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
       */
     def resolve(cparam0: NamedAst.ConstraintParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      case NamedAst.ConstraintParam(sym, tpe0, loc) =>
-        val tpeVal = resolveType(tpe0, uenv, taenv, ns0, root)
-        mapN(tpeVal) {
-          case tpe => ResolvedAst.ConstraintParam(sym, tpe, loc)
-        }
+      // TODO NS-REFACTOR no validation needed
+      case NamedAst.ConstraintParam(sym, loc) => ResolvedAst.ConstraintParam(sym, loc).toSuccess
     }
 
     /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
     def resolve(fparam0: NamedAst.FormalParam, uenv: ListMap[String, DeclarationOrJavaClass], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-      val tVal = resolveType(fparam0.tpe, uenv, taenv, ns0, root)
+      val tVal = traverseOpt(fparam0.tpe)(resolveType(_, uenv, taenv, ns0, root))
       mapN(tVal) {
-        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.src, fparam0.loc)
+        t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
       }
     }
 
@@ -1888,9 +1884,6 @@ object Resolver {
         case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
         case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
       }
-
-    case NamedAst.Type.Enum(sym, loc) =>
-      mkEnum(sym, loc).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(tpe => semiResolveType(tpe, uenv, ns0, root))
@@ -2875,7 +2868,7 @@ object Resolver {
       currentRegion match {
         case Some(sym) =>
           // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.tvar.withoutKind, sym.loc)
+          ResolvedAst.Expression.Var(sym, sym.loc)
         case None =>
           // Case 2.2: Use the global region.
           val tpe = Type.mkRegion(Type.False, loc)
@@ -2891,7 +2884,7 @@ object Resolver {
     case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym
     case Declaration.Sig(sym, spec, exp) => sym
     case Declaration.Def(sym, spec, exp) => sym
-    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc) => sym
+    case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case Declaration.Op(sym, spec) => sym

@@ -109,15 +109,16 @@ object Kinder {
     * Performs kinding on the given enum.
     */
   private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
-    case ResolvedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
+    case ResolvedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
       val annVal = traverse(ann0)(visitAnnotation(_, kenv, Map.empty, taenv, None, root))
-      val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
 
-      flatMapN(annVal, tparamsVal, tpeVal) {
-        case (ann, tparams, tpe) =>
+      flatMapN(annVal, tparamsVal) {
+        case (ann, tparams) =>
+          val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+          val tpe = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
           val casesVal = traverse(cases0) {
             case case0 => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
               caze => caze.sym -> caze
@@ -346,10 +347,7 @@ object Kinder {
 
     case ResolvedAst.Expression.Wild(loc) => KindedAst.Expression.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
-    case ResolvedAst.Expression.Var(sym, tpe0, loc) =>
-      mapN(visitType(tpe0, Kind.Star, kenv0, senv, taenv, root)) {
-        tpe => KindedAst.Expression.Var(sym, tpe, loc)
-      }
+    case ResolvedAst.Expression.Var(sym, loc) => KindedAst.Expression.Var(sym, loc).toSuccess
 
     case ResolvedAst.Expression.Def(sym, loc) => KindedAst.Expression.Def(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
 
@@ -952,11 +950,8 @@ object Kinder {
     * Performs kinding on the given constraint param under the given kind environment.
     */
   private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
-    case ResolvedAst.ConstraintParam(sym, tpe0, loc) =>
-      val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
-      mapN(tpeVal) {
-        case tpe => KindedAst.ConstraintParam(sym, tpe, loc)
-      }
+    // TODO NS-REFACTOR no validation needed
+    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc).toSuccess
   }
 
   /**
@@ -1132,8 +1127,12 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, src, loc) =>
-      mapN(visitType(tpe0, Kind.Star, kenv, senv, taenv, root)) {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      val (tpeVal, src) = tpe0 match {
+        case None => (sym.tvar.toSuccess, Ast.TypeSource.Inferred)
+        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, senv, taenv, root), Ast.TypeSource.Ascribed)
+      }
+      mapN(tpeVal) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, src, loc)
       }
   }
@@ -1265,7 +1264,10 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
+      case None => KindEnv.empty.toSuccess
+      case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)
+    }
   }
 
   /**
@@ -1437,7 +1439,7 @@ object Kinder {
     * Gets the kind of the enum.
     */
   private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
-    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _, _) =>
+    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
