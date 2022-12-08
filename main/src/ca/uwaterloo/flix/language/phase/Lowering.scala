@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, Sour
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * This phase translates AST expressions related to the Datalog subset of the
   * language into `Fixpoint/Ast` values (which are ordinary Flix values).
@@ -1620,18 +1622,23 @@ object Lowering {
     }
 
   /**
-    * Returns a desugared [[TypedAst.Expression.ParYield]] expression.
+    * Returns a desugared [[TypedAst.Expression.ParYield]] expression as a nested match-expression.
     */
-  def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+  private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
+    // Partition fragments into complex and simple exps.
+    val (complex, varOrCsts) = frags.partition(isSpawnable)
+
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
-    val (fs, last :: Nil) = frags.splitAt(frags.length - 1)
+    val (fs, lastComplex) = complex.splitAt(complex.length - 1)
 
     // Generate symbols for each channel.
     val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
 
-    // Make expression that evaluates the last fragment before proceeding to wait for channels.
+    // Make `GetChannel` exps for the spawnable exps.
     val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
-    val desugaredYieldExp = mkLetMatch(last.pat, last.exp, waitExps)
+
+    // Make expression that evaluates simple exps and the last fragment before proceeding to wait for channels.
+    val desugaredYieldExp = mkParYieldCurrentThread(varOrCsts ::: lastComplex, waitExps)
 
     // Generate channels and spawn exps.
     val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
@@ -1639,6 +1646,29 @@ object Lowering {
 
     // Wrap everything in a purity cast,
     LoweredAst.Expression.Cast(blockExp, None, Some(Type.Pure), Some(Type.Empty), tpe, pur, eff, loc.asSynthetic)
+  }
+
+  /**
+    * Returns the expression of a `ParYield` expression that should be evaluated in the current thread.
+    */
+  private def mkParYieldCurrentThread(exps: List[LoweredAst.ParYieldFragment], waitExps: LoweredAst.Expression): LoweredAst.Expression = {
+    exps.foldRight(waitExps) {
+      case (exp, acc) => mkLetMatch(exp.pat, exp.exp, acc)
+    }
+  }
+
+  /**
+    * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isVarOrCst`.
+    */
+  private def isSpawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isVarOrCst(frag.exp)
+
+  /**
+    * Returns `true` if `exp0` is either a literal or a variable.
+    */
+  private def isVarOrCst(exp0: LoweredAst.Expression): Boolean = exp0 match {
+    case LoweredAst.Expression.Var(_, _, _) => true
+    case LoweredAst.Expression.Cst(_: Ast.Constant, _, _) => true
+    case _ => false
   }
 
   /**
