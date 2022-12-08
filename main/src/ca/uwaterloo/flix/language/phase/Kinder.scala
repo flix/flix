@@ -1127,8 +1127,12 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, src, loc) =>
-      mapN(visitType(tpe0, Kind.Star, kenv, senv, taenv, root)) {
+    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+      val (tpeVal, src) = tpe0 match {
+        case None => (sym.tvar.toSuccess, Ast.TypeSource.Inferred)
+        case Some(tpe) => (visitType(tpe, Kind.Star, kenv, senv, taenv, root), Ast.TypeSource.Ascribed)
+      }
+      mapN(tpeVal) {
         tpe => KindedAst.FormalParam(sym, mod, tpe, src, loc)
       }
   }
@@ -1260,7 +1264,10 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _, _) => inferType(tpe0, Kind.Star, kenv, taenv, root)
+    case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
+      case None => KindEnv.empty.toSuccess
+      case Some(tpe) => inferType(tpe, Kind.Star, kenv, taenv, root)
+    }
   }
 
   /**

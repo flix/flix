@@ -1677,20 +1677,11 @@ object Namer {
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
-      // Compute the type of the formal parameter or use the type variable of the symbol.
-      val tpeVal = optType match {
-        case None => NamedAst.Type.Var(freshSym.tvar.sym.withoutKind, loc).toSuccess
-        case Some(t) => visitType(t, allowWild = true, tenv0)
-      }
-
-      val src = optType match {
-        case None => Ast.TypeSource.Inferred
-        case Some(_) => Ast.TypeSource.Ascribed
-      }
+      val tpeVal = traverseOpt(optType)(visitType(_, allowWild = true, tenv0))
 
       // Construct the formal parameter.
       mapN(tpeVal) {
-        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, src, loc)
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
       }
   }
 
@@ -1842,7 +1833,7 @@ object Namer {
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
     fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, NamedAst.FormalParam(sym, _, _, _, _)) =>
+      case (macc, NamedAst.FormalParam(sym, _, _, _)) =>
         if (sym.isWild) macc else macc + (sym.text -> sym)
     }
   }
