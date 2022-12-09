@@ -250,7 +250,7 @@ namespace List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, upcast _ -> None)
+        loop(l, upcast (_: Unit) -> None)
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -309,7 +309,7 @@ namespace List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, upcast identity)
+        loop(l, upcast identity: List[b] -> List[b])
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -633,8 +633,8 @@ namespace List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, upcast identity) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
+        loop(l, upcast identity: b -> b) // NB: Cast required because the identity continuation is pure,
+                                         // but the intermediate continuations are effect polymorphic
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -1025,7 +1025,7 @@ namespace List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast identity)
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast identity: c -> c)
 
     ///
     /// Returns the result of mapping each element and combining the results.

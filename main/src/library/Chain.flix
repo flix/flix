@@ -678,7 +678,7 @@ namespace Chain {
             case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), upcast identity)
+        loop(viewLeft(xs), viewLeft(ys), upcast identity: m[Chain[c]] -> m[Chain[c]])
 
 
     ///

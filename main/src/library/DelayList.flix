@@ -701,8 +701,11 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, upcast identity)) // NB: Cast required because the identity continuation is pure,
-                                                                  // but the intermediate continuations are effect polymorphic.
+        if (isEmpty(l))
+            None
+        else
+            Some(loop(l, upcast identity: Option[a] -> Option[a])) // NB: Cast required because the identity continuation is pure,
+                                                                   // but the intermediate continuations are effect polymorphic.
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///

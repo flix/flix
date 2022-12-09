@@ -375,7 +375,7 @@ namespace Nec {
             case OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, upcast identity)
+        loop(c, 0, upcast identity: Nec[b] -> Nec[b])
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -387,7 +387,7 @@ namespace Nec {
             case OneLeft(f2)      => k(map(f2, c))
             case SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, upcast identity)
+        loop(f, upcast identity: Nec[b] -> Nec[b])
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.

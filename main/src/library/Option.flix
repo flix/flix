@@ -405,7 +405,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, upcast s1 -> Some(s1))
+        loop(l, upcast (s1: b) -> Some(s1))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
