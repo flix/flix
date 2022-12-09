@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, Sour
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
-
 /**
   * This phase translates AST expressions related to the Datalog subset of the
   * language into `Fixpoint/Ast` values (which are ordinary Flix values).
@@ -1693,11 +1691,14 @@ object Lowering {
   private def mkParTuple(exp: LoweredAst.Expression.Tuple)(implicit flix: Flix): LoweredAst.Expression = {
     val LoweredAst.Expression.Tuple(elms, tpe, pur, eff, loc) = exp
 
+    // Only generate channels for n-1 elements. We use the current thread for the last element.
+    val (es, last) = elms.splitAt(elms.length - 1)
+
     // Generate symbols for each channel.
-    val chanSymsWithExps = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+    val chanSymsWithExps = es.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
 
     val waitExps = mkParWaits(chanSymsWithExps)
-    val tuple = LoweredAst.Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
+    val tuple = LoweredAst.Expression.Tuple(waitExps ::: last, tpe, pur, eff, loc.asSynthetic)
     mkParChannels(tuple, chanSymsWithExps)
   }
 
