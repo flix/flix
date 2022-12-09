@@ -26,7 +26,7 @@ object CodeLensProvider {
   /**
     * Processes a codelens request.
     */
-  def processCodeLens(uri: String)(implicit index: Index, root: Option[Root]): JObject = {
+  def processCodeLens(uri: String)(implicit index: Index, root: Root): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
     ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
@@ -34,7 +34,11 @@ object CodeLensProvider {
   /**
     * Returns code lenses for running entry points.
     */
-  private def getRunCodeLenses(uri: String)(implicit index: Index, root: Option[Root]): List[CodeLens] = {
+  private def getRunCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
+    if (root == null) {
+      return Nil
+    }
+
     getEntryPoints(uri).map {
       case sym =>
         val args = List(JString(sym.toString))
@@ -47,7 +51,11 @@ object CodeLensProvider {
   /**
     * Returns code lenses for running tests.
     */
-  private def getTestCodeLenses(uri: String)(implicit index: Index, root: Option[Root]): List[CodeLens] = {
+  private def getTestCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
+    if (root == null) {
+      return Nil
+    }
+
     getTests(uri).map {
       case sym =>
         val command = Command("Run Tests", "flix.cmdTests", Nil)
@@ -59,22 +67,18 @@ object CodeLensProvider {
   /**
     * Returns all entry points in the given `uri`.
     */
-  private def getEntryPoints(uri: String)(implicit root: Option[Root]): List[Symbol.DefnSym] = root.map {
-    _.defs.foldLeft(List.empty[Symbol.DefnSym]) {
-      case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) => defn.sym :: acc
-      case (acc, _) => acc
-    }
-  }.getOrElse(Nil)
+  private def getEntryPoints(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) => defn.sym :: acc
+    case (acc, _) => acc
+  }
 
   /**
     * Returns all tests in the given `uri`.
     */
-  private def getTests(uri: String)(implicit root: Option[Root]): List[Symbol.DefnSym] = root.map {
-    _.defs.foldLeft(List.empty[Symbol.DefnSym]) {
-      case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) && isTest(defn.spec) => defn.sym :: acc
-      case (acc, _) => acc
-    }
-  }.getOrElse(Nil)
+  private def getTests(uri: String)(implicit root: Root): List[Symbol.DefnSym] = root.defs.foldLeft(List.empty[Symbol.DefnSym]) {
+    case (acc, (sym, defn)) if matchesUri(uri, sym.loc) && isEntryPoint(defn.spec) && isTest(defn.spec) => defn.sym :: acc
+    case (acc, _) => acc
+  }
 
   /**
     * Returns `true` if the given `spec` is an entry point.
