@@ -363,7 +363,7 @@ namespace Nec {
             case OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity: Nec[b] -> Nec[b])
 
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
@@ -375,7 +375,7 @@ namespace Nec {
             case OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, upcast(identity))
+        loop(c, 0, upcast identity)
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -387,7 +387,7 @@ namespace Nec {
             case OneLeft(f2)      => k(map(f2, c))
             case SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, upcast(identity))
+        loop(f, upcast identity)
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
@@ -397,7 +397,7 @@ namespace Nec {
             case OneLeft(x)      => {let a = f(x); k(a)}
             case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity)
 
     ///
     /// Returns the reverse of `c`.
@@ -545,7 +545,7 @@ namespace Nec {
             case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity)
 
 
 
@@ -587,7 +587,7 @@ namespace Nec {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x, upcast(_ -> z))
+        case OneLeft(x)      => f(x, upcast (_ -> z): Unit -> b)
         case SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
@@ -611,7 +611,7 @@ namespace Nec {
                 case None    => loop(rs, k)
             }
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity: List[b] -> List[b])
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `c`.
@@ -657,7 +657,7 @@ namespace Nec {
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
         };
-        loop(c1, c2, upcast(identity))
+        loop(c1, c2, upcast identity: Nec[c] -> Nec[c])
 
     ///
     /// Returns a pair of Necs, the first containing all first components in `c`
@@ -691,7 +691,7 @@ namespace Nec {
             case (OneLeft(x), SomeLeft(y, _))       => k(singleton <$> f(x,y))
             case (OneLeft(x), OneLeft(y))           => k(singleton <$> f(x,y))
         };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+        loop(viewLeft(xs), viewLeft(ys), upcast identity: f[Nec[c]] -> f[Nec[c]])
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -708,7 +708,7 @@ namespace Nec {
                 loop(s2, rs, match (s3, ks) -> k((s3, cons(x1, ks))))
             }
         };
-        loop(start, c, upcast(identity))
+        loop(start, c, upcast identity: ((s, Nec[b])) -> (s, Nec[b]))
 
     ///
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -725,7 +725,7 @@ namespace Nec {
                 loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, x1))))
            }
         };
-        loop(start, c, upcast(identity))
+        loop(start, c, upcast identity: ((s, Nec[b])) -> (s, Nec[b]))
 
     ///
     /// Applies `f` to every element of `c`.
@@ -908,7 +908,7 @@ namespace Nec {
             case OneLeft(x)      => k(NecOne <$> f(x))
             case SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity: m[Nec[b]] -> m[Nec[b]])
 
     ///
     /// Returns the concatenation of the string representation
@@ -1001,7 +1001,7 @@ namespace Nec {
             case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
         };
-        loop(c, upcast(identity))
+        loop(c, upcast identity: List[a] -> List[a])
 
 
     ///

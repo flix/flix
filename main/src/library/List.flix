@@ -250,7 +250,7 @@ namespace List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, upcast(() -> None))
+        loop(l, upcast _ -> None)
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -309,7 +309,7 @@ namespace List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, upcast(identity))
+        loop(l, upcast identity)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -633,7 +633,7 @@ namespace List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast identity) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic
 
     ///
@@ -674,7 +674,7 @@ namespace List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, upcast(identity))
+        loop(l, upcast identity)
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -732,7 +732,7 @@ namespace List {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
+        loop(l, upcast identity) // NB: Cast required because the identity continuation is pure,
                                   // but the intermediate continuations are effect polymorphic
     ///
     /// Returns the sublist of `l` without the last element.
@@ -947,7 +947,7 @@ namespace List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, upcast(identity))
+        loop(xs, ys, upcast identity)
 
 
 
@@ -1025,7 +1025,7 @@ namespace List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast(identity))
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast identity)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -1355,7 +1355,7 @@ namespace List {
             case Nil     => k(Applicative.point(Nil))
             case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
         };
-        loop(l, upcast(identity))
+        loop(l, upcast identity)
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.

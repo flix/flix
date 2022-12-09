@@ -157,14 +157,6 @@ pub def bug!(m: String): a = unsafe_cast {
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
 
 ///
-/// Casts a pure function to `ef`.
-///
-/// `upcast` is safe to use anywhere.
-///
-pub def upcast(f: a -> b): a -> b \ ef =
-    x -> unsafe_cast f(x) as \ ef
-
-///
 /// Prints the argument unless it is ().
 ///
 @Internal

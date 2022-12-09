@@ -678,7 +678,7 @@ namespace Chain {
             case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+        loop(viewLeft(xs), viewLeft(ys), upcast identity)
 
 
     ///
@@ -888,7 +888,7 @@ namespace Chain {
     ///
     pub def traverse(f: a -> m[b] \ ef, c: Chain[a]): m[Chain[b]] \ ef with Applicative[m] =
         def loop(v, acc) = match v {
-            case NoneLeft        => upcast(() -> acc)()
+            case NoneLeft        => upcast acc: m[Chain[b]]
             case SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
         };
         loop(viewLeft(c), Applicative.point(empty()))

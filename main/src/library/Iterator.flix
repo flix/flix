@@ -481,8 +481,8 @@ namespace Iterator {
                 loop(ks -> k(f(x, ks)))
             }
         };
-        loop(upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                               // but the intermediate continuations are effect polymorphic
+        loop(upcast identity) // NB: Cast required because the identity continuation is pure,
+                              // but the intermediate continuations are effect polymorphic
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
     ///
