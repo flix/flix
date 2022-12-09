@@ -1693,11 +1693,13 @@ object Lowering {
   private def mkParTuple(exp: LoweredAst.Expression.Tuple)(implicit flix: Flix): LoweredAst.Expression = {
     val LoweredAst.Expression.Tuple(elms, tpe, pur, eff, loc) = exp
 
+    val (es, last) = elms.splitAt(elms.length - 1)
+
     // Generate symbols for each channel.
-    val chanSymsWithExps = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+    val chanSymsWithExps = es.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
 
     val waitExps = mkParWaits(chanSymsWithExps)
-    val tuple = LoweredAst.Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
+    val tuple = LoweredAst.Expression.Tuple(waitExps ::: last, tpe, pur, eff, loc.asSynthetic)
     mkParChannels(tuple, chanSymsWithExps)
   }
 
