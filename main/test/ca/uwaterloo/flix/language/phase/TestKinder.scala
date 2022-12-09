@@ -309,7 +309,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("IllegalEffect.01") {
-    val input = "def f(): Int32 = unsafe_cast 1 as & Int32"
+    val input = "def f(): Int32 = unsafe_cast 1 as _ & Int32"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -505,7 +505,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.02") {
     val input =
       """
-        |def f(): Int32 = unsafe_cast 1 as & Unit
+        |def f(): Int32 = unsafe_cast 1 as _ & Unit
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)

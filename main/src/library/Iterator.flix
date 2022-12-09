@@ -27,7 +27,7 @@ instance Scoped[Iterator[a]] {
 }
 
 instance Iterable[Iterator] {
-    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = unsafe_cast iter as \ Write(r)
+    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = unsafe_cast iter as _ \ Write(r)
 }
 
 ///
@@ -58,9 +58,9 @@ namespace Iterator {
     /// Returns an empty iterator.
     ///
     pub def new(_: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } =
-        let done = () -> unsafe_cast true as \ Read(r);
-        let next = () -> unsafe_cast bug!("Empty Iterator!") as \ Read(r);
-        unsafe_cast Iterator(done, next) as \ { Read(r), Write(r) }
+        let done = () -> unsafe_cast true as _ \ Read(r);
+        let next = () -> unsafe_cast bug!("Empty Iterator!") as _ \ Read(r);
+        unsafe_cast Iterator(done, next) as _ \ { Read(r), Write(r) }
 
     ///
     /// Returns an iterator containing only a single element, `x`.
@@ -544,7 +544,7 @@ namespace Iterator {
             case Some(x) =>
                 cursor := None;
                 x
-            } as \ {r, ef};
+            } as _ \ {r, ef};
         Iterator(done, next)
 
     ///
