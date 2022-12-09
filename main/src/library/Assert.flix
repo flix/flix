@@ -31,6 +31,6 @@ namespace Assert {
             println("");
             ?assertEq
         }
-    } as \ {}
+    } as _ \ {}
 
 }
