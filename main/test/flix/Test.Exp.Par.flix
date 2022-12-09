@@ -32,4 +32,9 @@ namespace Test/Exp/Par {
         ((par ((1, 2), par (3, 4))) :: (par ((5, 6), par (7, 8))) :: (par (par (9, 10), par (11, 12))) :: Nil) ==
             (par ((1, 2), par (3, 4))) :: (par ((5, 6), par (7, 8))) :: (par (par (9, 10), par (11, 12))) :: Nil
 
+    @test
+    def testPar08(): Bool =
+        let x = 1;
+        (par (f(1), 1, 2, x, f(2), x, 2, f(3), x, 2)) == (true, 1, 2, 1, false, 1, 2, false, 1, 3)
+
 }
