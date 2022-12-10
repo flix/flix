@@ -52,7 +52,7 @@ object CompletionProvider {
   // This list manually maintained. If a new built-in type is added, it must be extended.
   // Built-in types are typically described in TypeConstructor, Namer and Resolver.
   //
-  val builtinTypeNames: List[String] = List(
+  private val BuiltinTypeNames: List[String] = List(
     "Unit",
     "Bool",
     "Char",
@@ -65,18 +65,18 @@ object CompletionProvider {
   )
 
   // Built-in types with hardcoded low priority
-  val lowPriorityBuiltinTypeNames: List[String] = List(
+  private val LowPriorityBuiltinTypeNames: List[String] = List(
     "Int8",
     "Int16",
     "Float32"
   )
 
   // Built-in types with type parameters
-  val builtinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
+  private val BuiltinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
     ("Array", List("a", "r")),
     ("Ref", List("a", "r")),
-    ("Sender", List("t")),
-    ("Receiver", List("t")),
+    ("Sender", List("t", "r")),
+    ("Receiver", List("t", "r")),
     ("Lazy", List("t"))
   )
 
@@ -124,7 +124,7 @@ object CompletionProvider {
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
       case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
-    } 
+    }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
   }
@@ -136,12 +136,12 @@ object CompletionProvider {
     if (root == null) return Nil
     val entity = index.query(uri, pos)
     entity match {
-      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) => 
+      case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) =>
         HoleCompletion.candidates(sourceType, targetType, root)
           .map((root.defs(_)))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map{case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
+          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
       case _ => Nil
     }
   }
@@ -193,10 +193,10 @@ object CompletionProvider {
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
-        //
-        // The order of this list doesn't matter because suggestions are ordered
-        // through sortText
-        //
+      //
+      // The order of this list doesn't matter because suggestions are ordered
+      // through sortText
+      //
       case _ => getKeywordCompletions() ++
         getSnippetCompletions() ++
         getVarCompletions() ++
@@ -239,7 +239,6 @@ object CompletionProvider {
   }
 
   private def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    // TODO: keyword-specific help text?
     // NB: Please keep the list alphabetically sorted.
     List(
       "@benchmark",
@@ -291,6 +290,7 @@ object CompletionProvider {
       "or",
       "override",
       "project",
+      "par",
       "pub",
       "Pure",
       "query",
@@ -655,10 +655,10 @@ object CompletionProvider {
       return None
     }
     val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
-      case ((acc, z), (sym , cas)) => {
+      case ((acc, z), (sym, cas)) => {
         val name = sym.name
         val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$name => $${${z+1}:???}", z + 1)
+          case Some(TypeConstructor.Unit) => (s"$name => $${${z + 1}:???}", z + 1)
           case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
             .map(elem => s"$${${elem + z}:_elem$elem}")
             .mkString(s"$name(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
@@ -676,11 +676,11 @@ object CompletionProvider {
   private def matchCompletion(sym: String, completion: String, priority: String => String)(implicit context: Context): CompletionItem = {
     val label = s"match $sym"
     CompletionItem(label = label,
-        sortText = priority(label),
-        textEdit = TextEdit(context.range, completion),
-        documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Snippet)
+      sortText = priority(label),
+      textEdit = TextEdit(context.range, completion),
+      documentation = None,
+      insertTextFormat = InsertTextFormat.Snippet,
+      kind = CompletionItemKind.Snippet)
   }
 
   /**
@@ -706,8 +706,8 @@ object CompletionProvider {
   }
 
   /**
-   * Gets completions for record fields
-   */
+    * Gets completions for record fields
+    */
   private def getFieldCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // Do not get field completions if we are importing or using.
     if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
@@ -719,18 +719,18 @@ object CompletionProvider {
     context.word match {
       case regex(prefix) => {
         index.fieldDefs.m.concat(index.fieldUses.m)
-          .filter{case (_, locs) => locs.exists(loc => loc.source.name == context.uri)}
-          .foldLeft[List[CompletionItem]](Nil){
-          case (acc, (field, locs)) => {
-            val name = s"$prefix.${field.name}"
-            CompletionItem(label = name,
-              sortText = Priority.high(name),
-              textEdit = TextEdit(context.range, name),
-              documentation = None,
-              insertTextFormat = InsertTextFormat.PlainText,
-              kind = CompletionItemKind.Variable) :: acc
+          .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
+          .foldLeft[List[CompletionItem]](Nil) {
+            case (acc, (field, locs)) => {
+              val name = s"$prefix.${field.name}"
+              CompletionItem(label = name,
+                sortText = Priority.high(name),
+                textEdit = TextEdit(context.range, name),
+                documentation = None,
+                insertTextFormat = InsertTextFormat.PlainText,
+                kind = CompletionItemKind.Variable) :: acc
+            }
           }
-        }
       }
       case _ => Nil
     }
@@ -886,7 +886,7 @@ object CompletionProvider {
           kind = CompletionItemKind.Enum)
     }
 
-    val builtinTypes = builtinTypeNames map { name =>
+    val builtinTypes = BuiltinTypeNames map { name =>
       val internalPriority = Priority.high _
       CompletionItem(label = name,
         sortText = priority(internalPriority(name)),
@@ -894,7 +894,7 @@ object CompletionProvider {
         kind = CompletionItemKind.Enum)
     }
 
-    val lowPriorityBuiltinTypes = lowPriorityBuiltinTypeNames map { name =>
+    val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames map { name =>
       val internalPriority = Priority.low _
       CompletionItem(label = name,
         sortText = priority(internalPriority(name)),
@@ -902,10 +902,10 @@ object CompletionProvider {
         kind = CompletionItemKind.Enum)
     }
 
-    val builtinTypesWithParams = builtinTypeNamesWithTypeParameters map { case (name, tparams) =>
+    val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters map { case (name, tparams) =>
       val internalPriority = Priority.boost _
-      val fmtTparams = tparams.zipWithIndex.map{ case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
-      val finalName = s"$name[${tparams.mkString(", ")}}]"
+      val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
+      val finalName = s"$name[${tparams.mkString(", ")}]"
       CompletionItem(label = finalName,
         sortText = priority(internalPriority(name)),
         textEdit = TextEdit(context.range, s"$name[$fmtTparams]"),
@@ -1034,10 +1034,10 @@ object CompletionProvider {
     */
   private def getFirstAfterGivenPrefix(ns: List[String], prefix: List[String]): Option[String] = {
     (ns, prefix) match {
-        case (x :: _, Nil) => Some(x)
-        case (x :: xs, y :: ys) if x == y => getFirstAfterGivenPrefix(xs, ys)
-        case _ => None
-      }
+      case (x :: _, Nil) => Some(x)
+      case (x :: xs, y :: ys) if x == y => getFirstAfterGivenPrefix(xs, ys)
+      case _ => None
+    }
   }
 
   /**
@@ -1054,7 +1054,7 @@ object CompletionProvider {
     * Gets completions for enums in a given namespace
     */
   private def getEnumUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.enums.filter{case (sym, emn) => emn.mod.isPublic}
+    root.enums.filter { case (sym, emn) => emn.mod.isPublic }
       .keySet.filter(_.namespace == ns)
       .map(sym => useCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Enum))
   }
@@ -1063,7 +1063,7 @@ object CompletionProvider {
     * Gets completions for classes in a given namespace
     */
   private def getClassUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.classes.filter{case (sym, clazz) => clazz.mod.isPublic}
+    root.classes.filter { case (sym, clazz) => clazz.mod.isPublic }
       .keySet.filter(_.namespace == ns)
       .map(sym => useCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Interface))
   }
@@ -1072,7 +1072,7 @@ object CompletionProvider {
     * Gets completions for functions in a given namespace
     */
   private def getDefUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.defs.filter{case (sym, df) => df.spec.mod.isPublic}
+    root.defs.filter { case (sym, df) => df.spec.mod.isPublic }
       .keySet.filter(_.namespace == ns)
       .map(sym => useCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Function))
   }
@@ -1081,7 +1081,7 @@ object CompletionProvider {
     * Gets completion for type aliases in a given namespace
     */
   private def getTypeUseCompletions(ns: List[String])(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.typeAliases.filter{case (sym, tpe) => tpe.mod.isPublic}
+    root.typeAliases.filter { case (sym, tpe) => tpe.mod.isPublic }
       .keySet.filter(_.namespace == ns)
       .map(sym => useCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Struct))
   }
@@ -1090,20 +1090,22 @@ object CompletionProvider {
     * Gets completions for enum tags
     */
   private def getEnumTagCompletions(ns: List[String], enmName: String)(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.enums.filter{case (sym, _) => sym.name == enmName && sym.namespace == ns}
-      .flatMap{case (sym, emn) => emn.cases.map{
+    root.enums.filter { case (sym, _) => sym.name == enmName && sym.namespace == ns }
+      .flatMap { case (sym, emn) => emn.cases.map {
         case (casSym, _) => useCompletion(s"${nsToStringDot(ns)}${sym.name}.${casSym.name}", CompletionItemKind.EnumMember)
-      }}
+      }
+      }
   }
 
   /**
     * Gets completions for class sigs
     */
   private def getClassSigCompletions(ns: List[String], className: String)(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
-    root.classes.filter{case (sym, _) => sym.name == className && sym.namespace == ns}
-      .flatMap{case (sym, clazz) => clazz.signatures.map{
+    root.classes.filter { case (sym, _) => sym.name == className && sym.namespace == ns }
+      .flatMap { case (sym, clazz) => clazz.signatures.map {
         case sig => useCompletion(s"${nsToStringSlash(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember)
-      }}
+      }
+      }
   }
 
   /**
@@ -1183,9 +1185,9 @@ object CompletionProvider {
   private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
     classFromDotSeperatedString(clazz) match {
       case Some((clazzObject, clazz)) => clazzObject.getMethods()
-            // Filter if the method is static or not.
-            .filter((method) => java.lang.reflect.Modifier.isStatic(method.getModifiers()) == isStatic)
-            .map((method) => executableCompletion(method, clazz, None))
+        // Filter if the method is static or not.
+        .filter((method) => java.lang.reflect.Modifier.isStatic(method.getModifiers()) == isStatic)
+        .map((method) => executableCompletion(method, clazz, None))
       case None => Nil
     }
   }
@@ -1218,8 +1220,8 @@ object CompletionProvider {
   }
 
   /**
-   * Gets completions for java packages/classes
-   */
+    * Gets completions for java packages/classes
+    */
   private def getJavaClassCompletions()(implicit context: Context, root: TypedAst.Root): Iterable[CompletionItem] = {
     val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
     context.prefix match {
@@ -1239,21 +1241,21 @@ object CompletionProvider {
     root.names(prefix).map(clazz => {
       val label = prefix match {
         case Nil => clazz
-        case v => v.mkString("",".",s".$clazz")
+        case v => v.mkString("", ".", s".$clazz")
       }
-    CompletionItem(
-      label = label,
-      sortText = Priority.high(label),
-      textEdit = TextEdit(context.range, label),
-      documentation = None,
-      insertTextFormat = InsertTextFormat.PlainText,
-      kind = CompletionItemKind.Class)
+      CompletionItem(
+        label = label,
+        sortText = Priority.high(label),
+        textEdit = TextEdit(context.range, label),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Class)
     })
   }
 
   /**
-   * Gets completions for importing fields
-   */
+    * Gets completions for importing fields
+    */
   private def getImportFieldCompletions()(implicit context: Context): Iterable[CompletionItem] = {
     val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
     val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
@@ -1269,8 +1271,8 @@ object CompletionProvider {
   }
 
   /**
-   * Returns completions for a dot seperated class string
-   */
+    * Returns completions for a dot seperated class string
+    */
   private def importFieldCompletions(clazz: String, isStatic: Boolean, isGet: Boolean)(implicit context: Context): Iterable[CompletionItem] = {
     classFromDotSeperatedString(clazz) match {
       case Some((clazzObject, clazz)) => clazzObject.getFields()
@@ -1282,8 +1284,8 @@ object CompletionProvider {
   }
 
   /**
-   * Creates a field completion from a Field
-   */
+    * Creates a field completion from a Field
+    */
   private def fieldCompletion(clazz: String, field: Field, isGet: Boolean)(implicit context: Context): CompletionItem = {
     val ret = if (isGet) convertJavaClassToFlixType(field.getType()) else "Unit"
     val asSuggestion = if (isGet) s"get${field.getName()}" else s"set${field.getName()}"
@@ -1299,8 +1301,8 @@ object CompletionProvider {
   }
 
   /**
-   * Returns a class object if the string is a class or removing the last "part" makes it a class
-   */
+    * Returns a class object if the string is a class or removing the last "part" makes it a class
+    */
   private def classFromDotSeperatedString(clazz: String): Option[(Class[_ <: Object], String)] = {
     // If the last charachter is . then this drops that
     // I.e if we have java.lang.String. this converts to java.lang.String
@@ -1312,8 +1314,8 @@ object CompletionProvider {
   }
 
   /**
-   * Return a class object if the class exists
-   */
+    * Return a class object if the class exists
+    */
   private def classFromString(clazz: String): Option[(Class[_ <: Object], String)] = {
     try {
       Some((java.lang.Class.forName(clazz), clazz))
