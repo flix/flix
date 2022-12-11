@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
+import ca.uwaterloo.flix.util.Result
 
 object HoleCompletion {
 
@@ -46,23 +47,28 @@ object HoleCompletion {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        if (Unification.unifiesWith(matchType, lastArrow, RigidityEnv.empty)) {
-          Some((sym, spec))
-        } else {
-          None
+        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty) match {
+          case Result.Ok(subst) =>
+            // Track the size of all the types in the substitution.
+            // A smaller substitution means a more precise unification match.
+            val size = subst.m.values.map(_.size).sum
+            Some((sym, spec, size))
+          case Result.Err(_) =>
+            None
         }
     }.toList
 
     //
     // Sort the matched symbols by:
+    // - The size of the generated substitution (smaller is better) followed by:
     // - The number of parameters (fewer is better) followed by:
     // - The number of type variables (fewer is better) followed by:
     // - The symbol.
     //
     matches.sortBy {
-      case (sym, spec) => (spec.fparams.length, spec.declaredScheme.quantifiers.length, sym.toString)
+      case (sym, spec, size) => (size, spec.fparams.length, spec.declaredScheme.quantifiers.length, sym.toString)
     } map {
-      case (sym, _) => sym
+      case (sym, _, _) => sym
     }
   }
 
