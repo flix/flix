@@ -41,6 +41,7 @@ jobs:
           - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "mlutze/flix-json"
+          - "jaschdoc/flix-parsers"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
