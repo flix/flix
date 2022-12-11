@@ -1620,12 +1620,12 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given types.
     */
-  private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Unkinded = {
+  private def getImplicitTypeParamsFromTypes(types: List[WeededAst.Type])(implicit flix: Flix): NamedAst.TypeParams.Implicit = {
     val tvars = types.flatMap(freeVars).distinct
     val tparams = tvars.map {
-      ident => NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
+      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
-    NamedAst.TypeParams.Unkinded(tparams)
+    NamedAst.TypeParams.Implicit(tparams)
   }
 
   /**
@@ -1645,7 +1645,7 @@ object Namer {
     val effTvars = eff.getOrElse(Nil).flatMap(freeVars)
 
     val tparams = (fparamTvars ::: tpeTvars ::: purTvars ::: effTvars).distinct.map {
-      ident => NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
+      ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident), ident.loc)
     }
 
     NamedAst.TypeParams.Implicit(tparams)

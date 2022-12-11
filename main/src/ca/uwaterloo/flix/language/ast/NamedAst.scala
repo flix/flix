@@ -362,7 +362,7 @@ object NamedAst {
 
     case class Unkinded(tparams: List[NamedAst.TypeParam.Unkinded]) extends TypeParams
 
-    case class Implicit(tparams: List[NamedAst.TypeParam.Unkinded]) extends TypeParams
+    case class Implicit(tparams: List[NamedAst.TypeParam.Implicit]) extends TypeParams
 
   }
 
@@ -413,6 +413,8 @@ object NamedAst {
     case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
     case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
+
+    case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 
