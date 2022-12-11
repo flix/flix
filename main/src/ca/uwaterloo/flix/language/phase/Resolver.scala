@@ -1402,6 +1402,61 @@ object Resolver {
   object Patterns {
 
     /**
+      * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
+      * Constraint patterns do not introduce new variables.
+      */
+    // TODO NS-REFACTOR We should not be using a pattern for this AST node.
+    def resolveInConstraint(pat0: NamedAst.Pattern, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
+
+      def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
+        case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
+
+        case NamedAst.Pattern.Var(sym0, loc) => uenv(sym0.text).collectFirst {
+          case Resolution.Var(sym) => sym
+        } match {
+          case Some(sym) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
+          case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
+        }
+
+        case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
+
+        case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
+          val cVal = lookupTag(enum, tag, uenv, ns0, root)
+          val pVal = visit(pat)
+          mapN(cVal, pVal) {
+            case (c, p) =>
+              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, tag.loc), p, loc)
+          }
+
+        case NamedAst.Pattern.Tuple(elms, loc) =>
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.Tuple(es, loc)
+          }
+
+        case NamedAst.Pattern.Array(elms, loc) =>
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.Array(es, loc)
+          }
+
+        case NamedAst.Pattern.ArrayTailSpread(elms, sym, loc) =>
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
+          }
+
+        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, loc) =>
+          val esVal = traverse(elms)(visit)
+          mapN(esVal) {
+            es => ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
+          }
+      }
+
+      visit(pat0)
+    }
+
+    /**
       * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
       */
     def resolve(pat0: NamedAst.Pattern, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
@@ -1472,7 +1527,7 @@ object Resolver {
         */
       def resolve(b0: NamedAst.Predicate.Body, uenv: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-          val tsVal = traverse(terms)(t => Patterns.resolve(t, uenv, ns0, root))
+          val tsVal = traverse(terms)(t => Patterns.resolveInConstraint(t, uenv, ns0, root))
           mapN(tsVal) {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
