@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -740,7 +740,7 @@ object ResolutionError {
     * @param loc          the location of the method name.
     */
   case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    def summary : String = {
+    def summary: String = {
       s"Mismatching return type."
     }
 
@@ -748,11 +748,11 @@ object ResolutionError {
       import formatter._
       s"""${line(kind, source.name)}
         >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
-        |
-        |${code(loc, "mismatched return type.")}
-        |Declared type: ${declaredType.toString}
-        |Expected type: ${expectedType.toString}
-        |""".stripMargin
+         |
+         |${code(loc, "mismatched return type.")}
+         |Declared type: ${declaredType.toString}
+         |Expected type: ${expectedType.toString}
+         |""".stripMargin
     }
 
     /**
@@ -950,6 +950,30 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type aliases must be fully applied."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that a signature does not include the class's type parameter.
+    *
+    * @param sym the symbol of the signature.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
+         |
+         |${code(loc, "unexpected signature.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Every signature in a type class must mention the type variable of the class."
     })
 
   }

@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
@@ -384,10 +385,10 @@ object Resolver {
       val tparam = Params.resolveTparam(tparam0)
       val uenv = uenv0 ++ mkTypeParamEnv(List(tparam))
       val annVal = traverse(ann0)(visitAnnotation(_, uenv, taenv, ns0, root))
-      val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-      val sigsListVal = traverse(signatures)(resolveSig(_, tconstr, uenv, taenv, ns0, root))
+      val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, uenv, taenv, ns0, root))
       // ignore the parameter of the super class; we don't use it
       val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, uenv, taenv, ns0, root))
+      val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
       val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), uenv, taenv, ns0, root))
       mapN(annVal, sigsListVal, superClassesVal, lawsVal) {
         case (ann, sigsList, superClasses, laws) =>
@@ -424,15 +425,17 @@ object Resolver {
   /**
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
-  def resolveSig(s0: NamedAst.Declaration.Sig, tconstr: ResolvedAst.TypeConstraint, uenv0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
+  def resolveSig(s0: NamedAst.Declaration.Sig, clazz: Symbol.ClassSym, classTvar: Symbol.UnkindedTypeVarSym, uenv0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0) =>
+      val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz, clazz.loc), UnkindedType.Var(classTvar, classTvar.loc), clazz.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), uenv0, taenv, ns0, root)
       flatMapN(specVal) {
         case spec =>
           val uenv = uenv0 ++ mkSpecEnv(spec)
+          val specCheckVal = checkSigSpec(sym, spec, classTvar)
           val expVal = traverseOpt(exp0)(Expressions.resolve(_, uenv, taenv, ns0, root))
-          mapN(expVal) {
-            case exp => ResolvedAst.Sig(sym, spec, exp)
+          mapN(specCheckVal, expVal) {
+            case (_, exp) => ResolvedAst.Sig(sym, spec, exp)
           }
       }
   }
@@ -528,6 +531,22 @@ object Resolver {
       val specVal = resolveSpec(spec0, None, uenv, taenv, ns0, root)
       mapN(specVal) {
         spec => ResolvedAst.Op(sym, spec)
+      }
+  }
+
+  /**
+    * Checks that the signature spec is legal.
+    *
+    * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
+    */
+  private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
+      val tpes = tpe :: fparams.flatMap(_.tpe)
+      val tvars = tpes.flatMap(_.typeVars).to(SortedSet)
+      if (tvars.contains(tvar)) {
+        ().toSuccess
+      } else {
+        ResolutionError.IllegalSignature(sym, sym.loc).toFailure
       }
   }
 

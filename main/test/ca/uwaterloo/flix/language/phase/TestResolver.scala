@@ -1265,4 +1265,72 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
+  test("IllegalSignature.01") {
+    // The type variable `a` does not appear in the signature of `f`
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.02") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.03") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(x: {y = a}): {y = Bool}
+        |
+        |    pub def g(x: {y = Bool}): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.04") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.05") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): Int
+        |
+        |    pub def g(): String
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
 }

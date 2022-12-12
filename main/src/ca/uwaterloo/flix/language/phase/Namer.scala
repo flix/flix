@@ -414,20 +414,6 @@ object Namer {
   }
 
   /**
-    * Checks the type `tpe` of the signature to ensure that it contains the class type parameter `classTparam`.
-    */
-  private def checkSigType(sigIdent: Name.Ident, classTparam: NamedAst.TypeParam, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, purAndEff: WeededAst.PurityAndEffect, loc: SourceLocation): Validation[Unit, NameError] = {
-    val WeededAst.PurityAndEffect(pur, eff) = purAndEff
-    val tpes = fparams.flatMap(_.tpe) ::: tpe :: pur.toList ::: eff.getOrElse(Nil)
-    val tvars = tpes.flatMap(freeVars)
-    if (tvars.exists(tvar => tvar.name == classTparam.name.name)) {
-      ().toSuccess
-    } else {
-      NameError.IllegalSignature(sigIdent, loc).toFailure
-    }
-  }
-
-  /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {

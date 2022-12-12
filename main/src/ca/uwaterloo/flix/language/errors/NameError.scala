@@ -234,31 +234,6 @@ object NameError {
         |""".stripMargin
     })
   }
-
-  /**
-    * An error raised to indicate that a signature does not include the class's type parameter.
-    *
-    * @param name the name of the signature.
-    * @param loc  the location where the error occurred.
-    */
-  case class IllegalSignature(name: Name.Ident, loc: SourceLocation) extends NameError {
-    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected signature '${red(name.name)}' which does not mention the type variable of the class.
-         |
-         |${code(loc, "unexpected signature.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a type class must mention the type variable of the class."
-    })
-
-  }
-
   /**
     * An error raised to indicate that a wildcard type is used in an illegal position.
     *
