@@ -42,4 +42,8 @@ class UnificationCache[F] {
   def put(f1: F, f2: F, renv: Set[Int], s: BoolSubstitution[F]): Unit =
     m.putIfAbsent((f1, f2, renv), s)
 
+  def clear(): Unit = {
+    m.clear()
+  }
+
 }
