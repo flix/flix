@@ -176,7 +176,7 @@ object CompletionProvider {
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
     // if any of the following matches we do not want any completions
-    val defRegex = raw"\s*def\s+.*".r
+    val defRegex = raw"\s*def\s+[^=]*".r
     val enumRegex = raw"\s*enum\s+.*".r
     val typeAliasRegex = raw"\s*type\s+alias\s+.*".r
     val classRegex = raw"\s*class\s+.*".r
