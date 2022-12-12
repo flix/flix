@@ -1385,14 +1385,18 @@ object Resolver {
       /**
         * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
         */
-      def visitJvmMethod(method: NamedAst.JvmMethod, uenv: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
+      def visitJvmMethod(method: NamedAst.JvmMethod, uenv0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
-          val fparamsVal = resolveFormalParams(fparams, uenv, taenv, ns0, root)
-          val expVal = visitExp(exp, uenv, None)
-          val tpeVal = resolveType(tpe, uenv, taenv, ns0, root)
-          val purAndEffVal = resolvePurityAndEffect(purAndEff, uenv, taenv, ns0, root)
-          mapN(fparamsVal, expVal, tpeVal, purAndEffVal) {
-            case (f, e, t, p) => ResolvedAst.JvmMethod(ident, f, e, t, p, loc)
+          val fparamsVal = resolveFormalParams(fparams, uenv0, taenv, ns0, root)
+          flatMapN(fparamsVal) {
+            case fparams =>
+              val uenv = uenv0 ++ mkFormalParamEnv(fparams)
+              val expVal = visitExp(exp, uenv, None)
+              val tpeVal = resolveType(tpe, uenv, taenv, ns0, root)
+              val purAndEffVal = resolvePurityAndEffect(purAndEff, uenv, taenv, ns0, root)
+              mapN(expVal, tpeVal, purAndEffVal) {
+                case (e, t, p) => ResolvedAst.JvmMethod(ident, fparams, e, t, p, loc)
+              }
           }
       }
 
