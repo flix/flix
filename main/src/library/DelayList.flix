@@ -611,6 +611,21 @@ namespace DelayList {
             case _: _ => foldLeftNormal(f, s, l)
         }
 
+/*
+    pub def foldLeftDelay1(f: (DelayList[b], a) -> DelayList[b], s: DelayList[b], l: DelayList[a]): DelayList[b] = match l {
+        case ENil         => s
+        case ECons(x, xs) =>
+            let x1 = lazy f(s, x);
+            append(LList(lazy force x1), LList(lazy foldLeftDelay(f, force x1,       xs)))
+        case LCons(x, xs) =>
+            let x1 = lazy f(s, x);
+            append(LList(lazy force x1), LList(lazy foldLeftDelay(f, force x1, force xs)))
+        case LList(xs)    =>
+            LList(lazy foldLeftDelay(f, s, force xs))
+    }
+*/
+
+
     ///
     ///
     ///
