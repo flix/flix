@@ -1195,4 +1195,74 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
+
+  test("UndefinedTypeVar.Def.01") {
+    val input = "def f[a: Type](): b = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.02") {
+    val input = "def f[a: Type](x: b): Int = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.03") {
+    val input = "def f[a: Type, b: Type, c: Type](x: Option[d]): Int = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.01") {
+    val input = "instance C[a] with C[b]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.02") {
+    val input = "instance C[(a, b)] with D[c]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.03") {
+    val input = "instance C[(a, b)] with D[a], D[b], D[c]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] with A[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] with A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Expression.01") {
+    val input =
+      """
+        |def f(): Bool = typematch () {
+        |    case _: a => true
+        |    case _: _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
 }

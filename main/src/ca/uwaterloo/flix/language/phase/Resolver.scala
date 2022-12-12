@@ -2445,7 +2445,7 @@ object Resolver {
     } else {
       uenv(ident.name).collectFirst {
         case Resolution.TypeVar(sym) => sym.toSuccess
-      }.getOrElse(???) // MATT unknown tvar
+      }.getOrElse(ResolutionError.UndefinedTypeVar(ident.name, ident.loc).toFailure)
     }
   }
 
