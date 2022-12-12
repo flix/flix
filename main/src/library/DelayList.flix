@@ -605,9 +605,10 @@ namespace DelayList {
     ///
     @Experimental
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef =
-        typematch (f, s) {
-            case (g, t): ((DelayList[_], a) -> DelayList[_] \ {}, DelayList[_]) => foldLeftDelay(g, t, l)
-            case _ => foldLeftNormal(f, s, l)
+        let fs = (f, s);
+        typematch fs {
+            case gt: ((DelayList[_], _) -> DelayList[_] \ {}, DelayList[_]) => foldLeftDelay(fst(gt), snd(gt), l)
+            case _: _ => foldLeftNormal(f, s, l)
         }
 
     ///
