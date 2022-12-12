@@ -1421,12 +1421,19 @@ object Resolver {
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
 
-        case NamedAst.Pattern.Var(sym0, loc) => uenv(sym0.text).collectFirst {
-          case Resolution.Var(sym) => sym
-        } match {
-          case Some(sym) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
-          case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
-        }
+        case NamedAst.Pattern.Var(sym0, loc) =>
+          // TODO NS-REFACTOR wild patterns should not be counted as vars
+          // if the sym is wild then just call the pattern wild
+          if (sym0.isWild) {
+            ResolvedAst.Pattern.Wild(loc).toSuccess
+          } else {
+            uenv(sym0.text).collectFirst {
+              case Resolution.Var(sym) => sym
+            } match {
+              case Some(sym) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
+              case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
+            }
+          }
 
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
