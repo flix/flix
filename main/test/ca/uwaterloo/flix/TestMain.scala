@@ -202,6 +202,12 @@ class TestMain extends FunSuite {
     assert(opts.xvirtualthreads)
   }
 
+  test("--Xqmc") {
+    val args = Array("--Xqmc")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xqmc)
+  }
+
   test("--explain") {
     val args = Array("--explain")
     val opts = Main.parseCmdOpts(args).get

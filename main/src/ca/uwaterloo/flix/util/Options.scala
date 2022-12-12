@@ -47,6 +47,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
+    xqmc = false,
     xflexibleregions = false,
   )
 
@@ -90,6 +91,7 @@ object Options {
   * @param xbddthreshold      the threshold for when to use BDDs for SVE.
   * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xstatistics        enables statistics collection.
+  * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
   */
 case class Options(lib: LibLevel,
@@ -114,6 +116,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
+                   xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )
 
