@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
-import ca.uwaterloo.flix.language.ast.NamedAst
 import ca.uwaterloo.flix.language.ast.UnkindedType._
-import ca.uwaterloo.flix.language.ast.{Symbol, _}
+import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -366,15 +365,12 @@ object Resolver {
       */
     def resolve(c0: NamedAst.Constraint, uenv0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
       case NamedAst.Constraint(cparams0, head0, body0, loc) =>
-        val cparamsVal = traverse(cparams0)(p => Params.resolve(p, uenv0, taenv, ns0, root))
-        flatMapN(cparamsVal) {
-          case cparams =>
-            val uenv = uenv0 ++ mkConstraintParamEnv(cparams)
-            val headVal = Predicates.Head.resolve(head0, uenv, taenv, ns0, root)
-            val bodyVal = traverse(body0)(Predicates.Body.resolve(_, uenv, taenv, ns0, root))
-            mapN(headVal, bodyVal) {
-              case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
-            }
+        val cparams = resolveConstraintParams(cparams0, uenv0)
+        val uenv = uenv0 ++ mkConstraintParamEnv(cparams)
+        val headVal = Predicates.Head.resolve(head0, uenv, taenv, ns0, root)
+        val bodyVal = traverse(body0)(Predicates.Body.resolve(_, uenv, taenv, ns0, root))
+        mapN(headVal, bodyVal) {
+          case (head, body) => ResolvedAst.Constraint(cparams, head, body, loc)
         }
     }
 
@@ -1270,7 +1266,8 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
               val cVal = visitExp(chan, uenv0, region)
-              val bVal = visitExp(body, uenv0, region)
+              val uenv = uenv0 ++ mkVarEnv(sym)
+              val bVal = visitExp(body, uenv, region)
               mapN(cVal, bVal) {
                 case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
               }
@@ -1557,17 +1554,9 @@ object Resolver {
   object Params {
 
     /**
-      * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
-      */
-      // TODO NS-REFACTOR rename uenv to env everywhere
-    def resolve(cparam0: NamedAst.ConstraintParam, uenv: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      // TODO NS-REFACTOR no validation needed
-      case NamedAst.ConstraintParam(sym, loc) => ResolvedAst.ConstraintParam(sym, loc).toSuccess
-    }
-
-    /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
+    // TODO NS-REFACTOR rename uenv to env everywhere
     def resolve(fparam0: NamedAst.FormalParam, uenv: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       val tVal = traverseOpt(fparam0.tpe)(resolveType(_, uenv, taenv, ns0, root))
       mapN(tVal) {
@@ -1627,6 +1616,22 @@ object Resolver {
           case None => Some(ResolvedAst.TypeParam.Unkinded(name, tpe, loc))
         }
     }
+
+    /**
+      * Performs name resolution on the given constraint parameter.
+      */
+    def resolveConstraintParam(cparam0: NamedAst.ConstraintParam, uenv0: ListMap[String, Resolution]): Option[ResolvedAst.ConstraintParam] = cparam0 match {
+      case NamedAst.ConstraintParam(sym, loc) =>
+        // Check if the cparam is in the environment
+        uenv0(sym.text) collectFirst {
+          case Resolution.Var(sym) => sym
+        } match {
+          // Case 1: Already in the environment, this is not a constraint parameter.
+          case Some(_) => None
+          // Case 2: Not in the environment. This is a real constraint parameter.
+          case None => Some(ResolvedAst.ConstraintParam(sym, loc))
+        }
+    }
   }
 
   /**
@@ -1649,6 +1654,13 @@ object Resolver {
     case NamedAst.TypeParams.Implicit(tparams1) =>
       val tparams2 = tparams1.flatMap(Params.resolveImplicitTparam(_, uenv0))
       ResolvedAst.TypeParams.Unkinded(tparams2)
+  }
+
+  /**
+    * Performs name resolution on the given constraint parameters `cparams0`.
+    */
+  def resolveConstraintParams(cparams0: List[NamedAst.ConstraintParam], uenv0: ListMap[String, Resolution]): List[ResolvedAst.ConstraintParam] = {
+    cparams0.flatMap(Params.resolveConstraintParam(_, uenv0))
   }
 
   /**
@@ -2453,6 +2465,7 @@ object Resolver {
   }
 
   // TODO NS-REFACTOR remove
+
   /**
     * Tries to lookup the name in the given namespace, using the given namespace map.
     */
@@ -3189,13 +3202,13 @@ object Resolver {
   }
 
   // MATT docs
-  private def mkVarEnv(sym: Symbol.VarSym): ListMap[String, Resolution] = ListMap.singleton(sym.text,  Resolution.Var(sym))
+  private def mkVarEnv(sym: Symbol.VarSym): ListMap[String, Resolution] = ListMap.singleton(sym.text, Resolution.Var(sym))
 
   // MATT docs
   private def mkTypeVarEnv(sym: Symbol.UnkindedTypeVarSym): ListMap[String, Resolution] = {
     sym.text match {
       case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
-      case VarText.SourceText(s) => ListMap.singleton(s,  Resolution.TypeVar(sym))
+      case VarText.SourceText(s) => ListMap.singleton(s, Resolution.TypeVar(sym))
     }
   }
 
