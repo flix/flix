@@ -50,9 +50,15 @@ object SimpleRunner {
       System.exit(0)
     }
 
+    // check if the --Xbenchmark-frontend flag was passed.
+    if (cmdOpts.xbenchmarkFrontend) {
+      BenchmarkCompiler.benchmarkThroughput(options, frontend = true)
+      System.exit(0)
+    }
+
     // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options)
+      BenchmarkCompiler.benchmarkThroughput(options, frontend = false)
       System.exit(0)
     }
 
