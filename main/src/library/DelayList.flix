@@ -604,7 +604,26 @@ namespace DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = match l {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef =
+        typematch (f, s) {
+            case (g, t): ((DelayList[_], a) -> DelayList[_] \ {}, DelayList[_]) => foldLeftDelay(g, t, l)
+            case _ => foldLeftNormal(f, s, l)
+        }
+
+    ///
+    ///
+    ///
+    pub def foldLeftDelay(f: (DelayList[b], a) -> DelayList[b], s: DelayList[b], l: DelayList[a]): DelayList[b] = match l {
+        case ENil         => s
+        case ECons(x, xs) => LList(lazy foldLeftDelay(f, f(s, x),       xs))
+        case LCons(x, xs) => LList(lazy foldLeftDelay(f, f(s, x), force xs))
+        case LList(xs)    => LList(lazy foldLeftDelay(f,   s,     force xs))
+    }
+
+    ///
+    ///
+    ///
+    def foldLeftNormal(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = match l {
         case ENil         => s
         case ECons(x, xs) => foldLeft(f, f(s, x),       xs)
         case LCons(x, xs) => foldLeft(f, f(s, x), force xs)
@@ -651,6 +670,7 @@ namespace DelayList {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
+    @Experimental
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), l)
 

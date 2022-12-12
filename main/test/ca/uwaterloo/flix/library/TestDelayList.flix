@@ -632,6 +632,54 @@ namespace TestDelayList {
     def foldLeft06(): Bool =
     	DelayList.foldLeft((acc, x) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))) == 3 :: 2 :: 1 :: Nil
 
+    @test
+    def foldLeft07(): Bool =
+        let l = List.range(0, 100);
+        let l1 = List.foldLeft((acc, x) -> x :: acc, Nil, l); // reverse
+        let dl = DelayList.range(0, 100);
+        let dl1 = DelayList.foldLeft((acc, x) -> cons(x, acc), ENil, dl);
+        l1 == DelayList.toList(dl1)
+
+    @test
+    def foldLeft08(): Bool =
+        let l = List.range(0, 100);
+        let l1 = List.foldLeft((acc, x) -> (x + 1) :: acc, Nil, l);
+        let dl = DelayList.range(0, 100);
+        let dl1 = DelayList.foldLeft((acc, x) -> cons(x + 1, acc), ENil, dl);
+        l1 == DelayList.toList(dl1)
+
+    @test
+    def foldLeft09(): Bool =
+        let l = List.range(0, 100);
+        let l1 = List.foldLeft((acc, x) -> acc ::: (x + 1) :: Nil, Nil, l);
+        let dl = DelayList.range(0, 100);
+        let dl1 = DelayList.foldLeft((acc, x) -> DelayList.append(acc, cons(x + 1, ENil)), ENil, dl);
+        l1 == DelayList.toList(dl1)
+
+    @test
+    def foldLeft10(): Bool ==
+        let l = List.range(0, 100);
+        let l1 = List.foldLeft((_, _) -> 1 :: Nil, Nil, l);
+        let dl = DelayList.range(0, 100);
+        let dl1 = DelayList.foldLeft((_, _) -> ECons(1, ENil), ENil, dl);
+        l1 == DelayList.toList(dl1)
+
+    @test
+    def foldLeft11(): Bool =
+        let l = List.range(1, 100);
+        let l1 = List.foldLeft((acc, x) -> List.range(0, x) ::: acc, List.range(-100, 0), l);
+        let dl = DelayList.range(1, 100);
+        let dl1 = DelayList.foldLeft((acc, x) -> DelayList.append(DelayList.range(0, x), acc), DelayList.range(-100, 0), dl);
+        l1 == DelayList.toList(dl1)
+
+    @test
+    def foldLeft12(): Bool =
+        let l = List.range(0, 5);
+        let l1 = List.foldLeft((acc, _) -> acc ::: acc, 1 :: Nil, l);
+        let dl = DelayList.range(0, 5);
+        let dl1 = DelayList.foldLeft((acc, _) -> DelayList.append(acc, acc), ECons(1, ENil), dl);
+        l1 == DelayList.toList(dl1)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
