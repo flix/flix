@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -727,9 +726,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.01") {
     val input =
       raw"""
-         |def foo(): Unit =
-         |    import java.lang.String.hashCode(): Unit \ IO as _;
-         |    ()
+           |def foo(): Unit =
+           |    import java.lang.String.hashCode(): Unit \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -738,9 +737,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.02") {
     val input =
       raw"""
-         |def foo(): Unit =
-         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
-         |    ()
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -749,10 +748,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.03") {
     val input =
       raw"""
-         |type alias AliasedReturnType = ##java.util.Iterator
-         |def foo(): Unit =
-         |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
-         |    ()
+           |type alias AliasedReturnType = ##java.util.Iterator
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -1333,4 +1332,65 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("IllegalWildType.01") {
+    val input =
+      """
+        |type alias T = _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.02") {
+    val input =
+      """
+        |type alias T = _ -> _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.03") {
+    val input =
+      """
+        |enum E {
+        |    case C(_)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.04") {
+    val input =
+      """
+        |def foo(): String = unsafe_cast 123 as _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.05") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.06") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
 }
