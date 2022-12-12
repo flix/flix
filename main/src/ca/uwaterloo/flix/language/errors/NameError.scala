@@ -236,29 +236,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the local variable was not found.
-    *
-    * @param name the name of the variable.
-    * @param loc  the location of the undefined variable.
-    */
-  case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined variable '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined variable '${red(name)}'.
-         |
-         |${code(loc, "undefined variable.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      "Flix cannot find the variable. Maybe there is a typo?"
-    })
-  }
-
-  /**
     * An error raised to indicate that a signature does not include the class's type parameter.
     *
     * @param name the name of the signature.

@@ -2455,7 +2455,8 @@ object Resolver {
   private def lookupVar(ident: Name.Ident, uenv: ListMap[String, Resolution]): Validation[Symbol.VarSym, ResolutionError] = {
     uenv(ident.name).collectFirst {
       case Resolution.Var(sym) => sym.toSuccess
-    }.getOrElse(???) // MATT unknown tvar
+      // TODO NS-REFACTOR add tests
+    }.getOrElse(ResolutionError.UndefinedVar(ident.name, ident.loc).toFailure)
   }
 
 
