@@ -138,23 +138,37 @@ object BenchmarkCompiler {
   /**
     * Computes the throughput of the compiler.
     */
-  def benchmarkThroughput(o: Options): Unit = {
+  def benchmarkThroughput(o: Options, frontend: Boolean): Unit = {
+
+    case class Run(lines: Int, time: Long)
+
     //
     // Collect data from N iterations.
     //
     val results = (0 until N).map { _ =>
       val flix = newFlix(o)
-      flix.compile().get
+
+      // Benchmark frontend or entire compiler?
+      if (frontend) {
+        val root = flix.check().get
+        val totalLines = root.sources.foldLeft(0) {
+          case (acc, (_, sl)) => acc + sl.endLine
+        }
+        Run(totalLines, flix.getTotalTime)
+      } else {
+        val compilationResult = flix.compile().get
+        Run(compilationResult.getTotalLines, compilationResult.totalTime)
+      }
     }
 
     // The number of threads used.
     val threads = o.threads
 
     // Find the number of lines of source code.
-    val lines = results.head.getTotalLines.toLong
+    val lines = results.head.lines.toLong
 
     // Find the timings of each run.
-    val timings = results.map(_.totalTime).toList
+    val timings = results.map(_.time).toList
 
     // Compute the total time in seconds.
     val totalTime = (timings.sum / 1_000_000_000L).toInt
