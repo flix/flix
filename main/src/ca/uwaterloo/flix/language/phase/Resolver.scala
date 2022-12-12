@@ -1135,11 +1135,15 @@ object Resolver {
                 case NamedAst.HandlerRule(ident, fparams, body) =>
                   val opVal = findOpInEffect(ident, f)
                   val fparamsVal = resolveFormalParams(fparams, uenv0, taenv, ns0, root)
-                  val bodyVal = visitExp(body, uenv0, region)
-                  mapN(opVal, fparamsVal, bodyVal) {
-                    case (o, fp, b) =>
-                      val opUse = Ast.OpSymUse(o.sym, ident.loc)
-                      ResolvedAst.HandlerRule(opUse, fp, b)
+                  flatMapN(opVal, fparamsVal) {
+                    case (o, fp) =>
+                      val uenv = uenv0 ++ mkFormalParamEnv(fp)
+                      val bodyVal = visitExp(body, uenv, region)
+                      mapN(bodyVal) {
+                        case b =>
+                          val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                          ResolvedAst.HandlerRule(opUse, fp, b)
+                      }
                   }
               }
               mapN(rulesVal) {
