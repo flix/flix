@@ -109,7 +109,7 @@ object Main {
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -217,6 +217,7 @@ object Main {
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
+                     xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
@@ -371,6 +372,10 @@ object Main {
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks the performance of each compiler phase.")
+
+      // Xbenchmark-frontend
+      opt[Unit]("Xbenchmark-frontend").action((_, c) => c.copy(xbenchmarkFrontend = true)).
+        text("[experimental] benchmarks the performance of the frontend.")
 
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).

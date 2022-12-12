@@ -33,11 +33,6 @@ class CompilationResult(root: Root,
                         val codeSize: Int) {
 
   /**
-    * Returns the root AST.
-    */
-  def getRoot: Root = root
-
-  /**
     * Optionally returns the main function.
     */
   def getMain: Option[Array[String] => Unit] = main
@@ -58,14 +53,14 @@ class CompilationResult(root: Root,
     defs.collect {
       case (sym, run) if root.defs(sym).ann.isTest =>
         val skip = root.defs(sym).ann.isSkip
-        (sym -> TestFn(sym, skip, run))
+        sym -> TestFn(sym, skip, run)
     }
   }
 
   /**
     * Returns the total number of lines of compiled code.
     */
-  def getTotalLines: Int = getRoot.sources.foldLeft(0) {
+  def getTotalLines: Int = root.sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
 
