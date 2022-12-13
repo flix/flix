@@ -185,7 +185,7 @@ object CompletionProvider {
     val namespaceRegex = raw"\s*namespace\s+.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
-    // if ant of the following matches we know the next must be an expression
+    // if any of the following matches we know the next must be an expression
     val channelKeywordRegex = raw".*<-\s*[^\s]*".r
     val doubleColonRegex = raw".*::\s*[^\s]*".r
     val tripleColonRegex = raw".*:::\s*[^\s]*".r
