@@ -856,11 +856,11 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expression.Spawn(exp, _, loc) =>
+    case Expression.Spawn(exp1, exp2, _, loc) =>
       addSourceLine(visitor, loc)
 
       // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
       // make a thread and run it

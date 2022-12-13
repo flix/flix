@@ -409,7 +409,7 @@ object PrettyPrinter {
             clazz.getName +
             methods.map(fmtJvmMethod(_, formatter)).mkString("{ ", " ", " }")
 
-        case Expression.Spawn(exp, tpe, loc) => "spawn " + visitExp(exp)
+        case Expression.Spawn(exp1, exp2, tpe, loc) => "spawn " + visitExp(exp1)
 
         case Expression.Lazy(exp, tpe, loc) => "lazy " + visitExp(exp)
 

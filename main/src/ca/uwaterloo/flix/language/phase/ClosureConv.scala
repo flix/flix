@@ -254,9 +254,10 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+    case Expression.Spawn(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.Spawn(e1, e2, tpe, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -421,7 +422,7 @@ object ClosureConv {
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
-    case Expression.Spawn(exp, _, _) => freeVars(exp)
+    case Expression.Spawn(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Lazy(exp, _, _) => freeVars(exp)
 
@@ -675,9 +676,10 @@ object ClosureConv {
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+      case Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Spawn(e1, e2, tpe, loc)
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)
