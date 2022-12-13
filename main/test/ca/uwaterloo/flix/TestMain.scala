@@ -142,6 +142,12 @@ class TestMain extends FunSuite {
     assert(opts.xbenchmarkPhases)
   }
 
+  test("--Xbenchmark-frontend") {
+    val args = Array("--Xbenchmark-frontend", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkFrontend)
+  }
+
   test("--Xbenchmark-throughput") {
     val args = Array("--Xbenchmark-throughput", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -151,7 +157,7 @@ class TestMain extends FunSuite {
   test("--Xbdd-threshold") {
     val args = Array("--Xbdd-threshold", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbddthreshold == Some(42))
+    assert(opts.xbddthreshold.contains(42))
   }
 
   test("--Xdebug") {
@@ -194,6 +200,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xvirtual-threads")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xvirtualthreads)
+  }
+
+  test("--Xqmc") {
+    val args = Array("--Xqmc")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xqmc)
   }
 
   test("--explain") {

@@ -807,7 +807,7 @@ object Deriver {
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, varSym.tvar, loc)
+  private def mkVarExpr(varSym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expression.Var = KindedAst.Expression.Var(varSym, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.

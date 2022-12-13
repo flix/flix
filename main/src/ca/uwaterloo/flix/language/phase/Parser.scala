@@ -735,8 +735,26 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ WS ~ TypAndPurFragment ~ SP ~> ParsedAst.Expression.Cast
+    def Cast: Rule1[ParsedAst.Expression] = {
+      def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
+      }
+
+      def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((o: ParsedAst.Type) => Some(o))
+      }
+
+      def Both: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        SomeType ~ PurityAndEffect
+      }
+
+      def TypeAndPurity: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
+        PurAndEffOnly | Both
+      }
+
+      rule {
+        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
+      }
     }
 
     def Upcast: Rule1[ParsedAst.Expression] = rule {

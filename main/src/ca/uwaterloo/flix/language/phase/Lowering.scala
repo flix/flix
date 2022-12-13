@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, Sour
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
-import scala.annotation.tailrec
-
 /**
   * This phase translates AST expressions related to the Datalog subset of the
   * language into `Fixpoint/Ast` values (which are ordinary Flix values).
@@ -1542,16 +1540,12 @@ object Lowering {
   }
 
   /**
-    * Returns a list of `GetChannel` expressions based on `symExps`.
+    * Returns a `GetChannel` expression based on `sym` and `exp`.
     */
-  private def mkParWaits(symExps: List[(Symbol.VarSym, LoweredAst.Expression)]): List[LoweredAst.Expression] = {
-    // Make wait expressions `<- ch, ..., <- chn`.
-    symExps.map {
-      case (sym, e) =>
-        val loc = e.loc.asSynthetic
-        val chExp = mkChannelExp(sym, e.tpe, loc)
-        mkGetChannel(chExp, e.tpe, Type.Impure, e.eff, loc)
-    }
+  private def mkParWait(exp: LoweredAst.Expression, sym: Symbol.VarSym): LoweredAst.Expression = {
+    val loc = exp.loc.asSynthetic
+    val chExp = mkChannelExp(sym, exp.tpe, loc)
+    mkGetChannel(chExp, exp.tpe, Type.Impure, exp.eff, loc)
   }
 
   /**
@@ -1591,11 +1585,11 @@ object Lowering {
     * }}}
     */
   def mkLetMatch(pat: LoweredAst.Pattern, exp: LoweredAst.Expression, body: LoweredAst.Expression): LoweredAst.Expression = {
-    val expLoc = exp.loc.asSynthetic
+    val loc = exp.loc.asSynthetic
     val rule = List(LoweredAst.MatchRule(pat, None, body))
-    val pur = Type.mkAnd(exp.pur, body.pur, expLoc)
-    val eff = Type.mkUnion(exp.eff, body.eff, expLoc)
-    LoweredAst.Expression.Match(exp, rule, body.tpe, pur, eff, expLoc)
+    val pur = Type.mkAnd(exp.pur, body.pur, loc)
+    val eff = Type.mkUnion(exp.eff, body.eff, loc)
+    LoweredAst.Expression.Match(exp, rule, body.tpe, pur, eff, loc)
   }
 
   /**
@@ -1625,8 +1619,8 @@ object Lowering {
     * Returns a desugared [[TypedAst.Expression.ParYield]] expression as a nested match-expression.
     */
   private def mkParYield(frags: List[LoweredAst.ParYieldFragment], exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix): LoweredAst.Expression = {
-    // Partition fragments into complex and simple exps.
-    val (complex, varOrCsts) = frags.partition(isSpawnable)
+    // Partition fragments into complex and simple (vars or csts) exps.
+    val (complex, varOrCsts) = frags.partition(f => isSpawnable(f.exp))
 
     // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
     val (fs, lastComplex) = complex.splitAt(complex.length - 1)
@@ -1660,7 +1654,7 @@ object Lowering {
   /**
     * Returns `true` if the ParYield fragment should be spawned in a thread. Wrapper for `isVarOrCst`.
     */
-  private def isSpawnable(frag: LoweredAst.ParYieldFragment): Boolean = !isVarOrCst(frag.exp)
+  private def isSpawnable(exp: LoweredAst.Expression): Boolean = !isVarOrCst(exp)
 
   /**
     * Returns `true` if `exp0` is either a literal or a variable.
@@ -1693,12 +1687,53 @@ object Lowering {
   private def mkParTuple(exp: LoweredAst.Expression.Tuple)(implicit flix: Flix): LoweredAst.Expression = {
     val LoweredAst.Expression.Tuple(elms, tpe, pur, eff, loc) = exp
 
-    // Generate symbols for each channel.
-    val chanSymsWithExps = elms.map(e => (mkLetSym("channel", e.loc.asSynthetic), e))
+    // Partition elements into complex and simple (vars or csts) exps.
+    // We remember the index so we can sort the expression into the correct
+    // position of the tuple.
+    val (complex, varOrCsts) = elms.zipWithIndex.partition(e => isSpawnable(e._1))
 
-    val waitExps = mkParWaits(chanSymsWithExps)
-    val tuple = LoweredAst.Expression.Tuple(waitExps, tpe, pur, eff, loc.asSynthetic)
-    mkParChannels(tuple, chanSymsWithExps)
+    // Only generate channels for n-1 elements. We use the current thread for the last element.
+    val (es, last) = complex.splitAt(complex.length - 1)
+
+    // Generate symbols for each channel.
+    val chanSymsWithExps = es.map { case (e, i) => (mkLetSym("channel", e.loc.asSynthetic), e, i) }
+
+    // Make GetChannel exps for the spawned expressions.
+    val waitExps = chanSymsWithExps.map { case (s, e, i) => (mkParWait(e, s), i) }
+
+    val lastVarExpWithSym = last.map {
+      case (e, i) =>
+        val sym = Symbol.freshVarSym("last", Ast.BoundBy.Let, e.loc)
+        (LoweredAst.Expression.Var(sym, e.tpe, e.loc.asSynthetic), i, e, sym)
+    }
+
+    val lastVarExp = lastVarExpWithSym.map { case (v, i, _, _) => (v, i) }
+
+    // Sort to original ordering and map to exps
+    val parElmExps = (waitExps ::: lastVarExp ::: varOrCsts).sortBy(_._2).map(_._1)
+
+    // Make new tuple
+    val parTuple = LoweredAst.Expression.Tuple(parElmExps, tpe, pur, eff, loc.asSynthetic)
+
+    // Make let-exp that evaluates last under `lastVarExp` and prepend to the tuple.
+    val lastLetExp = lastVarExpWithSym.map {
+      case (_, _, e, s) =>
+        val l = e.loc.asSynthetic
+        val mods = Ast.Modifiers.Empty
+        val t = parTuple.tpe
+        val p = Type.mkAnd(e.pur, parTuple.pur, l)
+        val ef = Type.mkUnion(e.eff, parTuple.eff, l)
+        LoweredAst.Expression.Let(s, mods, e, parTuple, t, p, ef, l)
+    }
+
+    // If there was no lastVarExp, then just return `parTuple`.
+    val finalExp = lastLetExp match {
+      case Nil => parTuple
+      case e :: _ => e
+    }
+
+    // Finally, spawn channels.
+    mkParChannels(finalExp, chanSymsWithExps.map { case (s, e, _) => (s, e) })
   }
 
   /**

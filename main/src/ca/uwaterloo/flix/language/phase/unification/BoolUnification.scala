@@ -86,11 +86,11 @@ object BoolUnification {
     val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
 
     if (numberOfVars < threshold) {
-      implicit val alg: BoolAlg[BoolFormula] = BoolFormula.AsBoolAlg
+      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
       lookupOrSolve(tpe1, tpe2, renv0)
     } else {
-      implicit val alg: BoolAlg[DD] = BddFormula.AsBoolAlg
+      implicit val alg: BoolAlg[DD] = new BddFormulaAlg
       implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
       lookupOrSolve(tpe1, tpe2, renv0)
     }

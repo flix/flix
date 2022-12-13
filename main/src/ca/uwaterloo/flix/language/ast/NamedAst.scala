@@ -40,7 +40,7 @@ object NamedAst {
 
     case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
@@ -84,12 +84,9 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
+    case class VarOrDefOrSig(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Expression
 
-    case class DefOrSig(name: Name.QName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
-
-    // TODO NS-REFACTOR remove after moving var resolution to Resolver
-    case class UnqualifiedDefOrSig(name: Name.Ident, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
+    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -285,7 +282,7 @@ object NamedAst {
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -297,7 +294,7 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
@@ -365,19 +362,19 @@ object NamedAst {
 
     case class Unkinded(tparams: List[NamedAst.TypeParam.Unkinded]) extends TypeParams
 
+    case class Implicit(tparams: List[NamedAst.TypeParam.Implicit]) extends TypeParams
+
   }
 
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
-
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Option[NamedAst.Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -416,6 +413,8 @@ object NamedAst {
     case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
     case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
+
+    case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

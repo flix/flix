@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -59,6 +59,7 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.01") {
     val input =
       """
@@ -67,10 +68,11 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.02") {
     val input =
       """
@@ -79,9 +81,10 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.03") {
     val input =
       """
@@ -90,7 +93,7 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
   test("NegativelyBoundWildcard.01") {
@@ -265,7 +268,7 @@ class TestSafety extends FunSuite with TestUtils {
         |def f(): Unit & ef =
         |    let f =
         |        if (true)
-        |            upcast x -> (unsafe_cast x + 1 as & ef)
+        |            upcast x -> (unsafe_cast x + 1 as _ & ef)
         |        else
         |            upcast x -> x + 1;
         |    let _ = f(1);
@@ -335,7 +338,7 @@ class TestSafety extends FunSuite with TestUtils {
         |
         |def f(): Unit =
         |    let f = () -> ();
-        |    let g = () -> unsafe_cast () as \ { A, B, C };
+        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
         |            f
@@ -357,8 +360,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> unsafe_cast () as \ A;
-        |    let g = () -> unsafe_cast () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as _ \ A;
+        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
         |            f
@@ -380,8 +383,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> unsafe_cast () as & Impure \ A;
-        |    let g = () -> unsafe_cast () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as _ & Impure \ A;
+        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -403,8 +406,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> unsafe_cast () as \ A;
-        |    let g = () -> unsafe_cast () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as _ \ A;
+        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -426,8 +429,8 @@ class TestSafety extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> unsafe_cast () as & Impure \ A;
-        |    let g = () -> unsafe_cast () as \ { A, B, C };
+        |    let f = () -> unsafe_cast () as _ & Impure \ A;
+        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
         |            upcast f
@@ -512,7 +515,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            super_cast (unsafe_cast 1 as \ Impure)
+        |            super_cast (unsafe_cast 1 as _ \ Impure)
         |        else
         |            newObject();
         |    ()
@@ -529,7 +532,7 @@ class TestSafety extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
         |    let _ =
         |        if (true)
-        |            unsafe_cast 1 as \ Impure
+        |            unsafe_cast 1 as _ \ Impure
         |        else
         |            super_cast newObject();
         |    ()
