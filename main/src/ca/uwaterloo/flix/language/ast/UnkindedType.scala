@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.phase.Resolver
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.collection.immutable.SortedSet
 
 sealed trait UnkindedType {
   def loc: SourceLocation
@@ -61,6 +62,24 @@ sealed trait UnkindedType {
   def typeArguments: List[UnkindedType] = this match {
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.typeArguments :+ tpe2
     case _ => Nil
+  }
+
+  /**
+    * Returns the type variables in the given type.
+    */
+  def typeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(sym, loc) => SortedSet(sym)
+    case UnkindedType.Cst(tc, loc) => SortedSet.empty
+    case UnkindedType.Enum(sym, loc) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(sym, loc) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
+    case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) =>
+      val p = pur.iterator.flatMap(_.typeVars).to(SortedSet)
+      val e = eff.iterator.flatMap(_.flatMap(_.typeVars)).to(SortedSet)
+      p ++ e
+    case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
+    case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
+    case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
   }
 }
 

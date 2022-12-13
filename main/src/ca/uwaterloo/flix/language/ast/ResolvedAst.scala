@@ -323,6 +323,7 @@ object ResolvedAst {
   case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   sealed trait TypeParam {
+    val name: Name.Ident
     val sym: Symbol.UnkindedTypeVarSym
   }
 

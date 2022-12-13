@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildVariable, IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -59,6 +59,7 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.01") {
     val input =
       """
@@ -67,10 +68,11 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.02") {
     val input =
       """
@@ -79,9 +81,10 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
+  // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.03") {
     val input =
       """
@@ -90,7 +93,7 @@ class TestSafety extends FunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[IllegalNegativelyBoundWildVariable](result)
+    expectError[IllegalNegativelyBoundWildcard](result)
   }
 
   test("NegativelyBoundWildcard.01") {
