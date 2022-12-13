@@ -97,6 +97,8 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
+      xnoboolcache = cmdOpts.xnoboolcache,
+      xnoboolshortcuts = cmdOpts.xnoboolshortcuts,
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -222,6 +224,8 @@ object Main {
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xnoboolcache: Boolean = false,
+                     xnoboolshortcuts: Boolean = false,
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -412,6 +416,14 @@ object Main {
       // Xno-bool-effects
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
         text("[experimental] disables bool effects.")
+
+      // Xno-bool-cache
+      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
+        text("[experimental] disables Boolean caches.")
+
+      // Xno-bool-shortcuts
+      opt[Unit]("Xno-bool-shortcuts").action((_, c) => c.copy(xnoboolshortcuts = true)).
+        text("[experimental] disables Boolean unification shortcuts.")
 
       // Xno-bool-table
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).

@@ -184,6 +184,18 @@ class TestMain extends FunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
+  test("--Xno-bool-cache") {
+    val args = Array("--Xno-bool-cache")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolcache)
+  }
+
+  test("--Xno-bool-shortcuts") {
+    val args = Array("--Xno-bool-shortcuts")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolshortcuts)
+  }
+
   test("--Xno-bool-table") {
     val args = Array("--Xno-bool-table")
     val opts = Main.parseCmdOpts(args).get
