@@ -52,6 +52,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
+    case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -980,6 +981,21 @@ object BackendObjType {
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
         INVOKESTATIC(Objects.HashMethod) ~
         IRETURN()
+    ))
+  }
+
+  case object Region extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
   }
 
