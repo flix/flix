@@ -132,6 +132,6 @@ object BackendType {
          MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty() | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Var(_) => BackendObjType.JavaObject.toTpe
+         MonoType.Var(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
   }
 }
