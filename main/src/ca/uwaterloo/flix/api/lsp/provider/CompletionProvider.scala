@@ -204,7 +204,7 @@ object CompletionProvider {
       // The order of this list doesn't matter because suggestions are ordered
       // through sortText
       //
-      case _ => getExpCompletions()
+      case _ => getExpCompletions() ++
         getMatchCompletitions() ++
         getPredicateCompletions() ++
         getTypeCompletions() ++
@@ -215,7 +215,7 @@ object CompletionProvider {
   /**
     * Returns a list of completions that may be used in a position where an expression is needed.
     * This should include all completions supported that could be an expression.
-    * All of the completions are not neccesarily legal.
+    * All of the completions are not neccesarily sound.
     */
   private def getExpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     getKeywordCompletions() ++ 
