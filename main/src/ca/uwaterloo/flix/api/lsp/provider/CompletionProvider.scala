@@ -185,8 +185,14 @@ object CompletionProvider {
     val namespaceRegex = raw"\s*namespace\s+.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
+    // if any of the following matches we know the next must be an expression
+    val channelKeywordRegex = raw".*<-\s*[^\s]*".r
+    val doubleColonRegex = raw".*::\s*[^\s]*".r
+    val tripleColonRegex = raw".*:::\s*[^\s]*".r
+
     // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
     context.prefix match {
+      case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
       case typeRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
@@ -198,17 +204,26 @@ object CompletionProvider {
       // The order of this list doesn't matter because suggestions are ordered
       // through sortText
       //
-      case _ => getKeywordCompletions() ++
-        getSnippetCompletions() ++
-        getVarCompletions() ++
-        getDefAndSigCompletions() ++
+      case _ => getExpCompletions() ++
         getPredicateCompletions() ++
-        getFieldCompletions() ++
         getTypeCompletions() ++
-        getOpCompletions() ++
-        getEffectCompletions() ++
-        getMatchCompletitions()
+        getEffectCompletions()
     }
+  }
+
+  /**
+    * Returns a list of completions that may be used in a position where an expression is needed.
+    * This should include all completions supported that could be an expression.
+    * All of the completions are not neccesarily sound.
+    */
+  private def getExpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+    getKeywordCompletions() ++ 
+      getSnippetCompletions() ++
+      getVarCompletions() ++
+      getDefAndSigCompletions() ++
+      getFieldCompletions() ++
+      getOpCompletions() ++
+      getMatchCompletitions()
   }
 
   /**
