@@ -1434,7 +1434,6 @@ object Resolver {
       * Performs name resolution on the given constraint pattern `pat0` in the namespace `ns0`.
       * Constraint patterns do not introduce new variables.
       */
-    // TODO NS-REFACTOR We should not be using a pattern for this AST node.
     def resolveInConstraint(pat0: NamedAst.Pattern, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
@@ -1790,7 +1789,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
-    val classOpt = tryLookupName2(qname, uenv, ns0, root)
+    val classOpt = tryLookupName(qname, uenv, ns0, root)
     classOpt match {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) :: Nil =>
         getClassAccessibility(clazz, ns0) match {
@@ -1806,7 +1805,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
-    val classOpt = tryLookupName2(qname, uenv, ns0, root)
+    val classOpt = tryLookupName(qname, uenv, ns0, root)
     classOpt match {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) :: Nil =>
         getClassAccessibility(clazz, ns0) match {
@@ -1822,7 +1821,7 @@ object Resolver {
     */
   private def lookupVarOrDefOrSig(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[VarOrDefOrSig, ResolutionError] = {
     // first look in the local env
-    val resolutions = tryLookupName2(qname, uenv, ns0, root)
+    val resolutions = tryLookupName(qname, uenv, ns0, root)
 
     resolutions.collectFirst {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) =>
@@ -1847,7 +1846,7 @@ object Resolver {
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupOp(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Op, ResolutionError] = {
-    val opOpt = tryLookupName2(qname, uenv, ns0, root)
+    val opOpt = tryLookupName(qname, uenv, ns0, root)
 
     opOpt match {
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: Nil =>
@@ -2439,7 +2438,7 @@ object Resolver {
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
-    val symOpt = tryLookupName2(qname, uenv, ns0, root)
+    val symOpt = tryLookupName(qname, uenv, ns0, root)
 
     symOpt match {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) :: Nil => getTypeAliasIfAccessible(alias, ns0, qname.loc)
@@ -2451,7 +2450,7 @@ object Resolver {
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupEffect(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
-    val symOpt = tryLookupName2(qname, uenv, ns0, root)
+    val symOpt = tryLookupName(qname, uenv, ns0, root)
 
     symOpt match {
       case Resolution.Declaration(eff: NamedAst.Declaration.Effect) :: Nil => getEffectIfAccessible(eff, ns0, qname.loc)
@@ -2488,7 +2487,10 @@ object Resolver {
   }
 
 
-  private def tryLookupName2(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
+  /**
+    * Returns the list of symbols this name points to, ordered from most closely declared to furthest.
+    */
+  private def tryLookupName(qname: Name.QName, uenv: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
     if (qname.isUnqualified) {
       // Case 1 Unqualified name. Try in the use environment.
       uenv(qname.ident.name) match {
@@ -2505,31 +2507,6 @@ object Resolver {
     } else {
       // Case 2. Qualified name. Look it up directly.
       root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList
-    }
-  }
-
-  // TODO NS-REFACTOR remove
-
-  /**
-    * Tries to lookup the name in the given namespace, using the given namespace map.
-    */
-  @deprecated("tryLookupName2")
-  private def tryLookupName[T](qname: Name.QName, ns0: Name.NName, map: Map[Name.NName, Map[String, T]]): Option[T] = {
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val effOpt = map.getOrElse(ns0, Map.empty).get(qname.ident.name)
-
-      effOpt match {
-        case Some(eff) =>
-          // Case 1.2: Found in the current namespace.
-          Some(eff)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          map.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      map.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -3133,7 +3110,7 @@ object Resolver {
     * Resolves the given Use.
     */
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.UseDefOrSig(qname, alias, loc) => tryLookupName2(qname, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.UseDefOrSig(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       // Case 2: A match. Map it to a use.
@@ -3141,7 +3118,7 @@ object Resolver {
       // Case 3: Impossible. Hard error.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
-    case NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc) => tryLookupName2(qname, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       // Case 2: A match. Map it to a use.
@@ -3150,7 +3127,7 @@ object Resolver {
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
-    case NamedAst.UseOrImport.UseTag(qname, tag, alias, loc) => tryLookupName2(qname, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.UseTag(qname, tag, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       // Case 2: A Match. Look up the case and map it to a use.
