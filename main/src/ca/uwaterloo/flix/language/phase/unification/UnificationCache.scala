@@ -34,12 +34,12 @@ object UnificationCache {
   * A thread-safe cache of unification queries.
   */
 class UnificationCache[F] {
-  private val m: ConcurrentHashMap[(F, F, Set[Int]), BoolSubstitution[BoolFormula]] = new ConcurrentHashMap
+  private val m: ConcurrentHashMap[(F, F, Set[Int]), BoolSubstitution[F]] = new ConcurrentHashMap
 
-  def lookup(f1: F, f2: F, renv: Set[Int]): Option[BoolSubstitution[BoolFormula]] =
+  def lookup(f1: F, f2: F, renv: Set[Int]): Option[BoolSubstitution[F]] =
     Option(m.get((f1, f2, renv)))
 
-  def put(f1: F, f2: F, renv: Set[Int], s: BoolSubstitution[BoolFormula]): Unit =
+  def put(f1: F, f2: F, renv: Set[Int], s: BoolSubstitution[F]): Unit =
     m.putIfAbsent((f1, f2, renv), s)
 
   def clear(): Unit = {

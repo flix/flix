@@ -132,16 +132,4 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
     }
     Substitution(map)
   }
-
-  /**
-    * Converts this formula substitution into a BoolFormula substitution
-    */
-  def toBoolFormulaSubstitution()(implicit alg: BoolAlg[F]): BoolSubstitution[BoolFormula] = {
-    val map = m.map {
-      case (k0, v0) =>
-        val v = alg.toBoolFormula(v0)
-        (k0, v)
-    }
-    BoolSubstitution(map)
-  }
 }
