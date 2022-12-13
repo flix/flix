@@ -737,7 +737,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Cast: Rule1[ParsedAst.Expression] = {
       def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        "_" ~ WS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
+        "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
       }
 
       def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
@@ -753,7 +753,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ WS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
+        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
       }
     }
 
