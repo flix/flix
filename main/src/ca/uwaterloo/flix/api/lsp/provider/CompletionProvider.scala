@@ -169,7 +169,8 @@ object CompletionProvider {
   private def getCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val typeRegex = raw".*:\s*[^\s]*".r
+    val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
+    val typeAliasRegex = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val effectRegex = raw".*[\\]\s*[^\s]*".r
     val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
@@ -178,7 +179,7 @@ object CompletionProvider {
     // if any of the following matches we do not want any completions
     val defRegex = raw"\s*def\s+[^=]*".r
     val enumRegex = raw"\s*enum\s+.*".r
-    val typeAliasRegex = raw"\s*type\s+alias\s+.*".r
+    val incompleteTypeAliasRegex = raw"\s*type\s+alias\s+.*".r
     val classRegex = raw"\s*class\s+.*".r
     val letRegex = raw"\s*let\s+[^\s]*".r
     val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
@@ -194,9 +195,9 @@ object CompletionProvider {
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
-      case typeRegex() => getTypeCompletions()
+      case typeRegex() | typeAliasRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
-      case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() => Nil
+      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
@@ -868,8 +869,9 @@ object CompletionProvider {
     }
 
     // Boost priority if there's a colon immediately before the word the user's typing
-    val priorityBoost = raw".*:\s*[^\s]*".r
-    val priority = if (priorityBoost matches context.prefix) Priority.boost _ else Priority.low _
+    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
+    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
+    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix)) Priority.boost _ else Priority.low _
 
     val enums = root.enums.map {
       case (_, t) =>
