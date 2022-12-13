@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -727,9 +726,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.01") {
     val input =
       raw"""
-         |def foo(): Unit =
-         |    import java.lang.String.hashCode(): Unit \ IO as _;
-         |    ()
+           |def foo(): Unit =
+           |    import java.lang.String.hashCode(): Unit \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -738,9 +737,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.02") {
     val input =
       raw"""
-         |def foo(): Unit =
-         |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
-         |    ()
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -749,10 +748,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("MismatchingReturnType.03") {
     val input =
       raw"""
-         |type alias AliasedReturnType = ##java.util.Iterator
-         |def foo(): Unit =
-         |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
-         |    ()
+           |type alias AliasedReturnType = ##java.util.Iterator
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+           |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.MismatchingReturnType](result)
@@ -1194,5 +1193,204 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedTypeVar.Def.01") {
+    val input = "def f[a: Type](): b = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.02") {
+    val input = "def f[a: Type](x: b): Int = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.03") {
+    val input = "def f[a: Type, b: Type, c: Type](x: Option[d]): Int = 123"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.01") {
+    val input = "instance C[a] with C[b]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.02") {
+    val input = "instance C[(a, b)] with D[c]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Instance.03") {
+    val input = "instance C[(a, b)] with D[a], D[b], D[c]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.01") {
+    val input =
+      """
+        |class A[a]
+        |class B[a] with A[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.02") {
+    val input =
+      """
+        |class A[a]
+        |class B[a]
+        |class C[a] with A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Expression.01") {
+    val input =
+      """
+        |def f(): Bool = typematch () {
+        |    case _: a => true
+        |    case _: _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("IllegalSignature.01") {
+    // The type variable `a` does not appear in the signature of `f`
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.02") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.03") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(x: {y = a}): {y = Bool}
+        |
+        |    pub def g(x: {y = Bool}): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.04") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.05") {
+    val input =
+      """
+        |class C[a] {
+        |    pub def f(): Int
+        |
+        |    pub def g(): String
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalWildType.01") {
+    val input =
+      """
+        |type alias T = _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.02") {
+    val input =
+      """
+        |type alias T = _ -> _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.03") {
+    val input =
+      """
+        |enum E {
+        |    case C(_)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.04") {
+    val input =
+      """
+        |def foo(): String = unsafe_cast 123 as _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.05") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.06") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
+        |    deepToString([])
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
   }
 }
