@@ -205,7 +205,6 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        getMatchCompletitions() ++
         getPredicateCompletions() ++
         getTypeCompletions() ++
         getEffectCompletions()
