@@ -401,8 +401,7 @@ object Finalize {
 
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
-            case TypeConstructor.RegionToStar =>
-              MonoType.Unit // TODO: Should be erased?
+            case TypeConstructor.RegionToStar => MonoType.Region
 
             case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 

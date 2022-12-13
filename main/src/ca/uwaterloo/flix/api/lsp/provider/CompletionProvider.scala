@@ -176,20 +176,21 @@ object CompletionProvider {
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
     // if any of the following matches we do not want any completions
-    val defRegex = raw"\s*def\s+.*".r
+    val defRegex = raw"\s*def\s+[^=]*".r
     val enumRegex = raw"\s*enum\s+.*".r
     val typeAliasRegex = raw"\s*type\s+alias\s+.*".r
     val classRegex = raw"\s*class\s+.*".r
     val letRegex = raw"\s*let\s+[^\s]*".r
     val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
     val namespaceRegex = raw"\s*namespace\s+.*".r
+    val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
     // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case withRegex() => getWithCompletions()
       case typeRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
-      case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() => Nil
+      case defRegex() | enumRegex() | typeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()

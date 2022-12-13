@@ -283,13 +283,16 @@ object GenExpression {
       compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
     case Expression.Scope(sym, exp, _, loc) =>
-      //!TODO: For now just make like `let`
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-      val jvmType = JvmOps.getJvmType(MonoType.Unit)
-      // Store instruction for `jvmType`
-      val iStore = AsmOps.getStoreInstruction(jvmType)
+
+      // Create an instance of Region
+      visitor.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+
+      val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 

@@ -3142,15 +3142,6 @@ object Weeder {
   }
 
   /**
-    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
-    */
-  private def getRegionOrDefault(region: Option[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
-    val tpe = Type.mkRegion(Type.False, loc)
-    val exp = WeededAst.Expression.Region(tpe, loc)
-    region.getOrElse(exp)
-  }
-
-  /**
     * The syntactic environment of an expression.
     *
     * Used to indicate which expressions are allowed at the given point in the syntax tree.
