@@ -15,7 +15,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform when collecting statistics.
     */
-  val N = 10
+  val N = 25
 
   /**
     * Outputs statistics about the size of the generated JVM code.
