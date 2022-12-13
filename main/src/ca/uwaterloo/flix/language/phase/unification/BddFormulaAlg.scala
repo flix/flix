@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{IntMap, SortedSet}
 
 /**
   * Companion object of [[BddFormulaAlg]].
@@ -119,7 +119,6 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     toTypeQMC(f, env)
   }
 
-  //TODO: Optimize (2-level minimization)
   /**
     * Collects true paths in the BDD and ORs them together:
     * Traverses every path through the BDD and keeps track of the
@@ -154,6 +153,16 @@ final class BddFormulaAlg extends BoolAlg[DD] {
   //Mutability is needed for parts of the QMC algorithm
   import scala.collection.mutable
 
+  sealed trait BoolVal
+
+  object BoolVal {
+    case object True extends BoolVal
+
+    case object False extends BoolVal
+
+    case object DontCare extends BoolVal
+  }
+
   /**
     * Converting a BDD to a Type using the Quine-McCluskey algorithm
     */
@@ -181,7 +190,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * Converting a cover to a Type by making each prime
     * implicant into an AND and OR'ing them together
     */
-  private def coverToType(cover: Set[Map[Int, Int]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  private def coverToType(cover: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
     val typeList = cover.foldLeft(List.empty[Type])((acc, m) => acc ++ List(primeImpToType(m, env)))
     if (typeList.size == 1) {
       typeList.head
@@ -195,10 +204,10 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * "Don't care"'s are thrown away, 0's are mapped to
     * NOTs of vars and 1's are mapped to vars
     */
-  private def primeImpToType(primeImp: Map[Int, Int], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    val typeVars = primeImp.filter(kv => kv._2 != 2).map[Type](kv => {
+  private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    val typeVars = primeImp.filter(kv => kv._2 != BoolVal.DontCare).map[Type](kv => {
       val symVar = env.getBackward(kv._1).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: ${kv._1}", SourceLocation.Unknown))
-      if (kv._2 == 0) {
+      if (kv._2 == BoolVal.False) {
         Type.mkNot(Type.Var(symVar, symVar.loc), symVar.loc)
       } else {
         Type.Var(symVar, symVar.loc)
@@ -214,7 +223,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * Note: the implementation does not find a
     * minimal, but instead a greedy cover
     */
-  private def qmc(f: DD): Set[Map[Int, Int]] = {
+  private def qmc(f: DD): Set[IntMap[BoolVal]] = {
     val vars = freeVars(f)
     val minTerms = collectMinTerms(f, vars)
     val primeImplicants = collectPrimeImplicants(minTerms.filter(ms => ms._2 == 0), minTerms.filter(ms => ms._2 != 0))
@@ -228,14 +237,14 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * are mapped to 2 ("don't care"). Also gives the
     * number of "don't care" variables in each min term.
     */
-  private def collectMinTerms(f: DD, vars: SortedSet[Int]): Set[(Map[Int, Int], Int)] = {
-    val terms = collectTerms(f, vars, Map.empty)
+  private def collectMinTerms(f: DD, vars: SortedSet[Int]): Set[(IntMap[BoolVal], Int)] = {
+    val terms = collectTerms(f, vars, IntMap.empty)
     val noEmptyTerms = terms.filter(t => t.nonEmpty)
     noEmptyTerms.map { t =>
       val keys = t.keySet
       val dontCares = vars -- keys
       val size = dontCares.size
-      val dontCareMap = dontCares.foldLeft(Map.empty[Int, Int])((acc, dc) => acc ++ Map(dc -> 2))
+      val dontCareMap = dontCares.foldLeft(IntMap.empty[BoolVal])((acc, dc) => acc ++ IntMap(dc -> BoolVal.DontCare))
       (t ++ dontCareMap, size)
     }
   }
@@ -245,17 +254,17 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * In the map variables that were true on the path are mapped to 1,
     * and variables that were false are mapped to 0.
     */
-  private def collectTerms(f: DD, vars: SortedSet[Int], termSoFar: Map[Int, Int]): Set[Map[Int, Int]] = {
+  private def collectTerms(f: DD, vars: SortedSet[Int], termSoFar: IntMap[BoolVal]): Set[IntMap[BoolVal]] = {
     if (f.isLeaf) {
       if (f.isTrue) {
         Set(termSoFar)
       } else {
-        Set(Map.empty)
+        Set(IntMap.empty)
       }
     } else {
       val x = f.getVariable
-      val lowRes = collectTerms(f.getLow, vars, termSoFar.updated(x, 0))
-      val highRes = collectTerms(f.getHigh, vars, termSoFar.updated(x, 1))
+      val lowRes = collectTerms(f.getLow, vars, termSoFar.updated(x, BoolVal.False))
+      val highRes = collectTerms(f.getHigh, vars, termSoFar.updated(x, BoolVal.True))
 
       lowRes ++ highRes
     }
@@ -267,15 +276,15 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * size (# of "don't cares") 0 and those with larger
     * size.
     */
-  private def collectPrimeImplicants(size0: Set[(Map[Int, Int], Int)], larger: Set[(Map[Int, Int], Int)]): Set[Map[Int, Int]] = {
+  private def collectPrimeImplicants(size0: Set[(IntMap[BoolVal], Int)], larger: Set[(IntMap[BoolVal], Int)]): Set[IntMap[BoolVal]] = {
     //The min terms with the current size
-    var thisLevel: mutable.Set[(Map[Int, Int], Int)] = mutable.Set.empty
+    var thisLevel: mutable.Set[(IntMap[BoolVal], Int)] = mutable.Set.empty
     for (s <- size0) {
       thisLevel.add(s)
     }
-    var nextLevel: mutable.Set[(Map[Int, Int], Int)] = mutable.Set.empty
+    var nextLevel: mutable.Set[(IntMap[BoolVal], Int)] = mutable.Set.empty
     var currentSize = 0
-    val primeImplicants: mutable.Set[Map[Int, Int]] = mutable.Set.empty
+    val primeImplicants: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
 
     while (thisLevel.nonEmpty) {
       //Compare all pairs of terms on this level to see
@@ -327,7 +336,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * one variable where their values differ and returns
     * the merged term if so.
     */
-  private def offByOne(i: Map[Int, Int], j: Map[Int, Int]): Map[Int, Int] = {
+  private def offByOne(i: IntMap[BoolVal], j: IntMap[BoolVal]): IntMap[BoolVal] = {
     var eqSoFar = true
     var changedVar: Int = -1
 
@@ -337,15 +346,15 @@ final class BddFormulaAlg extends BoolAlg[DD] {
           eqSoFar = false
           changedVar = x
         } else {
-          return Map.empty
+          return IntMap.empty
         }
       }
     }
 
     if (eqSoFar) {
-      Map.empty
+      IntMap.empty
     } else {
-      i.updated(changedVar, 2)
+      i.updated(changedVar, BoolVal.DontCare)
     }
   }
 
@@ -353,11 +362,11 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * Finds a small cover for the given min terms
     * The cover is not minimal, but greedy
     */
-  private def findCover(minTerms: Set[(Map[Int, Int], Int)], primeImplicants: Set[Map[Int, Int]]): Set[Map[Int, Int]] = {
-    val cover: mutable.Set[Map[Int, Int]] = mutable.Set.empty
+  private def findCover(minTerms: Set[(IntMap[BoolVal], Int)], primeImplicants: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
+    val cover: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
 
     //For each min term find the PIs that cover it
-    val coverMap: mutable.Map[Map[Int, Int], Set[Map[Int, Int]]] = mutable.Map.empty
+    val coverMap: mutable.Map[IntMap[BoolVal], Set[IntMap[BoolVal]]] = mutable.Map.empty
     for ((term, _) <- minTerms) {
       val coveredBy = canBeCoveredBy(term, primeImplicants)
       coverMap.update(term, coveredBy)
@@ -372,7 +381,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
       cover.add(m.head)
 
       //Remove the covered min terms from the cover map
-      val removeTerms = coverMap.foldLeft(Set.empty[Map[Int, Int]])((acc, termCover) => {
+      val removeTerms = coverMap.foldLeft(Set.empty[IntMap[BoolVal]])((acc, termCover) => {
         val t0 = termCover._1
         val m0 = termCover._2
         acc ++ (if (m0.contains(m.head)) Set(t0) else Set.empty)
@@ -393,7 +402,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
       cover.add(toAdd)
 
       //Remove the covered min terms from the cover map
-      val removeTerms = coverMap.foldLeft(Set.empty[Map[Int, Int]])((acc, termCover) => {
+      val removeTerms = coverMap.foldLeft(Set.empty[IntMap[BoolVal]])((acc, termCover) => {
         val t0 = termCover._1
         val m0 = termCover._2
         acc ++ (if (m0.contains(toAdd)) Set(t0) else Set.empty)
@@ -411,7 +420,7 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * terms. This is a greedy approach and may not
     * lead to a minimal cover
     */
-  private def findBestPI(coverMap: Map[Map[Int, Int], Set[Map[Int, Int]]], primeImplicants: Set[Map[Int, Int]]): Map[Int, Int] = {
+  private def findBestPI(coverMap: Map[IntMap[BoolVal], Set[IntMap[BoolVal]]], primeImplicants: Set[IntMap[BoolVal]]): IntMap[BoolVal] = {
     var bestSoFar = coverMap.head._2.head
     var bestCoverNumber = 0
 
@@ -435,14 +444,14 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     * Finds all the prime implicants that can cover
     * a min term and returns them in a set
     */
-  private def canBeCoveredBy(term: Map[Int, Int], primeImplicants: Set[Map[Int, Int]]): Set[Map[Int, Int]] = {
-    val coveredBy = mutable.Set.empty[Map[Int, Int]]
+  private def canBeCoveredBy(term: IntMap[BoolVal], primeImplicants: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
+    val coveredBy = mutable.Set.empty[IntMap[BoolVal]]
     for (pi <- primeImplicants) {
       //If any variable is not covered (either by the same
       // value or a "don't care"), the PI does not cover the term
       var isCover = true
       for ((k, v) <- term) {
-        if (!(pi(k) == 2 || pi(k) == v)) {
+        if (!(pi(k) == BoolVal.DontCare || pi(k) == v)) {
           isCover = false
         }
       }
