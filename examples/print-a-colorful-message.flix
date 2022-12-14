@@ -12,7 +12,7 @@ def main(): Unit \ IO =
             Console.cyan("f") :: Console.greenBright("u") :: Console.blueBright("l") ::
             Console.black(" message.") :: Nil;
   let s5 = List.map(s -> Console.bgWhite(s), s4);
-  List.forEach(s -> print(s), s5);
+  List.forEach(s -> Console.print(s), s5);
   println("");
 
   let s6 = Console.bold("This message is bold.");
