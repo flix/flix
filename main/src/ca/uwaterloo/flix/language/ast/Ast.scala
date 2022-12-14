@@ -536,9 +536,14 @@ object Ast {
   case class OpSymUse(sym: Symbol.OpSym, loc: SourceLocation)
 
   /**
-    * Represents a use of an enum case.
+    * Represents a use of an enum case sym.
     */
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of a class sym.
+    */
+  case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
 
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.

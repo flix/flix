@@ -415,9 +415,8 @@ object Resolver {
           val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
           mapN(defsVal) {
             case defs =>
-              // TODO NS-REFACTOR remove Instance sym
-              val sym = Symbol.freshInstanceSym(clazz.sym, clazz0.loc)
-              ResolvedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+              val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
+              ResolvedAst.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
   }
@@ -3102,7 +3101,6 @@ object Resolver {
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
     case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
-    case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
   }
 
   /**
@@ -3352,7 +3350,7 @@ object Resolver {
 
     def addTypeAlias(alias: ResolvedAst.TypeAlias): SymbolTable = copy(typeAliases = typeAliases + (alias.sym -> alias))
 
-    def addInstance(inst: ResolvedAst.Instance): SymbolTable = copy(instances = instances + (inst.sym.clazz -> inst))
+    def addInstance(inst: ResolvedAst.Instance): SymbolTable = copy(instances = instances + (inst.clazz.sym -> inst))
 
     def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(

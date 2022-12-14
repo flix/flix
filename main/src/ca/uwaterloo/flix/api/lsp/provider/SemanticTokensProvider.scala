@@ -52,7 +52,7 @@ object SemanticTokensProvider {
     //
     val instanceTokens = root.instances.values.flatMap {
       case instances => instances.flatMap {
-        case instance if include(uri, instance.sym.loc) => visitInstance(instance)
+        case instance if include(uri, instance.clazz.loc) => visitInstance(instance)
         case _ => Nil
       }
     }
