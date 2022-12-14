@@ -84,7 +84,7 @@ object Namer {
     case decl: WeededAst.Declaration.Def => visitDef(decl, ns0)
     case decl: WeededAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: WeededAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
-    case decl: WeededAst.Declaration.Effect => visitEffect(decl, Map.empty, ns0)
+    case decl: WeededAst.Declaration.Effect => visitEffect(decl, ns0)
     case decl: WeededAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
   }
 
@@ -114,7 +114,6 @@ object Namer {
 
   private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) =>
-      // reset the uenv
       val table1 = fold(decls, table0) {
         case (table, d) => tableDecl(d, table)
       }
@@ -122,7 +121,6 @@ object Namer {
 
     case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      // reset the uenv inside the class
       flatMapN(table1Val) {
         case table1 => fold(sigs, table1) {
           case (table, d) => tableDecl(d, table)
@@ -146,7 +144,6 @@ object Namer {
 
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
-      // reset the uenv inside the effect
       flatMapN(table1Val) {
         case table1 => fold(ops, table1) {
           case (table, d) => tableDecl(d, table)
@@ -254,7 +251,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given constraint `c0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given constraint `c0`.
     */
   private def visitConstraint(c0: WeededAst.Constraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Constraint(h, bs, loc) =>
@@ -290,11 +287,9 @@ object Namer {
       // Compute the type parameters.
       val tparams = getTypeParams(tparams0)
 
-      val tenv = tparams.tparams.map(kv => kv.name.name -> kv.sym).toMap
-
       val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
-      val casesVal = traverse(cases0)(visitCase(_, sym, tenv))
+      val casesVal = traverse(cases0)(visitCase(_, sym))
 
       mapN(annVal, casesVal) {
         case (ann, cases) =>
@@ -309,7 +304,7 @@ object Namer {
   /**
     * Performs naming on the given enum case.
     */
-  private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym, tenv0: Map[String, Symbol.UnkindedTypeVarSym])(implicit flix: Flix): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
+  private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
     case WeededAst.Case(ident, tpe0) =>
       mapN(visitType(tpe0)) {
         case tpe =>
@@ -383,7 +378,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given signature declaration `sig` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
     case WeededAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, purAndEff0, tconstrs0, loc) =>
@@ -414,7 +409,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`, with type constraints `tconstrs`.
+    * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, loc) =>
@@ -447,15 +442,15 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given effect `eff0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given effect `eff0`.
     */
-  private def visitEffect(eff0: WeededAst.Declaration.Effect, tenv0: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
+  private def visitEffect(eff0: WeededAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
     case WeededAst.Declaration.Effect(doc, ann0, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
 
       val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
-      val opsVal = traverse(ops0)(visitOp(_, tenv0, ns0, sym))
+      val opsVal = traverse(ops0)(visitOp(_, ns0, sym))
 
       mapN(annVal, opsVal) {
         case (ann, ops) => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
@@ -463,9 +458,9 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given effect operation `op0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given effect operation `op0`.
     */
-  private def visitOp(op0: WeededAst.Declaration.Op, tenv: Map[String, Symbol.UnkindedTypeVarSym], ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
+  private def visitOp(op0: WeededAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
     case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -493,7 +488,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Performs naming on the given expression `exp0`.
     */
   // TODO NS-REFACTOR can remove ns0 too?
   private def visitExp(exp0: WeededAst.Expression, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
@@ -1006,47 +1001,7 @@ object Namer {
   }
 
   /**
-    * Names the given pattern `pat0` under the given environments `env0` and `uenv0`.
-    *
-    * Every variable in the pattern must be bound by the environment.
-    */
-  private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit flix: Flix): NamedAst.Pattern = {
-    def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
-      case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
-      case WeededAst.Pattern.Var(ident, loc) =>
-        val sym = env0(ident.name)
-        NamedAst.Pattern.Var(sym, loc)
-      case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
-
-      case WeededAst.Pattern.Tag(enumOpt, tag, pat, loc) =>
-        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), loc)
-
-      case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, loc)
-
-      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, loc)
-      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-        case None =>
-          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
-        case Some(value) =>
-          val sym = env0(value.name)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, loc)
-      }
-      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-        case None =>
-          val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
-        case Some(value) =>
-          val sym = env0(value.name)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, loc)
-      }
-    }
-
-    visit(pat0)
-  }
-
-  /**
-    * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Names the given head predicate `head`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.Atom(pred, den, terms, loc) =>
@@ -1056,7 +1011,7 @@ object Namer {
   }
 
   /**
-    * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
+    * Names the given body predicate `body`.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
@@ -1076,7 +1031,7 @@ object Namer {
   }
 
   /**
-    * Names the given type `tpe` under the given environments `uenv0` and `tenv0`.
+    * Names the given type `tpe`.
     */
   private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
     // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
@@ -1540,7 +1495,7 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given formal parameters `fparam0` under the given environments `uenv0` and `tenv0`.
+    * Performs naming on the given formal parameters `fparam0`.
     */
   private def getFormalParams(fparams0: List[WeededAst.FormalParam])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam)
