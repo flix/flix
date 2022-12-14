@@ -938,20 +938,19 @@ object Kinder {
     */
   private def visitConstraint(constraint0: ResolvedAst.Constraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Constraint, KindError] = constraint0 match {
     case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
-      val cparamsVal = traverse(cparams0)(visitConstraintParam(_, kenv, senv, taenv, root))
+      val cparams = cparams0.map(visitConstraintParam)
       val headVal = visitHeadPredicate(head0, kenv, senv, taenv, henv, root)
       val bodyVal = traverse(body0)(visitBodyPredicate(_, kenv, senv, taenv, henv, root))
-      mapN(cparamsVal, headVal, bodyVal) {
-        case (cparams, head, body) => KindedAst.Constraint(cparams, head, body, loc)
+      mapN(headVal, bodyVal) {
+        case (head, body) => KindedAst.Constraint(cparams, head, body, loc)
       }
   }
 
   /**
     * Performs kinding on the given constraint param under the given kind environment.
     */
-  private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.ConstraintParam, KindError] = cparam0 match {
-    // TODO NS-REFACTOR no validation needed
-    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc).toSuccess
+  private def visitConstraintParam(cparam0: ResolvedAst.ConstraintParam)(implicit flix: Flix): KindedAst.ConstraintParam = cparam0 match {
+    case ResolvedAst.ConstraintParam(sym, loc) => KindedAst.ConstraintParam(sym, loc)
   }
 
   /**
@@ -1023,13 +1022,10 @@ object Kinder {
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
     case UnkindedType.Cst(cst, loc) =>
-      flatMapN(visitTypeConstructor(cst, root, loc)) {
-        tycon =>
-          val kind = tycon.kind
-          unify(expectedKind, kind) match {
-            case Some(_) => Type.Cst(tycon, loc).toSuccess
-            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
-          }
+      val kind = cst.kind
+      unify(expectedKind, kind) match {
+        case Some(_) => Type.Cst(cst, loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
     case UnkindedType.Apply(t10, t20, loc) =>
       val t2Val = visitType(t20, Kind.Wild, kenv, senv, taenv, root)
@@ -1098,14 +1094,6 @@ object Kinder {
       mapN(visitType(tpe0, classKind, kenv, senv, taenv, root)) {
         tpe => Ast.TypeConstraint(head, tpe, loc)
       }
-  }
-
-  /**
-    * Performs kinding on the given type constructor under the given kind environment.
-    */
-  private def visitTypeConstructor(tycon: TypeConstructor, root: ResolvedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[TypeConstructor, KindError] = tycon match {
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.", loc)
-    case t => t.toSuccess
   }
 
   /**
@@ -1230,6 +1218,9 @@ object Kinder {
       }
   }
 
+  /**
+    * Performs kinding on the given JVM method.
+    */
   private def visitJvmMethod(method: ResolvedAst.JvmMethod, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix) = method match {
     case ResolvedAst.JvmMethod(_, fparams, exp, tpe0, _, _) =>
       val fparamsVal = traverse(fparams)(visitFormalParam(_, kenv, senv, taenv, root))
@@ -1307,8 +1298,7 @@ object Kinder {
       }
 
     case UnkindedType.Cst(cst, loc) =>
-      val tyconKind = getTyconKind(cst, root, loc)
-      val args = Kind.kindArgs(tyconKind)
+      val args = Kind.kindArgs(cst.kind)
 
       Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
@@ -1452,14 +1442,6 @@ object Kinder {
   private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
-  }
-
-  /**
-    * Gets the kind associated with the type constructor.
-    */
-  private def getTyconKind(tycon: TypeConstructor, root: ResolvedAst.Root, loc: SourceLocation)(implicit flix: Flix): Kind = tycon match {
-    case _: TypeConstructor.Enum => throw InternalCompilerException("Unexpected kinded enum.", loc)
-    case t => t.kind
   }
 
   /**
