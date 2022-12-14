@@ -219,8 +219,8 @@ object Kinder {
     * Performs kinding on the given instance.
     */
   private def visitInstance(inst: ResolvedAst.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
-    case ResolvedAst.Instance(doc, ann0, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
-      val kind = getClassKind(root.classes(sym.clazz))
+    case ResolvedAst.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, ns, loc) =>
+      val kind = getClassKind(root.classes(clazz.sym))
 
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
       flatMapN(kenvVal) {
@@ -230,7 +230,7 @@ object Kinder {
           val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, Map.empty, taenv, root))
           val defsVal = traverse(defs0)(visitDef(_, kenv, taenv, root))
           mapN(annVal, tpeVal, tconstrsVal, defsVal) {
-            case (ann, tpe, tconstrs, defs) => KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
+            case (ann, tpe, tconstrs, defs) => KindedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc)
           }
       }
   }

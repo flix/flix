@@ -160,7 +160,7 @@ object Lowering {
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.sym.clazz -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.clazz.sym -> kv).toMap
     val newEnums = enums.map(kv => kv.sym -> kv).toMap
     val newEffects = effects.map(kv => kv.sym -> kv).toMap
     val newAliases = aliases.map(kv => kv.sym -> kv).toMap
