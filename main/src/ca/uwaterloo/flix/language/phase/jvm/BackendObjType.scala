@@ -1008,13 +1008,19 @@ object BackendObjType {
       RETURN()
     ))
 
-    def SpawnMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
-      NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-      invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
+    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
+      (
+        if (flix.options.xvirtualthreads) {
+          ALOAD(1) ~ INVOKESTATIC(Thread.StartVirtualThreadMethod)
+        } else {
+          NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
+          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
+          DUP() ~ INVOKEVIRTUAL(Thread.StartMethod)
+        }
+      ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
         INVOKEVIRTUAL(ArrayList.AddMethod) ~ POP() ~
-        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
         RETURN()
       }
     ))
@@ -1136,5 +1142,8 @@ object BackendObjType {
 
     def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "start",
       MethodDescriptor.NothingToVoid, None)
+
+    def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
+      mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
   }
 }
