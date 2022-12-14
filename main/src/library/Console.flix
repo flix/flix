@@ -74,7 +74,7 @@ namespace Console {
     ///
     /// See also `System/StdOut.println`.
     ///
-    pub def printLine(x: a): Unit \ IO with ToString[a] =
+    pub def println(x: a): Unit \ IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
         import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
         console() |> Option.forEach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
