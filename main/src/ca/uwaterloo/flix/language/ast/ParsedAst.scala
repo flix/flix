@@ -906,14 +906,6 @@ object ParsedAst {
     case class ArraySlice(base: ParsedAst.Expression, beginIndex: Option[ParsedAst.Expression], endIndex: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Nil Expression (of list).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Cons expression (of list).
       *
       * @param exp1 the head of the list.
@@ -1228,7 +1220,6 @@ object ParsedAst {
       case Pattern.Array(sp1, _, _) => sp1
       case Pattern.ArrayHeadSpread(sp1, _, _, _) => sp1
       case Pattern.ArrayTailSpread(sp1, _, _, _) => sp1
-      case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
     }
 
@@ -1280,14 +1271,6 @@ object ParsedAst {
     case class ArrayTailSpread(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
 
     case class ArrayHeadSpread(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Nil Pattern (of list).
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Cons Pattern (of list).
