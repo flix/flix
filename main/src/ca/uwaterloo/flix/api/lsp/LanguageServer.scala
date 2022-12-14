@@ -208,102 +208,100 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = root match {
-    case None => Nil
-    case Some(actualRoot) => request match {
-      case Request.AddUri(id, uri, src) =>
-        addSourceCode(uri, src)
-        ("id" -> id) ~ ("status" -> "success")
+  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
 
-      case Request.RemUri(id, uri) =>
-        remSourceCode(uri)
-        ("id" -> id) ~ ("status" -> "success")
+    case Request.AddUri(id, uri, src) =>
+      addSourceCode(uri, src)
+      ("id" -> id) ~ ("status" -> "success")
 
-      case Request.AddPkg(id, uri, data) =>
-        // TODO: Possibly move into Input class?
-        val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
-        var entry = inputStream.getNextEntry
-        while (entry != null) {
-          val name = entry.getName
-          if (name.endsWith(".flix")) {
-            val bytes = StreamOps.readAllBytes(inputStream)
-            val src = new String(bytes, Charset.forName("UTF-8"))
-            addSourceCode(s"$uri/$name", src)
-          }
-          entry = inputStream.getNextEntry
+    case Request.RemUri(id, uri) =>
+      remSourceCode(uri)
+      ("id" -> id) ~ ("status" -> "success")
+
+    case Request.AddPkg(id, uri, data) =>
+      // TODO: Possibly move into Input class?
+      val inputStream = new ZipInputStream(new ByteArrayInputStream(data))
+      var entry = inputStream.getNextEntry
+      while (entry != null) {
+        val name = entry.getName
+        if (name.endsWith(".flix")) {
+          val bytes = StreamOps.readAllBytes(inputStream)
+          val src = new String(bytes, Charset.forName("UTF-8"))
+          addSourceCode(s"$uri/$name", src)
         }
-        inputStream.close()
+        entry = inputStream.getNextEntry
+      }
+      inputStream.close()
 
-        ("id" -> id) ~ ("status" -> "success")
+      ("id" -> id) ~ ("status" -> "success")
 
-      case Request.RemPkg(id, uri) =>
-        // clone is necessary because `remSourceCode` modifies `sources`
-        for ((file, _) <- sources.clone()
-             if file.startsWith(uri)) {
-          remSourceCode(file)
-        }
-        ("id" -> id) ~ ("status" -> "success")
+    case Request.RemPkg(id, uri) =>
+      // clone is necessary because `remSourceCode` modifies `sources`
+      for ((file, _) <- sources.clone()
+           if file.startsWith(uri)) {
+        remSourceCode(file)
+      }
+      ("id" -> id) ~ ("status" -> "success")
 
-      case Request.AddJar(id, uri) =>
-        flix.addJar(uri)
-        ("id" -> id) ~ ("status" -> "success")
+    case Request.AddJar(id, uri) =>
+      flix.addJar(uri)
+      ("id" -> id) ~ ("status" -> "success")
 
-      case Request.RemJar(id, uri) =>
-        // No-op (there is no easy way to remove a Jar from the JVM)
-        ("id" -> id) ~ ("status" -> "success")
+    case Request.RemJar(id, uri) =>
+      // No-op (there is no easy way to remove a Jar from the JVM)
+      ("id" -> id) ~ ("status" -> "success")
 
-      case Request.Version(id) => processVersion(id)
+    case Request.Version(id) => processVersion(id)
 
-      case Request.Shutdown(id) => processShutdown()
+    case Request.Shutdown(id) => processShutdown()
 
-      case Request.Check(id) => processCheck(id)
+    case Request.Check(id) => processCheck(id)
 
-      case Request.Codelens(id, uri) =>
-        if (current)
-          ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, actualRoot)
-        else
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+    case Request.Codelens(id, uri) =>
+      if (current)
+        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, actualRoot)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
-      case Request.Complete(id, uri, pos) =>
-        ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, actualRoot)
+    case Request.Complete(id, uri, pos) =>
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, actualRoot)
 
-      case Request.Highlight(id, uri, pos) =>
-        ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, actualRoot)
+    case Request.Highlight(id, uri, pos) =>
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, actualRoot)
 
-      case Request.Hover(id, uri, pos) =>
-        ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, actualRoot, flix)
+    case Request.Hover(id, uri, pos) =>
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, actualRoot, flix)
 
-      case Request.Goto(id, uri, pos) =>
-        ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, actualRoot)
+    case Request.Goto(id, uri, pos) =>
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, actualRoot)
 
-      case Request.Implementation(id, uri, pos) =>
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(actualRoot).map(_.toJSON))
+    case Request.Implementation(id, uri, pos) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(actualRoot).map(_.toJSON))
 
-      case Request.Rename(id, newName, uri, pos) =>
-        ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, actualRoot)
+    case Request.Rename(id, newName, uri, pos) =>
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, actualRoot)
 
-      case Request.DocumentSymbols(id, uri) =>
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(actualRoot).map(_.toJSON))
+    case Request.DocumentSymbols(id, uri) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(actualRoot).map(_.toJSON))
 
-      case Request.WorkspaceSymbols(id, query) =>
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(actualRoot).map(_.toJSON))
+    case Request.WorkspaceSymbols(id, query) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(actualRoot).map(_.toJSON))
 
-      case Request.Uses(id, uri, pos) =>
-        ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, actualRoot)
+    case Request.Uses(id, uri, pos) =>
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, actualRoot)
 
-      case Request.SemanticTokens(id, uri) =>
-        if (current)
-          ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, actualRoot)
-        else
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
+    case Request.SemanticTokens(id, uri) =>
+      if (current)
+        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, actualRoot)
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
-      case Request.InlayHint(id, uri, range) =>
-        if (current)
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, actualRoot, flix).map(_.toJSON))
-        else
-          ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+    case Request.InlayHint(id, uri, range) =>
+      if (current)
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, actualRoot, flix).map(_.toJSON))
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
-    }
   }
 
   /**
