@@ -1246,7 +1246,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      Tag | Lit | Tuple | Var
+      Lit | Var | Tag | Tuple
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {

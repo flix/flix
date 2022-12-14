@@ -498,11 +498,8 @@ object Namer {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(loc).toSuccess
 
-    case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
-
-    case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
-      NamedAst.Expression.VarOrDefOrSig(ident, loc).toSuccess
+    case WeededAst.Expression.Ambiguous(name, loc) =>
+      NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
@@ -635,19 +632,6 @@ object Namer {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
-      }
-
-    case WeededAst.Expression.Tag(enumOpt, tag, expOpt, loc) =>
-
-      expOpt match {
-        case None =>
-          // Case 1: The tag does not have an expression. Nothing more to be done.
-          NamedAst.Expression.Tag(enumOpt, tag, None, loc).toSuccess
-        case Some(exp) =>
-          // Case 2: The tag has an expression. Perform naming on it.
-          visitExp(exp, ns0) map {
-            case e => NamedAst.Expression.Tag(enumOpt, tag, Some(e), loc)
-          }
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
@@ -977,8 +961,8 @@ object Namer {
 
     case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
-    case WeededAst.Pattern.Tag(enumOpt, tag, pat, loc) =>
-      NamedAst.Pattern.Tag(enumOpt, tag, visitPattern(pat), loc)
+    case WeededAst.Pattern.Tag(qname, pat, loc) =>
+      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visitPattern, loc)
 
@@ -1229,7 +1213,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
-    case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
+    case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) =>

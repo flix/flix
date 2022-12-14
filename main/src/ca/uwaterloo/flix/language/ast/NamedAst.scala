@@ -80,9 +80,7 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
-    case class VarOrDefOrSig(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Expression
-
-    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -119,8 +117,6 @@ object NamedAst {
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
-
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -234,7 +230,7 @@ object NamedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class Tag(qname: Name.QName, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tuple(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 

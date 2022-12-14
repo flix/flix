@@ -632,6 +632,36 @@ object Resolver {
       }
 
       /**
+        * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+        */
+      def visitTag(caze: NamedAst.Declaration.Case, loc: SourceLocation): ResolvedAst.Expression = {
+        // Check if the tag value has Unit type.
+        if (isUnitType(caze.tpe)) {
+          // Case 1: The tag value has Unit type. Construct the Unit expression.
+          val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
+          ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, loc), e, loc)
+        } else {
+          // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
+          // If the tag is `Some` we construct the lambda: x -> Some(x).
+
+          // Construct a fresh symbol for the formal parameter.
+          val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
+
+          // Construct the formal parameter for the fresh symbol.
+          val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
+
+          // Construct a variable expression for the fresh symbol.
+          val varExp = ResolvedAst.Expression.Var(freshVar, loc)
+
+          // Construct the tag expression on the fresh symbol expression.
+          val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, loc), varExp, loc)
+
+          // Assemble the lambda expressions.
+          ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
+        }
+      }
+
+      /**
         * Resolve the application expression, performing currying over the subexpressions.
         */
       def visitApply(exp: NamedAst.Expression.Apply, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
@@ -682,6 +712,18 @@ object Resolver {
         }
       }
 
+      /**
+        * Resolves the tag application.
+        */
+      def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        val esVal = traverse(exps)(visitExp(_, env0, region))
+        mapN(esVal) {
+          case es =>
+            val exp = ResolvedAst.Expression.Tuple(es, outerLoc)
+            ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+        }
+      }
+
 
       /**
         * Local visitor.
@@ -691,18 +733,12 @@ object Resolver {
         case NamedAst.Expression.Wild(loc) =>
           ResolvedAst.Expression.Wild(loc).toSuccess
 
-        case NamedAst.Expression.VarOrDefOrSig(ident, loc) =>
-          mapN(lookupVarOrDefOrSig(Name.mkQName(ident), env0, ns0, root)) {
-            case VarOrDefOrSig.Def(defn) => visitDef(defn, loc)
-            case VarOrDefOrSig.Sig(sig) => visitSig(sig, loc)
-            case VarOrDefOrSig.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
-          }
-
-        case NamedAst.Expression.DefOrSig(qname, loc) =>
-          mapN(lookupVarOrDefOrSig(qname, env0, ns0, root)) {
-            case VarOrDefOrSig.Def(defn) => visitDef(defn, loc)
-            case VarOrDefOrSig.Sig(sig) => visitSig(sig, loc)
-            case VarOrDefOrSig.Var(_) => throw InternalCompilerException("unexpected variable", loc)
+        case NamedAst.Expression.Ambiguous(name, loc) =>
+          mapN(lookupTerm(name, env0, ns0, root)) {
+            case ResolvedTerm.Def(defn) => visitDef(defn, loc)
+            case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
+            case ResolvedTerm.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
+            case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -736,18 +772,12 @@ object Resolver {
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
 
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.DefOrSig(qname, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupVarOrDefOrSig(qname, env0, ns0, root)) {
-            case VarOrDefOrSig.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
-            case VarOrDefOrSig.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
-            case VarOrDefOrSig.Var(_) => throw InternalCompilerException("unexpected var", innerLoc)
-          }
-
-        case app@NamedAst.Expression.Apply(NamedAst.Expression.VarOrDefOrSig(ident, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupVarOrDefOrSig(Name.mkQName(ident), env0, ns0, root)) {
-            case VarOrDefOrSig.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
-            case VarOrDefOrSig.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
-            case VarOrDefOrSig.Var(_) => visitApply(app, env0, region)
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.Ambiguous(qname, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupTerm(qname, env0, ns0, root)) {
+            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Var(_) => visitApply(app, env0, region)
+            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -882,51 +912,6 @@ object Resolver {
           mapN(expsVal, rulesVal) {
             case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
           }
-
-        case NamedAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
-          case None =>
-            // Case 1: The tag does not have an expression.
-            // Either it is implicitly Unit or the tag is used as a function.
-
-            // Lookup the enum to determine the type of the tag.
-            lookupTag(enum, tag, env0, ns0, root) map {
-              case caze =>
-
-                // Check if the tag value has Unit type.
-                if (isUnitType(caze.tpe)) {
-                  // Case 1.1: The tag value has Unit type. Construct the Unit expression.
-                  val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
-                  ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), e, loc)
-                } else {
-                  // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
-                  // If the tag is `Some` we construct the lambda: x -> Some(x).
-
-                  // Construct a fresh symbol for the formal parameter.
-                  val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
-
-                  // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
-
-                  // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
-
-                  // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, tag.loc), varExp, loc)
-
-                  // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
-                }
-            }
-          case Some(exp) =>
-            // Case 2: The tag has an expression. Perform resolution on it.
-            val cVal = lookupTag(enum, tag, env0, ns0, root)
-            val eVal = visitExp(exp, env0, region)
-            mapN(cVal, eVal) {
-              case (c, e) =>
-
-                ResolvedAst.Expression.Tag(Ast.CaseSymUse(c.sym, tag.loc), e, loc)
-            }
-        }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
           val esVal = traverse(elms)(e => visitExp(e, env0, region))
@@ -1419,12 +1404,12 @@ object Resolver {
 
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
-          val cVal = lookupTag(enum, tag, env, ns0, root)
+        case NamedAst.Pattern.Tag(qname, pat, loc) =>
+          val cVal = lookupTag(qname, env, ns0, root)
           val pVal = visit(pat)
           mapN(cVal, pVal) {
             case (c, p) =>
-              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, tag.loc), p, loc)
+              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1467,12 +1452,12 @@ object Resolver {
 
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
-          val cVal = lookupTag(enum, tag, env, ns0, root)
+        case NamedAst.Pattern.Tag(qname, pat, loc) =>
+          val cVal = lookupTag(qname, env, ns0, root)
           val pVal = visit(pat)
           mapN(cVal, pVal) {
             case (c, p) =>
-              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, tag.loc), p, loc)
+              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1782,26 +1767,27 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupVarOrDefOrSig(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[VarOrDefOrSig, ResolutionError] = {
+  private def lookupTerm(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedTerm, ResolutionError] = {
     // first look in the local env
     val resolutions = tryLookupName(qname, env, ns0, root)
 
     resolutions.collectFirst {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) =>
         if (isDefAccessible(defn, ns0)) {
-          VarOrDefOrSig.Def(defn).toSuccess
+          ResolvedTerm.Def(defn).toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) =>
         if (isSigAccessible(sig, ns0)) {
-          VarOrDefOrSig.Sig(sig).toSuccess
+          ResolvedTerm.Sig(sig).toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Var(sym) => VarOrDefOrSig.Var(sym).toSuccess
-
-
+      case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
+        ResolvedTerm.Tag(caze).toSuccess
+        // MATT check accessible
+      case Resolution.Var(sym) => ResolvedTerm.Var(sym).toSuccess
     }.getOrElse(ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure)
   }
 
@@ -1839,129 +1825,126 @@ object Resolver {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupTag(qnameOpt: Option[Name.QName], tag: Name.Ident, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
-    // Determine whether the name is qualified.
-    qnameOpt match {
-      case None =>
-        // Case 1: The name is unqualified.
+  def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified.
 
-        // Case 1.1. The name is in the env.
-        env(tag.name) collectFirst {
-          case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
-            return caze.toSuccess
+      // Case 1.1. The name is in the env.
+      env(qname.ident.name) collectFirst {
+        case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
+          return caze.toSuccess
+      }
+
+      // Find all matching enums in the current namespace.
+      val namespaceMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
+      root.symbols.getOrElse(ns0, Map.empty).collect {
+        case (enumName, enum: NamedAst.Declaration.Enum) =>
+          for (caze <- enum.cases) {
+            if (qname.ident.name == caze.sym.name) {
+              namespaceMatches += ((enum, caze))
+            }
+          }
+      }
+
+      // Case 1.1.1: Exact match found in the namespace.
+      if (namespaceMatches.size == 1) {
+        val (enum, caze) = namespaceMatches.head
+        return getEnumAccessibility(enum, ns0) match {
+          case EnumAccessibility.Accessible => caze.toSuccess
+          case EnumAccessibility.Opaque =>
+            ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
+          case EnumAccessibility.Inaccessible =>
+            ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
         }
+      }
 
-        // Find all matching enums in the current namespace.
-        val namespaceMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
-        root.symbols.getOrElse(ns0, Map.empty).collect {
-          case (enumName, enum: NamedAst.Declaration.Enum) =>
-            for (caze <- enum.cases) {
-              if (tag.name == caze.sym.name) {
-                namespaceMatches += ((enum, caze))
+      // Case 1.1.2: Multiple matches found in the namespace.
+      if (namespaceMatches.size > 1) {
+        val locs = namespaceMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
+        return ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+      }
+
+      // Find all matching enums in the root namespace.
+      val globalMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
+      root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
+        case (enumName, enum: NamedAst.Declaration.Enum) =>
+          for (caze <- enum.cases) {
+            if (qname.ident.name == caze.sym.name) {
+              globalMatches += ((enum, caze))
+            }
+          }
+      }
+
+      // Case 1.2.1: Exact match found in the root namespace.
+      if (globalMatches.size == 1) {
+        val (enum, caze) = globalMatches.head
+        return getEnumAccessibility(enum, ns0) match {
+          case EnumAccessibility.Accessible => caze.toSuccess
+          case EnumAccessibility.Opaque =>
+            ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
+          case EnumAccessibility.Inaccessible =>
+            ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
+        }
+      }
+
+      // Case 1.2.2: Multiple matches found in the root namespace.
+      if (globalMatches.size > 1) {
+        val locs = globalMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
+        return ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+      }
+
+      // Case 1.2.3: No match found.
+      ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+
+    } else {
+      // Case 2: The name is qualified.
+
+      def lookupEnumInNs(ns: Name.NName): Option[NamedAst.Declaration.Enum] = {
+        root.symbols.get(ns).flatMap(_.get(qname.ident.name)).collect {
+          case e: NamedAst.Declaration.Enum => e
+        }
+      }
+
+      val enumOpt = if (qname.isUnqualified) {
+        // The name is unqualified (e.g. Option.None),
+        // First search the use env for the enum.
+        // then search the current namespace,
+        // if it's not found there, search the root namespace.
+        env(qname.ident.name).collectFirst {
+          case Resolution.Declaration(e: NamedAst.Declaration.Enum) => e
+        }.orElse {
+          lookupEnumInNs(ns0)
+        }.orElse {
+          lookupEnumInNs(Name.RootNS)
+        }
+      } else {
+        // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
+        lookupEnumInNs(qname.namespace)
+      }
+
+      enumOpt match {
+        case None =>
+          // Case 2.1: The enum does not exist.
+          ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
+        case Some(enum) =>
+          // Case 2.2: Enum declaration found. Look for the tag.
+          for (caze <- enum.cases) {
+            if (qname.ident.name == caze.sym.name) {
+              // Case 2.2.1: Tag found.
+              return getEnumAccessibility(enum, ns0) match {
+                case EnumAccessibility.Accessible => caze.toSuccess
+                case EnumAccessibility.Opaque =>
+                  ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
+                case EnumAccessibility.Inaccessible =>
+                  ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
               }
             }
-        }
-
-        // Case 1.1.1: Exact match found in the namespace.
-        if (namespaceMatches.size == 1) {
-          val (enum, caze) = namespaceMatches.head
-          return getEnumAccessibility(enum, ns0) match {
-            case EnumAccessibility.Accessible => caze.toSuccess
-            case EnumAccessibility.Opaque =>
-              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
-            case EnumAccessibility.Inaccessible =>
-              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
           }
-        }
 
-        // Case 1.1.2: Multiple matches found in the namespace.
-        if (namespaceMatches.size > 1) {
-          val locs = namespaceMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
-          return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
-        }
-
-        // Find all matching enums in the root namespace.
-        val globalMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
-        root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
-          case (enumName, enum: NamedAst.Declaration.Enum) =>
-            for (caze <- enum.cases) {
-              if (tag.name == caze.sym.name) {
-                globalMatches += ((enum, caze))
-              }
-            }
-        }
-
-        // Case 1.2.1: Exact match found in the root namespace.
-        if (globalMatches.size == 1) {
-          val (enum, caze) = globalMatches.head
-          return getEnumAccessibility(enum, ns0) match {
-            case EnumAccessibility.Accessible => caze.toSuccess
-            case EnumAccessibility.Opaque =>
-              ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
-            case EnumAccessibility.Inaccessible =>
-              ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
-          }
-        }
-
-        // Case 1.2.2: Multiple matches found in the root namespace.
-        if (globalMatches.size > 1) {
-          val locs = globalMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
-          return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
-        }
-
-        // Case 1.2.3: No match found.
-        ResolutionError.UndefinedTag(tag.name, ns0, tag.loc).toFailure
-
-      case Some(qname) =>
-        // Case 2: The name is qualified.
-
-        def lookupEnumInNs(ns: Name.NName): Option[NamedAst.Declaration.Enum] = {
-          root.symbols.get(ns).flatMap(_.get(qname.ident.name)).collect {
-            case e: NamedAst.Declaration.Enum => e
-          }
-        }
-
-        val enumOpt = if (qname.isUnqualified) {
-          // The name is unqualified (e.g. Option.None),
-          // First search the use env for the enum.
-          // then search the current namespace,
-          // if it's not found there, search the root namespace.
-          env(qname.ident.name).collectFirst {
-            case Resolution.Declaration(e: NamedAst.Declaration.Enum) => e
-          }.orElse {
-            lookupEnumInNs(ns0)
-          }.orElse {
-            lookupEnumInNs(Name.RootNS)
-          }
-        } else {
-          // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-          lookupEnumInNs(qname.namespace)
-        }
-
-        enumOpt match {
-          case None =>
-            // Case 2.1: The enum does not exist.
-            ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
-          case Some(enum) =>
-            // Case 2.2: Enum declaration found. Look for the tag.
-            for (caze <- enum.cases) {
-              if (tag.name == caze.sym.name) {
-                // Case 2.2.1: Tag found.
-                return getEnumAccessibility(enum, ns0) match {
-                  case EnumAccessibility.Accessible => caze.toSuccess
-                  case EnumAccessibility.Opaque =>
-                    ResolutionError.OpaqueEnum(enum.sym, ns0, tag.loc).toFailure
-                  case EnumAccessibility.Inaccessible =>
-                    ResolutionError.InaccessibleEnum(enum.sym, ns0, tag.loc).toFailure
-                }
-              }
-            }
-
-            // Case 2.2.2: No match found.
-            ResolutionError.UndefinedTag(tag.name, ns0, tag.loc).toFailure
-        }
+          // Case 2.2.2: No match found.
+          ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      }
     }
-
   }
 
   /**
@@ -3257,14 +3240,16 @@ object Resolver {
   /**
     * Union of variables, definitions, and signatures.
     */
-  private sealed trait VarOrDefOrSig
+  private sealed trait ResolvedTerm
 
-  private object VarOrDefOrSig {
-    case class Var(sym: Symbol.VarSym) extends VarOrDefOrSig
+  private object ResolvedTerm {
+    case class Var(sym: Symbol.VarSym) extends ResolvedTerm
 
-    case class Def(defn: NamedAst.Declaration.Def) extends VarOrDefOrSig
+    case class Def(defn: NamedAst.Declaration.Def) extends ResolvedTerm
 
-    case class Sig(sig: NamedAst.Declaration.Sig) extends VarOrDefOrSig
+    case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedTerm
+
+    case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedTerm
   }
 
   /**
