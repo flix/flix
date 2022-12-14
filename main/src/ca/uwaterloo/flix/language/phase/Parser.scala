@@ -730,14 +730,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew |
-        FNil | FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
+        FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
       def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
-        "_" ~ WS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
+        "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
       }
 
       def SomeType: Rule1[Option[ParsedAst.Type]] = rule {
@@ -753,7 +753,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ WS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
+        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
       }
     }
 
@@ -1116,10 +1116,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "[" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ "]" ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
-    def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
-      SP ~ keyword("Nil") ~ SP ~> ParsedAst.Expression.FNil
-    }
-
     def FAppend: Rule1[ParsedAst.Expression] = rule {
       FList ~ optional(optWS ~ SP ~ operatorX(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
     }
@@ -1272,7 +1268,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Lit | Tuple | Var
+      Tag | Lit | Tuple | Var
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -1289,10 +1285,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
-    }
-
-    def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
-      SP ~ keyword("Nil") ~ SP ~> ParsedAst.Pattern.FNil
     }
 
     def FList: Rule1[ParsedAst.Pattern] = rule {

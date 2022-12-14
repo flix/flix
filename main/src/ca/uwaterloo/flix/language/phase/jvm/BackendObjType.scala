@@ -38,7 +38,6 @@ sealed trait BackendObjType {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
     case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
-    case BackendObjType.Channel(_) => JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), mkName("Channel"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkName("Tuple", elms))
@@ -53,6 +52,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
+    case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -124,8 +124,6 @@ object BackendObjType {
   case object BigDecimal extends BackendObjType
 
   case object BigInt extends BackendObjType
-
-  case class Channel(tpe: BackendType) extends BackendObjType
 
   case class Lazy(tpe: BackendType) extends BackendObjType
 
@@ -983,6 +981,21 @@ object BackendObjType {
         DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
         INVOKESTATIC(Objects.HashMethod) ~
         IRETURN()
+    ))
+  }
+
+  case object Region extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
   }
 

@@ -83,13 +83,13 @@ object Instances {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, sym, tpe, _, _, ns, _) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
-        case _ if (sym.clazz.namespace) == ns.idents.map(_.name) => Nil
+        case _ if (clazz.sym.namespace) == ns.idents.map(_.name) => Nil
         // Case 3: Any type outside the class companion namespace and enum declaration namespace: orphan
-        case _ => List(InstanceError.OrphanInstance(tpe, sym, sym.loc))
+        case _ => List(InstanceError.OrphanInstance(tpe, clazz.sym, clazz.loc))
       }
     }
 
@@ -99,16 +99,16 @@ object Instances {
       * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, sym, tpe, _, _, _, _) => tpe match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
-        case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, sym, sym.loc))
+        case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc))
         case _: Type.Apply =>
           val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.Var], List.empty[InstanceError])) {
             // Case 1: Type variable
             case ((seen, errs), tvar: Type.Var) =>
               // Case 1.1 We've seen it already. Error.
               if (seen.contains(tvar))
-                (seen, List(InstanceError.DuplicateTypeVariableOccurrence(tvar, sym, sym.loc)))
+                (seen, List(InstanceError.DuplicateTypeVariableOccurrence(tvar, clazz.sym, clazz.loc)))
               // Case 1.2 We haven't seen it before. Add it to the list.
               else
                 (tvar :: seen, errs)
@@ -117,10 +117,10 @@ object Instances {
             // Case 3: False. Continue.
             case (acc, Type.Cst(TypeConstructor.False, _)) => acc
             // Case 4: Some other type. Error.
-            case ((seen, errs), _) => (seen, InstanceError.ComplexInstanceType(tpe, sym, sym.loc) :: errs)
+            case ((seen, errs), _) => (seen, InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc) :: errs)
           }
           errs0
-        case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, sym, sym.loc))
+        case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
       }
     }
 
@@ -131,8 +131,8 @@ object Instances {
       Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           List(
-            InstanceError.OverlappingInstances(inst1.sym.loc, inst2.sym.loc),
-            InstanceError.OverlappingInstances(inst2.sym.loc, inst1.sym.loc)
+            InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
+            InstanceError.OverlappingInstances(inst2.clazz.loc, inst1.clazz.loc)
           )
         case Err(_) => Nil
       }
@@ -154,14 +154,14 @@ object Instances {
       * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
       */
     def checkSigMatch(inst: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      val clazz = root.classes(inst.sym.clazz)
+      val clazz = root.classes(inst.clazz.sym)
 
       // Step 1: check that each signature has an implementation.
       val sigMatchVal = clazz.signatures.flatMap {
         sig =>
           (inst.defs.find(_.sym.name == sig.sym.name), sig.impl) match {
             // Case 1: there is no definition with the same name, and no default implementation
-            case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.sym.loc))
+            case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.clazz.loc))
             // Case 2: there is no definition with the same name, but there is a default implementation
             case (None, Some(_)) => Nil
             // Case 3: there is an implementation marked override, but no default implementation
@@ -208,8 +208,8 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, _, _, _) =>
-        val superClasses = root.classEnv(sym.clazz).superClasses
+      case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _) =>
+        val superClasses = root.classEnv(clazz.sym).superClasses
         superClasses flatMap {
           superClass =>
             // Find the instance of the superclass matching the type of this instance.
@@ -220,7 +220,7 @@ object Instances {
                   tconstr =>
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
                       case Validation.Failure(errors) => errors.map {
-                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, sym.loc)
+                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
                       case Validation.Success(_) => Nil
@@ -228,13 +228,13 @@ object Instances {
                 }
               case None =>
                 // Case 2: No instance matches. Error.
-                List(InstanceError.MissingSuperClassInstance(tpe, sym, superClass, sym.loc))
+                List(InstanceError.MissingSuperClassInstance(tpe, clazz.sym, superClass, clazz.loc))
             }
         }
     }
 
     def checkInstance(inst: TypedAst.Instance): List[InstanceError] = {
-      val isClassStable = inst.sym.clazz.loc.source.stable
+      val isClassStable = inst.clazz.loc.source.stable
       val isInstanceStable = inst.loc.source.stable
       val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
       if (isIncremental && isClassStable && isInstanceStable) {

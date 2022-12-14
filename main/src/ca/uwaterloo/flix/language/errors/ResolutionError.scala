@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, UnkindedType}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -434,6 +434,53 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that the local variable was not found.
+    *
+    * @param name the name of the variable.
+    * @param loc  the location of the undefined variable.
+    */
+  case class UndefinedVar(name: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined variable '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined variable '${red(name)}'.
+         |
+         |${code(loc, "undefined variable.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the variable. Maybe there is a typo?"
+    })
+  }
+
+  /**
+    * An error raised to indicate that the type variable was not found.
+    *
+    * @param name the name of the type variable.
+    * @param loc  the location of the undefined type variable.
+    */
+  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined type variable '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined type variable '${red(name)}'.
+         |
+         |${code(loc, "undefined type variable.")}
+         |""".stripMargin
+
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Flix cannot find the type variable. Maybe there is a typo?"
+    })
+  }
+
+  /**
     * Undefined Class Error.
     *
     * @param qn  the unresolved class.
@@ -693,7 +740,7 @@ object ResolutionError {
     * @param loc          the location of the method name.
     */
   case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError {
-    def summary : String = {
+    def summary: String = {
       s"Mismatching return type."
     }
 
@@ -701,11 +748,11 @@ object ResolutionError {
       import formatter._
       s"""${line(kind, source.name)}
         >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
-        |
-        |${code(loc, "mismatched return type.")}
-        |Declared type: ${declaredType.toString}
-        |Expected type: ${expectedType.toString}
-        |""".stripMargin
+         |
+         |${code(loc, "mismatched return type.")}
+         |Declared type: ${declaredType.toString}
+         |Expected type: ${expectedType.toString}
+         |""".stripMargin
     }
 
     /**
@@ -905,6 +952,53 @@ object ResolutionError {
       s"${underline("Tip:")} Type aliases must be fully applied."
     })
 
+  }
+
+  /**
+    * An error raised to indicate that a signature does not include the class's type parameter.
+    *
+    * @param sym the symbol of the signature.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
+         |
+         |${code(loc, "unexpected signature.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Every signature in a type class must mention the type variable of the class."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate that a wildcard type is used in an illegal position.
+    *
+    * @param ident the name of the wildcard type.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Illegal wildcard type: '$ident'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal wildcard type: '$ident'.
+         |
+         |${code(loc, "illegal wildcard type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      "Wildcard types (types starting with an underscore) are not allowed in this position."
+    })
   }
 
   /**

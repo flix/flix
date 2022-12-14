@@ -391,7 +391,7 @@ object Documentor {
         ("tparams" -> tparams.map(visitTypeParam)) ~
         ("cases" -> cases.values.toList.sortBy(_.loc).map(visitCase)) ~
         ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
-        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.sym.clazz) }) ~
+        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.clazz.sym) }) ~
         ("loc" -> visitSourceLocation(loc))
   }
 

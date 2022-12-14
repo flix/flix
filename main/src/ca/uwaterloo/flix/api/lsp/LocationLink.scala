@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, TypedAst}
 import org.json4s.JsonDSL._
 import org.json4s._
 
@@ -99,11 +99,11 @@ object LocationLink {
   /**
     * Returns a reference to the instance node `instance`.
     */
-  def fromInstanceSym(sym: Symbol.InstanceSym, originLoc: SourceLocation): LocationLink = {
+  def fromInstanceClassSymUse(clazz: Ast.ClassSymUse, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
-    val targetUri = sym.loc.source.name
-    val targetRange = Range.from(sym.loc)
-    val targetSelectionRange = Range.from(sym.loc)
+    val targetUri = clazz.loc.source.name
+    val targetRange = Range.from(clazz.loc)
+    val targetSelectionRange = Range.from(clazz.loc)
     LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
   }
 

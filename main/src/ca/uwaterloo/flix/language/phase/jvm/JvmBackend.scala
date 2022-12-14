@@ -185,6 +185,11 @@ object JvmBackend {
       val globalClass = GenGlobalClass.gen()
 
       //
+      // Generate the Region class.
+      //
+      val regionClass = GenRegionClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -209,7 +214,8 @@ object JvmBackend {
         rslClass,
         holeErrorClass,
         matchErrorClass,
-        globalClass
+        globalClass,
+        regionClass
       ).reduce(_ ++ _)
     }
 

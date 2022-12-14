@@ -1296,15 +1296,6 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.FNil(sp1, sp2) =>
-      /*
-       * Rewrites a `FNil` expression into a tag expression.
-       */
-      val loc = mkSL(sp1, sp2)
-      val tag = Name.Ident(sp1, "Nil", sp2)
-      val exp = WeededAst.Expression.Cst(Ast.Constant.Unit, loc)
-      WeededAst.Expression.Tag(None, tag, Some(exp), loc).toSuccess
-
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
@@ -2110,15 +2101,6 @@ object Weeder {
                 NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
             }
         }
-
-      case ParsedAst.Pattern.FNil(sp1, sp2) =>
-        /*
-         * Rewrites a `FNil` pattern into a tag pattern.
-         */
-        val loc = mkSL(sp1, sp2)
-        val tag = Name.Ident(sp1, "Nil", sp2)
-        val pat = WeededAst.Pattern.Cst(Ast.Constant.Unit, loc.asSynthetic)
-        WeededAst.Pattern.Tag(None, tag, pat, loc).toSuccess
 
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
         /*
@@ -3000,7 +2982,6 @@ object Weeder {
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
@@ -3139,15 +3120,6 @@ object Weeder {
       val memberName = components.last
 
       (className, memberName).toSuccess
-  }
-
-  /**
-    * Returns the region expression `region` if it is non-None. Otherwise returns the global region.
-    */
-  private def getRegionOrDefault(region: Option[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
-    val tpe = Type.mkRegion(Type.False, loc)
-    val exp = WeededAst.Expression.Region(tpe, loc)
-    region.getOrElse(exp)
   }
 
   /**

@@ -97,6 +97,8 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
+      xnoboolcache = cmdOpts.xnoboolcache,
+      xnoboolshortcuts = cmdOpts.xnoboolshortcuts,
       xnobooltable = cmdOpts.xnobooltable,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -104,11 +106,12 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
+      xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
     )
 
     // Don't use progress bar if benchmarking.
-    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkThroughput) {
+    if (cmdOpts.benchmark || cmdOpts.xbenchmarkCodeSize || cmdOpts.xbenchmarkIncremental || cmdOpts.xbenchmarkPhases || cmdOpts.xbenchmarkFrontend || cmdOpts.xbenchmarkThroughput) {
       options = options.copy(progress = false)
     }
 
@@ -216,10 +219,13 @@ object Main {
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
+                     xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xnoboolcache: Boolean = false,
+                     xnoboolshortcuts: Boolean = false,
                      xnobooltable: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -227,6 +233,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
+                     xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -370,6 +377,10 @@ object Main {
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks the performance of each compiler phase.")
 
+      // Xbenchmark-frontend
+      opt[Unit]("Xbenchmark-frontend").action((_, c) => c.copy(xbenchmarkFrontend = true)).
+        text("[experimental] benchmarks the performance of the frontend.")
+
       // Xbenchmark-throughput
       opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
         text("[experimental] benchmarks the performance of the entire compiler.")
@@ -406,6 +417,14 @@ object Main {
       opt[Unit]("Xno-bool-effects").action((_, c) => c.copy(xnobooleffects = true)).
         text("[experimental] disables bool effects.")
 
+      // Xno-bool-cache
+      opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
+        text("[experimental] disables Boolean caches.")
+
+      // Xno-bool-shortcuts
+      opt[Unit]("Xno-bool-shortcuts").action((_, c) => c.copy(xnoboolshortcuts = true)).
+        text("[experimental] disables Boolean unification shortcuts.")
+
       // Xno-bool-table
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
@@ -417,6 +436,10 @@ object Main {
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
+
+      // Xqmc
+      opt[Unit]("Xqmc").action((_, c) => c.copy(xqmc = true)).
+        text("[experimental] enables Quine McCluskey when using BDDs.")
 
       note("")
 

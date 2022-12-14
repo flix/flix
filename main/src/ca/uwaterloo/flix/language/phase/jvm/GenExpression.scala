@@ -283,13 +283,16 @@ object GenExpression {
       compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
     case Expression.Scope(sym, exp, _, loc) =>
-      //!TODO: For now just make like `let`
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-      val jvmType = JvmOps.getJvmType(MonoType.Unit)
-      // Store instruction for `jvmType`
-      val iStore = AsmOps.getStoreInstruction(jvmType)
+
+      // Create an instance of Region
+      visitor.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+
+      val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
@@ -853,11 +856,11 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expression.Spawn(exp, _, loc) =>
+    case Expression.Spawn(exp1, exp2, _, loc) =>
       addSourceLine(visitor, loc)
 
       // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
       // make a thread and run it

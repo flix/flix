@@ -8,7 +8,7 @@ import org.sosy_lab.pjbdd.api.{Creator, DD}
 class TestBdd extends FunSuite with TestUtils {
 
   val loc: SourceLocation = SourceLocation.Unknown
-  val builder: Creator = BddFormula.GlobalBddBuilder
+  val builder: Creator = BddFormulaAlg.GlobalBddBuilder
   val F: DD = builder.makeFalse()
   val T: DD = builder.makeTrue()
   val x0: DD = builder.makeIthVar(0)
@@ -86,7 +86,7 @@ class TestBdd extends FunSuite with TestUtils {
     *     |/ \       |/ \
     *     F  T       T  F
     */
-    val dd = builder.makeNot(builder.makeNode(F,x2,1))
+    val dd = builder.makeNot(builder.makeNode(F, x2, 1))
 
     assertResult(dd.getVariable)(1)
     assertResult(dd.getLow)(T)
