@@ -2443,7 +2443,11 @@ object Resolver {
         // Case 1.1 It's not in the env.
         case Nil =>
           // Case 1.1.1 Try in the local namespace
+          val localDecls = root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList.orElse {
+
+          }
           root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).orElse {
+            root.cases.getOrElse(ns0, Map.empty).get(qname.ident.name).map(_.map(Resolution.Declaration))
             // Case 1.1.2 Try in the root namespace
             root.symbols.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name).map(Resolution.Declaration)
           }.toList
