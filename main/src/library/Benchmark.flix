@@ -85,10 +85,10 @@ namespace Benchmark {
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
     def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] \ IO = {
-        print("Warmup: ");
+        System/StdOut.print("Warmup: ");
         bs |> Array.map(b -> {
             let time = runBenchmarkOnce(b);
-            print(".");
+            System/StdOut.print(".");
             (b, time)
         })
     }
