@@ -409,32 +409,15 @@ object Weeder {
     */
   private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
-      if (ident.isUpper)
-        List(WeededAst.UseOrImport.UseUpper(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
-      else
-        List(WeededAst.UseOrImport.UseLower(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+      List(WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      val us = names.foldRight(Nil: List[WeededAst.UseOrImport]) {
-        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
+      val us = names.map {
+        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) =>
           val alias = aliasOpt.getOrElse(ident)
-          if (ident.isUpper)
-            WeededAst.UseOrImport.UseUpper(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
-          else
-            WeededAst.UseOrImport.UseLower(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+          WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2))
       }
-      us.toSuccess
-
-    case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
-      List(WeededAst.UseOrImport.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
-
-    case ParsedAst.Use.UseManyTag(_, qname, tags, _) =>
-      val us = tags.foldRight(Nil: List[WeededAst.UseOrImport]) {
-        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
-          val alias = aliasOpt.getOrElse(ident)
-          WeededAst.UseOrImport.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
-      }
-      us.toSuccess
+      us.toList.toSuccess
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)

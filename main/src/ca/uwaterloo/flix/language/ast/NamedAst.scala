@@ -67,11 +67,7 @@ object NamedAst {
 
   object UseOrImport {
 
-    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
+    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
   }

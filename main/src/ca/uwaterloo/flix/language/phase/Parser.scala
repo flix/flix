@@ -316,7 +316,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseOne | Uses.UseMany)
   }
 
   object Uses {
@@ -331,20 +331,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ Names.Namespace ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
-      }
-    }
-
-    def UseOneTag: Rule1[ParsedAst.Use.UseOneTag] = rule {
-      SP ~ Names.QualifiedType ~ "." ~ Names.Tag ~ SP ~> ParsedAst.Use.UseOneTag
-    }
-
-    def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = {
-      def TagAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ Names.Tag ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
-      }
-
-      rule {
-        SP ~ Names.QualifiedType ~ atomic(".{") ~ optWS ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
     }
 
@@ -1824,7 +1810,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * Namespaces are lower or uppercase.
       */
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy("/") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 

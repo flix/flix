@@ -1474,9 +1474,7 @@ object Namer {
     * Performs naming on the given `use`.
     */
   private def visitUseOrImport(use: WeededAst.UseOrImport): NamedAst.UseOrImport = use match {
-    case WeededAst.UseOrImport.UseLower(qname, alias, loc) => NamedAst.UseOrImport.UseDefOrSig(qname, alias, loc)
-    case WeededAst.UseOrImport.UseUpper(qname, alias, loc) => NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc)
-    case WeededAst.UseOrImport.UseTag(qname, tag, alias, loc) => NamedAst.UseOrImport.UseTag(qname, tag, alias, loc)
+    case WeededAst.UseOrImport.Use(qname, alias, loc) => NamedAst.UseOrImport.Use(qname, alias, loc)
     case WeededAst.UseOrImport.Import(name, alias, loc) => NamedAst.UseOrImport.Import(name, alias, loc)
   }
 

@@ -56,11 +56,7 @@ object WeededAst {
 
   object UseOrImport {
 
-    case class UseLower(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
-
-    case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
-
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
+    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
   }
