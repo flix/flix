@@ -137,7 +137,12 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      flatMapN(table1Val) {
+        case table1 => fold(cases, table1) {
+          case (table, d) => tableDecl(d, table)
+        }
+      }
 
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -153,8 +158,8 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    // skip cases for now
-    case NamedAst.Declaration.Case(_, _) => table0.toSuccess
+    case NamedAst.Declaration.Case(sym, _) =>
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
   }
 
   /**
@@ -293,10 +298,7 @@ object Namer {
 
       mapN(annVal, casesVal) {
         case (ann, cases) =>
-          val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Declaration.Case]) {
-            case (acc, caze) => acc + (caze.sym.name -> caze)
-          }
-          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, caseMap, loc)
+          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 

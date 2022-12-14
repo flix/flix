@@ -493,7 +493,7 @@ object Resolver {
       val env = env0 ++ mkTypeParamEnv(tparams.tparams)
       val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val derivesVal = resolveDerivations(derives0, env, ns0, root)
-      val casesVal = traverse(cases0.values)(resolveCase(_, env, taenv, ns0, root))
+      val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
       mapN(annVal, derivesVal, casesVal) {
         case (ann, derives, cases) =>
           ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
@@ -1892,8 +1892,8 @@ object Resolver {
         val namespaceMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
         root.symbols.getOrElse(ns0, Map.empty).collect {
           case (enumName, enum: NamedAst.Declaration.Enum) =>
-            for ((enumTag, caze) <- enum.cases) {
-              if (tag.name == enumTag) {
+            for (caze <- enum.cases) {
+              if (tag.name == caze.sym.name) {
                 namespaceMatches += ((enum, caze))
               }
             }
@@ -1921,8 +1921,8 @@ object Resolver {
         val globalMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
         root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
           case (enumName, enum: NamedAst.Declaration.Enum) =>
-            for ((enumTag, caze) <- enum.cases) {
-              if (tag.name == enumTag) {
+            for (caze <- enum.cases) {
+              if (tag.name == caze.sym.name) {
                 globalMatches += ((enum, caze))
               }
             }
@@ -1981,8 +1981,8 @@ object Resolver {
             ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
           case Some(enum) =>
             // Case 2.2: Enum declaration found. Look for the tag.
-            for ((enumTag, caze) <- enum.cases) {
-              if (tag.name == enumTag) {
+            for (caze <- enum.cases) {
+              if (tag.name == caze.sym.name) {
                 // Case 2.2.1: Tag found.
                 return getEnumAccessibility(enum, ns0) match {
                   case EnumAccessibility.Accessible => caze.toSuccess
@@ -3091,7 +3091,7 @@ object Resolver {
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): NamedAst.Declaration = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.enumSym.namespace))(sym.enumSym.name).asInstanceOf[NamedAst.Declaration.Enum].cases(sym.name)
+    case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ClassSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3126,17 +3126,15 @@ object Resolver {
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
-    case NamedAst.UseOrImport.UseTag(qname, tag, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.UseTag(qname0, tag, alias, loc) =>
+      val qname = Name.mkQName(qname0.namespace.parts :+ qname0.ident.name, tag.name, qname0.sp1, tag.sp2)
+        tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
-      // Case 2: A Match. Look up the case and map it to a use.
-      case Resolution.Declaration(e: NamedAst.Declaration.Enum) :: Nil =>
-        // Check that each tag exists.
-        e.cases.get(tag.name) match {
-          case Some(NamedAst.Declaration.Case(sym, _)) => Ast.UseOrImport.Use(sym, alias, loc).toSuccess
-          case None => ResolutionError.UndefinedTag(tag.name, ns, loc).toFailure
-        }
-      case _ => throw InternalCompilerException("unexpected non-enum", loc)
+      // Case 2: A match. Map it to a use.
+      case Resolution.Declaration(d) :: Nil => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
+      // Case 3: Impossible. Hard error.
+      case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
