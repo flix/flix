@@ -76,7 +76,7 @@ object Kinder {
 
         // Extra type annotations are required due to limitations in Scala's type inference.
         val enumsVal = Validation.sequence(ParOps.parMap(root.enums)({
-          pair: (Symbol.EnumSym, ResolvedAst.Enum) =>
+          pair: (Symbol.EnumSym, ResolvedAst.Declaration.Enum) =>
             val (sym, enum) = pair
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
@@ -86,13 +86,13 @@ object Kinder {
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
 
         val instancesVal = Validation.sequence(ParOps.parMap(root.instances)({
-          pair: (Symbol.ClassSym, List[ResolvedAst.Instance]) =>
+          pair: (Symbol.ClassSym, List[ResolvedAst.Declaration.Instance]) =>
             val (sym, insts) = pair
             traverse(insts)(visitInstance(_, taenv, root)).map(sym -> _)
         }))
 
         val effectsVal = Validation.sequence(ParOps.parMap(root.effects)({
-          pair: (Symbol.EffectSym, ResolvedAst.Effect) =>
+          pair: (Symbol.EffectSym, ResolvedAst.Declaration.Effect) =>
             val (sym, eff) = pair
             visitEffect(eff, taenv, root).map(sym -> _)
         }))
@@ -108,8 +108,8 @@ object Kinder {
   /**
     * Performs kinding on the given enum.
     */
-  private def visitEnum(enum0: ResolvedAst.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
-    case ResolvedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, loc) =>
+  private def visitEnum(enum0: ResolvedAst.Declaration.Enum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Enum, KindError] = enum0 match {
+    case ResolvedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
@@ -134,8 +134,8 @@ object Kinder {
     * Performs kinding on the given type alias.
     * Returns the kind of the type alias.
     */
-  private def visitTypeAlias(alias: ResolvedAst.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
-    case ResolvedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+  private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
+    case ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
@@ -163,8 +163,8 @@ object Kinder {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def visitCase(caze0: ResolvedAst.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
-    case ResolvedAst.Case(sym, tpe0) =>
+  private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
+    case ResolvedAst.Declaration.Case(sym, tpe0) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
         case tpe =>
@@ -193,8 +193,8 @@ object Kinder {
   /**
     * Performs kinding on the given type class.
     */
-  private def visitClass(clazz: ResolvedAst.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+  private def visitClass(clazz: ResolvedAst.Declaration.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
+    case ResolvedAst.Declaration.Class(doc, ann0, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val annVal = traverse(ann0)(visitAnnotation(_, kenv, Map.empty, taenv, None, root))
@@ -218,8 +218,8 @@ object Kinder {
   /**
     * Performs kinding on the given instance.
     */
-  private def visitInstance(inst: ResolvedAst.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
-    case ResolvedAst.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, ns, loc) =>
+  private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
+    case ResolvedAst.Declaration.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(clazz.sym))
 
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
@@ -238,8 +238,8 @@ object Kinder {
   /**
     * Performs kinding on the given effect declaration.
     */
-  private def visitEffect(eff: ResolvedAst.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Effect, KindError] = eff match {
-    case ResolvedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
+  private def visitEffect(eff: ResolvedAst.Declaration.Effect, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Effect, KindError] = eff match {
+    case ResolvedAst.Declaration.Effect(doc, ann0, mod, sym, ops0, loc) =>
       val annVal = traverse(ann0)(visitAnnotation(_, KindEnv.empty, Map.empty, taenv, None, root))
       val opsVal = traverse(ops0)(visitOp(_, taenv, root))
       mapN(annVal, opsVal) {
@@ -266,8 +266,8 @@ object Kinder {
   /**
     * Performs kinding on the given def under the given kind environment.
     */
-  private def visitDef(def0: ResolvedAst.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
-    case ResolvedAst.Def(sym, spec0, exp0) =>
+  private def visitDef(def0: ResolvedAst.Declaration.Def, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Def, KindError] = def0 match {
+    case ResolvedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
       val kenvVal = getKindEnvFromSpec(spec0, kenv0, taenv, root)
@@ -286,8 +286,8 @@ object Kinder {
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
-  private def visitSig(sig0: ResolvedAst.Sig, classTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
-    case ResolvedAst.Sig(sym, spec0, exp0) =>
+  private def visitSig(sig0: ResolvedAst.Declaration.Sig, classTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+    case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
       val kenvVal = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       flatMapN(kenvVal) {
         kenv1 =>
@@ -304,8 +304,8 @@ object Kinder {
   /**
     * Performs kinding on the given effect operation under the given kind environment.
     */
-  private def visitOp(op: ResolvedAst.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Op, KindError] = op match {
-    case ResolvedAst.Op(sym, spec0) =>
+  private def visitOp(op: ResolvedAst.Declaration.Op, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Op, KindError] = op match {
+    case ResolvedAst.Declaration.Op(sym, spec0) =>
       val kenvVal = inferSpec(spec0, KindEnv.empty, taenv, root)
       flatMapN(kenvVal) {
         case kenv1 =>
@@ -1428,8 +1428,8 @@ object Kinder {
   /**
     * Gets the kind of the enum.
     */
-  private def getEnumKind(enum0: ResolvedAst.Enum)(implicit flix: Flix): Kind = enum0 match {
-    case ResolvedAst.Enum(_, _, _, _, tparams, _, _, _) =>
+  private def getEnumKind(enum0: ResolvedAst.Declaration.Enum)(implicit flix: Flix): Kind = enum0 match {
+    case ResolvedAst.Declaration.Enum(_, _, _, _, tparams, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
@@ -1439,7 +1439,7 @@ object Kinder {
   /**
     * Gets the kind of the class.
     */
-  private def getClassKind(clazz: ResolvedAst.Class): Kind = clazz.tparam match {
+  private def getClassKind(clazz: ResolvedAst.Declaration.Class): Kind = clazz.tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
   }

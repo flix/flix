@@ -107,22 +107,24 @@ object Resolver {
     * Builds a symbol table from the declaration.
     */
   private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
-    case ResolvedAst.Namespace(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
-    case clazz: ResolvedAst.Class => SymbolTable.empty.addClass(clazz)
-    case inst: ResolvedAst.Instance => SymbolTable.empty.addInstance(inst)
-    case defn: ResolvedAst.Def => SymbolTable.empty.addDef(defn)
-    case enum: ResolvedAst.Enum => SymbolTable.empty.addEnum(enum)
-    case alias: ResolvedAst.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
-    case effect: ResolvedAst.Effect => SymbolTable.empty.addEffect(effect)
-    case ResolvedAst.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
-    case ResolvedAst.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.Namespace(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
+    case clazz: ResolvedAst.Declaration.Class => SymbolTable.empty.addClass(clazz)
+    case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
+    case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
+    case enum: ResolvedAst.Declaration.Enum => SymbolTable.empty.addEnum(enum)
+    case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
+    case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
+    // TODO NS-REFACTOR this will be added once Cases become proper symbols
+    case ResolvedAst.Declaration.Case(sym, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
   }
 
   /**
     * Semi-resolves the type aliases in the root.
     */
-  private def semiResolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
-    fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
+  private def semiResolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+    fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, root)) {
         case aliases => aliases.foldLeft(acc) {
           case (innerAcc, alias) => innerAcc + (alias.sym -> alias)
@@ -134,7 +136,7 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the unit.
     */
-  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = unit match {
+  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
@@ -157,7 +159,7 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the namespace.
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.TypeAlias], ResolutionError] = ns0 match {
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, loc) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
@@ -183,12 +185,12 @@ object Resolver {
     *
     * Type aliases within the type are given temporary placeholders.
     */
-  def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeAlias, ResolutionError] = alias match {
+  def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
       val tparams = resolveTypeParams(tparams0, env0, ns, root)
       val env = env0 ++ mkTypeParamEnv(tparams.tparams)
       semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root) map {
-        tpe => ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+        tpe => ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
       }
   }
 
@@ -200,7 +202,7 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+  def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
     for {
       semiResolved <- semiResolveTypeAliases(root)
       orderedSyms <- findResolutionOrder(semiResolved.values)
@@ -240,7 +242,7 @@ object Resolver {
     *
     * Any alias only depends on those earlier in the list
     */
-  def findResolutionOrder(aliases: Iterable[ResolvedAst.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
+  def findResolutionOrder(aliases: Iterable[ResolvedAst.Declaration.TypeAlias]): Validation[List[Symbol.TypeAliasSym], ResolutionError] = {
     val aliasSyms = aliases.map(_.sym)
     val aliasLookup = aliases.map(alias => alias.sym -> alias).toMap
     val getUses = (sym: Symbol.TypeAliasSym) => getAliasUses(aliasLookup(sym).tpe)
@@ -258,12 +260,12 @@ object Resolver {
     *
     * The given aliases must be in resolution order.
     */
-  def finishResolveTypeAliases(aliases0: List[ResolvedAst.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ResolutionError] = {
-    Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
-      case (taenv, ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
+  def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+    Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
+      case (taenv, ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
         finishResolveType(tpe0, taenv) map {
           tpe =>
-            val alias = ResolvedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+            val alias = ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
             taenv + (sym -> alias)
         }
     }
@@ -272,7 +274,7 @@ object Resolver {
   /**
     * Performs name resolution on the compilation unit.
     */
-  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
+  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
@@ -288,7 +290,7 @@ object Resolver {
   /**
     * Performs name resolution on the declaration.
     */
-  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
+  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
@@ -300,7 +302,7 @@ object Resolver {
           val ns = Name.mkUnlocatedNName(sym.ns)
           val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, root))
           mapN(declsVal) {
-            case decls => ResolvedAst.Namespace(sym, usesAndImports, decls, loc)
+            case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
       }
     case clazz@NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
@@ -332,7 +334,7 @@ object Resolver {
   /**
     * Checks that the super classes form a DAG (no cycles).
     */
-  private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Class]): Validation[Unit, ResolutionError] = {
+  private def checkSuperClassDag(classes: Map[Symbol.ClassSym, ResolvedAst.Declaration.Class]): Validation[Unit, ResolutionError] = {
 
     /**
       * Create a list of CyclicClassHierarchy errors, one for each class.
@@ -357,14 +359,14 @@ object Resolver {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+    def resolve(constraints: List[NamedAst.Constraint], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
       traverse(constraints)(c => resolve(c, env, taenv, ns0, root))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
+    def resolve(c0: NamedAst.Constraint, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Constraint, ResolutionError] = c0 match {
       case NamedAst.Constraint(cparams0, head0, body0, loc) =>
         val cparams = resolveConstraintParams(cparams0, env0)
         val env = env0 ++ mkConstraintParamEnv(cparams)
@@ -380,7 +382,7 @@ object Resolver {
   /**
     * Resolves all the classes in the given root.
     */
-  def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Class, ResolutionError] = c0 match {
+  def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
     case NamedAst.Declaration.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       val tparam = Params.resolveTparam(tparam0)
       val env = env0 ++ mkTypeParamEnv(List(tparam))
@@ -393,14 +395,14 @@ object Resolver {
       mapN(annVal, sigsListVal, superClassesVal, lawsVal) {
         case (ann, sigsList, superClasses, laws) =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-          ResolvedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+          ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
       }
   }
 
   /**
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
-  def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Instance, ResolutionError] = i0 match {
+  def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann0, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
@@ -416,7 +418,7 @@ object Resolver {
           mapN(defsVal) {
             case defs =>
               val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
-              ResolvedAst.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+              ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
           }
       }
   }
@@ -424,7 +426,7 @@ object Resolver {
   /**
     * Performs name resolution on the given signature `s0` in the given namespace `ns0`.
     */
-  def resolveSig(s0: NamedAst.Declaration.Sig, clazz: Symbol.ClassSym, classTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Sig, ResolutionError] = s0 match {
+  def resolveSig(s0: NamedAst.Declaration.Sig, clazz: Symbol.ClassSym, classTvar: Symbol.UnkindedTypeVarSym, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Sig, ResolutionError] = s0 match {
     case NamedAst.Declaration.Sig(sym, spec0, exp0) =>
       val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz, clazz.loc), UnkindedType.Var(classTvar, classTvar.loc), clazz.loc)
       val specVal = resolveSpec(spec0, Some(tconstr), env0, taenv, ns0, root)
@@ -434,7 +436,7 @@ object Resolver {
           val specCheckVal = checkSigSpec(sym, spec, classTvar)
           val expVal = traverseOpt(exp0)(Expressions.resolve(_, env, taenv, ns0, root))
           mapN(specCheckVal, expVal) {
-            case (_, exp) => ResolvedAst.Sig(sym, spec, exp)
+            case (_, exp) => ResolvedAst.Declaration.Sig(sym, spec, exp)
           }
       }
   }
@@ -442,7 +444,7 @@ object Resolver {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
+  def resolveDef(d0: NamedAst.Declaration.Def, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Def, ResolutionError] = d0 match {
     case NamedAst.Declaration.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -452,7 +454,7 @@ object Resolver {
           val env = env0 ++ mkSpecEnv(spec)
           val expVal = Expressions.resolve(exp0, env, taenv, ns0, root)
           mapN(expVal) {
-            case exp => ResolvedAst.Def(sym, spec, exp)
+            case exp => ResolvedAst.Declaration.Def(sym, spec, exp)
           }
       }
   }
@@ -460,7 +462,7 @@ object Resolver {
   /**
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
-  def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
+  def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
@@ -485,7 +487,7 @@ object Resolver {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Enum, ResolutionError] = e0 match {
+  def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
     case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, loc) =>
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
       val env = env0 ++ mkTypeParamEnv(tparams.tparams)
@@ -494,42 +496,42 @@ object Resolver {
       val casesVal = traverse(cases0.values)(resolveCase(_, env, taenv, ns0, root))
       mapN(annVal, derivesVal, casesVal) {
         case (ann, derives, cases) =>
-          ResolvedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
+          ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 
   /**
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
-  private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Case, ResolutionError] = caze0 match {
+  private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
     case NamedAst.Declaration.Case(sym, tpe0) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Case(sym, tpe)
+        tpe => ResolvedAst.Declaration.Case(sym, tpe)
       }
   }
 
   /**
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
-  private def resolveEffect(eff0: NamedAst.Declaration.Effect, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Effect, ResolutionError] = eff0 match {
+  private def resolveEffect(eff0: NamedAst.Declaration.Effect, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
     case NamedAst.Declaration.Effect(doc, ann0, mod, sym, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new env
       val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val opsVal = traverse(ops0)(resolveOp(_, env, taenv, ns0, root))
       mapN(annVal, opsVal) {
-        case (ann, ops) => ResolvedAst.Effect(doc, ann, mod, sym, ops, loc)
+        case (ann, ops) => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
   /**
     * Performs name resolution on the given effect operation `op0` in the given namespace `ns0`.
     */
-  private def resolveOp(op0: NamedAst.Declaration.Op, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Op, ResolutionError] = op0 match {
+  private def resolveOp(op0: NamedAst.Declaration.Op, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Op, ResolutionError] = op0 match {
     case NamedAst.Declaration.Op(sym, spec0) =>
       val specVal = resolveSpec(spec0, None, env, taenv, ns0, root)
       mapN(specVal) {
-        spec => ResolvedAst.Op(sym, spec)
+        spec => ResolvedAst.Declaration.Op(sym, spec)
       }
   }
 
@@ -552,7 +554,7 @@ object Resolver {
   /**
     * Performs name resolution on the given annotation `a0` in the given namespace `ns0`.
     */
-  private def visitAnnotation(a0: NamedAst.Annotation, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
+  private def visitAnnotation(a0: NamedAst.Annotation, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
     val argsVal = traverse(a0.args)(Expressions.resolve(_, env, taenv, ns0, root))
     mapN(argsVal) {
       args => ResolvedAst.Annotation(a0.name, args, a0.loc)
@@ -564,7 +566,7 @@ object Resolver {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
-    def resolve(exp0: NamedAst.Expression, env00: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
+    def resolve(exp0: NamedAst.Expression, env00: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Expression, ResolutionError] = {
 
       /**
         * Creates `arity` fresh fparams for use in a curried def or sig application.
@@ -1407,7 +1409,7 @@ object Resolver {
       /**
         * Performs name resolution on the given JvmMethod `method` in the namespace `ns0`.
         */
-      def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
+      def visitJvmMethod(method: NamedAst.JvmMethod, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.JvmMethod, ResolutionError] = method match {
         case NamedAst.JvmMethod(ident, fparams, exp, tpe, purAndEff, loc) =>
           val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
           flatMapN(fparamsVal) {
@@ -1546,7 +1548,7 @@ object Resolver {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.Atom(pred, den, terms, loc) =>
           val tsVal = traverse(terms)(t => Expressions.resolve(t, env, taenv, ns0, root))
           mapN(tsVal) {
@@ -1559,7 +1561,7 @@ object Resolver {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+      def resolve(b0: NamedAst.Predicate.Body, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
           val tsVal = traverse(terms)(t => Patterns.resolveInConstraint(t, env, ns0, root))
           mapN(tsVal) {
@@ -1588,7 +1590,7 @@ object Resolver {
     /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
-    def resolve(fparam0: NamedAst.FormalParam, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
+    def resolve(fparam0: NamedAst.FormalParam, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Wildness.AllowWild, env, taenv, ns0, root))
       mapN(tVal) {
         t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
@@ -1598,7 +1600,7 @@ object Resolver {
     /**
       * Performs name resolution on the given predicate parameter `pparam0` in the given namespace `ns0`.
       */
-    def resolve(pparam0: NamedAst.PredicateParam, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
+    def resolve(pparam0: NamedAst.PredicateParam, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.PredicateParam, ResolutionError] = pparam0 match {
       case NamedAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
         ResolvedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
 
@@ -1668,7 +1670,7 @@ object Resolver {
   /**
     * Performs name resolution on the given formal parameters `fparams0`.
     */
-  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
+  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
     traverse(fparams0)(fparam => Params.resolve(fparam, env, taenv, ns0, root))
   }
 
@@ -1697,7 +1699,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type constraint `tconstr0`.
     */
-  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
+  def resolveTypeConstraint(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
       val classVal = lookupClass(clazz0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -1712,7 +1714,7 @@ object Resolver {
   /**
     * Performs name resolution on the given superclass constraint `tconstr0`.
     */
-  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
+  def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
     case NamedAst.TypeConstraint(clazz0, tpe0, loc) =>
       val classVal = lookupClassForImplementation(clazz0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -2210,13 +2212,13 @@ object Resolver {
     *
     * Replaces type alias placeholders with the real type aliases.
     */
-  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType, ResolutionError] = {
+  private def finishResolveType(tpe0: UnkindedType, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]): Validation[UnkindedType, ResolutionError] = {
 
     /**
       * Performs beta-reduction on the given type alias.
       * The list of arguments must be the same length as the alias's parameters.
       */
-    def applyAlias(alias: ResolvedAst.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
+    def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
       val map = alias.tparams.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val cst = Ast.AliasConstructor(alias.sym, cstLoc)
@@ -2288,7 +2290,7 @@ object Resolver {
   /**
     * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
     */
-  def resolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType, ResolutionError] = {
+  def resolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType, ResolutionError] = {
     val tVal = semiResolveType(tpe0, wildness, env, ns0, root)
     flatMapN(tVal) {
       t => finishResolveType(t, taenv)
@@ -2310,7 +2312,7 @@ object Resolver {
   /**
     * Finishes resolution of the given purity and effect.
     */
-  private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
+  private def finishResolvePurityAndEffect(purAndEff0: UnkindedType.PurityAndEffect, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]): Validation[UnkindedType.PurityAndEffect, ResolutionError] = purAndEff0 match {
     case UnkindedType.PurityAndEffect(pur0, eff0) =>
       val purVal = traverseOpt(pur0)(finishResolveType(_, taenv))
       val effVal = traverseOpt(eff0)(effs => traverse(effs)(finishResolveType(_, taenv)))
@@ -2322,7 +2324,7 @@ object Resolver {
   /**
     * Performs name resolution on the given purity and effect `purAndEff0` in the given namespace `ns0`.
     */
-  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = {
+  private def resolvePurityAndEffect(purAndEff0: NamedAst.PurityAndEffect, wildness: Wildness, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UnkindedType.PurityAndEffect, ResolutionError] = {
     flatMapN(semiResolvePurityAndEffect(purAndEff0, wildness, env, ns0, root)) {
       case purAndEff => finishResolvePurityAndEffect(purAndEff, taenv)
     }
@@ -3334,23 +3336,23 @@ object Resolver {
   /**
     * A table of all the symbols in the program.
     */
-  private case class SymbolTable(classes: Map[Symbol.ClassSym, ResolvedAst.Class],
-                                 instances: ListMap[Symbol.ClassSym, ResolvedAst.Instance],
-                                 defs: Map[Symbol.DefnSym, ResolvedAst.Def],
-                                 enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                                 effects: Map[Symbol.EffectSym, ResolvedAst.Effect],
-                                 typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.TypeAlias]) {
-    def addClass(clazz: ResolvedAst.Class): SymbolTable = copy(classes = classes + (clazz.sym -> clazz))
+  private case class SymbolTable(classes: Map[Symbol.ClassSym, ResolvedAst.Declaration.Class],
+                                 instances: ListMap[Symbol.ClassSym, ResolvedAst.Declaration.Instance],
+                                 defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
+                                 enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                                 effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
+                                 typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
+    def addClass(clazz: ResolvedAst.Declaration.Class): SymbolTable = copy(classes = classes + (clazz.sym -> clazz))
 
-    def addDef(defn: ResolvedAst.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
+    def addDef(defn: ResolvedAst.Declaration.Def): SymbolTable = copy(defs = defs + (defn.sym -> defn))
 
-    def addEnum(enum: ResolvedAst.Enum): SymbolTable = copy(enums = enums + (enum.sym -> enum))
+    def addEnum(enum: ResolvedAst.Declaration.Enum): SymbolTable = copy(enums = enums + (enum.sym -> enum))
 
-    def addEffect(effect: ResolvedAst.Effect): SymbolTable = copy(effects = effects + (effect.sym -> effect))
+    def addEffect(effect: ResolvedAst.Declaration.Effect): SymbolTable = copy(effects = effects + (effect.sym -> effect))
 
-    def addTypeAlias(alias: ResolvedAst.TypeAlias): SymbolTable = copy(typeAliases = typeAliases + (alias.sym -> alias))
+    def addTypeAlias(alias: ResolvedAst.Declaration.TypeAlias): SymbolTable = copy(typeAliases = typeAliases + (alias.sym -> alias))
 
-    def addInstance(inst: ResolvedAst.Instance): SymbolTable = copy(instances = instances + (inst.clazz.sym -> inst))
+    def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.clazz.sym -> inst))
 
     def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
