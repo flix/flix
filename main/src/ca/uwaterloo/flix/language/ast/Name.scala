@@ -182,6 +182,18 @@ object Name {
       case None => Name.QName(sp1, RootNS, ident, sp2)
       case Some(ns) => Name.QName(sp1, ns, ident, sp2)
     }
+
+    /**
+      * Converts the given NName into a qualified name.
+      */
+    def fromNName(nname0: Name.NName): QName = {
+      val sp1 = nname0.idents.head.sp1
+      val sp2 = nname0.idents.last.sp2
+      val ns = nname0.idents.init
+      val ident = nname0.idents.last
+      val nname = Name.NName(sp1, ns, sp2)
+      Name.QName(sp1, nname, ident, sp2)
+    }
   }
 
   /**

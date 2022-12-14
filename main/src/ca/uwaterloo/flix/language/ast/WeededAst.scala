@@ -110,7 +110,7 @@ object WeededAst {
 
     case class Choose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 

@@ -408,8 +408,8 @@ object Weeder {
     * Performs weeding on the given use or import `u0`.
     */
   private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
-    case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
-      List(WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+    case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
+      List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       val us = names.map {
@@ -443,13 +443,15 @@ object Weeder {
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
-    case ParsedAst.Expression.SName(sp1, ident, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.Expression.VarOrDefOrSig(ident, loc).toSuccess
-
     case ParsedAst.Expression.QName(_, qname, _) =>
       // NB: We only use the source location of the identifier itself.
-      WeededAst.Expression.DefOrSig(qname, qname.ident.loc).toSuccess
+
+      // Case 1: Upper name, so this is a tag.
+      if (qname.ident.isUpper) {
+        WeededAst.Expression.Tag(qname, qname.ident.loc)
+      } else {
+        WeededAst.Expression.DefOrSig(qname, qname.ident.loc).toSuccess // MATT or VAR!
+      }
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2928,7 +2930,6 @@ object Weeder {
     */
   @tailrec
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
-    case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
@@ -2956,7 +2957,6 @@ object Weeder {
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
