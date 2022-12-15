@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, NotInterface}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Synchronized._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -34,12 +35,12 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 sealed trait ClassMaker {
   def mkStaticConstructor(c: StaticConstructorMethod)(implicit flix: Flix): Unit = {
     if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-    makeMethod(c.ins, c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
+    makeMethod(c.ins, c.name, c.d, c.v, c.f, NotSynchronized, IsStatic, NotAbstract)
   }
 
   def mkStaticMethod(m: StaticMethod)(implicit flix: Flix): Unit = {
     if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-    makeMethod(m.ins, m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    makeMethod(m.ins, m.name, m.d, m.v, m.f, NotSynchronized, IsStatic, NotAbstract)
   }
 
   /**
@@ -64,8 +65,8 @@ sealed trait ClassMaker {
     case StaticField(_, v, f, name, tpe) => makeField(name, tpe, v, f, IsStatic)
   }
 
-  protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract)(implicit flix: Flix): Unit = {
-    val m = v.toInt + f.toInt + s.toInt + a.toInt
+  protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, sy: Synchronized, s: Static, a: Abstract)(implicit flix: Flix): Unit = {
+    val m = v.toInt + f.toInt + sy.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     i match {
       case None => ()
@@ -78,7 +79,7 @@ sealed trait ClassMaker {
   }
 
   protected def makeAbstractMethod(methodName: String, d: MethodDescriptor)(implicit flix: Flix): Unit = {
-    makeMethod(None, methodName, d, IsPublic, NotFinal, NotStatic, IsAbstract)
+    makeMethod(None, methodName, d, IsPublic, NotFinal, NotSynchronized, NotStatic, IsAbstract)
   }
 }
 
@@ -87,16 +88,16 @@ object ClassMaker {
     protected val visitor: ClassWriter = cw
 
     def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility)(implicit flix: Flix): Unit = {
-      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
+      makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotSynchronized, NotStatic, NotAbstract)
     }
 
     def mkConstructor(c: ConstructorMethod)(implicit flix: Flix): Unit = {
-      makeMethod(c.ins, JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
+      makeMethod(c.ins, JvmName.ConstructorMethod, c.d, c.v, c.f, NotSynchronized, NotStatic, NotAbstract)
     }
 
     def mkMethod(m: InstanceMethod)(implicit flix: Flix): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-      makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+      makeMethod(m.ins, m.name, m.d, m.v, m.f, m.s, NotStatic, NotAbstract)
     }
   }
 
@@ -105,12 +106,12 @@ object ClassMaker {
 
     def mkConstructor(c: ConstructorMethod)(implicit flix: Flix): Unit = {
       if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-      makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
+      makeMethod(c.ins, c.name, c.d, c.v, c.f, NotSynchronized, NotStatic, NotAbstract)
     }
 
     def mkMethod(m: InstanceMethod)(implicit flix: Flix): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
-      makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+      makeMethod(m.ins, m.name, m.d, m.v, m.f, NotSynchronized, NotStatic, NotAbstract)
     }
 
     def mkAbstractMethod(m: AbstractMethod)(implicit flix: Flix): Unit = {
@@ -174,6 +175,19 @@ object ClassMaker {
     case object IsFinal extends Final
 
     case object NotFinal extends Final
+  }
+
+  sealed trait Synchronized {
+    val toInt: Int = this match {
+      case IsSynchronized => Opcodes.ACC_FINAL
+      case NotSynchronized => 0
+    }
+  }
+
+  object Synchronized {
+    case object IsSynchronized extends Synchronized
+
+    case object NotSynchronized extends Synchronized
   }
 
   sealed trait Static {
@@ -241,6 +255,8 @@ object ClassMaker {
     def v: Visibility
 
     def f: Final
+
+    def s: Synchronized
   }
 
   sealed case class ConstructorMethod(clazz: JvmName, v: Visibility, args: List[BackendType], ins: Option[InstructionSet]) extends Method {
@@ -249,6 +265,8 @@ object ClassMaker {
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
 
     override def f: Final = NotFinal
+
+    override def s: Synchronized = NotSynchronized
   }
 
   case class StaticConstructorMethod(clazz: JvmName, ins: Option[InstructionSet]) extends Method {
@@ -259,10 +277,12 @@ object ClassMaker {
     override def v: Visibility = IsDefault
 
     override def f: Final = NotFinal
+
+    override def s: Synchronized = NotSynchronized
   }
 
-  sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[InstructionSet]) extends Method {
-    def implementation(clazz: JvmName, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+  sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, s: Synchronized, name: String, d: MethodDescriptor, ins: Option[InstructionSet]) extends Method {
+    def implementation(clazz: JvmName, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, s, name, d, ins)
   }
 
   sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
@@ -270,15 +290,21 @@ object ClassMaker {
 
     override def v: Visibility = IsPublic
 
-    def implementation(clazz: JvmName, f: Final, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, IsPublic, f, name, d, ins)
+    def implementation(clazz: JvmName, f: Final, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, IsPublic, f, NotSynchronized, name, d, ins)
+
+    override def s: Synchronized = NotSynchronized
   }
 
   sealed case class AbstractMethod(clazz: JvmName, v: Visibility, name: String, d: MethodDescriptor) extends Method {
     override def f: Final = NotFinal
 
-    def implementation(clazz: JvmName, f: Final, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+    def implementation(clazz: JvmName, f: Final, ins: Option[InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, NotSynchronized, name, d, ins)
+
+    override def s: Synchronized = NotSynchronized
   }
 
   sealed case class StaticMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[InstructionSet]) extends Method {
+
+    override def s: Synchronized = NotSynchronized
   }
 }

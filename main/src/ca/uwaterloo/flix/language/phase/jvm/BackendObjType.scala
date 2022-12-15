@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Synchronized.{IsSynchronized, NotSynchronized}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, MethodDescriptor, RootPackage}
@@ -61,6 +62,7 @@ sealed trait BackendObjType {
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
     case BackendObjType.ArrayList => JvmName(JavaUtil, "ArrayList")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
+    case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
   }
 
   /**
@@ -183,105 +185,105 @@ object BackendObjType {
         * These methods should do the same as a non-tail call in genExpression.
         */
       def functionMethod: InstanceMethod = this match {
-        case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+        case ObjFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "apply",
           mkDescriptor(JavaObject.toTpe)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
-        case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+        case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
-        case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+        case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
-        case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+        case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
-        case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+        case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
-        case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+        case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
-        case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
+        case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
-        case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+        case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
-        case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+        case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
-        case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+        case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
-        case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
+        case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ LRETURN()
           ))
-        case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
+        case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ ARETURN()
           ))
-        case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
+        case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ RETURN()
           ))
-        case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
+        case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
               INVOKEVIRTUAL(continuation.UnwindMethod) ~ IRETURN()
           ))
-        case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
+        case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(
             thisLoad() ~
@@ -424,7 +426,7 @@ object BackendObjType {
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(this.toTpe))
 
-    def UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "unwind", mkDescriptor()(result), Some(
+    def UnwindMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "unwind", mkDescriptor()(result), Some(
       thisLoad() ~ storeWithName(1, this.toTpe) { currentCont =>
         pushNull() ~ storeWithName(2, this.toTpe) { previousCont =>
           doWhile(Condition.NONNULL) {
@@ -440,7 +442,7 @@ object BackendObjType {
     /**
       * Called when spawned, should only be used by functions returning void.
       */
-    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "run", MethodDescriptor.NothingToVoid, Some(
+    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "run", MethodDescriptor.NothingToVoid, Some(
       thisLoad() ~ INVOKEVIRTUAL(UnwindMethod) ~ xPop(this.result) ~
         RETURN()
     ))
@@ -994,10 +996,12 @@ object BackendObjType {
       cm.mkField(ThreadsField)
       cm.mkConstructor(Constructor)
       cm.mkMethod(SpawnMethod)
+      cm.mkMethod(ExitMethod)
 
       cm.closeClassMaker()
     }
 
+    // private ArrayList<Thread> threads = new ArrayList<Thread>();
     def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ArrayList.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
@@ -1008,20 +1012,39 @@ object BackendObjType {
       RETURN()
     ))
 
-    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
+    // synchronized public void spawn(Runnable r) {
+    //   Thread t = new Thread(r);
+    //   threads.add(t);
+    //   t.start();
+    // }
+    def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, IsSynchronized, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
       (
         if (flix.options.xvirtualthreads) {
           ALOAD(1) ~ INVOKESTATIC(Thread.StartVirtualThreadMethod)
         } else {
           NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
-          DUP() ~ INVOKEVIRTUAL(Thread.StartMethod)
+          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
         }
       ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
         INVOKEVIRTUAL(ArrayList.AddMethod) ~ POP() ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
         RETURN()
+      }
+    ))
+
+    // synchronized public void exit() {
+    //   for (Thread t: threads)
+    //     t.join();
+    // }
+    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, IsSynchronized, "exit", MethodDescriptor.NothingToVoid, Some(
+      thisLoad() ~ GETFIELD(ThreadsField) ~ INVOKEVIRTUAL(ArrayList.IteratorMethod) ~
+      storeWithName(1, BackendObjType.Iterator.toTpe) { iterator => 
+        whileLoop(Condition.Bool) { iterator.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod) } {
+          iterator.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ INVOKEVIRTUAL(Thread.JoinMethod)
+        } ~ RETURN()
       }
     ))
   }
@@ -1097,16 +1120,16 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
 
-    def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "equals",
+    def EqualsMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "equals",
       mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
 
-    def HashcodeMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "hashCode",
+    def HashcodeMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "hashCode",
       mkDescriptor()(BackendType.Int32), None)
 
-    def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "toString",
+    def ToStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "toString",
       mkDescriptor()(String.toTpe), None)
 
-    def GetClassMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "getClass",
+    def GetClassMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "getClass",
       mkDescriptor()(JvmName.Class.toTpe), None)
   }
 
@@ -1114,10 +1137,10 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
 
-    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+    def AppendStringMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "append",
       mkDescriptor(String.toTpe)(StringBuilder.toTpe), None)
 
-    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "append",
+    def AppendInt32Method: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, NotSynchronized, "append",
       mkDescriptor(BackendType.Int32)(StringBuilder.toTpe), None)
 
   }
@@ -1134,16 +1157,29 @@ object BackendObjType {
 
   case object ArrayList extends BackendObjType {
     
-    def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "add",
+    def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "add",
       mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
+
+    def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "iterator",
+      mkDescriptor()(BackendObjType.Iterator.toTpe), None)
   }
 
   case object Thread extends BackendObjType {
 
-    def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "start",
+    def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "start",
       MethodDescriptor.NothingToVoid, None)
 
     def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
       mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
+
+    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, NotSynchronized, "join",
+      MethodDescriptor.NothingToVoid, None)
+  }
+
+  case object Iterator extends BackendObjType {
+
+    def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext", mkDescriptor()(BackendType.Bool))
+
+    def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next", mkDescriptor()(JavaObject.toTpe))
   }
 }
