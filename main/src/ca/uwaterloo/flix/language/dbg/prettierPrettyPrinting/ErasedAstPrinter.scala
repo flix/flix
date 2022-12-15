@@ -16,7 +16,7 @@ object ErasedAstPrinter {
   implicit val indent: Indent = INDENT
 
   def doc(root: Root): Doc = {
-    val defs = root.defs.filter { case (sym, _) => sym.namespace == List("One") }.map { case (_, defn) => doc(defn) }.toList
+    val defs = root.defs.toList.sortBy{case (sym, _) => sym.namespace.mkString("/")}/*.filter { case (sym, _) => sym.namespace == List("One") }*/.map { case (_, defn) => doc(defn) }.toList
     group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
   }
 
@@ -55,16 +55,11 @@ object ErasedAstPrinter {
       case Expression.Branch(exp, branches, tpe, loc) => text("<Branch>")
       case Expression.JumpTo(sym, tpe, loc) => text("<JumpTo>")
       case Expression.Let(_, _, _, _, _) =>
-        @tailrec
-        def collectBlock(e: Expression, acc: List[Doc]): List[Doc] = e match {
-          case Expression.Let(sym, exp1, exp2, _, _) =>
-            val let = letf(doc(sym), None, doc(exp1, paren = false))
-            collectBlock(exp2, let :: acc)
-          case other => doc(other, paren = false) :: acc
-        }
-        val es = collectBlock(exp, Nil).reverse
+        val es = collectLetBlock(exp, Nil)
         if (topDef) seqf(es) else seqBlockf(es)
-      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => text("<LetRec>")
+      case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) =>
+        val es = collectLetBlock(exp, Nil)
+        if (topDef) seqf(es) else seqBlockf(es)
       case Expression.Region(tpe, loc) => text("<Region>")
       case Expression.Is(sym, exp, loc) => text("<Is>")
       case Expression.Tag(sym, exp, tpe, loc) => text("<Tag>")
@@ -118,6 +113,17 @@ object ErasedAstPrinter {
       case Expression.UnboxFloat32(exp, _) => text("unbox") <+> doc(exp)
       case Expression.UnboxFloat64(exp, _) => text("unbox") <+> doc(exp)
     })
+  }
+
+  @tailrec
+  def collectLetBlock(e: Expression, acc: List[Doc]): List[Doc] = e match {
+    case Expression.Let(sym, exp1, exp2, _, _) =>
+      val let = letf(doc(sym), None, doc(exp1, paren = false))
+      collectLetBlock(exp2, let :: acc)
+    case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) =>
+      val let = letrecf(doc(varSym), None, doc(exp1, paren = false))
+      collectLetBlock(exp2, let :: acc)
+    case other => (doc(other, paren = false) :: acc).reverse
   }
 
   def doc(sym: HoleSym): Doc = text(sym.toString)

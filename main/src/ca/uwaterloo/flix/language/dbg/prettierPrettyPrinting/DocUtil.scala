@@ -134,6 +134,10 @@ object DocUtil {
       text("let") <+> ascf(v, tpe) <+> text("=") <+\?>> body
     }
 
+    def letrecf(v: Doc, tpe: Option[Doc], body: Doc)(implicit i: Indent): Doc = {
+      text("letrec") <+> ascf(v, tpe) <+> text("=") <+\?>> body
+    }
+
     /**
       * {a; b; c}
       *
