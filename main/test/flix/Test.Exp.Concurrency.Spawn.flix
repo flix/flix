@@ -54,9 +54,9 @@ namespace Test/Exp/Concurrency/Spawn {
     @test
     def testSpawn18(): Unit \ IO = spawn spawn spawn 123 @ Static @ Static @ Static
 
-    @test @Skip
-    def testSpawnAndRegionOf01(): Unit \ IO = region r {
-        let a = [1, 2, 3] @ r;
-        spawn () @ Scoped.regionOf(a)
-    }
+//    @test
+//    def testSpawnAndRegionOf01(): Unit \ IO = region r {
+//        let a = [1, 2, 3] @ r;
+//        spawn () @ Scoped.regionOf(a)
+//    }
 }
