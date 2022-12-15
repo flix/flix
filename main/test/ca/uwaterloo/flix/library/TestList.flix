@@ -2028,33 +2028,33 @@ def forEach02(): Bool \ IO =
     3 == deref r
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region r {
-        let a = List.toArray(r, Nil): Array[Int32, r];
-        Array.sameElements(a, [] @ r)
-    }
+@test
+def toArray01(): Bool = region r {
+    let a = List.toArray(r, Nil): Array[Int32, r];
+    Array.sameElements(a, [] @ r)
+}
 
-    @test
-    def toArray02(): Bool = region r {
-        let a = List.toArray(r, 1 :: Nil);
-        Array.sameElements(a, [1] @ r)
-    }
+@test
+def toArray02(): Bool = region r {
+    let a = List.toArray(r, 1 :: Nil);
+    Array.sameElements(a, [1] @ r)
+}
 
-    @test
-    def toArray03(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: Nil);
-        Array.sameElements(a, [1, 2] @ r)
-    }
+@test
+def toArray03(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: Nil);
+    Array.sameElements(a, [1, 2] @ r)
+}
 
-    @test
-    def toArray04(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
-        Array.sameElements(a, [1, 2, 3] @ r)
-    }
+@test
+def toArray04(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
+    Array.sameElements(a, [1, 2, 3] @ r)
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2457,431 +2457,458 @@ def distinctWith08(): Bool =
 def distinctWith09(): Bool =
     List.distinctWith((x,y) -> x == y, 4 :: 4 :: 3  :: 4 :: 2 :: 1 :: 1 :: Nil) == 4 :: 3 :: 2 :: 1 :: Nil
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toString01(): Bool =
-        toString(1 :: Nil) == "1 :: Nil"
+@test
+def toString01(): Bool =
+    toString(1 :: Nil) == "1 :: Nil"
 
-    @test
-    def toString02(): Bool =
-        toString(1 :: 2 :: Nil) == "1 :: 2 :: Nil"
+@test
+def toString02(): Bool =
+    toString(1 :: 2 :: Nil) == "1 :: 2 :: Nil"
 
-    @test
-    def toString03(): Bool =
-        toString(93 :: 3 :: 4 :: Nil) == "93 :: 3 :: 4 :: Nil"
+@test
+def toString03(): Bool =
+    toString(93 :: 3 :: 4 :: Nil) == "93 :: 3 :: 4 :: Nil"
 
-    @test
-    def toString04(): Bool =
-        toString('a' :: 'b' :: 'c' :: Nil) == "a :: b :: c :: Nil"
+@test
+def toString04(): Bool =
+    toString('a' :: 'b' :: 'c' :: Nil) == "a :: b :: c :: Nil"
 
-    @test
-    def toString05(): Bool =
-        toString(true :: false :: true :: true :: Nil) == "true :: false :: true :: true :: Nil"
+@test
+def toString05(): Bool =
+    toString(true :: false :: true :: true :: Nil) == "true :: false :: true :: true :: Nil"
 
-    @test
-    def toString06(): Bool =
-        toString((1 :: 2 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: 7 :: Nil) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
+@test
+def toString06(): Bool =
+    toString((1 :: 2 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: 7 :: Nil) :: Nil) == "1 :: 2 :: Nil :: 2 :: 3 :: Nil :: 4 :: 7 :: Nil :: Nil"
 
-    /////////////////////////////////////////////////////////////////////////////
-    // hash                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// hash                                                                    //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def hash01(): Bool = hash(Nil: List[Unit]) == hash(Nil: List[Unit])
+@test
+def hash01(): Bool = hash(Nil: List[Unit]) == hash(Nil: List[Unit])
 
-    @test
-    def hash02(): Bool = hash(1 :: Nil) == hash(1 :: Nil)
+@test
+def hash02(): Bool = hash(1 :: Nil) == hash(1 :: Nil)
 
-    @test
-    def hash03(): Bool = hash(1 :: 2 :: Nil) == hash(1 :: 2 :: Nil)
+@test
+def hash03(): Bool = hash(1 :: 2 :: Nil) == hash(1 :: 2 :: Nil)
 
-    @test
-    def hash04(): Bool = hash(2 :: 1 :: Nil) != hash(1 :: 2 :: Nil)
+@test
+def hash04(): Bool = hash(2 :: 1 :: Nil) != hash(1 :: 2 :: Nil)
 
-    @test
-    def hash05(): Bool = hash("c" :: "b" :: "a" :: Nil) != hash("c" :: "a" :: "b" :: Nil)
+@test
+def hash05(): Bool = hash("c" :: "b" :: "a" :: Nil) != hash("c" :: "a" :: "b" :: Nil)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // mimimumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// mimimumBy                                                               //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimumBy01(): Bool = List.minimumBy((x, y) -> x <=> y, Nil: List[Int32]) == None
+@test
+def minimumBy01(): Bool = List.minimumBy((x, y) -> x <=> y, Nil: List[Int32]) == None
 
-    @test
-    def minimumBy02(): Bool = List.minimumBy((x, y) -> x <=> y, 1 :: Nil) == Some(1)
+@test
+def minimumBy02(): Bool = List.minimumBy((x, y) -> x <=> y, 1 :: Nil) == Some(1)
 
-    @test
-    def minimumBy03(): Bool = List.minimumBy((x, y) -> x <=> y, 3 :: 2 :: 1 :: Nil) == Some(1)
+@test
+def minimumBy03(): Bool = List.minimumBy((x, y) -> x <=> y, 3 :: 2 :: 1 :: Nil) == Some(1)
 
-    @test
-    def minimumBy04(): Bool = List.minimumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(0)
+@test
+def minimumBy04(): Bool = List.minimumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(0)
 
-    @test
-    def minimumBy05(): Bool = List.minimumBy((_, _) -> LessThan, List.range(0, 99)) == Some(0)
+@test
+def minimumBy05(): Bool = List.minimumBy((_, _) -> LessThan, List.range(0, 99)) == Some(0)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // maximumBy                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// maximumBy                                                               //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximumBy01(): Bool = List.maximumBy((x, y) -> x <=> y, Nil: List[Int32]) == None
+@test
+def maximumBy01(): Bool = List.maximumBy((x, y) -> x <=> y, Nil: List[Int32]) == None
 
-    @test
-    def maximumBy02(): Bool = List.maximumBy((x, y) -> x <=> y, 1 :: Nil) == Some(1)
+@test
+def maximumBy02(): Bool = List.maximumBy((x, y) -> x <=> y, 1 :: Nil) == Some(1)
 
-    @test
-    def maximumBy03(): Bool = List.maximumBy((x, y) -> x <=> y, 3 :: 2 :: 1 :: Nil) == Some(3)
+@test
+def maximumBy03(): Bool = List.maximumBy((x, y) -> x <=> y, 3 :: 2 :: 1 :: Nil) == Some(3)
 
-    @test
-    def maximumBy04(): Bool = List.maximumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(3)
+@test
+def maximumBy04(): Bool = List.maximumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(3)
 
-    @test
-    def maximumBy05(): Bool = List.maximumBy((_, _) -> LessThan, List.range(0, 99)) == Some(98)
+@test
+def maximumBy05(): Bool = List.maximumBy((_, _) -> LessThan, List.range(0, 99)) == Some(98)
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toDelayList                                                             //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toDelayList01(): Bool = Nil: List[Unit] |> List.toDelayList == DelayList.empty()
+@test
+def toDelayList01(): Bool = Nil: List[Unit] |> List.toDelayList == DelayList.empty()
 
-    @test
-    def toDelayList02(): Bool = List.range(-1000, 1000) |> List.toDelayList == DelayList.range(-1000, 1000)
+@test
+def toDelayList02(): Bool = List.range(-1000, 1000) |> List.toDelayList == DelayList.range(-1000, 1000)
 
-    @test
-    def toDelayList03(): Bool = List.range(-1000, 1000) |> List.toDelayList |> DelayList.toList == List.range(-1000, 1000)
+@test
+def toDelayList03(): Bool = List.range(-1000, 1000) |> List.toDelayList |> DelayList.toList == List.range(-1000, 1000)
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toChain                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toChain                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool =
-        List.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
+@test
+def toChain01(): Bool =
+    List.toChain(Nil: List[Int32]) == Chain.empty(): Chain[Int32]
 
-    @test
-    def toChain02(): Bool =
-        List.toChain(1 :: Nil) == Chain.singleton(1)
+@test
+def toChain02(): Bool =
+    List.toChain(1 :: Nil) == Chain.singleton(1)
 
-    @test
-    def toChain03(): Bool =
-        List.toChain(1 :: 2 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` Chain.empty()))
+@test
+def toChain03(): Bool =
+    List.toChain(1 :: 2 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` Chain.empty()))
 
-    @test
-    def toChain04(): Bool =
-        List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
+@test
+def toChain04(): Bool =
+    List.toChain(1 :: 2 :: 3 :: Nil) == (1 `Chain.cons` (2 `Chain.cons` (3 `Chain.cons` Chain.empty())))
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sum                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// sum                                                                     //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool =
-        List.sum(Nil) == 0
+@test
+def sum01(): Bool =
+    List.sum(Nil) == 0
 
-    @test
-    def sum02(): Bool =
-        List.sum(1 :: Nil) == 1
+@test
+def sum02(): Bool =
+    List.sum(1 :: Nil) == 1
 
-    @test
-    def sum03(): Bool =
-        List.sum(1 :: 2 :: 3 :: Nil) == 6
+@test
+def sum03(): Bool =
+    List.sum(1 :: 2 :: 3 :: Nil) == 6
 
-    @test
-    def sum04(): Bool =
-        List.sum(1 :: 2 :: 3 :: -3 :: Nil) == 3
+@test
+def sum04(): Bool =
+    List.sum(1 :: 2 :: 3 :: -3 :: Nil) == 3
 
-    @test
-    def sum05(): Bool =
-        List.sum(-1 :: -2 :: -3 :: -4 :: Nil) == -10
+@test
+def sum05(): Bool =
+    List.sum(-1 :: -2 :: -3 :: -4 :: Nil) == -10
 
-    @test
-    def sum06(): Bool =
-        List.sum(10 :: -10 :: Nil) == 0
+@test
+def sum06(): Bool =
+    List.sum(10 :: -10 :: Nil) == 0
 
-    @test
-    def sum07(): Bool =
-        List.range(1, 101) |> List.sum == 5050
+@test
+def sum07(): Bool =
+    List.range(1, 101) |> List.sum == 5050
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // sumWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// sumWith                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
-        List.sumWith(x -> x + 1, Nil: List[Int32]) == 0
+@test
+def sumWith01(): Bool =
+    List.sumWith(x -> x + 1, Nil: List[Int32]) == 0
 
-    @test
-    def sumWith02(): Bool =
-        List.sumWith(x -> x + 1, 1 :: Nil) == 2
+@test
+def sumWith02(): Bool =
+    List.sumWith(x -> x + 1, 1 :: Nil) == 2
 
-    @test
-    def sumWith03(): Bool =
-        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 9
+@test
+def sumWith03(): Bool =
+    List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 9
 
-    @test
-    def sumWith04(): Bool =
-        List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == 7
+@test
+def sumWith04(): Bool =
+    List.sumWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == 7
 
-    @test
-    def sumWith05(): Bool =
-        List.sumWith(x -> x + 1, -1 :: -2 :: -3 :: -4 :: Nil) == -6
+@test
+def sumWith05(): Bool =
+    List.sumWith(x -> x + 1, -1 :: -2 :: -3 :: -4 :: Nil) == -6
 
-    @test
-    def sumWith06(): Bool =
-        List.sumWith(x -> x + 1, 10 :: -10 :: Nil) == 2
+@test
+def sumWith06(): Bool =
+    List.sumWith(x -> x + 1, 10 :: -10 :: Nil) == 2
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// product                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def product01(): Bool =
-        List.product(Nil) == 1
+@test
+def product01(): Bool =
+    List.product(Nil) == 1
 
-    @test
-    def product02(): Bool =
-        List.product(1 :: Nil) == 1
+@test
+def product02(): Bool =
+    List.product(1 :: Nil) == 1
 
-    @test
-    def product03(): Bool =
-        List.product(1 :: 2 :: 3 :: Nil) == 6
+@test
+def product03(): Bool =
+    List.product(1 :: 2 :: 3 :: Nil) == 6
 
-    @test
-    def product04(): Bool =
-        List.product(1 :: 2 :: 3 :: -3 :: Nil) == -18
-
-    @test
-    def product05(): Bool =
-        List.product(-1 :: -2 :: -3 :: -4 :: Nil) == 24
-
-    @test
-    def product06(): Bool =
-        List.product(10 :: -10 :: Nil) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        List.productWith(x -> x + 1, Nil) == 1
-
-    @test
-    def productWith02(): Bool =
-        List.productWith(x -> x + 1, 1 :: Nil) == 2
-
-    @test
-    def productWith03(): Bool =
-        List.productWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 24
-
-    @test
-    def productWith04(): Bool =
-        List.productWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == -48
-
-    @test
-    def productWith05(): Bool =
-        List.productWith(x -> x + 1, -2 :: -3 :: -4 :: -5 :: Nil) == 24
-
-    @test
-    def productWith06(): Bool =
-        List.productWith(x -> x + 1, 10 :: -10 :: Nil) == -99
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def iterator01(): Bool = region r {
-        Nil: List[Int32] |> List.iterator(r) |> Iterator.toList == Nil
-    }
-
-    @test
-    def iterator02(): Bool = region r {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-    }
-
-    @test
-    def iterator03(): Bool = region r {
-        List.range(-100, 100) |> List.iterator(r) |> Iterator.toList == List.range(-100, 100)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerate                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def enumerate01(): Bool = region r {
-        let z = ref Nil @ r;
-        let l = Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == Nil: List[(Int32, Int32)]
-    }
-
-    @test
-    def enumerate02(): Bool = region r {
-        let z = ref Nil @ r;
-        let l = 1 :: 2 :: 3 :: Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
-    }
-
-    @test
-    def enumerate03(): Bool = region r {
-        let z = ref Nil @ r;
-        let l = List.range(100, 200);
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == List.zip(l, List.range(0, 100))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sequence                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    /// TODO - this does not test order of effects.
-    /// We need a more "effective" monad than Identity to show that effects are
-    /// sequenced in left-to-right order.
-    /// This applies to the `sequence` tests on the other container types as well.
-
-    @test
-    def sequence01(): Bool =
-        let l: List[Identity[Int32]] = Nil;
-        List.sequence(l) == Identity(Nil)
-
-    @test
-    def sequence02(): Bool =
-        let l = Identity(1) :: Nil;
-        List.sequence(l) == Identity(1 :: Nil)
-
-    @test
-    def sequence03(): Bool =
-        let l = Identity(1) :: Identity(2) :: Nil;
-        List.sequence(l) == Identity(1 :: 2 :: Nil)
-
-    @test
-    def sequence04(): Bool =
-        let l = Identity(1) :: Identity(2) :: Identity(3) :: Nil;
-        List.sequence(l) == Identity(1 :: 2 :: 3 :: Nil)
-
-    /////////////////////////////////////////////////////////////////////////////
-    // traverse                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def traverse01(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nil) and deref st == 0
-    }
-
-    @test
-    def traverse02(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = 1 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: Nil) and deref st == 1
-    }
-
-    @test
-    def traverse03(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = 1 :: 2 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: 2 :: Nil) and deref st == 2
-    }
-
-    @test
-    def traverse04(): Bool = region r {
-        let st = ref 0 @ r;
-        let l = 1 :: 2 :: 3 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // merge                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def merge01(): Bool =
-        let l1 = Nil: List[Int32];
-        let l2 = Nil: List[Int32];
-        List.merge(l1, l2) == Nil
-
-    @test
-    def merge02(): Bool =
-        let l1 = 1 :: Nil;
-        let l2 = Nil: List[Int32];
-        List.merge(l1, l2) == 1 :: Nil
-
-    @test
-    def merge03(): Bool =
-        let l1 = 1 :: Nil;
-        let l2 = 2 :: Nil;
-        List.merge(l1, l2) == 1 :: 2 :: Nil
-
-    @test
-    def merge04(): Bool =
-        let l1 = 2 :: Nil;
-        let l2 = 1 :: Nil;
-        List.merge(l1, l2) == 1 :: 2 :: Nil
-
-    @test
-    def merge05(): Bool =
-        let l1 = 1 :: 4 :: 8 :: 10 :: Nil;
-        let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
-        List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
-
-    @test
-    def merge06(): Bool =
-        let l1 = 4 :: 5 :: Nil;
-        let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
-        List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // shuffle                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def shuffle01(): Bool \ NonDet =
-        let l1: List[Int32] = Nil;
-        let l2 = List.shuffle(Random.new(), l1);
-
-        List.length(l2) == 0 and List.toSet(l2) == Set#{}
-
-    @test
-    def shuffle02(): Bool \ NonDet =
-        let l1 = 1 :: Nil;
-        let l2 = List.shuffle(Random.new(), l1);
-
-        List.length(l2) == 1 and List.toSet(l2) == Set#{1}
-
-    @test
-    def shuffle03(): Bool \ NonDet =
-        let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.shuffle(Random.new(), l1);
-
-        List.length(l2) == 3 and List.toSet(l2) == Set#{1, 2, 3}
-
-    @test
-    def shuffle04(): Bool \ NonDet =
-        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.shuffle(Random.new(), l1);
-
-        List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-
+@test
+def product04(): Bool =
+    List.product(1 :: 2 :: 3 :: -3 :: Nil) == -18
+
+@test
+def product05(): Bool =
+    List.product(-1 :: -2 :: -3 :: -4 :: Nil) == 24
+
+@test
+def product06(): Bool =
+    List.product(10 :: -10 :: Nil) == -100
+
+
+/////////////////////////////////////////////////////////////////////////////
+// productWith                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def productWith01(): Bool =
+    List.productWith(x -> x + 1, Nil) == 1
+
+@test
+def productWith02(): Bool =
+    List.productWith(x -> x + 1, 1 :: Nil) == 2
+
+@test
+def productWith03(): Bool =
+    List.productWith(x -> x + 1, 1 :: 2 :: 3 :: Nil) == 24
+
+@test
+def productWith04(): Bool =
+    List.productWith(x -> x + 1, 1 :: 2 :: 3 :: -3 :: Nil) == -48
+
+@test
+def productWith05(): Bool =
+    List.productWith(x -> x + 1, -2 :: -3 :: -4 :: -5 :: Nil) == 24
+
+@test
+def productWith06(): Bool =
+    List.productWith(x -> x + 1, 10 :: -10 :: Nil) == -99
+
+
+/////////////////////////////////////////////////////////////////////////////
+// iterator                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def iterator01(): Bool = region r {
+    Nil: List[Int32] |> List.iterator(r) |> Iterator.toList == Nil
+}
+
+@test
+def iterator02(): Bool = region r {
+    (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+}
+
+@test
+def iterator03(): Bool = region r {
+    List.range(-100, 100) |> List.iterator(r) |> Iterator.toList == List.range(-100, 100)
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// enumerate                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def enumerate01(): Bool = region r {
+    let z = ref Nil @ r;
+    let l = Nil;
+    foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+    List.reverse(deref z) == Nil: List[(Int32, Int32)]
+}
+
+@test
+def enumerate02(): Bool = region r {
+    let z = ref Nil @ r;
+    let l = 1 :: 2 :: 3 :: Nil;
+    foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+    List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+}
+
+@test
+def enumerate03(): Bool = region r {
+    let z = ref Nil @ r;
+    let l = List.range(100, 200);
+    foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+    List.reverse(deref z) == List.zip(l, List.range(0, 100))
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// sequence                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+/// TODO - this does not test order of effects.
+/// We need a more "effective" monad than Identity to show that effects are
+/// sequenced in left-to-right order.
+/// This applies to the `sequence` tests on the other container types as well.
+
+@test
+def sequence01(): Bool =
+    let l: List[Identity[Int32]] = Nil;
+    List.sequence(l) == Identity(Nil)
+
+@test
+def sequence02(): Bool =
+    let l = Identity(1) :: Nil;
+    List.sequence(l) == Identity(1 :: Nil)
+
+@test
+def sequence03(): Bool =
+    let l = Identity(1) :: Identity(2) :: Nil;
+    List.sequence(l) == Identity(1 :: 2 :: Nil)
+
+@test
+def sequence04(): Bool =
+    let l = Identity(1) :: Identity(2) :: Identity(3) :: Nil;
+    List.sequence(l) == Identity(1 :: 2 :: 3 :: Nil)
+
+/////////////////////////////////////////////////////////////////////////////
+// traverse                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def traverse01(): Bool = region r {
+    let st = ref 0 @ r;
+    let l = Nil;
+    let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+    ans == Identity(Nil) and deref st == 0
+}
+
+@test
+def traverse02(): Bool = region r {
+    let st = ref 0 @ r;
+    let l = 1 :: Nil;
+    let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+    ans == Identity(1 :: Nil) and deref st == 1
+}
+
+@test
+def traverse03(): Bool = region r {
+    let st = ref 0 @ r;
+    let l = 1 :: 2 :: Nil;
+    let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+    ans == Identity(1 :: 2 :: Nil) and deref st == 2
+}
+
+@test
+def traverse04(): Bool = region r {
+    let st = ref 0 @ r;
+    let l = 1 :: 2 :: 3 :: Nil;
+    let ans = List.traverse(x -> {st := x; Identity(x)}, l);
+    ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// merge                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def merge01(): Bool =
+    let l1 = Nil: List[Int32];
+    let l2 = Nil: List[Int32];
+    List.merge(l1, l2) == Nil
+
+@test
+def merge02(): Bool =
+    let l1 = 1 :: Nil;
+    let l2 = Nil: List[Int32];
+    List.merge(l1, l2) == 1 :: Nil
+
+@test
+def merge03(): Bool =
+    let l1 = 1 :: Nil;
+    let l2 = 2 :: Nil;
+    List.merge(l1, l2) == 1 :: 2 :: Nil
+
+@test
+def merge04(): Bool =
+    let l1 = 2 :: Nil;
+    let l2 = 1 :: Nil;
+    List.merge(l1, l2) == 1 :: 2 :: Nil
+
+@test
+def merge05(): Bool =
+    let l1 = 1 :: 4 :: 8 :: 10 :: Nil;
+    let l2 = 2 :: 3 :: 8 :: 9 :: Nil;
+    List.merge(l1, l2) == 1 :: 2 :: 3 :: 4 :: 8 :: 8 :: 9 :: 10 :: Nil
+
+@test
+def merge06(): Bool =
+    let l1 = 4 :: 5 :: Nil;
+    let l2 = 2 :: 3 :: 6 :: 7 :: Nil;
+    List.merge(l1, l2) == 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil
+
+
+/////////////////////////////////////////////////////////////////////////////
+// shuffle                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def shuffle01(): Bool \ NonDet =
+    let l1: List[Int32] = Nil;
+    let l2 = List.shuffle(Random.new(), l1);
+
+    List.length(l2) == 0 and List.toSet(l2) == Set#{}
+
+@test
+def shuffle02(): Bool \ NonDet =
+    let l1 = 1 :: Nil;
+    let l2 = List.shuffle(Random.new(), l1);
+
+    List.length(l2) == 1 and List.toSet(l2) == Set#{1}
+
+@test
+def shuffle03(): Bool \ NonDet =
+    let l1 = 1 :: 2 :: 3 :: Nil;
+    let l2 = List.shuffle(Random.new(), l1);
+
+    List.length(l2) == 3 and List.toSet(l2) == Set#{1, 2, 3}
+
+@test
+def shuffle04(): Bool \ NonDet =
+    let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+    let l2 = List.shuffle(Random.new(), l1);
+
+    List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+/////////////////////////////////////////////////////////////////////////////
+// Literals                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def literal01(): Bool =
+    List#{} == (Nil: List[String])
+
+@test
+def literal02(): Bool =
+    List#{1} == 1 :: Nil
+
+@test
+def literal03(): Bool =
+    List#{1, 2, 3} == 1 :: 2 :: 3 :: Nil
+
+@test
+def literal04(): Bool =
+    List#{'a', 'b', 'c'} == 'a' :: 'b' :: 'c' :: Nil
+
+@test
+def literal05(): Bool =
+    List#{List#{1, 2}, List#{3}, List#{4, 5}} == (1 :: 2 :: Nil) :: (3 :: Nil) :: (4 :: 5 :: Nil) :: Nil
+
+@test
+def literal06(): Bool =
+    not List.isEmpty(List#{{}})
 
 }
