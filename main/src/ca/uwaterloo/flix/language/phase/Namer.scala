@@ -41,7 +41,7 @@ object Namer {
 
     flatMapN(unitsVal) {
       case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
+        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty)) {
           case (table, unit) => tableUnit(unit, table)
         }
 
