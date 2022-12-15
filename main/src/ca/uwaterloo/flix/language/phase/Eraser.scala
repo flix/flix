@@ -31,7 +31,7 @@ object Eraser {
 
 
     val res = ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
-    res.map(root => println(Doc.pretty(50, ErasedAstPrinter.doc(root))))
+    res.map(root => println(Doc.pretty(100, ErasedAstPrinter.doc(root))))
     res
   }
 

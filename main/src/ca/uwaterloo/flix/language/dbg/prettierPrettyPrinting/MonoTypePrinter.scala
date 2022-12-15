@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
 
 import scala.annotation.tailrec
 
@@ -42,7 +42,7 @@ object MonoTypePrinter {
             recordDoc(rest, (field, value) :: acc)
           case rest =>
             val fields = acc.reverse.map { case (field, tpe) => (text(field), doc(tpe)) }
-            recordExtendf(fields, doc(rest))
+            recordExtendf(fields, Some(doc(rest)))
         }
 
         recordDoc(tpe, Nil)
@@ -54,7 +54,7 @@ object MonoTypePrinter {
             schemaDoc(rest, (name, tpe) :: acc)
           case rest =>
             val fields = acc.reverse.map { case (field, tpe) => (text(field), doc(tpe)) }
-            schemaExtendf(fields, doc(rest))
+            schemaExtendf(fields, Some(doc(rest)))
         }
 
         schemaDoc(tpe, Nil)

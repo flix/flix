@@ -5,7 +5,10 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.Symbol._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
+
+import scala.annotation.tailrec
 
 
 object ErasedAstPrinter {
@@ -13,7 +16,7 @@ object ErasedAstPrinter {
   implicit val indent: Indent = INDENT
 
   def doc(root: Root): Doc = {
-    val defs = root.defs.filter{ case (sym, _) => sym.namespace == List("One")}.map { case (_, defn) => doc(defn) }.toList
+    val defs = root.defs.filter { case (sym, _) => sym.namespace == List("One") }.map { case (_, defn) => doc(defn) }.toList
     group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
   }
 
@@ -22,7 +25,7 @@ object ErasedAstPrinter {
       defn.sym.toString,
       defn.formals.map(doc),
       MonoTypePrinter.doc(defn.tpe),
-      doc(defn.exp, parenthesis = false)
+      doc(defn.exp, paren = false, topDef = true)
     )
   }
 
@@ -32,8 +35,11 @@ object ErasedAstPrinter {
 
   def doc(sym: VarSym): Doc = text(sym.toString)
 
-  def doc(exp: Expression, parenthesis: Boolean = true): Doc = {
-    def par(d: Doc): Doc = if (parenthesis) parens(d) else d
+  sealed trait Position
+
+  def doc(exp: Expression, paren: Boolean = true, topDef: Boolean = false): Doc = {
+    def par(d: Doc): Doc = if (paren) parens(d) else d
+
     par(exp match {
       case Expression.Cst(cst, _, _) => doc(cst)
       case Expression.Var(sym, _, _) => doc(sym)
@@ -48,8 +54,16 @@ object ErasedAstPrinter {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => text("<IfThenElse>")
       case Expression.Branch(exp, branches, tpe, loc) => text("<Branch>")
       case Expression.JumpTo(sym, tpe, loc) => text("<JumpTo>")
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        par(letf(doc(sym), None, doc(exp1, parenthesis = false), doc(exp2, parenthesis = false)))
+      case Expression.Let(_, _, _, _, _) =>
+        @tailrec
+        def collectBlock(e: Expression, acc: List[Doc]): List[Doc] = e match {
+          case Expression.Let(sym, exp1, exp2, _, _) =>
+            val let = letf(doc(sym), None, doc(exp1, paren = false))
+            collectBlock(exp2, let :: acc)
+          case other => doc(other, paren = false) :: acc
+        }
+        val es = collectBlock(exp, Nil).reverse
+        if (topDef) seqf(es) else seqBlockf(es)
       case Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, loc) => text("<LetRec>")
       case Expression.Region(tpe, loc) => text("<Region>")
       case Expression.Is(sym, exp, loc) => text("<Is>")

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
-import Doc._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 
 import scala.collection.immutable
 
@@ -17,82 +17,143 @@ object DocUtil {
   def lines(d: List[Doc]): Doc = fold(_ <+\> _, d)
 
   def bracket(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
-    group(text(l) <> nest(breakWith("") <> x) <\> text(r))
+    text(l) <> nest(breakWith("") <> x) <\> text(r)
   }
 
-  def sep(sep: Doc, d: List[Doc]): Doc = fold(_ <> sep <> _, d)
+  def sep(sep: Doc, d: List[Doc]): Doc =
+    fold(_ <> sep <> _, d)
 
   /**
     * A space/line following the sep
     */
-  def groupSep(sep: String, d: List[Doc]): Doc =
+  def groupVSep(sep: String, d: List[Doc]): Doc =
     group(fold(_ <> text(sep) <+\> _, d))
 
-  def parens(d: Doc)(implicit i: Indent): Doc = bracket("(", d, ")")
+  def sep(s: String, d: List[Doc]): Doc =
+    fold(_ <> text(s) <> _, d)
 
-  def defnf(name: String, args: List[Doc], resType: Doc, body: Doc)(implicit i: Indent): Doc = {
-    text("def") <+>
-      text(name) <> tuplef(args) <>
-      text(":") <+> resType <+> text("=") <+\?>>
-      body
-  }
+  def commaSep(d: List[Doc]): Doc = groupVSep(",", d)
 
-  // TODO lets should really be formatted as a block of lets
-  def letf(v: Doc, tpe: Option[Doc], body: Doc, rest: Doc)(implicit i: Indent): Doc = {
-    val varPart = tpe match {
-      case Some(value) => ascf(v, value)
-      case None => v
+  object Language {
+
+    def tuplef(t: List[Doc])(implicit i: Indent): Doc =
+      parens(commaSep(t))
+
+    def selectiveTuplef(t: List[Doc])(implicit i: Indent): Doc = t match {
+      case Nil => text("()")
+      case single :: Nil => single
+      case _ => tuplef(t)
     }
-    text("let") <+> varPart <+> text("=") <> nest(breakWith(" ") <> body) <> text(";") <+\?> rest
-  }
 
-  def arrowf(args: List[Doc], res: Doc)(implicit i: Indent): Doc = {
-    selectiveTuplef(args) <+> text("->") <+\?>> res
-  }
+    def paramf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
+      exp <> text(":") <+\?> tpe
 
-  def eqf(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 <+> text("=") <+\?> d2
+    def ascf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
+      exp <> text(":") <+> tpe
 
-  def recordExtendf(fields: List[(Doc, Doc)], rest: Doc)(implicit i: Indent): Doc = {
-    val f = fields.map{case (x, y) => eqf(x, y)}
-    bracket("{", group(sep(text(",") <> breakWith(" "), f) <+> text("|") <+\?> rest), "}")
-  }
+    def ascf(exp: Doc, tpe: Option[Doc])(implicit i: Indent): Doc = tpe match {
+      case Some(value) => ascf(exp, value)
+      case None => exp
+    }
 
-  def schemaExtendf(fields: List[(Doc, Doc)], rest: Doc)(implicit i: Indent): Doc =
-    text("#") <> recordExtendf(fields, rest)
+    def eqf(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
+      d1 <+> text("=") <+\?>> d2
 
-  def typeAppf(tpe: Doc, args: List[Doc])(implicit i: Indent): Doc = {
-    tpe <> bracket("[", commaSep(args),"]")
-  }
+    /**
+      * {a = b, c = d, e = f< | rest>}
+      *
+      * {
+      *   a = b, c = d, e = f< | rest>
+      * }
+      *
+      * {
+      *   a = b,
+      *   c = d,
+      *   e = f<
+      *   | rest>
+      * }
+      *
+      * {
+      *   a = b,
+      *   c =
+      *     d,
+      *   e = f<
+      *   | rest>
+      * }
+      */
+    def recordExtendf(fields: List[(Doc, Doc)], rest: Option[Doc])(implicit i: Indent): Doc = {
+      val f = fields.map { case (x, y) => x <+> text("=") <+\?>> y }
+      val restPart = rest match {
+        case Some(value) => text("|") <+> value
+        case None => empty
+      }
+      group(bracket("{", nest(group(
+        sep(text(",") <> breakWith(" "), f) <+\> restPart
+      )), "}"))
+    }
 
-  def paramf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
-    exp <> text(":") <+\?> tpe
+    def schemaExtendf(fields: List[(Doc, Doc)], rest: Option[Doc])(implicit i: Indent): Doc =
+      text("#") <> recordExtendf(fields, rest)
 
-  def ascf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
-    exp <> text(":") <+> tpe
+    def typeAppf(tpe: Doc, args: List[Doc])(implicit i: Indent): Doc = {
+      tpe <> group(bracket("[", commaSep(args), "]"))
+    }
 
-  def commaSep(d: List[Doc]): Doc = groupSep(",", d)
+    def parens(d: Doc)(implicit i: Indent): Doc = group(bracket("(", d, ")"))
 
-  def tuplef(t: List[Doc])(implicit i: Indent): Doc =
-    parens(commaSep(t))
+    /**
+      * def f(x: t, x: t): t = e
+      *
+      * def f(x: t, x: t): t =
+      *   e
+      *
+      * def f(
+      *   x: t,
+      *   x: t
+      * ): t =
+      *   e
+      */
+    def defnf(name: String, args: List[Doc], resType: Doc, body: Doc)(implicit i: Indent): Doc = {
+      group(
+        group(
+          text("def") <+>
+          text(name) <> bracket("(", sep(text(",") <> breakWith(" "), args), ")") <>
+          text(":") <+> resType <+> text("=")
+        ) <+\>>
+          body
+      )
+    }
 
-  def selectiveTuplef(t: List[Doc])(implicit i: Indent): Doc = t match {
-    case Nil => text("()")
-    case single :: Nil => single
-    case _ => parens(commaSep(t))
-  }
+    /**
+      * let x<: t> = e
+      *
+      * let x<: t> =
+      *   e
+      */
+    def letf(v: Doc, tpe: Option[Doc], body: Doc)(implicit i: Indent): Doc = {
+      text("let") <+> ascf(v, tpe) <+> text("=") <+\?>> body
+    }
 
-  def test(): Unit = {
-    implicit val i: Indent = INDENT
-    val doc = defnf(
-      "f",
-      List(text("x: String"), text("y: Int32"), text("z: Bool")),
-      text("String"),
-      text("x + y + z ......................")
-    )
-    println(pretty(0, doc))
-    println(pretty(40, doc))
-    println(pretty(50, doc))
-    println(pretty(80, doc))
+    /**
+      * {a; b; c}
+      *
+      * {
+      *   a;
+      *   b;
+      *   c
+      * }
+      */
+    def seqBlockf(l: List[Doc])(implicit i: Indent): Doc = {
+      group(bracket("{", sep(text(";") <> breakWith(" "), l), "}"))
+    }
+
+    def seqf(l: List[Doc])(implicit i: Indent): Doc = {
+      group(sep(text(";") <> breakWith(" "), l))
+    }
+
+    def arrowf(args: List[Doc], res: Doc)(implicit i: Indent): Doc = {
+      selectiveTuplef(args) <+> text("->") <+\?>> res
+    }
+
   }
 }
