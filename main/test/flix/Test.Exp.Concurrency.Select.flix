@@ -259,35 +259,100 @@ namespace Test/Exp/Concurrency/Select {
         let (tx15, rx15) = Channel.buffered(r, 0);
         let (tx16, rx16) = Channel.buffered(r, 0);
         let (tx17, rx17) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { Channel.send((), tx17) ; () } @ r; spawn { Channel.send((), tx16) ; () } @ r; spawn { Channel.send((), tx15) ; () } @ r; spawn { Channel.send((), tx14) ; () } @ r; spawn { select {
-        case _ <- recv(rx17) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16)
-        } } @ r; spawn { select {
-        case _ <- recv(rx16) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx17) ; ()
-        } } @ r; spawn { select {
-        case _ <- recv(rx17) => Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx171, rx171) = Channel.buffered(r, 0);
-        let (tx172, rx172) = Channel.buffered(r, 0);
-        let (tx173, rx173) = Channel.buffered(r, 0);
-        spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { Channel.send((), tx173) ; () } @ r; spawn { Channel.send((), tx172) ; () } @ r; spawn { Channel.send((), tx171) ; () } @ r; spawn { select {
-        case _ <- recv(rx172) => Channel.recv(rx173) ; Channel.recv(rx171) ; ()
-        } } @ r; spawn { select {
-        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
-        case _ <- recv(rx173) => Channel.recv(rx172) ; Channel.recv(rx171) ; ()
-        } } @ r; spawn { select {
-        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
-        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
-        case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172) ; ()
-        } } @ r; spawn { select {
-        case _ <- recv(rx171) => Channel.recv(rx173) ; select {
-        case _ <- recv(rx172) => ()
-        case _ <- recv(rx172) => ()
-        } ; ()
-        case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172) ; ()
-        } } @ r; ()
-        case _ <- recv(rx14) => Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx16) ; ()
-        } } @ r; spawn { select {
-        case _ <- recv(rx17) => Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx14) ; ()
-        } } @ r;
-        ()
+
+        let (txd, rxd) = Channel.buffered(r, 100);
+
+        spawn { Channel.send((), tx17); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx16); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx15); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx14); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx17); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx16); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx15); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx14); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx17); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx16); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx15); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx14); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx17); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx16); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx15); Channel.send((), txd) } @ r; 
+        spawn { Channel.send((), tx14); Channel.send((), txd) } @ r; 
+        spawn { 
+            select {
+                case _ <- recv(rx17) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx16)
+            };
+            Channel.send((), txd)
+        } @ r; 
+        spawn { 
+            select {
+                case _ <- recv(rx16) => Channel.recv(rx14) ; Channel.recv(rx15) ; Channel.recv(rx17)
+            };
+            Channel.send((), txd)
+        } @ r; 
+        spawn { 
+            select {
+                case _ <- recv(rx17) => 
+                    Channel.recv(rx15) ; Channel.recv(rx16) ; Channel.recv(rx14) ; let (tx171, rx171) = Channel.buffered(r, 0);
+                    let (tx172, rx172) = Channel.buffered(r, 0);
+                    let (tx173, rx173) = Channel.buffered(r, 0);
+                    spawn { Channel.send((), tx173); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx172); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx171); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx173); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx172); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx171); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx173); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx172); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx171); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx173); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx172); Channel.send((), txd) } @ r; 
+                    spawn { Channel.send((), tx171); Channel.send((), txd) } @ r; 
+                    spawn { 
+                        select {
+                            case _ <- recv(rx172) => Channel.recv(rx173) ; Channel.recv(rx171)
+                        };
+                        Channel.send((), txd)
+                    } @ r; 
+                    spawn { 
+                        select {
+                            case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172)
+                            case _ <- recv(rx173) => Channel.recv(rx172) ; Channel.recv(rx171)
+                        };
+                        Channel.send((), txd)
+                    } @ r; 
+                    spawn { 
+                        select {
+                            case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172)
+                            case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172)
+                            case _ <- recv(rx171) => Channel.recv(rx173) ; Channel.recv(rx172)
+                        };
+                        Channel.send((), txd)
+                    } @ r; 
+                    spawn { 
+                        select {
+                            case _ <- recv(rx171) => Channel.recv(rx173) ; 
+                                select {
+                                    case _ <- recv(rx172) => ()
+                                    case _ <- recv(rx172) => ()
+                                }
+                            case _ <- recv(rx173) => Channel.recv(rx171) ; Channel.recv(rx172)
+                        };
+                        Channel.send((), txd)
+                    } @ r; 
+                    ()
+                case _ <- recv(rx14) => Channel.recv(rx17) ; Channel.recv(rx15) ; Channel.recv(rx16)
+            } ;
+            Channel.send((), txd)
+        } @ r;
+        spawn { 
+            select {
+                case _ <- recv(rx17) => Channel.recv(rx16) ; Channel.recv(rx15) ; Channel.recv(rx14)
+            };
+            Channel.send((), txd)
+        } @ r;
+
+        List.range(0, 36) |> List.forEach(_ -> Channel.recv(rxd))
     }
 
     @test
