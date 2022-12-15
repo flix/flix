@@ -101,6 +101,10 @@ object DocUtil {
 
     def parens(d: Doc)(implicit i: Indent): Doc = group(bracket("(", d, ")"))
 
+    def applyf(caller: Doc, args: List[Doc])(implicit i: Indent): Doc = {
+      caller <> tuplef(args)
+    }
+
     /**
       * def f(x: t, x: t): t = e
       *
@@ -157,6 +161,37 @@ object DocUtil {
 
     def arrowf(args: List[Doc], res: Doc)(implicit i: Indent): Doc = {
       selectiveTuplef(args) <+> text("->") <+\?>> res
+    }
+
+    /**
+      * if (cond) {thn} else {els}
+      *
+      * if (cond) {
+      *   thn
+      * } else {
+      *   els
+      * }
+      *
+      * if (
+      *   cond
+      * ) {
+      *   thn
+      * } else {
+      *   els
+      * }
+      */
+    def itef(cond: Doc, thn: Doc, els: Doc)(implicit i: Indent): Doc = {
+      group(
+        text("if") <+> group(bracket("(", cond, ")")) <+> bracket("{", thn, "}") <+> text("else") <+> bracket("{", els, "}")
+      )
+    }
+
+    def castf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc = {
+      text("unsafe_cast") <+> exp <+> text("as") <+> tpe
+    }
+
+    def assignf(asignee: Doc, value: Doc)(implicit i: Indent): Doc = {
+      asignee <+> text(":=") <+> value
     }
 
   }

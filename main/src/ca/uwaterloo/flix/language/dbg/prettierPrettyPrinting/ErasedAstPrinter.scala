@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
-import ca.uwaterloo.flix.language.ast.Ast
+import ca.uwaterloo.flix.language.ast.{Ast, MonoType}
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.Symbol._
@@ -16,7 +16,11 @@ object ErasedAstPrinter {
   implicit val indent: Indent = INDENT
 
   def doc(root: Root): Doc = {
-    val defs = root.defs.toList.sortBy{case (sym, _) => sym.namespace.mkString("/")}/*.filter { case (sym, _) => sym.namespace == List("One") }*/.map { case (_, defn) => doc(defn) }.toList
+    val defs = root.
+      defs.
+      toList.
+      sortBy{case (sym, _) => sym.namespace.mkString("/")}/*.filter { case (sym, _) => sym.namespace == List("One") }*/.
+      map { case (_, defn) => doc(defn) }
     group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
   }
 
@@ -24,7 +28,7 @@ object ErasedAstPrinter {
     defnf(
       defn.sym.toString,
       defn.formals.map(doc),
-      MonoTypePrinter.doc(defn.tpe),
+      returnTypeDoc(defn.tpe),
       doc(defn.exp, paren = false, topDef = true)
     )
   }
@@ -44,14 +48,20 @@ object ErasedAstPrinter {
       case Expression.Cst(cst, _, _) => doc(cst)
       case Expression.Var(sym, _, _) => doc(sym)
       case Expression.Closure(sym, closureArgs, tpe, loc) => text("<Closure>")
-      case Expression.ApplyClo(exp, args, tpe, loc) => text("<ApplyClo>")
-      case Expression.ApplyDef(sym, args, tpe, loc) => text("<ApplyDef>")
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => text("<ApplyCloTail>")
-      case Expression.ApplyDefTail(sym, args, tpe, loc) => text("<ApplyDefTail>")
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => text("<ApplySelfTail>")
+      case Expression.ApplyClo(exp, args, _, _) =>
+        applyf(doc(exp, paren = false) <> text("[clo]"), args.map(a => doc(a, paren = false)))
+      case Expression.ApplyDef(sym, args, _, _) =>
+        applyf(doc(sym) <> text("[def]"), args.map(a => doc(a, paren = false)))
+      case Expression.ApplyCloTail(exp, args, _, _) =>
+        applyf(doc(exp, paren = false) <> text("[clotail]"), args.map(a => doc(a, paren = false)))
+      case Expression.ApplyDefTail(sym, args, _, _) =>
+        applyf(doc(sym) <> text("[deftail]"), args.map(a => doc(a, paren = false)))
+      case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
+        applyf(doc(sym) <> text("[clotail]"), actuals.map(a => doc(a, paren = false)))
       case Expression.Unary(sop, op, exp, tpe, loc) => text("<Unary>")
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => text("<Binary>")
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => text("<IfThenElse>")
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+        itef(doc(exp1, paren = false), doc(exp2, paren = false), doc(exp3, paren = false))
       case Expression.Branch(exp, branches, tpe, loc) => text("<Branch>")
       case Expression.JumpTo(sym, tpe, loc) => text("<JumpTo>")
       case Expression.Let(_, _, _, _, _) =>
@@ -78,10 +88,12 @@ object ErasedAstPrinter {
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => text("<ArraySlice>")
       case Expression.Ref(exp, _, _) =>
         par(text("ref") <+> doc(exp))
-      case Expression.Deref(exp, tpe, loc) =>
+      case Expression.Deref(exp, _, _) =>
         par(text("deref") <+> doc(exp))
-      case Expression.Assign(exp1, exp2, tpe, loc) => text("<Assign>")
-      case Expression.Cast(exp, tpe, loc) => text("<Cast>")
+      case Expression.Assign(exp1, exp2, _, _) =>
+        assignf(doc(exp1), doc(exp2))
+      case Expression.Cast(exp, tpe, _) =>
+        castf(doc(exp, paren = false), MonoTypePrinter.doc(tpe))
       case Expression.TryCatch(exp, rules, tpe, loc) => text("<TryCatch>")
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => text("<InvokeConstructor>")
       case Expression.InvokeMethod(method, exp, args, tpe, loc) => text("<InvokeMethod>")
@@ -126,7 +138,14 @@ object ErasedAstPrinter {
     case other => (doc(other, paren = false) :: acc).reverse
   }
 
+  def returnTypeDoc(tpe: MonoType): Doc = tpe match {
+    case MonoType.Arrow(_, result) => MonoTypePrinter.doc(result)
+    case _ => text("<NoReturnType>")
+  }
+
   def doc(sym: HoleSym): Doc = text(sym.toString)
+
+  def doc(sym: DefnSym): Doc = text(sym.toString)
 
   def doc(cst: Ast.Constant): Doc = cst match {
     case Constant.Unit => text("()")
@@ -141,7 +160,7 @@ object ErasedAstPrinter {
     case Constant.Int32(lit) => text(lit.toString) <> text("i32")
     case Constant.Int64(lit) => text(lit.toString) <> text("i64")
     case Constant.BigInt(lit) => text(lit.toString) <> text("ii")
-    case Constant.Str(lit) => text("String") <> parens(text(lit))
+    case Constant.Str(lit) => applyf(text("String"), List(text(lit)))
   }
 
 }
