@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
 
 
-object ErasedPrinter {
+object ErasedAstPrinter {
 
   implicit val indent: Indent = INDENT
 
