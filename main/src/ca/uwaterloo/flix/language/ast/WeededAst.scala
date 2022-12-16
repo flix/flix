@@ -29,7 +29,7 @@ object WeededAst {
 
   object Declaration {
 
-    case class Namespace(name: Name.NName, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(ident: Name.Ident, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
     case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration

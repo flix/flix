@@ -96,8 +96,8 @@ object Namer {
     * Performs naming on the given namespace.
     */
   private def visitNamespace(decl: WeededAst.Declaration.Namespace, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Namespace, NameError] = decl match {
-    case WeededAst.Declaration.Namespace(name, usesAndImports0, decls0, loc) =>
-      val ns = Name.NName(name.sp1, ns0.idents ::: name.idents, name.sp2)
+    case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
+      val ns = Name.NName(ident.sp1, ns0.idents :+ ident, ident.sp2)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val declsVal = traverse(decls0)(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)

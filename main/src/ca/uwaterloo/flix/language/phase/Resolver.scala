@@ -2368,7 +2368,8 @@ object Resolver {
     val head = qname0.namespace.parts.head
     tryLookupModule(head, env, ns0, root) match {
       case None => None
-      case Some(ns) =>
+      case Some(prefix) =>
+        val ns = prefix ::: qname0.namespace.parts.tail
         val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
         root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
@@ -2997,7 +2998,7 @@ object Resolver {
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
-    case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol $sym", SourceLocation.Unknown)
+    case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
     case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)

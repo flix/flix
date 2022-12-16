@@ -91,13 +91,21 @@ object Weeder {
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-    case ParsedAst.Declaration.Namespace(sp1, name, usesOrImports, decls, sp2) =>
+    case ParsedAst.Declaration.Namespace(sp1, names, usesOrImports, decls, sp2) =>
       val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
 
       val declarationsVal = traverse(decls)(visitDecl)
 
       mapN(usesAndImportsVal, declarationsVal) {
-        case (us, ds) => List(WeededAst.Declaration.Namespace(name, us.flatten, ds.flatten, mkSL(sp1, sp2)))
+        case (us, ds) =>
+          // TODO can improve SL by starting from ident
+          val loc = mkSL(sp1, sp2)
+
+          val base = WeededAst.Declaration.Namespace(names.idents.last, us.flatten, ds.flatten, mkSL(sp1, sp2))
+          val ns = names.idents.init.foldRight(base: WeededAst.Declaration) {
+            case (ident, acc) => WeededAst.Declaration.Namespace(ident, Nil, List(acc), loc)
+          }
+          List(ns)
       }
 
     case d: ParsedAst.Declaration.Def => visitTopDef(d)
@@ -454,7 +462,7 @@ object Weeder {
           val loc = mkSL(sp1, sp2)
           WeededAst.Expression.RecordSelect(exp, field, loc).toSuccess // MATT need to check for length?
 
-          // Case 2: It's a real qualified name.
+        // Case 2: It's a real qualified name.
         case _ =>
           // NB: We only use the source location of the identifier itself.
           WeededAst.Expression.Ambiguous(qname, qname.ident.loc).toSuccess
