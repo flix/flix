@@ -36,7 +36,7 @@ object BoolUnification {
     // Optimize common unification queries.
     //
 
-    if (!flix.options.xnoboolshortcuts) {
+    if (!flix.options.xnoboolspecialcases) {
 
       // Case 1: Unification of identical formulas.
       if (tpe1 eq tpe2) {
@@ -88,7 +88,11 @@ object BoolUnification {
     val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
     val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
 
-    if (numberOfVars < threshold) {
+    if (flix.options.xboolclassic) {
+      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlgClassic
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
       lookupOrSolve(tpe1, tpe2, renv0)
