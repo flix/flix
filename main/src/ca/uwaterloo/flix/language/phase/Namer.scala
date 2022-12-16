@@ -120,7 +120,7 @@ object Namer {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
-      val table2Val = fold(decls, table0) {
+      val table2Val = fold(decls, table1) {
         case (table, d) => tableDecl(d, table)
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
@@ -187,7 +187,6 @@ object Namer {
       val newMap = oldMap + (name -> decl)
       val symbols = symbols0 + (ns -> newMap)
       SymbolTable(symbols, instances, cases, uses)
-
   }
 
   /**

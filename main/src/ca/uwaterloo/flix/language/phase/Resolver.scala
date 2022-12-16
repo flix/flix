@@ -2231,23 +2231,17 @@ object Resolver {
       */
     def lookupInNamespace(ns: Name.NName): TypeLookupResult = {
       val symbolsInNamespace = root.symbols.getOrElse(ns, Map.empty)
-      symbolsInNamespace.getOrElse(qname.ident.name, Nil).flatMap {
-        case _: NamedAst.Declaration.Namespace =>
-          // Case 1: found a namespace. Ignore it.
-          None
+      symbolsInNamespace.getOrElse(qname.ident.name, Nil).collectFirst {
         case alias: NamedAst.Declaration.TypeAlias =>
           // Case 2: found a type alias
-          Some(TypeLookupResult.TypeAlias(alias))
+          TypeLookupResult.TypeAlias(alias)
         case enum: NamedAst.Declaration.Enum =>
           // Case 3: found an enum
-          Some(TypeLookupResult.Enum(enum))
+          TypeLookupResult.Enum(enum)
         case effect: NamedAst.Declaration.Effect =>
           // Case 4: found an effect
-          Some(TypeLookupResult.Effect(effect))
-      }.get
-      case None =>
-        // Case 1: name not found
-        TypeLookupResult.NotFound
+          TypeLookupResult.Effect(effect)
+      }.getOrElse(TypeLookupResult.NotFound)
     }
 
     def lookupInUseEnv(name: String): TypeLookupResult = env(name).collectFirst {
@@ -2376,7 +2370,7 @@ object Resolver {
       case None => None
       case Some(ns) =>
         val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
-        root.symbols.getOrElse(qname0.namespace, Map.empty).get(qname0.ident.name)
+        root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -3019,7 +3013,8 @@ object Resolver {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       // Case 2: A match. Map it to a use.
-      case Resolution.Declaration(d) :: Nil => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
+      // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
+      case Resolution.Declaration(d) :: _ => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
       // Case 3: Impossible. Hard error.
       case _ => throw InternalCompilerException("unexpected conflicted imports", loc)
     }
