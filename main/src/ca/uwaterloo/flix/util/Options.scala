@@ -43,6 +43,7 @@ object Options {
     xnoboolcache = false,
     xnoboolshortcuts = false,
     xnobooltable = false,
+    xnounittests = false,
     xstatistics = false,
     xstrictmono = false,
     xnoseteffects = false,
@@ -94,6 +95,7 @@ object Options {
   * @param xnoboolcache       disable Boolean caches.
   * @param xnoboolshortcuts   disable Boolean unification shortcuts.
   * @param xnobooltable       disable Boolean minimization via tabling.
+  * @param xnounittests       excludes unit tests from performance benchmarks.
   * @param xstatistics        enables statistics collection.
   * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
@@ -116,6 +118,7 @@ case class Options(lib: LibLevel,
                    xnoboolcache: Boolean,
                    xnoboolshortcuts: Boolean,
                    xnobooltable: Boolean,
+                   xnounittests: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                    xnoseteffects: Boolean,
