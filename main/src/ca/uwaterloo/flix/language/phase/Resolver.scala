@@ -1741,14 +1741,16 @@ object Resolver {
     */
   def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, env, ns0, root)
-    classOpt match {
-      case Resolution.Declaration(clazz: NamedAst.Declaration.Class) :: Nil =>
+    classOpt.collectFirst {
+      case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
+    } match {
+      case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => ResolutionError.SealedClass(clazz.sym, ns0, qname.loc).toFailure
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
-      case _ => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
     }
   }
 
@@ -1757,13 +1759,15 @@ object Resolver {
     */
   def lookupClass(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, env, ns0, root)
-    classOpt match {
-      case Resolution.Declaration(clazz: NamedAst.Declaration.Class) :: Nil =>
+    classOpt.collectFirst {
+      case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
+    } match {
+      case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
           case ClassAccessibility.Inaccessible => ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc).toFailure
         }
-      case _ => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
+      case None => ResolutionError.UndefinedClass(qname, ns0, qname.loc).toFailure
     }
   }
 
