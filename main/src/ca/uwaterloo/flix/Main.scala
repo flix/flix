@@ -97,6 +97,7 @@ object Main {
       loadClassFiles = Options.Default.loadClassFiles,
       xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
+      xboolclassic = cmdOpts.xboolclassic,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
@@ -225,6 +226,7 @@ object Main {
                      xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
+                     xboolclassic: Boolean = false,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
@@ -426,6 +428,10 @@ object Main {
       //
       // Boolean unification flags.
       //
+      // Xbool-classic
+      opt[Unit]("Xbool-classic").action((_, c) => c.copy(xboolclassic = true)).
+        text("[experimental] enable classic Boolean unification (as published in 2020).")
+
       // Xbdd-threshold
       opt[Int]("Xbdd-threshold").action((n, c) => c.copy(xbddthreshold = Some(n))).
         text("[experimental] sets the threshold for when to use BDDs.")
