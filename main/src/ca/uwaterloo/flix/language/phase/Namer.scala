@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -49,7 +50,7 @@ object Namer {
           case SymbolTable(symbols0, instances0, cases0, uses0) =>
             // TODO NS-REFACTOR remove use of NName
             val symbols = symbols0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
+              case (k, v) => Name.mkUnlocatedNName(k) -> v.m
             }
             val instances = instances0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -116,11 +117,13 @@ object Namer {
   }
 
   private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) =>
-      val table1 = fold(decls, table0) {
+    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
+      // Add the namespace to the table (no validation needed)
+      val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
+      val table2Val = fold(decls, table0) {
         case (table, d) => tableDecl(d, table)
       }
-      mapN(table1)(addUsesToTable(_, sym.ns, usesAndImports))
+      mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
     case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -180,7 +183,7 @@ object Namer {
     */
   private def addDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
     case SymbolTable(symbols0, instances, cases, uses) =>
-      val oldMap = symbols0.getOrElse(ns, Map.empty)
+      val oldMap = symbols0.getOrElse(ns, ListMap.empty)
       val newMap = oldMap + (name -> decl)
       val symbols = symbols0 + (ns -> newMap)
       SymbolTable(symbols, instances, cases, uses)
@@ -217,7 +220,7 @@ object Namer {
     */
   private def addCaseToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Case): SymbolTable = table match {
     case SymbolTable(symbols0, instances, cases0, uses) =>
-      val oldSymMap = symbols0.getOrElse(ns, Map.empty)
+      val oldSymMap = symbols0.getOrElse(ns, ListMap.empty)
       val newSymMap = oldSymMap + (name -> decl)
       val symbols = symbols0 + (ns -> newSymMap)
 
@@ -269,8 +272,12 @@ object Namer {
     * Looks up the uppercase name in the given namespace and root.
     */
   private def lookupName(name: String, ns0: List[String], table: SymbolTable): NameLookupResult = {
-    val symbols0 = table.symbols.getOrElse(ns0, Map.empty)
-    symbols0.get(name) match {
+    val symbols0 = table.symbols.getOrElse(ns0, ListMap.empty)
+    // ignore namespaces
+    symbols0(name).flatMap {
+      case _: NamedAst.Declaration.Namespace => None
+      case decl => Some(decl)
+    }.headOption match {
       // Case 1: The name is unused.
       case None => LookupResult.NotDefined
       // Case 2: An symbol with the name already exists.
@@ -1488,5 +1495,5 @@ object Namer {
   /**
     * A structure holding the symbols and instances in the program.
     */
-  case class SymbolTable(symbols: Map[List[String], Map[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], cases: Map[List[String], Map[String, List[NamedAst.Declaration.Case]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+  case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], cases: Map[List[String], Map[String, List[NamedAst.Declaration.Case]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
 }

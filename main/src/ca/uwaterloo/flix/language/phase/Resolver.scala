@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -28,7 +29,6 @@ import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
 
 /**
   * The Resolver phase performs name resolution on the program.
@@ -758,12 +758,15 @@ object Resolver {
           // Lookup the used name and add it to the env
           use match {
             case NamedAst.UseOrImport.Use(qname, alias, _) =>
-              // no relative imports: look up with no env and in root NS
-              flatMapN(lookupQualifiedName(qname, root)) {
-                case decl =>
-                  val env = env0 + (alias.name -> Resolution.Declaration(decl))
+              // TODO NS-REFACTOR allowing relative uses here...
+              flatMapN(lookupQualifiedName(qname, env0, ns0, root)) {
+                case decls =>
+                  val env = decls.foldLeft(env0) {
+                    case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
+                  }
                   mapN(visitExp(exp, env, region)) {
-                    case e => ResolvedAst.Expression.Use(getSym(decl), e, loc)
+                    // TODO NS-REFACTOR: multiple uses here
+                    case e => ResolvedAst.Expression.Use(getSym(decls.head), e, loc)
                   }
               }
 
@@ -2228,23 +2231,23 @@ object Resolver {
       */
     def lookupInNamespace(ns: Name.NName): TypeLookupResult = {
       val symbolsInNamespace = root.symbols.getOrElse(ns, Map.empty)
-      symbolsInNamespace.get(qname.ident.name) match {
-        case None =>
-          // Case 1: name not found
-          TypeLookupResult.NotFound
-        case Some(alias: NamedAst.Declaration.TypeAlias) =>
+      symbolsInNamespace.getOrElse(qname.ident.name, Nil).flatMap {
+        case _: NamedAst.Declaration.Namespace =>
+          // Case 1: found a namespace. Ignore it.
+          None
+        case alias: NamedAst.Declaration.TypeAlias =>
           // Case 2: found a type alias
-          TypeLookupResult.TypeAlias(alias)
-        case Some(enum: NamedAst.Declaration.Enum) =>
+          Some(TypeLookupResult.TypeAlias(alias))
+        case enum: NamedAst.Declaration.Enum =>
           // Case 3: found an enum
-          TypeLookupResult.Enum(enum)
-        case Some(effect: NamedAst.Declaration.Effect) =>
+          Some(TypeLookupResult.Enum(enum))
+        case effect: NamedAst.Declaration.Effect =>
           // Case 4: found an effect
-          TypeLookupResult.Effect(effect)
-        case _ =>
-          // Case 5: found a non-type sym. Treat as not found.
-          TypeLookupResult.NotFound
-      }
+          Some(TypeLookupResult.Effect(effect))
+      }.get
+      case None =>
+        // Case 1: name not found
+        TypeLookupResult.NotFound
     }
 
     def lookupInUseEnv(name: String): TypeLookupResult = env(name).collectFirst {
@@ -2341,13 +2344,13 @@ object Resolver {
         case Nil =>
           // First check the local namespace
           // Collect both normal symbols in this env, and nested cases
-          val localDecls = root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList
+          val localDecls = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
           val localCases = root.cases.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
 
           localDecls ::: localCases match {
             // Case 1.1.1: Nothing local. Check the root env
             case Nil =>
-              val rootDecls = root.symbols.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList
+              val rootDecls = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
               val rootCases = root.cases.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
               rootDecls ::: rootCases
             // Case 1.1.2: There are locals. Use them.
@@ -2359,23 +2362,56 @@ object Resolver {
       }
     } else {
       // Case 2. Qualified name. Look it up directly.
-      tryLookupQualifiedName(qname, root).map(Resolution.Declaration).toList
+      tryLookupQualifiedName(qname, env, ns0, root).getOrElse(Nil).map(Resolution.Declaration)
     }
   }
 
   /**
     * Looks up the qualified name in the given root.
     */
-  private def tryLookupQualifiedName(qname: Name.QName, root: NamedAst.Root): Option[NamedAst.Declaration] = {
-    root.symbols.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+  private def tryLookupQualifiedName(qname0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
+    // First resolve the root of the qualified name
+    val head = qname0.namespace.parts.head
+    tryLookupModule(head, env, ns0, root) match {
+      case None => None
+      case Some(ns) =>
+        val qname = Name.mkQName(ns, qname0.ident.name, SourcePosition.Unknown, SourcePosition.Unknown)
+        root.symbols.getOrElse(qname0.namespace, Map.empty).get(qname0.ident.name)
+    }
+  }
+
+  /**
+    * Looks up the given module in the root.
+    */
+  private def tryLookupModule(name: String, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
+    // First see if there's a module with this name imported into our environment
+    env(name).collectFirst {
+      case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
+      case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz.sym.namespace :+ clazz.sym.name
+      case Resolution.Declaration(enum: NamedAst.Declaration.Enum) => enum.sym.namespace :+ enum.sym.name
+    }.orElse {
+      // Then see if there's a module with this name declared in our namespace
+      root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
+        case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+      }
+    }.orElse {
+      // Then see if there's a module with this name declared in the root namespace
+      root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
+        case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+      }
+    }
   }
 
   /**
     * Looks up the qualified name in the given root.
     */
-  private def lookupQualifiedName(qname: Name.QName, root: NamedAst.Root): Validation[NamedAst.Declaration, ResolutionError] = {
-    tryLookupQualifiedName(qname, root) match {
-      case None => ResolutionError.UndefinedName(qname, Name.RootNS, Map.empty, qname.loc).toFailure
+  private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
+    tryLookupQualifiedName(qname, env, ns0, root) match {
+      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
       case Some(decl) => decl.toSuccess
     }
   }
@@ -2958,7 +2994,7 @@ object Resolver {
   /**
     * Resolves the symbol where the symbol is known to point to a valid declaration.
     */
-  private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): NamedAst.Declaration = sym match {
+  private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
@@ -3007,8 +3043,10 @@ object Resolver {
     */
   private def appendUseEnv(env: ListMap[String, Resolution], useOrImport: Ast.UseOrImport, root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = useOrImport match {
     case Ast.UseOrImport.Use(sym, alias, loc) =>
-      val decl = infallableLookupSym(sym, root)
-      env + (alias.name -> Resolution.Declaration(decl))
+      val decls = infallableLookupSym(sym, root)
+      decls.foldLeft(env) {
+        case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
+      }
     case Ast.UseOrImport.Import(clazz, alias, loc) => env + (alias.name -> Resolution.JavaClass(clazz))
   }
 
