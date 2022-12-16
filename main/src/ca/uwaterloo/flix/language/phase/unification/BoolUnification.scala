@@ -91,7 +91,7 @@ object BoolUnification {
     if (flix.options.xboolclassic) {
       implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlgClassic
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-      lookupOrSolve(tpe1, tpe2, renv0)(flix, alg, null)
+      lookupOrSolve(tpe1, tpe2, renv0)
     } else if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
