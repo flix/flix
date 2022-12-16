@@ -41,7 +41,7 @@ object Options {
     xallowredundancies = false,
     xbddthreshold = None,
     xnoboolcache = false,
-    xnoboolshortcuts = false,
+    xnoboolspecialcases = false,
     xnobooltable = false,
     xnounittests = false,
     xstatistics = false,
@@ -93,7 +93,7 @@ object Options {
   * @param xallowredundancies disables the redundancy checker.
   * @param xbddthreshold      the threshold for when to use BDDs for SVE.
   * @param xnoboolcache       disable Boolean caches.
-  * @param xnoboolshortcuts   disable Boolean unification shortcuts.
+  * @param xnoboolspecialcases   disable Boolean unification shortcuts.
   * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xnounittests       excludes unit tests from performance benchmarks.
   * @param xstatistics        enables statistics collection.
@@ -116,7 +116,7 @@ case class Options(lib: LibLevel,
                    xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
                    xnoboolcache: Boolean,
-                   xnoboolshortcuts: Boolean,
+                   xnoboolspecialcases: Boolean,
                    xnobooltable: Boolean,
                    xnounittests: Boolean,
                    xstatistics: Boolean,

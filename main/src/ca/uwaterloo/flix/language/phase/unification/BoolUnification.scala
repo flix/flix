@@ -36,7 +36,7 @@ object BoolUnification {
     // Optimize common unification queries.
     //
 
-    if (!flix.options.xnoboolshortcuts) {
+    if (!flix.options.xnoboolspecialcases) {
 
       // Case 1: Unification of identical formulas.
       if (tpe1 eq tpe2) {

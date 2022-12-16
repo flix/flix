@@ -190,10 +190,10 @@ class TestMain extends FunSuite {
     assert(opts.xnoboolcache)
   }
 
-  test("--Xno-bool-shortcuts") {
-    val args = Array("--Xno-bool-shortcuts")
+  test("--Xno-bool-specialcases") {
+    val args = Array("--Xno-bool-specialcases")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoboolshortcuts)
+    assert(opts.xnoboolspecialcases)
   }
 
   test("--Xno-bool-table") {

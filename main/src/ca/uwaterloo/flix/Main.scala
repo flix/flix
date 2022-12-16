@@ -98,7 +98,7 @@ object Main {
       xallowredundancies = Options.Default.xallowredundancies,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
-      xnoboolshortcuts = cmdOpts.xnoboolshortcuts,
+      xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
@@ -226,7 +226,7 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xnoboolcache: Boolean = false,
-                     xnoboolshortcuts: Boolean = false,
+                     xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
@@ -434,16 +434,16 @@ object Main {
       opt[Unit]("Xno-bool-cache").action((_, c) => c.copy(xnoboolcache = true)).
         text("[experimental] disables Boolean caches.")
 
-      // Xno-bool-shortcuts
-      opt[Unit]("Xno-bool-shortcuts").action((_, c) => c.copy(xnoboolshortcuts = true)).
-        text("[experimental] disables Boolean unification shortcuts.")
+      // Xno-bool-specialcases
+      opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
+        text("[experimental] disables hardcoded Boolean unification special cases.")
 
       // Xno-bool-table
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
 
       // Xno-unit-tests
-      opt[Unit]("Xno-no-unit-tests").action((_, c) => c.copy(xnounittests = true)).
+      opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
         text("[experimental] excludes unit tests from performance benchmarks.")
 
       // Xqmc
