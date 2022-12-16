@@ -133,8 +133,8 @@ namespace Concurrent/Channel {
             ),
             new MutDeque(Static)
         )
-    
-    /// 
+
+    ///
     /// Creates a new channel tuple (sender, receiver)
     ///
     @Internal
@@ -250,8 +250,8 @@ namespace Concurrent/Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels |>
-            Array.sortBy(match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
-            Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
+            Array.sortBy(Static, match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
+            Array.map(Static, match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -354,7 +354,7 @@ namespace Concurrent/Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels |>
-            Array.mapWithIndex(i -> match MpmcAdmin(_, _, _, _, size, _, _) -> {
+            Array.mapWithIndex(Static, i -> match MpmcAdmin(_, _, _, _, size, _, _) -> {
                 (deref size > 0, i)
             }) |>
             Array.findLeft(match (b, _) -> b) |>

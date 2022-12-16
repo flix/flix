@@ -70,7 +70,7 @@ namespace Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(bs);
+            let benchmarksWithEstimates = warmupAndEstimate(Static, bs);
             println("");
             println("");
             printCols();
@@ -84,9 +84,9 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] \ IO = {
+    def warmupAndEstimate(r1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
         Console.print("Warmup: ");
-        bs |> Array.map(b -> {
+        bs |> Array.map(r1, b -> {
             let time = runBenchmarkOnce(b);
             Console.print(".");
             (b, time)

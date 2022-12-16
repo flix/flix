@@ -549,7 +549,7 @@ namespace File {
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
-                Array.slice(0, numberRead, bytes)
+                Array.slice(Static, 0, numberRead, bytes)
             } else {
                 bytes
             }
@@ -891,7 +891,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def list(f: String): Result[List[String], String] \ IO =
+    pub def list(f: String): Result[List[String], String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.listFiles(): Array[##java.io.File, Static] \ IO;
@@ -901,7 +901,7 @@ namespace File {
             let javaList = f |> newFile |> listFiles;
 
             if (not Object.isNull(javaList)) {
-                let paths = javaList |> Array.map(toPath) |> Array.map(pathToString);
+                let paths = javaList |> Array.map(r, toPath >> pathToString);
                 Ok(Array.toList(paths))
             } else {
                 Err("An error occurred when trying to list the file: '${f}'.")
@@ -911,6 +911,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns an Iterator naming the files and directories in the directory `f`.
