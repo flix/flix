@@ -443,11 +443,22 @@ object Weeder {
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
-    case ParsedAst.Expression.QName(_, qname, _) =>
-      // NB: We only use the source location of the identifier itself.
+    case ParsedAst.Expression.QName(sp1, qname, sp2) =>
 
-      // Case 1: Upper name, so this is a tag.
-      WeededAst.Expression.Ambiguous(qname, qname.ident.loc).toSuccess
+      // Check the shape of the QName.
+      (qname.namespace.idents, qname.ident) match {
+        // Case 1: Special case: this is actually a record projection.
+        case (left :: Nil, right) =>
+          val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
+          val field = Name.mkField(right)
+          val loc = mkSL(sp1, sp2)
+          WeededAst.Expression.RecordSelect(exp, field, loc).toSuccess // MATT need to check for length?
+
+          // Case 2: It's a real qualified name.
+        case _ =>
+          // NB: We only use the source location of the identifier itself.
+          WeededAst.Expression.Ambiguous(qname, qname.ident.loc).toSuccess
+      }
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
