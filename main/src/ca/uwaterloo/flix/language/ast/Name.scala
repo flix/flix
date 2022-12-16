@@ -92,6 +92,11 @@ object Name {
     def isUpper: Boolean = name.charAt(0).isUpper
 
     /**
+      * Returns `true` if `this` identifier is lowercase.
+      */
+    def isLower: Boolean = name.charAt(0).isLower
+
+    /**
       * The source location of the identifier.
       */
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)

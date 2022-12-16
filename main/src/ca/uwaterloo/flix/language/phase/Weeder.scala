@@ -448,7 +448,7 @@ object Weeder {
       // Check the shape of the QName.
       (qname.namespace.idents, qname.ident) match {
         // Case 1: Special case: this is actually a record projection.
-        case (left :: Nil, right) =>
+        case (left :: Nil, right) if left.isLower =>
           val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
           val field = Name.mkField(right)
           val loc = mkSL(sp1, sp2)
