@@ -161,8 +161,8 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.Case(sym, _) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+    case caze@NamedAst.Declaration.Case(sym, _) =>
+      addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
   }
 
   /**

@@ -1786,7 +1786,7 @@ object Resolver {
         }
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
         ResolvedTerm.Tag(caze).toSuccess
-        // MATT check accessible
+      // MATT check accessible
       case Resolution.Var(sym) => ResolvedTerm.Var(sym).toSuccess
     }.getOrElse(ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure)
   }
@@ -1825,126 +1825,23 @@ object Resolver {
   /**
     * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
-    if (qname.isUnqualified) {
-      // Case 1: The name is unqualified.
-
-      // Case 1.1. The name is in the env.
-      env(qname.ident.name) collectFirst {
-        case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
-          return caze.toSuccess
-      }
-
-      // Find all matching enums in the current namespace.
-      val namespaceMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
-      root.symbols.getOrElse(ns0, Map.empty).collect {
-        case (enumName, enum: NamedAst.Declaration.Enum) =>
-          for (caze <- enum.cases) {
-            if (qname.ident.name == caze.sym.name) {
-              namespaceMatches += ((enum, caze))
-            }
-          }
-      }
-
-      // Case 1.1.1: Exact match found in the namespace.
-      if (namespaceMatches.size == 1) {
-        val (enum, caze) = namespaceMatches.head
-        return getEnumAccessibility(enum, ns0) match {
-          case EnumAccessibility.Accessible => caze.toSuccess
-          case EnumAccessibility.Opaque =>
-            ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
-          case EnumAccessibility.Inaccessible =>
-            ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
-        }
-      }
-
-      // Case 1.1.2: Multiple matches found in the namespace.
-      if (namespaceMatches.size > 1) {
-        val locs = namespaceMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
-        return ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
-      }
-
-      // Find all matching enums in the root namespace.
-      val globalMatches = mutable.Set.empty[(NamedAst.Declaration.Enum, NamedAst.Declaration.Case)]
-      root.symbols.getOrElse(Name.RootNS, Map.empty).collect {
-        case (enumName, enum: NamedAst.Declaration.Enum) =>
-          for (caze <- enum.cases) {
-            if (qname.ident.name == caze.sym.name) {
-              globalMatches += ((enum, caze))
-            }
-          }
-      }
-
-      // Case 1.2.1: Exact match found in the root namespace.
-      if (globalMatches.size == 1) {
-        val (enum, caze) = globalMatches.head
-        return getEnumAccessibility(enum, ns0) match {
-          case EnumAccessibility.Accessible => caze.toSuccess
-          case EnumAccessibility.Opaque =>
-            ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
-          case EnumAccessibility.Inaccessible =>
-            ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
-        }
-      }
-
-      // Case 1.2.2: Multiple matches found in the root namespace.
-      if (globalMatches.size > 1) {
-        val locs = globalMatches.map { case (_, caze) => caze.sym.loc }.toList.sorted
-        return ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
-      }
-
-      // Case 1.2.3: No match found.
-      ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
-
-    } else {
-      // Case 2: The name is qualified.
-
-      def lookupEnumInNs(ns: Name.NName): Option[NamedAst.Declaration.Enum] = {
-        root.symbols.get(ns).flatMap(_.get(qname.ident.name)).collect {
-          case e: NamedAst.Declaration.Enum => e
-        }
-      }
-
-      val enumOpt = if (qname.isUnqualified) {
-        // The name is unqualified (e.g. Option.None),
-        // First search the use env for the enum.
-        // then search the current namespace,
-        // if it's not found there, search the root namespace.
-        env(qname.ident.name).collectFirst {
-          case Resolution.Declaration(e: NamedAst.Declaration.Enum) => e
-        }.orElse {
-          lookupEnumInNs(ns0)
-        }.orElse {
-          lookupEnumInNs(Name.RootNS)
-        }
-      } else {
-        // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
-        lookupEnumInNs(qname.namespace)
-      }
-
-      enumOpt match {
-        case None =>
-          // Case 2.1: The enum does not exist.
-          ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
-        case Some(enum) =>
-          // Case 2.2: Enum declaration found. Look for the tag.
-          for (caze <- enum.cases) {
-            if (qname.ident.name == caze.sym.name) {
-              // Case 2.2.1: Tag found.
-              return getEnumAccessibility(enum, ns0) match {
-                case EnumAccessibility.Accessible => caze.toSuccess
-                case EnumAccessibility.Opaque =>
-                  ResolutionError.OpaqueEnum(enum.sym, ns0, qname.loc).toFailure
-                case EnumAccessibility.Inaccessible =>
-                  ResolutionError.InaccessibleEnum(enum.sym, ns0, qname.loc).toFailure
-              }
-            }
-          }
-
-          // Case 2.2.2: No match found.
-          ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
-      }
+  private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
+    // look up the name
+    val matches = tryLookupName(qname, env, ns0, root) collect {
+      case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
     }
+
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      // Case 1: Exactly one match. Success.
+      case caze :: Nil => caze.toSuccess
+      // Case 2: Multiple matches. Error
+      case cazes =>
+        val locs = cazes.map(_.sym.loc).sorted
+        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+    }
+    // MATT must check accessibility
   }
 
   /**
@@ -2438,19 +2335,25 @@ object Resolver {
     */
   private def tryLookupName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
     if (qname.isUnqualified) {
-      // Case 1 Unqualified name. Try in the use environment.
+      // Case 1: Unqualified name. Try in the use environment.
       env(qname.ident.name) match {
-        // Case 1.1 It's not in the env.
+        // Case 1.1: It's not in the env.
         case Nil =>
-          // Case 1.1.1 Try in the local namespace
-          val localDecls = root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList.orElse {
+          // First check the local namespace
+          // Collect both normal symbols in this env, and nested cases
+          val localDecls = root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList
+          val localCases = root.cases.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
 
+          localDecls ::: localCases match {
+            // Case 1.1.1: Nothing local. Check the root env
+            case Nil =>
+              val rootDecls = root.symbols.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name).map(Resolution.Declaration).toList
+              val rootCases = root.cases.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+              rootDecls ::: rootCases
+            // Case 1.1.2: There are locals. Use them.
+            case locals => locals
           }
-          root.symbols.getOrElse(ns0, Map.empty).get(qname.ident.name).map(Resolution.Declaration).orElse {
-            root.cases.getOrElse(ns0, Map.empty).get(qname.ident.name).map(_.map(Resolution.Declaration))
-            // Case 1.1.2 Try in the root namespace
-            root.symbols.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name).map(Resolution.Declaration)
-          }.toList
+
         // Case 1.2 It is in the env, return the results
         case l => l
       }
