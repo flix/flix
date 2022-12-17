@@ -167,7 +167,7 @@ namespace Array {
                 loop(i - 1, Chain.cons(x, acc))
             }
         };
-        loop(length(a), Chain.empty())
+        loop(length(arr), Chain.empty())
 
     ///
     /// Optionally returns the array `arr` as a non-empty chain.

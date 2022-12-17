@@ -729,7 +729,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew | ArrayLength | FList |
+        Upcast | Supercast | Mask | ArrayLength | Intrinsic | New | ArrayLit | ArrayNew | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
