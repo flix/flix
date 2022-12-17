@@ -14,42 +14,42 @@
  * limitations under the License.
  */
 
+///
+/// An immutable red-black tree implementation with keys
+/// of type `k` and values of type `v`.
+///
+/// A red-black tree is a self-balancing binary search tree.
+/// Each node is either red or black, although a transitory
+/// color double-black is allowed during deletion.
+/// The red-black tree satisfy the following invariants.
+///
+/// 1. For all nodes with key `x`,
+/// the left subtree contains only nodes with keys `y` < `x` and
+/// the right subtree contains only nodes with keys `z` > `x`.
+/// 2. No red node has a red parent.
+/// 3. Every path from the root to a leaf contains the same
+/// number of black nodes.
+///
+pub enum RedBlackTree[k, v] with Sendable {
+
+    ///
+    /// A black leaf.
+    ///
+    case Leaf
+
+    ///
+    /// A double-black leaf.
+    ///
+    case DoubleBlackLeaf
+
+    ///
+    /// A tree node consists of a color, left subtree, key, value and right subtree.
+    ///
+    case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
+
+}
+
 namespace RedBlackTree {
-
-    ///
-    /// An immutable red-black tree implementation with keys
-    /// of type `k` and values of type `v`.
-    ///
-    /// A red-black tree is a self-balancing binary search tree.
-    /// Each node is either red or black, although a transitory
-    /// color double-black is allowed during deletion.
-    /// The red-black tree satisfy the following invariants.
-    ///
-    /// 1. For all nodes with key `x`,
-    /// the left subtree contains only nodes with keys `y` < `x` and
-    /// the right subtree contains only nodes with keys `z` > `x`.
-    /// 2. No red node has a red parent.
-    /// 3. Every path from the root to a leaf contains the same
-    /// number of black nodes.
-    ///
-    pub enum RedBlackTree[k, v] with Sendable {
-
-        ///
-        /// A black leaf.
-        ///
-        case Leaf
-
-        ///
-        /// A double-black leaf.
-        ///
-        case DoubleBlackLeaf
-
-        ///
-        /// A tree node consists of a color, left subtree, key, value and right subtree.
-        ///
-        case Node(Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
-
-    }
 
     instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
         pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
