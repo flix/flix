@@ -682,7 +682,7 @@ namespace Array {
             let jlen = length(a[0]);
             if (jlen == 0 or uniformHelper(a, jlen))
                 // Non-transposing nested copy
-                init(r3, i -> copyOfRange(r3, 0, jlen, a[i]), ilen)
+                init(r3, i -> copyOfRange(r3, 0, length(a[i]), a[i]), ilen)
             else
                 init(r3, i -> init(r3, j -> a[j][i], ilen), jlen)
         }
