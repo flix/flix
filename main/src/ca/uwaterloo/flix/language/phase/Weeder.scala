@@ -2989,6 +2989,7 @@ object Weeder {
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
