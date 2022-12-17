@@ -27,9 +27,9 @@ instance Scoped[MutSet[t]] {
     pub def regionOf(_: MutSet[t, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[MutSet] {
-    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) = MutSet.iterator(s)
-}
+// instance Iterable[MutSet] {
+//     pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) = MutSet.iterator(s)
+// }
 
 namespace MutSet {
 
@@ -339,22 +339,22 @@ namespace MutSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(s: MutSet[a, r]): MutSet[a, r] \ { Read(r), Write(r) } =
+    pub def copy(r1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { Read(r), Write(r1) } =
         let MutSet(ms) = s;
-        MutSet(ref (deref ms) @ Scoped.regionOf(s))
+        MutSet(ref (deref ms) @ r1)
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
     //
     /// `s1` contains all elements of the mutable set `s` that satisfy the predicate function `f`.
-    /// `s2` contains all elements of teh mutable set `s` that do not satisfy the predicate function `f`.
+    /// `s2` contains all elements of the mutable set `s` that do not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r], MutSet[a, r]) \ { Read(r), Write(r) } with Order[a] =
+    pub def partition(r1: Region[r1], r2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { Read(r), Write(r1), Write(r2) } with Order[a] =
         let MutSet(ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-        (MutSet(ref ys @ Scoped.regionOf(s)), MutSet(ref zs @ Scoped.regionOf(s)))
+        (MutSet(ref ys @ r1), MutSet(ref zs @ r2))
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -397,16 +397,15 @@ namespace MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r1: Region[r1], s: MutSet[a, r]): Iterator[a, r1] \ { Read(r), Write(r1) } =
         let MutSet(ms) = s;
-        let r = Scoped.regionOf(s);
-        Set.iterator(r, deref ms)
+        Set.iterator(r1, deref ms)
 
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def enumerator(s: MutSet[a, r]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(s) |> Iterator.zipWithIndex
+    pub def enumerator(r1: Region[r1], s: MutSet[a, r]): Iterator[(a, Int32), r1] \ { Read(r), Write(r1) } =
+        iterator(r1, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.

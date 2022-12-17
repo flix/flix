@@ -342,8 +342,8 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def map(f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
-        mapWithKey(_ -> f, m)
+    pub def map(r1: Region[r1], f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
+        mapWithKey(r1, _ -> f, m)
 
     ///
     /// Returns a map with mappings `k => f(k, v)` for every `k => v` in `m`.
@@ -351,9 +351,9 @@ namespace MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     @ParallelWhenPure
-    pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r] \ { ef, Read(r), Write(r) } =
+    pub def mapWithKey(r1: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
         let MutMap(mm) = m;
-        MutMap(ref Map.mapWithKey(f, deref mm) @ Scoped.regionOf(m))
+        MutMap(ref Map.mapWithKey(f, deref mm) @ r1)
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -538,9 +538,9 @@ namespace MutMap {
     ///
     /// Returns a shallow copy of the mutable map `m`.
     ///
-    pub def copy(m: MutMap[k, v, r]): MutMap[k, v, r] \ { Read(r), Write(r) } =
+    pub def copy(r1: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { Read(r), Write(r1) } =
         let MutMap(mm) = m;
-        MutMap(ref (deref mm) @ Scoped.regionOf(m))
+        MutMap(ref (deref mm) @ r1)
 
     ///
     /// Returns the mutable map `m` as an immutable map.
@@ -580,26 +580,23 @@ namespace MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(r1: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r1] \ { Read(r), Write(r1) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iterator(r, deref mm)
+        Map.iterator(r1, deref mm)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+    pub def iteratorKeys(r1: Region[r1], m: MutMap[k, v, r]): Iterator[k, r1] \ { Read(r), Write(r1) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorKeys(r, deref mm)
+        Map.iteratorKeys(r1, deref mm)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+    pub def iteratorValues(r1: Region[r1], m: MutMap[k, v, r]): Iterator[v, r1] \ { Read(r), Write(r1) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorValues(r, deref mm)
+        Map.iteratorValues(r1, deref mm)
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
