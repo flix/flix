@@ -242,7 +242,7 @@ namespace TestFile {
     @test
     def testReadBytesWith02(): Bool \ IO =
         match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
-            case Ok(v) => v.length == 2
+            case Ok(v) => Array.length(v) == 2
             case _     => false
         }
 

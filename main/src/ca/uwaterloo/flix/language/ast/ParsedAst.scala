@@ -906,6 +906,15 @@ object ParsedAst {
     case class ArraySlice(base: ParsedAst.Expression, beginIndex: Option[ParsedAst.Expression], endIndex: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Array length expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the array.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayLength(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Cons expression (of list).
       *
       * @param exp1 the head of the list.

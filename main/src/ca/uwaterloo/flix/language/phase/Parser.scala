@@ -729,7 +729,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew | FList |
+        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew | ArrayLength | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
@@ -959,6 +959,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Mask: Rule1[ParsedAst.Expression.Mask] = rule {
       SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Mask
+    }
+
+    def ArrayLength: Rule1[ParsedAst.Expression.ArrayLength] = rule {
+      SP ~ keyword("$LENGTH$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.ArrayLength
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {

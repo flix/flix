@@ -1194,12 +1194,7 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp, senv)) {
-        case e =>
-          // Special Case: Array Length
-          if (ident.name == "length")
-            WeededAst.Expression.ArrayLength(e, mkSL(sp1, sp2))
-          else
-            WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
+        case e => WeededAst.Expression.RecordSelect(e, Name.mkField(ident), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, sp2) =>
@@ -1214,19 +1209,17 @@ object Weeder {
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest, senv)) {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv), visitFieldName(ident)) {
-            case (e, _) =>
+          mapN(visitExp(exp, senv)) {
+            case e =>
               WeededAst.Expression.RecordExtend(Name.mkField(ident), e, acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
-          mapN(visitFieldName(ident)) {
-            _ => WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
-          }
+          WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2)).toSuccess
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv), visitFieldName(ident)) {
-            case (e, _) =>
+          mapN(visitExp(exp, senv)) {
+            case e =>
               // An update is a restrict followed by an extension.
               val inner = WeededAst.Expression.RecordRestrict(Name.mkField(ident), acc, mkSL(sp1, sp2))
               WeededAst.Expression.RecordExtend(Name.mkField(ident), e, inner, mkSL(sp1, sp2))
@@ -1296,6 +1289,12 @@ object Weeder {
           }
       }
 
+    case ParsedAst.Expression.ArrayLength(sp1, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Expression.ArrayLength(e, loc)
+      }
+
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
@@ -1335,7 +1334,7 @@ object Weeder {
           val unit = WeededAst.Expression.Cst(Ast.Constant.Unit, loc)
           val nil: WeededAst.Expression = WeededAst.Expression.Tag(Some(listName), nilName, Some(unit), loc)
           val consName = Name.Ident(sp1, "Cons", sp2).asSynthetic
-          es.foldRight(nil){
+          es.foldRight(nil) {
             case (elm, acc) =>
               val exp = WeededAst.Expression.Tuple(List(elm, acc), loc)
               WeededAst.Expression.Tag(Some(listName), consName, Some(exp), loc)
@@ -2766,17 +2765,6 @@ object Weeder {
   private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
     if (ReservedWords.contains(ident.name)) {
       WeederError.ReservedName(ident, ident.loc).toFailure
-    } else {
-      ().toSuccess
-    }
-  }
-
-  /**
-    * Performs weeding on the given field name `ident`.
-    */
-  private def visitFieldName(ident: Name.Ident): Validation[Unit, WeederError] = {
-    if (ident.name == "length") {
-      WeederError.IllegalFieldName(ident.loc).toFailure
     } else {
       ().toSuccess
     }
