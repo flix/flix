@@ -718,6 +718,10 @@ object Resolver {
       def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         val esVal = traverse(exps)(visitExp(_, env0, region))
         mapN(esVal) {
+          // Case 1: one expression. No tuple.
+          case e :: Nil =>
+            ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, innerLoc), e, outerLoc)
+          // Case 2: multiple expressions. Make them a tuple
           case es =>
             val exp = ResolvedAst.Expression.Tuple(es, outerLoc)
             ResolvedAst.Expression.Tag(Ast.CaseSymUse(caze.sym, innerLoc), exp, outerLoc)
