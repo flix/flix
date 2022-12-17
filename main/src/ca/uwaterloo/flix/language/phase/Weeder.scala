@@ -1175,10 +1175,9 @@ object Weeder {
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordField(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
-          val fieldVal = visitFieldName(ident)
 
-          mapN(expVal, fieldVal) {
-            case (e, _) => ident -> e
+          mapN(expVal) {
+            case e => ident -> e
           }
       }
 
