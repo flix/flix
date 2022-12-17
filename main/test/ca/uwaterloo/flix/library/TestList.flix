@@ -2883,5 +2883,32 @@ def distinctWith09(): Bool =
 
         List.length(l2) == 10 and List.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
+/////////////////////////////////////////////////////////////////////////////
+// Literals                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def literal01(): Bool =
+    List#{} == (Nil: List[String])
+
+@test
+def literal02(): Bool =
+    List#{1} == 1 :: Nil
+
+@test
+def literal03(): Bool =
+    List#{1, 2, 3} == 1 :: 2 :: 3 :: Nil
+
+@test
+def literal04(): Bool =
+    List#{'a', 'b', 'c'} == 'a' :: 'b' :: 'c' :: Nil
+
+@test
+def literal05(): Bool =
+    List#{List#{1, 2}, List#{3}, List#{4, 5}} == (1 :: 2 :: Nil) :: (3 :: Nil) :: (4 :: 5 :: Nil) :: Nil
+
+@test
+def literal06(): Bool =
+    not List.isEmpty(List#{{}})
 
 }

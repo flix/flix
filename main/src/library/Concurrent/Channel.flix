@@ -207,7 +207,6 @@ namespace Concurrent/Channel {
         // Gets an element from the channel c which must be non-empty
         // and update the size.
         let optionalElement = MutDeque.popFront(elementDeque);
-        size := deref size - 1;
 
         let value = match optionalElement {
             case None =>
@@ -217,6 +216,7 @@ namespace Concurrent/Channel {
 
             case Some(element) =>
                 // Signal waiting setters that the channel has space
+                size := deref size - 1;
                 signalPutters(admin);
                 unlock(channelLock);
                 element
@@ -289,7 +289,6 @@ namespace Concurrent/Channel {
         // Try to get the element (which could already be taken by someone
         // else) and update size.
         let optionalElement = MutDeque.popFront(elementDeque);
-        size := deref size - 1;
 
         match optionalElement {
             case None => { // No element was found
@@ -317,6 +316,7 @@ namespace Concurrent/Channel {
 
             case Some(e) =>
                 // Signal waiting setters that the channel has space
+                size := deref size - 1;
                 signalPutters(admin);
                 e
         }

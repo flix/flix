@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, MethodDescriptor, RootPackage}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
 import org.objectweb.asm.Opcodes
 
 /**
@@ -59,7 +59,7 @@ sealed trait BackendObjType {
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
-    case BackendObjType.ArrayList => JvmName(JavaUtil, "ArrayList")
+    case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
   }
 
@@ -994,20 +994,27 @@ object BackendObjType {
       cm.mkField(ThreadsField)
       cm.mkConstructor(Constructor)
       cm.mkMethod(SpawnMethod)
+      cm.mkMethod(ExitMethod)
 
       cm.closeClassMaker()
     }
 
-    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ArrayList.toTpe)
+    // private ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
-      thisLoad() ~ NEW(BackendObjType.ArrayList.jvmName) ~
-      DUP() ~ invokeConstructor(BackendObjType.ArrayList.jvmName, MethodDescriptor.NothingToVoid) ~
+      thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
       RETURN()
     ))
 
+    // final public void spawn(Runnable r) {
+    //   Thread t = new Thread(r);
+    //   t.start();
+    //   threads.add(t);
+    // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
       (
         if (flix.options.xvirtualthreads) {
@@ -1020,7 +1027,25 @@ object BackendObjType {
       ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
-        INVOKEVIRTUAL(ArrayList.AddMethod) ~ POP() ~
+        INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
+        RETURN()
+      }
+    ))
+  
+    // final public void exit() throws InterruptedException {
+    //   Thread t;
+    //   while ((t = threads.poll()) != null)
+    //     t.join();
+    // }
+    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(
+      withName(1, BackendObjType.Thread.toTpe) { t =>
+        whileLoop(Condition.NONNULL) {
+          thisLoad() ~ GETFIELD(ThreadsField) ~ 
+          INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store() 
+        } {
+          t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
+        } ~
         RETURN()
       }
     ))
@@ -1132,10 +1157,13 @@ object BackendObjType {
 
   }
 
-  case object ArrayList extends BackendObjType {
+  case object ConcurrentLinkedQueue extends BackendObjType {
     
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "add",
       mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
+
+    def PollMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "poll",
+      mkDescriptor()(JavaObject.toTpe), None)
   }
 
   case object Thread extends BackendObjType {
@@ -1145,5 +1173,8 @@ object BackendObjType {
 
     def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
       mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
+
+    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "join",
+       MethodDescriptor.NothingToVoid, None)
   }
 }
