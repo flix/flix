@@ -455,14 +455,20 @@ object Weeder {
 
       // Check the shape of the QName.
       (qname.namespace.idents, qname.ident) match {
-        // Case 1: Special case: this is actually a record projection.
+        // Case 1: Special case: this is actually an array length access.
+        case (left :: Nil, right) if left.isLower && right.name == "length" =>
+          val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
+          val loc = mkSL(sp1, sp2)
+          WeededAst.Expression.ArrayLength(exp, loc).toSuccess
+
+        // Case 2: Special case: this is actually a record projection.
         case (left :: Nil, right) if left.isLower =>
           val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
           val field = Name.mkField(right)
           val loc = mkSL(sp1, sp2)
-          WeededAst.Expression.RecordSelect(exp, field, loc).toSuccess // MATT need to check for length?
+          WeededAst.Expression.RecordSelect(exp, field, loc).toSuccess
 
-        // Case 2: It's a real qualified name.
+        // Case 3: It's a real qualified name.
         case _ =>
           // NB: We only use the source location of the identifier itself.
           WeededAst.Expression.Ambiguous(qname, qname.ident.loc).toSuccess
