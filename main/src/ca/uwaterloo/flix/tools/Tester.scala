@@ -201,7 +201,7 @@ object Tester {
         } catch {
           case ex: Throwable =>
             // Restore std out and std err.
-            // redirect.restore()
+            redirect.restore()
 
             // Compute elapsed time.
             val elapsed = System.nanoTime() - start
