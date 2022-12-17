@@ -107,6 +107,7 @@ object JvmName {
   val Short: JvmName = JvmName(JavaLang, "Short")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
+  val UncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
   //

@@ -53,6 +53,7 @@ sealed trait BackendObjType {
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
     case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
+    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, "UncaughtExceptionHandler")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -61,6 +62,8 @@ sealed trait BackendObjType {
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
     case BackendObjType.ArrayList => JvmName(JavaUtil, "ArrayList")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
+    case BackendObjType.Throwable => JvmName(JavaLang, "Throwable")
+    case BackendObjType.Runtime => JvmName(JavaLang, "Runtime")
   }
 
   /**
@@ -1026,6 +1029,29 @@ object BackendObjType {
     ))
   }
 
+  case object UncaughtExceptionHandler extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(JvmName.UncaughtExceptionHandler))
+
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(UncaughtExceptionMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
+      RETURN()
+    ))
+
+    def UncaughtExceptionMethod : InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", mkDescriptor(BackendObjType.Thread.toTpe, BackendObjType.Throwable.toTpe)(VoidableType.Void), Some(
+      ALOAD(2) ~ INVOKEVIRTUAL(Throwable.PrintStackTraceMethod) ~
+      INVOKESTATIC(Runtime.GetRuntimeMethod) ~ ICONST_1() ~ INVOKEVIRTUAL(Runtime.ExitMethod) ~
+      RETURN()
+    ))
+  }
+
   //
   // Java Types
   //
@@ -1145,5 +1171,23 @@ object BackendObjType {
 
     def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
       mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
+
+    def SetDefaultUncaughtExceptionHandlerMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setDefaultUncaughtExceptionHandler",
+      mkDescriptor(JvmName.UncaughtExceptionHandler.toTpe)(VoidableType.Void), None)
+  }
+
+  case object Throwable extends BackendObjType {
+
+    def PrintStackTraceMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "printStackTrace", 
+      MethodDescriptor.NothingToVoid, None)
+  }
+
+  case object Runtime extends BackendObjType {
+
+    def GetRuntimeMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getRuntime",
+      mkDescriptor()(this.toTpe), None)
+
+    def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "exit", 
+      mkDescriptor(BackendType.Int32)(VoidableType.Void), None)
   }
 }

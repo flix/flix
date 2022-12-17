@@ -172,7 +172,7 @@ object Tester {
 
         // Redirect std out and std err.
         val redirect = new ConsoleRedirection
-        redirect.redirect()
+        // redirect.redirect()
 
         // Start the clock.
         val start = System.nanoTime()
@@ -185,7 +185,7 @@ object Tester {
           val elapsed = System.nanoTime() - start
 
           // Restore std out and std err.
-          redirect.restore()
+          // redirect.restore()
 
           result match {
             case java.lang.Boolean.TRUE =>
@@ -201,7 +201,7 @@ object Tester {
         } catch {
           case ex: Throwable =>
             // Restore std out and std err.
-            redirect.restore()
+            // redirect.restore()
 
             // Compute elapsed time.
             val elapsed = System.nanoTime() - start
@@ -221,6 +221,8 @@ object Tester {
 
     private var oldStreamOut: PrintStream = _
     private var oldStreamErr: PrintStream = _
+
+    private var shutdownHook: Thread = _
 
     /**
       * Returns the string emitted to the std out during redirection.
@@ -243,12 +245,23 @@ object Tester {
       // Set the new streams.
       System.setOut(streamOut)
       System.setErr(streamErr)
+
+      shutdownHook = new Thread {
+        override def run() = {
+          restore()
+          System.out.println(stdOut)
+          System.err.println(stdErr)
+        }
+      }
+      Runtime.getRuntime().addShutdownHook(shutdownHook)
     }
 
     /**
       * Restore the std in and std err to their original streams.
       */
     def restore(): Unit = {
+      Runtime.getRuntime().removeShutdownHook(shutdownHook)
+
       // Flush the new streams.
       System.out.flush()
       System.err.flush()

@@ -35,6 +35,14 @@ class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) exten
     */
   private val cache = mutable.Map.empty[String, Class[_]]
 
+  // Install a default UncaughtExceptionHandler
+  Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler {
+    def uncaughtException(t: Thread, e: Throwable): Unit = {
+      e.printStackTrace()
+      Runtime.getRuntime().exit(1)
+    }
+  })
+
   /**
     * Finds the class with the given binary `name`.
     */

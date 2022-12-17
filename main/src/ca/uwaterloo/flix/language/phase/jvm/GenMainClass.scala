@@ -110,6 +110,14 @@ object GenMainClass {
 
     main.visitCode()
 
+    // Install a defaultUncaughtExceptionHandler
+    main.visitTypeInsn(NEW, BackendObjType.UncaughtExceptionHandler.jvmName.toInternalName)
+    main.visitInsn(DUP)
+    main.visitMethodInsn(INVOKESPECIAL, BackendObjType.UncaughtExceptionHandler.jvmName.toInternalName, "<init>",
+      (BackendObjType.UncaughtExceptionHandler.Constructor.d.toDescriptor), false)
+    main.visitMethodInsn(INVOKESTATIC, BackendObjType.Thread.jvmName.toInternalName, BackendObjType.Thread.SetDefaultUncaughtExceptionHandlerMethod.name,
+      BackendObjType.Thread.SetDefaultUncaughtExceptionHandlerMethod.d.toDescriptor, false)
+
     // Push the args array on the stack.
     main.visitVarInsn(ALOAD, 0)
 
