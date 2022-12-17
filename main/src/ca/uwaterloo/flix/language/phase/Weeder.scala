@@ -1304,7 +1304,7 @@ object Weeder {
         case (e1, e2) =>
           val loc = mkSL(sp1, sp2)
           val enum = Name.mkQName("List", sp1, sp2)
-          val tag = Name.Ident(sp1, "Cons", sp2)
+          val tag = Name.Ident(sp1, "Cons", sp2).asSynthetic
           val exp = WeededAst.Expression.Tuple(List(e1, e2), loc)
           WeededAst.Expression.Tag(Some(enum), tag, Some(exp), loc)
       }
@@ -1320,6 +1320,26 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
+      }
+
+    case ParsedAst.Expression.FList(sp1, sp2, exps) =>
+      /*
+       * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
+       */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
+      traverse(exps)(e => visitExp(e, senv)) map {
+        case es =>
+          val nilName = Name.Ident(sp1, "Nil", sp2).asSynthetic
+          val listName = Name.mkQName("List", sp1, sp2)
+          val unit = WeededAst.Expression.Cst(Ast.Constant.Unit, loc)
+          val nil: WeededAst.Expression = WeededAst.Expression.Tag(Some(listName), nilName, Some(unit), loc)
+          val consName = Name.Ident(sp1, "Cons", sp2).asSynthetic
+          es.foldRight(nil){
+            case (elm, acc) =>
+              val exp = WeededAst.Expression.Tuple(List(elm, acc), loc)
+              WeededAst.Expression.Tag(Some(listName), consName, Some(exp), loc)
+          }
       }
 
     case ParsedAst.Expression.FSet(sp1, sp2, exps) =>
@@ -2984,6 +3004,7 @@ object Weeder {
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
+    case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1

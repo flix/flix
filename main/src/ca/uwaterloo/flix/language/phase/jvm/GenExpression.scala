@@ -294,7 +294,15 @@ object GenExpression {
 
       val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
+
+      // Compile the scope body
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // When we exit the scope, call the region's `exit` method
+      val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
+      visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name, 
+        BackendObjType.Region.ExitMethod.d.toDescriptor, false)
 
     case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging

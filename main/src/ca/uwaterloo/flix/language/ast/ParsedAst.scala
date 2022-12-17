@@ -926,6 +926,14 @@ object ParsedAst {
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
+      * List expression.
+      * @param sp1  the position of the first character in the `List` keyword.
+      * @param sp2  the position of the last character in the `List` keyword.
+      * @param exps the elements of the list.
+      */
+    case class FList(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+
+    /**
       * Set Expression.
       *
       * @param sp1  the position of the first character in the `Set` keyword.
