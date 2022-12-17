@@ -1200,6 +1200,9 @@ object BackendObjType {
     def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
       mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
 
+    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "join",
+       MethodDescriptor.NothingToVoid, None)
+
     def SetDefaultUncaughtExceptionHandlerMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "setDefaultUncaughtExceptionHandler",
       mkDescriptor(JvmName.UncaughtExceptionHandler.toTpe)(VoidableType.Void), None)
   }
@@ -1217,8 +1220,5 @@ object BackendObjType {
 
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "exit", 
       mkDescriptor(BackendType.Int32)(VoidableType.Void), None)
-
-    def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "join",
-       MethodDescriptor.NothingToVoid, None)
   }
 }
