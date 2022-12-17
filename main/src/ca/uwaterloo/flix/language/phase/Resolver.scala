@@ -2381,9 +2381,6 @@ object Resolver {
     */
   private def tryLookupQualifiedName(qname0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
     // First resolve the root of the qualified name
-    if (qname0.namespace.parts == List("RedBlackTree") && qname0.ident.name == "foldMap") {
-      println("debug") // MATT
-    }
     val head = qname0.namespace.parts.head
     tryLookupModule(head, env, ns0, root) match {
       case None => None
