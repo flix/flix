@@ -172,7 +172,7 @@ object Tester {
 
         // Redirect std out and std err.
         val redirect = new ConsoleRedirection
-        // redirect.redirect()
+        redirect.redirect()
 
         // Start the clock.
         val start = System.nanoTime()
@@ -185,7 +185,7 @@ object Tester {
           val elapsed = System.nanoTime() - start
 
           // Restore std out and std err.
-          // redirect.restore()
+          redirect.restore()
 
           result match {
             case java.lang.Boolean.TRUE =>
