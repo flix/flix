@@ -75,6 +75,7 @@ object JvmName {
   val JavaLang: List[String] = List("java", "lang")
   val JavaUtil: List[String] = List("java", "util")
   val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
+  val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
 
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
