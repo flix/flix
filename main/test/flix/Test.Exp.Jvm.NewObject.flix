@@ -315,7 +315,7 @@ namespace Test/Exp/Jvm/NewObject {
     let x = [1, 2, 3];
     let y = [4, 5, 6];
     let anon = new ##java.lang.Object {
-      def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(x, y))
+      def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(Static, x, y))
     };
     toString(anon) == "[1, 2, 3, 4, 5, 6]"
 
