@@ -1493,4 +1493,11 @@ namespace Test/Exp/Regions {
             }
         }
 
+    @test
+     def testRegionExit01(): Bool \ IO = 
+         let x  = ref false;
+         region r {
+             spawn { Thread.sleep(Time/Duration.fromSeconds(1)); x := true } @ r
+         };
+         deref x
 }
