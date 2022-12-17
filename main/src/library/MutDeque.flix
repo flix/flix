@@ -39,9 +39,9 @@ instance Scoped[MutDeque[a]] {
     pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-// instance Iterable[MutDeque] {
-//     pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
-// }
+instance Iterable[MutDeque] {
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
+}
 
 namespace MutDeque {
 
@@ -412,17 +412,14 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], d: MutDeque[a, r]): Iterator[a, r1] \ { Read(r), Write(r1) } =
+    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(d);
         let MutDeque(a, f, b) = d;
-        let i = ref (deref f) @ r1;
-        let arr = deref a;
-        let arr1 = Array.copyOfRange(r1, 0, Array.length(arr), arr);  // TODO - avoid this copy...
-        let a1 = ref arr1 @ r1;
-        let done = () -> deref i == unsafe_cast deref b as _ \ r1;
+        let i = ref (deref f) @ r;
+        let done = () -> deref i == deref b;
         let next = () -> {
-            let x = (deref a1)[deref i];
-            let cap = unsafe_cast capacity(d) as _ \ r1;
-            i := deref i + 1 &&& (cap - 1);
+            let x = (deref a)[deref i];
+            i := deref i + 1 &&& (capacity(d) - 1);
             x
         };
         Iterator(done, next)

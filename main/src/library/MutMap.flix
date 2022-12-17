@@ -580,23 +580,26 @@ namespace MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(r1: Region[r1], m: MutMap[k, v, r]): Iterator[(k, v), r1] \ { Read(r), Write(r1) } =
+    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
         let MutMap(mm) = m;
-        Map.iterator(r1, deref mm)
+        let r = Scoped.regionOf(m);
+        Map.iterator(r, deref mm)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r1: Region[r1], m: MutMap[k, v, r]): Iterator[k, r1] \ { Read(r), Write(r1) } =
+    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
         let MutMap(mm) = m;
-        Map.iteratorKeys(r1, deref mm)
+        let r = Scoped.regionOf(m);
+        Map.iteratorKeys(r, deref mm)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r1: Region[r1], m: MutMap[k, v, r]): Iterator[v, r1] \ { Read(r), Write(r1) } =
+    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
         let MutMap(mm) = m;
-        Map.iteratorValues(r1, deref mm)
+        let r = Scoped.regionOf(m);
+        Map.iteratorValues(r, deref mm)
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

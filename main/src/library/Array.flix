@@ -18,9 +18,9 @@ instance Scoped[Array[a]] {
     pub def regionOf(_: Array[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-/// instance Iterable[Array] {
-///    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) = Array.iterator(a)
-/// }
+instance Iterable[Array] {
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) = Array.iterator(a)
+}
 
 namespace Array {
 
@@ -1408,12 +1408,12 @@ namespace Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], a: Array[a, r]): Iterator[a, r1] \ { Read(r), Write(r1) } =
-        let i = ref 0 @ r1;
-        let a1 = copyOfRange(r1, 0, length(a), a);  // TODO - avoid this copy...
+    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(a);
+        let i = ref 0 @ r;
         let done = () -> deref i == length(a);
         let next = () -> {
-            let x = a1[deref i];
+            let x = a[deref i];
             i := deref i + 1;
             x
         };
@@ -1424,8 +1424,8 @@ namespace Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(r1: Region[r1], a: Array[a, r]): Iterator[(a, Int32), r1] \ { Read(r), Write(r1) } =
-        iterator(r1, a) |> Iterator.zipWithIndex
+    pub def enumerator(a: Array[a, r]): Iterator[(a, Int32), r] \ { Read(r), Write(r) } =
+        iterator(a) |> Iterator.zipWithIndex
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.

@@ -33,9 +33,9 @@ instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-// instance Iterable[MutList] {
-//     pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
-// }
+instance Iterable[MutList] {
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
+}
 
 namespace MutList {
 
@@ -798,16 +798,13 @@ namespace MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], l: MutList[a, r]): Iterator[a, r1] \ { Read(r), Write(r1) } =
+    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
+        let r = Scoped.regionOf(l);
         let MutList(a, len) = l;
-        let i = ref 0 @ r1;
-        let arr = deref a;
-        let arr1 = Array.copyOfRange(r1, 0, Array.length(arr), arr);  // TODO - avoid this copy...
-        let len1 = ref (deref len) @ r1;
-        let a1 = ref arr1 @ r1;
-        let done = () -> deref i == deref len1;
+        let i = ref 0 @ r;
+        let done = () -> deref i == deref len;
         let next = () -> {
-            let x = (deref a1)[deref i];
+            let x = (deref a)[deref i];
             i := deref i + 1;
             x
         };
