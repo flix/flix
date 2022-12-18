@@ -77,6 +77,28 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(ex)))(result)
   }
 
+  test("map07") {
+    val ex = new RuntimeException()
+    val result = Success("foo", LazyList(ex)).map {
+      case x => x.toUpperCase
+    }.map {
+      case y => y.reverse
+    }.map {
+      case z => z + z
+    }
+    assertResult(Success("OOFOOF", LazyList(ex)))(result)
+  }
+
+  test("map08") {
+    val ex = new RuntimeException()
+    val result = Success("abc", LazyList(ex)).map {
+      case x => x.length
+    }.map {
+      case y => y < 5
+    }
+    assertResult(Success(true, LazyList(ex)))(result)
+  }
+
   test("flatMapN01") {
     val result = flatMapN("foo".toSuccess[String, Exception]) {
       case x => x.toUpperCase.toSuccess
@@ -125,36 +147,36 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(4, 5, 6)))(result)
   }
 
-    test("traverse01") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => Success(x + 1, LazyList.empty)
-      }
-
-      assertResult(Success(List(2, 3, 4), LazyList.empty))(result)
+  test("traverse01") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Success(x + 1, LazyList.empty)
     }
 
-    test("traverse02") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => Failure(LazyList(42))
-      }
+    assertResult(Success(List(2, 3, 4), LazyList.empty))(result)
+  }
 
-      assertResult(Failure(LazyList(42, 42, 42)))(result)
+  test("traverse02") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Failure(LazyList(42))
     }
 
-    test("traverse03") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => if (x % 2 == 1) Success(x, LazyList.empty) else Failure(LazyList(x))
-      }
+    assertResult(Failure(LazyList(42, 42, 42)))(result)
+  }
 
-      assertResult(Failure(LazyList(2)))(result)
+  test("traverse03") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => if (x % 2 == 1) Success(x, LazyList.empty) else Failure(LazyList(x))
     }
 
-    test("foldRight01") {
-      val result = foldRight(List(1, 1, 1))(Success(10, LazyList.empty)) {
-        case (x, acc) => (acc - x).toSuccess
-      }
+    assertResult(Failure(LazyList(2)))(result)
+  }
 
-      assertResult(Success(7, LazyList.empty))(result)
+  test("foldRight01") {
+    val result = foldRight(List(1, 1, 1))(Success(10, LazyList.empty)) {
+      case (x, acc) => (acc - x).toSuccess
     }
+
+    assertResult(Success(7, LazyList.empty))(result)
+  }
 
 }
