@@ -2005,53 +2005,53 @@ namespace TestMutList {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(r: Region[r], a: MutList[Int32, r]): Bool \ { Read(r), Write(r) } =
-        MutList.sort(r, a) `sameElements` MutList.sortWith(r, cmp, a)
-
+    def testSortVsSortWith(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
+        MutList.sort(r1, a) `sameElements` MutList.sortWith(r1, cmp, a)
+    }
 
     @test
     def sort01(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, []: Array[Int32, r]))
+        testSortVsSortWith(Array.toMutList(r, []: Array[Int32, r]))
     }
 
     @test
     def sort02(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [0]))
+        testSortVsSortWith(Array.toMutList(r, [0]))
     }
 
     @test
     def sort03(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [0,1]))
+        testSortVsSortWith(Array.toMutList(r, [0,1]))
     }
 
     @test
     def sort04(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [1,0]))
+        testSortVsSortWith(Array.toMutList(r, [1,0]))
     }
 
     @test
     def sort05(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [1,1]))
+        testSortVsSortWith(Array.toMutList(r, [1,1]))
     }
 
     @test
     def sort06(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [0,1,2,3,4,5]))
+        testSortVsSortWith(Array.toMutList(r, [0,1,2,3,4,5]))
     }
 
     @test
     def sort07(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [5,4,3,2,1,0]))
+        testSortVsSortWith(Array.toMutList(r, [5,4,3,2,1,0]))
     }
 
     @test
     def sort08(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [5,3,0,4,1,2]))
+        testSortVsSortWith(Array.toMutList(r, [5,3,0,4,1,2]))
     }
 
     @test
     def sort09(): Bool = region r {
-        testSortVsSortWith(r, Array.toMutList(r, [2,3,0,4,1,2]))
+        testSortVsSortWith(Array.toMutList(r, [2,3,0,4,1,2]))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2152,56 +2152,57 @@ namespace TestMutList {
     // sort!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSort!VsSortWith!(r1: Region[r1], a: MutList[Int32, r]): Bool \ { Read(r), Write(r1) } =
+    def testSort!VsSortWith!(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
         let b = MutList.copy(r1, a);
         let c = MutList.copy(r1, a);
         MutList.sort!(b);
         MutList.sortWith!(cmp, c);
         b `sameElements` c
+    }
 
     @test
     def sort!01(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, []: Array[Int32, r]))
+        testSort!VsSortWith!(Array.toMutList(r, []: Array[Int32, r]))
     }
 
     @test
     def sort!02(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [0]))
+        testSort!VsSortWith!(Array.toMutList(r, [0]))
     }
 
     @test
     def sort!03(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [0,1]))
+        testSort!VsSortWith!(Array.toMutList(r, [0,1]))
     }
 
     @test
     def sort!04(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [1,0]))
+        testSort!VsSortWith!(Array.toMutList(r, [1,0]))
     }
 
     @test
     def sort!05(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [1,1]))
+        testSort!VsSortWith!(Array.toMutList(r, [1,1]))
     }
 
     @test
     def sort!06(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [0,1,2,3,4,5]))
+        testSort!VsSortWith!(Array.toMutList(r, [0,1,2,3,4,5]))
     }
 
     @test
     def sort!07(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [5,4,3,2,1,0]))
+        testSort!VsSortWith!(Array.toMutList(r, [5,4,3,2,1,0]))
     }
 
     @test
     def sort!08(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [5,3,0,4,1,2]))
+        testSort!VsSortWith!(Array.toMutList(r, [5,3,0,4,1,2]))
     }
 
     @test
     def sort!09(): Bool = region r {
-        testSort!VsSortWith!(r, Array.toMutList(r, [2,3,0,4,1,2]))
+        testSort!VsSortWith!(Array.toMutList(r, [2,3,0,4,1,2]))
     }
 
 
@@ -2209,54 +2210,55 @@ namespace TestMutList {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(r1: Region[r1], a: MutList[Int32, r]): Bool \ { Read(r), Write(r1) } =
+    def testSortByVsSort(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
         (MutList.sortBy(r1, identity, a) `sameElements` MutList.sort(r1, a)) and
         (MutList.sortBy(r1, x -> 4 * x + 7, a) `sameElements` MutList.sort(r1, a)) and
         (MutList.sortBy(r1, x -> -x, a) `sameElements` MutList.sortWith(r1, flip(cmp),a))
+    }
 
     @test
     def sortBy01(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, []: Array[Int32, r]))
+        testSortByVsSort(Array.toMutList(r, []: Array[Int32, r]))
     }
 
     @test
     def sortBy02(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [0]))
+        testSortByVsSort(Array.toMutList(r, [0]))
     }
 
     @test
     def sortBy03(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [0,1]))
+        testSortByVsSort(Array.toMutList(r, [0,1]))
     }
 
     @test
     def sortBy04(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [1,0]))
+        testSortByVsSort(Array.toMutList(r, [1,0]))
     }
 
     @test
     def sortBy05(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [1,1]))
+        testSortByVsSort(Array.toMutList(r, [1,1]))
     }
 
     @test
     def sortBy06(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [0,1,2,3,4,5]))
+        testSortByVsSort(Array.toMutList(r, [0,1,2,3,4,5]))
     }
 
     @test
     def sortBy07(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [5,4,3,2,1,0]))
+        testSortByVsSort(Array.toMutList(r, [5,4,3,2,1,0]))
     }
 
     @test
     def sortBy08(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [5,3,0,4,1,2]))
+        testSortByVsSort(Array.toMutList(r, [5,3,0,4,1,2]))
     }
 
     @test
     def sortBy09(): Bool = region r {
-        testSortByVsSort(r, Array.toMutList(r, [2,3,0,4,1,2]))
+        testSortByVsSort(Array.toMutList(r, [2,3,0,4,1,2]))
     }
 
     enum R {
@@ -2281,57 +2283,58 @@ namespace TestMutList {
     // sortBy!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortBy!VsSortBy(r1: Region[r1], a: MutList[Int32, r]): Bool \ { Read(r), Write(r1) } =
+    def testSortBy!VsSortBy(a: MutList[Int32, r]): Bool \ { Read(r) } = region r1 {
         let b = MutList.copy(r1, a);
         let c = MutList.copy(r1, a);
         MutList.sortBy!(identity, b);
         MutList.sortBy!(x -> 4 * x + 7, c);
         (b `sameElements` MutList.sortBy(r1, x -> 4 * x + 7, a)) and
         (c `sameElements` MutList.sortBy(r1, identity, a))
+    }
 
     @test
     def sortBy!01(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, []: Array[Int32, r]))
+        testSortBy!VsSortBy(Array.toMutList(r, []: Array[Int32, r]))
     }
 
     @test
     def sortBy!02(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [0]))
+        testSortBy!VsSortBy(Array.toMutList(r, [0]))
     }
 
     @test
     def sortBy!03(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [0,1]))
+        testSortBy!VsSortBy(Array.toMutList(r, [0,1]))
     }
 
     @test
     def sortBy!04(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [1,0]))
+        testSortBy!VsSortBy(Array.toMutList(r, [1,0]))
     }
 
     @test
     def sortBy!05(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [1,1]))
+        testSortBy!VsSortBy(Array.toMutList(r, [1,1]))
     }
 
     @test
     def sortBy!06(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [0,1,2,3,4,5]))
+        testSortBy!VsSortBy(Array.toMutList(r, [0,1,2,3,4,5]))
     }
 
     @test
     def sortBy!07(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [5,4,3,2,1,0]))
+        testSortBy!VsSortBy(Array.toMutList(r, [5,4,3,2,1,0]))
     }
 
     @test
     def sortBy!08(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [5,3,0,4,1,2]))
+        testSortBy!VsSortBy(Array.toMutList(r, [5,3,0,4,1,2]))
     }
 
     @test
     def sortBy!09(): Bool = region r {
-        testSortBy!VsSortBy(r, Array.toMutList(r, [2,3,0,4,1,2]))
+        testSortBy!VsSortBy(Array.toMutList(r, [2,3,0,4,1,2]))
     }
 
 

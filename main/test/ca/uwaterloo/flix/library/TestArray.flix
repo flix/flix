@@ -5125,52 +5125,53 @@ namespace TestArray {
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(r1: Region[r1], a: Array[Int32, r]): Bool \ { Read(r), Write(r1) } =
+    def testSortVsSortWith(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
         Array.sort(r1, a) `sameElements` Array.sortWith(r1, cmp, a)
+    }
 
     @test
     def sort01(): Bool = region r {
-        testSortVsSortWith(r, []: Array[Int32, _])
+        testSortVsSortWith([]: Array[Int32, _])
     }
 
     @test
     def sort02(): Bool = region r {
-        testSortVsSortWith(r, [0])
+        testSortVsSortWith([0])
     }
 
     @test
     def sort03(): Bool = region r {
-        testSortVsSortWith(r, [0,1])
+        testSortVsSortWith([0,1])
     }
 
     @test
     def sort04(): Bool = region r {
-        testSortVsSortWith(r, [1,0])
+        testSortVsSortWith([1,0])
     }
 
     @test
     def sort05(): Bool = region r {
-        testSortVsSortWith(r, [1,1])
+        testSortVsSortWith([1,1])
     }
 
     @test
     def sort06(): Bool = region r {
-        testSortVsSortWith(r, [0,1,2,3,4,5])
+        testSortVsSortWith([0,1,2,3,4,5])
     }
 
     @test
     def sort07(): Bool = region r {
-        testSortVsSortWith(r, [5,4,3,2,1,0])
+        testSortVsSortWith([5,4,3,2,1,0])
     }
 
     @test
     def sort08(): Bool = region r {
-        testSortVsSortWith(r, [5,3,0,4,1,2])
+        testSortVsSortWith([5,3,0,4,1,2])
     }
 
     @test
     def sort09(): Bool = region r {
-        testSortVsSortWith(r, [2,3,0,4,1,2])
+        testSortVsSortWith([2,3,0,4,1,2])
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5272,7 +5273,7 @@ namespace TestArray {
     // sort!                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r), Write(r) } = region r1 {
+    def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
         let b = Array.slice(r1, 0, Array.length(a), a);
         let c = Array.slice(r1, 0, Array.length(a), a);
         Array.sort!(b);
@@ -5329,54 +5330,55 @@ namespace TestArray {
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(r1: Region[r1], a: Array[Int32, r]): Bool \ { Read(r), Write(r1) } =
+    def testSortByVsSort(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
         (Array.sortBy(r1, identity, a) `sameElements` Array.sort(r1, a)) and
         (Array.sortBy(r1, x -> 4 * x + 7, a) `sameElements` Array.sort(r1, a)) and
         (Array.sortBy(r1, x -> -x, a) `sameElements` Array.sortWith(r1, flip(cmp),a))
+    }
 
     @test
     def sortBy01(): Bool = region r {
-        testSortByVsSort(r, []: Array[Int32, _])
+        testSortByVsSort([]: Array[Int32, _])
     }
 
     @test
     def sortBy02(): Bool = region r {
-        testSortByVsSort(r, [0])
+        testSortByVsSort([0])
     }
 
     @test
     def sortBy03(): Bool = region r {
-        testSortByVsSort(r, [0,1])
+        testSortByVsSort([0,1])
     }
 
     @test
     def sortBy04(): Bool = region r {
-        testSortByVsSort(r, [1,0])
+        testSortByVsSort([1,0])
     }
 
     @test
     def sortBy05(): Bool = region r {
-        testSortByVsSort(r, [1,1])
+        testSortByVsSort([1,1])
     }
 
     @test
     def sortBy06(): Bool = region r {
-        testSortByVsSort(r, [0,1,2,3,4,5])
+        testSortByVsSort([0,1,2,3,4,5])
     }
 
     @test
     def sortBy07(): Bool = region r {
-        testSortByVsSort(r, [5,4,3,2,1,0])
+        testSortByVsSort([5,4,3,2,1,0])
     }
 
     @test
     def sortBy08(): Bool = region r {
-        testSortByVsSort(r, [5,3,0,4,1,2])
+        testSortByVsSort([5,3,0,4,1,2])
     }
 
     @test
     def sortBy09(): Bool = region r {
-        testSortByVsSort(r, [2,3,0,4,1,2])
+        testSortByVsSort([2,3,0,4,1,2])
     }
 
     enum R {
@@ -5400,57 +5402,58 @@ namespace TestArray {
     // sortBy!                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortBy!VsSortBy(r1: Region[r1], a: Array[Int32, r]) : Bool \ { Read(r), Write(r1) } =
+    def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ { Read(r) } = region r1 {
         let b = Array.slice(r1, 0, Array.length(a), a);
         let c = Array.slice(r1, 0, Array.length(a), a);
         Array.sortBy!(identity, b);
         Array.sortBy!(x -> 4 * x + 7, c);
         (b `sameElements` Array.sortBy(r1, x -> 4 * x + 7, a)) and
         (c `sameElements` Array.sortBy(r1, identity, a))
+    }
 
     @test
     def sortBy!01(): Bool = region r {
-        testSortBy!VsSortBy(r, []: Array[Int32, _])
+        testSortBy!VsSortBy([]: Array[Int32, _])
     }
 
     @test
     def sortBy!02(): Bool = region r {
-        testSortBy!VsSortBy(r, [0])
+        testSortBy!VsSortBy([0])
     }
 
     @test
     def sortBy!03(): Bool = region r {
-        testSortBy!VsSortBy(r, [0,1])
+        testSortBy!VsSortBy([0,1])
     }
 
     @test
     def sortBy!04(): Bool = region r {
-        testSortBy!VsSortBy(r, [1,0])
+        testSortBy!VsSortBy([1,0])
     }
 
     @test
     def sortBy!05(): Bool = region r {
-        testSortBy!VsSortBy(r, [1,1])
+        testSortBy!VsSortBy([1,1])
     }
 
     @test
     def sortBy!06(): Bool = region r {
-        testSortBy!VsSortBy(r, [0,1,2,3,4,5])
+        testSortBy!VsSortBy([0,1,2,3,4,5])
     }
 
     @test
     def sortBy!07(): Bool = region r {
-        testSortBy!VsSortBy(r, [5,4,3,2,1,0])
+        testSortBy!VsSortBy([5,4,3,2,1,0])
     }
 
     @test
     def sortBy!08(): Bool = region r {
-        testSortBy!VsSortBy(r, [5,3,0,4,1,2])
+        testSortBy!VsSortBy([5,3,0,4,1,2])
     }
 
     @test
     def sortBy!09(): Bool = region r {
-        testSortBy!VsSortBy(r, [2,3,0,4,1,2])
+        testSortBy!VsSortBy([2,3,0,4,1,2])
     }
 
     /////////////////////////////////////////////////////////////////////////////
