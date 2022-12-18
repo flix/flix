@@ -650,8 +650,7 @@ object Weeder {
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
-          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, Some(e3), loc).toSuccess
-          case ("ARRAY_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, None, loc).toSuccess
+          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e2, e3, Some(e1), loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
