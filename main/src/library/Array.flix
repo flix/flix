@@ -66,12 +66,10 @@ namespace Array {
     }
 
     ///
-    /// Returns a fresh array of length `l` filled with the element `x`.
-    ///
-    /// Equivalent to the expression `[x; l]`.
+    /// Returns a fresh array of length `l` filled with the element `x` in the region r.
     ///
     pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        [x; l] @ r
+        $ARRAY_REPEAT$(x, l, r)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -1395,7 +1393,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = [x; len] @ r;
+            let a = Array.new(r, x, len);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
