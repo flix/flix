@@ -154,9 +154,7 @@ object Validation {
     // Apply f to each element and collect the results.
     for (x <- xs) {
       f(x) match {
-        case Success(v, e) =>
-          successValues += v
-          failureStream += e
+        case Success(v, _) => successValues += v
         case Failure(e) => failureStream += e
       }
     }
