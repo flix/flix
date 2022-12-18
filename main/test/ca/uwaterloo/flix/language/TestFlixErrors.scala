@@ -26,7 +26,7 @@ class TestFlixErrors extends FunSuite with TestUtils {
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
     expectSuccess(v)
     v match {
-      case Validation.Success(t) => t.getMain match {
+      case Validation.Success(t, _) => t.getMain match {
         case Some(main) => try {
           main.apply(Array.empty)
         } catch {

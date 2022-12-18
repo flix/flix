@@ -35,7 +35,7 @@ class TestProgramArgs extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
     result match {
-      case Validation.Success(result) => result.getMain match {
+      case Validation.Success(result, _) => result.getMain match {
         case Some(main) => try {
           main.apply(Array(arg))
         } catch {

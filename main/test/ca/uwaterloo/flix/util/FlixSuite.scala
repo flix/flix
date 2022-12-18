@@ -63,7 +63,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
       flix.compile() match {
-        case Success(compilationResult) =>
+        case Success(compilationResult, _) =>
           runTests(name, compilationResult)
         case Failure(errors) =>
           val es = errors.map(_.message(flix.getFormatter)).mkString("\n")

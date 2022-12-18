@@ -26,7 +26,7 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].map {
       case x => x.toUpperCase
     }
-    assertResult(Success("FOO"))(result)
+    assertResult(Success("FOO", LazyList.empty))(result)
   }
 
   test("map02") {
@@ -35,7 +35,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y.reverse
     }
-    assertResult(Success("OOF"))(result)
+    assertResult(Success("OOF", LazyList.empty))(result)
   }
 
   test("map03") {
@@ -46,7 +46,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z + z
     }
-    assertResult(Success("OOFOOF"))(result)
+    assertResult(Success("OOFOOF", LazyList.empty))(result)
   }
 
   test("map04") {
@@ -55,7 +55,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y < 5
     }
-    assertResult(Success(true))(result)
+    assertResult(Success(true, LazyList.empty))(result)
   }
 
   test("map05") {
@@ -66,7 +66,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z.toChar.toString
     }
-    assertResult(Success("e"))(result)
+    assertResult(Success("e", LazyList.empty))(result)
   }
 
   test("map06") {
@@ -81,7 +81,7 @@ class TestValidation extends FunSuite {
     val result = flatMapN("foo".toSuccess[String, Exception]) {
       case x => x.toUpperCase.toSuccess
     }
-    assertResult(Success("FOO"))(result)
+    assertResult(Success("FOO", LazyList.empty))(result)
   }
 
   test("flatMapN02") {
@@ -92,7 +92,7 @@ class TestValidation extends FunSuite {
         }
       }
     }
-    assertResult(Success("OOFOOF"))(result)
+    assertResult(Success("OOFOOF", LazyList.empty))(result)
   }
 
   test("andThen03") {
@@ -105,18 +105,18 @@ class TestValidation extends FunSuite {
 
   test("andThen04") {
     val result = flatMapN("foo".toSuccess[String, Int]) {
-      case x => flatMapN(Success(x.toUpperCase)) {
-        case y => flatMapN(Success(y.reverse)) {
-          case z => Success(z + z)
+      case x => flatMapN(Success(x.toUpperCase, LazyList.empty)) {
+        case y => flatMapN(Success(y.reverse, LazyList.empty)) {
+          case z => Success(z + z, LazyList.empty)
         }
       }
     }
-    assertResult(Success("OOFOOF"))(result)
+    assertResult(Success("OOFOOF", LazyList.empty))(result)
   }
 
   test("andThen05") {
     val result = flatMapN("foo".toSuccess[String, Int]) {
-      case x => flatMapN(Success(x.toUpperCase)) {
+      case x => flatMapN(Success(x.toUpperCase, LazyList.empty)) {
         case y => flatMapN(Failure(LazyList(4, 5, 6))) {
           case z => Failure(LazyList(7, 8, 9))
         }
@@ -127,10 +127,10 @@ class TestValidation extends FunSuite {
 
     test("traverse01") {
       val result = traverse(List(1, 2, 3)) {
-        case x => Success(x + 1)
+        case x => Success(x + 1, LazyList.empty)
       }
 
-      assertResult(Success(List(2, 3, 4)))(result)
+      assertResult(Success(List(2, 3, 4), LazyList.empty))(result)
     }
 
     test("traverse02") {
@@ -143,18 +143,18 @@ class TestValidation extends FunSuite {
 
     test("traverse03") {
       val result = traverse(List(1, 2, 3)) {
-        case x => if (x % 2 == 1) Success(x) else Failure(LazyList(x))
+        case x => if (x % 2 == 1) Success(x, LazyList.empty) else Failure(LazyList(x))
       }
 
       assertResult(Failure(LazyList(2)))(result)
     }
 
     test("foldRight01") {
-      val result = foldRight(List(1, 1, 1))(Success(10)) {
+      val result = foldRight(List(1, 1, 1))(Success(10, LazyList.empty)) {
         case (x, acc) => (acc - x).toSuccess
       }
 
-      assertResult(Success(7))(result)
+      assertResult(Success(7, LazyList.empty))(result)
     }
 
 }
