@@ -161,7 +161,7 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.check() match {
-      case Validation.Success(_) => ().toOk
+      case Validation.Success(_, _) => ().toOk
       case Validation.Failure(errors) =>
         flix.mkMessages(errors).foreach(println)
         Result.Err(1)
@@ -183,7 +183,7 @@ object Packager {
     addSourcesAndPackages(p, o)
 
     flix.compile() match {
-      case Validation.Success(r) => Result.Ok(r)
+      case Validation.Success(r, _) => Result.Ok(r)
       case Validation.Failure(errors) =>
         flix.mkMessages(errors).foreach(println)
         1.toErr
@@ -277,7 +277,7 @@ object Packager {
     // We require that a Flix package has a specific structure.
     //
     checkProjectPath(p) match {
-      case Validation.Success(_) => ()
+      case Validation.Success(_, _) => ()
       case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 

@@ -320,7 +320,7 @@ object Typer {
               val inferredSc = Scheme.generalize(inferredConstrs, inferredType)
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
-                case Validation.Success(_) => // noop
+                case Validation.Success(_, _) => // noop
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
@@ -359,7 +359,7 @@ object Typer {
                       val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, inferredPur)
                       val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, declaredPur)
                       Scheme.checkLessThanEqual(inferredPurScheme, declaredPurScheme, classEnv) match {
-                        case Validation.Success(_) =>
+                        case Validation.Success(_, _) =>
                         // Case 3.1: The purity is not the problem. Regular generalization error.
                         // Fall through to below.
                         case Validation.Failure(_) =>

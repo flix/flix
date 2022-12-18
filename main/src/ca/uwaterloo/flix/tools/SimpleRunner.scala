@@ -89,7 +89,7 @@ object SimpleRunner {
     // evaluate main.
     val timer = new Timer(flix.compile())
     timer.getResult match {
-      case Validation.Success(compilationResult) =>
+      case Validation.Success(compilationResult, _) =>
 
         compilationResult.getMain match {
           case None => // nop

@@ -181,7 +181,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       flix.setOptions(opts)
 
       flix.compile() match {
-        case Success(compilationResult) =>
+        case Success(compilationResult, _) =>
           // Compilation was successful.
 
           // Determine if the main function is present.

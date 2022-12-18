@@ -1194,7 +1194,7 @@ object Redundancy {
     /**
       * Returns Successful(a) unless `this` contains errors.
       */
-    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.to(LazyList))
+    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a, LazyList.empty) else Failure(errors.to(LazyList))
   }
 
   /**

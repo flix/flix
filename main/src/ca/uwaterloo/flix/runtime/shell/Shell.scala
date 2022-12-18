@@ -286,7 +286,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
         // And try to compile!
         compile(progress = false) match {
-          case Validation.Success(_) =>
+          case Validation.Success(_, _) =>
             // Compilation succeeded.
             w.println("Ok.")
           case Validation.Failure(_) =>
@@ -352,13 +352,13 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
     val checkResult = flix.check()
     checkResult match {
-      case Validation.Success(root) => this.root = Some(root)
+      case Validation.Success(root, _) => this.root = Some(root)
       case Failure(_) => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
     result match {
-      case Validation.Success(_) => // Compilation successful, no-op
+      case Validation.Success(_, _) => // Compilation successful, no-op
 
       case Validation.Failure(errors) =>
         for (msg <- flix.mkMessages(errors)) {
@@ -376,7 +376,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
     compile(entryPoint = Some(main), progress = false) match {
-      case Validation.Success(result) =>
+      case Validation.Success(result, _) =>
         result.getMain match {
           case Some(m) =>
             // Evaluate the main function

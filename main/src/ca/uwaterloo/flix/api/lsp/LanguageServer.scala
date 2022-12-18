@@ -317,12 +317,12 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     try {
       // Run the compiler up to the type checking phase.
       flix.check() match {
-        case Success(root) =>
+        case Success(root, errors) =>
           // Case 1: Compilation was successful. Build the reverse index.
           this.root = root
           this.index = Indexer.visitRoot(root)
           this.current = true
-          this.currentErrors = Nil
+          this.currentErrors = errors.toList
 
           // Compute elapsed time.
           val e = System.nanoTime() - t

@@ -1944,7 +1944,7 @@ object Weeder {
               val code = List(d0, d1, d2, d3).mkString
               // Doing a manual flatMap to keep the function tail-recursive
               translateHexCode(code, mkSL(sp1, sp2)) match {
-                case Validation.Success(char) => visit(rest2, char :: acc)
+                case Validation.Success(char, _) => visit(rest2, char :: acc)
                 case Validation.Failure(errors) => Validation.Failure(errors)
               }
             // Case 3.3.2: `\\u` followed by less than 4 literals

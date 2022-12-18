@@ -223,7 +223,7 @@ object Instances {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
-                      case Validation.Success(_) => Nil
+                      case Validation.Success(_, _) => Nil
                     }
                 }
               case None =>
