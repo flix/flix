@@ -74,7 +74,7 @@ namespace MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
-        MutDeque(ref [Reflect.default(); minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
+        MutDeque(ref Array.new(r, Reflect.default(), minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
@@ -290,9 +290,9 @@ namespace MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(a, f, b) = d;
         let c = capacity(d);
-        let arr = [Reflect.default(); c <<< 1] @ Scoped.regionOf(d); // Allocate new array `arr` with double the capacity of `a`.
-        copyElements!(deref f, deref b, deref a, arr);       // Copy elements from old array `a` to new array `arr`.
-        a := arr;                                            // Update references.
+        let arr = Array.new(Scoped.regionOf(d), Reflect.default(), c <<< 1); // Allocate new array `arr` with double the capacity of `a`.
+        copyElements!(deref f, deref b, deref a, arr);                       // Copy elements from old array `a` to new array `arr`.
+        a := arr;                                                            // Update references.
         b := computeSize(c, deref f, deref b);
         f := 0
 
@@ -315,10 +315,10 @@ namespace MutDeque {
         let MutDeque(a, f, b) = d;
         let mc = minCapacity();
         let c = capacity(d);
-        if (c > mc) {                                            // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = [Reflect.default(); c >>> 1] @ Scoped.regionOf(d); // Allocate new array `arr` with half the capacity of `a`.
-            copyElements!(deref f, deref b, deref a, arr);       // Copy elements from old array `a` to new array `arr`.
-            a := arr;                                            // Update references.
+        if (c > mc) {                                                            // Prevent the backing array from shrinking below `minCapacity`.
+            let arr = Array.new(Scoped.regionOf(d), Reflect.default(), c >>> 1); // Allocate new array `arr` with half the capacity of `a`.
+            copyElements!(deref f, deref b, deref a, arr);                       // Copy elements from old array `a` to new array `arr`.
+            a := arr;                                                            // Update references.
             b := computeSize(c, deref f, deref b);
             f := 0
         } else {
@@ -359,8 +359,8 @@ namespace MutDeque {
         if (aSize == bSize) {
             let MutDeque(aArray, aFront, aBack) = d1;
             let MutDeque(bArray, bFront, bBack) = d2;
-            let a1 = [Reflect.default(); aSize] @ Scoped.regionOf(d1);
-            let b1 = [Reflect.default(); bSize] @ Scoped.regionOf(d2);
+            let a1 = Array.new(Scoped.regionOf(d1), Reflect.default(), aSize);
+            let b1 = Array.new(Scoped.regionOf(d2), Reflect.default(), bSize);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
