@@ -1113,7 +1113,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "[" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ "]" ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.ArrayNew
+      SP ~ keyword("$ARRAY_REPEAT$") ~ "(" ~ optWS ~ Expression ~ optWS ~ "," ~ optWS ~ Expression ~ optWS ~ ")" ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
     def FAppend: Rule1[ParsedAst.Expression] = rule {
