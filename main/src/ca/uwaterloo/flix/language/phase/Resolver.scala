@@ -293,13 +293,13 @@ object Resolver {
   private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
-      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
+      // use the new namespace
+      val ns = Name.mkUnlocatedNName(sym.ns)
+      val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           // reset the env
           val env = mkUseEnv(usesAndImports, root)
-          // use the new namespace
-          val ns = Name.mkUnlocatedNName(sym.ns)
           val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, root))
           mapN(declsVal) {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
