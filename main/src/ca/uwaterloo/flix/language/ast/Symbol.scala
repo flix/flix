@@ -416,6 +416,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = enumSym.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = enumSym.namespace :+ enumSym.name
   }
 
   /**
