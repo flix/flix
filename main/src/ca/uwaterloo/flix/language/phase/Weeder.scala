@@ -650,6 +650,8 @@ object Weeder {
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
+          case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
+
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
         }
       }
@@ -1286,12 +1288,6 @@ object Weeder {
           mapN(visitExp(base, senv), visitExp(startIndex, senv), visitExp(endIndex, senv)) {
             case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
           }
-      }
-
-    case ParsedAst.Expression.ArrayLength(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.ArrayLength(e, loc)
       }
 
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
@@ -2989,7 +2985,6 @@ object Weeder {
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
