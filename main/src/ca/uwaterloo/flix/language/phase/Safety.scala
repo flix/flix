@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -572,7 +572,21 @@ object Safety {
     //
     val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
 
-    err1 concat err2
+    val err3 = c0.body.flatMap(s => checkBodyPattern(s))
+
+    err1 concat err2 concat err3
+  }
+
+  // Performs safety check on the pattern of an atom body.
+  private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
+    case Predicate.Body.Atom(_,_,_,_,terms,_,loc) =>
+      terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
+        case Pattern.Var(_, _, _)
+             | Pattern.Wild(_, _)
+             | Pattern.Cst(_, _, _) => acc
+        case _ => UnexpectedPatternInBodyAtom(loc) :: acc
+      }).reverse
+    case _ => Nil
   }
 
   /**

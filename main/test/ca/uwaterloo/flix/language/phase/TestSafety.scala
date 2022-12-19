@@ -18,13 +18,35 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, UnexpectedPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestSafety extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
+
+  test("UnexpectedBodyAtomPattern.01") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(x) :- B(Some(x)).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
+  test("UnexpectedBodyAtomPattern.02") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(1) :- B(Some(2)).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
 
   test("NonPositivelyBoundVariable.01") {
     val input =
