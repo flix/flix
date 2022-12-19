@@ -1782,7 +1782,12 @@ object Resolver {
     // first look in the local env
     val resolutions = tryLookupName(qname, allowCase = true, env, ns0, root)
 
-    resolutions match {
+    resolutions.collect {
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Def) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
+      case decl@Resolution.Var(_) => decl
+    } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
           ResolvedTerm.Def(defn).toSuccess
@@ -1798,7 +1803,7 @@ object Resolver {
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
         ResolvedTerm.Tag(caze).toSuccess
       // MATT check accessible
-      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: Nil =>
+      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
         // Multiple case matches. Error.
         ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
