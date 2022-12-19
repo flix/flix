@@ -1802,7 +1802,7 @@ object Resolver {
         }
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
         ResolvedTerm.Tag(caze).toSuccess
-      // MATT check accessible
+      // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
         // Multiple case matches. Error.
         ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
@@ -1861,7 +1861,7 @@ object Resolver {
         val locs = cazes.map(_.sym.loc).sorted
         ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
     }
-    // MATT must check accessibility
+    // TODO NS-REFACTOR check accessibility
   }
 
   /**
@@ -3099,20 +3099,26 @@ object Resolver {
     }
   }
 
-  // MATT docs
+  /**
+    * Creates an environment from the given constraint parameters.
+    */
   private def mkConstraintParamEnv(cparams: List[ResolvedAst.ConstraintParam]): ListMap[String, Resolution] = {
     cparams.foldLeft(ListMap.empty[String, Resolution]) {
       case (acc, cparam) => acc + (cparam.sym.text -> Resolution.Var(cparam.sym))
     }
   }
 
-  // MATT docs
+  /**
+    * Creates an environment from the given spec.
+    */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
     case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
       mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
   }
 
-  // MATT docs
+  /**
+    * Creates an environment from the given pattern.
+    */
   @tailrec
   private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
     case ResolvedAst.Pattern.Wild(loc) => ListMap.empty
@@ -3125,17 +3131,23 @@ object Resolver {
     case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, loc) => mkVarEnv(sym) ++ mkPatternsEnv(elms)
   }
 
-  // MATT docs
+  /**
+    * Creates an environment from the given patterns.
+    */
   private def mkPatternsEnv(pats: List[ResolvedAst.Pattern]): ListMap[String, Resolution] = {
     pats.foldLeft(ListMap.empty[String, Resolution]) {
       case (acc, pat) => acc ++ mkPatternEnv(pat)
     }
   }
 
-  // MATT docs
+  /**
+    * Creates an environment from the given variable symbol.
+    */
   private def mkVarEnv(sym: Symbol.VarSym): ListMap[String, Resolution] = ListMap.singleton(sym.text, Resolution.Var(sym))
 
-  // MATT docs
+  /**
+    * Creates an environment from the given type variable symbol.
+    */
   private def mkTypeVarEnv(sym: Symbol.UnkindedTypeVarSym): ListMap[String, Resolution] = {
     sym.text match {
       case VarText.Absent => throw InternalCompilerException("unexpected unnamed type var sym", sym.loc)
