@@ -865,7 +865,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("UndefinedType.03") {
@@ -887,7 +887,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedType](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedType.05") {
