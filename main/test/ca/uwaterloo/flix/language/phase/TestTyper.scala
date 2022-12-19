@@ -1181,7 +1181,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def mkArray(): Array[Int32, Static] \ IO = []
         |
-        |def zero(): Int32 & Pure = mkArray().length
+        |def zero(): Int32 & Pure = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.ImpureDeclaredAsPure](result)

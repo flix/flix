@@ -98,7 +98,7 @@ namespace Array {
     ///
     /// Returns the length of the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 = $LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
