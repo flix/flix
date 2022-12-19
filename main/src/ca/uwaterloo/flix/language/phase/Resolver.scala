@@ -2400,12 +2400,14 @@ object Resolver {
       case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz.sym.namespace :+ clazz.sym.name
       case Resolution.Declaration(enum: NamedAst.Declaration.Enum) => enum.sym.namespace :+ enum.sym.name
+      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff.sym.namespace :+ eff.sym.name
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+        case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
@@ -2413,6 +2415,7 @@ object Resolver {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
         case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
+        case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
       }
     }
   }
