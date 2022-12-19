@@ -95,6 +95,8 @@ namespace Concurrent/Channel {
     ///   `waitingGetters` - a set of conditions that are waiting for an
     ///       element. This set is notified and cleared after each new element.
     ///       An available element is not guaranteed when notified.
+    ///   `rendezvous` - a condition that is waiting for a rendezvous (only
+    ///       used for unbuffered channels).
     ///   `waitingPutters` - a condition that is waiting for an element.
     ///       The condition is notified after each new element. Available space
     ///       is not guaranteed when notified.
@@ -106,6 +108,7 @@ namespace Concurrent/Channel {
         Int32, // maxSize
         Ref[Int32, Static], // size
         MutList[(ReentrantLock, Condition), Static], // waitingGetters
+        Condition, // rendezvous
         Condition // waitingPutters
     )
 
@@ -129,6 +132,7 @@ namespace Concurrent/Channel {
                 if (unBuffered) 1 else bufferSize,
                 size,
                 new MutList(Static),
+                newCondition(reentrantLock),
                 newCondition(reentrantLock)
             ),
             new MutDeque(Static)
@@ -151,7 +155,7 @@ namespace Concurrent/Channel {
     @Internal
     pub def put(e: a, c: Mpmc[a]): Unit \ IO =
         let Mpmc(admin, elementDeque) = c;
-        let MpmcAdmin(_, channelLock, unBuffered, _, size, _, waitingPutters) = admin;
+        let MpmcAdmin(_, channelLock, unBuffered, _, size, _, _, waitingPutters) = admin;
         lock(channelLock);
 
         // Block until the channel is not full
@@ -166,14 +170,12 @@ namespace Concurrent/Channel {
 
         // If the channel is unbuffered, wait for the element to be handed off
         // before continuing.
-        /* TODO: Optimization possibility: This await could be faster with a
-                 separate condition such that the hand-off signal does not have
-                 to fight for the channel lock with the threads that actually
-                 want to insert an element (unblocking from await requires that
-                 you re-aquire the lock).
-        */
-        if (unBuffered) awaitCondition(waitingPutters)
-        else ();
+        if (unBuffered) {
+            awaitRendezvous(admin);
+            signalCondition(waitingPutters)
+        } else {
+            ()
+        };
 
         unlock(channelLock)
 
@@ -185,7 +187,7 @@ namespace Concurrent/Channel {
     ///
     @Internal
     pub def get(c: Mpmc[a]): a \ IO =
-        let MpmcAdmin(_, channelLock, _, _, _, _, _) = mpmcAdmin(c);
+        let MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
 
         // Get the next available element
@@ -201,7 +203,7 @@ namespace Concurrent/Channel {
     @Internal
     pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc(admin, elementDeque) = c;
-        let MpmcAdmin(_, channelLock, _, _, size, _, _) = admin;
+        let MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
         lock(channelLock);
 
         // Gets an element from the channel c which must be non-empty
@@ -217,7 +219,7 @@ namespace Concurrent/Channel {
             case Some(element) =>
                 // Signal waiting setters that the channel has space
                 size := deref size - 1;
-                signalPutters(admin);
+                onGetComplete(admin);
                 unlock(channelLock);
                 element
         };
@@ -250,8 +252,8 @@ namespace Concurrent/Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels |>
-            Array.sortBy(Static, match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
-            Array.map(Static, match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
+            Array.sortBy(Static, match MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
+            Array.map(Static, match MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -265,10 +267,23 @@ namespace Concurrent/Channel {
     ///
     @Internal
     def awaitAvailableSpace(c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, _, maxSize, size, _, waitingPutters) = c;
+        let MpmcAdmin(_, _, _, maxSize, size, _, _, waitingPutters) = c;
         if ((deref size) == maxSize) {
             awaitCondition(waitingPutters);
             awaitAvailableSpace(c)
+        } else {
+            ()
+        }
+
+    ///
+    /// Wait until the item we added has been removed.
+    ///
+    @Internal
+    def awaitRendezvous(c: MpmcAdmin): Unit \ IO =
+        let MpmcAdmin(_, _, _, _, size, _, rendezvous, _) = c;
+        if ((deref size) != 0) {
+            awaitCondition(rendezvous);
+            awaitRendezvous(c)
         } else {
             ()
         }
@@ -284,7 +299,7 @@ namespace Concurrent/Channel {
     ///
     def getHelper(c: Mpmc[a]): a \ IO =
         let Mpmc(admin, elementDeque) = c;
-        let MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _) = admin;
+        let MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _, _) = admin;
 
         // Try to get the element (which could already be taken by someone
         // else) and update size.
@@ -317,7 +332,7 @@ namespace Concurrent/Channel {
             case Some(e) =>
                 // Signal waiting setters that the channel has space
                 size := deref size - 1;
-                signalPutters(admin);
+                onGetComplete(admin);
                 e
         }
 
@@ -354,7 +369,7 @@ namespace Concurrent/Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels |>
-            Array.mapWithIndex(Static, i -> match MpmcAdmin(_, _, _, _, size, _, _) -> {
+            Array.mapWithIndex(Static, i -> match MpmcAdmin(_, _, _, _, size, _, _, _) -> {
                 (deref size > 0, i)
             }) |>
             Array.findLeft(match (b, _) -> b) |>
@@ -396,7 +411,7 @@ namespace Concurrent/Channel {
     /// The channel lock is expected to be held.
     ///
     def addGetter(l: ReentrantLock, cond: Condition, c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, _, _, _, waitingGetters, _) = c;
+        let MpmcAdmin(_, _, _, _, _, waitingGetters, _, _) = c;
         MutList.push!((l, cond), waitingGetters)
 
     ///
@@ -404,7 +419,7 @@ namespace Concurrent/Channel {
     /// The channel lock is expected to be held.
     ///
     def signalGetters(c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, _, _, _, waitingGetters, _) = c;
+        let MpmcAdmin(_, _, _, _, _, waitingGetters, _, _) = c;
 
         // Signal waitingGetters that there is an element available
         let signalLockConditionPair = match (conditionLock, condition) -> {
@@ -420,14 +435,15 @@ namespace Concurrent/Channel {
         MutList.clear!(waitingGetters)
 
     ///
-    /// Signals and clears the waiting putters.
+    /// Either signals waiting putters or rendezvous as appropriate.
     /// The channel lock is expected to be held.
     ///
-    def signalPutters(c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, _, _, _, _, waitingPutters) = c;
-        // Signal waiting setters that the channel has space
-        signalCondition(waitingPutters)
-        // Since there is only one condition there is no cleaning up to do.
+    def onGetComplete(c: MpmcAdmin): Unit \ IO =
+        let MpmcAdmin(_, _, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
+        if (unBuffered)
+            signalCondition(rendezvous)
+        else 
+            signalCondition(waitingPutters)
 
 
     // ------------- Helper Methods --------------------------------------------
