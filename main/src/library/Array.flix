@@ -93,12 +93,12 @@ namespace Array {
     ///
     /// Returns `true` if the given array `a` is empty.
     ///
-    pub def isEmpty(a: Array[a, r]): Bool = a.length == 0
+    pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
 
     ///
     /// Returns the length of the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 = a.length
+    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
@@ -120,7 +120,7 @@ namespace Array {
                 loop(i - 1, x :: acc)
             }
         };
-        loop(a.length, Nil)
+        loop(length(a), Nil)
 
     ///
     /// Optionally returns the array `arr` as a non-empty list.
@@ -139,7 +139,7 @@ namespace Array {
         if (Array.isEmpty(arr)) {
             None
         } else {
-            let i = arr.length - 1;
+            let i = length(arr) - 1;
             Some(loop(i, Nel.singleton(arr[i])))
         }
 
@@ -153,7 +153,7 @@ namespace Array {
             else
                 loop(i - 1, ECons(a[i], acc))
         };
-        loop(a.length - 1, ENil)
+        loop(length(a) - 1, ENil)
 
     ///
     /// Returns the array `arr` as a chain.
@@ -167,7 +167,7 @@ namespace Array {
                 loop(i - 1, Chain.cons(x, acc))
             }
         };
-        loop(arr.length, Chain.empty())
+        loop(length(arr), Chain.empty())
 
     ///
     /// Optionally returns the array `arr` as a non-empty chain.
@@ -186,7 +186,7 @@ namespace Array {
         if (Array.isEmpty(arr)) {
             None
         } else {
-            let i = arr.length - 1;
+            let i = length(arr) - 1;
             Some(loop(i, Nec.singleton(arr[i])))
         }
 
@@ -279,7 +279,7 @@ namespace Array {
     ///
     pub def indexOfLeft(a: a, arr: Array[a, r]): Option[Int32] \ Read(r) with Eq[a] =
         def loop(i) = {
-            if (i >= arr.length)
+            if (i >= length(arr))
                 -1
             else if (arr[i] == a)
                 i

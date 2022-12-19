@@ -85,30 +85,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  test("IllegalFieldName.01") {
-    val input = "def f(): { length = Int32 } = { length = 123 }"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFieldName](result)
-  }
-
-  test("IllegalFieldName.02") {
-    val input = "def f(): { length = Int32 } = { +length = 123 | {} }"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFieldName](result)
-  }
-
-  test("IllegalFieldName.03") {
-    val input = "def f(): { length = Int32 } = { -length | {} }"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFieldName](result)
-  }
-
-  test("IllegalFieldName.04") {
-    val input = "def f(): { length = Int32 } = { length = 123 | {} }"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFieldName](result)
-  }
-
   test("IllegalFixedAtom.01") {
     val input =
       """def f(): Unit =
