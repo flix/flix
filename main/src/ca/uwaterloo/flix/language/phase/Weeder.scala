@@ -452,26 +452,28 @@ object Weeder {
     */
   private def visitExp(exp0: ParsedAst.Expression, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
     case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-
-      // Check the shape of the QName.
-      (qname.namespace.idents, qname.ident) match {
-        // Case 1: Special case: this is actually an array length access.
-        case (left :: Nil, right) if left.isLower && right.name == "length" =>
-          val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
-          val loc = mkSL(sp1, sp2)
-          WeededAst.Expression.ArrayLength(exp, loc).toSuccess
-
-        // Case 2: Special case: this is actually a record projection.
-        case (left :: Nil, right) if left.isLower =>
-          val exp = WeededAst.Expression.Ambiguous(Name.mkQName(left), left.loc)
-          val field = Name.mkField(right)
-          val loc = mkSL(sp1, sp2)
-          WeededAst.Expression.RecordSelect(exp, field, loc).toSuccess
-
-        // Case 3: It's a real qualified name.
-        case _ =>
+      val parts = qname.namespace.idents :+ qname.ident
+      val prefix = parts.takeWhile(_.isUpper)
+      val suffix = parts.dropWhile(_.isUpper)
+      suffix match {
+        // Case 1: upper qualified name
+        case Nil =>
           // NB: We only use the source location of the identifier itself.
           WeededAst.Expression.Ambiguous(qname, qname.ident.loc).toSuccess
+
+        // Case 1: basic qualified name
+        case ident :: Nil =>
+          // NB: We only use the source location of the identifier itself.
+          WeededAst.Expression.Ambiguous(qname, ident.loc).toSuccess
+
+        // Case 2: actually a record access/array length
+        case ident :: fields =>
+          // NB: We only use the source location of the identifier itself.
+          val base = WeededAst.Expression.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
+          fields.foldLeft(base: WeededAst.Expression) {
+            case (acc, field) if field.name == "length" => WeededAst.Expression.ArrayLength(acc, field.loc) // TODO NS-REFACTOR should use better location
+            case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
+          }.toSuccess
       }
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
