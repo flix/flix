@@ -1782,24 +1782,28 @@ object Resolver {
     // first look in the local env
     val resolutions = tryLookupName(qname, allowCase = true, env, ns0, root)
 
-    resolutions.collectFirst {
-      case Resolution.Declaration(defn: NamedAst.Declaration.Def) =>
+    resolutions match {
+      case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
           ResolvedTerm.Def(defn).toSuccess
         } else {
           ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Declaration(sig: NamedAst.Declaration.Sig) =>
+      case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
           ResolvedTerm.Sig(sig).toSuccess
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Declaration(caze: NamedAst.Declaration.Case) =>
+      case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
         ResolvedTerm.Tag(caze).toSuccess
       // MATT check accessible
-      case Resolution.Var(sym) => ResolvedTerm.Var(sym).toSuccess
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure)
+      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: Nil =>
+        // Multiple case matches. Error.
+        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
+      case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
+      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
+    }
   }
 
   /**
