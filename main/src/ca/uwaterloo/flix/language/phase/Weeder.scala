@@ -466,12 +466,11 @@ object Weeder {
           // NB: We only use the source location of the identifier itself.
           WeededAst.Expression.Ambiguous(qname, ident.loc).toSuccess
 
-        // Case 2: actually a record access/array length
+        // Case 2: actually a record access
         case ident :: fields =>
           // NB: We only use the source location of the identifier itself.
           val base = WeededAst.Expression.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
           fields.foldLeft(base: WeededAst.Expression) {
-            case (acc, field) if field.name == "length" => WeededAst.Expression.ArrayLength(acc, field.loc) // TODO NS-REFACTOR should use better location
             case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
           }.toSuccess
       }
