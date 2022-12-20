@@ -45,7 +45,7 @@ object Weeder {
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
-    "namespace", "null", "opaque", "override", "pub", "ref", "region",
+    "mod", "null", "opaque", "override", "pub", "ref", "region",
     "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
