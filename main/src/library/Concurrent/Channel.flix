@@ -22,6 +22,9 @@ namespace Concurrent/Channel {
     use Concurrent/ReentrantLock.newLock
     use Concurrent/Condition.Condition
     use Concurrent/ReentrantLock.newCondition
+    use Concurrent/CyclicBarrier.CyclicBarrier
+    use Concurrent/CyclicBarrier.newCyclicBarrier
+    use Concurrent/CyclicBarrier.awaitBarrier
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
@@ -108,8 +111,9 @@ namespace Concurrent/Channel {
     ///   `waitingGetters` - a set of conditions that are waiting for an
     ///       element. This set is notified and cleared after each new element.
     ///       An available element is not guaranteed when notified.
-    ///   `rendezvous` - a condition that is waiting for a synchronous rendezvous
-    ///       Between putter and getter (only used for unbuffered channels).
+    ///   `rendezvous` - a cyclic barrier used to implement synchronous
+    ///       rendezvous between putter and getter (only used for unbuffered
+    ///       channels).
     ///   `waitingPutters` - a condition that is waiting for an element.
     ///       The condition is notified after each new element. Available space
     ///       is not guaranteed when notified.
@@ -121,7 +125,7 @@ namespace Concurrent/Channel {
         Int32, // maxSize
         Ref[Int32, Static], // size
         MutList[(ReentrantLock, Condition), Static], // waitingGetters
-        Condition, // rendezvous
+        CyclicBarrier, // rendezvous
         Condition // waitingPutters
     )
 
@@ -145,7 +149,7 @@ namespace Concurrent/Channel {
                 if (unBuffered) 1 else bufferSize,
                 size,
                 new MutList(Static),
-                newCondition(reentrantLock),
+                newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
             new MutDeque(Static)
@@ -168,7 +172,7 @@ namespace Concurrent/Channel {
     @Internal
     pub def put(e: a, c: Mpmc[a]): Unit \ IO =
         let Mpmc(admin, elementDeque) = c;
-        let MpmcAdmin(_, channelLock, unBuffered, _, size, _, _, waitingPutters) = admin;
+        let MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
         lock(channelLock);
 
         // Block until the channel is not full
@@ -181,16 +185,12 @@ namespace Concurrent/Channel {
         // Signal the waiting getters that an element has arrived
         signalGetters(admin);
 
+        unlock(channelLock);
+
         // If the channel is unbuffered, wait for the element to be handed off
         // before continuing.
-        if (unBuffered) {
-            awaitRendezvous(admin);
-            signalCondition(waitingPutters)
-        } else {
-            ()
-        };
-
-        unlock(channelLock)
+        if (unBuffered) discard awaitBarrier(rendezvous)
+        else ()
 
     ///
     /// Retrieves an element from the channel `c`. This is blocking if the
@@ -204,10 +204,8 @@ namespace Concurrent/Channel {
         lock(channelLock);
 
         // Get the next available element
-        let element = getHelper(c);
-
-        unlock(channelLock);
-        element
+        getHelper(c)
+        // no need to unlock because getHelper unlocks
 
     ///
     /// Retrieves an element from the channel `c` and unlocks `locks` after doing so.
@@ -233,7 +231,7 @@ namespace Concurrent/Channel {
                 // Signal waiting setters that the channel has space
                 size := deref size - 1;
                 onGetComplete(admin);
-                unlock(channelLock);
+                // channelLock is now unlocked
                 element
         };
 
@@ -289,26 +287,13 @@ namespace Concurrent/Channel {
         }
 
     ///
-    /// Wait until the item we added has been removed.
-    ///
-    @Internal
-    def awaitRendezvous(c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, _, _, size, _, rendezvous, _) = c;
-        if ((deref size) != 0) {
-            awaitCondition(rendezvous);
-            awaitRendezvous(c)
-        } else {
-            ()
-        }
-
-    ///
     /// Recursive helper function for get, it repeatedly attempts to retrieve an
     /// element.
     /// 1) try to retrieve element, if so, return
     /// 2) wait for a new element
     /// 3) wake up, go to 1)
     ///
-    /// The channel lock is expected to be held.
+    /// The channel lock is expected to be held, and will be unlocked on return.
     ///
     def getHelper(c: Mpmc[a]): a \ IO =
         let Mpmc(admin, elementDeque) = c;
@@ -346,6 +331,7 @@ namespace Concurrent/Channel {
                 // Signal waiting setters that the channel has space
                 size := deref size - 1;
                 onGetComplete(admin);
+                // channelLock is now unlocked
                 e
         }
 
@@ -448,17 +434,22 @@ namespace Concurrent/Channel {
         MutList.clear!(waitingGetters)
 
     ///
-    /// Either signals waiting putters or rendezvous as appropriate.
-    /// The channel lock is expected to be held.
+    /// Signals and clears the waiting putters.
+    /// The channel lock is expected to be held, and will be unlocked on return.
     ///
     def onGetComplete(c: MpmcAdmin): Unit \ IO =
-        let MpmcAdmin(_, _, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
-        if (unBuffered)
-            // Perform synchronous rendezvous with the putter (the putter will 
-            // signal waiting putters once that rendezvous is complete)
-            signalCondition(rendezvous)
-        else 
-            signalCondition(waitingPutters)
+        let MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
+
+        // Signal waiting setters that the channel has space
+        signalCondition(waitingPutters);
+        // Since there is only one condition there is no cleaning up to do.
+
+        // Unlock the channel
+        unlock(channelLock);
+
+        // In the unbuffered case, rendezvous with the putter from which we just received a value.
+        if (unBuffered) discard awaitBarrier(rendezvous)
+        else ()
 
 
     // ------------- Helper Methods --------------------------------------------
