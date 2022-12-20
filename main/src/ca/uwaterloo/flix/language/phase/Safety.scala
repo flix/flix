@@ -572,20 +572,25 @@ object Safety {
     //
     val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
 
+    //
+    // Check that patterns in atom body are legal
+    //
     val err3 = c0.body.flatMap(s => checkBodyPattern(s))
 
-    err1 concat err2 concat err3
+    err1 ++ err2 ++ err3
   }
 
-  // Performs safety check on the pattern of an atom body.
+  /**
+    * Performs safety check on the pattern of an atom body.
+    */
   private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
     case Predicate.Body.Atom(_,_,_,_,terms,_,loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
-        case Pattern.Var(_, _, _)
-             | Pattern.Wild(_, _)
-             | Pattern.Cst(_, _, _) => acc
+        case Pattern.Var(_, _, _) => acc
+        case Pattern.Wild(_, _) => acc
+        case Pattern.Cst(_, _, _) => acc
         case _ => UnexpectedPatternInBodyAtom(loc) :: acc
-      }).reverse
+      })
     case _ => Nil
   }
 

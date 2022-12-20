@@ -48,6 +48,28 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[UnexpectedPatternInBodyAtom](result)
   }
 
+  test("UnexpectedBodyAtomPattern.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(1) :- B(None).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
+  test("UnexpectedBodyAtomPattern.04") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Unit), C(List[Int32]) } = #{
+        |    A(x) :- B(()), C(x::_).
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
   test("NonPositivelyBoundVariable.01") {
     val input =
       """

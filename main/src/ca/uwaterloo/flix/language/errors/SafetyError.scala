@@ -31,7 +31,6 @@ object SafetyError {
          |""".stripMargin
     }
 
-    // TODO: Proper explain for this!
     def explain(formatter: Formatter): Option[String] = None
   }
 
