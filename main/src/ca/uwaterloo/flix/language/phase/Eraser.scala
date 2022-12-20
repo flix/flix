@@ -218,8 +218,9 @@ object Eraser {
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
-    case FinalAst.Expression.Spawn(exp, tpe, loc) =>
-      ErasedAst.Expression.Spawn(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.Spawn(visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
       ErasedAst.Expression.Lazy(visitExp(exp), tpe, loc)

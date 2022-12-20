@@ -76,7 +76,6 @@ object Typer {
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
 
-        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -154,7 +153,7 @@ object Typer {
     flix.subphase("Instances") {
       val results = ParOps.parMap(root.instances.values.flatten)(visitInstance(_, root, classEnv))
       Validation.sequence(results) map {
-        insts => insts.groupBy(inst => inst.sym.clazz)
+        insts => insts.groupBy(inst => inst.clazz.sym)
       }
     }
 

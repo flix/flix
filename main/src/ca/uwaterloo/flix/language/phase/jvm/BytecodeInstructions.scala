@@ -361,12 +361,27 @@ object BytecodeInstructions {
     f
   }
 
+  /// do { i } while(c)
   def doWhile(c: Condition)(i: InstructionSet): InstructionSet = f0 => {
     var f = f0
     val start = new Label()
     f.visitLabel(start)
     f = i(f)
     f.visitJumpInstruction(opcodeOf(c), start)
+    f
+  }
+
+  /// while(c(t)) { i }
+  def whileLoop(c: Condition)(t: InstructionSet)(i: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val startLabel = new Label()
+    val doneLabel = new Label()
+    f.visitLabel(startLabel)
+    f = t(f)
+    f.visitJumpInstruction(opcodeOf(negated(c)), doneLabel)
+    f = i(f)
+    f.visitJumpInstruction(Opcodes.GOTO, startLabel)
+    f.visitLabel(doneLabel)
     f
   }
 

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use RedBlackTree.RedBlackTree
-
 pub enum DelayMap[k, v] with Sendable {
     case DMap(RedBlackTree[k, Lazy[v]])
 }
@@ -450,7 +448,7 @@ namespace DelayMap {
     ///
     @Experimental @Parallel
     pub def forceAll(m: DelayMap[k, v]): Unit =
-        use RedBlackTree.RedBlackTree.Node;
+        use RedBlackTree.Node;
         def seqLoop(tt) = match tt {
             case Node(_, a, _, v, b) =>
                 let _ = seqLoop(a);

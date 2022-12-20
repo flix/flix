@@ -35,14 +35,6 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh instance symbol with the given class.
-    */
-  def freshInstanceSym(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix): InstanceSym = {
-    val id = flix.genSym.freshId()
-    new InstanceSym(id, clazz, loc)
-  }
-
-  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -424,6 +416,11 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = enumSym.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = enumSym.namespace :+ enumSym.name
   }
 
   /**
@@ -452,34 +449,6 @@ object Symbol {
       * Returns the source of `this`.
       */
     override def src: Ast.Source = loc.source
-  }
-
-  /**
-    * Instance Symbol.
-    */
-  final class InstanceSym(val id: Int, val clazz: Symbol.ClassSym, val loc: SourceLocation) extends Symbol {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: InstanceSym => this.id == that.id && this.clazz == that.clazz
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = Objects.hash(id, clazz)
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = clazz.toString + Flix.Delimiter + id
-
-    /**
-      * The name of the instance.
-      */
-    val name: String = clazz.name
   }
 
   /**

@@ -14,81 +14,81 @@
  * limitations under the License.
  */
 
+///
+/// An immutable red-black tree implementation with keys
+/// of type `k` and values of type `v`.
+///
+/// A red-black tree is a self-balancing binary search tree.
+/// Each node is either red or black, although a transitory
+/// color double-black is allowed during deletion.
+/// The red-black tree satisfy the following invariants.
+///
+/// 1. For all nodes with key `x`,
+/// the left subtree contains only nodes with keys `y` < `x` and
+/// the right subtree contains only nodes with keys `z` > `x`.
+/// 2. No red node has a red parent.
+/// 3. Every path from the root to a leaf contains the same
+/// number of black nodes.
+///
+pub enum RedBlackTree[k, v] with Sendable {
+
+    ///
+    /// A black leaf.
+    ///
+    case Leaf
+
+    ///
+    /// A double-black leaf.
+    ///
+    case DoubleBlackLeaf
+
+    ///
+    /// A tree node consists of a color, left subtree, key, value and right subtree.
+    ///
+    case Node(RedBlackTree.Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
+
+}
+
+instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
+    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+        RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
+}
+
+instance Functor[RedBlackTree[k]] {
+    pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.mapWithKey((_, v) -> f(v), t)
+}
+
+instance Foldable[RedBlackTree[k]] {
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
+    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
+    override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
+        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
+}
+
+instance UnorderedFoldable[RedBlackTree[k]] {
+    pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
+    override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
+    override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
+    override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
+}
+
+instance Traversable[RedBlackTree[k]] {
+    pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
+        RedBlackTree.mapAWithKey((_, v) -> f(v), t)
+
+    pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
+        RedBlackTree.mapAWithKey((_, v) -> v, t)
+}
+
+instance Filterable[RedBlackTree[k]] with Order[k] {
+    pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.filterMap(f, t)
+    pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
+}
+
+instance Witherable[RedBlackTree[k]] with Order[k]
+
 namespace RedBlackTree {
-
-    ///
-    /// An immutable red-black tree implementation with keys
-    /// of type `k` and values of type `v`.
-    ///
-    /// A red-black tree is a self-balancing binary search tree.
-    /// Each node is either red or black, although a transitory
-    /// color double-black is allowed during deletion.
-    /// The red-black tree satisfy the following invariants.
-    ///
-    /// 1. For all nodes with key `x`,
-    /// the left subtree contains only nodes with keys `y` < `x` and
-    /// the right subtree contains only nodes with keys `z` > `x`.
-    /// 2. No red node has a red parent.
-    /// 3. Every path from the root to a leaf contains the same
-    /// number of black nodes.
-    ///
-    pub enum RedBlackTree[k, v] with Sendable {
-
-        ///
-        /// A black leaf.
-        ///
-        case Leaf
-
-        ///
-        /// A double-black leaf.
-        ///
-        case DoubleBlackLeaf
-
-        ///
-        /// A tree node consists of a color, left subtree, key, value and right subtree.
-        ///
-        case Node(Color, RedBlackTree[k, v], k, v, RedBlackTree[k, v])
-
-    }
-
-    instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-        pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
-            toList(t1) == toList(t2)
-    }
-
-    instance Functor[RedBlackTree[k]] {
-        pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = mapWithKey((_, v) -> f(v), t)
-    }
-
-    instance Foldable[RedBlackTree[k]] {
-        pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldLeft((acc, _, v) -> f(acc, v), s, t)
-        pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRight((_, v, acc) -> f(v, acc), s, t)
-        pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
-        override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
-            iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
-    }
-
-    instance UnorderedFoldable[RedBlackTree[k]] {
-        pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
-        override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
-        override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
-        override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
-    }
-
-    instance Traversable[RedBlackTree[k]] {
-        pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
-            mapAWithKey((_, v) -> f(v), t)
-
-        pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
-            mapAWithKey((_, v) -> v, t)
-    }
-
-    instance Filterable[RedBlackTree[k]] with Order[k] {
-        pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = filterMapImplementation(f, t)
-        pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = filterImplementation(f, t)
-    }
-
-    instance Witherable[RedBlackTree[k]] with Order[k]
 
     ///
     /// The color of a red-black tree node.

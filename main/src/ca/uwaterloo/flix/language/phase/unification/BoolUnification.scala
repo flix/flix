@@ -36,56 +36,63 @@ object BoolUnification {
     // Optimize common unification queries.
     //
 
-    // Case 1: Unification of identical formulas.
-    if (tpe1 eq tpe2) {
-      return Ok(Substitution.empty)
-    }
+    if (!flix.options.xnoboolspecialcases) {
 
-    // Case 2: Common unification instances.
-    // Note: Order determined by code coverage.
-    (tpe1, tpe2) match {
-      case (Type.Var(x, _), Type.Var(y, _)) =>
-        if (renv0.isFlexible(x)) {
-          return Ok(Substitution.singleton(x, tpe2)) // 9000 hits
-        }
-        if (renv0.isFlexible(y)) {
-          return Ok(Substitution.singleton(y, tpe1)) // 1000 hits
-        }
-        if (x == y) {
-          return Ok(Substitution.empty) // 1000 hits
-        }
-      // else nop
+      // Case 1: Unification of identical formulas.
+      if (tpe1 eq tpe2) {
+        return Ok(Substitution.empty)
+      }
 
-      case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
-        return Ok(Substitution.empty) // 6000 hits
+      // Case 2: Common unification instances.
+      // Note: Order determined by code coverage.
+      (tpe1, tpe2) match {
+        case (Type.Var(x, _), Type.Var(y, _)) =>
+          if (renv0.isFlexible(x)) {
+            return Ok(Substitution.singleton(x, tpe2)) // 9000 hits
+          }
+          if (renv0.isFlexible(y)) {
+            return Ok(Substitution.singleton(y, tpe1)) // 1000 hits
+          }
+          if (x == y) {
+            return Ok(Substitution.empty) // 1000 hits
+          }
 
-      case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
-        case TypeConstructor.True =>
-          return Ok(Substitution.singleton(x, Type.True)) // 9000 hits
-        case TypeConstructor.False =>
-          return Ok(Substitution.singleton(x, Type.False)) // 1000 hits
+        case (Type.Cst(TypeConstructor.True, _), Type.Cst(TypeConstructor.True, _)) =>
+          return Ok(Substitution.empty) // 6000 hits
+
+        case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
+          case TypeConstructor.True =>
+            return Ok(Substitution.singleton(x, Type.True)) // 9000 hits
+          case TypeConstructor.False =>
+            return Ok(Substitution.singleton(x, Type.False)) // 1000 hits
+          case _ => // nop
+        }
+
+        case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
+          case TypeConstructor.True =>
+            return Ok(Substitution.singleton(y, Type.True)) // 7000 hits
+          case TypeConstructor.False =>
+            return Ok(Substitution.singleton(y, Type.False)) //  500 hits
+          case _ => // nop
+        }
+
+        case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
+          return Ok(Substitution.empty) //  100 hits
+
         case _ => // nop
       }
 
-      case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
-        case TypeConstructor.True =>
-          return Ok(Substitution.singleton(y, Type.True)) // 7000 hits
-        case TypeConstructor.False =>
-          return Ok(Substitution.singleton(y, Type.False)) //  500 hits
-        case _ => // nop
-      }
-
-      case (Type.Cst(TypeConstructor.False, _), Type.Cst(TypeConstructor.False, _)) =>
-        return Ok(Substitution.empty) //  100 hits
-
-      case _ => // nop
     }
 
     // Choose the SVE implementation based on the number of variables.
     val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
     val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
 
-    if (numberOfVars < threshold) {
+    if (flix.options.xboolclassic) {
+      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlgClassic
+      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+      lookupOrSolve(tpe1, tpe2, renv0)
+    } else if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
       lookupOrSolve(tpe1, tpe2, renv0)
@@ -113,11 +120,13 @@ object BoolUnification {
     //
     // Lookup the query to see if it is already in unification cache.
     //
-    cache.lookup(f1, f2, renv) match {
-      case None => // cache miss: must compute the unification.
-      case Some(subst) =>
-        // cache hit: return the found substitution.
-        return subst.toTypeSubstitution(env).toOk
+    if (!flix.options.xnoboolcache) {
+      cache.lookup(f1, f2, renv) match {
+        case None => // cache miss: must compute the unification.
+        case Some(subst) =>
+          // cache hit: return the found substitution.
+          return subst.toTypeSubstitution(env).toOk
+      }
     }
 
     //
@@ -126,7 +135,9 @@ object BoolUnification {
     booleanUnification(f1, f2, renv) match {
       case None => UnificationError.MismatchedBools(tpe1, tpe2).toErr
       case Some(subst) =>
-        cache.put(f1, f2, renv, subst)
+        if (!flix.options.xnoboolcache) {
+          cache.put(f1, f2, renv, subst)
+        }
         subst.toTypeSubstitution(env).toOk
     }
   }

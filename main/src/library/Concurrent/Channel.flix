@@ -133,8 +133,8 @@ namespace Concurrent/Channel {
             ),
             new MutDeque(Static)
         )
-    
-    /// 
+
+    ///
     /// Creates a new channel tuple (sender, receiver)
     ///
     @Internal
@@ -207,7 +207,6 @@ namespace Concurrent/Channel {
         // Gets an element from the channel c which must be non-empty
         // and update the size.
         let optionalElement = MutDeque.popFront(elementDeque);
-        size := deref size - 1;
 
         let value = match optionalElement {
             case None =>
@@ -217,6 +216,7 @@ namespace Concurrent/Channel {
 
             case Some(element) =>
                 // Signal waiting setters that the channel has space
+                size := deref size - 1;
                 signalPutters(admin);
                 unlock(channelLock);
                 element
@@ -250,8 +250,8 @@ namespace Concurrent/Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels |>
-            Array.sortBy(match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
-            Array.map(match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
+            Array.sortBy(Static, match MpmcAdmin(id, _, _, _, _, _, _) -> id) |>
+            Array.map(Static, match MpmcAdmin(_, rlock, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -289,7 +289,6 @@ namespace Concurrent/Channel {
         // Try to get the element (which could already be taken by someone
         // else) and update size.
         let optionalElement = MutDeque.popFront(elementDeque);
-        size := deref size - 1;
 
         match optionalElement {
             case None => { // No element was found
@@ -317,6 +316,7 @@ namespace Concurrent/Channel {
 
             case Some(e) =>
                 // Signal waiting setters that the channel has space
+                size := deref size - 1;
                 signalPutters(admin);
                 e
         }
@@ -354,7 +354,7 @@ namespace Concurrent/Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels |>
-            Array.mapWithIndex(i -> match MpmcAdmin(_, _, _, _, size, _, _) -> {
+            Array.mapWithIndex(Static, i -> match MpmcAdmin(_, _, _, _, size, _, _) -> {
                 (deref size > 0, i)
             }) |>
             Array.findLeft(match (b, _) -> b) |>

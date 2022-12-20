@@ -340,7 +340,7 @@ namespace GetOpt {
     /// Return an error indicating the option requires an argument that was not supplied.
     ///
     def errReq(d: String, optStr: String): OptionKind[a] =
-        OptErr ("option '${optStr}' requires an argument ${d}\n")
+        OptErr("option '${optStr}' requires an argument ${d}\n")
 
     ///
     /// Return an error indicating the option name was not recognized.

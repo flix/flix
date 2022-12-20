@@ -40,7 +40,11 @@ object Options {
     loadClassFiles = true,
     xallowredundancies = false,
     xbddthreshold = None,
+    xboolclassic = false,
+    xnoboolcache = false,
+    xnoboolspecialcases = false,
     xnobooltable = false,
+    xnounittests = false,
     xstatistics = false,
     xstrictmono = false,
     xnoseteffects = false,
@@ -89,7 +93,10 @@ object Options {
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param xallowredundancies disables the redundancy checker.
   * @param xbddthreshold      the threshold for when to use BDDs for SVE.
+  * @param xnoboolcache       disable Boolean caches.
+  * @param xnoboolspecialcases   disable Boolean unification shortcuts.
   * @param xnobooltable       disable Boolean minimization via tabling.
+  * @param xnounittests       excludes unit tests from performance benchmarks.
   * @param xstatistics        enables statistics collection.
   * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
@@ -109,7 +116,11 @@ case class Options(lib: LibLevel,
                    loadClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xbddthreshold: Option[Int],
+                   xboolclassic: Boolean,
+                   xnoboolcache: Boolean,
+                   xnoboolspecialcases: Boolean,
                    xnobooltable: Boolean,
+                   xnounittests: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
                    xnoseteffects: Boolean,

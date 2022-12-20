@@ -95,14 +95,6 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
-/// Converts `x` to a string and prints it to standard out.
-///
-pub def print(x: a): Unit \ IO with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.print(String): Unit \ IO;
-    x |> ToString.toString |> print(getOut())
-
-///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =

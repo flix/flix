@@ -62,7 +62,7 @@ namespace Benchmark {
     ///
     @Experimental
     pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =
-        if (bs.length == 0) {
+        if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
         } else {
@@ -70,7 +70,7 @@ namespace Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(bs);
+            let benchmarksWithEstimates = warmupAndEstimate(Static, bs);
             println("");
             println("");
             printCols();
@@ -84,11 +84,11 @@ namespace Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r] \ IO = {
-        print("Warmup: ");
-        bs |> Array.map(b -> {
+    def warmupAndEstimate(r1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
+        Console.print("Warmup: ");
+        bs |> Array.map(r1, b -> {
             let time = runBenchmarkOnce(b);
-            print(".");
+            Console.print(".");
             (b, time)
         })
     }
@@ -97,7 +97,7 @@ namespace Benchmark {
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
     def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit \ IO = {
-        let budgetPerBenchmark = budget / (Int32.toInt64(bs.length));
+        let budgetPerBenchmark = budget / (Int32.toInt64(Array.length(bs)));
         bs |> Array.forEach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
             runBenchmark(b, iters) |> printRow

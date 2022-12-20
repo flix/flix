@@ -435,7 +435,7 @@ namespace TestTraversable {
     /// Helper for RedBlackTree                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree.RedBlackTree[k, v] with Order[k] =
+    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree[k, v] with Order[k] =
         List.foldLeft((acc, kv) -> {let (k,v) = kv; RedBlackTree.insert(k, v, acc)}, RedBlackTree.empty(), xs)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -444,12 +444,12 @@ namespace TestTraversable {
 
     @test
     def sequenceRedBlackTree01(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Option[Int32]] = RedBlackTree.empty();
+        let t: RedBlackTree[Int32, Option[Int32]] = RedBlackTree.empty();
         sequence(t) == Some(RedBlackTree.empty())
 
     @test
     def sequenceRedBlackTree02(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Option[Int32]] = toRedBlackTree((1, None) :: Nil);
+        let t: RedBlackTree[Int32, Option[Int32]] = toRedBlackTree((1, None) :: Nil);
         sequence(t) == None
 
     @test
@@ -473,32 +473,32 @@ namespace TestTraversable {
 
     @test
     def traverseRedBlackTree01(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
+        let t: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         traverse(x -> Some(x+1), t) == Some(RedBlackTree.empty())
 
     @test
     def traverseRedBlackTree02(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
+        let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
         traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: Nil))
 
     @test
     def traverseRedBlackTree03(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         traverse(x -> Some(x+1), t) == Some(toRedBlackTree((1, 2) :: (2, 3) :: Nil))
 
     @test
     def traverseRedBlackTree04(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
+        let t: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         traverse(_ -> None: Option[Int32], t) == Some(RedBlackTree.empty())
 
     @test
     def traverseRedBlackTree05(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1):: Nil);
+        let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1):: Nil);
         traverse(_ -> None: Option[Int32], t) == None
 
     @test
     def traverseRedBlackTree06(): Bool =
-        let t: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let t: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         traverse(_ -> None: Option[Int32], t) == None
 
     /////////////////////////////////////////////////////////////////////////////
@@ -507,22 +507,22 @@ namespace TestTraversable {
 
     @test
     def mapAccumLeftRedBlackTree01(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = RedBlackTree.empty();
+        let m: RedBlackTree[Int32, Int32] = RedBlackTree.empty();
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (10, RedBlackTree.empty())
 
     @test
     def mapAccumLeftRedBlackTree02(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
+        let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (11, toRedBlackTree((1, 11) :: Nil))
 
     @test
     def mapAccumLeftRedBlackTree03(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
+        let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (12, toRedBlackTree((1, 11) :: (2, 13) :: Nil))
 
     @test
     def mapAccumLeftRedBlackTree04(): Bool =
-        let m: RedBlackTree.RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
+        let m: RedBlackTree[Int32, Int32] = toRedBlackTree((1, 1) :: (2, 2) :: (3, 3) :: Nil);
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, m) == (13, toRedBlackTree((1, 11) :: (2, 13) :: (3, 15) :: Nil))
 
 }

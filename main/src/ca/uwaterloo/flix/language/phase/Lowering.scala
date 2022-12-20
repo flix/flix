@@ -160,7 +160,7 @@ object Lowering {
 
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
-    val newInstances = instances.map(kv => kv.head.sym.clazz -> kv).toMap
+    val newInstances = instances.map(kv => kv.head.clazz.sym -> kv).toMap
     val newEnums = enums.map(kv => kv.sym -> kv).toMap
     val newEffects = effects.map(kv => kv.sym -> kv).toMap
     val newAliases = aliases.map(kv => kv.sym -> kv).toMap
@@ -666,11 +666,11 @@ object Lowering {
         case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
       }
 
-    case TypedAst.Expression.Spawn(exp, _, tpe, pur, eff, loc) =>
-      // Note: We explicitly ignore the region.
-      val e = visitExp(exp)
+    case TypedAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.Spawn(e, t, pur, eff, loc)
+      LoweredAst.Expression.Spawn(e1, e2, t, pur, eff, loc)
 
     case TypedAst.Expression.Par(exp, loc0) => exp match {
       case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc1) =>
@@ -1558,7 +1558,7 @@ object Lowering {
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.Impure, Type.mkUnion(e.eff, e1.eff, loc), loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expression.Spawn(e2, Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        val e3 = LoweredAst.Expression.Spawn(e2, LoweredAst.Expression.Region(Type.Unit, loc), Type.Unit, Type.Impure, e2.eff, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expression.Stm(e3, acc, e1.tpe, Type.mkAnd(e3.pur, acc.pur, loc), Type.mkUnion(e3.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
@@ -2001,9 +2001,10 @@ object Lowering {
 
     case LoweredAst.Expression.NewObject(_, _, _, _, _, _, _) => exp0
 
-    case LoweredAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Spawn(e, tpe, pur, eff, loc)
+    case LoweredAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expression.Spawn(e1, e2, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
       val e = substExp(exp, subst)

@@ -294,7 +294,15 @@ object GenExpression {
 
       val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
+
+      // Compile the scope body
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // When we exit the scope, call the region's `exit` method
+      val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
+      visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name, 
+        BackendObjType.Region.ExitMethod.d.toDescriptor, false)
 
     case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging
@@ -856,23 +864,40 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expression.Spawn(exp, _, loc) =>
+    case Expression.Spawn(exp1, exp2, _, loc) =>
       addSourceLine(visitor, loc)
 
-      // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+      exp2 match {
+        // The expression represents the `Static` region, just start a thread directly
+        case Expression.Region(_, _) => 
 
-      // make a thread and run it
-      if (flix.options.xvirtualthreads) {
-        visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-        visitor.visitInsn(POP)
-      } else {
-        visitor.visitTypeInsn(NEW, "java/lang/Thread")
-        visitor.visitInsn(DUP_X1)
-        visitor.visitInsn(SWAP)
-        visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+          // Compile the expression, putting a function implementing the Runnable interface on the stack
+          compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+          // make a thread and run it
+          if (flix.options.xvirtualthreads) {
+            visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+            visitor.visitInsn(POP)
+          } else {
+            visitor.visitTypeInsn(NEW, "java/lang/Thread")
+            visitor.visitInsn(DUP_X1)
+            visitor.visitInsn(SWAP)
+            visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+          }
+
+        case _ => 
+          // Compile the expression representing the region
+          compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
+
+          // Compile the expression, putting a function implementing the Runnable interface on the stack
+          compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+          // Call the Region's `spawn` method
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
       }
 
       // Put a Unit value on the stack

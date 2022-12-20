@@ -307,10 +307,11 @@ object Finalize {
         val ms = methods.map(visitJvmMethod(_, m))
         FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
-      case LiftedAst.Expression.Spawn(exp, tpe, loc) =>
-        val e = visit(exp)
+      case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.Spawn(e, t, loc)
+        FinalAst.Expression.Spawn(e1, e2, t, loc)
 
       case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visit(exp)
