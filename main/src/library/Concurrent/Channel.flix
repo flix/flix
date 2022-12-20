@@ -56,6 +56,19 @@ namespace Concurrent/Channel {
     /// conditions in `waitingPutters` comes from locks created by the get
     /// function or the select function.
     ///
+    /// -- Difference between buffered and unbuffered channels --
+    ///
+    /// An unbuffered channel works *almost* like a buffered channel with a 
+    /// buffer size of 1. The difference is in the behaviour of the thread
+    /// executing `put`.
+    ///
+    /// For a buffered channel, `put` blocks until space is available. Once it
+    /// is, the value is added to the channel and `put` returns.
+    ///
+    /// For an unbuffered channel, the thread executing `put` needs to perform
+    /// a [synchronous rendezvous](https://en.wikipedia.org/wiki/Barrier_(computer_science))
+    /// with the thread executing `get`.
+    ///
     /// -- Mpmc / MpmcAdmin split --
     /// The select function must work on heterogeneous channel collections,
     /// which cannot happen without existential types. This means that the
@@ -95,8 +108,8 @@ namespace Concurrent/Channel {
     ///   `waitingGetters` - a set of conditions that are waiting for an
     ///       element. This set is notified and cleared after each new element.
     ///       An available element is not guaranteed when notified.
-    ///   `rendezvous` - a condition that is waiting for a rendezvous (only
-    ///       used for unbuffered channels).
+    ///   `rendezvous` - a condition that is waiting for a synchronous rendezvous
+    ///       Between putter and getter (only used for unbuffered channels).
     ///   `waitingPutters` - a condition that is waiting for an element.
     ///       The condition is notified after each new element. Available space
     ///       is not guaranteed when notified.
@@ -441,6 +454,8 @@ namespace Concurrent/Channel {
     def onGetComplete(c: MpmcAdmin): Unit \ IO =
         let MpmcAdmin(_, _, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
         if (unBuffered)
+            // Perform synchronous rendezvous with the putter (the putter will 
+            // signal waiting putters once that rendezvous is complete)
             signalCondition(rendezvous)
         else 
             signalCondition(waitingPutters)
