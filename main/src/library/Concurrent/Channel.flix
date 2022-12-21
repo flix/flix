@@ -440,16 +440,16 @@ namespace Concurrent/Channel {
     def onGetComplete(c: MpmcAdmin): Unit \ IO =
         let MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
 
+        // In the unbuffered case, rendezvous with the putter from which we just received a value.
+        if (unBuffered) discard awaitBarrier(rendezvous)
+        else ();
+
         // Signal waiting setters that the channel has space
         signalCondition(waitingPutters);
         // Since there is only one condition there is no cleaning up to do.
 
         // Unlock the channel
-        unlock(channelLock);
-
-        // In the unbuffered case, rendezvous with the putter from which we just received a value.
-        if (unBuffered) discard awaitBarrier(rendezvous)
-        else ()
+        unlock(channelLock)
 
 
     // ------------- Helper Methods --------------------------------------------
