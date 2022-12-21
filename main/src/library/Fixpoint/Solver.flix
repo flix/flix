@@ -55,7 +55,7 @@ namespace Fixpoint {
             case Model(_) => d
             case Join(Model(m), cs) => region r {
                 let db = Map.map(Map.toMutMap(r), m) |> Map.toMutMap(r);
-                compiler(cs) |> interpretWithDatabase(db) |> toModel
+                compiler(cs) |> interpretWithDatabase(r, db) |> toModel
             }
             case _ => bug!("Datalog normalization bug")
         };
