@@ -37,7 +37,7 @@ object KindedAst {
 
   case class Class(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.InstanceSym, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: KindedAst.Spec, exp: Option[KindedAst.Expression])
 
@@ -61,7 +61,7 @@ object KindedAst {
 
     case class Wild(tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends KindedAst.Expression
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends KindedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -275,7 +275,7 @@ object KindedAst {
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
 

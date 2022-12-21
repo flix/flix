@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(symbols: Map[Name.NName, Map[String, NamedAst.Declaration]],
+  case class Root(symbols: Map[Name.NName, Map[String, List[NamedAst.Declaration]]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Declaration.Instance]]],
+                  cases: Map[Name.NName, Map[String, List[NamedAst.Declaration.Case]]],
                   uses: Map[Name.NName, List[NamedAst.UseOrImport]],
                   units: Map[Ast.Source, NamedAst.CompilationUnit],
                   entryPoint: Option[Symbol.DefnSym],
@@ -40,13 +41,13 @@ object NamedAst {
 
     case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[String, NamedAst.Declaration.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -67,11 +68,7 @@ object NamedAst {
 
   object UseOrImport {
 
-    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
+    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
   }
@@ -84,12 +81,7 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
-
-    case class DefOrSig(name: Name.QName, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
-
-    // TODO NS-REFACTOR remove after moving var resolution to Resolver
-    case class UnqualifiedDefOrSig(name: Name.Ident, env: Map[String, Symbol.VarSym], loc: SourceLocation) extends NamedAst.Expression
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -126,8 +118,6 @@ object NamedAst {
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
-
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -241,7 +231,7 @@ object NamedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class Tag(qname: Name.QName, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tuple(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 
@@ -285,7 +275,7 @@ object NamedAst {
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -297,13 +287,11 @@ object NamedAst {
 
   object Type {
 
-    case class Var(tvar: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends NamedAst.Type
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Type
 
     case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
     case class Unit(loc: SourceLocation) extends NamedAst.Type
-
-    case class Enum(name: Symbol.EnumSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
@@ -367,19 +355,19 @@ object NamedAst {
 
     case class Unkinded(tparams: List[NamedAst.TypeParam.Unkinded]) extends TypeParams
 
+    case class Implicit(tparams: List[NamedAst.TypeParam.Implicit]) extends TypeParams
+
   }
 
   case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class ConstrainedType(ident: Name.Ident, classes: List[Name.QName])
-
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
-  case class ConstraintParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
+  case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, src: Ast.TypeSource, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Option[NamedAst.Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -418,6 +406,8 @@ object NamedAst {
     case class Kinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, kind: Kind, loc: SourceLocation) extends TypeParam
 
     case class Unkinded(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
+
+    case class Implicit(name: Name.Ident, sym: Symbol.UnkindedTypeVarSym, loc: SourceLocation) extends TypeParam
 
   }
 

@@ -32,12 +32,12 @@ import org.objectweb.asm.{ClassWriter, Opcodes}
 
 // TODO: There are further things you can constrain and assert, e.g. final classes have implicitly final methods.
 sealed trait ClassMaker {
-  def mkStaticConstructor(c: StaticConstructorMethod): Unit = {
+  def mkStaticConstructor(c: StaticConstructorMethod)(implicit flix: Flix): Unit = {
     if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
     makeMethod(c.ins, c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
   }
 
-  def mkStaticMethod(m: StaticMethod): Unit = {
+  def mkStaticMethod(m: StaticMethod)(implicit flix: Flix): Unit = {
     if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
     makeMethod(m.ins, m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
   }
@@ -53,18 +53,18 @@ sealed trait ClassMaker {
 
   protected val visitor: ClassWriter
 
-  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, s: Static): Unit = {
+  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, s: Static)(implicit flix: Flix): Unit = {
     val m = v.toInt + f.toInt + s.toInt
     val field = visitor.visitField(m, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
-  def mkField(f: Field): Unit = f match {
+  def mkField(f: Field)(implicit flix: Flix): Unit = f match {
     case InstanceField(_, v, f, name, tpe) => makeField(name, tpe, v, f, NotStatic)
     case StaticField(_, v, f, name, tpe) => makeField(name, tpe, v, f, IsStatic)
   }
 
-  protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract): Unit = {
+  protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract)(implicit flix: Flix): Unit = {
     val m = v.toInt + f.toInt + s.toInt + a.toInt
     val mv = visitor.visitMethod(m, methodName, d.toDescriptor, null, null)
     i match {
@@ -77,7 +77,7 @@ sealed trait ClassMaker {
     mv.visitEnd()
   }
 
-  protected def makeAbstractMethod(methodName: String, d: MethodDescriptor): Unit = {
+  protected def makeAbstractMethod(methodName: String, d: MethodDescriptor)(implicit flix: Flix): Unit = {
     makeMethod(None, methodName, d, IsPublic, NotFinal, NotStatic, IsAbstract)
   }
 }
@@ -86,15 +86,15 @@ object ClassMaker {
   class InstanceClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility): Unit = {
+    def mkConstructor(ins: InstructionSet, d: MethodDescriptor, v: Visibility)(implicit flix: Flix): Unit = {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
     }
 
-    def mkConstructor(c: ConstructorMethod): Unit = {
+    def mkConstructor(c: ConstructorMethod)(implicit flix: Flix): Unit = {
       makeMethod(c.ins, JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
-    def mkMethod(m: InstanceMethod): Unit = {
+    def mkMethod(m: InstanceMethod)(implicit flix: Flix): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
@@ -103,17 +103,17 @@ object ClassMaker {
   class AbstractClassMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkConstructor(c: ConstructorMethod): Unit = {
+    def mkConstructor(c: ConstructorMethod)(implicit flix: Flix): Unit = {
       if (c.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(c.ins, c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
-    def mkMethod(m: InstanceMethod): Unit = {
+    def mkMethod(m: InstanceMethod)(implicit flix: Flix): Unit = {
       if (m.ins.isEmpty) throw InternalCompilerException(s"Trying to generate code for external class", SourceLocation.Unknown)
       makeMethod(m.ins, m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
 
-    def mkAbstractMethod(m: AbstractMethod): Unit = {
+    def mkAbstractMethod(m: AbstractMethod)(implicit flix: Flix): Unit = {
       makeAbstractMethod(m.name, m.d)
     }
   }
@@ -121,7 +121,7 @@ object ClassMaker {
   class InterfaceMaker(cw: ClassWriter) extends ClassMaker {
     protected val visitor: ClassWriter = cw
 
-    def mkInterfaceMethod(m: InterfaceMethod): Unit = {
+    def mkInterfaceMethod(m: InterfaceMethod)(implicit flix: Flix): Unit = {
       makeAbstractMethod(m.name, m.d)
     }
   }

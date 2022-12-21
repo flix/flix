@@ -95,14 +95,6 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
-/// Converts `x` to a string and prints it to standard out.
-///
-pub def print(x: a): Unit \ IO with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
-    import java.io.PrintStream.print(String): Unit \ IO;
-    x |> ToString.toString |> print(getOut())
-
-///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
@@ -116,7 +108,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as \ {}
+def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -124,7 +116,7 @@ def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as \ {}
+def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 
 ///
 /// Prints the stringified representation of `x`.
@@ -132,7 +124,7 @@ def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as \ {}
+def debug!!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 
 ///
 /// Crashes the current process with the given message `m`.
@@ -149,7 +141,7 @@ pub def bug!(m: String): a = unsafe_cast {
     prt(repeat("*", 80));
     prt("");
     ?panic
-} as \ {}
+} as _ \ {}
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
@@ -162,7 +154,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 /// `upcast` is safe to use anywhere.
 ///
 pub def upcast(f: a -> b): a -> b \ ef =
-    x -> unsafe_cast f(x) as \ ef
+    x -> unsafe_cast f(x) as _ \ ef
 
 ///
 /// Prints the argument unless it is ().

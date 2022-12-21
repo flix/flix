@@ -150,6 +150,11 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Region(t, loc)
 
+      case LiftedAst.Expression.Scope(sym, exp, tpe, _, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Scope(sym, e, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
@@ -302,10 +307,11 @@ object Finalize {
         val ms = methods.map(visitJvmMethod(_, m))
         FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
-      case LiftedAst.Expression.Spawn(exp, tpe, loc) =>
-        val e = visit(exp)
+      case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
         val t = visitType(tpe)
-        FinalAst.Expression.Spawn(e, t, loc)
+        FinalAst.Expression.Spawn(e1, e2, t, loc)
 
       case LiftedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visit(exp)
@@ -396,8 +402,7 @@ object Finalize {
 
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
-            case TypeConstructor.RegionToStar =>
-              MonoType.Unit // TODO: Should be erased?
+            case TypeConstructor.RegionToStar => MonoType.Region
 
             case TypeConstructor.Tuple(l) => MonoType.Tuple(args)
 

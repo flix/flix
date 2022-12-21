@@ -354,16 +354,15 @@ namespace MutList {
     ///
     /// The result is a new mutable list.
     ///
-    pub def map(f: a -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
-        let r = Scoped.regionOf(v);
+    pub def map(r1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r)
+            new MutList(r1)
         else {
             let MutList(ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(a[0]);
-            let b = [x; Array.length(a)] @ r;
+            let b = [x; Array.length(a)] @ r1;
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -373,22 +372,21 @@ namespace MutList {
                 }
             };
             loop(1);
-            MutList(ref b @ r, ref l @ r)
+            MutList(ref b @ r1, ref l @ r1)
         }
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r] \ { ef, Read(r), Write(r) } =
-        let r = Scoped.regionOf(v);
+    pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r)
+            new MutList(r1)
         else {
             let MutList(ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
             let x = f(0, a[0]);
-            let b = [x; Array.length(a)] @ r;
+            let b = [x; Array.length(a)] @ r1;
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -398,7 +396,7 @@ namespace MutList {
                 }
             };
             loop(1);
-            MutList(ref b @ r, ref l @ r)
+            MutList(ref b @ r1, ref l @ r1)
         }
 
     ///
@@ -534,14 +532,13 @@ namespace MutList {
     /// Returns a shallow copy of the given mutable list `v`.
     /// The capacity of the copy is equal to the length of the list.
     ///
-    pub def copy(v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
+    pub def copy(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } =
         let MutList(a, l) = v;
         let len = deref l;
-        let r = Scoped.regionOf(v);
         if (len > minCapacity())
-            MutList(ref Array.copyOfRange(r, 0, len, deref a) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(r1, 0, len, deref a) @ r1, ref len @ r1)
         else
-            MutList(ref Array.copyOfRange(r, 0, capacity(v), deref a) @ r, ref len @ r)
+            MutList(ref Array.copyOfRange(r1, 0, capacity(v), deref a) @ r1, ref len @ r1)
 
     ///
     /// Optionally removes and returns the last element in the given mutable list `v`.
@@ -880,8 +877,8 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sort(v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } with Order[a] =
-        sortWith(Order.compare, v)
+    pub def sort(r1: Region[r1], v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } with Order[a] =
+        sortWith(r1, Order.compare, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -891,8 +888,8 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortBy(f: a -> b, v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } with Order[b] =
-        sortWith(Order.compare `on` f, v)
+    pub def sortBy(r1: Region[r1], f: a -> b, v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } with Order[b] =
+        sortWith(r1, Order.compare `on` f, v)
 
     ///
     /// Returns a sorted copy of MutList `v`, where the elements are ordered from low to high according to
@@ -902,8 +899,8 @@ namespace MutList {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r] \ { Read(r), Write(r) } =
-        let vCopy = copy(v);
+    pub def sortWith(r1: Region[r1], cmp: (a,a) -> Comparison, v: MutList[a, r]): MutList[a, r1] \ { Read(r), Write(r1) } =
+        let vCopy = copy(r1, v);
         sortWith!(cmp, vCopy);
         vCopy
 

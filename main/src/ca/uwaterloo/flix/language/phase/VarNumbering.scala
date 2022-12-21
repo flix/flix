@@ -116,6 +116,10 @@ object VarNumbering {
       case Expression.Region(_, _) =>
         i0
 
+      case Expression.Scope(sym, exp, _, _, _) =>
+        val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
+        visitExp(exp, i1)
+
       case Expression.Is(_, exp, _, _) =>
         visitExp(exp, i0)
 
@@ -218,8 +222,9 @@ object VarNumbering {
         // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
         i0
 
-      case Expression.Spawn(exp, _, _) =>
-        visitExp(exp, i0)
+      case Expression.Spawn(exp1, exp2, _, _) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
 
       case Expression.Lazy(exp, _, _) =>
         visitExp(exp, i0)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2022 Paul Butcher
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.unification
 
-object BddFormula {
+package ca.uwaterloo.flix.language.phase.jvm
 
-  class Bdd
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.Region
 
-  // TODO: Add an instance of BoolFormula for Bdd.
-
+object GenRegionClass {
+  def gen()(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    Map(Region.jvmName -> JvmClass(Region.jvmName, Region.genByteCode()))
+  }
 }

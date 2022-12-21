@@ -188,14 +188,18 @@ object Tester {
           redirect.restore()
 
           result match {
-            case java.lang.Boolean.TRUE =>
-              queue.add(TestEvent.Success(sym, Duration(elapsed)))
-
             case java.lang.Boolean.FALSE =>
+              // Case 1: Assertion Error.
               queue.add(TestEvent.Failure(sym, "Assertion Error" :: Nil, Duration(elapsed)))
 
             case _ =>
-              queue.add(TestEvent.Success(sym, Duration(elapsed)))
+              if (redirect.stdErr.isEmpty) {
+                // Case 2: Non-False result and no stderr output.
+                queue.add(TestEvent.Success(sym, Duration(elapsed)))
+              } else {
+                // Case 3: Non-False result, but with stderr output.
+                queue.add(TestEvent.Failure(sym, "Std Err Output" :: redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
+              }
 
           }
         } catch {

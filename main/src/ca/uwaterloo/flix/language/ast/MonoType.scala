@@ -52,6 +52,8 @@ object MonoType {
 
   case object Str extends MonoType
 
+  case object Region extends MonoType
+
   ///
   /// Compound Types.
   ///
@@ -75,10 +77,6 @@ object MonoType {
   case class SchemaEmpty() extends MonoType
 
   case class SchemaExtend(name: String, tpe: MonoType, rest: MonoType) extends MonoType
-
-  case class Relation(tpes: List[MonoType]) extends MonoType
-
-  case class Lattice(tpes: List[MonoType]) extends MonoType
 
   case class Native(clazz: Class[_]) extends MonoType
 

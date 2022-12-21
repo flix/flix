@@ -62,6 +62,7 @@ object JvmOps {
     case MonoType.Int64 => JvmType.PrimLong
     case MonoType.BigInt => JvmType.BigInteger
     case MonoType.Str => JvmType.String
+    case MonoType.Region => JvmType.Object
 
     // Compound
     case MonoType.Array(_) => JvmType.Object
@@ -546,6 +547,8 @@ object JvmOps {
 
       case Expression.Region(_, _) => Set.empty
 
+      case Expression.Scope(_, exp, _, _) => visitExp(exp)
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -624,7 +627,7 @@ object JvmOps {
           case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
         }
 
-      case Expression.Spawn(exp, _, _) => visitExp(exp)
+      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Lazy(exp, _, _) => visitExp(exp)
 
@@ -728,14 +731,13 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
+    case MonoType.Region => Type.mkRegion(Type.Unit, SourceLocation.Unknown) // hack
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
     case MonoType.Native(clazz) => Type.mkNative(clazz, SourceLocation.Unknown)
     case MonoType.Ref(elm) => Type.mkRef(hackMonoType2Type(elm), Type.False, SourceLocation.Unknown)
     case MonoType.Arrow(targs, tresult) => Type.mkPureCurriedArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult), SourceLocation.Unknown)
     case MonoType.Enum(sym, args) => Type.mkEnum(sym, args.map(hackMonoType2Type), SourceLocation.Unknown)
-    case MonoType.Relation(attr) => Type.mkRelation(attr.map(hackMonoType2Type), SourceLocation.Unknown)
-    case MonoType.Lattice(attr) => Type.mkLattice(attr.map(hackMonoType2Type), SourceLocation.Unknown)
     case MonoType.Tuple(_) => Type.mkTuple(Nil, SourceLocation.Unknown) // hack
     case MonoType.RecordEmpty() => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
     case MonoType.RecordExtend(_, _, _) => Type.mkRecord(hackMonoType2RecordRowType(tpe), SourceLocation.Unknown)
@@ -896,6 +898,8 @@ object JvmOps {
 
       case Expression.Region(_, _) => Set.empty
 
+      case Expression.Scope(_, exp, _, _) => visitExp(exp)
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -972,7 +976,7 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expression.Spawn(exp, _, _) => visitExp(exp)
+      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Lazy(exp, _, _) => visitExp(exp)
 
@@ -1050,6 +1054,7 @@ object JvmOps {
       case MonoType.Int64 => Set(tpe)
       case MonoType.BigInt => Set(tpe)
       case MonoType.Str => Set(tpe)
+      case MonoType.Region => Set(tpe)
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
       case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
@@ -1070,8 +1075,6 @@ object JvmOps {
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
-      case MonoType.Relation(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Lattice(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }
@@ -1140,6 +1143,8 @@ object JvmOps {
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Region(_, _) => Set.empty
+
+      case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
@@ -1210,7 +1215,7 @@ object JvmOps {
 
       case obj: Expression.NewObject => Set(obj)
 
-      case Expression.Spawn(exp, _, _) => visitExp(exp)
+      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Lazy(exp, _, _) => visitExp(exp)
 

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use RedBlackTree.RedBlackTree
-
 ///
 /// The Map type.
 ///

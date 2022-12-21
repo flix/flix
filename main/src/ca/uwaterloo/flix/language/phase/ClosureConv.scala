@@ -126,6 +126,9 @@ object ClosureConv {
     case Expression.Region(tpe, loc) =>
       Expression.Region(tpe, loc)
 
+    case Expression.Scope(sym, e, tpe, purity, loc) =>
+      Expression.Scope(sym, visitExp(e), tpe, purity, loc)
+
     case Expression.Is(sym, e, purity, loc) =>
       Expression.Is(sym, visitExp(e), purity, loc)
 
@@ -251,9 +254,10 @@ object ClosureConv {
       }
       Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+    case Expression.Spawn(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.Spawn(e1, e2, tpe, loc)
 
     case Expression.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -353,6 +357,8 @@ object ClosureConv {
     case Expression.Region(tpe, loc) =>
       SortedSet.empty
 
+    case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
+
     case Expression.Is(_, exp, _, _) => freeVars(exp)
 
     case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
@@ -416,7 +422,7 @@ object ClosureConv {
           acc ++ filterBoundParams(freeVars(exp), fparams)
       }
 
-    case Expression.Spawn(exp, _, _) => freeVars(exp)
+    case Expression.Spawn(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Lazy(exp, _, _) => freeVars(exp)
 
@@ -538,6 +544,11 @@ object ClosureConv {
 
       case Expression.Region(tpe, loc) =>
         Expression.Region(tpe, loc)
+
+      case Expression.Scope(sym, exp, tpe, purity, loc) =>
+        val newSym = subst.getOrElse(sym, sym)
+        val e = visitExp(exp)
+        Expression.Scope(newSym, e, tpe, purity, loc)
 
       case Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
@@ -665,9 +676,10 @@ object ClosureConv {
         val methods = methods0.map(visitJvmMethod(_, subst))
         Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+      case Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Spawn(e1, e2, tpe, loc)
 
       case Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)

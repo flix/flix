@@ -179,6 +179,10 @@ object LambdaLift {
       case SimplifiedAst.Expression.Region(tpe, loc) =>
         LiftedAst.Expression.Region(tpe, loc)
 
+      case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+        val e = visitExp(exp)
+        LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Is(sym, e, purity, loc)
@@ -305,9 +309,10 @@ object LambdaLift {
         val methods = methods0.map(visitJvmMethod)
         LiftedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        LiftedAst.Expression.Spawn(e, tpe, loc)
+      case SimplifiedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        LiftedAst.Expression.Spawn(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)

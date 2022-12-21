@@ -127,6 +127,9 @@ object Eraser {
     case FinalAst.Expression.Region(tpe, loc) =>
       ErasedAst.Expression.Region(tpe, loc)
 
+    case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
+      ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
+
     case FinalAst.Expression.Is(sym, exp, loc) =>
       ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 
@@ -219,8 +222,9 @@ object Eraser {
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
-    case FinalAst.Expression.Spawn(exp, tpe, loc) =>
-      ErasedAst.Expression.Spawn(visitExp(exp), tpe, loc)
+
+    case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+      ErasedAst.Expression.Spawn(visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
       ErasedAst.Expression.Lazy(visitExp(exp), tpe, loc)

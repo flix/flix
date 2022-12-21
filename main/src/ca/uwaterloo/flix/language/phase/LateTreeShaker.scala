@@ -141,6 +141,9 @@ object LateTreeShaker {
     case Expression.Region(_, _) =>
       Set.empty
 
+    case Expression.Scope(_, exp, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Is(_, exp, _, _) =>
       visitExp(exp)
 
@@ -225,8 +228,8 @@ object LateTreeShaker {
     case Expression.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
-    case Expression.Spawn(exp, _, _) =>
-      visitExp(exp)
+    case Expression.Spawn(exp1, exp2, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Lazy(exp, _, _) =>
       visitExp(exp)

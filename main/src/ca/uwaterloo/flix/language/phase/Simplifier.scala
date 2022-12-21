@@ -105,7 +105,7 @@ object Simplifier {
         SimplifiedAst.Expression.Region(tpe, loc)
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
-        SimplifiedAst.Expression.Let(sym, SimplifiedAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc), visitExp(exp), tpe, simplifyPurity(pur), loc)
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -236,12 +236,13 @@ object Simplifier {
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, simplifyPurity(pur), methods, loc)
 
-      case LoweredAst.Expression.Spawn(exp, tpe, pur, eff, loc) =>
+      case LoweredAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
         // Wrap the expression in a closure: () -> tpe \ eff
-        val e = visitExp(exp)
-        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, Type.Empty, e.tpe, loc) // TODO use eff
-        val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e, lambdaTyp, loc)
-        SimplifiedAst.Expression.Spawn(lambdaExp, tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val lambdaTyp = Type.mkArrowWithEffect(Type.Unit, eff, Type.Empty, e1.tpe, loc) // TODO use eff
+        val lambdaExp = SimplifiedAst.Expression.Lambda(List(), e1, lambdaTyp, loc)
+        SimplifiedAst.Expression.Spawn(lambdaExp, e2, tpe, loc)
 
       case LoweredAst.Expression.Lazy(exp, tpe, loc) =>
         // Wrap the expression in a closure: () -> tpe & Pure
@@ -831,6 +832,9 @@ object Simplifier {
       case SimplifiedAst.Expression.Region(tpe, loc) =>
         SimplifiedAst.Expression.Region(tpe, loc)
 
+      case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
+        SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
 
@@ -937,9 +941,10 @@ object Simplifier {
         val methods = methods0 map visitJvmMethod
         SimplifiedAst.Expression.NewObject(name, clazz, tpe, purity, methods, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Spawn(e, tpe, loc)
+      case SimplifiedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.Spawn(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.Lazy(exp, tpe, loc) =>
         val e = visitExp(exp)

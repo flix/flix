@@ -142,6 +142,12 @@ class TestMain extends FunSuite {
     assert(opts.xbenchmarkPhases)
   }
 
+  test("--Xbenchmark-frontend") {
+    val args = Array("--Xbenchmark-frontend", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkFrontend)
+  }
+
   test("--Xbenchmark-throughput") {
     val args = Array("--Xbenchmark-throughput", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -151,7 +157,7 @@ class TestMain extends FunSuite {
   test("--Xbdd-threshold") {
     val args = Array("--Xbdd-threshold", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xbddthreshold == 42)
+    assert(opts.xbddthreshold.contains(42))
   }
 
   test("--Xdebug") {
@@ -178,10 +184,34 @@ class TestMain extends FunSuite {
     assert(opts.xlib == LibLevel.All)
   }
 
+  test("--Xbool-classic") {
+    val args = Array("--Xbool-classic")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xboolclassic)
+  }
+
+  test("--Xno-bool-cache") {
+    val args = Array("--Xno-bool-cache")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolcache)
+  }
+
+  test("--Xno-bool-specialcases") {
+    val args = Array("--Xno-bool-specialcases")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolspecialcases)
+  }
+
   test("--Xno-bool-table") {
     val args = Array("--Xno-bool-table")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnobooltable)
+  }
+
+  test("--Xno-unit-tests") {
+    val args = Array("--Xno-unit-tests")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnounittests)
   }
 
   test("--Xstrictmono") {
@@ -194,6 +224,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xvirtual-threads")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xvirtualthreads)
+  }
+
+  test("--Xqmc") {
+    val args = Array("--Xqmc")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xqmc)
   }
 
   test("--explain") {

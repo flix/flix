@@ -76,7 +76,6 @@ object Typer {
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
 
-        case sym: Symbol.InstanceSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.ModuleSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
         case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -154,7 +153,7 @@ object Typer {
     flix.subphase("Instances") {
       val results = ParOps.parMap(root.instances.values.flatten)(visitInstance(_, root, classEnv))
       Validation.sequence(results) map {
-        insts => insts.groupBy(inst => inst.sym.clazz)
+        insts => insts.groupBy(inst => inst.clazz.sym)
       }
     }
 
@@ -493,10 +492,8 @@ object Typer {
       case KindedAst.Expression.Wild(tvar, _) =>
         liftM(List.empty, tvar, Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Var(sym, tpe, loc) =>
-        for {
-          resultTyp <- unifyTypeM(sym.tvar, tpe, loc)
-        } yield (List.empty, resultTyp, Type.Pure, Type.Empty)
+      case KindedAst.Expression.Var(sym, loc) =>
+        liftM(List.empty, sym.tvar, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
@@ -1947,7 +1944,7 @@ object Typer {
       case KindedAst.Expression.Wild(tvar, loc) =>
         TypedAst.Expression.Wild(subst0(tvar), loc)
 
-      case KindedAst.Expression.Var(sym, tvar, loc) =>
+      case KindedAst.Expression.Var(sym, loc) =>
         TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
@@ -2478,8 +2475,8 @@ object Typer {
 
       // Reassemble the constraint parameters.
       val cparams = cparams0.map {
-        case KindedAst.ConstraintParam(sym, tpe, l) =>
-          TypedAst.ConstraintParam(sym, subst0(tpe), l)
+        case KindedAst.ConstraintParam(sym, l) =>
+          TypedAst.ConstraintParam(sym, subst0(sym.tvar), l)
       }
 
       // Reassemble the constraint.
