@@ -28,6 +28,7 @@ object MonoTypePrinter {
       case MonoType.Int64 => text("Int64")
       case MonoType.BigInt => text("BigInt")
       case MonoType.Str => text("String")
+      case MonoType.Region => text("Region")
       case MonoType.Array(tpe) => tapp(text("Array"), List(tpe))
       case MonoType.Lazy(tpe) => tapp(text("Lazy"), List(tpe))
       case MonoType.Ref(tpe) => tapp(text("Ref"), List(tpe))
@@ -58,8 +59,6 @@ object MonoTypePrinter {
         }
 
         schemaDoc(tpe, Nil)
-      case MonoType.Relation(_) => text("<Relation>")
-      case MonoType.Lattice(_) => text("<Lattice>")
       case MonoType.Native(clazz) =>
         val name = clazz.getCanonicalName
         val nullGuardedName = if (name == null) "<AnonClass>" else name
