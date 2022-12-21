@@ -22,7 +22,7 @@ namespace TestMutList {
     /// Helper function to test capacity of internal array.
     ///
     def capacity(v: MutList[a, r]): Int32 \ Read(r) =
-        let MutList(a, _) = v;
+        let MutList(_, a, _) = v;
         Array.length(deref a)
 
 
@@ -575,7 +575,7 @@ namespace TestMutList {
 
     @test
     def scanLeft01(): Bool = region r {
-        let v = MutList.scanLeft((x, y) -> x + y, 0, new MutList(r));
+        let v = MutList.scanLeft(r, (x, y) -> x + y, 0, new MutList(r));
         MutList.length(v) == 1 and MutList.head(v) == Some(0)
     }
 
@@ -589,13 +589,13 @@ namespace TestMutList {
         MutList.push!(6, v2);
         MutList.push!(10, v2);
         MutList.push!(15, v2);
-        let v3 = MutList.scanLeft((x, y) -> x + y, 0, v1);
+        let v3 = MutList.scanLeft(r, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
 
     @test
     def scanLeft03(): Bool = region r {
-        let v = MutList.scanLeft((x, y) -> x + y, 7, MutList.range(r, 5, 13));
+        let v = MutList.scanLeft(r, (x, y) -> x + y, 7, MutList.range(r, 5, 13));
         MutList.last(v) == Some(75)
     }
 
@@ -606,7 +606,7 @@ namespace TestMutList {
 
     @test
     def scanRight01(): Bool = region r {
-        let v = MutList.scanRight((x, y) -> x + y, 0, new MutList(r));
+        let v = MutList.scanRight(r, (x, y) -> x + y, 0, new MutList(r));
         MutList.length(v) == 1 and MutList.head(v) == Some(0)
     }
 
@@ -620,13 +620,13 @@ namespace TestMutList {
         MutList.push!(9, v2);
         MutList.push!(5, v2);
         MutList.push!(0, v2);
-        let v3 = MutList.scanRight((x, y) -> x + y, 0, v1);
+        let v3 = MutList.scanRight(r, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
 
     @test
     def scanRight03(): Bool = region r {
-        let v = MutList.scanRight((x, y) -> x + y, 7, MutList.range(r, 5, 13));
+        let v = MutList.scanRight(r, (x, y) -> x + y, 7, MutList.range(r, 5, 13));
         MutList.last(v) == Some(7)
     }
 
@@ -972,16 +972,16 @@ namespace TestMutList {
     @test
     def copy04(): Bool = region r {
         let v1 = MutList.range(r, 0, 1000);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(r, v1);
+        let MutList(_, l1, n1) = v1;
+        let MutList(_, l2, n2) = MutList.copy(r, v1);
         (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2)
     }
 
     @test
     def copy05(): Bool = region r {
         let v1 = MutList.range(r, 0, 3);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(r, v1);
+        let MutList(_, l1, n1) = v1;
+        let MutList(_, l2, n2) = MutList.copy(r, v1);
         (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2) and
             (Array.length(deref l2) == 8)
     }
