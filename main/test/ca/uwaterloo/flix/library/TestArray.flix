@@ -529,43 +529,43 @@ namespace TestArray {
 
     @test
     def indices01(): Bool = region r {
-        let a = Array.indices(0, []: Array[Int32, r]);
+        let a = Array.indices(r, 0, []: Array[Int32, r]);
         Array.sameElements(a, []: Array[Int32, r])
     }
 
     @test
     def indices02(): Bool = region r {
-        let a = Array.indices(0, [1]);
+        let a = Array.indices(r, 0, [1]);
         Array.sameElements(a, []: Array[Int32, r])
     }
 
     @test
     def indices03(): Bool = region r {
-        let a = Array.indices(1, [1]);
+        let a = Array.indices(r, 1, [1]);
         Array.sameElements(a, [0])
     }
 
     @test
     def indices04(): Bool = region r {
-        let a = Array.indices(0, [1,2]);
+        let a = Array.indices(r, 0, [1,2]);
         Array.sameElements(a, []: Array[Int32, r])
     }
 
     @test
     def indices05(): Bool = region r {
-        let a = Array.indices(1, [1,2]);
+        let a = Array.indices(r, 1, [1,2]);
         Array.sameElements(a, [0])
     }
 
     @test
     def indices06(): Bool = region r {
-        let a = Array.indices(2, [1,2]);
+        let a = Array.indices(r, 2, [1,2]);
         Array.sameElements(a, [1])
     }
 
     @test
     def indices07(): Bool = region r {
-        let a = Array.indices(1, [1,1]);
+        let a = Array.indices(r, 1, [1,1]);
         Array.sameElements(a, [0,1])
     }
     /////////////////////////////////////////////////////////////////////////////
@@ -765,43 +765,43 @@ namespace TestArray {
 
     @test
     def scan01(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, []);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scan02(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scan03(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scan04(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scan05(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scan06(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scan07(): Bool = region r {
-        let a = Array.scan((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
+        let a = Array.scan(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -811,43 +811,43 @@ namespace TestArray {
 
     @test
     def scanLeft01(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, []: Array[Bool, _]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, []: Array[Bool, _]);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanLeft02(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [1,3])
     }
 
     @test
     def scanLeft03(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def scanLeft04(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [1,3,5])
     }
 
     @test
     def scanLeft05(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [1,3,4])
     }
 
     @test
     def scanLeft06(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [1,2,4])
     }
 
     @test
     def scanLeft07(): Bool = region r {
-        let a = Array.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
+        let a = Array.scanLeft(r, (i, b) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [1,2,3])
     }
 
@@ -857,43 +857,43 @@ namespace TestArray {
 
     @test
     def scanRight01(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, []);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, []);
         Array.sameElements(a, [1])
     }
 
     @test
     def scanRight02(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [false]);
         Array.sameElements(a, [3,1])
     }
 
     @test
     def scanRight03(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [true]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def scanRight04(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,false]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [false,false]);
         Array.sameElements(a, [5,3,1])
     }
 
     @test
     def scanRight05(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [false,true]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [false,true]);
         Array.sameElements(a, [4,2,1])
     }
 
     @test
     def scanRight06(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,false]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [true,false]);
         Array.sameElements(a, [4,3,1])
     }
 
     @test
     def scanRight07(): Bool = region r {
-        let a = Array.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, [true,true]);
+        let a = Array.scanRight(r, (b, i) -> if (b) i + 1 else i + 2, 1, [true,true]);
         Array.sameElements(a, [3,2,1])
     }
 
@@ -1208,67 +1208,67 @@ namespace TestArray {
 
     @test
     def rotateLeft01(): Bool = region r {
-        let a = Array.rotateLeft(0, []: Array[Int32, _]);
+        let a = Array.rotateLeft(r, 0, []: Array[Int32, _]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateLeft02(): Bool = region r {
-        let a = Array.rotateLeft(1, []: Array[Int32, _]);
+        let a = Array.rotateLeft(r, 1, []: Array[Int32, _]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateLeft03(): Bool = region r {
-        let a = Array.rotateLeft(0, [1]);
+        let a = Array.rotateLeft(r, 0, [1]);
         Array.sameElements(a, [1])
     }
 
     @test
     def rotateLeft04(): Bool = region r {
-        let a = Array.rotateLeft(0, [1,2]);
+        let a = Array.rotateLeft(r, 0, [1,2]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def rotateLeft05(): Bool = region r {
-        let a = Array.rotateLeft(1, [1,2]);
+        let a = Array.rotateLeft(r, 1, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateLeft06(): Bool = region r {
-        let a = Array.rotateLeft(2, [1,2]);
+        let a = Array.rotateLeft(r, 2, [1,2]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def rotateLeft07(): Bool = region r {
-        let a = Array.rotateLeft(3, [1,2]);
+        let a = Array.rotateLeft(r, 3, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateLeft08(): Bool = region r {
-        let a = Array.rotateLeft(-1, [1,2]);
+        let a = Array.rotateLeft(r, -1, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateLeft09(): Bool = region r {
-        let a = Array.rotateLeft(0, [1,2,3]);
+        let a = Array.rotateLeft(r, 0, [1,2,3]);
         Array.sameElements(a, [1,2,3])
     }
 
     @test
     def rotateLeft10(): Bool = region r {
-        let a = Array.rotateLeft(1, [1,2,3]);
+        let a = Array.rotateLeft(r, 1, [1,2,3]);
         Array.sameElements(a, [2,3,1])
     }
 
     @test
     def rotateLeft11(): Bool = region r {
-        let a = Array.rotateLeft(2, [1,2,3]);
+        let a = Array.rotateLeft(r, 2, [1,2,3]);
         Array.sameElements(a, [3,1,2])
     }
 
@@ -1278,67 +1278,67 @@ namespace TestArray {
 
     @test
     def rotateRight01(): Bool = region r {
-        let a = Array.rotateRight(0, []: Array[Int32, _]);
+        let a = Array.rotateRight(r, 0, []: Array[Int32, _]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateRight02(): Bool = region r {
-        let a = Array.rotateRight(1, []: Array[Int32, _]);
+        let a = Array.rotateRight(r, 1, []: Array[Int32, _]);
         Array.sameElements(a, []: Array[Int32, _])
     }
 
     @test
     def rotateRight03(): Bool = region r {
-        let a = Array.rotateRight(0, [1]);
+        let a = Array.rotateRight(r, 0, [1]);
         Array.sameElements(a, [1])
     }
 
     @test
     def rotateRight04(): Bool = region r {
-        let a = Array.rotateRight(0, [1,2]);
+        let a = Array.rotateRight(r, 0, [1,2]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def rotateRight05(): Bool = region r {
-        let a = Array.rotateRight(1, [1,2]);
+        let a = Array.rotateRight(r, 1, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateRight06(): Bool = region r {
-        let a = Array.rotateRight(2, [1,2]);
+        let a = Array.rotateRight(r, 2, [1,2]);
         Array.sameElements(a, [1,2])
     }
 
     @test
     def rotateRight07(): Bool = region r {
-        let a = Array.rotateRight(3, [1,2]);
+        let a = Array.rotateRight(r, 3, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateRight08(): Bool = region r {
-        let a = Array.rotateRight(-1, [1,2]);
+        let a = Array.rotateRight(r, -1, [1,2]);
         Array.sameElements(a, [2,1])
     }
 
     @test
     def rotateRight09(): Bool = region r {
-        let a = Array.rotateRight(0, [1,2,3]);
+        let a = Array.rotateRight(r, 0, [1,2,3]);
         Array.sameElements(a, [1,2,3])
     }
 
     @test
     def rotateRight10(): Bool = region r {
-        let a = Array.rotateRight(1, [1,2,3]);
+        let a = Array.rotateRight(r, 1, [1,2,3]);
         Array.sameElements(a, [3,1,2])
     }
 
     @test
     def rotateRight11(): Bool = region r {
-        let a = Array.rotateRight(2, [1,2,3]);
+        let a = Array.rotateRight(r, 2, [1,2,3]);
         Array.sameElements(a, [2,3,1])
     }
 
@@ -4445,43 +4445,43 @@ namespace TestArray {
 
     @test
     def findIndices01(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, []: Array[Int32, r]);
+        let a = Array.findIndices(r, i -> i > 2, []: Array[Int32, r]);
         Array.sameElements(a, []: Array[Int32, r])
     }
 
     @test
     def findIndices02(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [1]);
+        let a = Array.findIndices(r, i -> i > 2, [1]);
         Array.sameElements(a, []: Array[Int32, r])
     }
 
     @test
     def findIndices03(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [3]);
+        let a = Array.findIndices(r, i -> i > 2, [3]);
         Array.sameElements(a, [0])
     }
 
     @test
     def findIndices04(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [1,2]);
+        let a = Array.findIndices(r, i -> i > 2, [1,2]);
         Array.sameElements(a, [] : Array[Int32, r])
     }
 
     @test
     def findIndices05(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [6,-6]);
+        let a = Array.findIndices(r, i -> i > 2, [6,-6]);
         Array.sameElements(a, [0])
     }
 
     @test
     def findIndices06(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [-6,6]);
+        let a = Array.findIndices(r, i -> i > 2, [-6,6]);
         Array.sameElements(a, [1])
     }
 
     @test
     def findIndices07(): Bool = region r {
-        let a = Array.findIndices(i -> i > 2, [6,7]);
+        let a = Array.findIndices(r, i -> i > 2, [6,7]);
         Array.sameElements(a, [0,1])
     }
 

@@ -308,8 +308,8 @@ namespace Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(a: a, arr: Array[a, r]): Array[Int32, r] \ { Read(r), Write(r) } with Eq[a] =
-        findIndices(b -> a == b, arr)
+    pub def indices(r: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ { Read(r), Write(r) } with Eq[a] =
+        findIndices(r, b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
@@ -362,17 +362,16 @@ namespace Array {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
-        scanLeft(f, s, arr)
+    pub def scan(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+        scanLeft(r, f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanLeft(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let r = Scoped.regionOf(arr);
         let b = new(r, s, len);
         def loop(i, acc) = {
             if (i >= len)
@@ -391,9 +390,8 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
         let b = new(r, s, len + 1);
         def loop(i, acc) = {
             if (i < 0)
@@ -492,15 +490,15 @@ namespace Array {
     ///
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
-    pub def rotateLeft(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def rotateLeft(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
         if (len < 1)
-            [] @ Scoped.regionOf(arr)
+            [] @ r2
         else
             if (n < 0)
-                rotateRightHelper(Int32.abs(n), arr)
+                rotateRightHelper(r2, Int32.abs(n), arr)
             else
-                rotateLeftHelper(n, arr)
+                rotateLeftHelper(r2, n, arr)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -509,23 +507,22 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
-        let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(r, f, len)
+        init(r2, f, len)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
-    pub def rotateRight(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def rotateRight(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         if (length(arr) < 1)
-            [] @ Scoped.regionOf(arr)
+            [] @ r2
         else
             if (n < 0)
-                rotateLeftHelper(Int32.abs(n), arr)
+                rotateLeftHelper(r2, Int32.abs(n), arr)
             else
-                rotateRightHelper(n, arr)
+                rotateRightHelper(r2, n, arr)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -534,13 +531,12 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    def rotateRightHelper(r2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(r, f, len)
+        init(r2, f, len)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -584,12 +580,12 @@ namespace Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } = region r3 {
         let len1 = length(a);
-        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(r2, 0, size, a);
+        let sub = copyOfRange(r3, 0, size, a);
         updateSequence!(i, sub, b)
+    }
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -1128,10 +1124,9 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r2] \ { Read(r2), Write(r2, r1) } =
+    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { Read(r2), Write(r1) } =
         let xs = toList(a);
-        let r2 = Scoped.regionOf(a);
-        groupByHelper(r1, f, xs, Nil) |> List.toArray(r2)
+        groupByHelper(r1, f, xs, Nil) |> List.toArray(r1)
 
     ///
     /// Helper function for `groupBy`.
@@ -1301,7 +1296,7 @@ namespace Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(r1, 0, c, a);
-        MutList(ref copy @ r1, ref len @ r1)
+        MutList(r1, ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1349,10 +1344,9 @@ namespace Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
+    pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, Read(r1), Write(r2) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
-        let l = new MutList(r);
+        let l = new MutList(r2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1362,7 +1356,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(r, l)
+        MutList.toArray(r2, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
