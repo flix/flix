@@ -457,16 +457,16 @@ namespace Option {
     /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
     pub def toSuccess(e: e, o: Option[t]): Validation[t, e] = match o {
-        case None    => Failure(Nec.singleton(e))
-        case Some(a) => Success(a)
+        case None    => Validation.Failure(Nec.singleton(e))
+        case Some(a) => Validation.Success(a)
     }
 
     ///
     /// Returns `e` into Validation's `Failure` if `o` is `Some(e)`. Otherwise returns `Success(d)`.
     ///
     pub def toFailure(d: t, o: Option[e]): Validation[t, e] = match o {
-        case None    => Success(d)
-        case Some(e) => Failure(Nec.singleton(e))
+        case None    => Validation.Success(d)
+        case Some(e) => Validation.Failure(Nec.singleton(e))
     }
 
     ///

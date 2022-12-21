@@ -6,7 +6,7 @@ namespace Reflect {
     /// it acts as a placeholder to be replaced by a proper value.
     ///
     @Unsafe
-    pub def default(): a = typematch (Proxy: Proxy[a]) {
+    pub def default(): a = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Unit] => unsafe_cast () as a
         case _: Proxy[Bool] => unsafe_cast false as a
         case _: Proxy[Char] => unsafe_cast '0' as a

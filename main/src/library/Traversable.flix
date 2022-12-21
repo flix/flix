@@ -68,11 +68,11 @@ namespace Traversable {
     pub def mapAccumLeft(f: (acc, a) -> (acc, b) \ ef, start: acc, t: t[a]): (acc, t[b]) \ ef with Traversable[t] =
         region r {
             let acc = ref start @ r;
-            let Identity(tb) = t |> Traversable.traverse(x -> {
+            let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
                 let st = deref acc;
                 let (acc1, b) = f(st, x);
                 acc := acc1;
-                Identity(b)
+                Identity.Identity(b)
             });
             (deref acc, tb)
         }

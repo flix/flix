@@ -118,7 +118,7 @@ namespace StringBuilder {
             i := deref i + 1;
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.

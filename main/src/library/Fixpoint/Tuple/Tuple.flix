@@ -26,16 +26,16 @@ namespace Fixpoint/Tuple {
     // NB: Unsafe instance.
     instance Eq[Tuple[v]] with Eq[v] {
         pub def eq(x: Tuple[v], y: Tuple[v]): Bool =
-            let Tuple(a) = x;
-            let Tuple(b) = y;
+            let Tuple.Tuple(a) = x;
+            let Tuple.Tuple(b) = y;
             unsafe_cast Array.sameElements(a, b) as _ \ {}
     }
 
     // NB: Unsafe instance.
     instance Order[Tuple[v]] with Order[v] {
         pub def compare(x: Tuple[v], y: Tuple[v]): Comparison =
-            let Tuple(a) = x;
-            let Tuple(b) = y;
+            let Tuple.Tuple(a) = x;
+            let Tuple.Tuple(b) = y;
             unsafe_cast Array.compare(a, b) as _ \ {}
     }
 
@@ -43,13 +43,13 @@ namespace Fixpoint/Tuple {
     /// Creates an empty tuple consisting of the elements in `l`.
     ///
     pub def new(l: f[v]): Tuple[v] with Foldable[f] =
-        unsafe_cast Tuple(Foldable.toArray(Static, l)) as _ \ {}
+        unsafe_cast Tuple.Tuple(Foldable.toArray(Static, l)) as _ \ {}
 
     ///
     /// Converts `t` to a list.
     ///
     pub def toList(t: Tuple[v]): List[v] = unsafe_cast {
-        let Tuple(a) = t;
+        let Tuple.Tuple(a) = t;
         Array.toList(a)
     } as _ \ {}
 
@@ -57,7 +57,7 @@ namespace Fixpoint/Tuple {
     /// Returns the length of `t`.
     ///
     pub def length(t: Tuple[v]): Int32 =
-        let Tuple(a) = t;
+        let Tuple.Tuple(a) = t;
         Array.length(a)
 
     ///
@@ -65,7 +65,7 @@ namespace Fixpoint/Tuple {
     /// Throws a runtime exception if `v` is out of bounds.
     ///
     pub def valueAt(t: Tuple[v], v: Int32): v = unsafe_cast {
-        let Tuple(a) = t;
+        let Tuple.Tuple(a) = t;
         a[v]
     } as _ \ {}
 }
