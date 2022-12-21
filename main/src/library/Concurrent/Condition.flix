@@ -23,6 +23,9 @@ namespace Concurrent {
     pub enum Condition(##java.util.concurrent.locks.Condition)
 
     namespace Condition {
+        // TODO NS-REFACTOR these imports can be removed
+        use Concurrent.Condition;
+        use Concurrent.Condition.Condition;
 
 
         ///
