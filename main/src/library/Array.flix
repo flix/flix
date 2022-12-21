@@ -1301,7 +1301,7 @@ namespace Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(r1, 0, c, a);
-        MutList(ref copy @ r1, ref len @ r1)
+        MutList(r1, ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
