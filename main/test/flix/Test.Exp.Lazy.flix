@@ -53,14 +53,20 @@ namespace Test/Exp/Lazy {
         lazy "string"
 
     @test
-    def testArrayOfIntLazy01(): Lazy[Array[Int32, Static]] \ IO =
-        let array = [1, 2];
-        lazy array
+    def testArrayOfIntLazy01(): Unit = region r {
+        discard {
+            let array = [1, 2] @ r;
+            lazy array
+        }
+    }
 
     @test
-    def testArrayOfStringLazy01(): Lazy[Array[String, Static]] \ IO =
-        let array = ["str", "str2"];
-        lazy array
+    def testArrayOfStringLazy01(): Unit = region r {
+        discard {
+            let array = ["str", "str2"] @ r;
+            lazy array
+        }
+    }
 
     @test
     def testTupleLazy01(): Lazy[(String, String)] =
