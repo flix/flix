@@ -106,11 +106,11 @@ namespace File {
     ///
     /// Returns the BacisFileAttributes of the file `f`.
     ///
-    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] \ IO =
+    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, Static]): ##java.nio.file.attribute.BasicFileAttributes \ IO;
+            import static java.nio.file.Files.readAttributes(##java.nio.file.Path, ##java.lang.Class, Array[##java.nio.file.LinkOption, r]): ##java.nio.file.attribute.BasicFileAttributes \ IO;
             import static java.lang.Class.forName(String): ##java.lang.Class \ IO;
 
             let javaFile = newFile(f);
@@ -123,6 +123,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns the type of the given file `f`.
@@ -201,11 +202,11 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is a regular file.
     ///
-    pub def isRegularFile(f: String): Result[Bool, String] \ IO =
+    pub def isRegularFile(f: String): Result[Bool, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, Static]): Bool \ IO;
+            import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, r]): Bool \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let isRegular = isRegularFile(javaPath, []);
@@ -215,6 +216,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns `true` if the given file `f` is readable.
@@ -301,14 +303,14 @@ namespace File {
     /// `count` - the number of bytes read.
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readWith(opts: {offset = Int64, count = Int32, charSet = String}, f : String): Result[String, String] \ IO =
+    pub def readWith(opts: {offset = Int64, count = Int32, charSet = String}, f : String): Result[String, String] \ IO = region r {
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
                 import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
+                import java.io.FileInputStream.read(Array[Int8, r], Int32, Int32): Int32 \ IO;
                 import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
-                import new java.lang.String(Array[Int8, Static], ##java.nio.charset.Charset): String \ IO as newString;
+                import new java.lang.String(Array[Int8, r], ##java.nio.charset.Charset): String \ IO as newString;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -332,6 +334,7 @@ namespace File {
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readWith`.")
         }
+    }
 
     ///
     /// Helper function for `readWith` and `readBytesWith`.
@@ -411,7 +414,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(f: String): Iterator[Result[String, String], Static] \ IO =
+    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -421,18 +424,18 @@ namespace File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
-            let line = ref readLine(reader);
+            let line = ref readLine(reader) @ r;
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
                 try {
                     let l = deref line;
-                    line := readLine(reader);
+                    line := unsafe_cast readLine(reader) as _ \ Read(r);
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException => {
                         line := unsafe_cast null as String;
-                        import java.lang.Throwable.getMessage(): String \ IO;
+                        import java.lang.Throwable.getMessage(): String \ {};
                         Err(getMessage(ex))
                     }
                 }
@@ -440,8 +443,8 @@ namespace File {
             Iterator(done, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Iterator.singleton(Static, Err(getMessage(ex)))
+                import java.lang.Throwable.getMessage(): String \ {};
+                Iterator.singleton(r, Err(getMessage(ex)))
         }
 
     ///
@@ -449,7 +452,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(opts: {charSet = String}, f: String): Iterator[Result[String, String], Static] \ IO =
+    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -460,18 +463,18 @@ namespace File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
-            let line = ref readLine(reader);
+            let line = ref readLine(reader) @ r;
 
             let done = () -> Object.isNull(deref line);
             let next = () -> {
                 try {
                     let l = deref line;
-                    line := readLine(reader);
+                    line := unsafe_cast readLine(reader) as _ \ Read(r);
                     Ok(l)
                 } catch {
                     case ex: ##java.io.IOException => {
                         line := unsafe_cast null as String;
-                        import java.lang.Throwable.getMessage(): String \ IO;
+                        import java.lang.Throwable.getMessage(): String \ {};
                         Err(getMessage(ex))
                     }
                 }
@@ -479,18 +482,18 @@ namespace File {
             Iterator(done, next)
         } catch {
             case ex: ##java.io.IOException =>
-                import java.lang.Throwable.getMessage(): String \ IO;
-                Iterator.singleton(Static, Err(getMessage(ex)))
+                import java.lang.Throwable.getMessage(): String \ {};
+                Iterator.singleton(r, Err(getMessage(ex)))
         }
 
     ///
     /// Returns an array of all the bytes in the given file `f`.
     ///
-    pub def readBytes(f: String): Result[Array[Int8, Static], String] \ IO =
+    pub def readBytes(_r: Region[r], f: String): Result[Array[Int8, r], String] \ { Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, Static] \ IO;
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -509,7 +512,7 @@ namespace File {
     /// `offset` - the start offset in the given file `f`.
     /// `count` - the number of bytes read.
     ///
-    pub def readBytesWith(opts: {offset = Int64, count = Int32}, f: String): Result[Array[Int8, Static], String] \ IO =
+    pub def readBytesWith(r: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[Array[Int8, r], String] \ { Read(r), Write(r), IO } =
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -520,9 +523,9 @@ namespace File {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = [0i8; opts.count];
-                        let numberRead = read(stream, bytes, 0, opts.count);
-                        let res = readBytesWithHelper(bytes, numberRead, opts.count);
+                        let bytes = [0i8; opts.count] @ r;
+                        let numberRead = read(stream, unsafe_cast bytes as Array[Int8, Static], 0, opts.count);
+                        let res = readBytesWithHelper(r, bytes, numberRead, opts.count);
                         Ok(res)
                     }
                     case Err(msg) => Err(msg)
@@ -533,7 +536,7 @@ namespace File {
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
-            Ok([])
+            Ok([] @ r)
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
@@ -542,14 +545,14 @@ namespace File {
     /// Helper function for `readBytesWith`.
     /// Returns an array that corresponds to the bytes actually read from the stream.
     ///
-    def readBytesWithHelper(bytes: Array[Int8, Static], numberRead: Int32, count: Int32): Array[Int8, Static] \ IO =
+    def readBytesWithHelper(r: Region[r], bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ { Read(r), Write(r) } =
         let nothingRead = (numberRead == -1);
         if (nothingRead) {
-            []
+            [] @ r
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
-                Array.slice(Static, 0, numberRead, bytes)
+                Array.slice(r, 0, numberRead, bytes)
             } else {
                 bytes
             }
@@ -558,7 +561,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(chunkSize: Int32, f: String): Iterator[Result[Array[Int8, Static], String], Static] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[Array[Int8, r], String], r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -567,21 +570,21 @@ namespace File {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                let bytes = ref [0i8; chunkSize];
-                let numberRead = ref read(stream, deref bytes);
+                let bytes = ref [0i8; chunkSize] @ r @ r;
+                let numberRead = ref unsafe_cast read(stream, unsafe_cast deref bytes as Array[Int8, Static]) as _ \ Read(r) @ r;
 
                 let done = () -> deref numberRead == -1;
                 let next = () -> {
                     try {
                         let chunk = deref bytes;
-                        bytes := [0i8; chunkSize];
+                        bytes := [0i8; chunkSize] @ r;
                         let accRead = deref numberRead;
-                        numberRead := read(stream, deref bytes);
-                        Ok(readBytesWithHelper(chunk, accRead, chunkSize))
+                        numberRead := unsafe_cast read(stream, unsafe_cast deref bytes as Array[Int8, Static]) as _ \ Read(r);
+                        Ok(readBytesWithHelper(r, chunk, accRead, chunkSize))
                     } catch {
                         case ex: ##java.io.IOException => {
                             numberRead := -1;
-                            import java.lang.Throwable.getMessage(): String \ IO;
+                            import java.lang.Throwable.getMessage(): String \ {};
                             Err(getMessage(ex))
                         }
                     }
@@ -589,13 +592,13 @@ namespace File {
                 Iterator(done, next)
             } catch {
                 case ex: ##java.io.IOException =>
-                    import java.lang.Throwable.getMessage(): String \ IO;
-                    Iterator.singleton(Static, Err(getMessage(ex)))
+                    import java.lang.Throwable.getMessage(): String \ {};
+                    Iterator.singleton(r, Err(getMessage(ex)))
             }
         } else if (chunkSize == 0) {
-            Iterator.new(Static)
+            Iterator.new(r)
         } else {
-            Iterator.singleton(Static, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
+            Iterator.singleton(r, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
         }
 
     ///
@@ -894,7 +897,7 @@ namespace File {
     pub def list(f: String): Result[List[String], String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
-            import java.io.File.listFiles(): Array[##java.io.File, Static] \ IO;
+            import java.io.File.listFiles(): Array[##java.io.File, r] \ IO;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import java.nio.file.Path.toString(): String \ IO as pathToString;
 
@@ -919,7 +922,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(f: String): Result[Iterator[String, Static], String] \ IO =
+    pub def listWithIter(r: Region[r], f: String): Result[Iterator[String, r], String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -932,7 +935,7 @@ namespace File {
             let javaStream = newDirectoryStream(javaPath);
             let javaIter = iterator(javaStream);
 
-            let iter = fromJavaIter(javaIter);
+            let iter = fromJavaIter(r, javaIter);
             Ok(Iterator.mapL(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
@@ -946,7 +949,7 @@ namespace File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(f: String): Result[Iterator[String, Static], String] \ IO =
+    pub def walk(r: Region[r], f: String): Result[Iterator[String, r], String] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -959,7 +962,7 @@ namespace File {
             let javaStream = walk(javaPath, []);
             let javaIter = iterator(upcast javaStream);
 
-            let iter = fromJavaIter(javaIter);
+            let iter = fromJavaIter(r, javaIter);
             Ok(Iterator.mapL(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
@@ -970,9 +973,9 @@ namespace File {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(iter: ##java.util.Iterator): Iterator[a, Static] =
-        import java.util.Iterator.hasNext(): Bool \ IO;
-        import java.util.Iterator.next(): a \ IO as getNext;
+    def fromJavaIter(_r: Region[r], iter: ##java.util.Iterator): Iterator[a, r] =
+        import java.util.Iterator.hasNext(): Bool \ Read(r);
+        import java.util.Iterator.next(): a \ { Read(r), Write(r) } as getNext;
 
         let done = () -> not hasNext(iter);
         let next = () -> {
