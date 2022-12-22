@@ -1,22 +1,6 @@
 namespace Test/Exp/New {
 
     @test
-    def testNewMutList1Region01(): MutList[Int32, Static] \ IO =
-        new MutList(Static): MutList[Int32, Static]
-
-    @test
-    def testNewMutList1Region02(): MutList[Int32, Static] \ IO =
-        let l = new MutList(Static);
-        MutList.push!(1, l);
-        l
-
-    @test
-    def testNewMutList1Region03(): MutList[String, Static] \ IO =
-        region _ {
-            new MutList(Static): MutList[String, Static]
-        }
-
-    @test
     def testNewMutList1Region04(): Unit =
         region r {
             discard new MutList(r): MutList[String, r];
@@ -32,35 +16,6 @@ namespace Test/Exp/New {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
-        }
-
-    @test
-    def testNewMutList2RegionsFlat01(): MutList[Int32, Static] \ IO =
-        discard region _ {
-            new MutList(Static): MutList[String, Static]
-        };
-        region _ {
-            new MutList(Static): MutList[Int32, Static]
-        }
-
-    @test
-    def testNewMutList2RegionsFlat02(): MutList[Int32, Static] \ IO =
-        let _ = region r {
-            discard new MutList(r): MutList[String, r];
-            ()
-        };
-        region _ {
-            new MutList(Static): MutList[Int32, Static]
-        }
-
-    @test
-    def testNewMutList2RegionsFlat03(): Unit \ IO =
-        discard region _ {
-            new MutList(Static): MutList[String, Static]
-        };
-        region r {
-            discard new MutList(r): MutList[Int32, r];
-            ()
         }
 
     @test
@@ -225,22 +180,6 @@ namespace Test/Exp/New {
         }
 
     @test
-    def testNewMutMap1Region01(): MutMap[Int32, Int32, Static] \ IO =
-        new MutMap(Static): MutMap[Int32, Int32, Static]
-
-    @test
-    def testNewMutMap1Region02(): MutMap[Int32, Int32, Static] \ IO =
-        let m = new MutMap(Static);
-        MutMap.put!(1, 1, m);
-        m
-
-    @test
-    def testNewMutMap1Region03(): MutMap[Int32, String, Static] \ IO =
-        region _ {
-            new MutMap(Static): MutMap[Int32, String, Static]
-        }
-
-    @test
     def testNewMutMap1Region04(): Unit =
         region r {
             discard new MutMap(r): MutMap[Int32, String, r];
@@ -256,35 +195,6 @@ namespace Test/Exp/New {
                 case Some(1) => 1
                 case _       => unreachable!()
             }
-        }
-
-    @test
-    def testNewMutMap2RegionsFlat01(): MutMap[Int32, Int32, Static] \ IO =
-        discard region _ {
-            new MutMap(Static): MutMap[Int32, String, Static]
-        };
-        region _ {
-            new MutMap(Static): MutMap[Int32, Int32, Static]
-        }
-
-    @test
-    def testNewMutMap2RegionsFlat02(): MutMap[Int32, Int32, Static] \ IO =
-        let _ = region r {
-            discard new MutMap(r): MutMap[Int32, String, r];
-            ()
-        };
-        region _ {
-            new MutMap(Static): MutMap[Int32, Int32, Static]
-        }
-
-    @test
-    def testNewMutMap2RegionsFlat03(): Unit \ IO =
-        discard region _ {
-            new MutMap(Static): MutMap[Int32, String, Static]
-        };
-        region r {
-            discard new MutMap(r): MutMap[Int32, Int32, r];
-            ()
         }
 
     @test
