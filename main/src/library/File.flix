@@ -517,14 +517,14 @@ namespace File {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
                 import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static], Int32, Int32): Int32 \ IO;
+                import java.io.FileInputStream.read(Array[Int8, r], Int32, Int32): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
                         let bytes = [0i8; opts.count] @ r;
-                        let numberRead = read(stream, unsafe_cast bytes as Array[Int8, Static], 0, opts.count);
+                        let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(r, bytes, numberRead, opts.count);
                         Ok(res)
                     }
@@ -566,12 +566,12 @@ namespace File {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
                 import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, Static]): Int32 \ IO;
+                import java.io.FileInputStream.read(Array[Int8, r]): Int32 \ IO;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 let bytes = ref [0i8; chunkSize] @ r @ r;
-                let numberRead = ref unsafe_cast read(stream, unsafe_cast deref bytes as Array[Int8, Static]) as _ \ Read(r) @ r;
+                let numberRead = ref unsafe_cast read(stream, deref bytes) as _ \ Read(r) @ r;
 
                 let done = () -> deref numberRead == -1;
                 let next = () -> {
@@ -579,7 +579,7 @@ namespace File {
                         let chunk = deref bytes;
                         bytes := [0i8; chunkSize] @ r;
                         let accRead = deref numberRead;
-                        numberRead := unsafe_cast read(stream, unsafe_cast deref bytes as Array[Int8, Static]) as _ \ Read(r);
+                        numberRead := unsafe_cast read(stream, deref bytes) as _ \ Read(r);
                         Ok(readBytesWithHelper(r, chunk, accRead, chunkSize))
                     } catch {
                         case ex: ##java.io.IOException => {
@@ -750,12 +750,12 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] =
+    pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
             import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8, Static]): Unit \ IO;
+            import java.io.FileOutputStream.write(Array[Int8, r]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
@@ -765,7 +765,7 @@ namespace File {
             let fileStream = newFileStream(javaFile);
             let printWriter = newPrintWriter(upcast fileStream);
 
-            let dataAsArray = Foldable.toArray(Static, data);
+            let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
             close(printWriter);
 
@@ -780,18 +780,19 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Appends `data` to the given `f`.
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] =
+    pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
             import new java.io.PrintWriter(##java.io.OutputStream): ##java.io.PrintWriter \ IO as newPrintWriter;
-            import java.io.FileOutputStream.write(Array[Int8, Static]): Unit \ IO;
+            import java.io.FileOutputStream.write(Array[Int8, r]): Unit \ IO;
             import java.io.PrintWriter.close(): Unit \ IO;
             import java.io.PrintWriter.checkError(): Bool \ IO;
 
@@ -802,7 +803,7 @@ namespace File {
             let fileStream = newFileStream(javaFile, true);
             let printWriter = newPrintWriter(upcast fileStream);
 
-            let dataAsArray = Foldable.toArray(Static, data);
+            let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
 
             close(printWriter);
@@ -818,6 +819,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
@@ -953,13 +955,13 @@ namespace File {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, Static]): ##java.util.stream.Stream \ IO;
+            import static java.nio.file.Files.walk(##java.nio.file.Path, Array[##java.nio.file.FileVisitOption, r]): ##java.util.stream.Stream \ IO;
             import java.util.stream.BaseStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let javaStream = walk(javaPath, []);
+            let javaStream = walk(javaPath, [] @ r);
             let javaIter = iterator(upcast javaStream);
 
             let iter = fromJavaIter(r, javaIter);
@@ -996,23 +998,24 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def move(src: {src = String} , dst: String): Result[Unit, String] \ IO =
+    pub def move(src: {src = String} , dst: String): Result[Unit, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, Static]): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, r]): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard move(srcPath, dstPath, []);
+            discard move(srcPath, dstPath, [] @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Moves a file or directory from path `src` to directory `dst`.
@@ -1055,11 +1058,11 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved, or an I/O error occurred.
     ///
-    pub def moveOver(src: {src = String}, dst: String): Result[Unit, String] \ IO =
+    pub def moveOver(src: {src = String}, dst: String): Result[Unit, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, Static]): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.move(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, r]): ##java.nio.file.Path \ IO;
             import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
@@ -1067,7 +1070,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, [upcast getOverwrite()]);
+            discard move(srcPath, dstPath, [upcast getOverwrite()] @ r);
 
             Ok()
         } catch {
@@ -1075,6 +1078,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Copies a file or directory from path `src` to path `dst`.
@@ -1085,23 +1089,24 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def copy(src: {src = String} , dst: String): Result[Unit, String] \ IO =
+    pub def copy(src: {src = String} , dst: String): Result[Unit, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, Static]): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, r]): ##java.nio.file.Path \ IO;
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard copy(srcPath, dstPath, []);
+            discard copy(srcPath, dstPath, [] @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Copies a file or directory from path `src` to directory `dst`.
@@ -1144,11 +1149,11 @@ namespace File {
     /// Returns `Ok(())` if `src` was copied.
     /// Returns `Err(msg)` if `src` was not copied, or an I/O error occurred.
     ///
-    pub def copyOver(src: {src = String}, dst: String): Result[Unit, String] \ IO =
+    pub def copyOver(src: {src = String}, dst: String): Result[Unit, String] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, Static]): ##java.nio.file.Path \ IO;
+            import static java.nio.file.Files.copy(##java.nio.file.Path, ##java.nio.file.Path, Array[##java.nio.file.CopyOption, r]): ##java.nio.file.Path \ IO;
             import static get java.nio.file.StandardCopyOption.REPLACE_EXISTING: ##java.nio.file.StandardCopyOption \ IO as getOverwrite;
 
             let dstFile = newFile(dst);
@@ -1156,7 +1161,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, [upcast getOverwrite()]);
+            discard copy(srcPath, dstPath, [upcast getOverwrite()] @ r);
 
             Ok()
         } catch {
@@ -1164,6 +1169,7 @@ namespace File {
                 import java.lang.Throwable.getMessage(): String \ IO;
                 Err(getMessage(ex))
         }
+    }
 
     ///
     /// Deletes the given file or directory `f`.
