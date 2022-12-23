@@ -65,7 +65,10 @@ namespace TestObject {
     def isNullArray01(): Bool \ IO = not Object.isNull([])
 
     @test
-    def isNullArray02(): Bool = Object.isNull(unsafe_cast null as Array[Int32, Static])
+    def isNullArray02(): Bool = region r {
+        let _ = r;
+        Object.isNull(unsafe_cast null as Array[Int32, r])
+    }
 
     @test
     def isNullOther01(): Bool = not Object.isNull(1 :: 2 :: Nil)
