@@ -5594,7 +5594,7 @@ namespace TestArray {
 
     @test
     def toDelayList02(): Bool = region r {
-        ([0; 0] @ r) |> Array.toDelayList == DelayList.empty()
+        (Array.new(r, 0, 0)) |> Array.toDelayList == DelayList.empty()
     }
 
     @test

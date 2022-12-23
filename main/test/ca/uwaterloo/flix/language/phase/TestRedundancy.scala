@@ -1217,7 +1217,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            upcast ()
         |        else {
-        |            let _ = [8; 8];
+        |            let _ = $ARRAY_NEW$(false, 8, 8);
         |            ()
         |        };
         |    ()
