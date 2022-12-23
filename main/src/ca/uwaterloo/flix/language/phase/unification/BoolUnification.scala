@@ -26,7 +26,7 @@ object BoolUnification {
   /**
     * The number of variables required before we switch to using BDDs for SVE.
     */
-  private val DefaultThreshold: Int = 1_000
+  private val DefaultThreshold: Int = 5
 
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.

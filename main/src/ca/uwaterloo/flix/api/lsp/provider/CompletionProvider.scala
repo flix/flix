@@ -218,7 +218,7 @@ object CompletionProvider {
     * All of the completions are not neccesarily sound.
     */
   private def getExpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getKeywordCompletions() ++ 
+    getKeywordCompletions() ++
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
@@ -293,7 +293,7 @@ object CompletionProvider {
       "lazy",
       "let",
       "match",
-      "namespace",
+      "mod",
       "new",
       "not",
       "null",

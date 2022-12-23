@@ -339,22 +339,22 @@ namespace MutSet {
     ///
     /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def copy(s: MutSet[a, r]): MutSet[a, r] \ { Read(r), Write(r) } =
+    pub def copy(r1: Region[r1], s: MutSet[a, r]): MutSet[a, r1] \ { Read(r), Write(r1) } =
         let MutSet(ms) = s;
-        MutSet(ref (deref ms) @ Scoped.regionOf(s))
+        MutSet(ref (deref ms) @ r1)
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
     //
     /// `s1` contains all elements of the mutable set `s` that satisfy the predicate function `f`.
-    /// `s2` contains all elements of teh mutable set `s` that do not satisfy the predicate function `f`.
+    /// `s2` contains all elements of the mutable set `s` that do not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r], MutSet[a, r]) \ { Read(r), Write(r) } with Order[a] =
+    pub def partition(r1: Region[r1], r2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { Read(r), Write(r1), Write(r2) } with Order[a] =
         let MutSet(ms) = s;
         let (ys, zs) = Set.partition(f, deref ms);
-        (MutSet(ref ys @ Scoped.regionOf(s)), MutSet(ref zs @ Scoped.regionOf(s)))
+        (MutSet(ref ys @ r1), MutSet(ref zs @ r2))
 
     ///
     /// Returns the mutable set `s` as an immutable set.
@@ -403,7 +403,7 @@ namespace MutSet {
         Set.iterator(r, deref ms)
 
     ///
-    /// Returns an iterator over `s`.
+    /// Returns an enumerator over `s`.
     ///
     pub def enumerator(s: MutSet[a, r]): Iterator[(a, Int32), r] \ Write(r) =
         iterator(s) |> Iterator.zipWithIndex

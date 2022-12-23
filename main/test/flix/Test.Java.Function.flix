@@ -48,8 +48,8 @@ namespace Test/Java/Function {
     }
 
     @Test
-    def testPredicate(): Bool \ IO = {
-        import static java.util.stream.Stream.of(Array[Object, Static]): Stream \ IO;
+    def testPredicate(): Bool \ IO = region r {
+        import static java.util.stream.Stream.of(Array[Object, r]): Stream \ IO;
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
         import java.util.Optional.get(): Object;
@@ -182,8 +182,8 @@ namespace Test/Java/Function {
     }
 
     @Test
-    def testDoublePredicate(): Bool \ IO = {
-        import static java.util.stream.DoubleStream.of(Array[Float64, Static]): DoubleStream \ IO;
+    def testDoublePredicate(): Bool \ IO = region r {
+        import static java.util.stream.DoubleStream.of(Array[Float64, r]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of([0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64]);
