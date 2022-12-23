@@ -172,7 +172,7 @@ namespace TestFilterable {
 
     @test
     def filterRedBlackTree01(): Bool =
-        filter(isOdd, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        filter(isOdd, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
 
     @test
     def filterRedBlackTree02(): Bool =
@@ -190,7 +190,7 @@ namespace TestFilterable {
 
     @test
     def filterMapRedBlackTree01(): Bool =
-        filterMap(oddPlus10, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        filterMap(oddPlus10, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
 
     @test
     def filterMapMapRedBlackTree02(): Bool =

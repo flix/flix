@@ -245,11 +245,10 @@ object ParsedAst {
       * A use of a single name from a namespace.
       *
       * @param sp1   the position of the first character.
-      * @param nname the namespace.
-      * @param ident the name.
+      * @param qname the qualified name.
       * @param sp2   the position of the last character.
       */
-    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Use
+    case class UseOne(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A use of multiple names from a namespace.
@@ -260,26 +259,6 @@ object ParsedAst {
       * @param sp2   the position of the last character.
       */
     case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends ParsedAst.Use
-
-    /**
-      * A use of a single tag.
-      *
-      * @param sp1   the position of the first character.
-      * @param qname the name of the enum.
-      * @param tag   the name of the tag.
-      * @param sp2   the position of the last character.
-      */
-    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends ParsedAst.Use
-
-    /**
-      * A use of multiple tags.
-      *
-      * @param sp1   the position of the first character.
-      * @param qname the name of the enum.
-      * @param tags  the names of the tags.
-      * @param sp2   the position of the last character.
-      */
-    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends ParsedAst.Use
 
     /**
       * A name with an optional alias.
@@ -508,15 +487,6 @@ object ParsedAst {
   sealed trait Expression
 
   object Expression {
-
-    /**
-      * Simple Name Expression (either a variable or reference expression).
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the name.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class SName(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Qualified Name Expression (reference expression).
@@ -790,16 +760,6 @@ object ParsedAst {
     case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Tag Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the optionally fully-qualified name of the type and the tag name.
-      * @param exp  the optional value expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Tag(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Tuple Expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -924,6 +884,14 @@ object ParsedAst {
       * @param exp2 the second list.
       */
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
+      * List expression.
+      * @param sp1  the position of the first character in the `List` keyword.
+      * @param sp2  the position of the last character in the `List` keyword.
+      * @param exps the elements of the list.
+      */
+    case class FList(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
       * Set Expression.

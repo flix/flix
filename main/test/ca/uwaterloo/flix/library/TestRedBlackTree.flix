@@ -1,7 +1,6 @@
 namespace TestRedBlackTree {
 
-    use RedBlackTree.RedBlackTree
-    use RedBlackTree.RedBlackTree.{Node}
+    use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
 
     @test
@@ -322,7 +321,7 @@ namespace TestRedBlackTree {
     // eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree.RedBlackTree[k, v] with Order[k] =
+    def toRedBlackTree(xs: List[(k, v)]): RedBlackTree[k, v] with Order[k] =
         List.foldLeft((acc, kv) -> {let (k,v) = kv; RedBlackTree.insert(k, v, acc)}, RedBlackTree.empty(), xs)
 
     @test
@@ -759,7 +758,7 @@ namespace TestRedBlackTree {
 
     @test
     def filter01(): Bool =
-        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
 
     @test
     def filter02(): Bool =
@@ -776,7 +775,7 @@ namespace TestRedBlackTree {
 
     @test
     def filterMap01(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32])
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree[Int32, Int32])
             == RedBlackTree.empty()
 
     @test
@@ -795,7 +794,7 @@ namespace TestRedBlackTree {
 
     @test
     def toMutDeque01(): Bool = region r {
-        let t = RedBlackTree.empty(): RedBlackTree.RedBlackTree[Int32, Int32];
+        let t = RedBlackTree.empty(): RedBlackTree[Int32, Int32];
         let d1 = RedBlackTree.toMutDeque(r, t);
 
         let d2 = new MutDeque(r);
@@ -852,7 +851,7 @@ namespace TestRedBlackTree {
     @test
     def mapAWithKey01(): Bool = region r {
         let st = ref '#' @ r;
-        let t: RedBlackTree.RedBlackTree[Int32, Char] = RedBlackTree.empty();
+        let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
         let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
         ans == Identity(RedBlackTree.empty()) and deref st == '#'
     }

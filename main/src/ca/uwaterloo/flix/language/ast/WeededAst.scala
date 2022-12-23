@@ -29,7 +29,7 @@ object WeededAst {
 
   object Declaration {
 
-    case class Namespace(name: Name.NName, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(ident: Name.Ident, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
     case class Class(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
@@ -56,11 +56,7 @@ object WeededAst {
 
   object UseOrImport {
 
-    case class UseLower(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
-
-    case class UseUpper(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
-
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
+    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.UseOrImport
   }
@@ -74,9 +70,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class VarOrDefOrSig(name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
-
-    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
@@ -113,8 +107,6 @@ object WeededAst {
     case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.MatchTypeRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Choose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
-
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -228,7 +220,7 @@ object WeededAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class Tag(qname: Name.QName, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 

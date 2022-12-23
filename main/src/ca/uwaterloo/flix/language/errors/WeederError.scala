@@ -153,53 +153,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal array length.
-    *
-    * @param loc the location where the illegal array length occurs.
-    */
-  case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal array length"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal array length.
-         |
-         |${code(loc, "illegal array length.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate an illegal field name.
-    *
-    * @param loc the location where the illegal field name occurs.
-    */
-  case class IllegalFieldName(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal field name"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Illegal field name.
-         |
-         |${code(loc, "illegal field name.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
