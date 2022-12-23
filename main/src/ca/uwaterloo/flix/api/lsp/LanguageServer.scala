@@ -259,46 +259,46 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     case Request.Codelens(id, uri) =>
       if (current)
-        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, actualRoot)
+        ("id" -> id) ~ CodeLensProvider.processCodeLens(uri)(index, root)
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, actualRoot)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, actualRoot)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, actualRoot, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root.orNull, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, actualRoot)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root.orNull)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(actualRoot).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, actualRoot)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(actualRoot).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(actualRoot).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, actualRoot)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
 
     case Request.SemanticTokens(id, uri) =>
       if (current)
-        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, actualRoot)
+        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, actualRoot, flix).map(_.toJSON))
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
