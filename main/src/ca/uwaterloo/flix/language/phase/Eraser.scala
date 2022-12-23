@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc.Indent
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.{Doc, ErasedAstPrinter}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -29,9 +30,8 @@ object Eraser {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-
     val res = ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
-    res.map(root => println(Doc.pretty(80, ErasedAstPrinter.doc(root))))
+    res.map(root => println(Doc.pretty(60, ErasedAstPrinter.doc(root)(Doc.INDENT))))
     res
   }
 

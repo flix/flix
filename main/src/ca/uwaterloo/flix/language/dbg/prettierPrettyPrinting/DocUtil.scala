@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 
+import java.lang.reflect.Method
 import scala.collection.immutable
 
 object DocUtil {
@@ -46,7 +47,7 @@ object DocUtil {
     }
 
     def paramf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
-      exp <> text(":") <+\?> tpe
+      exp <> text(":") <+\?>> tpe
 
     def ascf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc =
       exp <> text(":") <+> tpe
@@ -101,8 +102,34 @@ object DocUtil {
 
     def parens(d: Doc)(implicit i: Indent): Doc = group(bracket("(", d, ")"))
 
-    def applyf(caller: Doc, args: List[Doc])(implicit i: Indent): Doc = {
-      caller <> tuplef(args)
+    def applyf(fun: Doc, args: List[Doc])(implicit i: Indent): Doc = {
+      fun <> tuplef(args)
+    }
+
+    def applyStaticJavaf(m: Method, args: List[Doc])(implicit i: Indent): Doc = {
+      val className = m.getDeclaringClass.getCanonicalName
+      val methodName = text(m.getName)
+      val fullMethodName = if (className == null) {
+        methodName
+      } else {
+        text(className) <> text(".") <> methodName
+      }
+      applyf(fullMethodName, args)
+    }
+
+    def applyJavaf(m: Method, exp: Doc, args: List[Doc])(implicit i: Indent): Doc = {
+      val className = m.getDeclaringClass.getCanonicalName
+      val methodName = text(m.getName)
+      val fullMethodName = if (className == null) {
+        methodName
+      } else {
+        text(className) <> text(".") <> methodName
+      }
+      applyf(exp <> metaText(fullMethodName), args)
+    }
+
+    def applyf(caller: String, args: List[Doc])(implicit i: Indent): Doc = {
+      text(caller) <> tuplef(args)
     }
 
     /**
@@ -193,6 +220,19 @@ object DocUtil {
     def assignf(asignee: Doc, value: Doc)(implicit i: Indent): Doc = {
       asignee <+> text(":=") <+> value
     }
+
+    def stringf(s: String)(implicit i: Indent): Doc =
+      applyf("String", List(text(s)))
+
+    /**
+      * `<txt>`
+      */
+    def metaText(txt: String): Doc = text("<") <> text(txt) <> text(">")
+
+    /**
+      * `<txt>`
+      */
+    def metaText(txt: Doc): Doc = text("<") <> txt <> text(">")
 
   }
 }

@@ -9,9 +9,7 @@ import scala.annotation.tailrec
 
 object MonoTypePrinter {
 
-  implicit val indent: Indent = INDENT
-
-  def doc(tpe: MonoType): Doc = {
+  def doc(tpe: MonoType)(implicit i: Indent): Doc = {
     def tapp(tpeS: Doc, args: List[MonoType]): Doc =
       typeAppf(tpeS, args.map(doc))
 
@@ -59,11 +57,20 @@ object MonoTypePrinter {
         }
 
         schemaDoc(tpe, Nil)
-      case MonoType.Native(clazz) =>
-        val name = clazz.getCanonicalName
-        val nullGuardedName = if (name == null) "<AnonClass>" else name
-        text(nullGuardedName)
-      case MonoType.Var(id) => text("<tvar_") <> text(id.toString) <> text(">")
+      case MonoType.Native(clazz) => (clazz.getCanonicalName, clazz.getSuperclass) match {
+        case (null, null) =>
+          metaText(text("Anon class with null superclass"))
+        case (null, superClass) =>
+          val superName = superClass.getCanonicalName
+          if (superName != null) {
+            metaText(text("Anon subclass of") <+> text(superName))
+          } else {
+            metaText(text("Anon class"))
+          }
+        case (name, _) =>
+          text(name)
+      }
+      case MonoType.Var(id) => metaText(text("tvar_") <> text(id.toString))
     }
   }
 
