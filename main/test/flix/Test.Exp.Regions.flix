@@ -679,7 +679,7 @@ namespace Test/Exp/Regions {
     def testRegions3Regions1Nested01(): Bool \ IO =
         region _ {
             region r2 {
-                let a: Array[MutList[Int32, Static], r2] = $ARRAY_NEW(r2, new MutList(Static), 8);
+                let a: Array[MutList[Int32, Static], r2] = $ARRAY_NEW$(r2, new MutList(Static), 8);
                 region _ {
                     MutList.push!(1, a[0]);
                     MutList.pop!(a[0]) == Some(1)
