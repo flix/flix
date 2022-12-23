@@ -69,7 +69,7 @@ namespace Array {
     /// Returns a fresh array of length `l` filled with the element `x` in the region r.
     ///
     pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        $ARRAY_NEW$(r, x, l)
+        $ARRAY_REPEAT$(r, x, l)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
