@@ -1217,7 +1217,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            upcast ()
         |        else {
-        |            let static = unsafe_cast () as _ & Impure;
+        |            let static = unsafe_cast () as Region[false];
         |            let _ = $ARRAY_REPEAT$(static, 8, 8);
         |            ()
         |        };
