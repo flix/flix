@@ -1,5 +1,7 @@
 namespace Test/Exp/Regions {
 
+    def static_region(): Region[false] = unsafe_cast () as Region[false]
+
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.
     // Test cases that use 0, 1, 2, 3 data structures nested inside each other (e.g. array inside array inside array).
@@ -112,7 +114,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region1Nested02(): Bool \ IO =
         region r {
             let l = new MutList(r);
-            MutList.push!($ARRAY_REPEAT$(false, 1, 8), l);
+            MutList.push!($ARRAY_REPEAT$(static_region(), 1, 8), l);
             match MutList.pop!(l) {
                 case Some(a) => a `Array.sameElements` $ARRAY_REPEAT$(r, 1, 8)
                 case _       => unreachable!()
@@ -261,10 +263,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions01(): Bool \ IO =
         region _ {
-            let a1 = $ARRAY_REPEAT$(false, 1, 8);
+            let a1 = $ARRAY_REPEAT$(static_region(), 1, 8);
             a1[0] == 1 and 1 ==
             region _ {
-                let a2 = $ARRAY_REPEAT$(false, 1, 8);
+                let a2 = $ARRAY_REPEAT$(static_region(), 1, 8);
                 a2[0]
             }
         }
@@ -301,7 +303,7 @@ namespace Test/Exp/Regions {
             let a1 = $ARRAY_REPEAT$(r1, 1, 8);
             a1[0] == 1 and 1 ==
             region _ {
-                let a2 = $ARRAY_REPEAT$(false, 1, 8);
+                let a2 = $ARRAY_REPEAT$(static_region(), 1, 8);
                 a2[0]
             }
         }
@@ -335,7 +337,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions07(): Bool \ IO =
         region _ {
-            let a1 = $ARRAY_REPEAT$(false, 1, 8);
+            let a1 = $ARRAY_REPEAT$(static_region(), 1, 8);
             a1[0] == 1 and 1 ==
             region r2 {
                 let a2 = $ARRAY_REPEAT$(r2, 1, 8);
@@ -633,7 +635,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3Regions02(): Bool \ IO =
         region _ {
-            let a = $ARRAY_REPEAT$(false, 1, 8);
+            let a = $ARRAY_REPEAT$(static_region(), 1, 8);
             region r2 {
                 let l = new MutList(r2);
                 region r3 {
@@ -726,7 +728,7 @@ namespace Test/Exp/Regions {
         region _ {
             region r2 {
                 region r3 {
-                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], Static] = [Reflect.default(); 8] @ Static;
+                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], Static] = $ARRAY_REPEAT$(static_region(), Reflect.default(), 8);
                     let m = new MutMap(r2);
                     let l = new MutList(r3);
                     MutList.push!(1, l);
@@ -782,7 +784,7 @@ namespace Test/Exp/Regions {
                 region r3 {
                     let a: Array[MutMap[Int32, MutList[Array[Int32, Static], r1], r2], r3] = $ARRAY_REPEAT$(r3, new MutMap(r2), 8);
                     MutMap.put!(1, l, a[0]);
-                    MutList.push!($ARRAY_REPEAT$(false, 1, 8), l);
+                    MutList.push!($ARRAY_REPEAT$(static_region(), 1, 8), l);
                     match MutMap.get(1, a[0]) {
                         case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                         case _       => unreachable!()
@@ -905,7 +907,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region1NestedReferences02(): Bool \ IO =
         region r {
             let l = ref new MutList(r) @ Static; // Static reference to a MutList in region r
-            MutList.push!(ref ($ARRAY_REPEAT$(false, 1, 8)) @ Static, deref l);
+            MutList.push!(ref ($ARRAY_REPEAT$(static_region(), 1, 8)) @ Static, deref l);
             match MutList.pop!(deref l) {
                 case Some(a) => (deref a) `Array.sameElements` $ARRAY_REPEAT$(r, 1, 8)
                 case _       => unreachable!()
@@ -1044,7 +1046,7 @@ namespace Test/Exp/Regions {
             let a1 = ref $ARRAY_REPEAT$(r1, 1, 8) @ r1;
             (deref a1)[0] == 1 and 1 ==
             region _ {
-                let a2 = ref $ARRAY_REPEAT$(false, 1, 8) @ r1;
+                let a2 = ref $ARRAY_REPEAT$(static_region(), 1, 8) @ r1;
                 (deref a2)[0]
             }
         }
@@ -1272,7 +1274,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3RegionsReferences02(): Bool \ IO =
         region _ {
-            let a = ref $ARRAY_REPEAT$(false, 1, 8) @ Static;
+            let a = ref $ARRAY_REPEAT$(static_region(), 1, 8) @ Static;
             region r2 {
                 let l = ref new MutList(r2) @ r2;
                 region r3 {
@@ -1365,7 +1367,7 @@ namespace Test/Exp/Regions {
         region _ {
             region r2 {
                 region r3 {
-                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], Static], r2], r3], Static], r2] = ref [Reflect.default(); 8] @ Static @ r2;
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], Static], r2], r3], Static], r2] = ref $ARRAY_REPEAT$(static_region(), Reflect.default(), 8) @ r2;
                     let m = ref new MutMap(r2) @ r3;
                     let l = ref new MutList(r3) @ Static;
                     MutList.push!(1, deref l);
@@ -1421,7 +1423,7 @@ namespace Test/Exp/Regions {
                 region r3 {
                     let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, Static], r1], r1], r2], r2], r3], r3], Static] = ref [ref new MutMap(r2) @ r3; 8] @ r3 @ Static;
                     MutMap.put!(1, l, deref (deref a)[0]);
-                    MutList.push!(ref $ARRAY_REPEAT$(false, 1, 8) @ r1, deref l);
+                    MutList.push!(ref $ARRAY_REPEAT$(static_region(), 1, 8) @ r1, deref l);
                     match MutMap.get(1, deref (deref a)[0]) {
                         case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                         case _       => unreachable!()
