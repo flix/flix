@@ -114,7 +114,7 @@ namespace Test/Exp/Regions {
             let l = new MutList(r);
             MutList.push!($ARRAY_NEW$(false, 1, 8), l);
             match MutList.pop!(l) {
-                case Some(a) => a `Array.sameElements` [1; 8]
+                case Some(a) => a `Array.sameElements` $ARRAY_NEW$(r, 1, 8)
                 case _       => unreachable!()
             }
         }
@@ -907,7 +907,7 @@ namespace Test/Exp/Regions {
             let l = ref new MutList(r) @ Static; // Static reference to a MutList in region r
             MutList.push!(ref ($ARRAY_NEW$(false, 1, 8)) @ Static, deref l);
             match MutList.pop!(deref l) {
-                case Some(a) => (deref a) `Array.sameElements` [1; 8]
+                case Some(a) => (deref a) `Array.sameElements` $ARRAY_NEW$(r, 1, 8)
                 case _       => unreachable!()
             }
         }
@@ -939,7 +939,7 @@ namespace Test/Exp/Regions {
             let l = ref new MutList(r) @ r;
             MutList.push!($ARRAY_NEW$(r, 1, 8), deref l);
             match MutList.pop!(deref l) {
-                case Some(a) => a `Array.sameElements` [1; 8]
+                case Some(a) => a `Array.sameElements` $ARRAY_NEW$(r, 1, 8)
                 case _       => unreachable!()
             }
         }
