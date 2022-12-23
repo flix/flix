@@ -1209,6 +1209,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantUpcast](result)
   }
+
   test("RedundantUpcast.03") {
     val input =
       """
@@ -1228,7 +1229,26 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantUpcast](result)
   }
 
-  test("TestUpcast.04") {
+  test("RedundantUpcast.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            upcast ()
+        |        else
+        |        region r {
+        |            let _ = $ARRAY_REPEAT$(r, 8, 8);
+        |            ()
+        |        };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantUpcast](result)
+  }
+
+  test("TestUpcast.05") {
     val input =
       """
         |def f(): Unit =
@@ -1244,7 +1264,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantUpcast](result)
   }
 
-  test("TestUpcast.05") {
+  test("TestUpcast.06") {
     val input =
       """
         |def f(): Unit & Impure =
@@ -1263,7 +1283,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
 
-  test("TestUpcast.08") {
+  test("TestUpcast.07") {
     val input =
       """
         |pub eff A
