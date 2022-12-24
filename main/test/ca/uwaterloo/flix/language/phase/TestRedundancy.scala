@@ -1237,10 +1237,10 @@ class TestRedundancy extends FunSuite with TestUtils {
         |        if (true)
         |            upcast ()
         |        else
-        |        region r {
-        |            let _ = $ARRAY_NEW$(r, 8, 8);
-        |            ()
-        |        };
+        |            region r {
+        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |                ()
+        |            };
         |    ()
         |""".stripMargin
 
