@@ -36,6 +36,7 @@ class TestFlixErrors extends FunSuite with TestUtils {
         }
         case None => fail("Could not find main")
       }
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(_) => fail("Impossible")
     }
   }

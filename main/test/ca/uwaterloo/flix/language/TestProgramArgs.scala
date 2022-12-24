@@ -43,6 +43,7 @@ class TestProgramArgs extends FunSuite with TestUtils {
         }
         case None => fail("No entrypoint")
       }
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(errors) =>
         val actuals = errors.map(_.getClass)
         fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")

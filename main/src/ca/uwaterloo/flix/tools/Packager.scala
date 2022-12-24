@@ -162,6 +162,7 @@ object Packager {
 
     flix.check() match {
       case Validation.Success(_) => ().toOk
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(errors) =>
         flix.mkMessages(errors).foreach(println)
         Result.Err(1)
@@ -184,6 +185,7 @@ object Packager {
 
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(errors) =>
         flix.mkMessages(errors).foreach(println)
         1.toErr
@@ -278,6 +280,7 @@ object Packager {
     //
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
     }
 

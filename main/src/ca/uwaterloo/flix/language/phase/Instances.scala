@@ -224,6 +224,7 @@ object Instances {
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
                       case Validation.Success(_) => Nil
+                      case Validation.SuccessWithFailures(_, _) => ???
                     }
                 }
               case None =>

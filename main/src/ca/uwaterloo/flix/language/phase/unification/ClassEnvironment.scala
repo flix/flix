@@ -62,6 +62,7 @@ object ClassEnvironment {
   def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     byInst(tconstr, classEnv) match {
       case Validation.Success(_) => true
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(_) => false
     }
   }
@@ -78,6 +79,7 @@ object ClassEnvironment {
       case head :: tail => entail(acc ++ tail, head, classEnv) match {
         // Case 1: `head` is entailed by the other type constraints, skip it
         case Validation.Success(_) => loop(tail, acc)
+        case Validation.SuccessWithFailures(_, _) => ???
         // Case 2: `head` is not entailed, add it to the list
         case Validation.Failure(_) => loop(tail, head :: acc)
       }

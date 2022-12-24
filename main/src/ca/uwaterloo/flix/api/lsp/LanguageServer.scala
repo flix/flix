@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.Validation.{Failure, Success, SuccessWithFailures}
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -337,6 +337,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
             val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
             ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
           }
+
+        case SuccessWithFailures(_, _) => ???
 
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.

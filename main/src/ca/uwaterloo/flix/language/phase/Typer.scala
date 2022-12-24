@@ -321,6 +321,7 @@ object Typer {
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
+                case Validation.SuccessWithFailures(_, _) => ???
                 case Validation.Failure(errs) =>
                   val instanceErrs = errs.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
@@ -362,6 +363,9 @@ object Typer {
                         case Validation.Success(_) =>
                         // Case 3.1: The purity is not the problem. Regular generalization error.
                         // Fall through to below.
+
+                        case Validation.SuccessWithFailures(_, _) => ???
+
                         case Validation.Failure(_) =>
                           // Case 3.2: The purity cannot be generalized.
                           return TypeError.EffectGeneralizationError(declaredPur, inferredPur, loc).toFailure

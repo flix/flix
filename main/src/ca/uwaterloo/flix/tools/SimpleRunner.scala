@@ -116,6 +116,8 @@ object SimpleRunner {
 
         ().toOk
 
+      case Validation.SuccessWithFailures(_, _) => ???
+
       case Validation.Failure(errors) =>
         flix.mkMessages(errors.sortBy(_.source.name))
           .foreach(println)

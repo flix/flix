@@ -289,6 +289,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
           case Validation.Success(_) =>
             // Compilation succeeded.
             w.println("Ok.")
+          case Validation.SuccessWithFailures(_, _) => ???
           case Validation.Failure(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
@@ -353,12 +354,15 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     val checkResult = flix.check()
     checkResult match {
       case Validation.Success(root) => this.root = Some(root)
+      case Validation.SuccessWithFailures(_, _) => ???
       case Failure(_) => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
     result match {
       case Validation.Success(_) => // Compilation successful, no-op
+
+      case Validation.SuccessWithFailures(_, _) => ???
 
       case Validation.Failure(errors) =>
         for (msg <- flix.mkMessages(errors)) {
@@ -389,6 +393,8 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
 
           case None =>
         }
+
+      case Validation.SuccessWithFailures(_, _) => ???
 
       case Validation.Failure(_) =>
     }

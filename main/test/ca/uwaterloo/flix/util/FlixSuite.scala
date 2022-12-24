@@ -65,6 +65,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       flix.compile() match {
         case Success(compilationResult) =>
           runTests(name, compilationResult)
+        case Validation.SuccessWithFailures(_, _) => ???
         case Failure(errors) =>
           val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
           fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")

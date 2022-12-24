@@ -44,6 +44,9 @@ trait TestUtils {
     */
   def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
+
+    case Validation.SuccessWithFailures(_, _) => ???
+
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
       val actuals = errors.map(_.getClass).toList
@@ -59,6 +62,9 @@ trait TestUtils {
     */
   def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => ()
+
+    case Validation.SuccessWithFailures(_, _) => ???
+
     case Validation.Failure(errors) =>
       val rejected = classTag.runtimeClass
       val actuals = errors.map(_.getClass)
@@ -72,6 +78,7 @@ trait TestUtils {
     */
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result match {
     case Validation.Success(_) => ()
+    case Validation.SuccessWithFailures(_, _) => ???
     case Validation.Failure(errors) =>
       val actuals = errors.map(_.getClass)
 

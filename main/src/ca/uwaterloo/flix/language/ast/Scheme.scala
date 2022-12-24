@@ -99,6 +99,7 @@ object Scheme {
   def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     checkLessThanEqual(sc1, sc2, classEnv) match {
       case Validation.Success(_) => true
+      case Validation.SuccessWithFailures(_, _) => ???
       case Validation.Failure(_) => false
     }
   }
