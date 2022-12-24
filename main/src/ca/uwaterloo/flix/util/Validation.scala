@@ -27,6 +27,7 @@ sealed trait Validation[+T, +E] {
     */
   final def get: T = this match {
     case Validation.Success(value) => value
+    case Validation.SuccessWithFailures(value, _) => value
     case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
@@ -37,6 +38,7 @@ sealed trait Validation[+T, +E] {
     */
   final def map[U](f: T => U): Validation[U, E] = this match {
     case Validation.Success(value) => Validation.Success(f(value))
+    case Validation.SuccessWithFailures(value, errors) => Validation.SuccessWithFailures(f(value), errors)
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
@@ -45,12 +47,20 @@ sealed trait Validation[+T, +E] {
     *
     * Preserves the errors.
     */
-    // Deprecated. Use flatMapN instead.
+  // Deprecated. Use flatMapN instead.
   final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
     case Validation.Success(input) => f(input) match {
       case Validation.Success(value) => Validation.Success(value)
+      case Validation.SuccessWithFailures(value, thatErrors) => Validation.SuccessWithFailures(value, errors #::: thatErrors)
       case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
     }
+
+    case Validation.SuccessWithFailures(input, errors) => f(input) match {
+      case Validation.Success(value) => Validation.Success(value)
+      case Validation.SuccessWithFailures(value, thatErrors) => Validation.SuccessWithFailures(value, errors #::: thatErrors)
+      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
+    }
+
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
@@ -79,6 +89,11 @@ object Validation {
   case class Success[T, E](t: T) extends Validation[T, E] {
     def errors: LazyList[E] = LazyList.empty
   }
+
+  /**
+    * Represents a success that contains a value and non-critical `errors`.
+    */
+  case class SuccessWithFailures[T, E](t: T, errors: LazyList[E]) extends Validation[T, E]
 
   /**
     * Represents a failure with no value and `errors`.
@@ -251,7 +266,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E], t8: Validation[T8, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
+                                                (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
     (t1, t2, t3, t4, t5, t6, t7, t8) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8))
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors)
@@ -261,9 +276,9 @@ object Validation {
     * Maps over t1, t2, t3, t4, t5, t6, t7, t8, and t9.
     */
   def mapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                                 t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
-                                                 t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
+                                                     t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                     t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
+                                                    (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
     (t1, t2, t3, t4, t5, t6, t7, t8, t9) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8), Success(v9)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8, v9))
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors #::: t9.errors)
@@ -325,7 +340,7 @@ object Validation {
     */
   def flatMapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
-                                             (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
+                                            (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4, t5, t6) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => f(v1, v2, v3, v4, v5, v6)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
@@ -337,7 +352,7 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
+                                                (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
     (t1, t2, t3, t4, t5, t6, t7) match {
       case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => f(v1, v2, v3, v4, v5, v6, v7)
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
