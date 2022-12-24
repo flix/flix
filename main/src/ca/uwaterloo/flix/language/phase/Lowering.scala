@@ -638,7 +638,7 @@ object Lowering {
     // becomes:
     //     let ch1 = ?ch1;
     //     let ch2 = ?ch2;
-    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
+    //     match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
     //         case (0, locks) =>
     //             let x = unsafeGetAndUnlock(ch1, locks);
     //             ?handlech1
@@ -1459,17 +1459,6 @@ object Lowering {
     // Construct a call to the liftXb function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
-  }
-
-  /**
-    * Returns a pure array expression constructed from the given list of expressions `exps`.
-    */
-  private def mkArray(exps: List[LoweredAst.Expression], elmType: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val tpe = Type.mkArray(elmType, Type.Pure, loc)
-    val pur = Type.Pure
-    val eff = Type.Empty
-    val reg = LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-    LoweredAst.Expression.ArrayLit(exps, reg, tpe, pur, eff, loc)
   }
 
   /**
