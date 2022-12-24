@@ -252,7 +252,7 @@ namespace Concurrent/Channel {
     ///
     @Internal
     pub def selectFrom(
-        channels: Array[MpmcAdmin, Static],
+        channels: List[MpmcAdmin],
         blocking: Bool
     ): (Int32, List[ReentrantLock]) \ IO =
         // Create a new lock and condition for this select. The condition is
@@ -263,8 +263,8 @@ namespace Concurrent/Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels |>
-            Array.sortBy(Static, match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
-            Array.map(Static, match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
+            List.sortBy(match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
+            List.map(match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
 
     ///
@@ -343,9 +343,9 @@ namespace Concurrent/Channel {
     /// otherwise this blocks.
     ///
     def selectHelper(
-        channels: Array[MpmcAdmin, Static],
+        channels: List[MpmcAdmin],
         blocking: Bool,
-        sortedLocks: Array[ReentrantLock, Static],
+        sortedLocks: List[ReentrantLock],
         selectLock: ReentrantLock,
         selectCondition: Condition
     ): (Int32, List[ReentrantLock]) \ IO =
@@ -356,7 +356,7 @@ namespace Concurrent/Channel {
         // where a channel receives an element while the later channels are
         // searched for elements but before we place the condition on the
         // channels.
-        Array.forEach(lock, sortedLocks);
+        List.forEach(lock, sortedLocks);
 
         // Lock the select lock. Channels cannot signal the select condition
         // while this lock is held.
@@ -368,26 +368,26 @@ namespace Concurrent/Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels |>
-            Array.mapWithIndex(Static, i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+            List.mapWithIndex(i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
                 (deref size > 0, i)
             }) |>
-            Array.findLeft(match (b, _) -> b) |>
+            List.findLeft(match (b, _) -> b) |>
             Option.map(snd);
 
         match index {
             case Some(i) =>
-                (i, Array.toList(sortedLocks) `List.append` (selectLock :: Nil))
+                (i, sortedLocks `List.append` (selectLock :: Nil))
 
             case None => { // No channel had an element ready
                 if (blocking) { // We have to wait for an element
                     // Add our condition to all channels to get notified when a
                     // new element is added.
-                    Array.forEach(addGetter(selectLock, selectCondition), channels);
+                    List.forEach(addGetter(selectLock, selectCondition), channels);
 
                     // Unlock all channels in sorted order, so other threads
                     // may input elements. The order is not important for
                     // correctness.
-                    Array.forEach(unlock, sortedLocks);
+                    List.forEach(unlock, sortedLocks);
 
                     // Wait for an element to be added to any of the channels
                     awaitCondition(selectCondition);
@@ -398,7 +398,7 @@ namespace Concurrent/Channel {
                     // Try again
                     selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
                 } else {
-                    (Array.toList(sortedLocks) `List.append` (selectLock :: Nil)) |>
+                    (sortedLocks `List.append` (selectLock :: Nil)) |>
                         List.forEach(unlock);
                     (-1, Nil)
                 }
