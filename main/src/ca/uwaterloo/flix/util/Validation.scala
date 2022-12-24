@@ -198,6 +198,54 @@ object Validation {
     }
   }
 
+  def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
+    (f, t1) match {
+      case (Success(g), Success(v)) =>
+        Success(g(v))
+      case (Success(g), SuccessWithFailures(v, errs)) =>
+        SuccessWithFailures(g(v), errs)
+      case (Success(_), Failure(errs)) =>
+        Failure(errs)
+
+      case (SuccessWithFailures(g, errs), Success(v)) =>
+        SuccessWithFailures(g(v), errs)
+      case (SuccessWithFailures(g, errs1), SuccessWithFailures(v, errs2)) =>
+        SuccessWithFailures(g(v), errs1 #::: errs2)
+      case (SuccessWithFailures(_, errs1), Failure(errs2)) =>
+        Failure(errs1 #::: errs2)
+
+      case (Failure(errs), Success(_)) =>
+        Failure(errs)
+      case (Failure(errs1), SuccessWithFailures(_, errs2)) =>
+        Failure(errs1 #::: errs2)
+      case (Failure(errs1), Failure(errs2)) =>
+        Failure(errs1 #::: errs2)
+    }
+
+  private def curry[T1, T2, T3](f: (T1, T2) => T3): T1 => T2 => T3 =
+    (t1: T1) => (t2: T2) => f(t1, t2)
+
+  private def curry[T1, T2, T3, T4](f: (T1, T2, T3) => T4): (T1, T2) => T3 => T4 =
+    (t1: T1, t2: T2) => (t3: T3) => f(t1, t2, t3)
+
+  private def curry[T1, T2, T3, T4, T5](f: (T1, T2, T3, T4) => T5): (T1, T2, T3) => T4 => T5 =
+    (t1: T1, t2: T2, t3: T3) => (t4: T4) => f(t1, t2, t3, t4)
+
+  private def curry[T1, T2, T3, T4, T5, T6](f: (T1, T2, T3, T4, T5) => T6): (T1, T2, T3, T4) => T5 => T6 =
+    (t1: T1, t2: T2, t3: T3, t4: T4) => (t5: T5) => f(t1, t2, t3, t4, t5)
+
+  private def curry[T1, T2, T3, T4, T5, T6, T7](f: (T1, T2, T3, T4, T5, T6) => T7): (T1, T2, T3, T4, T5) => T6 => T7 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5) => (t6: T6) => f(t1, t2, t3, t4, t5, t6)
+
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8](f: (T1, T2, T3, T4, T5, T6, T7) => T8): (T1, T2, T3, T4, T5, T6) => T7 => T8 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6) => (t7: T7) => f(t1, t2, t3, t4, t5, t6, t7)
+
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9](f: (T1, T2, T3, T4, T5, T6, T7, T8) => T9): (T1, T2, T3, T4, T5, T6, T7) => T8 => T9 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7) => (t8: T8) => f(t1, t2, t3, t4, t5, t6, t7, t8)
+
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => T10): (T1, T2, T3, T4, T5, T6, T7, T8) => T9 => T10 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8) => (t9: T9) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9)
+
   /**
     * Maps over t1.
     */
@@ -214,20 +262,14 @@ object Validation {
     */
   def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                         (f: (T1, T2) => U): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) => Success(f(v1, v2))
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    ap(mapN(t1)(curry(f)))(t2)
 
   /**
     * Maps over t1, t2, and t3.
     */
   def mapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                             (f: (T1, T2, T3) => U): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) => Success(f(v1, v2, v3))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    ap(mapN(t1, t2)(curry(f)))(t3)
 
   /**
     * Maps over t1, t2, t3, and t4.
@@ -235,10 +277,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                  t4: Validation[T4, E])
                                 (f: (T1, T2, T3, T4) => U): Validation[U, E] =
-    (t1, t2, t3, t4) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4)) => Success(f(v1, v2, v3, v4))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
-    }
+    ap(mapN(t1, t2, t3)(curry(f)))(t4)
 
   /**
     * Maps over t1, t2, t3, t4, and t5.
@@ -246,10 +285,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E], t5: Validation[T5, E])
                                     (f: (T1, T2, T3, T4, T5) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => Success(f(v1, v2, v3, v4, v5))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
-    }
+    ap(mapN(t1, t2, t3, t4)(curry(f)))(t5)
 
   /**
     * Maps over t1, t2, t3, t4, t5, and t6.
@@ -257,11 +293,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
                                         (f: (T1, T2, T3, T4, T5, T6) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => Success(f(v1, v2, v3, v4, v5, v6))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
-
-    }
+    ap(mapN(t1, t2, t3, t4, t5)(curry(f)))(t6)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, and t7.
@@ -270,10 +302,7 @@ object Validation {
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                              t7: Validation[T7, E])
                                             (f: (T1, T2, T3, T4, T5, T6, T7) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => Success(f(v1, v2, v3, v4, v5, v6, v7))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
-    }
+    ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, t7, and t8.
@@ -282,10 +311,7 @@ object Validation {
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E], t8: Validation[T8, E])
                                                 (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7, t8) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors)
-    }
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, t7, t8, and t9.
@@ -294,10 +320,7 @@ object Validation {
                                                      t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                      t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
                                                     (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7, t8, t9) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8), Success(v9)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8, v9))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors #::: t9.errors)
-    }
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8)(curry(f)))(t9)
 
   /**
     * FlatMaps over t1.
