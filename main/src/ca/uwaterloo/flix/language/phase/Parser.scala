@@ -316,12 +316,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    keyword("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
+    keyword("use") ~ WS ~ (Uses.UseMany | Uses.UseOne)
   }
 
   object Uses {
     def UseOne: Rule1[ParsedAst.Use.UseOne] = rule {
-      SP ~ Names.Namespace ~ "." ~ UseName ~ SP ~> ParsedAst.Use.UseOne
+      SP ~ Names.QName ~ SP ~> ParsedAst.Use.UseOne
     }
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = {
@@ -330,21 +330,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Names.Namespace ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
-      }
-    }
-
-    def UseOneTag: Rule1[ParsedAst.Use.UseOneTag] = rule {
-      SP ~ Names.QualifiedType ~ "." ~ Names.Tag ~ SP ~> ParsedAst.Use.UseOneTag
-    }
-
-    def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = {
-      def TagAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-        SP ~ Names.Tag ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
-      }
-
-      rule {
-        SP ~ Names.QualifiedType ~ atomic(".{") ~ optWS ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+        SP ~ Names.DotSeparated ~ atomic(".{") ~ optWS ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Use.UseMany
       }
     }
 
@@ -620,7 +606,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Special ~ zeroOrMore(optWS ~ "`" ~ FName ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
+      Special ~ zeroOrMore(optWS ~ "`" ~ QName ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
@@ -732,7 +718,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | ArrayNew | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | FName | Tag | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | QName | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
@@ -1056,10 +1042,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Primary ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
     }
 
-    def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
-    }
-
     def Tuple: Rule1[ParsedAst.Expression] = rule {
       SP ~ ArgumentList ~ SP ~> ParsedAst.Expression.Tuple
     }
@@ -1105,7 +1087,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def New: Rule1[ParsedAst.Expression] = rule {
-      keyword("new") ~ WS ~ SP ~ Names.UpperCaseQName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
+      keyword("new") ~ WS ~ SP ~ Names.QName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
@@ -1142,16 +1124,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def FName: Rule1[ParsedAst.Expression] = rule {
-      SName | QName
-    }
-
-    def SName: Rule1[ParsedAst.Expression.SName] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.SName
-    }
-
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
-      SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+      SP ~ Names.QName ~ SP ~> ParsedAst.Expression.QName
     }
 
     def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
@@ -1272,7 +1246,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      Tag | Lit | Tuple | Var
+      Lit | Var | Tag | Tuple
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -1779,17 +1753,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     /**
-      * A lowercase qualified name is a namespace followed by a lowercase name.
+      * A qualified name.
       */
-    def LowerCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ ".") ~ LowerCaseName ~ SP ~> Name.QName.mk _
-    }
-
-    /**
-      * An uppercase qualified name is a namespace followed by an uppercase name.
-      */
-    def UpperCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ ".") ~ UpperCaseName ~ SP ~> Name.QName.mk _
+    def QName: Rule1[Name.QName] = rule {
+      Names.DotSeparated ~> Name.QName.fromNName _
     }
 
     /**
@@ -1823,8 +1790,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * Namespaces are lower or uppercase.
       */
+      // TODO NS-REFACTOR remove
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy("/") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
+        ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
+    }
+
+    /**
+      * Dot-separated name.
+      */
+    def DotSeparated: Rule1[Name.NName] = rule {
+      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
@@ -1836,21 +1812,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedClass: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedClass: Rule1[Name.QName] = QName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
     }
 
-    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
+    def QualifiedDefinition: Rule1[Name.QName] = QName
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedEffect: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedEffect: Rule1[Name.QName] = QName
 
     def Operation: Rule1[Name.Ident] = LowerCaseName
 
-    def QualifiedOperation: Rule1[Name.QName] = LowerCaseQName
+    def QualifiedOperation: Rule1[Name.QName] = QName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
@@ -1860,15 +1836,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedPredicate: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedPredicate: Rule1[Name.QName] = QName
 
     def Tag: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedTag: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedTag: Rule1[Name.QName] = QName
 
     def Type: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedType: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedType: Rule1[Name.QName] = QName
 
     def Variable: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | Wildcard

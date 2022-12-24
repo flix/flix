@@ -85,14 +85,16 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       val testsByName = tests.toList.sortBy(_._1.name)
 
       // Evaluate each tests with a clue of its source location.
-      for ((sym, TestFn(_, _, run)) <- testsByName) {
-        withClue(sym.loc.format) {
-          // Evaluate the function.
-          val result = run()
-          // Expect the true value, if boolean.
-          if (result.isInstanceOf[java.lang.Boolean]) {
-            if (result != true) {
-              fail("Expected true, but got false.")
+      for ((sym, TestFn(_, skip, run)) <- testsByName) {
+        if (!skip) {
+          withClue(sym.loc.format) {
+            // Evaluate the function.
+            val result = run()
+            // Expect the true value, if boolean.
+            if (result.isInstanceOf[java.lang.Boolean]) {
+              if (result != true) {
+                fail("Expected true, but got false.")
+              }
             }
           }
         }

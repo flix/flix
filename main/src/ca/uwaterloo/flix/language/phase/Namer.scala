@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -41,15 +42,15 @@ object Namer {
 
     flatMapN(unitsVal) {
       case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
+        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty)) {
           case (table, unit) => tableUnit(unit, table)
         }
 
         mapN(tableVal) {
-          case SymbolTable(symbols0, instances0, uses0) =>
+          case SymbolTable(symbols0, instances0, cases0, uses0) =>
             // TODO NS-REFACTOR remove use of NName
             val symbols = symbols0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
+              case (k, v) => Name.mkUnlocatedNName(k) -> v.m
             }
             val instances = instances0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
@@ -57,7 +58,10 @@ object Namer {
             val uses = uses0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
             }
-            NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
+            val cases = cases0.map {
+              case (k, v) => Name.mkUnlocatedNName(k) -> v
+            }
+            NamedAst.Root(symbols, instances, cases, uses, units, program.entryPoint, locations, program.names)
         }
     }
   }
@@ -92,8 +96,8 @@ object Namer {
     * Performs naming on the given namespace.
     */
   private def visitNamespace(decl: WeededAst.Declaration.Namespace, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Namespace, NameError] = decl match {
-    case WeededAst.Declaration.Namespace(name, usesAndImports0, decls0, loc) =>
-      val ns = Name.NName(name.sp1, ns0.idents ::: name.idents, name.sp2)
+    case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
+      val ns = Name.NName(ident.sp1, ns0.idents :+ ident, ident.sp2)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val declsVal = traverse(decls0)(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts)
@@ -113,11 +117,13 @@ object Namer {
   }
 
   private def tableDecl(decl: NamedAst.Declaration, table0: SymbolTable): Validation[SymbolTable, NameError] = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) =>
-      val table1 = fold(decls, table0) {
+    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
+      // Add the namespace to the table (no validation needed)
+      val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
+      val table2Val = fold(decls, table1) {
         case (table, d) => tableDecl(d, table)
       }
-      mapN(table1)(addUsesToTable(_, sym.ns, usesAndImports))
+      mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
     case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -137,7 +143,12 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) =>
-      tryAddToTable(table0, sym.namespace, sym.name, decl)
+      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      flatMapN(table1Val) {
+        case table1 => fold(cases, table1) {
+          case (table, d) => tableDecl(d, table)
+        }
+      }
 
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -153,8 +164,8 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    // skip cases for now
-    case NamedAst.Declaration.Case(_, _) => table0.toSuccess
+    case caze@NamedAst.Declaration.Case(sym, _) =>
+      addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
   }
 
   /**
@@ -171,37 +182,56 @@ object Namer {
     * Adds the given declaration to the table.
     */
   private def addDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
-    case SymbolTable(symbols0, instances, uses) =>
-      val oldMap = symbols0.getOrElse(ns, Map.empty)
+    case SymbolTable(symbols0, instances, cases, uses) =>
+      val oldMap = symbols0.getOrElse(ns, ListMap.empty)
       val newMap = oldMap + (name -> decl)
       val symbols = symbols0 + (ns -> newMap)
-      SymbolTable(symbols, instances, uses)
-
+      SymbolTable(symbols, instances, cases, uses)
   }
 
   /**
     * Adds the given instance to the table.
     */
   private def addInstanceToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Instance): SymbolTable = table match {
-    case SymbolTable(symbols, instances0, uses) =>
+    case SymbolTable(symbols, instances0, cases, uses) =>
       val oldMap = instances0.getOrElse(ns, Map.empty)
       val newMap = oldMap.updatedWith(name) {
         case None => Some(List(decl))
         case Some(insts) => Some(decl :: insts)
       }
       val instances = instances0 + (ns -> newMap)
-      SymbolTable(symbols, instances, uses)
+      SymbolTable(symbols, instances, cases, uses)
   }
 
   /**
     * Adds the given uses to the table.
     */
   private def addUsesToTable(table: SymbolTable, ns: List[String], usesAndImports: List[NamedAst.UseOrImport]): SymbolTable = table match {
-    case SymbolTable(symbols, instances, uses0) =>
+    case SymbolTable(symbols, instances, cases, uses0) =>
       val oldList = uses0.getOrElse(ns, Nil)
       val newList = usesAndImports ::: oldList
       val uses = uses0 + (ns -> newList)
-      SymbolTable(symbols, instances, uses)
+      SymbolTable(symbols, instances, cases, uses)
+  }
+
+  /**
+    * Adds the given case to the table.
+    */
+  private def addCaseToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Case): SymbolTable = table match {
+    case SymbolTable(symbols0, instances, cases0, uses) =>
+      val oldSymMap = symbols0.getOrElse(ns, ListMap.empty)
+      val newSymMap = oldSymMap + (name -> decl)
+      val symbols = symbols0 + (ns -> newSymMap)
+
+      // The case map contains cases in the enum's declaring namespace
+      val oldCaseMap = cases0.getOrElse(ns.init, Map.empty)
+      val newCaseMap = oldCaseMap.updatedWith(name) {
+        case None => Some(List(decl))
+        case Some(cases) => Some(decl :: cases)
+      }
+      val cases = cases0 + (ns.init -> newCaseMap)
+
+      SymbolTable(symbols, instances, cases, uses)
   }
 
   /**
@@ -241,8 +271,12 @@ object Namer {
     * Looks up the uppercase name in the given namespace and root.
     */
   private def lookupName(name: String, ns0: List[String], table: SymbolTable): NameLookupResult = {
-    val symbols0 = table.symbols.getOrElse(ns0, Map.empty)
-    symbols0.get(name) match {
+    val symbols0 = table.symbols.getOrElse(ns0, ListMap.empty)
+    // ignore namespaces
+    symbols0(name).flatMap {
+      case _: NamedAst.Declaration.Namespace => None
+      case decl => Some(decl)
+    }.headOption match {
       // Case 1: The name is unused.
       case None => LookupResult.NotDefined
       // Case 2: An symbol with the name already exists.
@@ -293,10 +327,7 @@ object Namer {
 
       mapN(annVal, casesVal) {
         case (ann, cases) =>
-          val caseMap = cases.foldLeft(Map.empty[String, NamedAst.Declaration.Case]) {
-            case (acc, caze) => acc + (caze.sym.name -> caze)
-          }
-          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, caseMap, loc)
+          NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 
@@ -496,11 +527,8 @@ object Namer {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(loc).toSuccess
 
-    case WeededAst.Expression.DefOrSig(qname, loc) =>
-      NamedAst.Expression.DefOrSig(qname, loc).toSuccess
-
-    case WeededAst.Expression.VarOrDefOrSig(ident, loc) =>
-      NamedAst.Expression.VarOrDefOrSig(ident, loc).toSuccess
+    case WeededAst.Expression.Ambiguous(name, loc) =>
+      NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
@@ -633,19 +661,6 @@ object Namer {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
-      }
-
-    case WeededAst.Expression.Tag(enumOpt, tag, expOpt, loc) =>
-
-      expOpt match {
-        case None =>
-          // Case 1: The tag does not have an expression. Nothing more to be done.
-          NamedAst.Expression.Tag(enumOpt, tag, None, loc).toSuccess
-        case Some(exp) =>
-          // Case 2: The tag has an expression. Perform naming on it.
-          visitExp(exp, ns0) map {
-            case e => NamedAst.Expression.Tag(enumOpt, tag, Some(e), loc)
-          }
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
@@ -975,8 +990,8 @@ object Namer {
 
     case WeededAst.Pattern.Cst(cst, loc) => NamedAst.Pattern.Cst(cst, loc)
 
-    case WeededAst.Pattern.Tag(enumOpt, tag, pat, loc) =>
-      NamedAst.Pattern.Tag(enumOpt, tag, visitPattern(pat), loc)
+    case WeededAst.Pattern.Tag(qname, pat, loc) =>
+      NamedAst.Pattern.Tag(qname, visitPattern(pat), loc)
 
     case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visitPattern, loc)
 
@@ -1227,7 +1242,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
-    case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
+    case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) =>
@@ -1472,14 +1487,12 @@ object Namer {
     * Performs naming on the given `use`.
     */
   private def visitUseOrImport(use: WeededAst.UseOrImport): NamedAst.UseOrImport = use match {
-    case WeededAst.UseOrImport.UseLower(qname, alias, loc) => NamedAst.UseOrImport.UseDefOrSig(qname, alias, loc)
-    case WeededAst.UseOrImport.UseUpper(qname, alias, loc) => NamedAst.UseOrImport.UseTypeOrClass(qname, alias, loc)
-    case WeededAst.UseOrImport.UseTag(qname, tag, alias, loc) => NamedAst.UseOrImport.UseTag(qname, tag, alias, loc)
+    case WeededAst.UseOrImport.Use(qname, alias, loc) => NamedAst.UseOrImport.Use(qname, alias, loc)
     case WeededAst.UseOrImport.Import(name, alias, loc) => NamedAst.UseOrImport.Import(name, alias, loc)
   }
 
   /**
     * A structure holding the symbols and instances in the program.
     */
-  case class SymbolTable(symbols: Map[List[String], Map[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+  case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], cases: Map[List[String], Map[String, List[NamedAst.Declaration.Case]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
 }

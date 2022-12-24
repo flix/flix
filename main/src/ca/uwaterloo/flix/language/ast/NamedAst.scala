@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 object NamedAst {
 
-  case class Root(symbols: Map[Name.NName, Map[String, NamedAst.Declaration]],
+  case class Root(symbols: Map[Name.NName, Map[String, List[NamedAst.Declaration]]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Declaration.Instance]]],
+                  cases: Map[Name.NName, Map[String, List[NamedAst.Declaration.Case]]],
                   uses: Map[Name.NName, List[NamedAst.UseOrImport]],
                   units: Map[Ast.Source, NamedAst.CompilationUnit],
                   entryPoint: Option[Symbol.DefnSym],
@@ -46,7 +47,7 @@ object NamedAst {
 
     case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: Map[String, NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -67,11 +68,7 @@ object NamedAst {
 
   object UseOrImport {
 
-    case class UseDefOrSig(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTypeOrClass(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
-
-    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
+    case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
 
     case class Import(name: Name.JavaName, alias: Name.Ident, loc: SourceLocation) extends NamedAst.UseOrImport
   }
@@ -84,9 +81,7 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
-    case class VarOrDefOrSig(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Expression
-
-    case class DefOrSig(name: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -123,8 +118,6 @@ object NamedAst {
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
-
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -238,7 +231,7 @@ object NamedAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Tag(qname: Option[Name.QName], tag: Name.Ident, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class Tag(qname: Name.QName, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tuple(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 

@@ -120,7 +120,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestBoolArrayInterface.runTest(TestBoolArrayInterface): Bool;
     let anon = new TestBoolArrayInterface {
       def testMethod(_this: TestBoolArrayInterface, xs: Array[Bool, Static]): Array[Bool, Static] =
-        xs |> Array.map(x -> not x)
+        xs |> Array.map(Static, x -> not x)
     };
     runTest(anon)
 
@@ -129,7 +129,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestCharArrayInterface.runTest(TestCharArrayInterface): Bool;
     let anon = new TestCharArrayInterface {
       def testMethod(_this: TestCharArrayInterface, xs: Array[Char, Static]): Array[Char, Static] =
-        xs |> Array.map(Char.toUpperCase)
+        xs |> Array.map(Static, Char.toUpperCase)
     };
     runTest(anon)
 
@@ -138,7 +138,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestInt8ArrayInterface.runTest(TestInt8ArrayInterface): Bool;
     let anon = new TestInt8ArrayInterface {
       def testMethod(_this: TestInt8ArrayInterface, xs: Array[Int8, Static]): Array[Int8, Static] =
-        xs |> Array.map(x -> x + 1i8)
+        xs |> Array.map(Static, x -> x + 1i8)
     };
     runTest(anon)
 
@@ -147,7 +147,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestInt16ArrayInterface.runTest(TestInt16ArrayInterface): Bool;
     let anon = new TestInt16ArrayInterface {
       def testMethod(_this: TestInt16ArrayInterface, xs: Array[Int16, Static]): Array[Int16, Static] =
-        xs |> Array.map(x -> x + 1i16)
+        xs |> Array.map(Static, x -> x + 1i16)
     };
     runTest(anon)
 
@@ -156,7 +156,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestInt32ArrayInterface.runTest(TestInt32ArrayInterface): Bool;
     let anon = new TestInt32ArrayInterface {
       def testMethod(_this: TestInt32ArrayInterface, xs: Array[Int32, Static]): Array[Int32, Static] =
-        xs |> Array.map(x -> x + 1)
+        xs |> Array.map(Static, x -> x + 1)
     };
     runTest(anon)
 
@@ -165,7 +165,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestInt64ArrayInterface.runTest(TestInt64ArrayInterface): Bool;
     let anon = new TestInt64ArrayInterface {
       def testMethod(_this: TestInt64ArrayInterface, xs: Array[Int64, Static]): Array[Int64, Static] =
-        xs |> Array.map(x -> x + 1i64)
+        xs |> Array.map(Static, x -> x + 1i64)
     };
     runTest(anon)
 
@@ -174,7 +174,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestFloat32ArrayInterface.runTest(TestFloat32ArrayInterface): Bool;
     let anon = new TestFloat32ArrayInterface {
       def testMethod(_this: TestFloat32ArrayInterface, xs: Array[Float32, Static]): Array[Float32, Static] =
-        xs |> Array.map(x -> x + 0.5f32)
+        xs |> Array.map(Static, x -> x + 0.5f32)
     };
     runTest(anon)
 
@@ -183,7 +183,7 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestFloat64ArrayInterface.runTest(TestFloat64ArrayInterface): Bool;
     let anon = new TestFloat64ArrayInterface {
       def testMethod(_this: TestFloat64ArrayInterface, xs: Array[Float64, Static]): Array[Float64, Static] =
-        xs |> Array.map(x -> x + 0.5f64)
+        xs |> Array.map(Static, x -> x + 0.5f64)
     };
     runTest(anon)
 
@@ -315,7 +315,7 @@ namespace Test/Exp/Jvm/NewObject {
     let x = [1, 2, 3];
     let y = [4, 5, 6];
     let anon = new ##java.lang.Object {
-      def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(x, y))
+      def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(Static, x, y))
     };
     toString(anon) == "[1, 2, 3, 4, 5, 6]"
 
