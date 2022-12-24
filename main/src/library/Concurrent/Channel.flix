@@ -79,15 +79,15 @@ namespace Concurrent/Channel {
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a](
-        MpmcAdmin, // admin
-        MutDeque[a, Static] // elementDeque
+    pub enum Mpmc[a: Type, r: Region](
+        MpmcAdmin[r], // admin
+        MutDeque[a, r] // elementDeque
     )
 
     /// Returns the `MpmcAdmin` of `c`.
     @Internal
-    pub def mpmcAdmin(c: Mpmc[a]): MpmcAdmin = {
-        let Mpmc.Mpmc(admin, _) = c;
+    pub def mpmcAdmin(c: Mpmc[a, r]): MpmcAdmin[r] = {
+        let Mpmc(admin, _) = c;
         admin
     }
 
@@ -118,13 +118,13 @@ namespace Concurrent/Channel {
     ///       The condition is notified after each new element. Available space
     ///       is not guaranteed when notified.
     /// )
-    enum MpmcAdmin(
+    enum MpmcAdmin[r: Region](
         Int64, // id
         ReentrantLock, // channelLock
         Bool, // unBuffered
         Int32, // maxSize
-        Ref[Int32, Static], // size
-        MutList[(ReentrantLock, Condition), Static], // waitingGetters
+        Ref[Int32, r], // size
+        MutList[(ReentrantLock, Condition), r], // waitingGetters
         CyclicBarrier, // rendezvous
         Condition // waitingPutters
     )
@@ -135,12 +135,12 @@ namespace Concurrent/Channel {
     /// receiving is syncronized.
     ///
     @Internal
-    pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
+    pub def newChannel(r: Region[r], bufferSize: Int32): Mpmc[a, r] \ { Read(r), Write(r), IO } =
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
-        let size = ref 0;
+        let size = ref 0 @ r;
         Mpmc.Mpmc(
             MpmcAdmin.MpmcAdmin(
                 newId(),
@@ -148,19 +148,19 @@ namespace Concurrent/Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                new MutList(Static),
+                new MutList(r),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            new MutDeque(Static)
+            new MutDeque(r)
         )
 
     ///
     /// Creates a new channel tuple (sender, receiver)
     ///
     @Internal
-    pub def newChannelTuple(bufferSize: Int32): (Mpmc[a], Mpmc[a]) \ IO =
-        let c = newChannel(bufferSize);
+    pub def newChannelTuple(r: Region[r], bufferSize: Int32): (Mpmc[a, r], Mpmc[a, r]) \ { Read(r), Write(r), IO } =
+        let c = newChannel(r, bufferSize);
         (c, c)
 
     ///
@@ -170,7 +170,7 @@ namespace Concurrent/Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
-    pub def put(e: a, c: Mpmc[a]): Unit \ IO =
+    pub def put(e: a, c: Mpmc[a, r]): Unit \ { Read(r), Write(r), IO } =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
         lock(channelLock);
@@ -199,7 +199,7 @@ namespace Concurrent/Channel {
     /// Implements to the expression `<- c`.
     ///
     @Internal
-    pub def get(c: Mpmc[a]): a \ IO =
+    pub def get(c: Mpmc[a, r]): a \ { Read(r), Write(r), IO } =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
 
@@ -212,7 +212,7 @@ namespace Concurrent/Channel {
     /// Assumes the channel to be non-empty.
     ///
     @Internal
-    pub def unsafeGetAndUnlock(c: Mpmc[a], locks: List[ReentrantLock]): a \ IO = {
+    pub def unsafeGetAndUnlock(c: Mpmc[a, r], locks: List[ReentrantLock]): a \ { Read(r), Write(r), IO } = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
         lock(channelLock);
@@ -252,9 +252,9 @@ namespace Concurrent/Channel {
     ///
     @Internal
     pub def selectFrom(
-        channels: Array[MpmcAdmin, Static],
+        channels: Array[MpmcAdmin[r0], r1],
         blocking: Bool
-    ): (Int32, List[ReentrantLock]) \ IO =
+    ): (Int32, List[ReentrantLock]) \ { Read(r0), Write(r0), Read(r1), Write(r1), IO } = region r2 {
         // Create a new lock and condition for this select. The condition is
         // potentially put into the waiting getters of the channels if a
         // default isn't defined.
@@ -263,9 +263,10 @@ namespace Concurrent/Channel {
 
         // Sort locks to avoid deadlocks
         let sortedLocks = channels |>
-            Array.sortBy(Static, match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
-            Array.map(Static, match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
+            Array.sortBy(r2, match MpmcAdmin.MpmcAdmin(id, _, _, _, _, _, _, _) -> id) |>
+            Array.map(r2, match MpmcAdmin.MpmcAdmin(_, rlock, _, _, _, _, _, _) -> rlock);
         selectHelper(channels, blocking, sortedLocks, selectLock, selectCondition)
+    }
 
     ///
     /// The fairness policy of the locks.
@@ -277,7 +278,7 @@ namespace Concurrent/Channel {
     /// The channel lock is expected to be held.
     ///
     @Internal
-    def awaitAvailableSpace(c: MpmcAdmin): Unit \ IO =
+    def awaitAvailableSpace(c: MpmcAdmin[r]): Unit \ { Read(r), IO } =
         let MpmcAdmin.MpmcAdmin(_, _, _, maxSize, size, _, _, waitingPutters) = c;
         if ((deref size) == maxSize) {
             awaitCondition(waitingPutters);
@@ -295,7 +296,7 @@ namespace Concurrent/Channel {
     ///
     /// The channel lock is expected to be held, and will be unlocked on return.
     ///
-    def getHelper(c: Mpmc[a]): a \ IO =
+    def getHelper(c: Mpmc[a, r]): a \ { Read(r), Write(r), IO } =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _, _) = admin;
 
@@ -343,12 +344,12 @@ namespace Concurrent/Channel {
     /// otherwise this blocks.
     ///
     def selectHelper(
-        channels: Array[MpmcAdmin, Static],
+        channels: Array[MpmcAdmin[r0], r1],
         blocking: Bool,
-        sortedLocks: Array[ReentrantLock, Static],
+        sortedLocks: Array[ReentrantLock, r2],
         selectLock: ReentrantLock,
         selectCondition: Condition
-    ): (Int32, List[ReentrantLock]) \ IO =
+    ): (Int32, List[ReentrantLock]) \ { Read(r1), Write(r1), Read(r2), Write(r2), IO } = region r3 {
         // bug if the thread is interrupted
         if (threadInterrupted()) bug!("thread interrupted") else
 
@@ -368,7 +369,7 @@ namespace Concurrent/Channel {
                  randomized to avoid starvation scenarios).
         */
         let index = channels |>
-            Array.mapWithIndex(Static, i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
+            Array.mapWithIndex(r3, i -> match MpmcAdmin.MpmcAdmin(_, _, _, _, size, _, _, _) -> {
                 (deref size > 0, i)
             }) |>
             Array.findLeft(match (b, _) -> b) |>
@@ -404,12 +405,13 @@ namespace Concurrent/Channel {
                 }
             }
         }
+    }
 
     ///
     /// Add a condition to the list of waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def addGetter(l: ReentrantLock, cond: Condition, c: MpmcAdmin): Unit \ IO =
+    def addGetter(l: ReentrantLock, cond: Condition, c: MpmcAdmin[r]): Unit \ Write(r) =
         let MpmcAdmin.MpmcAdmin(_, _, _, _, _, waitingGetters, _, _) = c;
         MutList.push!((l, cond), waitingGetters)
 
@@ -417,7 +419,7 @@ namespace Concurrent/Channel {
     /// Signals and clears the waiting getters.
     /// The channel lock is expected to be held.
     ///
-    def signalGetters(c: MpmcAdmin): Unit \ IO =
+    def signalGetters(c: MpmcAdmin[r]): Unit \ { Read(r), Write(r), IO } =
         let MpmcAdmin.MpmcAdmin(_, _, _, _, _, waitingGetters, _, _) = c;
 
         // Signal waitingGetters that there is an element available
@@ -437,7 +439,7 @@ namespace Concurrent/Channel {
     /// Signals and clears the waiting putters.
     /// The channel lock is expected to be held, and will be unlocked on return.
     ///
-    def onGetComplete(c: MpmcAdmin): Unit \ IO =
+    def onGetComplete(c: MpmcAdmin[r]): Unit \ { Read(r), IO } =
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
 
         // In the unbuffered case, rendezvous with the putter from which we just received a value.

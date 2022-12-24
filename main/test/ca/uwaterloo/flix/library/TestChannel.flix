@@ -26,32 +26,35 @@
     use Concurrent/Channel.selectFrom
 
     @test
-    def testNew01(): Mpmc[Int32] \ IO = newChannel(0)
+    def testNew01(): Unit \ IO = region r { discard newChannel(r, 0) }
 
     @test
-    def testNew02(): Mpmc[Result[String, a]] \ IO = newChannel(32)
+    def testNew02(): Unit \ IO = region r { discard newChannel(r, 32) }
 
     @test
-    def testGetPut01(): Bool \ IO =
-        let c = newChannel(1);
+    def testGetPut01(): Bool \ IO = region r {
+        let c = newChannel(r, 1);
         put(true, c);
         get(c)
+    }
 
     @test
-    def testGetPut02(): Bool \ IO =
-        let c = newChannel(1);
+    def testGetPut02(): Bool \ IO = region r {
+        let c = newChannel(r, 1);
         put(123, c);
         get(c) == 123
+    }
 
     @test
-    def testGetPut03(): Bool \ IO =
-        let c = newChannel(1);
+    def testGetPut03(): Bool \ IO = region r {
+        let c = newChannel(r, 1);
         put("Hello World!", c);
         get(c) == "Hello World!"
+    }
 
     @test
-    def testSelect01(): Bool \ IO =
-        let c = newChannel(1);
+    def testSelect01(): Bool \ IO = region r {
+        let c = newChannel(r, 1);
         put(2, c);
         match selectFrom([mpmcAdmin(c)], true) {
             case (0, locks) =>
@@ -59,10 +62,11 @@
                 i == 2
             case _ => unreachable!()
         }
+    }
 
     @test
-    def testSelect02(): Bool \ IO =
-        let c = newChannel(1);
+    def testSelect02(): Bool \ IO = region r {
+        let c = newChannel(r, 1);
         match selectFrom([mpmcAdmin(c)], false) {
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c, locks);
@@ -71,11 +75,12 @@
                 true
             case _ => unreachable!()
         }
+    }
 
     @test
-    def testSelect03(): Bool \ IO =
-        let c1: Mpmc[Int32] = newChannel(0);
-        let c2: Mpmc[String] = newChannel(10);
+    def testSelect03(): Bool \ IO = region r {
+        let c1: Mpmc[Int32, r] = newChannel(r, 0);
+        let c2: Mpmc[String, r] = newChannel(r, 10);
 
         put("hey", c2);
 
@@ -88,5 +93,5 @@
                 s == "hey"
             case _ => unreachable!()
         }
-
+    }
 }

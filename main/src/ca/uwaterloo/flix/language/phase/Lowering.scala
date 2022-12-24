@@ -604,10 +604,11 @@ object Lowering {
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expression.NewChannel(_, exp, tpe, pur, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, pur, eff, loc)
+      mkNewChannelTuple(e1, e2, t, pur, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -638,15 +639,17 @@ object Lowering {
     // becomes:
     //     let ch1 = ?ch1;
     //     let ch2 = ?ch2;
-    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
-    //         case (0, locks) =>
-    //             let x = unsafeGetAndUnlock(ch1, locks);
-    //             ?handlech1
-    //         case (1, locks) =>
-    //             let y = unsafeGetAndUnlock(ch2, locks);
-    //             ?handlech2
-    //         case (-1, _) =>                                                  // Omitted if no default
-    //             ?default                                                     // Unlock is handled by selectFrom
+    //     region r {
+    //         match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ r, false) {  // true if no default
+    //             case (0, locks) =>
+    //                 let x = unsafeGetAndUnlock(ch1, locks);
+    //                 ?handlech1
+    //             case (1, locks) =>
+    //                 let y = unsafeGetAndUnlock(ch2, locks);
+    //                 ?handlech2
+    //             case (-1, _) =>                                               // Omitted if no default
+    //                 ?default                                                  // Unlock is handled by selectFrom
+    //         }
     //     }
     // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
     //
@@ -845,14 +848,9 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+      // Special case for Sender and Receiver, both of which are rewritten to Concurrent/Channel.Mpmc
+      case Type.Cst(TypeConstructor.Sender | TypeConstructor.Receiver, loc) =>
+        Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1309,17 +1307,17 @@ object Lowering {
   /**
     * Make a new channel expression
     */
-  private def mkNewChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  private def mkNewChannel(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNew, Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, tpe, loc), loc)
+    LoweredAst.Expression.Apply(newChannel, exp1 :: exp2 :: Nil, tpe, pur, eff, loc)
   }
 
   /**
     * Make a new channel tuple (sender, receiver) expression
     */
-  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  private def mkNewChannelTuple(e1: LoweredAst.Expression, e2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureUncurriedArrow(e1.tpe :: e2.tpe :: Nil, tpe, loc), loc)
+    LoweredAst.Expression.Apply(newChannel, e1 :: e2 :: Nil, tpe, pur, eff, loc)
   }
 
   /**
@@ -1566,7 +1564,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: LoweredAst.Expression) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(LoweredAst.Expression.Region(Type.Unit, loc), LoweredAst.Expression.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, Type.Empty, loc) // The channel exp `chan 1`
         LoweredAst.Expression.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkAnd(e.pur, acc.pur, loc), Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
