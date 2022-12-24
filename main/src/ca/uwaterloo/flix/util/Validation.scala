@@ -104,14 +104,26 @@ object Validation {
     * Sequences the given list of validations `xs`.
     */
   def sequence[T, E](xs: Iterable[Validation[T, E]]): Validation[List[T], E] = {
-    val zero = Success(List.empty[T]): Validation[List[T], E]
+    val zero = SuccessNil: Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
         Success(curValue :: accValue)
+      case (Success(curValue), SuccessWithFailures(accValue, accErrors)) =>
+        SuccessWithFailures(curValue :: accValue, accErrors)
       case (Success(_), Failure(accErrors)) =>
         Failure(accErrors)
+
+      case (SuccessWithFailures(curValue, curErrors), Success(accValue)) =>
+        SuccessWithFailures(curValue :: accValue, curErrors)
+      case (SuccessWithFailures(curValue, curErrors), SuccessWithFailures(accValue, accErrors)) =>
+        SuccessWithFailures(curValue :: accValue, curErrors #::: accErrors)
+      case (SuccessWithFailures(_, curErrors), Failure(accErrors)) =>
+        Failure(curErrors #::: accErrors)
+
       case (Failure(curErrors), Success(_)) =>
         Failure(curErrors)
+      case (Failure(curErrors), SuccessWithFailures(_, accErrors)) =>
+        Failure(curErrors #::: accErrors)
       case (Failure(curErrors), Failure(accErrors)) =>
         Failure(curErrors #::: accErrors)
     }
@@ -145,6 +157,7 @@ object Validation {
     case None => Validation.SuccessNone
     case Some(x) => f(x) match {
       case Success(t) => Success(Some(t))
+      case SuccessWithFailures(t, errs) => SuccessWithFailures(Some(t), errs)
       case Failure(errs) => Failure(errs)
     }
   }
@@ -172,6 +185,7 @@ object Validation {
     for (x <- xs) {
       f(x) match {
         case Success(v) => successValues += v
+        case SuccessWithFailures(v, e) => ??? // TODO
         case Failure(e) => failureStream += e
       }
     }
