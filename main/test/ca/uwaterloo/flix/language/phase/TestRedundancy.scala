@@ -1219,7 +1219,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |            upcast ()
         |        else {
         |            let static = unsafe_cast () as Region[false];
-        |            let _ = $ARRAY_REPEAT$(static, 8, 8);
+        |            let _ = $ARRAY_NEW$(static, 8, 8);
         |            ()
         |        };
         |    ()
@@ -1238,7 +1238,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |            upcast ()
         |        else
         |        region r {
-        |            let _ = $ARRAY_REPEAT$(r, 8, 8);
+        |            let _ = $ARRAY_NEW$(r, 8, 8);
         |            ()
         |        };
         |    ()
