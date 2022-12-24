@@ -206,7 +206,7 @@ object Validation {
     t1 match {
       case Success(v1) => Success(f(v1))
       case SuccessWithFailures(v1, err1) => SuccessWithFailures(f(v1), err1)
-      case _ => Failure(t1.errors)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
