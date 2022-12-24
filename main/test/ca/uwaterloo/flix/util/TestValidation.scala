@@ -70,6 +70,48 @@ class TestValidation extends FunSuite {
   }
 
   test("map06") {
+    val result = SuccessWithFailures("abc", LazyList.empty[Exception]).map {
+      case x => x.length
+    }.map {
+      case y => y < 5
+    }
+    assertResult(SuccessWithFailures(true, LazyList.empty[Exception]))(result)
+  }
+
+  test("map07") {
+    val result = SuccessWithFailures("abc", LazyList.empty[Exception]).map {
+      case x => x.charAt(1)
+    }.map {
+      case y => y + 3
+    }.map {
+      case z => z.toChar.toString
+    }
+    assertResult(SuccessWithFailures("e", LazyList.empty[Exception]))(result)
+  }
+
+  test("map08") {
+    val ex = new RuntimeException()
+    val result = SuccessWithFailures("abc", LazyList(ex)).map {
+      case x => x.length
+    }.map {
+      case y => y < 5
+    }
+    assertResult(SuccessWithFailures(true, LazyList(ex)))(result)
+  }
+
+  test("map09") {
+    val ex = new RuntimeException()
+    val result = SuccessWithFailures("abc", LazyList(ex)).map {
+      case x => x.charAt(1)
+    }.map {
+      case y => y + 3
+    }.map {
+      case z => z.toChar.toString
+    }
+    assertResult(SuccessWithFailures("e", LazyList(ex)))(result)
+  }
+
+  test("map10") {
     val ex = new RuntimeException()
     val result = ex.toFailure[String, Exception].map {
       case x => x.toUpperCase
