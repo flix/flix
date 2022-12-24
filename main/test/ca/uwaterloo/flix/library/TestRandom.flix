@@ -2,7 +2,7 @@
 def testChoose01(): Option[Int32] \ NonDet =
     region r {
         let rnd = Random.new();
-        let arr = $ARRAY_REPEAT$(r, 42i32, 10);
+        let arr = Array.new(r, 42i32, 10);
         Random.choose(rnd, arr)
     }
 
@@ -10,7 +10,7 @@ def testChoose01(): Option[Int32] \ NonDet =
 def testChoose02(): Option[String] \ NonDet =
     region r {
         let rnd = Random.new();
-        let arr = $ARRAY_REPEAT$(r, "Hello World", 10);
+        let arr = Array.new(r, "Hello World", 10);
         Random.choose(rnd, arr)
     }
 
