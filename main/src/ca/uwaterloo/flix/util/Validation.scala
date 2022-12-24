@@ -185,7 +185,9 @@ object Validation {
     for (x <- xs) {
       f(x) match {
         case Success(v) => successValues += v
-        case SuccessWithFailures(v, e) => ??? // TODO
+        case SuccessWithFailures(v, e) =>
+          successValues += v
+          failureStream += e
         case Failure(e) => failureStream += e
       }
     }
