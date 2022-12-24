@@ -25,15 +25,15 @@ pub class Boxable[a] with Order[a] {
     pub def box(x: a): Boxed = {
         let value = unsafe_cast x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(unsafe_cast o1 as a, unsafe_cast o2 as a);
-        BoxedObject(value, compare)
+        Boxed.BoxedObject(value, compare)
     }
 
     ///
     /// Unboxes the given `x`.
     ///
     pub def unbox(x: Boxed): a = match x {
-        case BoxedObject(v, _) => unsafe_cast v as a
-        case _                 => ?bug
+        case Boxed.BoxedObject(v, _) => unsafe_cast v as a
+        case _                       => ?bug
     }
 
 }
@@ -134,71 +134,71 @@ instance Boxable[Unit] {
     pub override def box(x: Unit): Boxed = {
         let value = unsafe_cast x as ##java.lang.Object;
         let compare = (o1, o2) -> Order.compare(unsafe_cast o1 as Unit, unsafe_cast o2 as Unit);
-        BoxedObject(value, compare)
+        Boxed.BoxedObject(value, compare)
     }
     pub override def unbox(_: Boxed): Unit = ()
 }
 
 instance Boxable[Bool] {
-    pub override def box(x: Bool): Boxed = BoxedBool(x)
+    pub override def box(x: Bool): Boxed = Boxed.BoxedBool(x)
     pub override def unbox(x: Boxed): Bool = match x {
-        case BoxedBool(v) => v
+        case Boxed.BoxedBool(v) => v
         case _            => ?bug
     }
 }
 
 instance Boxable[Char] {
-    pub override def box(x: Char): Boxed = BoxedChar(x)
+    pub override def box(x: Char): Boxed = Boxed.BoxedChar(x)
     pub override def unbox(x: Boxed): Char = match x {
-        case BoxedChar(v) => v
+        case Boxed.BoxedChar(v) => v
         case _            => ?bug
     }
 }
 
 instance Boxable[Int8] {
-    pub override def box(x: Int8): Boxed = BoxedInt8(x)
+    pub override def box(x: Int8): Boxed = Boxed.BoxedInt8(x)
     pub override def unbox(x: Boxed): Int8 = match x {
-        case BoxedInt8(v) => v
+        case Boxed.BoxedInt8(v) => v
         case _            => ?bug
     }
 }
 
 instance Boxable[Int16] {
-    pub override def box(x: Int16): Boxed = BoxedInt16(x)
+    pub override def box(x: Int16): Boxed = Boxed.BoxedInt16(x)
     pub override def unbox(x: Boxed): Int16 = match x {
-        case BoxedInt16(v) => v
+        case Boxed.BoxedInt16(v) => v
         case _             => ?bug
     }
 }
 
 instance Boxable[Int32] {
-    pub override def box(x: Int32): Boxed = BoxedInt32(x)
+    pub override def box(x: Int32): Boxed = Boxed.BoxedInt32(x)
     pub override def unbox(x: Boxed): Int32 = match x {
-        case BoxedInt32(v) => v
+        case Boxed.BoxedInt32(v) => v
         case _             => ?bug
     }
 }
 
 instance Boxable[Int64] {
-    pub override def box(x: Int64): Boxed = BoxedInt64(x)
+    pub override def box(x: Int64): Boxed = Boxed.BoxedInt64(x)
     pub override def unbox(x: Boxed): Int64 = match x {
-        case BoxedInt64(v) => v
+        case Boxed.BoxedInt64(v) => v
         case _             => ?bug
     }
 }
 
 instance Boxable[Float32] {
-    pub override def box(x: Float32): Boxed = BoxedFloat32(x)
+    pub override def box(x: Float32): Boxed = Boxed.BoxedFloat32(x)
     pub override def unbox(x: Boxed): Float32 = match x {
-        case BoxedFloat32(v) => v
+        case Boxed.BoxedFloat32(v) => v
         case _               => ?bug
     }
 }
 
 instance Boxable[Float64] {
-    pub override def box(x: Float64): Boxed = BoxedFloat64(x)
+    pub override def box(x: Float64): Boxed = Boxed.BoxedFloat64(x)
     pub override def unbox(x: Boxed): Float64 = match x {
-        case BoxedFloat64(v) => v
+        case Boxed.BoxedFloat64(v) => v
         case _               => ?bug
     }
 }

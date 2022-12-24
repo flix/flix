@@ -214,7 +214,7 @@ namespace Iterator {
     ///
     pub def toNel(iter: Iterator[a, r]): Option[Nel[a]] \ Read(r) = match toList(iter) {
         case Nil     => None
-        case x :: xs => Some(Nel(x, xs))
+        case x :: xs => Some(Nel.Nel(x, xs))
     }
 
     ///

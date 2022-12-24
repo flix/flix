@@ -24,22 +24,22 @@ pub enum Validation[t, e] with Eq, Order, ToString, Sendable {
 
 instance Hash[Validation[t, e]] with Hash[t], Hash[e] {
     pub def hash(x: Validation[t, e]): Int32 = match x {
-        case Success(v) => 5407 + 197 * Hash.hash(v)
-        case Failure(v) => 5413 + 199 * Hash.hash(v)
+        case Validation.Success(v) => 5407 + 197 * Hash.hash(v)
+        case Validation.Failure(v) => 5413 + 199 * Hash.hash(v)
     }
 }
 
 instance SemiGroup[Validation[t, e]] with SemiGroup[t] {
     pub def combine(x: Validation[t, e], y: Validation[t, e]): Validation[t, e] = match (x, y) {
-        case (Success(x1), Success(y1))     => Success(SemiGroup.combine(x1, y1))
-        case (Failure(es1), Failure(es2))   => Failure(Nec.append(es1, es2))
-        case (Failure(_), _)                => x
-        case (_, Failure(_))                => y
+        case (Validation.Success(x1), Validation.Success(y1))       => Validation.Success(SemiGroup.combine(x1, y1))
+        case (Validation.Failure(es1), Validation.Failure(es2))     => Validation.Failure(Nec.append(es1, es2))
+        case (Validation.Failure(_), _)                             => x
+        case (_, Validation.Failure(_))                             => y
     }
 }
 
 instance Monoid[Validation[t, e]] with Monoid[t] {
-    pub def empty(): Validation[t, e] = Success(Monoid.empty())
+    pub def empty(): Validation[t, e] = Validation.Success(Monoid.empty())
 }
 
 namespace Validation {
