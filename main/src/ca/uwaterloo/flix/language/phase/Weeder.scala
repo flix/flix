@@ -657,6 +657,7 @@ object Weeder {
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
+          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, e3, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
@@ -1231,13 +1232,6 @@ object Weeder {
       mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
         case (es, e) =>
           WeededAst.Expression.ArrayLit(es, e, loc)
-      }
-
-    case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverseOpt(exp3)(visitExp(_, senv))) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -2962,7 +2956,6 @@ object Weeder {
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
