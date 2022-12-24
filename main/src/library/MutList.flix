@@ -49,7 +49,7 @@ namespace MutList {
     /// Returns a new empty mutable list with a default capacity.
     ///
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(r, ref ([Reflect.default(); minCapacity()] @ r) @ r, ref 0 @ r)
+        MutList(r, ref Array.new(r, Reflect.default(), minCapacity()) @ r, ref 0 @ r)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -313,7 +313,7 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = [s; n] @ r1;
+        let b = Array.new(r1, s, n);
         def loop(i, acc) = {
             if (i >= n)
                 ()
@@ -334,7 +334,7 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = [s; n] @ r1;
+        let b = Array.new(r1, s, n);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -360,7 +360,7 @@ namespace MutList {
             let a = deref ra;
             let l = deref rl;
             let x = f(a[0]);
-            let b = [x; Array.length(a)] @ r1;
+            let b = Array.new(r1, x, Array.length(a));
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -384,7 +384,7 @@ namespace MutList {
             let a = deref ra;
             let l = deref rl;
             let x = f(0, a[0]);
-            let b = [x; Array.length(a)] @ r1;
+            let b = Array.new(r1, x, Array.length(a));
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -523,7 +523,7 @@ namespace MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(r, a, l) = v;
-        a := [Reflect.default(); Array.length(deref a)] @ r;
+        a := Array.new(r, Reflect.default(), Array.length(deref a));
         l := 0
 
     ///
@@ -703,7 +703,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, [Reflect.default(); c] @ r)
+            Array.updateSequence!(0, deref a, Array.new(r, Reflect.default(), c))
         }
         else
             ()

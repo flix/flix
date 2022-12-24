@@ -140,11 +140,11 @@ object Simplifier {
         val es = exps.map(visitExp)
         SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
 
-      case LoweredAst.Expression.ArrayNew(exp1, exp2, _, tpe, pur, eff, loc) =>
+      case LoweredAst.Expression.ArrayNew(_, exp2, exp3, tpe, pur, eff, loc) =>
         // Note: The region expression is erased.
-        val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ArrayNew(e1, e2, tpe, loc)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.ArrayNew(e2, e3, tpe, loc)
 
       case LoweredAst.Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
         val b = visitExp(base)
