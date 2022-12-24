@@ -975,12 +975,12 @@ object Resolver {
           }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
-          val erVal = visitExp(exp1, env0, region)
+          val e1Val = visitExp(exp1, env0, region)
           val e2Val = visitExp(exp2, env0, region)
           val e3Val = visitExp(exp3, env0, region)
-          mapN(erVal, e2Val, e3Val) {
-            case (er, e2, e3) =>
-              ResolvedAst.Expression.ArrayNew(er, e2, e3, loc)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) =>
+              ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
           }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
