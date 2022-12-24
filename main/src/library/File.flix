@@ -316,7 +316,7 @@ namespace File {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = [0i8; opts.count];
+                        let bytes = Array.new(r, 0i8, opts.count);
                         discard read(stream, bytes, 0, opts.count);
                         let charSet = forName(opts.charSet);
                         let returnString = newString(bytes, charSet);
@@ -523,7 +523,7 @@ namespace File {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = [0i8; opts.count] @ r;
+                        let bytes = Array.new(r, 0i8, opts.count);
                         let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(r, bytes, numberRead, opts.count);
                         Ok(res)
@@ -570,14 +570,14 @@ namespace File {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                let bytes = ref [0i8; chunkSize] @ r @ r;
+                let bytes = ref Array.new(r, 0i8, chunkSize) @ r;
                 let numberRead = ref unsafe_cast read(stream, deref bytes) as _ \ Read(r) @ r;
 
                 let done = () -> deref numberRead == -1;
                 let next = () -> {
                     try {
                         let chunk = deref bytes;
-                        bytes := [0i8; chunkSize] @ r;
+                        bytes := Array.new(r, 0i8, chunkSize);
                         let accRead = deref numberRead;
                         numberRead := unsafe_cast read(stream, deref bytes) as _ \ Read(r);
                         Ok(readBytesWithHelper(r, chunk, accRead, chunkSize))
