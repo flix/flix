@@ -423,7 +423,7 @@ namespace MutDeque {
             i := deref i + 1 &&& (capacity(d) - 1);
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
@@ -448,7 +448,7 @@ namespace MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
+    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
         toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 

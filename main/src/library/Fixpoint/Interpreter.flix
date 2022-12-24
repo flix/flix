@@ -109,9 +109,9 @@ namespace Fixpoint {
 
     def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v] =
         match query {
-            case Nil => EqualTo
+            case Nil => Comparison.EqualTo
             case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
-                case EqualTo => evalQuery(env, tl, tuple)
+                case Comparison.EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
         }

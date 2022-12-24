@@ -27,23 +27,23 @@ namespace Fixpoint/Ast {
 
     instance PredSymsOf[HeadPredicate[v]] {
         pub def predSymsOf(x: HeadPredicate[v]): Set[PredSym] = match x {
-            case HeadAtom(predSym, _, _ ) => Set.singleton(predSym)
+            case HeadPredicate.HeadAtom(predSym, _, _ ) => Set.singleton(predSym)
         }
     }
 
     instance SubstitutePredSym[HeadPredicate[v]] {
         pub def substitute(x: HeadPredicate[v], s: Map[PredSym, PredSym]): HeadPredicate[v] = match x {
-            case HeadAtom(predSym, den, terms) =>
+            case HeadPredicate.HeadAtom(predSym, den, terms) =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
-                HeadAtom(newSym, den, terms)
+                HeadPredicate.HeadAtom(newSym, den, terms)
         }
     }
 
     instance ToString[HeadPredicate[v]] {
         pub def toString(head: HeadPredicate[v]): String =
             match head {
-                case HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> List.join(", ")})"
-                case HeadAtom(predSym, Latticenal(_), terms) =>
+                case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> List.join(", ")})"
+                case HeadPredicate.HeadAtom(predSym, Denotation.Latticenal(_), terms) =>
                     let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
                     match List.head(latticeTerms) {
                         case None    => "${predSym}(${keyTerms |> List.join(", ")})"

@@ -28,16 +28,16 @@ namespace Fixpoint/Ram {
         pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {
-                case Search(var, ramSym, body) =>
+                case RelOp.Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
-                case Query(var, ramSym, prefixQuery, body) =>
+                case RelOp.Query(var, ramSym, prefixQuery, body) =>
                     let query = List.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
-                case Project(terms, ramSym) =>
+                case RelOp.Project(terms, ramSym) =>
                     "project (${terms |> List.join(", ")}) into ${ramSym}"
-                case If(test, then) =>
+                case RelOp.If(test, then) =>
                     let tst = test |> List.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
