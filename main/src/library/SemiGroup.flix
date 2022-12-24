@@ -140,12 +140,12 @@ namespace SemiGroup {
 
     instance SemiGroup[Any] {
         pub def combine(x: Any, y: Any): Any = match (x, y) {
-            case (Any(a), Any(b)) => Any(a or b)
+            case (Any.Any(a), Any.Any(b)) => Any.Any(a or b)
         }
     }
 
     instance Monoid[Any] {
-        pub def empty(): Any = Any(false)
+        pub def empty(): Any = Any.Any(false)
     }
 
     instance CommutativeMonoid[Any]
@@ -156,12 +156,12 @@ namespace SemiGroup {
 
     instance SemiGroup[All] {
         pub def combine(x: All, y: All): All = match (x, y) {
-            case (All(a), All(b)) => All(a and b)
+            case (All.All(a), All.All(b)) => All.All(a and b)
         }
     }
 
     instance Monoid[All] {
-        pub def empty(): All = All(true)
+        pub def empty(): All = All.All(true)
     }
 
     instance CommutativeMonoid[All]

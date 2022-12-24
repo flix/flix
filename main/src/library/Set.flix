@@ -207,7 +207,7 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
-        def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
+        def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         typematch cmp {
             case g: (a, a) -> Comparison \ {} =>
                 if (useParallelEvaluation(s))
@@ -239,7 +239,7 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
-        def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
+        def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         typematch cmp {
             case g: (a, a) -> Comparison \ {} =>
                 if (useParallelEvaluation(s))
@@ -554,7 +554,7 @@ namespace Set {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
-        MutSet(ref s @ r)
+        MutSet.MutSet(ref s @ r)
 
     ///
     /// Applies `f` to every element of `s`.
@@ -596,7 +596,7 @@ namespace Set {
     /// Returns the set `s` as a `DelayList`.
     ///
     pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> ECons(x, acc), ENil, s)
+        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, s)
 
     ///
     /// Returns an iterator over `s`.

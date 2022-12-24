@@ -162,109 +162,109 @@ namespace Console {
     /// Returns the string `s` formatted with the default blue color.
     ///
     pub def blue(s: a): String with ToString[a] =
-        rgb(Blue |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Blue |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default cyan color.
     ///
     pub def cyan(s: a): String with ToString[a] =
-        rgb(Cyan |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Cyan |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default green color.
     ///
     pub def green(s: a): String with ToString[a] =
-        rgb(Green |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Green |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default magenta color.
     ///
     pub def magenta(s: a): String with ToString[a] =
-        rgb(Magenta |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Magenta |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default red color.
     ///
     pub def red(s: a): String with ToString[a] =
-        rgb(Red |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Red |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default yellow color.
     ///
     pub def yellow(s: a): String with ToString[a] =
-        rgb(Yellow |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Yellow |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default white color.
     ///
     pub def white(s: a): String with ToString[a] =
-        rgb(White |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.White |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default black color.
     ///
     pub def black(s: a): String with ToString[a] =
-        rgb(Black |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.Black |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright black color.
     ///
     pub def blackBright(s: a): String with ToString[a] =
-        rgb(BrightBlack |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightBlack |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright red color.
     ///
     pub def redBright(s: a): String with ToString[a] =
-        rgb(BrightRed |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightRed |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright green color.
     ///
     pub def greenBright(s: a): String with ToString[a] =
-        rgb(BrightGreen |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightGreen |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright yellow color.
     ///
     pub def yellowBright(s: a): String with ToString[a] =
-        rgb(BrightYellow |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightYellow |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright blue color.
     ///
     pub def blueBright(s: a): String with ToString[a] =
-        rgb(BrightBlue |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightBlue |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright magenta color.
     ///
     pub def magentaBright(s: a): String with ToString[a] =
-        rgb(BrightMagenta |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightMagenta |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright cyan color.
     ///
     pub def cyanBright(s: a): String with ToString[a] =
-        rgb(BrightCyan |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightCyan |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright white color.
     ///
     pub def whiteBright(s: a): String with ToString[a] =
-        rgb(BrightWhite |> toRGB, ToString.toString(s), isFg = true)
+        rgb(Ansi.BrightWhite |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
     pub def bgBlack(s: a): String with ToString[a] =
-        rgb(BackgroundBlack |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBlack |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default red color.
     ///
     pub def bgRed(s: a): String with ToString[a] =
-        rgb(BackgroundRed |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundRed |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default green color.
@@ -276,43 +276,43 @@ namespace Console {
     /// Returns the string `s` with background color of the default yellow color.
     ///
     pub def bgYellow(s: a): String with ToString[a] =
-        rgb(BackgroundYellow |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundYellow |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default blue color.
     ///
     pub def bgBlue(s: a): String with ToString[a] =
-        rgb(BackgroundBlue |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBlue |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default magenta color.
     ///
     pub def bgMagenta(s: a): String with ToString[a] =
-        rgb(BackgroundMagenta |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundMagenta |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default cyan color.
     ///
     pub def bgCyan(s: a): String with ToString[a] =
-        rgb(BackgroundCyan |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundCyan |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default white color.
     ///
     pub def bgWhite(s: a): String with ToString[a] =
-        rgb(BackgroundWhite |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundWhite |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
     pub def bgBlackBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightBlack |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightBlack |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default red color.
     ///
     pub def bgRedBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightRed |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightRed |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default green color.
@@ -324,31 +324,31 @@ namespace Console {
     /// Returns the string `s` with background color of the default yellow color.
     ///
     pub def bgYellowBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightYellow |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightYellow |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default blue color.
     ///
     pub def bgBlueBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightBlue |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightBlue |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default magenta color.
     ///
     pub def bgMagentaBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightMagenta |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightMagenta |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default cyan color.
     ///
     pub def bgCyanBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightCyan |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightCyan |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default white color.
     ///
     pub def bgWhiteBright(s: a): String with ToString[a] =
-        rgb(BackgroundBrightWhite |> toRGB, ToString.toString(s), isFg = false)
+        rgb(Ansi.BackgroundBrightWhite |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Ansi Colors.

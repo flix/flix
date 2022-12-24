@@ -50,12 +50,12 @@ instance Order[List[a]] with Order[a] {
     /// Compares `l1` and `l2` lexicographically.
     ///
     pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
-        case (_ :: _, Nil) => GreaterThan
-        case (Nil, Nil) => EqualTo
-        case (Nil, _ :: _) => LessThan
+        case (_ :: _, Nil) => Comparison.GreaterThan
+        case (Nil, Nil) => Comparison.EqualTo
+        case (Nil, _ :: _) => Comparison.LessThan
         case (z :: zs, w :: ws) =>
             let cmp = z <=> w;
-            if (cmp == EqualTo) zs <=> ws else cmp
+            if (cmp == Comparison.EqualTo) zs <=> ws else cmp
     }
 
 }
@@ -1077,8 +1077,8 @@ namespace List {
     /// Returns the elements of `l` as a `DelayList`.
     ///
     pub def toDelayList(l: List[a]): DelayList[a] = match l {
-        case Nil     => ENil
-        case x :: xs => LCons(x, lazy toDelayList(xs))
+        case Nil     => DelayList.ENil
+        case x :: xs => DelayList.LCons(x, lazy toDelayList(xs))
     }
 
     ///
@@ -1140,7 +1140,7 @@ namespace List {
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
         case Some(x) =>
-            let a = [x; length(l)] @ r;
+            let a = Array.new(r, x, length(l));
             forEach(match (b, i) -> a[i] = b, zipWithIndex(l));
             a
         }
@@ -1152,7 +1152,7 @@ namespace List {
     ///
     pub def toNel(l: List[a]): Option[Nel[a]] = match l {
         case Nil     => None
-        case x :: xs => Some(Nel(x, xs))
+        case x :: xs => Some(Nel.Nel(x, xs))
     }
 
     ///
@@ -1307,7 +1307,7 @@ namespace List {
                 cursor := xs;
                 x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
@@ -1365,7 +1365,7 @@ namespace List {
         def loop(acc1, acc2, k) = match (acc1, acc2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
-                if (cmp == LessThan or cmp == EqualTo) loop(xs, acc2, ks -> k(x :: ks))
+                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, acc2, ks -> k(x :: ks))
                 else                                   loop(acc1, ys, ks -> k(y :: ks))
             }
             case (Nil    , y :: ys) => k(y :: ys)
@@ -1377,7 +1377,7 @@ namespace List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] \ NonDet = region r {
+    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region r {
         toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
     }
 

@@ -32,16 +32,16 @@ namespace Array {
         def loop(i) = {
             if (i < len) {
                 let cmp = a[i] <=> b[i];
-                if (cmp == EqualTo)
+                if (cmp == Comparison.EqualTo)
                     loop(i + 1)
                 else
                     cmp
             } else if (i < Array.length(a)) {
-                GreaterThan
+                Comparison.GreaterThan
             } else if (i < Array.length(b)) {
-                LessThan
+                Comparison.LessThan
             } else {
-                EqualTo
+                Comparison.EqualTo
             }
         };
         loop(0)
@@ -66,12 +66,10 @@ namespace Array {
     }
 
     ///
-    /// Returns a fresh array of length `l` filled with the element `x`.
-    ///
-    /// Equivalent to the expression `[x; l]`.
+    /// Returns a fresh array of length `l` filled with the element `x` in the region r.
     ///
     pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        [x; l] @ r
+        $ARRAY_NEW$(r, x, l)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -151,9 +149,9 @@ namespace Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, ECons(a[i], acc))
+                loop(i - 1, DelayList.ECons(a[i], acc))
         };
-        loop(length(a) - 1, ENil)
+        loop(length(a) - 1, DelayList.ENil)
 
     ///
     /// Returns the array `arr` as a chain.
@@ -1296,7 +1294,7 @@ namespace Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(r1, 0, c, a);
-        MutList(r1, ref copy @ r1, ref len @ r1)
+        MutList.MutList(r1, ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1366,7 +1364,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = [x; len] @ r;
+            let a = Array.new(r, x, len);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
@@ -1411,7 +1409,7 @@ namespace Array {
             i := deref i + 1;
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `a` in the same region as `a` zipped with the indices of the elements.
@@ -1597,7 +1595,7 @@ namespace Array {
     def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (cmp(a[j], pivot) == LessThan) {
+            if (cmp(a[j], pivot) == Comparison.LessThan) {
                 swap!(ix, j, a);
                 ix+1
             } else
@@ -1675,7 +1673,7 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & r \ NonDet =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit & r \ NonDet =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

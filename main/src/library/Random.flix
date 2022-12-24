@@ -1,3 +1,9 @@
+
+///
+/// Represents a random number generator.
+///
+pub enum Random(##java.util.Random)
+
 namespace Random {
 
     ///
@@ -83,10 +89,4 @@ namespace Random {
         import java.util.Random.nextInt(Int32): Int32 \ NonDet;
         let Random(o) = r;
         nextInt(o, m)
-
-    ///
-    /// Represents a random number generator.
-    ///
-    pub enum Random(##java.util.Random)
-
 }

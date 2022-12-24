@@ -57,7 +57,7 @@ namespace System {
                 if (Object.isNull(l)) bug!("No more lines on StdIn")
                 else l
             };
-            Iterator(done, next)
+            Iterator.Iterator(done, next)
     }
 
     ///
