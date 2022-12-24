@@ -304,6 +304,11 @@ object Validation {
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
+      case SuccessWithFailures(v1, err1) => f(v1) match {
+        case Success(x) => SuccessWithFailures(x, err1)
+        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: err1)
+        case Failure(errors) => Failure(errors #::: err1)
+      }
       case _ => Failure(t1.errors)
     }
 
