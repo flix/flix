@@ -316,7 +316,7 @@ namespace File {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(Static, 0i8, opts.count);
+                        let bytes = Array.new(r, 0i8, opts.count);
                         discard read(stream, bytes, 0, opts.count);
                         let charSet = forName(opts.charSet);
                         let returnString = newString(bytes, charSet);
