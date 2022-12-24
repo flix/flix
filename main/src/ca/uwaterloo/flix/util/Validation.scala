@@ -198,6 +198,23 @@ object Validation {
     }
   }
 
+  def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
+    case Success(Success(t)) =>
+      Success(t)
+    case Success(SuccessWithFailures(t, e)) =>
+      SuccessWithFailures(t, e)
+    case Success(Failure(e)) =>
+      Failure(e)
+    case SuccessWithFailures(Success(t), errors) =>
+      SuccessWithFailures(t, errors)
+    case SuccessWithFailures(SuccessWithFailures(t, e), errors) =>
+      SuccessWithFailures(t, e #::: errors)
+    case SuccessWithFailures(Failure(e), errors) =>
+      Failure(e #::: errors)
+    case Failure(errors) =>
+      Failure(errors)
+  }
+
   def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
     (f, t1) match {
       case (Success(g), Success(v)) =>
@@ -341,20 +358,14 @@ object Validation {
     */
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                             (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) => f(v1, v2)
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    flatten(ap(mapN(t1)(curry(f)))(t2))
 
   /**
     * FlatMaps over t1, t2, and t3.
     */
   def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                                 (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    flatten(ap(mapN(t1, t2)(curry(f)))(t3))
 
   /**
     * FlatMaps over t1, t2, t3, and t4.
@@ -362,10 +373,7 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E])
                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4)) => f(v1, v2, v3, v4)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3)(curry(f)))(t4))
 
   /**
     * FlatMaps over t1, t2, t3, t4, and t5.
@@ -373,10 +381,7 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E])
                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => f(v1, v2, v3, v4, v5)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3, t4)(curry(f)))(t5))
 
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
@@ -384,10 +389,7 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
                                             (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => f(v1, v2, v3, v4, v5, v6)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3, t4, t5)(curry(f)))(t6))
 
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
@@ -396,10 +398,7 @@ object Validation {
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E])
                                                 (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => f(v1, v2, v3, v4, v5, v6, v7)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
 
   /**
     * Sequences over t1, t2, and t3.
