@@ -132,7 +132,7 @@ object Lowering {
     lazy val Comparison: Type = Type.mkEnum(Enums.Comparison, Nil, SourceLocation.Unknown)
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+    lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Kind.Wild ->: Kind.Star, SourceLocation.Unknown)
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
@@ -604,10 +604,11 @@ object Lowering {
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //
-    case TypedAst.Expression.NewChannel(_, exp, tpe, pur, eff, loc) =>
-      val e = visitExp(exp)
+    case TypedAst.Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, pur, eff, loc)
+      mkNewChannelTuple(e1, e2, t, pur, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -845,14 +846,9 @@ object Lowering {
         case _ => tpe0
       }
 
-      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
-
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+      // Special case for Sender and Receiver, both of which are rewritten to Concurrent/Channel.Mpmc
+       case Type.Cst(TypeConstructor.Sender | TypeConstructor.Receiver, loc) =>
+         Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Bool ->: Kind.Star), loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1317,9 +1313,9 @@ object Lowering {
   /**
     * Make a new channel tuple (sender, receiver) expression
     */
-  private def mkNewChannelTuple(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
-    LoweredAst.Expression.Apply(newChannel, exp :: Nil, tpe, pur, eff, loc)
+  private def mkNewChannelTuple(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+    val newChannel = LoweredAst.Expression.Def(Defs.ChannelNewTuple, Type.mkImpureUncurriedArrow(exp1.tpe :: exp2.tpe :: Nil, tpe, loc), loc)
+    LoweredAst.Expression.Apply(newChannel, exp1 :: exp2 :: Nil, tpe, pur, eff, loc)
   }
 
   /**
@@ -1343,9 +1339,12 @@ object Lowering {
     */
   private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], loc: SourceLocation): LoweredAst.Expression = {
     val admins = rs.zip(channels) map {
-      case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
-        val admin = LoweredAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
-        LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
+      case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, LoweredAst.Expression.Var(_, Type.Apply(_, reg, _), _))) =>
+        val adminTpe = Type.mkEnum(Enums.ChannelMpmcAdmin, reg :: Nil, SourceLocation.Unknown)
+        val admin = LoweredAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, adminTpe, loc), loc)
+        LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), adminTpe, Type.Pure, Type.Empty, loc)
+      case _ =>
+        throw InternalCompilerException("Unexpected channel type", loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -1377,7 +1376,7 @@ object Lowering {
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(i), Type.Int32, loc), LoweredAst.Pattern.Var(locksSym, locksType, loc)), loc)
         val getTpe = Type.eraseTopAliases(chan.tpe) match {
-          case Type.Apply(_, t, _) => t
+          case Type.Apply(Type.Apply(_, t, _), _, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
         }
         val get = LoweredAst.Expression.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
