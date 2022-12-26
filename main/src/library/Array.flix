@@ -72,21 +72,25 @@ namespace Array {
         $ARRAY_NEW$(r, x, l)
 
     ///
-    /// Optionally returns the element at position `i` in the array `a`.
+    /// Retrieves the value at position `i` in the array `a`.
     ///
-    pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
-        if (0 <= i and i < Array.length(a))
-            Some(a[i])
-        else
-            None
+    pub def get(i: Int32, a: Array[a, r]): Unit \ Read(r) =
+        a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
-    /// Equivalent to the expression `a[i] = x`.
-    ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
         a[i] = x
+
+    ///
+    /// Optionally returns the element at position `i` in the array `a`.
+    ///
+    pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
+        if (0 <= i and i < length(a))
+            Some(a[i])
+        else
+            None
 
     ///
     /// Returns `true` if the given array `a` is empty.
