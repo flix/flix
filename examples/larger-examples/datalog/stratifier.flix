@@ -17,14 +17,14 @@ namespace Stratifier {
     type alias PrecedenceGraph = List[PrecedenceEdge]
 
     def convertProgram(p: Program): PrecedenceGraph =
-        let Program(c) = p;
+        let Program.Program(c) = p;
         flatMap(convertConstraint, c)
 
     def convertConstraint(c: Constraint): PrecedenceGraph =
-        let Constraint(HeadAtom(Atom(a0)), b) = c;
+        let Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(a0)), b) = c;
         let unfoldBodyAtom = ba -> match ba {
-            case Positive(Atom(ps)) => (true, ps),
-            case Negative(Atom(ps)) => (false, ps)
+            case BodyAtom.Positive(Atom.Atom(ps)) => (true, ps),
+            case BodyAtom.Negative(Atom.Atom(ps)) => (false, ps)
         };
         b |> map(unfoldBodyAtom) |> map(pna -> match pna {case (pn, a) => (a0, pn, a)})
 
@@ -59,10 +59,10 @@ namespace Stratifier {
         // A :- B, C
         // B :- D
         // C :- not D
-        let p = Program(
-            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Positive(Atom(PredicateSymbol("B"))) :: Positive(Atom(PredicateSymbol("C"))) :: Nil) ::
-            Constraint(HeadAtom(Atom(PredicateSymbol("B"))), Positive(Atom(PredicateSymbol("D"))) :: Nil) ::
-            Constraint(HeadAtom(Atom(PredicateSymbol("C"))), Negative(Atom(PredicateSymbol("D"))) :: Nil) ::
+        let p = Program.Program(
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil) ::
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
             Nil
         );
         let result = ullman(p, 4);
@@ -79,11 +79,11 @@ namespace Stratifier {
         // B :- D
         // C :- not D
         // D :- A
-        let p = Program(
-            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Positive(Atom(PredicateSymbol("B"))) :: Positive(Atom(PredicateSymbol("C"))) :: Nil) ::
-            Constraint(HeadAtom(Atom(PredicateSymbol("B"))), Positive(Atom(PredicateSymbol("D"))) :: Nil) ::
-            Constraint(HeadAtom(Atom(PredicateSymbol("C"))), Negative(Atom(PredicateSymbol("D"))) :: Nil) ::
-            Constraint(HeadAtom(Atom(PredicateSymbol("D"))), Negative(Atom(PredicateSymbol("A"))) :: Nil) ::
+        let p = Program.Program(
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))) :: Nil) ::
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))), BodyAtom.Positive(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("C"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))) :: Nil) ::
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("D"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))) :: Nil) ::
             Nil
         );
         let result = ullman(p, 4);
@@ -96,8 +96,8 @@ namespace Stratifier {
     pub def example03(): Unit \ IO =
         println("example03");
         // A :- not B.
-        let p = Program(
-            Constraint(HeadAtom(Atom(PredicateSymbol("A"))), Negative(Atom(PredicateSymbol("B"))) :: Nil) ::
+        let p = Program.Program(
+            Constraint.Constraint(HeadAtom.HeadAtom(Atom.Atom(PredicateSymbol.PredicateSymbol("A"))), BodyAtom.Negative(Atom.Atom(PredicateSymbol.PredicateSymbol("B"))) :: Nil) ::
             Nil
         );
         let result = ullman(p, 2);

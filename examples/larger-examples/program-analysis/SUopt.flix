@@ -93,7 +93,7 @@ def main(): Unit \ IO =
         // Kill
         // ---------
         Kill(l: String; f(b)) :- Store(l,p,_q), Pt(p,b).
-        Kill(l;Top) :- Phi(l).
+        Kill(l;SULattice.Top) :- Phi(l).
     };
     let m = solve p;
     Fixpoint.unsafePrint(m);

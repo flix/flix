@@ -136,25 +136,25 @@ namespace Test/Dec/TypeAlias {
     type alias W[a, b] = Z[a, b]
 
     @test
-    def testTypeAlias21(): U = X(123)
+    def testTypeAlias21(): U = X.X(123)
 
     @test
-    def testTypeAlias22(): V[Bool] = Y(None)
+    def testTypeAlias22(): V[Bool] = Y.Y(None)
 
     @test
-    def testTypeAlias23(): V[Bool] = Y(Some(true))
+    def testTypeAlias23(): V[Bool] = Y.Y(Some(true))
 
     @test
-    def testTypeAlias24(): V[Int32] = Y(None)
+    def testTypeAlias24(): V[Int32] = Y.Y(None)
 
     @test
-    def testTypeAlias25(): V[Int32] = Y(Some(123))
+    def testTypeAlias25(): V[Int32] = Y.Y(Some(123))
 
     @test
-    def testTypeAlias26(): W[Bool, Int32] = Z(Ok(true))
+    def testTypeAlias26(): W[Bool, Int32] = Z.Z(Ok(true))
 
     @test
-    def testTypeAlias27(): W[Bool, Int32] = Z(Err(123))
+    def testTypeAlias27(): W[Bool, Int32] = Z.Z(Err(123))
 
     ///
     /// Type-level if-then-else

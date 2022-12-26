@@ -1,4 +1,5 @@
 namespace Test/Exp/Binary/Spaceship {
+    use Comparison.{EqualTo, GreaterThan, LessThan}
 
     @test
     def testBinarySpaceship01(): Bool = (() <=> ()) == EqualTo
@@ -199,22 +200,22 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship66(): Bool = ((4, 2, 3) <=> (1, 2, 3)) == GreaterThan
 
     @test
-    def testBinarySpaceship67(): Bool = (Red <=> Red) == EqualTo
+    def testBinarySpaceship67(): Bool = (Color.Red <=> Color.Red) == EqualTo
 
     @test
-    def testBinarySpaceship68(): Bool = (Blu <=> Blu) == EqualTo
+    def testBinarySpaceship68(): Bool = (Color.Blu <=> Color.Blu) == EqualTo
 
     @test
-    def testBinarySpaceship69(): Bool = (Red <=> Blu) == LessThan
+    def testBinarySpaceship69(): Bool = (Color.Red <=> Color.Blu) == LessThan
 
     @test
-    def testBinarySpaceship70(): Bool = (Blu <=> Red) == GreaterThan
+    def testBinarySpaceship70(): Bool = (Color.Blu <=> Color.Red) == GreaterThan
 
     @test
-    def testBinarySpaceship71(): Bool = (Some(Red) <=> Some(Blu)) == LessThan
+    def testBinarySpaceship71(): Bool = (Some(Color.Red) <=> Some(Color.Blu)) == LessThan
 
     @test
-    def testBinarySpaceship72(): Bool = (Some(Blu) <=> Some(Red)) == GreaterThan
+    def testBinarySpaceship72(): Bool = (Some(Color.Blu) <=> Some(Color.Red)) == GreaterThan
 
     enum Color {
         case Red,
@@ -223,19 +224,19 @@ namespace Test/Exp/Binary/Spaceship {
 
     instance Eq[Color] {
         pub def eq(c1: Color, c2: Color): Bool = match (c1, c2) {
-            case (Red, Red) => true
-            case (Blu, Blu) => true
-            case (Red, Blu) => false
-            case (Blu, Red) => false
+            case (Color.Red, Color.Red) => true
+            case (Color.Blu, Color.Blu) => true
+            case (Color.Red, Color.Blu) => false
+            case (Color.Blu, Color.Red) => false
         }
     }
 
     instance Order[Color] {
         pub def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
-            case (Red, Red) => EqualTo
-            case (Blu, Blu) => EqualTo
-            case (Red, Blu) => LessThan
-            case (Blu, Red) => GreaterThan
+            case (Color.Red, Color.Red) => EqualTo
+            case (Color.Blu, Color.Blu) => EqualTo
+            case (Color.Red, Color.Blu) => LessThan
+            case (Color.Blu, Color.Red) => GreaterThan
         }
     }
 

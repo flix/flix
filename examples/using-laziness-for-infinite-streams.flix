@@ -13,7 +13,7 @@ def primes(): DelayList[Int32] =
 def primes2(): DelayList[Int32] = sieve(DelayList.from(2))
 def sieve(ps: DelayList[Int32]): DelayList[Int32] = match DelayList.head(ps) {
     case Some(p) =>
-        LCons(p,
+        DelayList.LCons(p,
             lazy sieve(
                 DelayList.filter(x -> x rem p != 0, DelayList.tail(ps))
                 )

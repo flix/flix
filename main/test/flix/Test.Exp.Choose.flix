@@ -1,4 +1,5 @@
 namespace Test/Exp/Choose {
+    use Choice.{Present, Absent}
 
     @test
     def testChooseOne01(): Bool =

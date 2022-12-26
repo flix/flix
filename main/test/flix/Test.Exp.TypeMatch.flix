@@ -702,7 +702,7 @@ namespace Test/Exp/ReifyType {
     @Test
     def testPairTreeSize03(): Bool = pairTreeSize(("hi", ("there", "pal"))) == 5
 
-    def magicList(n: Int32): List[a] = typematch (Proxy: Proxy[a]) {
+    def magicList(n: Int32): List[a] = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Int32] =>
             if (n > 0) {
                 unsafe_cast (n :: magicList(n - 1)) as List[a]

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-namespace Concurrent/CyclicBarrier {
-
+namespace Concurrent {
   ///
   /// A wrapper around a Java CyclicBarrier
   ///
   @Internal
   pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
+}
+
+namespace Concurrent/CyclicBarrier {
 
   ///
   /// Create a new CyclicBarrier which will wait for `parties` threads
