@@ -1302,7 +1302,7 @@ object Weeder {
 
     case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
       /*
-       * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
+       * Rewrites an `FArray` expression into an array literal.
        */
       val loc = mkSL(sp1, sp2).asSynthetic
 
