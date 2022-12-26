@@ -8,7 +8,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region01(): Bool =
         region r {
-            let a = Array.new(r, 1, 8);
+            let a = Array.repeat(r, 8, 1);
             a[0] == 1
         }
 
@@ -31,7 +31,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1Nested01(): Bool =
         region r {
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             MutMap.put!(1, 1, a[0]);
             MutMap.get(1, a[0]) == Some(1)
         }
@@ -40,9 +40,9 @@ namespace Test/Exp/Regions {
     def testRegions1Region1Nested02(): Bool =
         region r {
             let l = new MutList(r);
-            MutList.push!(Array.new(r, 1, 8), l);
+            MutList.push!(Array.repeat(r, 8, 1), l);
             match MutList.pop!(l) {
-                case Some(a) => a `Array.sameElements` Array.new(r, 1, 8)
+                case Some(a) => a `Array.sameElements` Array.repeat(r, 8, 1)
                 case _       => unreachable!()
             }
         }
@@ -63,7 +63,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1Nested04(): Bool =
         region r {
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             MutMap.put!(1, 1, a[0]);
             MutMap.get(1, a[0]) == Some(1)
         }
@@ -72,9 +72,9 @@ namespace Test/Exp/Regions {
     def testRegions1Region1Nested05(): Bool =
         region r {
             let l = new MutList(r);
-            MutList.push!(Array.new(r, 1, 8), l);
+            MutList.push!(Array.repeat(r, 8, 1), l);
             match MutList.pop!(l) {
-                case Some(a) => a `Array.sameElements` Array.new(r, 1, 8)
+                case Some(a) => a `Array.sameElements` Array.repeat(r, 8, 1)
                 case _       => unreachable!()
             }
         }
@@ -95,7 +95,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region2Nested01(): Bool =
         region r {
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             let l = new MutList(r);
             MutList.push!(1, l);
             MutMap.put!(1, l, a[0]);
@@ -109,7 +109,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region2Nested02(): Bool =
         region r {
             let l = new MutList(r);
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             MutMap.put!(1, 1, a[0]);
             MutList.push!(a, l);
             match MutList.pop!(l) {
@@ -123,7 +123,7 @@ namespace Test/Exp/Regions {
         region r {
             let m = new MutMap(r);
             let l = new MutList(r);
-            MutList.push!(Array.new(r, 1, 8), l);
+            MutList.push!(Array.repeat(r, 8, 1), l);
             MutMap.put!(1, l, m);
             match MutMap.get(1, m) {
                 case Some(k) => match MutList.pop!(k) {
@@ -137,9 +137,9 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region3Nested01(): Bool =
         region r {
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             let l = new MutList(r);
-            MutList.push!(Array.new(r, 1, 8), l);
+            MutList.push!(Array.repeat(r, 8, 1), l);
             MutMap.put!(1, l, a[0]);
             match MutMap.get(1, a[0]) {
                 case Some(k) => match MutList.pop!(k) {
@@ -154,7 +154,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region3Nested02(): Bool =
         region r {
             let l = new MutList(r);
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             let l1 = new MutList(r);
             MutList.push!(1, l1);
             MutMap.put!(1, l1, a[0]);
@@ -173,7 +173,7 @@ namespace Test/Exp/Regions {
         region r {
             let m = new MutMap(r);
             let l = new MutList(r);
-            let a = Array.new(r, new MutMap(r), 8);
+            let a = Array.repeat(r, 8, new MutMap(r));
             MutMap.put!(1, 1, a[0]);
             MutList.push!(a, l);
             MutMap.put!(1, l, m);
@@ -189,10 +189,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions01(): Bool =
         region r1 {
-            let a1 = Array.new(r1, 1, 8);
+            let a1 = Array.repeat(r1, 8, 1);
             a1[0] == 1 and 1 ==
             region r2 {
-                let a2 = Array.new(r2, 1, 8);
+                let a2 = Array.repeat(r2, 8, 1);
                 a2[0]
             }
         }
@@ -300,10 +300,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions10(): Bool =
         region r1 {
-            let a1 = Array.new(r1, 1, 8);
+            let a1 = Array.repeat(r1, 8, 1);
             a1[0] == 1 and 1 ==
             region r2 {
-                let a2 = Array.new(r2, 1, 8);
+                let a2 = Array.repeat(r2, 8, 1);
                 a2[0]
             }
         }
@@ -337,9 +337,9 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions13(): Bool =
         region r1 {
-            let a1 = Array.new(r1, 1, 8);
+            let a1 = Array.repeat(r1, 8, 1);
             region r2 {
-                let a2 = Array.new(r2, 1, 8);
+                let a2 = Array.repeat(r2, 8, 1);
                 a1[0] == 1 and 1 == a2[0]
             }
         }
@@ -373,7 +373,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1Nested01(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutMap[Int32, Int32, r2], r1] = Array.new(r1, new MutMap(r2), 8);
+                let a: Array[MutMap[Int32, Int32, r2], r1] = Array.repeat(r1, 8, new MutMap(r2));
                 MutMap.put!(1, 1, a[0]);
                 MutMap.get(1, a[0]) == Some(1)
             }
@@ -384,7 +384,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: MutList[Array[Int32, r2], r1] = new MutList(r1);
-                MutList.push!(Array.new(r2, 1, 8), l);
+                MutList.push!(Array.repeat(r2, 8, 1), l);
                 match MutList.pop!(l) {
                     case Some(a) => a[0] == 1
                     case _       => unreachable!()
@@ -411,7 +411,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1Nested04(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutMap[Int32, Int32, r1], r2] = Array.new(r2, new MutMap(r1), 8);
+                let a: Array[MutMap[Int32, Int32, r1], r2] = Array.repeat(r2, 8, new MutMap(r1));
                 MutMap.put!(1, 1, a[0]);
                 MutMap.get(1, a[0]) == Some(1)
             }
@@ -422,7 +422,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: MutList[Array[Int32, r1], r2] = new MutList(r2);
-                MutList.push!(Array.new(r1, 1, 8), l);
+                MutList.push!(Array.repeat(r1, 8, 1), l);
                 match MutList.pop!(l) {
                     case Some(a) => a[0] == 1
                     case _       => unreachable!()
@@ -449,7 +449,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions2Nested01(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutMap[Int32, MutList[Int32, r1], r2], r2] = Array.new(r2, new MutMap(r2), 8);
+                let a: Array[MutMap[Int32, MutList[Int32, r1], r2], r2] = Array.repeat(r2, 8, new MutMap(r2));
                 let l = new MutList(r1);
                 MutList.push!(1, l);
                 MutMap.put!(1, l, a[0]);
@@ -465,7 +465,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: MutList[Array[MutMap[Int32, Int32, r2], r1], r2] = new MutList(r2);
-                let a = Array.new(r1, new MutMap(r2), 8);
+                let a = Array.repeat(r1, 8, new MutMap(r2));
                 MutList.push!(a, l);
                 MutMap.put!(1, 1, a[0]); // Mutate a[0], the MutList `l` above should also be updated by this
                 match MutList.pop!(l) {
@@ -481,7 +481,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 let m: MutMap[Int32, MutList[Array[Int32, r2], r2], r1] = new MutMap(r1);
                 let l = new MutList(r2);
-                MutList.push!(Array.new(r2, 1, 8), l);
+                MutList.push!(Array.repeat(r2, 8, 1), l);
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
                     case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
@@ -494,9 +494,9 @@ namespace Test/Exp/Regions {
     def testRegions2Regions3Nested01(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutMap[Int32, MutList[Array[Int32, r1], r1], r2], r2] = Array.new(r2, new MutMap(r2), 8);
+                let a: Array[MutMap[Int32, MutList[Array[Int32, r1], r1], r2], r2] = Array.repeat(r2, 8, new MutMap(r2));
                 let l = new MutList(r1);
-                MutList.push!(Array.new(r1, 1, 8), l);
+                MutList.push!(Array.repeat(r1, 8, 1), l);
                 MutMap.put!(1, l, a[0]);
                 match MutMap.get(1, a[0]) {
                     case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
@@ -510,7 +510,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: MutList[Array[MutMap[Int32, MutList[Int32, r2], r2], r1], r2] = new MutList(r2);
-                let a = Array.new(r1, new MutMap(r2), 8);
+                let a = Array.repeat(r1, 8, new MutMap(r2));
                 MutList.push!(a, l);
                 let l2 = new MutList(r2);
                 MutMap.put!(1, l2, a[0]); // Mutate a[0], the MutList `l` above should also be updated by this
@@ -531,7 +531,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 let m: MutMap[Int32, MutList[Array[MutMap[Int32, Int32, r2], r2], r1], r1] = new MutMap(r1);
                 let l = new MutList(r1);
-                let a = Array.new(r2, new MutMap(r2), 8);
+                let a = Array.repeat(r2, 8, new MutMap(r2));
                 MutList.push!(a, l);
                 MutMap.put!(1, 1, a[0]); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, m);
@@ -546,7 +546,22 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3Regions01(): Bool =
         region r1 {
-            let a = Array.new(r1, 1, 8);
+            let a = Array.repeat(r1, 8, 1);
+            region r2 {
+                let l = new MutList(r2);
+                region _ {
+                    let m = new MutMap(Static);
+                    MutList.push!(1, l);
+                    MutMap.put!(1, 1, m);
+                    a[0] == 1 and MutList.pop!(l) == Some(1) and MutMap.get(1, m) == Some(1)
+                }
+            }
+        }
+
+    @test
+    def testRegions3Regions02(): Bool \ IO =
+        region _ {
+            let a = Array.repeat(Static, 8, 1);
             region r2 {
                 let l = new MutList(r2);
                 region r3 {
@@ -561,24 +576,9 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3Regions02(): Bool =
         region r1 {
-            let a = Array.new(r1, 1, 8);
-            region r2 {
-                let l = new MutList(r2);
-                region r3 {
-                    let m = new MutMap(r3);
-                    MutList.push!(1, l);
-                    MutMap.put!(1, 1, m);
-                    a[0] == 1 and MutList.pop!(l) == Some(1) and MutMap.get(1, m) == Some(1)
-                }
-            }
-        }
-
-    @test
-    def testRegions3Regions03(): Bool =
-        region r1 {
-            let a = Array.new(r1, 1, 8);
-            region r2 {
-                let l = new MutList(r2);
+            let a = Array.repeat(r1, 8, 1);
+            region _ {
+                let l = new MutList(Static);
                 region r3 {
                     let m = new MutMap(r3);
                     MutList.push!(1, l);
@@ -591,7 +591,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3Regions04(): Bool =
         region r1 {
-            let a = Array.new(r1, 1, 8);
+            let a = Array.repeat(r1, 8, 1);
             region r2 {
                 let l = new MutList(r2);
                 region r3 {
@@ -607,7 +607,7 @@ namespace Test/Exp/Regions {
     def testRegions3Regions1Nested01(): Bool =
         region r1 {
             region r2 {
-                let a: Array[MutList[Int32, r1], r2] = Array.new(r2, new MutList(r1), 8);
+                let a: Array[MutList[Int32, r1], r2] = Array.repeat(r2, 8, new MutList(r1));
                 region _ {
                     MutList.push!(1, a[0]);
                     MutList.pop!(a[0]) == Some(1)
@@ -654,7 +654,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 region r3 {
-                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], r1] = Array.new(r1, Reflect.default(), 8);
+                    let a: Array[MutMap[Int32, MutList[Int32, r3], r2], r1] = Array.new(r1, 8);
                     let m = new MutMap(r2);
                     let l = new MutList(r3);
                     MutList.push!(1, l);
@@ -674,7 +674,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 region r3 {
                     let l: MutList[Array[MutMap[Int32, Int32, r1], r2], r3] = new MutList(r3);
-                    let a = Array.new(r2, new MutMap(r1), 8);
+                    let a = Array.repeat(r2, 8, new MutMap(r1));
                     MutList.push!(a, l);
                     MutMap.put!(1, 1, a[0]);
                     match MutList.pop!(l) {
@@ -693,7 +693,7 @@ namespace Test/Exp/Regions {
                     let m: MutMap[Int32, MutList[Array[Int32, r1], r3], r2] = new MutMap(r2);
                     let l = new MutList(r3);
                     MutMap.put!(1, l, m);
-                    MutList.push!(Array.new(r1, 1, 8), l);
+                    MutList.push!(Array.repeat(r1, 8, 1), l);
                     match MutMap.get(1, m) {
                         case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                         case _       => unreachable!()
@@ -708,9 +708,9 @@ namespace Test/Exp/Regions {
             let l = new MutList(r1);
             region r2 {
                 region r3 {
-                    let a: Array[MutMap[Int32, MutList[Array[Int32, r1], r1], r2], r3] = Array.new(r3, new MutMap(r2), 8);
+                    let a: Array[MutMap[Int32, MutList[Array[Int32, r1], r1], r2], r3] = Array.repeat(r3, 8, new MutMap(r2));
                     MutMap.put!(1, l, a[0]);
-                    MutList.push!(Array.new(r1, 1, 8), l);
+                    MutList.push!(Array.repeat(r1, 8, 1), l);
                     match MutMap.get(1, a[0]) {
                         case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
                         case _       => unreachable!()
@@ -725,7 +725,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 region r3 {
                     let l: MutList[Array[MutMap[Int32, MutList[Int32, r2], r3], r1], r2] = new MutList(r2);
-                    let a = Array.new(r1, new MutMap(r3), 8);
+                    let a = Array.repeat(r1, 8, new MutMap(r3));
                     let l2 = new MutList(r2);
                     MutList.push!(a, l);
                     MutMap.put!(1, l2, a[0]);
@@ -748,7 +748,7 @@ namespace Test/Exp/Regions {
                 region r3 {
                     let m: MutMap[Int32, MutList[Array[MutMap[Int32, Int32, r1], r3], r1], r2] = new MutMap(r2);
                     let l = new MutList(r1);
-                    let a = Array.new(r3, new MutMap(r1), 8);
+                    let a = Array.repeat(r3, 8, new MutMap(r1));
                     MutMap.put!(1, l, m);
                     MutList.push!(a, l);
                     MutMap.put!(1, 1, a[0]);
@@ -763,7 +763,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1RegionReferences03(): Bool =
         region r {
-            let a = Array.new(r, ref 1 @ r, 8);
+            let a = Array.repeat(r, 8, ref 1 @ r);
             deref a[0] == 1
         }
 
@@ -786,7 +786,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences01(): Bool =
         region r {
-            let a = ref Array.new(r, new MutMap(r), 8) @ r;
+            let a = ref Array.repeat(r, 8, new MutMap(r)) @ Static;
             MutMap.put!(1, 1, (deref a)[0]);
             MutMap.get(1, (deref a)[0]) == Some(1)
         }
@@ -794,10 +794,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences02(): Bool =
         region r {
-            let l = ref new MutList(r) @ r; 
-            MutList.push!(ref (Array.new(r, 1, 8)) @ r, deref l);
+            let l = ref new MutList(r) @ r; // Static reference to a MutList in region r
+            MutList.push!(ref (Array.repeat(r, 8, 1)) @ r, deref l);
             match MutList.pop!(deref l) {
-                case Some(a) => (deref a) `Array.sameElements` Array.new(r, 1, 8)
+                case Some(a) => (deref a) `Array.sameElements` Array.repeat(r, 8, 1)
                 case _       => unreachable!()
             }
         }
@@ -818,7 +818,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences04(): Bool =
         region r {
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             MutMap.put!(1, 1, deref ((deref a)[0]));
             MutMap.get(1, deref ((deref a)[0])) == Some(1)
         }
@@ -827,9 +827,9 @@ namespace Test/Exp/Regions {
     def testRegions1Region1NestedReferences05(): Bool =
         region r {
             let l = ref new MutList(r) @ r;
-            MutList.push!(Array.new(r, 1, 8), deref l);
+            MutList.push!(Array.repeat(r, 8, 1), deref l);
             match MutList.pop!(deref l) {
-                case Some(a) => a `Array.sameElements` Array.new(r, 1, 8)
+                case Some(a) => a `Array.sameElements` Array.repeat(r, 8, 1)
                 case _       => unreachable!()
             }
         }
@@ -837,7 +837,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region2NestedReferences01(): Bool =
         region r {
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             let l = ref new MutList(r) @ r;
             MutList.push!(1, deref l);
             MutMap.put!(1, l, deref (deref a)[0]);
@@ -851,7 +851,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region2NestedReferences02(): Bool =
         region r {
             let l = ref new MutList(r) @ r;
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             MutMap.put!(1, 1, deref (deref a)[0]);
             MutList.push!(a, deref l);
             match MutList.pop!(deref l) {
@@ -865,7 +865,7 @@ namespace Test/Exp/Regions {
         region r {
             let m = ref new MutMap(r) @ r;
             let l = ref new MutList(r) @ r;
-            MutList.push!(ref Array.new(r, 1, 8) @ r, deref l);
+            MutList.push!(ref Array.repeat(r, 8, 1) @ r, deref l);
             MutMap.put!(1, l, deref m);
             match MutMap.get(1, deref m) {
                 case Some(k) => match MutList.pop!(deref k) {
@@ -879,9 +879,9 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region3NestedReferences01(): Bool =
         region r {
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             let l = ref new MutList(r) @ r;
-            MutList.push!(ref Array.new(r, 1, 8) @ r, deref l);
+            MutList.push!(ref Array.repeat(r, 8, 1) @ r, deref l);
             MutMap.put!(1, l, deref (deref a)[0]);
             match MutMap.get(1, deref (deref a)[0]) {
                 case Some(k) => match MutList.pop!(deref k) {
@@ -896,7 +896,7 @@ namespace Test/Exp/Regions {
     def testRegions1Region3NestedReferences02(): Bool =
         region r {
             let l = ref new MutList(r) @ r;
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             let l1 = ref new MutList(r) @ r;
             MutList.push!(1, deref l1);
             MutMap.put!(1, l1, deref (deref a)[0]);
@@ -915,7 +915,7 @@ namespace Test/Exp/Regions {
         region r {
             let m = ref new MutMap(r) @ r;
             let l = ref new MutList(r) @ r;
-            let a = ref Array.new(r, ref new MutMap(r) @ r, 8) @ r;
+            let a = ref Array.repeat(r, 8, ref new MutMap(r) @ r) @ r;
             MutMap.put!(1, 1, deref (deref a)[0]);
             MutList.push!(a, deref l);
             MutMap.put!(1, l, deref m);
@@ -931,10 +931,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2RegionsReferences01(): Bool =
         region r1 {
-            let a1 = ref Array.new(r1, 1, 8) @ r1;
+            let a1 = ref Array.repeat(r1, 8, 1) @ r1;
             (deref a1)[0] == 1 and 1 ==
             region r2 {
-                let a2 = ref Array.new(r2, 1, 8) @ r1;
+                let a2 = ref Array.repeat(r2, 8, 1) @ r1;
                 (deref a2)[0]
             }
         }
@@ -980,8 +980,8 @@ namespace Test/Exp/Regions {
     def testRegions2RegionsReferences05(): Bool =
         region r1 {
             region r2 {
-                let a1 = ref Array.new(r1, 1, 8) @ r2;
-                let a2 = ref Array.new(r2, 1, 8) @ r2;
+                let a1 = ref Array.repeat(r1, 8, 1) @ r2;
+                let a2 = ref Array.repeat(r2, 8, 1) @ r2;
                 (deref a1)[0] == 1 and 1 == (deref a2)[0]
             }
         }
@@ -1002,7 +1002,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1NestedReferences01(): Bool =
         region r1 {
             region r2 {
-                let a: Ref[Array[Ref[MutMap[Int32, Int32, r2], r1], r1], r2] = ref Array.new(r1, ref new MutMap(r2) @ r1, 8) @ r2;
+                let a: Ref[Array[Ref[MutMap[Int32, Int32, r2], r1], r1], r2] = ref Array.repeat(r1, 8, ref new MutMap(r2) @ r1) @ r2;
                 MutMap.put!(1, 1, deref (deref a)[0]);
                 MutMap.get(1, deref (deref a)[0]) == Some(1)
             }
@@ -1013,7 +1013,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: Ref[MutList[Ref[Array[Int32, r2], r1], r1], r1] = ref new MutList(r1) @ r1;
-                MutList.push!(ref Array.new(r2, 1, 8) @ r1, deref l);
+                MutList.push!(ref Array.repeat(r2, 8, 1) @ r1, deref l);
                 match MutList.pop!(deref l) {
                     case Some(a) => (deref a)[0] == 1
                     case _       => unreachable!()
@@ -1040,7 +1040,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions1NestedReferences04(): Bool =
         region r1 {
             region r2 {
-                let a: Ref[Array[Ref[MutMap[Int32, Int32, r1], r2], r2], r2] = ref Array.new(r2, ref new MutMap(r1) @ r2, 8) @ r2;
+                let a: Ref[Array[Ref[MutMap[Int32, Int32, r1], r2], r2], r2] = ref Array.repeat(r2, 8, ref new MutMap(r1) @ r2) @ r2;
                 MutMap.put!(1, 1, deref (deref a)[0]);
                 MutMap.get(1, deref (deref a)[0]) == Some(1)
             }
@@ -1050,7 +1050,7 @@ namespace Test/Exp/Regions {
     def testRegions2Regions2NestedReferences01(): Bool =
         region r1 {
             region r2 {
-                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r1], r1], r2], r2], r2], r2] = ref Array.new(r2, ref new MutMap(r2) @ r2, 8) @ r2;
+                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r1], r1], r2], r2], r2], r2] = ref Array.repeat(r2, 8, ref new MutMap(r2) @ r2) @ r2;
                 let l = ref new MutList(r1) @ r1;
                 MutList.push!(1, deref l);
                 MutMap.put!(1, l, deref (deref a)[0]);
@@ -1066,7 +1066,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, r2], r1], r2], r1], r2], r1] = ref new MutList(r2) @ r1;
-                let a = ref Array.new(r2, ref new MutMap(r2) @ r1, 8) @ r1;
+                let a = ref Array.repeat(r2, 8, ref new MutMap(r2) @ r1) @ r1;
                 MutList.push!(a, deref l);
                 MutMap.put!(1, 1, deref (deref a)[0]); // Mutate a[0], the MutList `l` above should also be updated by this
                 match MutList.pop!(deref l) {
@@ -1082,7 +1082,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r2], r2], r1], r2], r1], r2] = ref new MutMap(r1) @ r2;
                 let l = ref new MutList(r1) @ r2;
-                MutList.push!(ref Array.new(r2, 1, 8) @ r2, deref l);
+                MutList.push!(ref Array.repeat(r2, 8, 1) @ r2, deref l);
                 MutMap.put!(1, l, deref m);
                 match MutMap.get(1, deref m) {
                     case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
@@ -1095,9 +1095,9 @@ namespace Test/Exp/Regions {
     def testRegions2Regions3NestedReferences01(): Bool =
         region r1 {
             region r2 {
-                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r1], r1], r1], r2], r2], r2], r2] = ref Array.new(r2, ref new MutMap(r2) @ r2, 8) @ r2;
+                let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r1], r1], r1], r2], r2], r2], r2] = ref Array.repeat(r2, 8, ref new MutMap(r2) @ r2) @ r2;
                 let l = ref new MutList(r1) @ r1;
-                MutList.push!(ref Array.new(r1, 1, 8) @ r1, deref l);
+                MutList.push!(ref Array.repeat(r1, 8, 1) @ r1, deref l);
                 MutMap.put!(1, l, deref (deref a)[0]);
                 match MutMap.get(1, deref (deref a)[0]) {
                     case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
@@ -1111,7 +1111,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r2], r1], r2], r1], r1], r2], r2], r1] = ref new MutList(r2) @ r1;
-                let a = ref Array.new(r1, ref new MutMap(r2) @ r1, 8) @ r2;
+                let a = ref Array.repeat(r1, 8, ref new MutMap(r2) @ r1) @ r2;
                 MutList.push!(a, deref l);
                 let l2 = ref new MutList(r2) @ r1;
                 MutMap.put!(1, l2, deref (deref a)[0]); // Mutate a[0], the MutList `l` above should also be updated by this
@@ -1132,7 +1132,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, r2], r1], r2], r1], r1], r2], r1], r2] = ref new MutMap(r1) @ r2;
                 let l = ref new MutList(r1) @ r2;
-                let a = ref Array.new(r2, ref new MutMap(r2) @ r1, 8) @ r1;
+                let a = ref Array.repeat(r2, 8, ref new MutMap(r2) @ r1) @ r1;
                 MutList.push!(a, deref l);
                 MutMap.put!(1, 1, deref (deref a)[0]); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, deref m);
@@ -1147,7 +1147,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3RegionsReferences01(): Bool =
         region r1 {
-            let a = ref Array.new(r1, 1, 8) @ r1;
+            let a = ref Array.repeat(r1, 8, 1) @ r1;
             region r2 {
                 let l = ref new MutList(r2) @ r1;
                 region _ {
@@ -1160,9 +1160,9 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions3RegionsReferences02(): Bool =
+    def testRegions3RegionsReferences02(): Bool \ IO =
         region r1 {
-            let a = ref Array.new(r1, 1, 8) @ r1;
+            let a = ref Array.repeat(r1, 8, 1) @ r1;
             region r2 {
                 let l = ref new MutList(r2) @ r2;
                 region r3 {
@@ -1177,7 +1177,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3RegionsReferences03(): Bool =
         region r1 {
-            let a = ref Array.new(r1, 1, 8) @ r1;
+            let a = ref Array.repeat(r1, 8, 1) @ r1;
             region r2 {
                 let l = ref new MutList(r2) @ r1;
                 region r3 {
@@ -1192,7 +1192,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions3RegionsReferences04(): Bool =
         region r1 {
-            let a = ref Array.new(r1, 1, 8) @ r1;
+            let a = ref Array.repeat(r1, 8, 1) @ r1;
             region r2 {
                 let l = ref new MutList(r2) @ r2;
                 region r3 {
@@ -1208,7 +1208,7 @@ namespace Test/Exp/Regions {
     def testRegions3Regions1NestedReferences01(): Bool =
         region r1 {
             region r2 {
-                let a: Ref[Array[Ref[MutList[Int32, r1], r2], r2], r2] = ref Array.new(r2, ref new MutList(r1) @ r2, 8) @ r2;
+                let a: Ref[Array[Ref[MutList[Int32, r1], r2], r2], r2] = ref Array.repeat(r2, 8, ref new MutList(r1) @ r2) @ r2;
                 region _ {
                     MutList.push!(1, deref (deref a)[0]);
                     MutList.pop!(deref (deref a)[0]) == Some(1)
@@ -1255,7 +1255,7 @@ namespace Test/Exp/Regions {
         region r1 {
             region r2 {
                 region r3 {
-                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], r1], r2], r3], r1], r2] = ref Array.new(r1, Reflect.default(), 8) @ r2;
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r3], r1], r2], r3], r1], r2] = ref Array.new(r1, 8) @ r2;
                     let m = ref new MutMap(r2) @ r3;
                     let l = ref new MutList(r3) @ r1;
                     MutList.push!(1, deref l);
@@ -1275,7 +1275,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 region r3 {
                     let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, r1], r3], r2], r1], r3], r2] = ref new MutList(r3) @ r2;
-                    let a = ref Array.new(r2, ref new MutMap(r1) @ r3, 8) @ r1;
+                    let a = ref Array.repeat(r2, 8, ref new MutMap(r1) @ r3) @ r1;
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref (deref a)[0]);
                     match MutList.pop!(deref l) {
@@ -1294,7 +1294,7 @@ namespace Test/Exp/Regions {
                     let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r2], r3], r1], r2], r3] = ref new MutMap(r2) @ r3;
                     let l = ref new MutList(r3) @ r1;
                     MutMap.put!(1, l, deref m);
-                    MutList.push!(ref Array.new(r1, 1, 8) @ r2, deref l);
+                    MutList.push!(ref Array.repeat(r1, 8, 1) @ r2, deref l);
                     match MutMap.get(1, deref m) {
                         case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                         case _       => unreachable!()
@@ -1309,9 +1309,9 @@ namespace Test/Exp/Regions {
             region r2 {
                 let l = ref new MutList(r1) @ r2;
                 region r3 {
-                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r1], r1], r2], r2], r3], r3], r1] = ref Array.new(r3, ref new MutMap(r2) @ r3, 8) @ r1;
+                    let a: Ref[Array[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Int32, r1], r1], r1], r2], r2], r3], r3], r1] = ref Array.repeat(r3, 8, ref new MutMap(r2) @ r3) @ r1;
                     MutMap.put!(1, l, deref (deref a)[0]);
-                    MutList.push!(ref Array.new(r1, 1, 8) @ r1, deref l);
+                    MutList.push!(ref Array.repeat(r1, 8, 1) @ r1, deref l);
                     match MutMap.get(1, deref (deref a)[0]) {
                         case Some(k) => MutList.nth(0, deref k) |> Option.flatMap(arr -> Array.nth(0, deref arr)) == Some(1)
                         case _       => unreachable!()
@@ -1326,7 +1326,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 region r3 {
                     let l: Ref[MutList[Ref[Array[Ref[MutMap[Int32, Ref[MutList[Int32, r2], r2], r3], r3], r1], r1], r2], r2] = ref new MutList(r2) @ r2;
-                    let a = ref Array.new(r1, ref new MutMap(r3) @ r3, 8) @ r1;
+                    let a = ref Array.repeat(r1, 8, ref new MutMap(r3) @ r3) @ r1;
                     let l2 = ref new MutList(r2) @ r2;
                     MutList.push!(a, deref l);
                     MutMap.put!(1, l2, deref (deref a)[0]);
@@ -1349,7 +1349,7 @@ namespace Test/Exp/Regions {
                 region r3 {
                     let m: Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[MutMap[Int32, Int32, r1], r3], r3], r2], r1], r1], r2], r1] = ref new MutMap(r2) @ r1;
                     let l = ref new MutList(r1) @ r1;
-                    let a = ref Array.new(r3, ref new MutMap(r1) @ r3, 8) @ r2;
+                    let a = ref Array.repeat(r3, 8, ref new MutMap(r1) @ r3) @ r2;
                     MutMap.put!(1, l, deref m);
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref (deref a)[0]);
@@ -1370,7 +1370,7 @@ namespace Test/Exp/Regions {
                     let m: Ref[Ref[Ref[Ref[MutMap[Int32, Ref[MutList[Ref[Array[Ref[Ref[Ref[Ref[MutMap[Int32, Int32, r1], r3], r2], r1], r3], r3], r2], r1], r1], r2], r1], r3], r2], r3] =
                         ref ref ref ref new MutMap(r2) @ r1 @ r3 @ r2 @ r3;
                     let l = ref new MutList(r1) @ r1;
-                    let a = ref Array.new(r3, ref ref ref ref new MutMap(r1) @ r3 @ r2 @ r1 @ r3, 8) @ r2;
+                    let a = ref Array.repeat(r3, 8, ref ref ref ref new MutMap(r1) @ r3 @ r2 @ r1 @ r3) @ r2;
                     MutMap.put!(1, l, deref deref deref deref m);
                     MutList.push!(a, deref l);
                     MutMap.put!(1, 1, deref deref deref deref (deref a)[0]);
