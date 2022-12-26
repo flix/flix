@@ -769,7 +769,7 @@ namespace Chain {
     ///
     pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
         case None    => [] @ r
-        case Some(x) =>
+        case Some(_) =>
             let arr = Array.new(r, length(c));
             forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
             arr

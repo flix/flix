@@ -598,7 +598,7 @@ namespace Array {
         if (len2 <= 0)
             [] @ r1
         else {
-            let b = new(r1, len2);
+            let b = repeat(r1, len2, x);
             let f = { (i, v) -> let j = i + i; b[j] = v };
             forEachWithIndex(f, a);
             b
@@ -615,7 +615,7 @@ namespace Array {
         match headArrays(arrs) {
             case None    => [] @ r1
             case Some(x) =>
-                let out = new(r1, len);
+                let out = repeat(r1, len, x);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -904,7 +904,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => [] @ r1
             case Some(x) => {
-                let out = new(r1, len);
+                let out = repeat(r1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -1197,8 +1197,8 @@ namespace Array {
             ([] @ r1, [] @ r2)
         else {
             let (x, y) = a[0];
-            let arr = new(r1, len);
-            let brr = new(r2, len);
+            let arr = repeat(r1, len, x);
+            let brr = repeat(r2, len, y);
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = a[i];
@@ -1368,7 +1368,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = Array.new(r, len);
+            let a = Array.repeat(r, len, x);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
