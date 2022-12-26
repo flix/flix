@@ -550,7 +550,7 @@ namespace Test/Exp/Regions {
             region r2 {
                 let l = new MutList(r2);
                 region _ {
-                    let m = new MutMap(Static);
+                    let m = new MutMap(r1);
                     MutList.push!(1, l);
                     MutMap.put!(1, 1, m);
                     a[0] == 1 and MutList.pop!(l) == Some(1) and MutMap.get(1, m) == Some(1)
@@ -560,8 +560,8 @@ namespace Test/Exp/Regions {
 
     @test
     def testRegions3Regions02(): Bool \ IO =
-        region _ {
-            let a = Array.repeat(Static, 8, 1);
+        region r1 {
+            let a = Array.repeat(r1, 8, 1);
             region r2 {
                 let l = new MutList(r2);
                 region r3 {
@@ -578,7 +578,7 @@ namespace Test/Exp/Regions {
         region r1 {
             let a = Array.repeat(r1, 8, 1);
             region _ {
-                let l = new MutList(Static);
+                let l = new MutList(r1);
                 region r3 {
                     let m = new MutMap(r3);
                     MutList.push!(1, l);
@@ -786,7 +786,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences01(): Bool =
         region r {
-            let a = ref Array.repeat(r, 8, new MutMap(r)) @ Static;
+            let a = ref Array.repeat(r, 8, new MutMap(r)) @ r;
             MutMap.put!(1, 1, (deref a)[0]);
             MutMap.get(1, (deref a)[0]) == Some(1)
         }
@@ -794,7 +794,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences02(): Bool =
         region r {
-            let l = ref new MutList(r) @ r; // Static reference to a MutList in region r
+            let l = ref new MutList(r) @ r; 
             MutList.push!(ref (Array.repeat(r, 8, 1)) @ r, deref l);
             match MutList.pop!(deref l) {
                 case Some(a) => (deref a) `Array.sameElements` Array.repeat(r, 8, 1)
