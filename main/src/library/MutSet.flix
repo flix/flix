@@ -143,7 +143,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: MutSet[a, r]): Option[a] \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
@@ -164,7 +163,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: MutSet[a, r]): Option[a] \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
@@ -279,7 +277,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def count(f: a -> Bool \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
@@ -296,7 +293,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
@@ -313,7 +309,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def productWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)

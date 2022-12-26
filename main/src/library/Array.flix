@@ -53,7 +53,7 @@ namespace Array {
         let sb = new StringBuilder(r2);
         let first = ref true @ r2;
 
-        StringBuilder.appendString!("[", sb);
+        StringBuilder.appendString!("Array#{", sb);
 
         let f = (x) -> {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
@@ -61,32 +61,36 @@ namespace Array {
         };
         Array.forEach(f, a);
 
-        StringBuilder.appendString!("]", sb);
+        StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
 
     ///
-    /// Returns a fresh array of length `l` filled with the element `x` in the region r.
+    /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        $ARRAY_NEW$(r, x, l)
+    pub def new(r: Region[r], l: Int32): Array[a, r] \ Write(r) =
+        $ARRAY_NEW$(r, Reflect.default(), l)
+
+    ///
+    /// Retrieves the value at position `i` in the array `a`.
+    ///
+    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) =
+        a[i]
+
+    ///
+    /// Stores the value `x` at position `i` in the array `a`.
+    ///
+    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
+        a[i] = x
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
     ///
     pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
-        if (0 <= i and i < Array.length(a))
+        if (0 <= i and i < length(a))
             Some(a[i])
         else
             None
-
-    ///
-    /// Stores the value `x` at position `i` in the array `a`.
-    ///
-    /// Equivalent to the expression `a[i] = x`.
-    ///
-    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
-        a[i] = x
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -349,13 +353,13 @@ namespace Array {
     ///
     /// Returns an array with the element `x` repeated `n` times.
     ///
-    /// Returns `[]` if `n <= 0`.
+    /// Returns the empty array if `n <= 0`.
     ///
     pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
             [] @ r
         else
-            new(r, x, n)
+            $ARRAY_NEW$(r, x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -370,7 +374,7 @@ namespace Array {
     ///
     pub def scanLeft(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(r, s, len);
+        let b = repeat(r, len, s);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -390,7 +394,7 @@ namespace Array {
     ///
     pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(r, s, len + 1);
+        let b = repeat(r, len + 1, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -594,7 +598,7 @@ namespace Array {
         if (len2 <= 0)
             [] @ r1
         else {
-            let b = new(r1, x, len2);
+            let b = repeat(r1, len2, x);
             let f = { (i, v) -> let j = i + i; b[j] = v };
             forEachWithIndex(f, a);
             b
@@ -611,7 +615,7 @@ namespace Array {
         match headArrays(arrs) {
             case None    => [] @ r1
             case Some(x) =>
-                let out = new(r1, x, len);
+                let out = repeat(r1, len, x);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -900,7 +904,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => [] @ r1
             case Some(x) => {
-                let out = new(r1, x, len);
+                let out = repeat(r1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -948,7 +952,7 @@ namespace Array {
         if (len < 1) {
             [] @ r1
         } else {
-            let out = new(r1, arr[0], len);
+            let out = new(r1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1193,8 +1197,8 @@ namespace Array {
             ([] @ r1, [] @ r2)
         else {
             let (x, y) = a[0];
-            let arr = new(r1, x, len);
-            let brr = new(r2, y, len);
+            let arr = repeat(r1, len, x);
+            let brr = repeat(r2, len, y);
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = a[i];
@@ -1364,7 +1368,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = Array.new(r, x, len);
+            let a = Array.repeat(r, len, x);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);

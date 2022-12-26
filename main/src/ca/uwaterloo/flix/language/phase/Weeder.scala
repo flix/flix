@@ -1305,6 +1305,16 @@ object Weeder {
           mkApplyFqn("List.append", List(e1, e2), loc)
       }
 
+    case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
+      /*
+       * Rewrites an `FArray` expression into an array literal.
+       */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
+      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
+        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), loc)
+      }
+
     case ParsedAst.Expression.FList(sp1, sp2, exps) =>
       /*
        * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
@@ -2966,6 +2976,7 @@ object Weeder {
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
+    case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
