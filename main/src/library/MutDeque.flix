@@ -40,7 +40,7 @@ instance Scoped[MutDeque[a]] {
 }
 
 instance Iterable[MutDeque] {
-    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
+    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutDeque.iterator(r1, d)
 }
 
 namespace MutDeque {
@@ -413,17 +413,16 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(d);
+    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ r;
+        let i = ref (deref f) @ r1;
         let done = () -> deref i == deref b;
         let next = () -> {
             let x = (deref a)[deref i];
             i := deref i + 1 &&& (capacity(d) - 1);
             x
         };
-        Iterator.Iterator(done, next)
+        Iterator.Iterator(upcast done, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
