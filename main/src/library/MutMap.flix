@@ -71,7 +71,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
@@ -93,7 +92,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumValueBy(cmp, deref mm)
@@ -114,7 +112,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
@@ -136,7 +133,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumValueBy(cmp, deref mm)
@@ -341,7 +337,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def map(r1: Region[r1], f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
         mapWithKey(r1, _ -> f, m)
 
@@ -350,7 +345,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def mapWithKey(r1: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
         let MutMap(mm) = m;
         MutMap(ref Map.mapWithKey(f, deref mm) @ r1)
@@ -464,7 +458,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.count(f, deref mm)
@@ -488,7 +481,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.sumWith(f, deref mm)
@@ -512,7 +504,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.productWith(f, deref mm)
