@@ -317,7 +317,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new ##java.lang.Object {
       def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(Static, x, y))
     };
-    toString(anon) == "[1, 2, 3, 4, 5, 6]"
+    toString(anon) == "Array#{1, 2, 3, 4, 5, 6}"
 
   @test
   def testStaticNestedClass01(): ##dev.flix.test.TestClassWithStaticNestedClass$NestedClass \ IO =
