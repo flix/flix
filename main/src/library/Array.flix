@@ -394,7 +394,7 @@ namespace Array {
     ///
     pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = repeat(r, s, len + 1);
+        let b = repeat(r, len + 1, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
