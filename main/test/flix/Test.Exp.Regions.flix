@@ -574,7 +574,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions3Regions02(): Bool =
+    def testRegions3Regions03(): Bool =
         region r1 {
             let a = Array.repeat(r1, 8, 1);
             region _ {
