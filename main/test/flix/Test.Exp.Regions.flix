@@ -226,10 +226,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions04(): Bool =
         region r1 {
-            let a1 = Array.new(r1, 1, 8);
+            let a1 = Array.repeat(r1, 8, 1);
             a1[0] == 1 and 1 ==
             region r2 {
-                let a2 = Array.new(r2, 1, 8);
+                let a2 = Array.repeat(r2, 8, 1);
                 a2[0]
             }
         }
@@ -263,10 +263,10 @@ namespace Test/Exp/Regions {
     @test
     def testRegions2Regions07(): Bool =
         region r1 {
-            let a1 = Array.new(r1, 1, 8);
+            let a1 = Array.repeat(r1, 8, 1);
             a1[0] == 1 and 1 ==
             region r2 {
-                let a2 = Array.new(r2, 1, 8);
+                let a2 = Array.repeat(r2, 8, 1);
                 a2[0]
             }
         }
@@ -559,7 +559,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions3Regions02(): Bool \ IO =
+    def testRegions3Regions02(): Bool =
         region r1 {
             let a = Array.repeat(r1, 8, 1);
             region r2 {
@@ -1160,7 +1160,7 @@ namespace Test/Exp/Regions {
         }
 
     @test
-    def testRegions3RegionsReferences02(): Bool \ IO =
+    def testRegions3RegionsReferences02(): Bool =
         region r1 {
             let a = ref Array.repeat(r1, 8, 1) @ r1;
             region r2 {
