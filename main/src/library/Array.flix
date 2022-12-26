@@ -74,7 +74,7 @@ namespace Array {
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
-    pub def get(i: Int32, a: Array[a, r]): Unit \ Read(r) =
+    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) =
         a[i]
 
     ///
