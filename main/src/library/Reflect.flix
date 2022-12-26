@@ -20,4 +20,5 @@ namespace Reflect {
         case _: Proxy[BigInt] => unsafe_cast 0ii as a
         case _: _ => unsafe_cast null as a
     }
+
 }

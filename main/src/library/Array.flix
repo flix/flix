@@ -66,10 +66,10 @@ namespace Array {
     }
 
     ///
-    /// Returns a fresh array of length `l` filled with the element `x` in the region r.
+    /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        $ARRAY_NEW$(r, x, l)
+    pub def new(r: Region[r], l: Int32): Array[a, r] \ Write(r) =
+        $ARRAY_NEW$(r, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
@@ -353,13 +353,13 @@ namespace Array {
     ///
     /// Returns an array with the element `x` repeated `n` times.
     ///
-    /// Returns `[]` if `n <= 0`.
+    /// Returns the empty array if `n <= 0`.
     ///
     pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
             [] @ r
         else
-            new(r, x, n)
+            $ARRAY_NEW$(r, x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -374,7 +374,7 @@ namespace Array {
     ///
     pub def scanLeft(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let b = new(r, s, len);
+        let b = repeat(r, len, s);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -394,7 +394,7 @@ namespace Array {
     ///
     pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let b = new(r, s, len + 1);
+        let b = repeat(r, s, len + 1);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -598,7 +598,7 @@ namespace Array {
         if (len2 <= 0)
             [] @ r1
         else {
-            let b = new(r1, x, len2);
+            let b = new(r1, len2);
             let f = { (i, v) -> let j = i + i; b[j] = v };
             forEachWithIndex(f, a);
             b
@@ -615,7 +615,7 @@ namespace Array {
         match headArrays(arrs) {
             case None    => [] @ r1
             case Some(x) =>
-                let out = new(r1, x, len);
+                let out = new(r1, len);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -904,7 +904,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => [] @ r1
             case Some(x) => {
-                let out = new(r1, x, len);
+                let out = new(r1, len);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -952,7 +952,7 @@ namespace Array {
         if (len < 1) {
             [] @ r1
         } else {
-            let out = new(r1, arr[0], len);
+            let out = new(r1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1197,8 +1197,8 @@ namespace Array {
             ([] @ r1, [] @ r2)
         else {
             let (x, y) = a[0];
-            let arr = new(r1, x, len);
-            let brr = new(r2, y, len);
+            let arr = new(r1, len);
+            let brr = new(r2, len);
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = a[i];
@@ -1368,7 +1368,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = Array.new(r, x, len);
+            let a = Array.new(r, len);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
