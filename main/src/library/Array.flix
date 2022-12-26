@@ -53,7 +53,7 @@ namespace Array {
         let sb = new StringBuilder(r2);
         let first = ref true @ r2;
 
-        StringBuilder.appendString!("[", sb);
+        StringBuilder.appendString!("Array#{", sb);
 
         let f = (x) -> {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
@@ -61,7 +61,7 @@ namespace Array {
         };
         Array.forEach(f, a);
 
-        StringBuilder.appendString!("]", sb);
+        StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
 

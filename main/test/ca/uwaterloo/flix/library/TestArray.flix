@@ -24,22 +24,22 @@ namespace TestArray {
 
     @test
     def toString01(): Bool = region r {
-        Array.toString(([] @ r): Array[Int32, _]) == "[]"
+        Array.toString(([] @ r): Array[Int32, _]) == "Array#{}"
     }
 
     @test
     def toString02(): Bool = region r {
-        Array.toString(([1] @ r)) == "[1]"
+        Array.toString(([1] @ r)) == "Array#{1}"
     }
 
     @test
     def toString03(): Bool = region r {
-        Array.toString(([1, 2, 3, 4] @ r)) == "[1, 2, 3, 4]"
+        Array.toString(([1, 2, 3, 4] @ r)) == "Array#{1, 2, 3, 4}"
     }
 
     @test
     def toString04(): Bool = region r {
-        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "[a, b, c, d]"
+        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "Array#{a, b, c, d}"
     }
 
     /////////////////////////////////////////////////////////////////////////////
