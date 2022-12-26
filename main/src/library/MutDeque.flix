@@ -74,7 +74,7 @@ namespace MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
-        MutDeque(r, ref Array.new(r, Reflect.default(), minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
+        MutDeque(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
@@ -290,7 +290,7 @@ namespace MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
-        let arr = Array.new(r, Reflect.default(), c <<< 1); // Allocate new array `arr` with double the capacity of `a`.
+        let arr = Array.new(r, c <<< 1);                    // Allocate new array `arr` with double the capacity of `a`.
         copyElements!(deref f, deref b, deref a, arr);      // Copy elements from old array `a` to new array `arr`.
         a := arr;                                           // Update references.
         b := computeSize(c, deref f, deref b);
@@ -316,7 +316,7 @@ namespace MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                           // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = Array.new(r, Reflect.default(), c >>> 1); // Allocate new array `arr` with half the capacity of `a`.
+            let arr = Array.new(r, c >>> 1);                    // Allocate new array `arr` with half the capacity of `a`.
             copyElements!(deref f, deref b, deref a, arr);      // Copy elements from old array `a` to new array `arr`.
             a := arr;                                           // Update references.
             b := computeSize(c, deref f, deref b);
@@ -359,8 +359,8 @@ namespace MutDeque {
         if (aSize == bSize) {
             let MutDeque(_, aArray, aFront, aBack) = d1;
             let MutDeque(_, bArray, bFront, bBack) = d2;
-            let a1 = Array.new(r3, Reflect.default(), aSize);
-            let b1 = Array.new(r3, Reflect.default(), bSize);
+            let a1 = Array.new(r3, aSize);
+            let b1 = Array.new(r3, bSize);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
