@@ -5,7 +5,7 @@ def main(): Unit \ IO = region r {
         let s = "Flix is cool!";
 
         // Array to store 8 chars in.
-        let xs = Array.new(r, 'a', 8);
+        let xs = Array.repeat(r, 8, 'a');
 
         // Print contents of `xs`.
         foreach (x <- xs)
