@@ -177,7 +177,7 @@ object Validation {
     if (xs.isEmpty)
       return Validation.SuccessNil
 
-    // Two mutable arrays to hold the intermediate results.
+    // Three mutable arrays to hold the intermediate results.
     val successValues = mutable.ArrayBuffer.empty[(S, Int)]
     val successFailureStream = mutable.ArrayBuffer.empty[(S, LazyList[E], Int)]
     val failureStream = mutable.ArrayBuffer.empty[(LazyList[E], Int)]
@@ -185,9 +185,9 @@ object Validation {
     // Apply f to each element and collect the results.
     for ((x, i) <- xs.zipWithIndex) {
       f(x) match {
-        case Success(v) => successValues += (v, i)
-        case SuccessWithFailures(v, e) => successFailureStream += (v, e, i)
-        case Failure(e) => failureStream += (e, i)
+        case Success(v) => successValues += ((v, i))
+        case SuccessWithFailures(v, e) => successFailureStream += ((v, e, i))
+        case Failure(e) => failureStream += ((e, i))
       }
     }
 
