@@ -178,7 +178,7 @@ object Validation {
     if (xs.isEmpty)
       return Validation.SuccessNil
 
-    // Three mutable arrays to hold the intermediate results.
+    // Two mutable arrays to hold the intermediate results.
     val successValues = mutable.ArrayBuffer.empty[S]
     val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
 
@@ -198,6 +198,7 @@ object Validation {
       }
     }
 
+    // Check whether we were successful or not.
     if (isFatal) {
       Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
     } else if (failureStream.nonEmpty) {
