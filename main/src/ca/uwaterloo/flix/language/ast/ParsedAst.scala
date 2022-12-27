@@ -875,7 +875,18 @@ object ParsedAst {
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
+      * Array expression.
+      *
+      * @param sp1  the position of the first character in the `Array` keyword.
+      * @param sp2  the position of the last character in the `Array` keyword.
+      * @param exps the elements of the array.
+      * @param exp  the region of the array.
+      */
+    case class FArray(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
       * List expression.
+      *
       * @param sp1  the position of the first character in the `List` keyword.
       * @param sp2  the position of the last character in the `List` keyword.
       * @param exps the elements of the list.

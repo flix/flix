@@ -28,7 +28,7 @@ instance Scoped[MutSet[t]] {
 }
 
 instance Iterable[MutSet] {
-    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) = MutSet.iterator(s)
+    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutSet.iterator(r1, s)
 }
 
 namespace MutSet {
@@ -143,7 +143,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: MutSet[a, r]): Option[a] \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.minimumBy(cmp, deref ms)
@@ -164,7 +163,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: MutSet[a, r]): Option[a] \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.maximumBy(cmp, deref ms)
@@ -279,7 +277,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def count(f: a -> Bool \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.count(f, deref ms)
@@ -296,7 +293,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def sumWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ss) = s;
         Set.sumWith(f, deref ss)
@@ -313,7 +309,6 @@ namespace MutSet {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def productWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(ss) = s;
         Set.productWith(f, deref ss)
@@ -397,16 +392,15 @@ namespace MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(s: MutSet[a, r]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutSet(ms) = s;
-        let r = Scoped.regionOf(s);
-        Set.iterator(r, deref ms)
+        unsafe_cast Set.iterator(r1, deref ms) as Iterator[a, r1 and r2]
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(s: MutSet[a, r]): Iterator[(a, Int32), r] \ Write(r) =
-        iterator(s) |> Iterator.zipWithIndex
+    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(a, Int32), r1 and r2] \ { Write(r1), Read(r2) } =
+        iterator(r1, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.

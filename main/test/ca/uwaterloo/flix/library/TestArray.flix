@@ -24,22 +24,22 @@ namespace TestArray {
 
     @test
     def toString01(): Bool = region r {
-        Array.toString(([] @ r): Array[Int32, _]) == "[]"
+        Array.toString(([] @ r): Array[Int32, _]) == "Array#{}"
     }
 
     @test
     def toString02(): Bool = region r {
-        Array.toString(([1] @ r)) == "[1]"
+        Array.toString(([1] @ r)) == "Array#{1}"
     }
 
     @test
     def toString03(): Bool = region r {
-        Array.toString(([1, 2, 3, 4] @ r)) == "[1, 2, 3, 4]"
+        Array.toString(([1, 2, 3, 4] @ r)) == "Array#{1, 2, 3, 4}"
     }
 
     @test
     def toString04(): Bool = region r {
-        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "[a, b, c, d]"
+        Array.toString((['a', 'b', 'c', 'd'] @ r)) == "Array#{a, b, c, d}"
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -48,17 +48,32 @@ namespace TestArray {
 
     @test
     def testNew01(): Bool = region r {
-        Array.new(r, 42, 10)[0] == 42
+        Array.new(r, 10)[0] == 0
     }
 
     @test
     def testNew02(): Bool = region r {
-        Array.new(r, 42, 10)[5] == 42
+        Array.new(r, 10)[5] == 0
     }
 
     @test
     def testNew03(): Bool = region r {
-        Array.new(r, 42, 10)[9] == 42
+        Array.new(r, 10)[9] == 0
+    }
+
+    @test
+    def testNew04(): Bool = region r {
+        Array.new(r, 10)[0] == false
+    }
+
+    @test
+    def testNew05(): Bool = region r {
+        Array.new(r, 10)[5] == false
+    }
+
+    @test
+    def testNew06(): Bool = region r {
+        Array.new(r, 10)[9] == false
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5594,7 +5609,7 @@ namespace TestArray {
 
     @test
     def toDelayList02(): Bool = region r {
-        (Array.new(r, 0, 0)) |> Array.toDelayList == DelayList.empty()
+        (Array.new(r, 0): Array[String, r]) |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5839,22 +5854,22 @@ namespace TestArray {
 
     @test
     def iterator01(): Bool = region r {
-        []: Array[Int32, r] |> Array.iterator |> Iterator.toList == Nil
+        []: Array[Int32, r] |> Array.iterator(r) |> Iterator.toList == Nil
     }
 
     @test
     def iterator02(): Bool = region r {
-        [1, 2, 3] |> Array.iterator |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        [1, 2, 3] |> Array.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def iterator03(): Bool = region r {
-        ([1, 2, 3] @ r) |> Array.iterator |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
+        ([1, 2, 3] @ r) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` [1, 2, 3] @ r
     }
 
     @test
     def iterator04(): Bool = region r {
-        Array.range(r, -100, 100) |> Array.iterator |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
+        Array.range(r, -100, 100) |> Array.iterator(r) |> Iterator.toArray(r) `sameElements` Array.range(r, -100, 100)
     }
 
 

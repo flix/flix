@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -352,11 +352,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
-      case t: Throwable =>
+      case ex: Throwable =>
         // Mark the AST as outdated.
         current = false
-        t.printStackTrace(System.err)
-        ("id" -> requestId) ~ ("status" -> "failure")
+        CrashHandler.handleCrash(ex)(flix)
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
     }
   }
 

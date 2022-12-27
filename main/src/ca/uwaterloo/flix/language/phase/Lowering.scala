@@ -638,7 +638,7 @@ object Lowering {
     // becomes:
     //     let ch1 = ?ch1;
     //     let ch2 = ?ch2;
-    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
+    //     match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
     //         case (0, locks) =>
     //             let x = unsafeGetAndUnlock(ch1, locks);
     //             ?handlech1
@@ -656,8 +656,8 @@ object Lowering {
       val t = visitType(tpe)
 
       val channels = rs map { case LoweredAst.SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
-      val adminArray = mkChannelAdminArray(rs, channels, loc)
-      val selectExp = mkChannelSelect(adminArray, d, loc)
+      val admins = mkChannelAdminList(rs, channels, loc)
+      val selectExp = mkChannelSelect(admins, d, loc)
       val cases = mkChannelCases(rs, channels, pur, eff, loc)
       val defaultCase = mkSelectDefaultCase(d, t, loc)
       val matchExp = LoweredAst.Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
@@ -1339,31 +1339,31 @@ object Lowering {
   }
 
   /**
-    * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
+    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
     */
-  private def mkChannelAdminArray(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], loc: SourceLocation): LoweredAst.Expression = {
+  private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], loc: SourceLocation): LoweredAst.Expression = {
     val admins = rs.zip(channels) map {
       case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
         val admin = LoweredAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
         LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
     }
-    mkArray(admins, Types.ChannelMpmcAdmin, loc)
+    mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
 
   /**
-    * Construct a call to `selectFrom` given an array of MpmcAdmin objects and optional default
+    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default
     */
-  private def mkChannelSelect(adminArray: LoweredAst.Expression, default: Option[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
+  private def mkChannelSelect(admins: LoweredAst.Expression, default: Option[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
+    val selectTpe = Type.mkImpureUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
     val select = LoweredAst.Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
     val blocking = default match {
       case Some(_) => LoweredAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
       case None => LoweredAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
     }
-    LoweredAst.Expression.Apply(select, List(adminArray, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
+    LoweredAst.Expression.Apply(select, List(admins, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
   }
 
   /**
@@ -1459,17 +1459,6 @@ object Lowering {
     // Construct a call to the liftXb function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
-  }
-
-  /**
-    * Returns a pure array expression constructed from the given list of expressions `exps`.
-    */
-  private def mkArray(exps: List[LoweredAst.Expression], elmType: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val tpe = Type.mkArray(elmType, Type.Pure, loc)
-    val pur = Type.Pure
-    val eff = Type.Empty
-    val reg = LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-    LoweredAst.Expression.ArrayLit(exps, reg, tpe, pur, eff, loc)
   }
 
   /**
