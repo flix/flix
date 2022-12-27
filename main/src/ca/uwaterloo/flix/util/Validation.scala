@@ -56,7 +56,7 @@ sealed trait Validation[+T, +E] {
     }
 
     case Validation.SuccessWithFailures(input, errors) => f(input) match {
-      case Validation.Success(value) => Validation.Success(value)
+      case Validation.Success(value) => Validation.SuccessWithFailures(value, errors)
       case Validation.SuccessWithFailures(value, thatErrors) => Validation.SuccessWithFailures(value, errors #::: thatErrors)
       case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
     }
