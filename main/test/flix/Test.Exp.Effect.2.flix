@@ -20,31 +20,31 @@ namespace Test/Exp/Effect {
 
     @test
     def testInferEffect01(): Unit \ Print = {
-        do println()
+        do Print.println()
     }
 
     @test
     def testInferEffect02(): Unit \ Print = {
-        do print("hello");
-        do println()
+        do Print.print("hello");
+        do Print.println()
     }
 
     @test
     def testInferEffect03(): Unit \ {Print, Throw} = {
-        do println();
-        do throw()
+        do Print.println();
+        do Throw.throw()
     }
 
     @test
     def testInferEffect04(): Unit \ {Print, Throw} = {
-        do throw();
-        do print("hello")
+        do Throw.throw();
+        do Print.print("hello")
     }
 
     @test
     def testInferEffect05(): Unit \ {Print, Throw} = {
-        do throw() without Print;
-        do println() without Throw
+        do Throw.throw() without Print;
+        do Print.println() without Throw
     }
 
     @test
@@ -64,7 +64,7 @@ namespace Test/Exp/Effect {
 
     @test
     def testHofEffect02(): Unit \ Throw = {
-        noPrint(_ -> do throw())
+        noPrint(_ -> do Throw.throw())
     }
 
     @test
@@ -79,22 +79,22 @@ namespace Test/Exp/Effect {
 
     @test
     def testHofEffect05(): Unit \ {Print, Throw} = {
-        disjoint(_ -> do println(), _ -> do throw())
+        disjoint(_ -> do Print.println(), _ -> do Throw.throw())
     }
 
     @test
     def testHofEffect06(): Unit \ Print = {
-        yesPrint(_ -> do println())
+        yesPrint(_ -> do Print.println())
     }
 
     @test
     def testHofEffect07(): Unit \ {Print, Throw} = {
-        yesPrint(_ -> { do println(); do throw() })
+        yesPrint(_ -> { do Print.println(); do Throw.throw() })
     }
 
     @test
     def testHofEffect08(): Unit \ {Print, Ding} = {
-        yesPrintNoThrow(_ -> { do println(); do ding() })
+        yesPrintNoThrow(_ -> { do Print.println(); do ding() })
     }
 
     def noPrint(f: Unit -> Unit \ {ef - Print}): Unit \ {ef - Print} = {

@@ -110,5 +110,5 @@ namespace Test/Derives/ToString {
     def testToString23(): Bool = "${MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))}" == "RecursiveCase(RecursiveCase(EmptyCase))"
 
     @test
-    def testToString24(): Bool = "${OpaqueType(123)}" == "OpaqueType(123)"
+    def testToString24(): Bool = "${OpaqueType.OpaqueType(123)}" == "OpaqueType(123)"
 }
