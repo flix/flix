@@ -137,6 +137,54 @@ class TestValidation extends FunSuite {
     assertResult(Success("OOFOOF"))(result)
   }
 
+  test("flatMapN03") {
+    val result = flatMapN(SuccessWithFailures("foo", LazyList.empty[Exception])) {
+      case x => flatMapN(x.toUpperCase.toSuccess) {
+        case y => flatMapN(y.reverse.toSuccess) {
+          case z => (z + z).toSuccess
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList.empty[Exception]))(result)
+  }
+
+  test("flatMapN04") {
+    val ex = new RuntimeException()
+    val result = flatMapN(SuccessWithFailures("foo", LazyList.empty[Exception])) {
+      case x => flatMapN(SuccessWithFailures(x.toUpperCase, LazyList(ex))) {
+        case y => flatMapN(y.reverse.toSuccess) {
+          case z => (z + z).toSuccess
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList(ex)))(result)
+  }
+
+  test("flatMapN05") {
+    val ex = new RuntimeException()
+    val result = flatMapN("foo".toSuccess[String, Exception]) {
+      case x => flatMapN(SuccessWithFailures(x.toUpperCase, LazyList(ex))) {
+        case y => flatMapN(y.reverse.toSuccess) {
+          case z => (z + z).toSuccess
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList(ex)))(result)
+  }
+
+  test("flatMapN05") {
+    val ex1 = new RuntimeException()
+    val ex2 = new RuntimeException()
+    val result = flatMapN("foo".toSuccess[String, Exception]) {
+      case x => flatMapN(SuccessWithFailures(x.toUpperCase, LazyList(ex1))) {
+        case y => flatMapN(y.reverse.toSuccess) {
+          case _ => ex2.toFailure
+        }
+      }
+    }
+    assertResult(Failure(LazyList(ex1, ex2)))(result)
+  }
+
   test("andThen03") {
     val ex = new RuntimeException()
     val result = flatMapN("foo".toSuccess[String, Exception]) {
@@ -167,36 +215,36 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(4, 5, 6)))(result)
   }
 
-    test("traverse01") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => Success(x + 1)
-      }
-
-      assertResult(Success(List(2, 3, 4)))(result)
+  test("traverse01") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Success(x + 1)
     }
 
-    test("traverse02") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => Failure(LazyList(42))
-      }
+    assertResult(Success(List(2, 3, 4)))(result)
+  }
 
-      assertResult(Failure(LazyList(42, 42, 42)))(result)
+  test("traverse02") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Failure(LazyList(42))
     }
 
-    test("traverse03") {
-      val result = traverse(List(1, 2, 3)) {
-        case x => if (x % 2 == 1) Success(x) else Failure(LazyList(x))
-      }
+    assertResult(Failure(LazyList(42, 42, 42)))(result)
+  }
 
-      assertResult(Failure(LazyList(2)))(result)
+  test("traverse03") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => if (x % 2 == 1) Success(x) else Failure(LazyList(x))
     }
 
-    test("foldRight01") {
-      val result = foldRight(List(1, 1, 1))(Success(10)) {
-        case (x, acc) => (acc - x).toSuccess
-      }
+    assertResult(Failure(LazyList(2)))(result)
+  }
 
-      assertResult(Success(7))(result)
+  test("foldRight01") {
+    val result = foldRight(List(1, 1, 1))(Success(10)) {
+      case (x, acc) => (acc - x).toSuccess
     }
+
+    assertResult(Success(7))(result)
+  }
 
 }
