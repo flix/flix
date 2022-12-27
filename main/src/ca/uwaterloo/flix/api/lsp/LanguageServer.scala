@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{Failure, Success, SuccessWithFailures}
+import ca.uwaterloo.flix.util.Validation.Success
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -338,17 +338,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
             ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
           }
 
-        case SuccessWithFailures(_, _) => ???
-
-        case Failure(errors) =>
+        case failure =>
           // Case 2: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.
           this.current = false
-          this.currentErrors = errors.toList
+          this.currentErrors = failure.errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(errors)
+          val results = PublishDiagnosticsParams.fromMessages(failure.errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {

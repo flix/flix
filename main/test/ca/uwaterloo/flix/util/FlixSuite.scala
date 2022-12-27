@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.Validation.Success
 import org.scalatest.FunSuite
 
 import java.nio.file.{Files, Path, Paths}
@@ -65,10 +65,9 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       flix.compile() match {
         case Success(compilationResult) =>
           runTests(name, compilationResult)
-        case Validation.SuccessWithFailures(_, _) => ???
-        case Failure(errors) =>
-          val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+        case failure =>
+          val es = failure.errors.map(_.message(flix.getFormatter)).mkString("\n")
+          fail(s"Unable to compile. Failed with: ${failure.errors.length} errors.\n\n$es")
       }
     } finally {
       // Remove the source path.
