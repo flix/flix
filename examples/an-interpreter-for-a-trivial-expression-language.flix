@@ -51,12 +51,12 @@ enum BExp {
 /// We now define a small interpreter for arithmetic expressions.
 ///
 def evalAExp(e: AExp): Int32 = match e {
-    case Cst(i)                 => i
-    case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
-    case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
-    case Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
-    case Divide(e1, e2)         => evalAExp(e1) / evalAExp(e2)
-    case IfThenElse(e1, e2, e3) =>
+    case AExp.Cst(i)                 => i
+    case AExp.Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
+    case AExp.Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
+    case AExp.Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
+    case AExp.Divide(e1, e2)         => evalAExp(e1) / evalAExp(e2)
+    case AExp.IfThenElse(e1, e2, e3) =>
         let cond = evalBExp(e1);
             if (cond) evalAExp(e2) else evalAExp(e3)
 }
@@ -65,18 +65,18 @@ def evalAExp(e: AExp): Int32 = match e {
 /// and here is the small interpreter for Boolean expressions.
 ///
 def evalBExp(e: BExp): Bool = match e {
-    case True           => true
-    case False          => false
-    case Not(e1)        => not evalBExp(e1)
-    case Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
-    case Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
-    case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
-    case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
+    case BExp.True           => true
+    case BExp.False          => false
+    case BExp.Not(e1)        => not evalBExp(e1)
+    case BExp.Conj(e1, e2)   => evalBExp(e1) and evalBExp(e2)
+    case BExp.Disj(e1, e2)   => evalBExp(e1) or evalBExp(e2)
+    case BExp.Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
+    case BExp.Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
 }
 
 /// We can now run it!
 def main(): Unit \ IO =
     let r = evalAExp(
-        IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))
+        AExp.IfThenElse(BExp.Neq(AExp.Cst(1), AExp.Cst(2)), AExp.Cst(42), AExp.Cst(21))
     );
     r |> println

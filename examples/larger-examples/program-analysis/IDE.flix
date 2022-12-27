@@ -186,7 +186,7 @@ namespace ConstantProp {
         pub def leastUpperBound(x: Const, y: Const): Const = match (x, y) {
             case (Const.Bot, _)                    => y
             case (_, Const.Bot)                    => x
-            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Cst(n1) else Const.Top
+            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Const.Cst(n1) else Const.Top
             case _                                 => Const.Top
         }
     }
@@ -198,7 +198,7 @@ namespace ConstantProp {
         pub def greatestLowerBound(x: Const, y: Const): Const = match (x, y) {
             case (Const.Top, _)                 => y
             case (_, Const.Top)                 => x
-            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Cst(n1) else Const.Bot
+            case (Const.Cst(n1), Const.Cst(n2)) => if (n1 == n2) Const.Cst(n1) else Const.Bot
             case _                              => Const.Bot
         }
     }
@@ -214,7 +214,7 @@ namespace ConstantProp {
     pub def sum(x: Const, y: Const): Const = match (x, y) {
         case (Const.Bot, _)                 => Const.Bot
         case (_, Const.Bot)                 => Const.Bot
-        case (Const.Cst(n1), Const.Cst(n2)) => Cst(n1 + n2)
+        case (Const.Cst(n1), Const.Cst(n2)) => Const.Cst(n1 + n2)
         case _                              => Const.Top
     }
 

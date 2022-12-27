@@ -97,7 +97,7 @@ namespace Test/Exp/Discard {
 
     @test
     def testEnumDiscard01(): Unit \ IO =
-        let arr = [Data(32)];
+        let arr = [Enum.Data(32)];
         discard arr[0]
 
     pub enum Poly[a, b] {
@@ -109,7 +109,7 @@ namespace Test/Exp/Discard {
 
     @test
     def testPolyDiscard01(): Unit \ IO =
-        let arr = [That("hello")];
+        let arr = [Poly.That("hello")];
         discard arr[0]
 
 

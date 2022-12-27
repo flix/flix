@@ -11,8 +11,8 @@ namespace Test/Unused/Tag {
         case _DKK
     }
 
-    pub def f(): Color = Red
+    pub def f(): Color = Color.Red
 
-    pub def g(): Currency = CAD
+    pub def g(): Currency = Currency.CAD
 
 }

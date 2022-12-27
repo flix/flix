@@ -22,7 +22,7 @@ namespace Concurrent/Channel {
     use Concurrent/ReentrantLock.newLock
     use Concurrent/Condition
     use Concurrent/ReentrantLock.newCondition
-    use Concurrent/CyclicBarrier.CyclicBarrier
+    use Concurrent/CyclicBarrier
     use Concurrent/CyclicBarrier.newCyclicBarrier
     use Concurrent/CyclicBarrier.awaitBarrier
 
