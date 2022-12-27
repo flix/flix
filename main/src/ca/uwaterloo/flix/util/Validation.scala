@@ -210,9 +210,9 @@ object Validation {
     case SuccessWithFailures(Success(t), errors) =>
       SuccessWithFailures(t, errors)
     case SuccessWithFailures(SuccessWithFailures(t, e), errors) =>
-      SuccessWithFailures(t, e #::: errors)
+      SuccessWithFailures(t, errors #::: e)
     case SuccessWithFailures(Failure(e), errors) =>
-      Failure(e #::: errors)
+      Failure(errors #::: e)
     case Failure(errors) =>
       Failure(errors)
   }
@@ -221,24 +221,24 @@ object Validation {
     (f, t1) match {
       case (Success(g), Success(v)) =>
         Success(g(v))
-      case (Success(g), SuccessWithFailures(v, errs)) =>
-        SuccessWithFailures(g(v), errs)
-      case (Success(_), Failure(errs)) =>
-        Failure(errs)
+      case (Success(g), SuccessWithFailures(v, e2)) =>
+        SuccessWithFailures(g(v), e2)
+      case (Success(_), Failure(e2)) =>
+        Failure(e2)
 
-      case (SuccessWithFailures(g, errs), Success(v)) =>
-        SuccessWithFailures(g(v), errs)
-      case (SuccessWithFailures(g, errs1), SuccessWithFailures(v, errs2)) =>
-        SuccessWithFailures(g(v), errs1 #::: errs2)
-      case (SuccessWithFailures(_, errs1), Failure(errs2)) =>
-        Failure(errs1 #::: errs2)
+      case (SuccessWithFailures(g, e1), Success(v)) =>
+        SuccessWithFailures(g(v), e1)
+      case (SuccessWithFailures(g, e1), SuccessWithFailures(v, e2)) =>
+        SuccessWithFailures(g(v), e1 #::: e2)
+      case (SuccessWithFailures(_, e1), Failure(e2)) =>
+        Failure(e1 #::: e2)
 
-      case (Failure(errs), Success(_)) =>
-        Failure(errs)
-      case (Failure(errs1), SuccessWithFailures(_, errs2)) =>
-        Failure(errs1 #::: errs2)
-      case (Failure(errs1), Failure(errs2)) =>
-        Failure(errs1 #::: errs2)
+      case (Failure(e1), Success(_)) =>
+        Failure(e1)
+      case (Failure(e1), SuccessWithFailures(_, e2)) =>
+        Failure(e1 #::: e2)
+      case (Failure(e1), Failure(e2)) =>
+        Failure(e1 #::: e2)
     }
 
   private def curry[T1, T2, T3, T4, T5](f: (T1, T2, T3, T4) => T5): (T1, T2, T3) => T4 => T5 =
@@ -371,8 +371,8 @@ object Validation {
       case Success(v1) => f(v1)
       case SuccessWithFailures(v1, e1) => f(v1) match {
         case Success(x) => SuccessWithFailures(x, e1)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1)
-        case Failure(errors) => Failure(errors #::: e1)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: funcErrors)
       }
       case _ => Failure(t1.errors)
     }
@@ -386,18 +386,18 @@ object Validation {
       case (Success(v1), Success(v2)) => f(v1, v2)
       case (Success(v1), SuccessWithFailures(v2, e2)) => f(v1, v2) match {
         case Success(x) => SuccessWithFailures(x, e2)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e2)
-        case Failure(errors) => Failure(errors #::: e2)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e2 #::: funcErrors)
       }
       case (SuccessWithFailures(v1, e1), Success(v2)) => f(v1, v2) match {
         case Success(x) => SuccessWithFailures(x, e1)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1)
-        case Failure(errors) => Failure(errors #::: e1)
+        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, e1 #::: errors)
+        case Failure(errors) => Failure(e1 #::: errors)
       }
       case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2)) => f(v1, v2) match {
         case Success(x) => SuccessWithFailures(x, e1 #::: e2)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1 #::: e2)
-        case Failure(errors) => Failure(errors #::: e1 #::: e2)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: e2 #::: funcErrors)
       }
       case _ => Failure(t1.errors #::: t2.errors)
     }
@@ -411,38 +411,38 @@ object Validation {
       case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
       case (Success(v1), Success(v2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e3)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e3)
-        case Failure(errors) => Failure(errors #::: e3)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e3 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e3 #::: funcErrors)
       }
       case (Success(v1), SuccessWithFailures(v2, e2), Success(v3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e2)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e2)
-        case Failure(errors) => Failure(errors #::: e2)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e2 #::: funcErrors)
       }
       case (SuccessWithFailures(v1, e1), Success(v2), Success(v3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e1)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1)
-        case Failure(errors) => Failure(errors #::: e1)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: funcErrors)
       }
       case (Success(v1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e2 #::: e3)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e2 #::: e3)
-        case Failure(errors) => Failure(errors #::: e2 #::: e3)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: e3 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e2 #::: e3 #::: funcErrors)
       }
       case (SuccessWithFailures(v1, e1), Success(v2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e1 #::: e3)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1 #::: e3)
-        case Failure(errors) => Failure(errors #::: e1 #::: e3)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e3 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: e3 #::: funcErrors)
       }
       case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), Success(v3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e1 #::: e2)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1 #::: e2)
-        case Failure(errors) => Failure(errors #::: e1 #::: e2)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: e2 #::: funcErrors)
       }
       case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
         case Success(x) => SuccessWithFailures(x, e1 #::: e2 #::: e3)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, errors #::: e1 #::: e2 #::: e3)
-        case Failure(errors) => Failure(errors #::: e1 #::: e2 #::: e3)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: e3 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: e2 #::: e3 #::: funcErrors)
       }
       case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
     }
