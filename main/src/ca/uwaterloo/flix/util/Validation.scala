@@ -223,7 +223,7 @@ object Validation {
   }
 
   /**
-    * Applies the function in `f` to `t`.
+    * Applies the function inside `f` to the value inside `t`.
     *
     * Preserves all errors.
     */
