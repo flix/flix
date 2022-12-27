@@ -274,6 +274,78 @@ class TestValidation extends FunSuite {
     assertResult(Failure(LazyList(4, 5, 6)))(result)
   }
 
+  test("flatMap01") {
+    val result = SuccessWithFailures("foo", LazyList.empty[Exception]).flatMap {
+      case x => x.toUpperCase.toSuccess
+    }.flatMap {
+      case y => y.reverse.toSuccess
+    }.flatMap {
+      case z => Success(z + z)
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList.empty))(result)
+  }
+
+  test("flatMap02") {
+    val result = SuccessWithFailures("foo", LazyList.empty[Exception]).flatMap {
+      case x => x.toUpperCase.toSuccess[String, Exception].flatMap {
+        case y => y.reverse.toSuccess[String, Exception].flatMap {
+          case z => Success[String, Exception](z + z)
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList.empty))(result)
+  }
+
+  test("flatMap03") {
+    val ex = new RuntimeException()
+    val result = SuccessWithFailures("foo", LazyList.empty[Exception]).flatMap {
+      case x => x.toUpperCase.toSuccess[String, Exception].flatMap {
+        case y => y.reverse.toSuccess[String, Exception].flatMap {
+          case z => SuccessWithFailures[String, Exception](z + z, LazyList(ex))
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("OOFOOF", LazyList(ex)))(result)
+  }
+
+  test("flatMap04") {
+    val ex = new RuntimeException()
+    val result = SuccessWithFailures("foo", LazyList.empty[Exception]).flatMap {
+      case x => x.toUpperCase.toSuccess[String, Exception].flatMap {
+        case y => y.reverse.toSuccess[String, Exception].flatMap {
+          case _ => Failure[String, Exception](LazyList(ex))
+        }
+      }
+    }
+    assertResult(Failure(LazyList(ex)))(result)
+  }
+
+  test("flatMap05") {
+    val ex1 = new RuntimeException()
+    val ex2 = new RuntimeException()
+    val result = SuccessWithFailures("abc", LazyList(ex1)).flatMap {
+      case x => x.toUpperCase.toSuccess[String, Exception].flatMap {
+        case y => SuccessWithFailures[String, Exception](y.reverse, LazyList(ex2)).flatMap {
+          case z => Success[String, Exception](z + z)
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("CBACBA", LazyList(ex1, ex2)))(result)
+  }
+
+  test("flatMap06") {
+    val ex1 = new RuntimeException()
+    val ex2 = new RuntimeException()
+    val result = "abc".toSuccess[String, Exception].flatMap {
+      case x => SuccessWithFailures(x.toUpperCase, LazyList(ex2)).flatMap {
+        case y => SuccessWithFailures(y.reverse, LazyList(ex1)).flatMap {
+          case z => Success[String, Exception](z + z)
+        }
+      }
+    }
+    assertResult(SuccessWithFailures("CBACBA", LazyList(ex2, ex1)))(result)
+  }
+
   test("traverse01") {
     val result = traverse(List(1, 2, 3)) {
       case x => Success(x + 1)
