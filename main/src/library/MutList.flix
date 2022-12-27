@@ -34,7 +34,7 @@ instance Scoped[MutList[a]] {
 }
 
 instance Iterable[MutList] {
-    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
+    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutList.iterator(r1, l)
 }
 
 namespace MutList {
@@ -795,17 +795,16 @@ namespace MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(l);
+    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutList(_, a, len) = l;
-        let i = ref 0 @ r;
+        let i = ref 0 @ r1;
         let done = () -> deref i == deref len;
         let next = () -> {
             let x = (deref a)[deref i];
             i := deref i + 1;
             x
         };
-        Iterator.Iterator(done, next)
+        unsafe_cast Iterator.Iterator(done, next) as _ \ { Write(r1), Read(r2) }
 
     ///
     /// Applies `f` to all the elements in `v`.
