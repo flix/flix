@@ -27,7 +27,7 @@ sealed trait Validation[+T, +E] {
     */
   final def get: T = this match {
     case Validation.Success(value) => value
-    case Validation.SuccessWithFailures(value, _) => throw new RuntimeException(s"Attempt to retrieve value from SuccessWithFailures. The errors are: ${errors.mkString(", ")}")
+    case Validation.SuccessWithFailures(_, errors) => throw new RuntimeException(s"Attempt to retrieve value from SuccessWithFailures. The errors are: ${errors.mkString(", ")}")
     case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
