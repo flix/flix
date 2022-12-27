@@ -192,7 +192,9 @@ object Validation {
         case SuccessWithFailures(v, e) =>
           successValues += v
           failureStream += e
-        case Failure(e) => failureStream += e
+        case Failure(e) =>
+          failureStream += e
+          isFatal = true
       }
     }
 
