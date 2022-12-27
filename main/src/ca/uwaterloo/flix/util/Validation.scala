@@ -281,14 +281,42 @@ object Validation {
     */
   def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                         (f: (T1, T2) => U): Validation[U, E] =
-    ap(mapN(t1)(curry(f)))(t2)
+    (t1, t2) match {
+      case (Success(v1), Success(v2)) =>
+        Success(f(v1, v2))
+      case (Success(v1), SuccessWithFailures(v2, e2)) =>
+        SuccessWithFailures(f(v1, v2), e2)
+      case (SuccessWithFailures(v1, e1), Success(v2)) =>
+        SuccessWithFailures(f(v1, v2), e1)
+      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2)) =>
+        SuccessWithFailures(f(v1, v2), e1 #::: e2)
+      case _ => Failure(t1.errors #::: t2.errors)
+    }
 
   /**
     * Maps over t1, t2, and t3.
     */
   def mapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                             (f: (T1, T2, T3) => U): Validation[U, E] =
-    ap(mapN(t1, t2)(curry(f)))(t3)
+    (t1, t2, t3) match {
+      case (Success(v1), Success(v2), Success(v3)) =>
+        Success(f(v1, v2, v3))
+      case (Success(v1), Success(v2), SuccessWithFailures(v3, e3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e3)
+      case (Success(v1), SuccessWithFailures(v2, e2), Success(v3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e2)
+      case (SuccessWithFailures(v1, e1), Success(v2), Success(v3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e1)
+      case (Success(v1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e2 #::: e3)
+      case (SuccessWithFailures(v1, e1), Success(v2), SuccessWithFailures(v3, e3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e1 #::: e3)
+      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), Success(v3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e1 #::: e2)
+      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) =>
+        SuccessWithFailures(f(v1, v2, v3), e1 #::: e2 #::: e3)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
 
   /**
     * Maps over t1, t2, t3, and t4.
