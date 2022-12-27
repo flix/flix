@@ -137,7 +137,7 @@ class TestValidation extends FunSuite {
     val result = mapN("foo".toSuccess[String, Exception], "foo".toSuccess[String, Exception], SuccessWithFailures("abc", LazyList.empty)) {
       case (x, y, z) => x.toUpperCase.reverse + y.toUpperCase.reverse + z.toUpperCase.reverse
     }
-    assertResult(SuccessWithFailures("OOFOOFBCA", LazyList.empty))(result)
+    assertResult(SuccessWithFailures("OOFOOFCBA", LazyList.empty))(result)
   }
 
   test("mapN04") {
@@ -145,7 +145,7 @@ class TestValidation extends FunSuite {
     val result = mapN("foo".toSuccess[String, Exception], "foo".toSuccess[String, Exception], SuccessWithFailures("abc", LazyList(ex))) {
       case (x, y, z) => x.toUpperCase.reverse + y.toUpperCase.reverse + z.toUpperCase.reverse
     }
-    assertResult(SuccessWithFailures("OOFOOFBCA", LazyList(ex)))(result)
+    assertResult(SuccessWithFailures("OOFOOFCBA", LazyList(ex)))(result)
   }
 
   test("mapN05") {
