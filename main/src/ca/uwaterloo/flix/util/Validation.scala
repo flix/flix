@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 sealed trait Validation[+T, +E] {
 
@@ -193,34 +194,55 @@ object Validation {
 
     // Check whether we were successful or not.
     if (!failureStream.isEmpty) {
-      // Combine failure streams
-      val combined = successFailureStream.map {
-        case (_, e, i) => (e, i)
-      }.appendAll(failureStream).sortInPlaceBy {
-        case (_, idx) => idx
-      }.map {
-        case (e, _) => e
-      }.foldLeft(LazyList.empty[E])(_ #::: _)
+      val combined = combineFailureStreams(failureStream, successFailureStream)
       Failure(combined)
+
     } else if (!successFailureStream.isEmpty) {
+
       val failures = successFailureStream.map {
         case (_, e, _) => e
       }.foldLeft(LazyList.empty[E])(_ #::: _)
-      // Combine success streams
-      val combined = successFailureStream.map {
-        case (v, _, i) => (v, i)
-      }.appendAll(successValues).sortInPlaceBy {
-        case (_, idx) => idx
-      }.map {
-        case (v, _) => v
-      }.toList
+
+      val combined = combineSuccessStreams(successValues, successFailureStream)
       SuccessWithFailures(combined, failures)
+
     } else {
       val values = successValues.map {
         case (v, _) => v
       }.toList
+
       Success(values)
     }
+  }
+
+  /**
+    * Returns the combined stream of `failureStream` and `successFailureStream`.
+    *
+    * Helper function for `fastTraverse`.
+    */
+  private def combineFailureStreams[E, S, T](failureStream: ArrayBuffer[(LazyList[E], Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
+    successFailureStream.map {
+      case (_, e, i) => (e, i)
+    }.appendAll(failureStream).sortInPlaceBy {
+      case (_, idx) => idx
+    }.map {
+      case (e, _) => e
+    }.foldLeft(LazyList.empty[E])(_ #::: _)
+  }
+
+  /**
+    * Returns the combined stream of `successValues` and `successFailureStream`.
+    *
+    * Helper function for `fastTraverse`.
+    */
+  private def combineSuccessStreams[E, S, T](successValues: ArrayBuffer[(S, Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
+    successFailureStream.map {
+      case (v, _, i) => (v, i)
+    }.appendAll(successValues).sortInPlaceBy {
+      case (_, idx) => idx
+    }.map {
+      case (v, _) => v
+    }.toList
   }
 
   /**
