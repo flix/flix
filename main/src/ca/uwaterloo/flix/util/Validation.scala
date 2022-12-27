@@ -299,6 +299,18 @@ object Validation {
   /**
     * Returns `f` with the last parameter curried.
     */
+  private def curry[T1, T2, T3](f: (T1, T2) => T3): T1 => T2 => T3 =
+    (t1: T1) => (t2: T2) => f(t1, t2)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4](f: (T1, T2, T3) => T4): (T1, T2) => T3 => T4 =
+    (t1: T1, t2: T2) => (t3: T3) => f(t1, t2, t3)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
   private def curry[T1, T2, T3, T4, T5](f: (T1, T2, T3, T4) => T5): (T1, T2, T3) => T4 => T5 =
     (t1: T1, t2: T2, t3: T3) => (t4: T4) => f(t1, t2, t3, t4)
 
