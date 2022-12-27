@@ -209,36 +209,6 @@ object Validation {
   }
 
   /**
-    * Returns the combined stream of `failureStream` and `successFailureStream`.
-    *
-    * Helper function for `fastTraverse`.
-    */
-  private def combineFailureStreams[E, S, T](failureStream: ArrayBuffer[(LazyList[E], Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
-    successFailureStream.map {
-      case (_, e, i) => (e, i)
-    }.appendAll(failureStream).sortInPlaceBy {
-      case (_, idx) => idx
-    }.map {
-      case (e, _) => e
-    }.foldLeft(LazyList.empty[E])(_ #::: _)
-  }
-
-  /**
-    * Returns the combined stream of `successValues` and `successFailureStream`.
-    *
-    * Helper function for `fastTraverse`.
-    */
-  private def combineSuccessStreams[E, S, T](successValues: ArrayBuffer[(S, Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
-    successFailureStream.map {
-      case (v, _, i) => (v, i)
-    }.appendAll(successValues).sortInPlaceBy {
-      case (_, idx) => idx
-    }.map {
-      case (v, _) => v
-    }.toList
-  }
-
-  /**
     * Returns the `Validation` inside `t1`.
     *
     * Preserves all errors.
@@ -288,18 +258,6 @@ object Validation {
       case (Failure(e1), Failure(e2)) =>
         Failure(e1 #::: e2)
     }
-
-  /**
-    * Returns `f` with the last parameter curried.
-    */
-  private def curry[T1, T2, T3](f: (T1, T2) => T3): T1 => T2 => T3 =
-    (t1: T1) => (t2: T2) => f(t1, t2)
-
-  /**
-    * Returns `f` with the last parameter curried.
-    */
-  private def curry[T1, T2, T3, T4](f: (T1, T2, T3) => T4): (T1, T2) => T3 => T4 =
-    (t1: T1, t2: T2) => (t3: T3) => f(t1, t2, t3)
 
   /**
     * Returns `f` with the last parameter curried.
