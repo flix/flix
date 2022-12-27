@@ -24,6 +24,10 @@ namespace Concurrent {
 
 namespace Concurrent/CyclicBarrier {
 
+    // TODO NS-REFACTOR can remove these
+    use Concurrent.CyclicBarrier
+    use Concurrent.CyclicBarrier.CyclicBarrier
+
   ///
   /// Create a new CyclicBarrier which will wait for `parties` threads
   ///
