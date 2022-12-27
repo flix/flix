@@ -41,7 +41,7 @@ namespace Concurrent {
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
         @Internal
-        pub def await(condition: Condition): Result[Unit, ConditionError] \ IO =
+        pub def await(condition: Condition): Result[ConditionError, Unit] \ IO =
             import java.util.concurrent.locks.Condition.await(): Unit \ IO;
             let Condition(c) = condition;
             try {
@@ -57,7 +57,7 @@ namespace Concurrent {
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
         @Internal
-        pub def awaitTimeout(condition: Condition, timeout: Int64): Result[Int64, ConditionError] \ IO =
+        pub def awaitTimeout(condition: Condition, timeout: Int64): Result[ConditionError, Int64] \ IO =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
             let Condition(c) = condition;
             try {
@@ -71,7 +71,7 @@ namespace Concurrent {
         /// Causes the current thread to wait until it is signalled.
         ///
         @Internal
-        pub def awaitUninterruptibly(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+        pub def awaitUninterruptibly(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.Condition.awaitUninterruptibly(): Unit \ IO;
             let Condition(c) = condition;
             try {
@@ -84,7 +84,7 @@ namespace Concurrent {
         /// Wakes up one waiting thread.
         ///
         @Internal
-        pub def signal(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+        pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.Condition.signal(): Unit \ IO;
             let Condition(c) = condition;
             try {
@@ -97,7 +97,7 @@ namespace Concurrent {
         /// Wakes up all waiting threads.
         ///
         @Internal
-        pub def signalAll(condition: Condition): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+        pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.Condition.signalAll(): Unit \ IO;
             let Condition(c) = condition;
             try {

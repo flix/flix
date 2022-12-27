@@ -440,7 +440,7 @@ namespace Option {
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
-    pub def toOk(e: e, o: Option[t]): Result[t, e] = match o {
+    pub def toOk(e: e, o: Option[t]): Result[e, t] = match o {
         case None    => Err(e)
         case Some(a) => Ok(a)
     }
@@ -448,7 +448,7 @@ namespace Option {
     ///
     /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
-    pub def toErr(d: t, o: Option[e]): Result[t, e] = match o {
+    pub def toErr(d: t, o: Option[e]): Result[e, t] = match o {
         case None    => Ok(d)
         case Some(e) => Err(e)
     }

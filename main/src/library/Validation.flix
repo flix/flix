@@ -192,7 +192,7 @@ namespace Validation {
     /// Returns `Ok(t)` if `v` is `Success(t)`.
     /// Returns `Err(e)` if `v` is `Failure(e)`.
     ///
-    pub def toResult(v: Validation[t, e]): Result[t, Nec[e]] = match v {
+    pub def toResult(v: Validation[t, e]): Result[Nec[e], t] = match v {
         case Success(t) => Ok(t)
         case Failure(e) => Err(e)
     }

@@ -61,7 +61,7 @@ namespace Concurrent {
         /// Acquires the lock unless the current thread is interrupted.
         ///
         @Internal
-        pub def lockInterruptibly(lock: ReentrantLock): Result[Unit, ##java.lang.InterruptedException] \ IO =
+        pub def lockInterruptibly(lock: ReentrantLock): Result[##java.lang.InterruptedException, Unit] \ IO =
             import java.util.concurrent.locks.ReentrantLock.lockInterruptibly(): Unit \ IO;
             let ReentrantLock(l) = lock;
             try {
@@ -92,7 +92,7 @@ namespace Concurrent {
         /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
         ///
         @Internal
-        pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[Bool, ##java.lang.InterruptedException] \ IO =
+        pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[##java.lang.InterruptedException, Bool] \ IO =
             import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool \ IO;
             import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
             let ReentrantLock(l) = lock;
@@ -106,7 +106,7 @@ namespace Concurrent {
         /// Attempts to release this lock.
         ///
         @Internal
-        pub def unlock(lock: ReentrantLock): Result[Unit, ##java.lang.IllegalMonitorStateException] \ IO =
+        pub def unlock(lock: ReentrantLock): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
             import java.util.concurrent.locks.ReentrantLock.unlock(): Unit \ IO;
             let ReentrantLock(l) = lock;
             try {

@@ -291,7 +291,7 @@ namespace Int64 {
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[Int64, String] = try {
+    pub def parse(radix: Int32, s: String): Result[String, Int64] = try {
         import java.lang.String.strip(): String \ {};
         import static java.lang.Long.parseLong(String, Int32): Int64 \ {};
         Ok(parseLong(strip(s), radix))
