@@ -179,39 +179,32 @@ object Validation {
       return Validation.SuccessNil
 
     // Three mutable arrays to hold the intermediate results.
-    val successValues = mutable.ArrayBuffer.empty[(S, Int)]
-    val successFailureStream = mutable.ArrayBuffer.empty[(S, LazyList[E], Int)]
-    val failureStream = mutable.ArrayBuffer.empty[(LazyList[E], Int)]
+    val successValues = mutable.ArrayBuffer.empty[S]
+    val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
+
+    // Flag to signal fatal (non-recoverable) errors
+    var isFatal = false
 
     // Apply f to each element and collect the results.
-    for ((x, i) <- xs.zipWithIndex) {
+    for (x <- xs) {
       f(x) match {
-        case Success(v) => successValues += ((v, i))
-        case SuccessWithFailures(v, e) => successFailureStream += ((v, e, i))
-        case Failure(e) => failureStream += ((e, i))
+        case Success(v) => successValues += v
+        case SuccessWithFailures(v, e) =>
+          successValues += v
+          failureStream += e
+        case Failure(e) =>
+          failureStream += e
+          isFatal = true
       }
     }
 
-    // Check whether we were successful or not.
-    if (!failureStream.isEmpty) {
-      val combined = combineFailureStreams(failureStream, successFailureStream)
-      Failure(combined)
-
-    } else if (!successFailureStream.isEmpty) {
-
-      val failures = successFailureStream.map {
-        case (_, e, _) => e
-      }.foldLeft(LazyList.empty[E])(_ #::: _)
-
-      val combined = combineSuccessStreams(successValues, successFailureStream)
-      SuccessWithFailures(combined, failures)
-
-    } else {
-      val values = successValues.map {
-        case (v, _) => v
-      }.toList
-
-      Success(values)
+    if (isFatal) {
+      Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+    } else if (failureStream.nonEmpty) {
+      SuccessWithFailures(successValues.toList, failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+    }
+    else {
+      Success(successValues.toList)
     }
   }
 
@@ -295,6 +288,18 @@ object Validation {
       case (Failure(e1), Failure(e2)) =>
         Failure(e1 #::: e2)
     }
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3](f: (T1, T2) => T3): T1 => T2 => T3 =
+    (t1: T1) => (t2: T2) => f(t1, t2)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4](f: (T1, T2, T3) => T4): (T1, T2) => T3 => T4 =
+    (t1: T1, t2: T2) => (t3: T3) => f(t1, t2, t3)
 
   /**
     * Returns `f` with the last parameter curried.
