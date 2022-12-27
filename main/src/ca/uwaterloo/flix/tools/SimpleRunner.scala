@@ -116,11 +116,11 @@ object SimpleRunner {
 
         ().toOk
 
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors.sortBy(_.source.name))
+      case failure =>
+        flix.mkMessages(failure.errors.sortBy(_.source.name))
           .foreach(println)
         println()
-        println(s"Compilation failed with ${errors.length} error(s).")
+        println(s"Compilation failed with ${failure.errors.length} error(s).")
         1.toErr
     }
   }

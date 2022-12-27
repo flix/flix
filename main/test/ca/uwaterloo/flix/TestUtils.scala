@@ -20,11 +20,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
-import ca.uwaterloo.flix.util.Formatter
 
 trait TestUtils {
 
@@ -44,13 +43,14 @@ trait TestUtils {
     */
   def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
-    case Validation.Failure(errors) =>
+
+    case failure =>
       val expected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass).toList
+      val actuals = failure.errors.map(_.getClass).toList
 
       if (!actuals.exists(expected.isAssignableFrom(_)))
         fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(_.getName)}.")
-      else if (errors.exists(e => e.loc == SourceLocation.Unknown))
+      else if (failure.errors.exists(e => e.loc == SourceLocation.Unknown))
         fail("Error contains unknown source location.")
   }
 
@@ -59,9 +59,10 @@ trait TestUtils {
     */
   def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => ()
-    case Validation.Failure(errors) =>
+
+    case failure =>
       val rejected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass)
+      val actuals = failure.errors.map(_.getClass)
 
       if (actuals.exists(rejected.isAssignableFrom(_)))
         fail(s"Unexpected an error of type ${rejected.getSimpleName}.")
@@ -72,9 +73,7 @@ trait TestUtils {
     */
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result match {
     case Validation.Success(_) => ()
-    case Validation.Failure(errors) =>
-      val actuals = errors.map(_.getClass)
-
-      fail(s"Expected success, but found errors:\n\n${errorString(errors)}.")
+    case failure =>
+      fail(s"Expected success, but found errors:\n\n${errorString(failure.errors)}.")
   }
 }

@@ -1933,7 +1933,7 @@ object Weeder {
               // Doing a manual flatMap to keep the function tail-recursive
               translateHexCode(code, mkSL(sp1, sp2)) match {
                 case Validation.Success(char) => visit(rest2, char :: acc)
-                case Validation.Failure(errors) => Validation.Failure(errors)
+                case failure => Validation.Failure(failure.errors)
               }
             // Case 3.3.2: `\\u` followed by less than 4 literals
             case rest2 =>
