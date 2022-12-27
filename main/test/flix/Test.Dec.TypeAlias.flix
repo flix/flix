@@ -28,7 +28,7 @@ namespace Test/Dec/TypeAlias {
     /**
      * A type alias for a Result.
      */
-    type alias B = Result[Bool, Int32]
+    type alias B = Result[Int32, Bool]
 
     /**
      * A polymorphic type alias for a Option.
@@ -43,7 +43,7 @@ namespace Test/Dec/TypeAlias {
     /**
      * A partially polymorphic type alias for a Result.
      */
-    type alias E[a] = Result[a, String]
+    type alias E[a] = Result[String, a]
 
     @test
     def testTypeAlias01(): Celsius = 123
@@ -88,10 +88,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias14(): C[Int32] = Some(123)
 
     @test
-    def testTypeAlias15(): D[Bool, Int32] = Ok(true)
+    def testTypeAlias15(): D[Bool, Int32] = Ok(123)
 
     @test
-    def testTypeAlias16(): D[Bool, Int32] = Err(123)
+    def testTypeAlias16(): D[Bool, Int32] = Err(true)
 
     @test
     def testTypeAlias17(): E[Bool] = Ok(true)
@@ -151,10 +151,10 @@ namespace Test/Dec/TypeAlias {
     def testTypeAlias25(): V[Int32] = Y.Y(Some(123))
 
     @test
-    def testTypeAlias26(): W[Bool, Int32] = Z.Z(Ok(true))
+    def testTypeAlias26(): W[Bool, Int32] = Z.Z(Ok(123))
 
     @test
-    def testTypeAlias27(): W[Bool, Int32] = Z.Z(Err(123))
+    def testTypeAlias27(): W[Bool, Int32] = Z.Z(Err(true))
 
     ///
     /// Type-level if-then-else

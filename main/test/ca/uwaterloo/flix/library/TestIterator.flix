@@ -1769,18 +1769,18 @@ namespace TestIterator {
 
     @test
     def toResultList01(): Bool = region r {
-        (Nil: List[Result[Int32, String]]) |> List.iterator(r) |>
+        (Nil: List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(Nil)
     }
     @test
     def toResultList02(): Bool = region r {
-        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: Nil)
     }
 
     @test
     def toResultList03(): Bool = region r {
-        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
     }
 

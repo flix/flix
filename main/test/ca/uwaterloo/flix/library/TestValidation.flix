@@ -358,10 +358,10 @@ namespace TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toResult01(): Bool = (Success(123) |> Validation.toResult): Result[_, Nec[Unit]] == Ok(123)
+    def toResult01(): Bool = (Success(123) |> Validation.toResult): Result[Nec[Unit], _] == Ok(123)
 
     @test
-    def toResult02(): Bool = (Failure(singleton(42)) |> Validation.toResult): Result[Unit, _] == Err(singleton(42))
+    def toResult02(): Bool = (Failure(singleton(42)) |> Validation.toResult): Result[_, Unit] == Err(singleton(42))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
