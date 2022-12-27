@@ -26,7 +26,7 @@ pub enum Result[e, t] with Eq, Order, ToString, Sendable {
     case Err(e)
 }
 
-instance Hash[Result[e, t]] with Hash[t], Hash[e] {
+instance Hash[Result[e, t]] with Hash[e], Hash[t] {
     pub def hash(r: Result[e, t]): Int32 = match r {
         case Ok(v)  => 5381 + 113 * Hash.hash(v)
         case Err(v) => 5351 + 97 * Hash.hash(v)

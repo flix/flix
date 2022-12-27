@@ -151,7 +151,7 @@ namespace GetOpt {
     ///
     pub def getOpt(ordering: ArgOrder[a],
                    optDescriptors: List[OptionDescr[a]],
-                   sourceArgs: List[String]): Validation[{options = List[a], nonOptions = List[String]}, String] =
+                   sourceArgs: List[String]): Validation[String, {options = List[a], nonOptions = List[String]}] =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
             case Nil => Validation.Success({options = answers.options, nonOptions = answers.nonOptions})

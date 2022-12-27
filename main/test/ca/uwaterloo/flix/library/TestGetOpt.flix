@@ -63,12 +63,12 @@ namespace TestGetOpt {
         ::  {optionIds = 'h':: Nil,         optionNames = "height" :: Nil,              argDescriptor = ReqArg(height, "HEIGHT"),   explanation = "image HEIGHT" }
         :: Nil
 
-    def assertSuccessWith(x: Validation[a, e], test: a -> Bool): Bool  = match x {
+    def assertSuccessWith(x: Validation[e, a], test: a -> Bool): Bool  = match x {
         case Success(x1) => test(x1)
         case Failure(_) => false
     }
 
-    def assertFailureWith(x: Validation[a, e], test: Nec[e] -> Bool): Bool  = match x {
+    def assertFailureWith(x: Validation[e, a], test: Nec[e] -> Bool): Bool  = match x {
         case Success(_) => false
         case Failure(es) => test(es)
     }
