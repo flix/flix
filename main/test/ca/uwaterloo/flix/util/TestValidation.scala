@@ -382,7 +382,7 @@ class TestValidation extends FunSuite {
   }
 
   test("traverse06") {
-    val result = traverse(List(1, 2, 3, 4)) {
+    val result = traverse(List(1, 2, 3, 4, 5)) {
       case x => if (x % 2 == 1) SuccessWithFailures(x, LazyList(-1)) else Failure(LazyList(x))
     }
     assertResult(Failure(LazyList(2, 4)))(result)
