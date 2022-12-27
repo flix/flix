@@ -178,25 +178,48 @@ object Validation {
       return Validation.SuccessNil
 
     // Two mutable arrays to hold the intermediate results.
-    val successValues = mutable.ArrayBuffer.empty[S]
-    val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
+    val successValues = mutable.ArrayBuffer.empty[(S, Int)]
+    val successFailureStream = mutable.ArrayBuffer.empty[(S, LazyList[E], Int)]
+    val failureStream = mutable.ArrayBuffer.empty[(LazyList[E], Int)]
 
     // Apply f to each element and collect the results.
-    for (x <- xs) {
+    for ((x, i) <- xs.zipWithIndex) {
       f(x) match {
-        case Success(v) => successValues += v
-        case SuccessWithFailures(v, e) =>
-          successValues += v
-          failureStream += e
-        case Failure(e) => failureStream += e
+        case Success(v) => successValues += (v, i)
+        case SuccessWithFailures(v, e) => successFailureStream += (v, e, i)
+        case Failure(e) => failureStream += (e, i)
       }
     }
 
     // Check whether we were successful or not.
-    if (failureStream.isEmpty) {
-      Success(successValues.toList)
+    if (!failureStream.isEmpty) {
+      // Combine failure streams
+      val combined = successFailureStream.map {
+        case (_, e, i) => (e, i)
+      }.appendAll(failureStream).sortInPlaceBy {
+        case (_, idx) => idx
+      }.map {
+        case (e, _) => e
+      }.foldLeft(LazyList.empty[E])(_ #::: _)
+      Failure(combined)
+    } else if (!successFailureStream.isEmpty) {
+      val failures = successFailureStream.map {
+        case (_, e, _) => e
+      }.foldLeft(LazyList.empty[E])(_ #::: _)
+      // Combine success streams
+      val combined = successFailureStream.map {
+        case (v, _, i) => (v, i)
+      }.appendAll(successValues).sortInPlaceBy {
+        case (_, idx) => idx
+      }.map {
+        case (v, _) => v
+      }.toList
+      SuccessWithFailures(combined, failures)
     } else {
-      Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+      val values = successValues.map {
+        case (v, _) => v
+      }.toList
+      Success(values)
     }
   }
 
