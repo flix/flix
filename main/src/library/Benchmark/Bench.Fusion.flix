@@ -10,10 +10,11 @@ namespace Bench/Fusion {
     /// https://github.com/biboudis/streamalg/blob/master/src/main/java/benchmarks/
     ///
 
-    pub def runBenchmarks(): Unit \ IO =
+    pub def runBenchmarks(): Unit \ IO = region r {
         let s1 = biboudisSuite(100);
-        discard Benchmark.runWithBudget(s1 |> List.toArray(Static), 250_000_000_000i64);
+        discard Benchmark.runWithBudget(s1 |> List.toArray(r), 250_000_000_000i64);
         ()
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     /// Initial Input                                                        ///

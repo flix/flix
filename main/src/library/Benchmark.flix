@@ -63,7 +63,7 @@ namespace Benchmark {
     /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region r {
         if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
@@ -72,7 +72,7 @@ namespace Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(Static, bs);
+            let benchmarksWithEstimates = warmupAndEstimate(r, bs);
             println("");
             println("");
             printCols();
@@ -82,6 +82,7 @@ namespace Benchmark {
             println("Total time elapsed: ${toSeconds(e)} seconds. Time budget was: ${toSeconds(budget)} seconds.");
             0
         }
+    }
 
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
