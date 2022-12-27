@@ -197,9 +197,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
               })
               Ok(timer.getResult, compilationResult.totalTime, timer.getElapsed)
           }
-        case Failure(errors) =>
+
+        case failure =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message(flix.getFormatter))
+          Err(failure.errors.head.message(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)
