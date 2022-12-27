@@ -365,42 +365,14 @@ object Validation {
     */
   def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                         (f: (T1, T2) => U): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) =>
-        Success(f(v1, v2))
-      case (Success(v1), SuccessWithFailures(v2, e2)) =>
-        SuccessWithFailures(f(v1, v2), e2)
-      case (SuccessWithFailures(v1, e1), Success(v2)) =>
-        SuccessWithFailures(f(v1, v2), e1)
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2)) =>
-        SuccessWithFailures(f(v1, v2), e1 #::: e2)
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    ap(mapN(t1)(curry(f)))(t2)
 
   /**
     * Maps over t1, t2, and t3.
     */
   def mapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                             (f: (T1, T2, T3) => U): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) =>
-        Success(f(v1, v2, v3))
-      case (Success(v1), Success(v2), SuccessWithFailures(v3, e3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e3)
-      case (Success(v1), SuccessWithFailures(v2, e2), Success(v3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e2)
-      case (SuccessWithFailures(v1, e1), Success(v2), Success(v3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e1)
-      case (Success(v1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e2 #::: e3)
-      case (SuccessWithFailures(v1, e1), Success(v2), SuccessWithFailures(v3, e3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e1 #::: e3)
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), Success(v3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e1 #::: e2)
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) =>
-        SuccessWithFailures(f(v1, v2, v3), e1 #::: e2 #::: e3)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    ap(mapN(t1, t2)(curry(f)))(t3)
 
   /**
     * Maps over t1, t2, t3, and t4.
@@ -472,70 +444,14 @@ object Validation {
     */
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                             (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) => f(v1, v2)
-      case (Success(v1), SuccessWithFailures(v2, e2)) => f(v1, v2) match {
-        case Success(x) => SuccessWithFailures(x, e2)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e2 #::: funcErrors)
-      }
-      case (SuccessWithFailures(v1, e1), Success(v2)) => f(v1, v2) match {
-        case Success(x) => SuccessWithFailures(x, e1)
-        case SuccessWithFailures(x, errors) => SuccessWithFailures(x, e1 #::: errors)
-        case Failure(errors) => Failure(e1 #::: errors)
-      }
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2)) => f(v1, v2) match {
-        case Success(x) => SuccessWithFailures(x, e1 #::: e2)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: e2 #::: funcErrors)
-      }
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    flatten(ap(mapN(t1)(curry(f)))(t2))
 
   /**
     * FlatMaps over t1, t2, and t3.
     */
   def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                                 (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
-      case (Success(v1), Success(v2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e3)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e3 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e3 #::: funcErrors)
-      }
-      case (Success(v1), SuccessWithFailures(v2, e2), Success(v3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e2)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e2 #::: funcErrors)
-      }
-      case (SuccessWithFailures(v1, e1), Success(v2), Success(v3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e1)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: funcErrors)
-      }
-      case (Success(v1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e2 #::: e3)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e2 #::: e3 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e2 #::: e3 #::: funcErrors)
-      }
-      case (SuccessWithFailures(v1, e1), Success(v2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e1 #::: e3)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e3 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: e3 #::: funcErrors)
-      }
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), Success(v3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e1 #::: e2)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: e2 #::: funcErrors)
-      }
-      case (SuccessWithFailures(v1, e1), SuccessWithFailures(v2, e2), SuccessWithFailures(v3, e3)) => f(v1, v2, v3) match {
-        case Success(x) => SuccessWithFailures(x, e1 #::: e2 #::: e3)
-        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: e2 #::: e3 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: e2 #::: e3 #::: funcErrors)
-      }
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    flatten(ap(mapN(t1, t2)(curry(f)))(t3))
 
   /**
     * FlatMaps over t1, t2, t3, and t4.
