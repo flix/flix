@@ -67,7 +67,7 @@ sealed trait Validation[+T, +E] {
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
-  protected def errors: LazyList[E]
+  def errors: LazyList[E]
 
 }
 
