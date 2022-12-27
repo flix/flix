@@ -350,7 +350,6 @@ class TestValidation extends FunSuite {
     val result = traverse(List(1, 2, 3)) {
       case x => Success(x + 1)
     }
-
     assertResult(Success(List(2, 3, 4)))(result)
   }
 
@@ -358,7 +357,6 @@ class TestValidation extends FunSuite {
     val result = traverse(List(1, 2, 3)) {
       case x => Failure(LazyList(42))
     }
-
     assertResult(Failure(LazyList(42, 42, 42)))(result)
   }
 
@@ -366,15 +364,34 @@ class TestValidation extends FunSuite {
     val result = traverse(List(1, 2, 3)) {
       case x => if (x % 2 == 1) Success(x) else Failure(LazyList(x))
     }
-
     assertResult(Failure(LazyList(2)))(result)
+  }
+
+  test("traverse04") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => if (x % 2 == 1) SuccessWithFailures(x, LazyList(-1)) else SuccessWithFailures(-1, LazyList(x))
+    }
+    assertResult(SuccessWithFailures(List(1, -1, 3), LazyList(-1, 2, -1)))(result)
+  }
+
+  test("traverse05") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => if (x % 2 == 1) Success(x) else SuccessWithFailures(-1, LazyList(x))
+    }
+    assertResult(SuccessWithFailures(List(1, -1, 3), LazyList(2)))(result)
+  }
+
+  test("traverse06") {
+    val result = traverse(List(1, 2, 3, 4)) {
+      case x => if (x % 2 == 1) SuccessWithFailures(x, LazyList(-1)) else Failure(LazyList(x))
+    }
+    assertResult(Failure(LazyList(2, 4)))(result)
   }
 
   test("foldRight01") {
     val result = foldRight(List(1, 1, 1))(Success(10)) {
       case (x, acc) => (acc - x).toSuccess
     }
-
     assertResult(Success(7))(result)
   }
 
