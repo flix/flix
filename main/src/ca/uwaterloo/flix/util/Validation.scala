@@ -200,6 +200,11 @@ object Validation {
     }
   }
 
+  /**
+    * Returns the `Validation` inside `t1`.
+    *
+    * Preserves all errors.
+    */
   def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
     case Success(Success(t)) =>
       Success(t)
@@ -217,6 +222,11 @@ object Validation {
       Failure(errors)
   }
 
+  /**
+    * Applies the function in `f` to `t`.
+    *
+    * Preserves all errors.
+    */
   def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
     (f, t1) match {
       case (Success(g), Success(v)) =>
@@ -241,21 +251,44 @@ object Validation {
         Failure(e1 #::: e2)
     }
 
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5](f: (T1, T2, T3, T4) => T5): (T1, T2, T3) => T4 => T5 =
     (t1: T1, t2: T2, t3: T3) => (t4: T4) => f(t1, t2, t3, t4)
 
+
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5, T6](f: (T1, T2, T3, T4, T5) => T6): (T1, T2, T3, T4) => T5 => T6 =
     (t1: T1, t2: T2, t3: T3, t4: T4) => (t5: T5) => f(t1, t2, t3, t4, t5)
 
+
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5, T6, T7](f: (T1, T2, T3, T4, T5, T6) => T7): (T1, T2, T3, T4, T5) => T6 => T7 =
     (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5) => (t6: T6) => f(t1, t2, t3, t4, t5, t6)
 
+
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5, T6, T7, T8](f: (T1, T2, T3, T4, T5, T6, T7) => T8): (T1, T2, T3, T4, T5, T6) => T7 => T8 =
     (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6) => (t7: T7) => f(t1, t2, t3, t4, t5, t6, t7)
 
+
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9](f: (T1, T2, T3, T4, T5, T6, T7, T8) => T9): (T1, T2, T3, T4, T5, T6, T7) => T8 => T9 =
     (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7) => (t8: T8) => f(t1, t2, t3, t4, t5, t6, t7, t8)
 
+
+  /**
+    * Returns `f` where the last parameter is curried.
+    */
   private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => T10): (T1, T2, T3, T4, T5, T6, T7, T8) => T9 => T10 =
     (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8) => (t9: T9) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9)
 
