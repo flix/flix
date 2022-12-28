@@ -28,7 +28,7 @@ namespace Test/Dec/Enum/Singleton {
     /**
      * An enum for a Result.
      */
-    enum B(Result[Int32, String])
+    enum B(Result[String, Int32])
 
     /**
      * An enum for a polymorphic pair.
@@ -38,12 +38,12 @@ namespace Test/Dec/Enum/Singleton {
     /**
      * An enum for a polymorphic Result.
      */
-    enum C[a](Result[a, Int32])
+    enum C[a](Result[Int32, a])
 
     /**
      * An enum for a polymorphic Result.
      */
-    enum D[a, b, c](Result[a, Result[b, c]])
+    enum D[a, b, c](Result[Result[c, b], a])
 
     @test
     def testOpaqueType01(): Celsius = Celsius.Celsius(123)
@@ -184,19 +184,19 @@ namespace Test/Dec/Enum/Singleton {
     }
 
     @test
-    def testOpaqueType30(): V = V.V(Ok(true))
+    def testOpaqueType30(): V = V.V(Err(true))
 
     @test
-    def testOpaqueType31(): Bool = match V.V(Ok(true)) {
-        case V.V(x) => x == Ok(true)
+    def testOpaqueType31(): Bool = match V.V(Err(true)) {
+        case V.V(x) => x == Err(true)
     }
 
     @test
-    def testOpaqueType32(): V = V.V(Err(123))
+    def testOpaqueType32(): V = V.V(Ok(123))
 
     @test
-    def testOpaqueType33(): Bool = match V.V(Err(123)) {
-        case V.V(x) => x == Err(123)
+    def testOpaqueType33(): Bool = match V.V(Ok(123)) {
+        case V.V(x) => x == Ok(123)
     }
 
 }

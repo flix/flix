@@ -28,7 +28,7 @@ namespace File {
     ///
     /// Returns the last access time of the given file `f` in milliseconds.
     ///
-    pub def accessTime(f: String): Result[Int64, String] \ IO =
+    pub def accessTime(f: String): Result[String, Int64] \ IO =
         try {
             use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime \ IO;
@@ -48,7 +48,7 @@ namespace File {
     ///
     /// Returns the creation time of the given file `f` in milliseconds.
     ///
-    pub def creationTime(f: String): Result[Int64, String] \ IO =
+    pub def creationTime(f: String): Result[String, Int64] \ IO =
         try {
             use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime \ IO;
@@ -68,7 +68,7 @@ namespace File {
     ///
     /// Returns the last-modified timestamp of the given file `f` in milliseconds
     ///
-    pub def modificationTime(f: String): Result[Int64, String] \ IO =
+    pub def modificationTime(f: String): Result[String, Int64] \ IO =
         try {
             use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime \ IO;
@@ -88,7 +88,7 @@ namespace File {
     ///
     /// Returns the size of the given file `f` in bytes.
     ///
-    pub def size(f: String): Result[Int64, String] \ IO =
+    pub def size(f: String): Result[String, Int64] \ IO =
         try {
             use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.size(): Int64 \ IO;
@@ -106,7 +106,7 @@ namespace File {
     ///
     /// Returns the BacisFileAttributes of the file `f`.
     ///
-    def getAttributes(f: String): Result[##java.nio.file.attribute.BasicFileAttributes, String] \ IO = region r {
+    def getAttributes(f: String): Result[String, ##java.nio.file.attribute.BasicFileAttributes] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -128,7 +128,7 @@ namespace File {
     ///
     /// Returns the type of the given file `f`.
     ///
-    pub def fileType(f: String): Result[FileType, String] \ IO =
+    pub def fileType(f: String): Result[String, FileType] \ IO =
         use Result.flatMap;
 
         let* isFile = File.isRegularFile(f);
@@ -154,7 +154,7 @@ namespace File {
     ///
     /// Returns the statistics of the given file `f`.
     ///
-    pub def stat(f: String): Result[StatInfo, String] \ IO =
+    pub def stat(f: String): Result[String, StatInfo] \ IO =
         use Result.flatMap;
 
         let* fileAccessTime = accessTime(f);
@@ -174,7 +174,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` exists.
     ///
-    pub def exists(f: String): Result[Bool, String] \ IO =
+    pub def exists(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.exists(): Bool \ IO;
@@ -188,7 +188,7 @@ namespace File {
     ///
     /// Returns `true` is the given file `f` is a directory.
     ///
-    pub def isDirectory(f: String): Result[Bool, String] \ IO =
+    pub def isDirectory(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.isDirectory(): Bool \ IO;
@@ -202,7 +202,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is a regular file.
     ///
-    pub def isRegularFile(f: String): Result[Bool, String] \ IO = region r {
+    pub def isRegularFile(f: String): Result[String, Bool] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -221,7 +221,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is readable.
     ///
-    pub def isReadable(f: String): Result[Bool, String] \ IO =
+    pub def isReadable(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.canRead(): Bool \ IO;
@@ -235,7 +235,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is a symbolic link.
     ///
-    pub def isSymbolicLink(f: String): Result[Bool, String] \ IO =
+    pub def isSymbolicLink(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -253,7 +253,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is writable.
     ///
-    pub def isWritable(f: String): Result[Bool, String] \ IO =
+    pub def isWritable(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.canWrite(): Bool \ IO;
@@ -267,7 +267,7 @@ namespace File {
     ///
     /// Returns `true` if the given file `f` is executable.
     ///
-    pub def isExecutable(f: String): Result[Bool, String] \ IO =
+    pub def isExecutable(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.canExecute(): Bool \ IO;
@@ -340,7 +340,7 @@ namespace File {
     /// Helper function for `readWith` and `readBytesWith`.
     /// Tries to skip the requested number of bytes `bytes to skip` in `f` over `i + 1` iterations.
     ///
-    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[Unit, String] \ IO =
+    def skip(i: Int64, bytesToSkip: Int64, stream: ##java.io.FileInputStream, f: String): Result[String, Unit] \ IO =
         try {
             if (0i64 <= i) {
                 import java.io.FileInputStream.skip(Int64): Int64 \ IO as javaSkip;
@@ -361,7 +361,7 @@ namespace File {
     ///
     /// Returns a list of all the lines in the given file `f`.
     ///
-    pub def readLines(f: String): Result[List[String], String] \ IO = try {
+    pub def readLines(f: String): Result[String, List[String]] \ IO = try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
             import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
@@ -394,7 +394,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesWith(opts: {charSet = String}, f: String): Result[List[String], String] \ IO =
+    pub def readLinesWith(opts: {charSet = String}, f: String): Result[String, List[String]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -489,7 +489,7 @@ namespace File {
     ///
     /// Returns an array of all the bytes in the given file `f`.
     ///
-    pub def readBytes(_r: Region[r], f: String): Result[Array[Int8, r], String] \ { Write(r), IO } =
+    pub def readBytes(_r: Region[r], f: String): Result[String, Array[Int8, r]] \ { Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -512,7 +512,7 @@ namespace File {
     /// `offset` - the start offset in the given file `f`.
     /// `count` - the number of bytes read.
     ///
-    pub def readBytesWith(r: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[Array[Int8, r], String] \ { Read(r), Write(r), IO } =
+    pub def readBytesWith(r: Region[r], opts: {offset = Int64, count = Int32}, f: String): Result[String, Array[Int8, r]] \ { Read(r), Write(r), IO } =
         if (0 < opts.count) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -561,7 +561,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[Array[Int8, r], String], r] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -608,7 +608,7 @@ namespace File {
     ///
     /// Returns `true` if the file was created.
     ///
-    pub def write(f: String, data: t): Result[Bool, String] \ IO with ToString[t] =
+    pub def write(f: String, data: t): Result[String, Bool] \ IO with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
@@ -643,7 +643,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def writeLines(f: String, data: f[String]): Result[Bool, String] \ IO with Foldable[f] =
+    pub def writeLines(f: String, data: f[String]): Result[String, Bool] \ IO with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
@@ -676,7 +676,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def append(f: String, data: t): Result[Bool, String] \ IO with ToString[t] =
+    pub def append(f: String, data: t): Result[String, Bool] \ IO with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
@@ -712,7 +712,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def appendLines(f: String, data: f[String]): Result[Bool, String] \ IO with Foldable[f] =
+    pub def appendLines(f: String, data: f[String]): Result[String, Bool] \ IO with Foldable[f] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
@@ -750,7 +750,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def writeBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] = region r {
+    pub def writeBytes(f: String, data: f[Int8]): Result[String, Bool] \ IO with Foldable[f] = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
@@ -787,7 +787,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def appendBytes(f: String, data: f[Int8]): Result[Bool, String] \ IO with Foldable[f] = region r {
+    pub def appendBytes(f: String, data: f[Int8]): Result[String, Bool] \ IO with Foldable[f] = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
@@ -824,7 +824,7 @@ namespace File {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def truncate(f: String): Result[Bool, String] \ IO =
+    pub def truncate(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
@@ -857,7 +857,7 @@ namespace File {
     /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
     /// Returns `Err(msg)` if the directory could not be created.
     ///
-    pub def mkdir(d: String): Result[Bool, String] \ IO =
+    pub def mkdir(d: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.mkdir(): Bool \ IO;
@@ -877,7 +877,7 @@ namespace File {
     /// Returns `Ok(false)` if the directory `d` already existed and is a directory.
     /// Returns `Err(msg)` if the directory could not be created.
     ///
-    pub def mkdirs(d: String): Result[Bool, String] \ IO =
+    pub def mkdirs(d: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.mkdirs(): Bool \ IO;
@@ -896,7 +896,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def list(f: String): Result[List[String], String] \ IO = region r {
+    pub def list(f: String): Result[String, List[String]] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.listFiles(): Array[##java.io.File, r] \ IO;
@@ -924,7 +924,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(r: Region[r], f: String): Result[Iterator[String, r], String] \ IO =
+    pub def listWithIter(r: Region[r], f: String): Result[String, Iterator[String, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -951,7 +951,7 @@ namespace File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(r: Region[r], f: String): Result[Iterator[String, r], String] \ IO =
+    pub def walk(r: Region[r], f: String): Result[String, Iterator[String, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -998,7 +998,7 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def move(src: {src = String} , dst: String): Result[Unit, String] \ IO = region r {
+    pub def move(src: {src = String} , dst: String): Result[String, Unit] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1027,7 +1027,7 @@ namespace File {
     /// - `dst` is not a directory, or
     /// - an I/O error occurred.
     ///
-    pub def moveInto(src: {src = String} , dst: String): Result[Unit, String] \ IO =
+    pub def moveInto(src: {src = String} , dst: String): Result[String, Unit] \ IO =
         try {
             match File.isDirectory(dst) {
                 case Ok(true)  => {
@@ -1058,7 +1058,7 @@ namespace File {
     /// Returns `Ok(())` if `src` was moved.
     /// Returns `Err(msg)` if `src` was not moved, or an I/O error occurred.
     ///
-    pub def moveOver(src: {src = String}, dst: String): Result[Unit, String] \ IO = region r {
+    pub def moveOver(src: {src = String}, dst: String): Result[String, Unit] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1089,7 +1089,7 @@ namespace File {
     /// - `dst` is a subpath of `src`, or
     /// - an I/O error occurred.
     ///
-    pub def copy(src: {src = String} , dst: String): Result[Unit, String] \ IO = region r {
+    pub def copy(src: {src = String} , dst: String): Result[String, Unit] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1118,7 +1118,7 @@ namespace File {
     /// - `dst` is not a directory, or
     /// - an I/O error occurred.
     ///
-    pub def copyInto(src: {src = String} , dst: String): Result[Unit, String] \ IO =
+    pub def copyInto(src: {src = String} , dst: String): Result[String, Unit] \ IO =
         try {
             match File.isDirectory(dst) {
                 case Ok(true)  => {
@@ -1149,7 +1149,7 @@ namespace File {
     /// Returns `Ok(())` if `src` was copied.
     /// Returns `Err(msg)` if `src` was not copied, or an I/O error occurred.
     ///
-    pub def copyOver(src: {src = String}, dst: String): Result[Unit, String] \ IO = region r {
+    pub def copyOver(src: {src = String}, dst: String): Result[String, Unit] \ IO = region r {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1176,7 +1176,7 @@ namespace File {
     ///
     /// If `f` is a directory it must be empty.
     ///
-    pub def delete(f: String): Result[Unit, String] \ IO =
+    pub def delete(f: String): Result[String, Unit] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -1198,7 +1198,7 @@ namespace File {
     ///
     /// If `f` is a directory it must be empty.
     ///
-    pub def deleteIfExists(f: String): Result[Bool, String] \ IO =
+    pub def deleteIfExists(f: String): Result[String, Bool] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;

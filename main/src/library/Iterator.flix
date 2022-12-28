@@ -27,7 +27,7 @@ instance Scoped[Iterator[a]] {
 }
 
 instance Iterable[Iterator] {
-    pub def iterator(r1: Region[r1], iter: Iterator[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = 
+    pub def iterator(r1: Region[r1], iter: Iterator[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let _ = r1; // Avoid redundancy error
         unsafe_cast iter as Iterator[a, r1 and r2] \ { Write(r1), Read(r2) }
 }
@@ -529,7 +529,7 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     @Lazy
-    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[a, b] \ ef): Iterator[a, r and ef] \ Write(r) =
+    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, r and ef] \ Write(r) =
         let cursor = ref None @ r;
         let done = () -> match deref cursor {
             case None    => match f() {
@@ -883,7 +883,7 @@ namespace Iterator {
     /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
     /// If the iterator has no errors then the result is wrapped with `Ok`.
     ///
-    pub def toResultList(iter: Iterator[Result[a, e], r]): Result[List[a], e] \ Read(r) =
+    pub def toResultList(iter: Iterator[Result[e, a], r]): Result[e, List[a]] \ Read(r) =
         let Iterator(done, next) = iter;
         def loop(fk, sk) = {
             if (done())

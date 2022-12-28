@@ -1237,7 +1237,7 @@ namespace List {
     ///
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
-    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] \ ef): Result[List[a], e] \ ef =
+    pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
         def loop(k) = match next() {
             case Ok(None)    => k(Ok(Nil))
             case Err(e)      => k(Err(e))
