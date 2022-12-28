@@ -42,6 +42,16 @@ instance Monoid[Validation[e, t]] with Monoid[t] {
     pub def empty(): Validation[e, t] = Validation.Success(Monoid.empty())
 }
 
+instance Functor[Validation[e]] {
+    pub def map(f: a -> b \ ef, x: Validation[e, a]): Validation[e, b] \ ef = Validation.map(f, x)
+}
+
+instance Applicative[Validation[e]] {
+    pub def point(a: a) : Validation[e, a] = Validation.Success(a)
+    pub def ap(f: Validation[e, a -> b \ ef], x: Validation[e, a]): Validation[e, b] \ ef = Validation.ap(f, x)
+}
+
+
 namespace Validation {
 
     ///
