@@ -38,6 +38,32 @@ namespace TestValidation {
     def necOf10(p: a, q: a, r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Nec[a] = cons(p, cons(q, cons(r, cons(s, cons(t, cons(u, cons(v, cons(w, cons(x, singleton(y))))))))))
 
     /////////////////////////////////////////////////////////////////////////////
+    // Functor.map                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def functor_map01(): Bool = Functor.map(x -> x, Success(123)): Validation[Int32, Int32] == Success(123)
+
+    @test
+    def functor_map02(): Bool = Functor.map(x -> x + 1, Success(123)): Validation[Int32, Int32] == Success(124)
+
+    @test
+    def functor_map03(): Bool = Functor.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32] == Failure(singleton(123))
+
+    @test
+    def functor_map04(): Bool = (Success(123): Validation[Int32, Int32]) |> Functor.map(x -> x + 1) |> Functor.map(x -> x * 2)  == Success(248)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Applicative.ap                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def applicative_ap01(): Bool = Applicative.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32] == Success(124)
+
+    @test
+    def applicative_ap02(): Bool = Applicative.ap(Success(x -> x + 1), Failure(singleton(42))) == Failure(singleton(42))
+
+    /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 

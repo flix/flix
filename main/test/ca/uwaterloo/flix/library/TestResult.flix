@@ -18,6 +18,46 @@ namespace TestResult {
 
     use Hash.hash
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Functor.map                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def functor_map01(): Bool = Functor.map(i -> i == 2, Err(-1ii)) == Err(-1ii)
+
+    @test
+    def functor_map02(): Bool = Functor.map(i -> i == 2, Ok(1)): Result[Unit, Bool] == Ok(false)
+
+    @test
+    def functor_map03(): Bool = Functor.map(i -> i == 2, Ok(2)): Result[Unit, Bool] == Ok(true)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Monad.flatMap                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def monad_flatMap01(): Bool = Monad.flatMap(i -> if (i == 2) Ok(i) else Err(false), Err(true)) == Err(true)
+
+    @test
+    def monad_flatMap02(): Bool = Monad.flatMap(i -> if (i == 2) Ok(i) else Err(false), Ok(1)) == Err(false)
+
+    @test
+    def monad_flatMap03(): Bool = Monad.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)) == Ok(4)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Applicative.ap                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def applicative_ap01(): Bool = Applicative.ap(Ok(x -> x + 1), Ok(123)): Result[String, Int32] == Ok(124)
+
+    @test
+    def applicative_ap02(): Bool = Applicative.ap(Ok(x -> x + 1), Err("b")) == Err("b")
+
+    @test
+    def applicative_ap03(): Bool = Applicative.ap(Err("a"), Ok(123)): Result[String, Int32] == Err("a")
+
+    @test
+    def applicative_ap04(): Bool = Applicative.ap(Err("a"), Err("b")): Result[String, Int32] == Err("a")
+
     /////////////////////////////////////////////////////////////////////////////
     // isOk                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -134,6 +174,7 @@ namespace TestResult {
 
     @test
     def flatMap03(): Bool = Result.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)) == Ok(4)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //

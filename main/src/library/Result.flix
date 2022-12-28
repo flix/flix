@@ -33,6 +33,19 @@ instance Hash[Result[e, t]] with Hash[e], Hash[t] {
     }
 }
 
+instance Functor[Result[e]] {
+    pub def map(f: a -> b \ ef, x: Result[e, a]): Result[e, b] \ ef = Result.map(f, x)
+}
+
+instance Applicative[Result[e]] {
+    pub def point(a: a) : Result[e, a] = Ok(a)
+    pub def ap(f: Result[e, a -> b \ ef], x: Result[e, a]): Result[e, b] \ ef = Result.ap(f, x)
+}
+
+instance Monad[Result[e]] {
+    pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
+}
+
 namespace Result {
 
     ///
