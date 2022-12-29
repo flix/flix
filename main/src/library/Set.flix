@@ -98,7 +98,7 @@ namespace Set {
     pub def toString(s: Set[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Set#{", sb);
-        foreach ((x, i) <- enumerator(r, s)) {
+        foreach ((i, x) <- enumerator(r, s)) {
             if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -608,7 +608,7 @@ namespace Set {
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
     ///

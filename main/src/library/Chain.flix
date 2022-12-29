@@ -96,7 +96,7 @@ instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Chain#{", sb);
-        foreach ((x, i) <- enumerator(r, c)) {
+        foreach ((i, x) <- enumerator(r, c)) {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -796,7 +796,7 @@ namespace Chain {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///

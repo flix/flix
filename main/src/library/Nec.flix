@@ -126,7 +126,7 @@ instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Nec#{", sb);
-        foreach ((x, i) <- enumerator(r, c)) {
+        foreach ((i, x) <- enumerator(r, c)) {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -674,10 +674,10 @@ namespace Nec {
     /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
+    pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =
         def loop(c1, k, i) = match viewLeft(c1) {
-            case ViewLeft.OneLeft(x)      => k(NecOne(x, i))
-            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
+            case ViewLeft.OneLeft(x)      => k(NecOne(i, x))
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((i, x), ks)), i + 1)
         };
         loop(c, k -> k, 0)
 
@@ -784,7 +784,7 @@ namespace Nec {
     pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = Array.repeat(r, length(c), x);
-        forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+        forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
         arr
 
     ///
@@ -818,7 +818,7 @@ namespace Nec {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///

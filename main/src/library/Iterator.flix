@@ -41,7 +41,7 @@ pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable
 ///
 /// Alias for `Foldable.iterator |> Iterable.enumerator`.
 ///
-pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
+pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r] \ Write(r) with Foldable[t] =
     Foldable.iterator(r, t) |> Iterable.enumerator(r)
 
 namespace Iterator {
@@ -438,11 +438,11 @@ namespace Iterator {
     /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
-    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
         let Iterator(done, next) = iter;
         let i = ref 0 @ Scoped.regionOf(iter);
         let next1 = () -> {
-            let x = (next(), deref i);
+            let x = (deref i, next());
             i := deref i + 1;
             x
         };
@@ -451,7 +451,7 @@ namespace Iterator {
     ///
     /// Alias for `zipWithIndex`.
     ///
-    pub def enumerator(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
         zipWithIndex(iter)
 
     ///

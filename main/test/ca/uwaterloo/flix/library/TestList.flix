@@ -1609,13 +1609,13 @@ def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 ::
 def zipWithIndex01(): Bool = List.zipWithIndex(Nil : List[Char]) == Nil
 
 @test
-def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (1, 0) :: Nil
+def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (0, 1) :: Nil
 
 @test
-def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) :: ("b", 1) :: Nil
+def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == (0, "a") :: (1, "b") :: Nil
 
 @test
-def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
+def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == (0, (0, true)) :: (1, (1, false)) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // zipWithA                                                                //

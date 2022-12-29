@@ -130,8 +130,8 @@ namespace DelayList {
     pub def toString(l: DelayList[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("DelayList(", sb);
-        foreach ((x, i) <- enumerator(r, l)) {
-            if (i == 0)
+        foreach ((i, x) <- enumerator(r, l)) {
+            if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
@@ -1205,7 +1205,7 @@ namespace DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

@@ -430,7 +430,7 @@ namespace Result {
     ///
     /// Returns an iterator over `r` zipped with the indices of the elements.
     ///
-    pub def enumerator(reg: Region[reg], r: Result[e, t]): Iterator[(t, Int32), reg] \ Write(reg) =
+    pub def enumerator(reg: Region[reg], r: Result[e, t]): Iterator[(Int32, t), reg] \ Write(reg) =
         iterator(reg, r) |> Iterator.zipWithIndex
 
     ///
