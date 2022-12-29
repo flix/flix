@@ -140,24 +140,24 @@ namespace Test/Exp/Interpolation {
 
     @test
     def interpolation26(): Bool =
-        let x = Red;
+        let x = Color.Red;
         "${x}" == "r"
 
     @test
     def interpolation27(): Bool =
-        let x = Green;
+        let x = Color.Green;
         "${x}" == "g"
 
     @test
     def interpolation28(): Bool =
-        let x = Blue;
+        let x = Color.Blue;
         "${x}" == "b"
 
     @test
     def interpolation29(): Bool =
-        let x = Red;
-        let y = Green;
-        let z = Blue;
+        let x = Color.Red;
+        let y = Color.Green;
+        let z = Color.Blue;
         "${x}${y}${z}" == "rgb"
 
     @test
@@ -187,7 +187,7 @@ namespace Test/Exp/Interpolation {
 
     @test
     def interpolation35(): Bool =
-        let x = Ok(Some(123)): Result[Option[Int32], Int32];
+        let x = Ok(Some(123)): Result[Int32, Option[Int32]];
         "${x}" == "Ok(Some(123))"
 
     @test

@@ -226,15 +226,15 @@ namespace Test/Dec/Class {
 
         instance Eq[M[true, a]] with Eq[a] {
             pub def eq(x: M[true, a], y: M[true, a]): Bool = match (x, y) {
-                case (M(x1), M(y1)) => x1 == y1
+                case (M.M(x1), M.M(y1)) => x1 == y1
             }
         }
 
         @test
-        def testCallComplexBoolSig01(): Bool = M(10): M[true, Int32] == M(10): M[true, Int32]
+        def testCallComplexBoolSig01(): Bool = M.M(10): M[true, Int32] == M.M(10): M[true, Int32]
 
         @test
-        def testCallComplexBoolSig02(): Bool = M(10): M[true, Int32] != M(11): M[true, Int32]
+        def testCallComplexBoolSig02(): Bool = M.M(10): M[true, Int32] != M.M(11): M[true, Int32]
     }
 
     @test

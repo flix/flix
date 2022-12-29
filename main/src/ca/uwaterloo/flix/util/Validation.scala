@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 sealed trait Validation[+T, +E] {
 
@@ -27,6 +28,7 @@ sealed trait Validation[+T, +E] {
     */
   final def get: T = this match {
     case Validation.Success(value) => value
+    case Validation.SuccessWithFailures(_, errors) => throw new RuntimeException(s"Attempt to retrieve value from SuccessWithFailures. The errors are: ${errors.mkString(", ")}")
     case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
@@ -37,6 +39,7 @@ sealed trait Validation[+T, +E] {
     */
   final def map[U](f: T => U): Validation[U, E] = this match {
     case Validation.Success(value) => Validation.Success(f(value))
+    case Validation.SuccessWithFailures(value, errors) => Validation.SuccessWithFailures(f(value), errors)
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
@@ -45,19 +48,27 @@ sealed trait Validation[+T, +E] {
     *
     * Preserves the errors.
     */
-    // Deprecated. Use flatMapN instead.
+  // Deprecated. Use flatMapN instead.
   final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
     case Validation.Success(input) => f(input) match {
       case Validation.Success(value) => Validation.Success(value)
+      case Validation.SuccessWithFailures(value, thatErrors) => Validation.SuccessWithFailures(value, errors #::: thatErrors)
       case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
     }
+
+    case Validation.SuccessWithFailures(input, errors) => f(input) match {
+      case Validation.Success(value) => Validation.SuccessWithFailures(value, errors)
+      case Validation.SuccessWithFailures(value, thatErrors) => Validation.SuccessWithFailures(value, errors #::: thatErrors)
+      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
+    }
+
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
-  protected def errors: LazyList[E]
+  def errors: LazyList[E]
 
 }
 
@@ -81,6 +92,11 @@ object Validation {
   }
 
   /**
+    * Represents a success that contains a value and non-critical `errors`.
+    */
+  case class SuccessWithFailures[T, E](t: T, errors: LazyList[E]) extends Validation[T, E]
+
+  /**
     * Represents a failure with no value and `errors`.
     */
   case class Failure[T, E](errors: LazyList[E]) extends Validation[T, E]
@@ -89,14 +105,26 @@ object Validation {
     * Sequences the given list of validations `xs`.
     */
   def sequence[T, E](xs: Iterable[Validation[T, E]]): Validation[List[T], E] = {
-    val zero = Success(List.empty[T]): Validation[List[T], E]
+    val zero = SuccessNil: Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
         Success(curValue :: accValue)
+      case (Success(curValue), SuccessWithFailures(accValue, accErrors)) =>
+        SuccessWithFailures(curValue :: accValue, accErrors)
       case (Success(_), Failure(accErrors)) =>
         Failure(accErrors)
+
+      case (SuccessWithFailures(curValue, curErrors), Success(accValue)) =>
+        SuccessWithFailures(curValue :: accValue, curErrors)
+      case (SuccessWithFailures(curValue, curErrors), SuccessWithFailures(accValue, accErrors)) =>
+        SuccessWithFailures(curValue :: accValue, curErrors #::: accErrors)
+      case (SuccessWithFailures(_, curErrors), Failure(accErrors)) =>
+        Failure(curErrors #::: accErrors)
+
       case (Failure(curErrors), Success(_)) =>
         Failure(curErrors)
+      case (Failure(curErrors), SuccessWithFailures(_, accErrors)) =>
+        Failure(curErrors #::: accErrors)
       case (Failure(curErrors), Failure(accErrors)) =>
         Failure(curErrors #::: accErrors)
     }
@@ -130,6 +158,7 @@ object Validation {
     case None => Validation.SuccessNone
     case Some(x) => f(x) match {
       case Success(t) => Success(Some(t))
+      case SuccessWithFailures(t, errs) => SuccessWithFailures(Some(t), errs)
       case Failure(errs) => Failure(errs)
     }
   }
@@ -153,21 +182,166 @@ object Validation {
     val successValues = mutable.ArrayBuffer.empty[S]
     val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
 
+    // Flag to signal fatal (non-recoverable) errors
+    var isFatal = false
+
     // Apply f to each element and collect the results.
     for (x <- xs) {
       f(x) match {
         case Success(v) => successValues += v
-        case Failure(e) => failureStream += e
+        case SuccessWithFailures(v, e) =>
+          successValues += v
+          failureStream += e
+        case Failure(e) =>
+          failureStream += e
+          isFatal = true
       }
     }
 
     // Check whether we were successful or not.
-    if (failureStream.isEmpty) {
-      Success(successValues.toList)
-    } else {
+    if (isFatal) {
       Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+    } else if (failureStream.nonEmpty) {
+      SuccessWithFailures(successValues.toList, failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+    }
+    else {
+      Success(successValues.toList)
     }
   }
+
+  /**
+    * Returns the combined stream of `failureStream` and `successFailureStream`.
+    *
+    * Helper function for `fastTraverse`.
+    */
+  private def combineFailureStreams[E, S, T](failureStream: ArrayBuffer[(LazyList[E], Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
+    successFailureStream.map {
+      case (_, e, i) => (e, i)
+    }.appendAll(failureStream).sortInPlaceBy {
+      case (_, idx) => idx
+    }.map {
+      case (e, _) => e
+    }.foldLeft(LazyList.empty[E])(_ #::: _)
+  }
+
+  /**
+    * Returns the combined stream of `successValues` and `successFailureStream`.
+    *
+    * Helper function for `fastTraverse`.
+    */
+  private def combineSuccessStreams[E, S, T](successValues: ArrayBuffer[(S, Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
+    successFailureStream.map {
+      case (v, _, i) => (v, i)
+    }.appendAll(successValues).sortInPlaceBy {
+      case (_, idx) => idx
+    }.map {
+      case (v, _) => v
+    }.toList
+  }
+
+  /**
+    * Returns the `Validation` inside `t1`.
+    *
+    * Preserves all errors.
+    */
+  def flatten[U, E](t1: Validation[Validation[U, E], E]): Validation[U, E] = t1 match {
+    case Success(Success(t)) =>
+      Success(t)
+    case Success(SuccessWithFailures(t, e)) =>
+      SuccessWithFailures(t, e)
+    case Success(Failure(e)) =>
+      Failure(e)
+    case SuccessWithFailures(Success(t), errors) =>
+      SuccessWithFailures(t, errors)
+    case SuccessWithFailures(SuccessWithFailures(t, e), errors) =>
+      SuccessWithFailures(t, errors #::: e)
+    case SuccessWithFailures(Failure(e), errors) =>
+      Failure(errors #::: e)
+    case Failure(errors) =>
+      Failure(errors)
+  }
+
+  /**
+    * Applies the function inside `f` to the value inside `t`.
+    *
+    * Preserves all errors.
+    */
+  def ap[T1, U, E](f: Validation[T1 => U, E])(t1: Validation[T1, E]): Validation[U, E] =
+    (f, t1) match {
+      case (Success(g), Success(v)) =>
+        Success(g(v))
+      case (Success(g), SuccessWithFailures(v, e2)) =>
+        SuccessWithFailures(g(v), e2)
+      case (Success(_), Failure(e2)) =>
+        Failure(e2)
+
+      case (SuccessWithFailures(g, e1), Success(v)) =>
+        SuccessWithFailures(g(v), e1)
+      case (SuccessWithFailures(g, e1), SuccessWithFailures(v, e2)) =>
+        SuccessWithFailures(g(v), e1 #::: e2)
+      case (SuccessWithFailures(_, e1), Failure(e2)) =>
+        Failure(e1 #::: e2)
+
+      case (Failure(e1), Success(_)) =>
+        Failure(e1)
+      case (Failure(e1), SuccessWithFailures(_, e2)) =>
+        Failure(e1 #::: e2)
+      case (Failure(e1), Failure(e2)) =>
+        Failure(e1 #::: e2)
+    }
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3](f: (T1, T2) => T3): T1 => T2 => T3 =
+    (t1: T1) => (t2: T2) => f(t1, t2)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4](f: (T1, T2, T3) => T4): (T1, T2) => T3 => T4 =
+    (t1: T1, t2: T2) => (t3: T3) => f(t1, t2, t3)
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5](f: (T1, T2, T3, T4) => T5): (T1, T2, T3) => T4 => T5 =
+    (t1: T1, t2: T2, t3: T3) => (t4: T4) => f(t1, t2, t3, t4)
+
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6](f: (T1, T2, T3, T4, T5) => T6): (T1, T2, T3, T4) => T5 => T6 =
+    (t1: T1, t2: T2, t3: T3, t4: T4) => (t5: T5) => f(t1, t2, t3, t4, t5)
+
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7](f: (T1, T2, T3, T4, T5, T6) => T7): (T1, T2, T3, T4, T5) => T6 => T7 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5) => (t6: T6) => f(t1, t2, t3, t4, t5, t6)
+
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8](f: (T1, T2, T3, T4, T5, T6, T7) => T8): (T1, T2, T3, T4, T5, T6) => T7 => T8 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6) => (t7: T7) => f(t1, t2, t3, t4, t5, t6, t7)
+
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9](f: (T1, T2, T3, T4, T5, T6, T7, T8) => T9): (T1, T2, T3, T4, T5, T6, T7) => T8 => T9 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7) => (t8: T8) => f(t1, t2, t3, t4, t5, t6, t7, t8)
+
+
+  /**
+    * Returns `f` with the last parameter curried.
+    */
+  private def curry[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => T10): (T1, T2, T3, T4, T5, T6, T7, T8) => T9 => T10 =
+    (t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8) => (t9: T9) => f(t1, t2, t3, t4, t5, t6, t7, t8, t9)
 
   /**
     * Maps over t1.
@@ -176,7 +350,8 @@ object Validation {
                     (f: T1 => U): Validation[U, E] =
     t1 match {
       case Success(v1) => Success(f(v1))
-      case _ => Failure(t1.errors)
+      case SuccessWithFailures(v1, err1) => SuccessWithFailures(f(v1), err1)
+      case Failure(errors) => Failure(errors)
     }
 
   /**
@@ -184,20 +359,14 @@ object Validation {
     */
   def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                         (f: (T1, T2) => U): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) => Success(f(v1, v2))
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    ap(mapN(t1)(curry(f)))(t2)
 
   /**
     * Maps over t1, t2, and t3.
     */
   def mapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                             (f: (T1, T2, T3) => U): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) => Success(f(v1, v2, v3))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    ap(mapN(t1, t2)(curry(f)))(t3)
 
   /**
     * Maps over t1, t2, t3, and t4.
@@ -205,10 +374,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                  t4: Validation[T4, E])
                                 (f: (T1, T2, T3, T4) => U): Validation[U, E] =
-    (t1, t2, t3, t4) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4)) => Success(f(v1, v2, v3, v4))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
-    }
+    ap(mapN(t1, t2, t3)(curry(f)))(t4)
 
   /**
     * Maps over t1, t2, t3, t4, and t5.
@@ -216,10 +382,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E], t5: Validation[T5, E])
                                     (f: (T1, T2, T3, T4, T5) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => Success(f(v1, v2, v3, v4, v5))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
-    }
+    ap(mapN(t1, t2, t3, t4)(curry(f)))(t5)
 
   /**
     * Maps over t1, t2, t3, t4, t5, and t6.
@@ -227,11 +390,7 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
                                         (f: (T1, T2, T3, T4, T5, T6) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => Success(f(v1, v2, v3, v4, v5, v6))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
-
-    }
+    ap(mapN(t1, t2, t3, t4, t5)(curry(f)))(t6)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, and t7.
@@ -240,10 +399,7 @@ object Validation {
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                              t7: Validation[T7, E])
                                             (f: (T1, T2, T3, T4, T5, T6, T7) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => Success(f(v1, v2, v3, v4, v5, v6, v7))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
-    }
+    ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, t7, and t8.
@@ -251,23 +407,17 @@ object Validation {
   def mapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E], t8: Validation[T8, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7, t8) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors)
-    }
+                                                (f: (T1, T2, T3, T4, T5, T6, T7, T8) => U): Validation[U, E] =
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8)
 
   /**
     * Maps over t1, t2, t3, t4, t5, t6, t7, t8, and t9.
     */
   def mapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                                 t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
-                                                 t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7, t8, t9) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7), Success(v8), Success(v9)) => Success(f(v1, v2, v3, v4, v5, v6, v7, v8, v9))
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors #::: t8.errors #::: t9.errors)
-    }
+                                                     t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                     t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
+                                                    (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => U): Validation[U, E] =
+    ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8)(curry(f)))(t9)
 
   /**
     * FlatMaps over t1.
@@ -275,6 +425,11 @@ object Validation {
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
     t1 match {
       case Success(v1) => f(v1)
+      case SuccessWithFailures(v1, e1) => f(v1) match {
+        case Success(x) => SuccessWithFailures(x, e1)
+        case SuccessWithFailures(x, funcErrors) => SuccessWithFailures(x, e1 #::: funcErrors)
+        case Failure(funcErrors) => Failure(e1 #::: funcErrors)
+      }
       case _ => Failure(t1.errors)
     }
 
@@ -283,20 +438,14 @@ object Validation {
     */
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
                             (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
-    (t1, t2) match {
-      case (Success(v1), Success(v2)) => f(v1, v2)
-      case _ => Failure(t1.errors #::: t2.errors)
-    }
+    flatten(ap(mapN(t1)(curry(f)))(t2))
 
   /**
     * FlatMaps over t1, t2, and t3.
     */
   def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
                                 (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3) match {
-      case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
-    }
+    flatten(ap(mapN(t1, t2)(curry(f)))(t3))
 
   /**
     * FlatMaps over t1, t2, t3, and t4.
@@ -304,10 +453,7 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                      t4: Validation[T4, E])
                                     (f: (T1, T2, T3, T4) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4)) => f(v1, v2, v3, v4)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3)(curry(f)))(t4))
 
   /**
     * FlatMaps over t1, t2, t3, t4, and t5.
@@ -315,21 +461,15 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                          t4: Validation[T4, E], t5: Validation[T5, E])
                                         (f: (T1, T2, T3, T4, T5) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => f(v1, v2, v3, v4, v5)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
-    }
+    flatten(ap(mapN(t1, t2, t3, t4)(curry(f)))(t5))
 
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
     */
   def flatMapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                              t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
-                                             (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => f(v1, v2, v3, v4, v5, v6)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
-    }
+                                            (f: (T1, T2, T3, T4, T5, T6) => Validation[U, E]): Validation[U, E] =
+    flatten(ap(mapN(t1, t2, t3, t4, t5)(curry(f)))(t6))
 
   /**
     * FlatMaps over t1, t2, t3, t4, t5, and t6.
@@ -337,11 +477,8 @@ object Validation {
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
                                                  t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
                                                  t7: Validation[T7, E])
-                                                 (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
-    (t1, t2, t3, t4, t5, t6, t7) match {
-      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => f(v1, v2, v3, v4, v5, v6, v7)
-      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
-    }
+                                                (f: (T1, T2, T3, T4, T5, T6, T7) => Validation[U, E]): Validation[U, E] =
+    flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
 
   /**
     * Sequences over t1, t2, and t3.

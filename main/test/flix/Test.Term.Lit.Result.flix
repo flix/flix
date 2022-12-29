@@ -13,8 +13,8 @@ namespace Test/Term/Lit/Result {
     @test
     def testLitResult02(): Bool =
         let p = #{
-            A(Ok("Hello World"): Result[String, Int32]).
-            B(Ok("Hello World"): Result[String, Int32]).
+            A(Ok("Hello World"): Result[Int32, String]).
+            B(Ok("Hello World"): Result[Int32, String]).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);

@@ -2351,7 +2351,7 @@ def unfoldWithOkIter01(): Bool \ IO =
         } else {
             Ok(Some(deref x))
         };
-    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(Nil)
+    List.unfoldWithOkIter(step): Result[Unit, _] == Ok(Nil)
 
 @test
 def unfoldWithOkIter02(): Bool \ IO =
@@ -2375,7 +2375,7 @@ def unfoldWithOkIter03(): Bool \ IO =
         } else {
             Ok(None)
         };
-    List.unfoldWithOkIter(step): Result[_, Unit] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+    List.unfoldWithOkIter(step): Result[Unit, _] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // distinct                                                                //

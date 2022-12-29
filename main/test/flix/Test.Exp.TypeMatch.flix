@@ -137,135 +137,179 @@ namespace Test/Exp/ReifyType {
     }
 
     @Test
-    def matchTypeArrayUnit01(): Bool \ IO = typematch [()] {
-        case _: Array[Unit, Static] => true
-        case _: _ => false
+    def matchTypeArrayUnit01(): Bool = region r {
+        typematch [()] {
+            case _: Array[Unit, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayUnit02(): Bool \ IO = typematch [()] {
-        case x: Array[Unit, Static] => Array.sameElements(x, [()])
-        case _: _ => false
+    def matchTypeArrayUnit02(): Bool = region r {
+        typematch [()] {
+            case x: Array[Unit, r] => Array.sameElements(x, [()])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayBool01(): Bool \ IO = typematch [true] {
-        case _: Array[Bool, Static] => true
-        case _: _ => false
+    def matchTypeArrayBool01(): Bool = region r { 
+        typematch [true] {
+            case _: Array[Bool, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayBool02(): Bool \ IO = typematch [true] {
-        case x: Array[Bool, Static] => Array.sameElements(x, [true])
-        case _: _ => false
+    def matchTypeArrayBool02(): Bool = region r { 
+        typematch [true] {
+            case x: Array[Bool, r] => Array.sameElements(x, [true])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayChar01(): Bool \ IO = typematch ['a'] {
-        case _: Array[Char, Static] => true
-        case _: _ => false
+    def matchTypeArrayChar01(): Bool = region r { 
+        typematch ['a'] {
+            case _: Array[Char, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayChar02(): Bool \ IO = typematch ['a'] {
-        case x: Array[Char, Static] => Array.sameElements(x, ['a'])
-        case _: _ => false
+    def matchTypeArrayChar02(): Bool = region r { 
+        typematch ['a'] {
+            case x: Array[Char, r] => Array.sameElements(x, ['a'])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayFloat32_01(): Bool \ IO = typematch [0.123f32] {
-        case _: Array[Float32, Static] => true
-        case _: _ => false
+    def matchTypeArrayFloat32_01(): Bool = region r { 
+        typematch [0.123f32] {
+            case _: Array[Float32, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayFloat32_02(): Bool \ IO = typematch [0.123f32] {
-        case x: Array[Float32, Static] => Array.sameElements(x, [0.123f32])
-        case _: _ => false
+    def matchTypeArrayFloat32_02(): Bool = region r { 
+        typematch [0.123f32] {
+            case x: Array[Float32, r] => Array.sameElements(x, [0.123f32])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayFloat64_01(): Bool \ IO = typematch [0.123f64] {
-        case _: Array[Float64, Static] => true
-        case _: _ => false
+    def matchTypeArrayFloat64_01(): Bool = region r { 
+        typematch [0.123f64] {
+            case _: Array[Float64, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayFloat64_02(): Bool \ IO = typematch [0.123f64] {
-        case x: Array[Float64, Static] => Array.sameElements(x, [0.123f64])
-        case _: _ => false
+    def matchTypeArrayFloat64_02(): Bool = region r { 
+        typematch [0.123f64] {
+            case x: Array[Float64, r] => Array.sameElements(x, [0.123f64])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt8_01(): Bool \ IO = typematch [123i8] {
-        case _: Array[Int8, Static] => true
-        case _: _ => false
+    def matchTypeArrayInt8_01(): Bool = region r { 
+        typematch [123i8] {
+            case _: Array[Int8, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt8_02(): Bool \ IO = typematch [123i8] {
-        case x: Array[Int8, Static] => Array.sameElements(x, [123i8])
-        case _: _ => false
+    def matchTypeArrayInt8_02(): Bool = region r { 
+        typematch [123i8] {
+            case x: Array[Int8, r] => Array.sameElements(x, [123i8])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt16_01(): Bool \ IO = typematch [123i16] {
-        case _: Array[Int16, Static] => true
-        case _: _ => false
+    def matchTypeArrayInt16_01(): Bool = region r { 
+        typematch [123i16] {
+            case _: Array[Int16, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt16_02(): Bool \ IO = typematch [123i16] {
-        case x: Array[Int16, Static] => Array.sameElements(x, [123i16])
-        case _: _ => false
+    def matchTypeArrayInt16_02(): Bool = region r { 
+        typematch [123i16] {
+            case x: Array[Int16, r] => Array.sameElements(x, [123i16])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt32_01(): Bool \ IO = typematch [123i32] {
-        case _: Array[Int32, Static] => true
-        case _: _ => false
+    def matchTypeArrayInt32_01(): Bool = region r { 
+        typematch [123i32] {
+            case _: Array[Int32, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt32_02(): Bool \ IO = typematch [123i32] {
-        case x: Array[Int32, Static] => Array.sameElements(x, [123i32])
-        case _: _ => false
+    def matchTypeArrayInt32_02(): Bool = region r { 
+        typematch [123i32] {
+            case x: Array[Int32, r] => Array.sameElements(x, [123i32])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt64_01(): Bool \ IO = typematch [123i64] {
-        case _: Array[Int64, Static] => true
-        case _: _ => false
+    def matchTypeArrayInt64_01(): Bool = region r { 
+        typematch [123i64] {
+            case _: Array[Int64, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayInt64_02(): Bool \ IO = typematch [123i64] {
-        case x: Array[Int64, Static] => Array.sameElements(x, [123i64])
-        case _: _ => false
+    def matchTypeArrayInt64_02(): Bool = region r { 
+        typematch [123i64] {
+            case x: Array[Int64, r] => Array.sameElements(x, [123i64])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayBigInt01(): Bool \ IO = typematch [123ii] {
-        case _: Array[BigInt, Static] => true
-        case _: _ => false
+    def matchTypeArrayBigInt01(): Bool = region r { 
+        typematch [123ii] {
+            case _: Array[BigInt, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayBigInt02(): Bool \ IO = typematch [123ii] {
-        case x: Array[BigInt, Static] => Array.sameElements(x, [123ii])
-        case _: _ => false
+    def matchTypeArrayBigInt02(): Bool = region r { 
+        typematch [123ii] {
+            case x: Array[BigInt, r] => Array.sameElements(x, [123ii])
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayString01(): Bool \ IO = typematch ["hello"] {
-        case _: Array[String, Static] => true
-        case _: _ => false
+    def matchTypeArrayString01(): Bool = region r { 
+        typematch ["hello"] {
+            case _: Array[String, r] => true
+            case _: _ => false
+        }
     }
 
     @Test
-    def matchTypeArrayString02(): Bool \ IO = typematch ["hello"] {
-        case x: Array[String, Static] => Array.sameElements(x, ["hello"])
-        case _: _ => false
+    def matchTypeArrayString02(): Bool = region r { 
+        typematch ["hello"] {
+            case x: Array[String, r] => Array.sameElements(x, ["hello"])
+            case _: _ => false
+        }
     }
 
     //////////////////////////////////////
@@ -658,7 +702,7 @@ namespace Test/Exp/ReifyType {
     @Test
     def testPairTreeSize03(): Bool = pairTreeSize(("hi", ("there", "pal"))) == 5
 
-    def magicList(n: Int32): List[a] = typematch (Proxy: Proxy[a]) {
+    def magicList(n: Int32): List[a] = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Int32] =>
             if (n > 0) {
                 unsafe_cast (n :: magicList(n - 1)) as List[a]

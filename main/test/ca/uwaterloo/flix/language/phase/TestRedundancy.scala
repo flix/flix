@@ -1209,17 +1209,19 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantUpcast](result)
   }
+
   test("RedundantUpcast.03") {
     val input =
       """
-        |def f(): Unit & Impure =
+        |def f(): Unit =
         |    let _ =
         |        if (true)
         |            upcast ()
-        |        else {
-        |            let _ = [8; 8];
-        |            ()
-        |        };
+        |        else
+        |            region r {
+        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |                ()
+        |            };
         |    ()
         |""".stripMargin
 
@@ -1262,7 +1264,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
 
-  test("TestUpcast.08") {
+  test("TestUpcast.06") {
     val input =
       """
         |pub eff A

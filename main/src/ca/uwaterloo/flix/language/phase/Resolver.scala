@@ -977,11 +977,10 @@ object Resolver {
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           val e1Val = visitExp(exp1, env0, region)
           val e2Val = visitExp(exp2, env0, region)
-          val erVal = traverseOpt(exp3)(visitExp(_, env0, region))
-          mapN(e1Val, e2Val, erVal) {
-            case (e1, e2, er) =>
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.ArrayNew(e1, e2, reg, loc)
+          val e3Val = visitExp(exp3, env0, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) =>
+              ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
           }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>

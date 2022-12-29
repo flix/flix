@@ -33,4 +33,4 @@ pub enum Player({id = Int32}, {score = Int32})
 ///
 /// Creates a new player from the given ID.
 ///
-pub def initializePlayer(id: Int32): Player = Player(id = id, score = 0)
+pub def initializePlayer(id: Int32): Player = Player.Player(id = id, score = 0)

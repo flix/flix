@@ -21,18 +21,18 @@ enum Card(Rank, Suit) with Eq
 // An instance of ToString for Ranks
 instance ToString[Rank] {
     pub def toString(x: Rank): String = match x {
-        case Number(n) => "${n}"
-        case Jack      => "Jack"
-        case Queen     => "Queen"
-        case King      => "King"
-        case Ace       => "Ace"
+        case Rank.Number(n) => "${n}"
+        case Rank.Jack      => "Jack"
+        case Rank.Queen     => "Queen"
+        case Rank.King      => "King"
+        case Rank.Ace       => "Ace"
     }
 }
 
 // An instance of ToString for Cards
 instance ToString[Card] {
     pub def toString(x: Card): String = match x {
-        case Card(r, s) => "${r} of ${s}"
+        case Card.Card(r, s) => "${r} of ${s}"
     }
 }
 
@@ -42,8 +42,8 @@ def playWar(p1: List[Card], p2: List[Card], spoils: List[Card]): Unit \ IO = mat
     case (Nil, _) => println("Player 1 is out of cards. Player 2 wins!")
     case (_, Nil) => println("Player 2 is out of cards. Player 1 wins!")
     case (c1 :: d1, c2 :: d2) =>
-        let Card(r1, _) = c1;
-        let Card(r2, _) = c2;
+        let Card.Card(r1, _) = c1;
+        let Card.Card(r2, _) = c2;
         println("Player 1 plays ${c1}. Player 2 plays ${c2}.");
         if (r1 > r2) {
             println("Player 1 wins the battle.");

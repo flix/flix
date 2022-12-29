@@ -1,4 +1,5 @@
 namespace Test/Exp/Binary/Spaceship {
+    use Comparison.{EqualTo, GreaterThan, LessThan}
 
     @test
     def testBinarySpaceship01(): Bool = (() <=> ()) == EqualTo
@@ -109,22 +110,22 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship36(): Bool = (Some(123) <=> None) == GreaterThan
 
     @test
-    def testBinarySpaceship37(): Bool = ((Ok(123): Result[_, Unit]) <=> Ok(123)) == EqualTo
+    def testBinarySpaceship37(): Bool = ((Ok(123): Result[Unit, _]) <=> Ok(123)) == EqualTo
 
     @test
-    def testBinarySpaceship38(): Bool = ((Ok(123): Result[_, Unit]) <=> Ok(456)) == LessThan
+    def testBinarySpaceship38(): Bool = ((Ok(123): Result[Unit, _]) <=> Ok(456)) == LessThan
 
     @test
-    def testBinarySpaceship39(): Bool = ((Ok(456): Result[_, Unit]) <=> Ok(123)) == GreaterThan
+    def testBinarySpaceship39(): Bool = ((Ok(456): Result[Unit, _]) <=> Ok(123)) == GreaterThan
 
     @test
-    def testBinarySpaceship40(): Bool = ((Err(123): Result[Unit, _]) <=> Err(123)) == EqualTo
+    def testBinarySpaceship40(): Bool = ((Err(123): Result[_, Unit]) <=> Err(123)) == EqualTo
 
     @test
-    def testBinarySpaceship41(): Bool = ((Err(123): Result[Unit, _]) <=> Err(456)) == LessThan
+    def testBinarySpaceship41(): Bool = ((Err(123): Result[_, Unit]) <=> Err(456)) == LessThan
 
     @test
-    def testBinarySpaceship42(): Bool = ((Err(456): Result[Unit, _]) <=> Err(123)) == GreaterThan
+    def testBinarySpaceship42(): Bool = ((Err(456): Result[_, Unit]) <=> Err(123)) == GreaterThan
 
     @test
     def testBinarySpaceship43(): Bool = (Ok(123) <=> Err(123)) == LessThan
@@ -133,19 +134,19 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship44(): Bool = (Err(123) <=> Ok(123)) == GreaterThan
 
     @test
-    def testBinarySpaceship45(): Bool = ((None: Option[Result[_, Unit]]) <=> Some(Ok(123))) == LessThan
+    def testBinarySpaceship45(): Bool = ((None: Option[Result[Unit, _]]) <=> Some(Ok(123))) == LessThan
 
     @test
-    def testBinarySpaceship46(): Bool = ((Some(Ok(123)): Option[Result[_, Unit]]) <=> None) == GreaterThan
+    def testBinarySpaceship46(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> None) == GreaterThan
 
     @test
-    def testBinarySpaceship47(): Bool = ((Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(123))) == EqualTo
+    def testBinarySpaceship47(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(123))) == EqualTo
 
     @test
-    def testBinarySpaceship48(): Bool = ((Some(Ok(123)): Option[Result[_, Unit]]) <=> Some(Ok(456))) == LessThan
+    def testBinarySpaceship48(): Bool = ((Some(Ok(123)): Option[Result[Unit, _]]) <=> Some(Ok(456))) == LessThan
 
     @test
-    def testBinarySpaceship49(): Bool = ((Some(Ok(456)): Option[Result[_, Unit]]) <=> Some(Ok(123))) == GreaterThan
+    def testBinarySpaceship49(): Bool = ((Some(Ok(456)): Option[Result[Unit, _]]) <=> Some(Ok(123))) == GreaterThan
 
     @test
     def testBinarySpaceship50(): Bool = (Some(Ok(123)) <=> Some(Err("hello"))) == LessThan
@@ -154,13 +155,13 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship51(): Bool = (Some(Err("hello")) <=> Some(Ok(123))) == GreaterThan
 
     @test
-    def testBinarySpaceship52(): Bool = ((Some(Ok(None)): Option[Result[Option[Unit], Unit]]) <=> Some(Ok(None))) == EqualTo
+    def testBinarySpaceship52(): Bool = ((Some(Ok(None)): Option[Result[Unit, Option[Unit]]]) <=> Some(Ok(None))) == EqualTo
 
     @test
-    def testBinarySpaceship53(): Bool = ((Some(Ok(None)): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(Some(123)))) == LessThan
+    def testBinarySpaceship53(): Bool = ((Some(Ok(None)): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(Some(123)))) == LessThan
 
     @test
-    def testBinarySpaceship54(): Bool = ((Some(Ok(Some(123))): Option[Result[Option[Int32], Unit]]) <=> Some(Ok(None))) == GreaterThan
+    def testBinarySpaceship54(): Bool = ((Some(Ok(Some(123))): Option[Result[Unit, Option[Int32]]]) <=> Some(Ok(None))) == GreaterThan
 
     @test
     def testBinarySpaceship55(): Bool = ((111, 222) <=> (111, 222)) == EqualTo
@@ -199,22 +200,22 @@ namespace Test/Exp/Binary/Spaceship {
     def testBinarySpaceship66(): Bool = ((4, 2, 3) <=> (1, 2, 3)) == GreaterThan
 
     @test
-    def testBinarySpaceship67(): Bool = (Red <=> Red) == EqualTo
+    def testBinarySpaceship67(): Bool = (Color.Red <=> Color.Red) == EqualTo
 
     @test
-    def testBinarySpaceship68(): Bool = (Blu <=> Blu) == EqualTo
+    def testBinarySpaceship68(): Bool = (Color.Blu <=> Color.Blu) == EqualTo
 
     @test
-    def testBinarySpaceship69(): Bool = (Red <=> Blu) == LessThan
+    def testBinarySpaceship69(): Bool = (Color.Red <=> Color.Blu) == LessThan
 
     @test
-    def testBinarySpaceship70(): Bool = (Blu <=> Red) == GreaterThan
+    def testBinarySpaceship70(): Bool = (Color.Blu <=> Color.Red) == GreaterThan
 
     @test
-    def testBinarySpaceship71(): Bool = (Some(Red) <=> Some(Blu)) == LessThan
+    def testBinarySpaceship71(): Bool = (Some(Color.Red) <=> Some(Color.Blu)) == LessThan
 
     @test
-    def testBinarySpaceship72(): Bool = (Some(Blu) <=> Some(Red)) == GreaterThan
+    def testBinarySpaceship72(): Bool = (Some(Color.Blu) <=> Some(Color.Red)) == GreaterThan
 
     enum Color {
         case Red,
@@ -223,19 +224,19 @@ namespace Test/Exp/Binary/Spaceship {
 
     instance Eq[Color] {
         pub def eq(c1: Color, c2: Color): Bool = match (c1, c2) {
-            case (Red, Red) => true
-            case (Blu, Blu) => true
-            case (Red, Blu) => false
-            case (Blu, Red) => false
+            case (Color.Red, Color.Red) => true
+            case (Color.Blu, Color.Blu) => true
+            case (Color.Red, Color.Blu) => false
+            case (Color.Blu, Color.Red) => false
         }
     }
 
     instance Order[Color] {
         pub def compare(c1: Color, c2: Color): Comparison = match (c1, c2) {
-            case (Red, Red) => EqualTo
-            case (Blu, Blu) => EqualTo
-            case (Red, Blu) => LessThan
-            case (Blu, Red) => GreaterThan
+            case (Color.Red, Color.Red) => EqualTo
+            case (Color.Blu, Color.Blu) => EqualTo
+            case (Color.Red, Color.Blu) => LessThan
+            case (Color.Blu, Color.Red) => GreaterThan
         }
     }
 

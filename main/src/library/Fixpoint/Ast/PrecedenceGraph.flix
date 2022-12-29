@@ -15,7 +15,7 @@
  */
 
 namespace Fixpoint/Ast {
-    
+
     use Fixpoint/Shared.PredSym
 
     @Internal
@@ -28,12 +28,12 @@ namespace Fixpoint/Ast {
     }
 
     instance Monoid[PrecedenceGraph] {
-        pub def empty(): PrecedenceGraph = PrecedenceGraph(Set.empty())
+        pub def empty(): PrecedenceGraph = PrecedenceGraph.PrecedenceGraph(Set.empty())
     }
 
     instance SemiGroup[PrecedenceGraph] {
         pub def combine(x: PrecedenceGraph, y: PrecedenceGraph): PrecedenceGraph = match (x, y) {
-            case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
+            case (PrecedenceGraph.PrecedenceGraph(xs), PrecedenceGraph.PrecedenceGraph(ys)) => PrecedenceGraph.PrecedenceGraph(Set.union(xs, ys))
         }
     }
 }

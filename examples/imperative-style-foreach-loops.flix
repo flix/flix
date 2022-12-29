@@ -8,7 +8,7 @@
 /// In this example we explore how this loop
 /// works in Flix.
 ///
-def main(): Unit \ IO =
+def main(): Unit \ IO = region r {
 
     ///
     /// Construct a simple list.
@@ -25,7 +25,7 @@ def main(): Unit \ IO =
     /// On the right side of the arrow we get
     /// an iterator over `l`.
     ///
-    foreach (x <- List.iterator(Static, l))
+    foreach (x <- List.iterator(r, l))
         println(x);
 
     ///
@@ -38,7 +38,7 @@ def main(): Unit \ IO =
     /// This may be familiar to you if you have
     /// some experience with Rust.
     ///
-    foreach ((x, i) <- List.enumerator(Static, l))
+    foreach ((x, i) <- List.enumerator(r, l))
         println("${(x, i)}");
 
     ///
@@ -50,7 +50,7 @@ def main(): Unit \ IO =
     /// of type unit.
     ///
     let z = ref Nil;
-    foreach (x <- List.iterator(Static, l))
+    foreach (x <- List.iterator(r, l))
         z := x :: deref z;
 
     ///
@@ -61,7 +61,7 @@ def main(): Unit \ IO =
     /// to read than `foreach` function calls.
     ///
     let q = ref Nil;
-    List.iterator(Static, l) |>
+    List.iterator(r, l) |>
     Iterator.forEach(match x -> q := x :: deref q);
 
     ///
@@ -70,9 +70,9 @@ def main(): Unit \ IO =
     ///
     let k = 4 :: 5 :: 6 :: Nil;
     let w = ref Nil;
-    foreach (a <- List.iterator(Static, l)) {
+    foreach (a <- List.iterator(r, l)) {
         w := a :: deref w;
-        foreach (b <- List.iterator(Static, k))
+        foreach (b <- List.iterator(r, k))
             w := b :: deref w
     };
 
@@ -82,10 +82,10 @@ def main(): Unit \ IO =
     /// below.
     ///
     let v = ref Nil;
-    List.iterator(Static, l) |>
+    List.iterator(r, l) |>
     Iterator.forEach(match a -> {
         v := a :: deref v;
-        List.iterator(Static, k) |>
+        List.iterator(r, k) |>
         Iterator.forEach(match b -> v := b :: deref v)
     });
 
@@ -100,8 +100,8 @@ def main(): Unit \ IO =
     /// some experience with Scala's for-loops.
     ///
     let e = ref Nil;
-    foreach (a <- List.iterator(Static, l);
-             b <- List.iterator(Static, k))
+    foreach (a <- List.iterator(r, l);
+             b <- List.iterator(r, k))
                 e := (a, b) :: deref e;
 
     ///
@@ -109,9 +109,9 @@ def main(): Unit \ IO =
     /// has a bit more visual noise.
     ///
     let e1 = ref Nil;
-    List.iterator(Static, l) |>
+    List.iterator(r, l) |>
     Iterator.forEach(match a -> {
-        List.iterator(Static, k) |>
+        List.iterator(r, k) |>
         Iterator.forEach(match b -> e1 := (a, b) :: deref e1)
     });
 
@@ -130,9 +130,9 @@ def main(): Unit \ IO =
     /// for-loops.
     ///
     let c = ref Nil;
-    foreach (a <- List.iterator(Static, l);
+    foreach (a <- List.iterator(r, l);
              if a > 1;
-             b <- List.iterator(Static, k);
+             b <- List.iterator(r, k);
              if b < 6)
                 c := (a, b) :: deref c;
 
@@ -141,8 +141,8 @@ def main(): Unit \ IO =
     /// at the end of the parenthesis.
     ///
     let d = ref Nil;
-    foreach (a <- List.iterator(Static, l);
-             b <- List.iterator(Static, k);
+    foreach (a <- List.iterator(r, l);
+             b <- List.iterator(r, k);
              if a > 1 and b < 6)
                 d := (a, b) :: deref d;
 
@@ -163,9 +163,9 @@ def main(): Unit \ IO =
     /// and include guards.
     ///
     let cf = ref Nil;
-    List.iterator(Static, l) |>
+    List.iterator(r, l) |>
     Iterator.forEach(match a -> {
-        List.iterator(Static, k) |>
+        List.iterator(r, k) |>
         Iterator.forEach(match b -> {
             if (a > 1 and b < 6) cf := (a, b) :: deref cf else ()
         })
@@ -182,3 +182,4 @@ def main(): Unit \ IO =
     println("c (sorted) == ${List.sortBy(match (a, _) -> a, deref c)}");
     println("c == d? ${deref c == deref d}");
     println("c == cf? ${deref c == deref cf}")
+}

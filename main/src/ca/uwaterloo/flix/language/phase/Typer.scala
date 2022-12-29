@@ -321,8 +321,8 @@ object Typer {
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
-                case Validation.Failure(errs) =>
-                  val instanceErrs = errs.collect {
+                case failure =>
+                  val instanceErrs = failure.errors.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
@@ -362,7 +362,8 @@ object Typer {
                         case Validation.Success(_) =>
                         // Case 3.1: The purity is not the problem. Regular generalization error.
                         // Fall through to below.
-                        case Validation.Failure(_) =>
+
+                        case _failure =>
                           // Case 3.2: The purity cannot be generalized.
                           return TypeError.EffectGeneralizationError(declaredPur, inferredPur, loc).toFailure
                       }
@@ -1313,9 +1314,9 @@ object Typer {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
           (constrs3, tpe3, pur3, eff3) <- visitExp(exp3)
-          _ <- expectTypeM(expected = regionType, actual = tpe3, loc)
-          lenType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArray(tpe1, regionVar, loc), loc)
+          _ <- expectTypeM(expected = regionType, actual = tpe1, loc)
+          _lenType <- expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkArray(tpe2, regionVar, loc), loc)
           resultPur <- unifyTypeM(pvar, Type.mkAnd(pur1, pur2, pur3, regionVar, loc), loc)
           resultEff = Type.mkUnion(List(eff1, eff2, eff3), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3, resultTyp, resultPur, resultEff)
