@@ -1495,24 +1495,24 @@ namespace TestDelayList {
 
     @test
     def zipWithIndex01(): Bool =
-        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Unit, Int32)]
+        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Int32, Unit)]
 
     @test
     def zipWithIndex02(): Bool =
-        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((1, 0), ENil)
+        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((0, 1), ENil)
 
     @test
     def zipWithIndex03(): Bool =
-        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((1, 0), lazy ENil)
+        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((0, 1), lazy ENil)
 
     @test
     def zipWithIndex04(): Bool =
-        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((1, 0), ENil))
+        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((0, 1), ENil))
 
     @test
     def zipWithIndex05(): Bool =
         let l = DelayList.zipWithIndex(LList(lazy LList(lazy LCons(5, lazy ECons(7, ENil)))));
-        l == LList(lazy LList(lazy LCons((5, 0), lazy ECons((7, 1), ENil))))
+        l == LList(lazy LList(lazy LCons((0, 5), lazy ECons((1, 7), ENil))))
 
     @test
     def zipWithIndex0(): Bool =
@@ -1525,7 +1525,7 @@ namespace TestDelayList {
             LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
             LList(lazy LCons((3, 3), lazy LList(lazy
             LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
-            LList(lazy LCons((10, 6), lazy LList(lazy ENil)))))))))))))))
+            LList(lazy LCons((6, 10), lazy LList(lazy ENil)))))))))))))))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

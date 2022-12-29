@@ -2734,14 +2734,14 @@ def distinctWith09(): Bool =
         let z = ref Nil @ r;
         let l = 1 :: 2 :: 3 :: Nil;
         foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+        List.reverse(deref z) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
     def enumerate03(): Bool = region r {
         let z = ref Nil @ r;
         let l = List.range(100, 200);
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        foreach ((i, x) <- List.enumerator(r, l)) z := (x, i) :: deref z;
         List.reverse(deref z) == List.zip(l, List.range(0, 100))
     }
 

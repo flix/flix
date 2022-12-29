@@ -771,7 +771,7 @@ namespace Chain {
         case None    => [] @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
-            forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+            forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
             arr
         }
 
@@ -911,10 +911,10 @@ namespace Chain {
     /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(c: Chain[a]): Chain[(a, Int32)] =
+    pub def zipWithIndex(c: Chain[a]): Chain[(Int32, a)] =
         def loop(cc, acc, i) = match viewLeft(cc) {
             case ViewLeft.NoneLeft        => acc
-            case ViewLeft.SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
+            case ViewLeft.SomeLeft(a, rs) => loop(rs, snoc(acc, (i, a)), i + 1)
         };
         loop(c, Empty, 0)
 

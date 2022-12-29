@@ -1162,11 +1162,11 @@ namespace DelayList {
     ///
     /// Does not force the tail of `l`.
     ///
-    pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
+    pub def zipWithIndex(l: DelayList[a]): DelayList[(Int32, a)] =
         def loop(ll, i) = match ll {
             case ENil         => ENil
-            case ECons(x, xs) => LCons(((x, i)), lazy loop(      xs, i + 1))
-            case LCons(x, xs) => LCons(((x, i)), lazy loop(force xs, i + 1))
+            case ECons(x, xs) => LCons(((i, x)), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(((i, x)), lazy loop(force xs, i + 1))
             case LList(xs)    => LList(          lazy loop(force xs, i))
         };
         loop(l, 0)
@@ -1179,7 +1179,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = Array.new(r, length(l));
-        forEach(match (y, i) -> a[i] = y, zipWithIndex(l));
+        forEach(match (i, y) -> a[i] = y, zipWithIndex(l));
         a
 
     ///
