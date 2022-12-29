@@ -17,7 +17,7 @@ def main(): Unit \ IO = region r {
         // out of bounds errors.
         // It also matches the pattern of the
         // value returned by `enumerator.`
-        foreach ((x, i) <- String.enumerator(r, s);
+        foreach ((i, x) <- String.enumerator(r, s);
                  if i < Array.length(xs))
                     xs[i] = x;
 
