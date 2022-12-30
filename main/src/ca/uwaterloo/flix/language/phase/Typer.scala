@@ -1363,9 +1363,10 @@ object Typer {
 
       case KindedAst.Expression.ArraySlice(exp1, exp2, exp3, exp4, pvar, loc) =>
         val elmVar = Type.freshVar(Kind.Star, loc)
-        val regionVar = Type.freshVar(Kind.Bool, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
-        val arrayType = Type.mkArray(elmVar, regionVar, loc)
+        val regionVar0 = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar0, loc)
+        val regionVar1 = Type.freshVar(Kind.Bool, loc)
+        val arrayType = Type.mkArray(elmVar, regionVar1, loc)
         for {
           (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -1374,8 +1375,9 @@ object Typer {
           _regionType <- expectTypeM(expected = regionType, actual = tpe1, exp1.loc)
           _beginIndexType <- expectTypeM(expected = Type.Int32, actual = tpe3, exp3.loc)
           _endIndexType <- expectTypeM(expected = Type.Int32, actual = tpe4, exp4.loc)
-          resultTyp <- expectTypeM(expected = arrayType, actual = tpe2, exp2.loc)
-          resultPur <- unifyTypeM(pvar, Type.mkAnd(List(regionVar, pur1, pur2, pur3, pur4), loc), loc)
+          _arrayType <- expectTypeM(expected = arrayType, actual = tpe2, exp2.loc)
+          resultTyp = Type.mkArray(elmVar, regionVar0, loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(List(regionVar0, regionVar1, pur1, pur2, pur3, pur4), loc), loc)
           resultEff = Type.mkUnion(List(eff1, eff2, eff3, eff4), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3 ++ constrs4, resultTyp, resultPur, resultEff)
 
