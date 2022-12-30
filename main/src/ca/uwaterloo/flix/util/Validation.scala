@@ -538,6 +538,13 @@ object Validation {
   }
 
   /**
+    * Returns a [[Validation.SuccessWithFailures]] containing `t` and `e`.
+    */
+  final def toSuccessWithFailures[T, E](t: T, e: E): Validation[T, E] =
+    Validation.SuccessWithFailures(t, LazyList(e))
+
+
+  /**
     * Adds an implicit `toFailure` method.
     */
   implicit class ToFailure[+E](val e: E) {
