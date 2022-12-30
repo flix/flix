@@ -523,7 +523,7 @@ namespace Nel {
         (Nel(a, l1), Nel(b, l2))
 
     ///
-    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// Returns a new non-empty list where each element `e` is mapped to `(i, e)`
     /// where `i` is the index of `e`.
     ///
     pub def zipWithIndex(l: Nel[a]): Nel[(Int32, a)] =

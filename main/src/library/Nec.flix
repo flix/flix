@@ -671,7 +671,7 @@ namespace Nec {
         loop(c, (ks, ls) -> (ks, ls))
 
     ///
-    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a Nec where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
     pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =

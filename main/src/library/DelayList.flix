@@ -1157,7 +1157,7 @@ namespace DelayList {
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
-    /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a `DelayList` where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
     /// Does not force the tail of `l`.

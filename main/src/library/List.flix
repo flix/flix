@@ -927,7 +927,7 @@ namespace List {
         loop(l1, l2, identity)
 
     ///
-    /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a list where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
     pub def zipWithIndex(l: List[a]): List[(Int32, a)] =

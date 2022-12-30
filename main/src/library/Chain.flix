@@ -908,7 +908,7 @@ namespace Chain {
         Foldable.joinWith(f, sep, c)
 
     ///
-    /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a chain where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
     pub def zipWithIndex(c: Chain[a]): Chain[(Int32, a)] =
