@@ -33,15 +33,15 @@ namespace Fixpoint/Ram {
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {
-                case Insert(op) => ToString.toString(op)
-                case Merge(src, dst) => "merge ${src} into ${dst}"
-                case Assign(lhs, rhs) => "${lhs} := ${rhs}"
-                case Purge(ramSym) => "purge ${ramSym}"
-                case Seq(xs) => List.join(";${nl}", xs)
-                case Until(test, body) =>
+                case RamStmt.Insert(op) => ToString.toString(op)
+                case RamStmt.Merge(src, dst) => "merge ${src} into ${dst}"
+                case RamStmt.Assign(lhs, rhs) => "${lhs} := ${rhs}"
+                case RamStmt.Purge(ramSym) => "purge ${ramSym}"
+                case RamStmt.Seq(xs) => List.join(";${nl}", xs)
+                case RamStmt.Until(test, body) =>
                     let tst = test |> List.join(" Λ ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
-                case Comment(comment) => "// ${comment}"
+                case RamStmt.Comment(comment) => "// ${comment}"
             }
     }
 }

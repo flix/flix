@@ -35,16 +35,16 @@ namespace Fixpoint/Ast {
 
     instance PredSymsOf[BodyPredicate[v]] {
         pub def predSymsOf(x: BodyPredicate[v]): Set[PredSym] = match x {
-            case BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
-            case _                             => Set.empty()
+            case BodyPredicate.BodyAtom(predSym, _, _, _, _)    => Set.singleton(predSym)
+            case _                                              => Set.empty()
         }
     }
 
     instance SubstitutePredSym[BodyPredicate[v]] {
         pub def substitute(x: BodyPredicate[v], s: Map[PredSym, PredSym]): BodyPredicate[v] = match x {
-            case BodyAtom(predSym, den, polarity, fixity, terms) =>
+            case BodyPredicate.BodyAtom(predSym, den, polarity, fixity, terms) =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
-                BodyAtom(newSym, den, polarity, fixity, terms)
+                BodyPredicate.BodyAtom(newSym, den, polarity, fixity, terms)
             case _                             => x
         }
     }
@@ -52,29 +52,29 @@ namespace Fixpoint/Ast {
     instance ToString[BodyPredicate[v]] {
         pub def toString(body: BodyPredicate[v]): String =
             def polarityPrefix(p) = match p {
-                case Negative => "not "
-                case Positive => ""
+                case Polarity.Negative => "not "
+                case Polarity.Positive => ""
             };
             def fixityPrefix(f) = match f {
-                case Fixed => "fix "
-                case Loose => ""
+                case Fixity.Fixed => "fix "
+                case Fixity.Loose => ""
             };
             match body {
-                case BodyAtom(predSym, Relational, p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Denotation.Relational, p, f, terms) =>
                     "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> List.join(", ")})"
-                case BodyAtom(predSym, Latticenal(_), p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_), p, f, terms) =>
                     let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
                     match List.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
                         case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.join(", ")}; ${l})"
                     }
-                case Guard0(_) => "<clo>()"
-                case Guard1(_, v) => "<clo>(${v})"
-                case Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-                case Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-                case Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-                case Loop1(_) => "<loop>"
+                case BodyPredicate.Guard0(_) => "<clo>()"
+                case BodyPredicate.Guard1(_, v) => "<clo>(${v})"
+                case BodyPredicate.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
+                case BodyPredicate.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
+                case BodyPredicate.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BodyPredicate.Loop1(_) => "<loop>"
             }
     }
 }

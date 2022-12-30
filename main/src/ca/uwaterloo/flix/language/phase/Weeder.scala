@@ -657,6 +657,7 @@ object Weeder {
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
+          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, e3, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
@@ -740,21 +741,24 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
+    case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
       //
       // Rewrites a foreach loop to Iterator.forEach call.
       //
 
+      val loc = mkSL(sp1, sp2)
       val fqnForEach = "Iterator.forEach"
       val fqnIterator = "Iterable.iterator"
+      val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+      val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
-      foldRight(frags)(visitExp(exp, senv)) {
+      val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
               val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+              val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
               val fparams = List(lambda, iterable)
               mkApplyFqn(fqnForEach, fparams, loc)
           }
@@ -765,6 +769,8 @@ object Weeder {
             WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
           }
       }
+
+      mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
 
     case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
       //
@@ -1233,13 +1239,6 @@ object Weeder {
           WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
-    case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverseOpt(exp3)(visitExp(_, senv))) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
-      }
-
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       val loc = mkSL(sp1, sp2)
@@ -1304,6 +1303,16 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
+      }
+
+    case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
+      /*
+       * Rewrites an `FArray` expression into an array literal.
+       */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
+      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
+        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), loc)
       }
 
     case ParsedAst.Expression.FList(sp1, sp2, exps) =>
@@ -1924,7 +1933,7 @@ object Weeder {
               // Doing a manual flatMap to keep the function tail-recursive
               translateHexCode(code, mkSL(sp1, sp2)) match {
                 case Validation.Success(char) => visit(rest2, char :: acc)
-                case Validation.Failure(errors) => Validation.Failure(errors)
+                case failure => Validation.Failure(failure.errors)
               }
             // Case 3.3.2: `\\u` followed by less than 4 literals
             case rest2 =>
@@ -2962,12 +2971,12 @@ object Weeder {
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
+    case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1

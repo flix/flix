@@ -53,7 +53,7 @@
     def testSelect01(): Bool \ IO =
         let c = newChannel(1);
         put(2, c);
-        match selectFrom([mpmcAdmin(c)], true) {
+        match selectFrom(mpmcAdmin(c) :: Nil, true) {
             case (0, locks) =>
                 let i = unsafeGetAndUnlock(c, locks);
                 i == 2
@@ -63,7 +63,7 @@
     @test
     def testSelect02(): Bool \ IO =
         let c = newChannel(1);
-        match selectFrom([mpmcAdmin(c)], false) {
+        match selectFrom(mpmcAdmin(c) :: Nil, false) {
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c, locks);
                 false
@@ -79,7 +79,7 @@
 
         put("hey", c2);
 
-        match selectFrom([mpmcAdmin(c1), mpmcAdmin(c2)], true) {
+        match selectFrom(mpmcAdmin(c1) :: mpmcAdmin(c2) :: Nil, true) {
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c1, locks);
                 bug!("The channel should be empty")

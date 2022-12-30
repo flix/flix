@@ -53,14 +53,20 @@ namespace Test/Exp/Lazy {
         lazy "string"
 
     @test
-    def testArrayOfIntLazy01(): Lazy[Array[Int32, Static]] \ IO =
-        let array = [1, 2];
-        lazy array
+    def testArrayOfIntLazy01(): Unit = region r {
+        discard {
+            let array = [1, 2] @ r;
+            lazy array
+        }
+    }
 
     @test
-    def testArrayOfStringLazy01(): Lazy[Array[String, Static]] \ IO =
-        let array = ["str", "str2"];
-        lazy array
+    def testArrayOfStringLazy01(): Unit = region r {
+        discard {
+            let array = ["str", "str2"] @ r;
+            lazy array
+        }
+    }
 
     @test
     def testTupleLazy01(): Lazy[(String, String)] =
@@ -76,32 +82,32 @@ namespace Test/Exp/Lazy {
 
     @test
     def testNestedLazy03(): Poly[Lazy[Int32], Lazy[String]] =
-        Both(lazy 2, lazy "2")
+        Poly.Both(lazy 2, lazy "2")
 
     @test
     def testNestedLazy04(): Poly[Lazy[Int32], Lazy[Int32]] =
         let x = lazy 15;
-        Both(x, x)
+        Poly.Both(x, x)
 
     @test
     def testNestedLazy05(): Lazy[Poly[Lazy[Int32], String]] =
-        lazy (This(lazy 5))
+        lazy (Poly.This(lazy 5))
 
     @test
     def testNestedEnumLazy01(): Lazy[Card] =
-        lazy Card(Hearts, N(4))
+        lazy Card.Card(Suit.Hearts, Rank.N(4))
 
     @test
     def testPolyLazy01(): Lazy[Poly[Int32, String]] =
-        lazy This(123)
+        lazy Poly.This(123)
 
     @test
     def testPolyLazy02(): Lazy[Poly[String, String]] =
-        lazy That("str")
+        lazy Poly.That("str")
 
     @test
     def testPolyLazy03(): Lazy[Poly[String, Int32]] =
-        lazy Both("str", 123)
+        lazy Poly.Both("str", 123)
 
     pub enum Suit {
         case Hearts, Diamonds, Clubs, Spades

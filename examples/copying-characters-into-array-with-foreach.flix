@@ -5,7 +5,7 @@ def main(): Unit \ IO = region r {
         let s = "Flix is cool!";
 
         // Array to store 8 chars in.
-        let xs = ['a'; 8] @ r;
+        let xs = Array.repeat(r, 8, 'a');
 
         // Print contents of `xs`.
         foreach (x <- xs)
@@ -17,7 +17,7 @@ def main(): Unit \ IO = region r {
         // out of bounds errors.
         // It also matches the pattern of the
         // value returned by `enumerator.`
-        foreach ((x, i) <- String.enumerator(r, s);
+        foreach ((i, x) <- String.enumerator(r, s);
                  if i < Array.length(xs))
                     xs[i] = x;
 

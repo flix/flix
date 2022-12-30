@@ -3343,7 +3343,7 @@ def escapeInterpolation04(): String = "$"
 
     @test
     def enumerator02(): Bool = region r {
-        String.enumerator(r, "abc") |> Iterator.toList == ('a', 0) :: ('b', 1) :: ('c', 2) :: Nil
+        String.enumerator(r, "abc") |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
     }
 
 }

@@ -28,8 +28,8 @@ import ca.uwaterloo.flix.util._
 import java.io.{File, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
+import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.util.{Failure, Success, Using}
 
@@ -162,8 +162,8 @@ object Packager {
 
     flix.check() match {
       case Validation.Success(_) => ().toOk
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors).foreach(println)
+      case failure =>
+        flix.mkMessages(failure.errors).foreach(println)
         Result.Err(1)
     }
   }
@@ -184,8 +184,8 @@ object Packager {
 
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
-      case Validation.Failure(errors) =>
-        flix.mkMessages(errors).foreach(println)
+      case failure =>
+        flix.mkMessages(failure.errors).foreach(println)
         1.toErr
     }
   }
@@ -278,7 +278,7 @@ object Packager {
     //
     checkProjectPath(p) match {
       case Validation.Success(_) => ()
-      case Validation.Failure(missingPaths) => throw new RuntimeException(s"Missing files or directories: ${missingPaths.mkString(", ")}")
+      case failure => throw new RuntimeException(s"Missing files or directories: ${failure.errors.mkString(", ")}")
     }
 
     // The path to the fpkg file.

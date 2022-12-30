@@ -24,7 +24,7 @@ enum Date(Year, Month, Day) with Eq, Order
 /// since we don't want the default "Date(1948, December, 10)"
 instance ToString[Date] {
     pub def toString(x: Date): String =
-        let Date(y, m, d) = x;
+        let Date.Date(y, m, d) = x;
         "${d} ${m}, ${y}"
 }
 

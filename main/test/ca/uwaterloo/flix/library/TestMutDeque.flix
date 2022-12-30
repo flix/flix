@@ -1099,13 +1099,13 @@ namespace TestMutDeque {
     @test
     def iterator01(): Bool = region r {
         let d = new MutDeque(r): MutDeque[Int32, r];
-        Iterable.iterator(d) |> invokeIsEmpty(100)
+        Iterable.iterator(r, d) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator02(): Bool = region r {
         let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        not (Iterable.iterator(d) |> invokeIsEmpty(100))
+        not (Iterable.iterator(r, d) |> invokeIsEmpty(100))
     }
 
     @test
@@ -1114,27 +1114,27 @@ namespace TestMutDeque {
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        Iterable.iterator(d) |> invokeIsEmpty(100)
+        Iterable.iterator(r, d) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator04(): Bool = region r {
         let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        Iterable.iterator(d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        Iterable.iterator(r, d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def iterator05(): Bool = region r {
         let d = List.range(0, 100) |> List.toMutDeque(r);
-        Iterable.iterator(d) |> Iterator.toList == List.range(0, 100) and
+        Iterable.iterator(r, d) |> Iterator.toList == List.range(0, 100) and
         MutDeque.toList(d) == List.range(0, 100)
     }
 
     @test
     def iterator06(): Bool = region r {
         let d = List.range(0, 100) |> List.toMutDeque(r);
-        let iter = Iterable.iterator(d);
-        foreach (_ <- MutList.range(r, 0, 50) |> Iterable.iterator)
+        let iter = Iterable.iterator(r, d);
+        foreach (_ <- MutList.range(r, 0, 50) |> Iterable.iterator(r))
             discard Iterator.next(iter);
         iter |> Iterator.toList == List.range(50, 100) and
         MutDeque.toList(d) == List.range(0, 100)

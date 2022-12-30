@@ -41,16 +41,16 @@ namespace Fixpoint/Ram {
 
     instance ToString[RamTerm[v]] {
         pub def toString(term: RamTerm[v]): String = match term {
-            case Lit(v) => "%{v}"
-            case RowLoad(var, index) => "${var}[${index}]"
-            case LoadLatVar(var) => "${var}[-1]"
-            case Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
-            case App0(_) => "<clo>()"
-            case App1(_, v) => "<clo>(${v})"
-            case App2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-            case App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-            case App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case RamTerm.Lit(v) => "%{v}"
+            case RamTerm.RowLoad(var, index) => "${var}[${index}]"
+            case RamTerm.LoadLatVar(var) => "${var}[-1]"
+            case RamTerm.Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
+            case RamTerm.App0(_) => "<clo>()"
+            case RamTerm.App1(_, v) => "<clo>(${v})"
+            case RamTerm.App2(_, v1, v2) => "<clo>(${v1}, ${v2})"
+            case RamTerm.App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
+            case RamTerm.App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case RamTerm.App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 }

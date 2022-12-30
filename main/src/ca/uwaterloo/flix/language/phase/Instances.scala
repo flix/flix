@@ -219,11 +219,11 @@ object Instances {
                 superInst.tconstrs flatMap {
                   tconstr =>
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
-                      case Validation.Failure(errors) => errors.map {
+                      case Validation.Success(_) => Nil
+                      case failure => failure.errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
-                      case Validation.Success(_) => Nil
                     }
                 }
               case None =>

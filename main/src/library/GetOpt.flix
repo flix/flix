@@ -123,18 +123,18 @@ namespace GetOpt {
     /// Format a single character option.
     ///
     def formatShort(argDescr: ArgDescr[a], short: Char): String = match argDescr {
-        case NoArg(_)           => "-${short}"
-        case ReqArg(_, descr)   => "-${short} ${descr}"
-        case OptArg(_, descr)   => "-${short}[${descr}]"
+        case ArgDescr.NoArg(_)           => "-${short}"
+        case ArgDescr.ReqArg(_, descr)   => "-${short} ${descr}"
+        case ArgDescr.OptArg(_, descr)   => "-${short}[${descr}]"
     }
 
     ///
     /// Format a named option.
     ///
     def formatLong(argDescr: ArgDescr[a], long: String): String = match argDescr {
-        case NoArg(_)           => "--${long}"
-        case ReqArg(_, descr)   => "--${long}=${descr}"
-        case OptArg(_, descr)   => "--${long}[=${descr}]"
+        case ArgDescr.NoArg(_)           => "--${long}"
+        case ArgDescr.ReqArg(_, descr)   => "--${long}=${descr}"
+        case ArgDescr.OptArg(_, descr)   => "--${long}[=${descr}]"
     }
 
     ///
@@ -151,13 +151,13 @@ namespace GetOpt {
     ///
     pub def getOpt(ordering: ArgOrder[a],
                    optDescriptors: List[OptionDescr[a]],
-                   sourceArgs: List[String]): Validation[{options = List[a], nonOptions = List[String]}, String] =
+                   sourceArgs: List[String]): Validation[String, {options = List[a], nonOptions = List[String]}] =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
-            case Nil => Success({options = answers.options, nonOptions = answers.nonOptions})
+            case Nil => Validation.Success({options = answers.options, nonOptions = answers.nonOptions})
             case e :: es => match List.toNec(es) {
-                case None    => Failure(Nec.singleton(e))
-                case Some(c) => Failure(Nec.cons(e, c))
+                case None    => Validation.Failure(Nec.singleton(e))
+                case Some(c) => Validation.Failure(Nec.cons(e, c))
             }
         }
 
@@ -186,15 +186,15 @@ namespace GetOpt {
             let (opt, rest)         = getNext(arg, optDescrs, args);
             let (os, xs, us, es)    = getOpt1Helper(ordering, optDescrs, rest);
             match (opt, ordering) {
-                case (Opt(o),       _)                  => (o :: os, xs, us, es)
-                case (UnreqOpt(u),  _)                  => (os, xs, u :: us, es)        /// u is added to
-                case (NonOpt(x),    RequireOrder)       => (Nil, x :: rest, Nil, Nil)
-                case (NonOpt(x),    Permute)            => (os, x :: xs, us, es)
-                case (NonOpt(x),    ReturnInOrder(f))   => (f(x) :: os, xs, us, es)
-                case (EndOfOpts,    RequireOrder)       => (Nil, rest, Nil, Nil)
-                case (EndOfOpts,    Permute)            => (Nil, rest, Nil, Nil)
-                case (EndOfOpts,    ReturnInOrder(f))   => (List.map(f, rest), Nil, Nil, Nil)
-                case (OptErr(e),    _)                  => (os, xs, us, e :: es)
+                case (OptionKind.Opt(o),       _)                           => (o :: os, xs, us, es)
+                case (OptionKind.UnreqOpt(u),  _)                           => (os, xs, u :: us, es)        /// u is added to
+                case (OptionKind.NonOpt(x),    ArgOrder.RequireOrder)       => (Nil, x :: rest, Nil, Nil)
+                case (OptionKind.NonOpt(x),    ArgOrder.Permute)            => (os, x :: xs, us, es)
+                case (OptionKind.NonOpt(x),    ArgOrder.ReturnInOrder(f))   => (f(x) :: os, xs, us, es)
+                case (OptionKind.EndOfOpts,    ArgOrder.RequireOrder)       => (Nil, rest, Nil, Nil)
+                case (OptionKind.EndOfOpts,    ArgOrder.Permute)            => (Nil, rest, Nil, Nil)
+                case (OptionKind.EndOfOpts,    ArgOrder.ReturnInOrder(f))   => (List.map(f, rest), Nil, Nil, Nil)
+                case (OptionKind.OptErr(e),    _)                           => (os, xs, us, e :: es)
             }
         }
     }
@@ -208,10 +208,10 @@ namespace GetOpt {
     def getNext(arg: String,
                 optDescrs: List[OptionDescr[a]],
                 tokens: List[String]): (OptionKind[a], List[String]) = match arg {
-        case "--"                                                       => (EndOfOpts, tokens)
-        case s if String.startsWith({prefix = "--"}, s)                            => longOpt(String.dropLeft(2, s), optDescrs, tokens)
-        case s if String.startsWith({prefix = "-"}, s) and String.length(s) >= 2   => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
-        case s                                                          => (NonOpt(s), tokens)
+        case "--"                                                                   => (OptionKind.EndOfOpts, tokens)
+        case s if String.startsWith({prefix = "--"}, s)                             => longOpt(String.dropLeft(2, s), optDescrs, tokens)
+        case s if String.startsWith({prefix = "-"}, s) and String.length(s) >= 2    => shortOpt(String.charAt(1, s), String.dropLeft(2, s), optDescrs, tokens)
+        case s                                                                      => (OptionKind.NonOpt(s), tokens)
     }
 
     /// "--" has been parsed
@@ -221,17 +221,17 @@ namespace GetOpt {
         let optStr      = "--${optname}";
         match findOptionByName(optname, optDescrs) {
             case Ok(opt) => match (opt.argDescriptor, deconsLeft(arg), tokens) {
-                case (NoArg(a),     None,               rest)       => (Opt(a), rest)
-                case (NoArg(_),     Some(('=', _)),     rest)       => (errNoArgReq(optStr), rest)
-                case (ReqArg(_, d), None,               Nil)        => (errReq(d, optStr), Nil)
-                case (ReqArg(f, _), None,               r :: rest)  => (decodeArg(f(r), optStr), rest)
-                case (ReqArg(f, _), Some(('=', ss)),    rest)       => (decodeArg(f(ss), optStr), rest)
-                case (OptArg(f, _), None,               rest)       => (decodeArg(f(None), optStr), rest)
-                case (OptArg(f, _), Some(('=', ss)),    rest)       => (decodeArg(f(Some(ss)), optStr), rest)
-                case (_,            _,                  rest)       => (UnreqOpt("--${xstr}"), rest)
+                case (ArgDescr.NoArg(a),     None,               rest)          => (OptionKind.Opt(a), rest)
+                case (ArgDescr.NoArg(_),     Some(('=', _)),     rest)          => (errNoArgReq(optStr), rest)
+                case (ArgDescr.ReqArg(_, d), None,               Nil)           => (errReq(d, optStr), Nil)
+                case (ArgDescr.ReqArg(f, _), None,               r :: rest)     => (decodeArg(f(r), optStr), rest)
+                case (ArgDescr.ReqArg(f, _), Some(('=', ss)),    rest)          => (decodeArg(f(ss), optStr), rest)
+                case (ArgDescr.OptArg(f, _), None,               rest)          => (decodeArg(f(None), optStr), rest)
+                case (ArgDescr.OptArg(f, _), Some(('=', ss)),    rest)          => (decodeArg(f(Some(ss)), optStr), rest)
+                case (_,                        _,                  rest)       => (OptionKind.UnreqOpt("--${xstr}"), rest)
             }
-            case Err(Ambiguous(options))                            => (errAmbig(options, optStr), tokens)
-            case Err(NotFound)                                      => (UnreqOpt("--${xstr}"), tokens)
+            case Err(GetOptionFailure.Ambiguous(options))                            => (errAmbig(options, optStr), tokens)
+            case Err(GetOptionFailure.NotFound)                                      => (OptionKind.UnreqOpt("--${xstr}"), tokens)
         }
 
     /// Returns the "left view" of String `s`.
@@ -254,24 +254,24 @@ namespace GetOpt {
         let optStr  = "-${xc}";
         match findOptionById(xc, optDescrs) {
             case Ok(opt) => match (opt.argDescriptor, xstr, tokens)  {
-                case (NoArg(a), "", rest)           => (Opt(a), rest)
-                case (NoArg(a), str, rest)          => (Opt(a), "-${str}" :: rest)
-                case (ReqArg(_, d), "", Nil)        => (errReq(d, optStr), Nil)
-                case (ReqArg(f, _), "", r :: rest)  => (decodeArg(f(r), optStr), rest)
-                case (ReqArg(f, _), str, rest)      => (decodeArg(f(str), optStr), rest)
-                case (OptArg(f, _), "", rest)       => (decodeArg(f(None), optStr), rest)
-                case (OptArg(f, _), str, rest)      => (decodeArg(f(Some(str)), optStr), rest)
+                case (ArgDescr.NoArg(a), "", rest)           => (OptionKind.Opt(a), rest)
+                case (ArgDescr.NoArg(a), str, rest)          => (OptionKind.Opt(a), "-${str}" :: rest)
+                case (ArgDescr.ReqArg(_, d), "", Nil)        => (errReq(d, optStr), Nil)
+                case (ArgDescr.ReqArg(f, _), "", r :: rest)  => (decodeArg(f(r), optStr), rest)
+                case (ArgDescr.ReqArg(f, _), str, rest)      => (decodeArg(f(str), optStr), rest)
+                case (ArgDescr.OptArg(f, _), "", rest)       => (decodeArg(f(None), optStr), rest)
+                case (ArgDescr.OptArg(f, _), str, rest)      => (decodeArg(f(Some(str)), optStr), rest)
             }
-            case Err(Ambiguous(options))            => (errAmbig(options, optStr), tokens)
-            case Err(NotFound) if xstr == ""        => (UnreqOpt(optStr), tokens)
-            case Err(NotFound)                      => (UnreqOpt(optStr), "-${xstr}" :: tokens)
+            case Err(GetOptionFailure.Ambiguous(options))            => (errAmbig(options, optStr), tokens)
+            case Err(GetOptionFailure.NotFound) if xstr == ""        => (OptionKind.UnreqOpt(optStr), tokens)
+            case Err(GetOptionFailure.NotFound)                      => (OptionKind.UnreqOpt(optStr), "-${xstr}" :: tokens)
         }
 
     ///
     /// Decode the argument which should be `Some(_)` otherwise decoding has failed.
     ///
     def decodeArg(x: Option[a], optStr: String): OptionKind[a] = match x {
-        case Some(x1) => Opt(x1)
+        case Some(x1) => OptionKind.Opt(x1)
         case None => errDecode(optStr)
     }
 
@@ -298,7 +298,7 @@ namespace GetOpt {
     ///
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
-    def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
+    def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
         /// Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
@@ -306,8 +306,8 @@ namespace GetOpt {
         let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
             case optd :: Nil    => Ok(optd)
-            case x :: xs        => Err(Ambiguous(Nel(x, xs)))
-            case Nil            => Err(NotFound)
+            case x :: xs        => Err(GetOptionFailure.Ambiguous(Nel.Nel(x, xs)))
+            case Nil            => Err(GetOptionFailure.NotFound)
         }
 
     ///
@@ -317,13 +317,13 @@ namespace GetOpt {
     ///
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
-    def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
+    def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         /// This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
         let options = List.filterMap(o -> { let ss = o.optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
         match options {
             case optd :: Nil    => Ok(optd)
-            case x :: xs        => Err(Ambiguous(Nel(x, xs)))
-            case Nil            => Err(NotFound)
+            case x :: xs        => Err(GetOptionFailure.Ambiguous(Nel.Nel(x, xs)))
+            case Nil            => Err(GetOptionFailure.NotFound)
         }
 
 
@@ -334,13 +334,13 @@ namespace GetOpt {
     ///
     def errAmbig(ods: Nel[OptionDescr[a]], optStr: String): OptionKind[a] =
         let header = "option '${optStr}' is ambiguous; could be one of:";
-        OptErr(usageInfo(header, Nel.toList(ods)))
+        OptionKind.OptErr(usageInfo(header, Nel.toList(ods)))
 
     ///
     /// Return an error indicating the option requires an argument that was not supplied.
     ///
     def errReq(d: String, optStr: String): OptionKind[a] =
-        OptErr("option '${optStr}' requires an argument ${d}\n")
+        OptionKind.OptErr("option '${optStr}' requires an argument ${d}\n")
 
     ///
     /// Return an error indicating the option name was not recognized.
@@ -351,13 +351,13 @@ namespace GetOpt {
     /// Return an error indicating the option was supplied an argument when it does not want one.
     ///
     def errNoArgReq(optStr: String): OptionKind[a] =
-        OptErr("option '${optStr}' doesn't allow an argument\n")
+        OptionKind.OptErr("option '${optStr}' doesn't allow an argument\n")
 
     ///
     /// Return an error indicating the option was supplied an argument it could not decode.
     ///
     def errDecode(optStr: String): OptionKind[a] =
-        OptErr("option '${optStr}' could not decode its argument\n")
+        OptionKind.OptErr("option '${optStr}' could not decode its argument\n")
 
 
     /// Preprocessing the commandline args.

@@ -1,4 +1,5 @@
 namespace Test/Exp/ChooseStar {
+    use Choice.{Absent, Present}
 
     @test
     def testChooseStarOne01(): Bool =

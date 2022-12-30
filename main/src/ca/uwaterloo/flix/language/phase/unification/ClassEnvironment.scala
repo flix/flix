@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
@@ -62,7 +62,7 @@ object ClassEnvironment {
   def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     byInst(tconstr, classEnv) match {
       case Validation.Success(_) => true
-      case Validation.Failure(_) => false
+      case _failure => false
     }
   }
 
@@ -79,7 +79,7 @@ object ClassEnvironment {
         // Case 1: `head` is entailed by the other type constraints, skip it
         case Validation.Success(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
-        case Validation.Failure(_) => loop(tail, head :: acc)
+        case _failure => loop(tail, head :: acc)
       }
     }
 

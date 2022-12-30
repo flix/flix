@@ -10,10 +10,16 @@ namespace Test/Exp/Null {
     def testNullString01(): String = unsafe_cast null as String
 
     @test
-    def testNullArray01(): Array[String, Static] = unsafe_cast null as Array[String, Static]
+    def testNullArray01(): Unit \ IO = region r { 
+        let _ = r;
+        discard unsafe_cast unsafe_cast null as _ \ IO as Array[String, r] \ IO
+    }
 
     @test
-    def testNullChannel01(): Receiver[String, Static] = unsafe_cast null as Receiver[String, Static]
+    def testNullChannel01(): Unit \ IO = region r {
+        let _ = r;
+        discard unsafe_cast unsafe_cast null as _ \ IO as Receiver[String, r] \ IO
+    }
 
     @test
     def testNullRecord01(): {} = unsafe_cast null as {}
@@ -31,7 +37,10 @@ namespace Test/Exp/Null {
     def testNullRecord05(): {fstName = String, lstName = String} = {fstName = unsafe_cast null as String, lstName = unsafe_cast null as String}
 
     @test
-    def testNullRef01(): Ref[String, Static] = unsafe_cast null as Ref[String, Static]
+    def testNullRef01(): Unit \ IO = region r {
+        let _ = r;
+        discard unsafe_cast unsafe_cast null as _ \ IO as Ref[String, r] \ IO
+    }
 
     @test
     def testNullTuple01(): (String, String) = unsafe_cast null as (String, String)

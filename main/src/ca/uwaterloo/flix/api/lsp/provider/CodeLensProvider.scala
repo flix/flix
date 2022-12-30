@@ -26,7 +26,7 @@ object CodeLensProvider {
   /**
     * Processes a codelens request.
     */
-  def processCodeLens(uri: String)(implicit index: Index, root: Root): JObject = {
+  def processCodeLens(uri: String)(implicit index: Index, root: Option[Root]): JObject = {
     val codeLenses = getRunCodeLenses(uri) ::: getTestCodeLenses(uri)
     ("status" -> "success") ~ ("result" -> JArray(codeLenses.map(_.toJSON)))
   }
@@ -34,12 +34,12 @@ object CodeLensProvider {
   /**
     * Returns code lenses for running entry points.
     */
-  private def getRunCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
-    if (root == null) {
+  private def getRunCodeLenses(uri: String)(implicit index: Index, root: Option[Root]): List[CodeLens] = {
+    if (root.isEmpty) {
       return Nil
     }
 
-    getEntryPoints(uri).map {
+    getEntryPoints(uri)(root.get).map {
       case sym =>
         val args = List(JString(sym.toString))
         val command = Command("Run", "flix.runMain", args)
@@ -51,12 +51,12 @@ object CodeLensProvider {
   /**
     * Returns code lenses for running tests.
     */
-  private def getTestCodeLenses(uri: String)(implicit index: Index, root: Root): List[CodeLens] = {
-    if (root == null) {
+  private def getTestCodeLenses(uri: String)(implicit index: Index, root: Option[Root]): List[CodeLens] = {
+    if (root.isEmpty) {
       return Nil
     }
 
-    getTests(uri).map {
+    getTests(uri)(root.get).map {
       case sym =>
         val command = Command("Run Tests", "flix.cmdTests", Nil)
         val range = Range.from(sym.loc)

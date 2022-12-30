@@ -195,7 +195,7 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
-        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -229,7 +229,7 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
-        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -268,7 +268,7 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
-        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -303,7 +303,7 @@ namespace DelayMap {
     ///
     @Experimental @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
-        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -763,14 +763,14 @@ namespace DelayMap {
     pub def toMap(m: DelayMap[k, v]): Map[k, v] =
         let _ = parallelForce(m);
         let DMap(t) = m;
-        Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
+        Map.Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
     /// Returns `m` as a mutable set.
     ///
     @Experimental @Parallel
     pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap(ref toMap(m) @ r)
+        MutMap.MutMap(ref toMap(m) @ r)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -784,7 +784,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
+        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

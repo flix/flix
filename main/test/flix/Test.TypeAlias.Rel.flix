@@ -24,7 +24,7 @@ namespace Test/TypeAlias/Rel {
 
     rel D(x: List[Int32])
     rel E(x: Option[Int32])
-    rel F(x: Result[Bool, String])
+    rel F(x: Result[String, Bool])
 
     @test
     def testTypeAlias04(): #{D} = #{

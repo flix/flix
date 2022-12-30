@@ -1027,8 +1027,8 @@ namespace String {
     pub def levenshteinDistance(s: String, t: String): Int32 = region r {
         let m = length(s);
         let n = length(t);
-        let v0 = Array.new(r, 0, n + 1);
-        let v1 = Array.new(r, 0, n + 1);
+        let v0 = Array.repeat(r, n + 1, 0);
+        let v1 = Array.repeat(r, n + 1, 0);
         forIndex(0, n, i -> v0[i] = i);
         forIndex(0, m - 1, i -> {
             v1[0] = i + 1;
@@ -1221,12 +1221,12 @@ namespace String {
             i := deref i + 1;
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Char, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
 }

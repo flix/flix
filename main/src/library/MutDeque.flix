@@ -40,7 +40,7 @@ instance Scoped[MutDeque[a]] {
 }
 
 instance Iterable[MutDeque] {
-    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) = MutDeque.iterator(d)
+    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutDeque.iterator(r1, d)
 }
 
 namespace MutDeque {
@@ -74,7 +74,7 @@ namespace MutDeque {
     /// Returns an empty MutDeque.
     ///
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
-        MutDeque(r, ref [Reflect.default(); minCapacity()] @ r @ r, ref 0 @ r, ref 0 @ r)
+        MutDeque(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r, ref 0 @ r)
 
     ///
     /// Returns the number of elements in `d`.
@@ -290,9 +290,9 @@ namespace MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
-        let arr = [Reflect.default(); c <<< 1] @ r;          // Allocate new array `arr` with double the capacity of `a`.
-        copyElements!(deref f, deref b, deref a, arr);       // Copy elements from old array `a` to new array `arr`.
-        a := arr;                                            // Update references.
+        let arr = Array.new(r, c <<< 1);                    // Allocate new array `arr` with double the capacity of `a`.
+        copyElements!(deref f, deref b, deref a, arr);      // Copy elements from old array `a` to new array `arr`.
+        a := arr;                                           // Update references.
         b := computeSize(c, deref f, deref b);
         f := 0
 
@@ -315,10 +315,10 @@ namespace MutDeque {
         let MutDeque(r, a, f, b) = d;
         let mc = minCapacity();
         let c = capacity(d);
-        if (c > mc) {                                            // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = [Reflect.default(); c >>> 1] @ r;          // Allocate new array `arr` with half the capacity of `a`.
-            copyElements!(deref f, deref b, deref a, arr);       // Copy elements from old array `a` to new array `arr`.
-            a := arr;                                            // Update references.
+        if (c > mc) {                                           // Prevent the backing array from shrinking below `minCapacity`.
+            let arr = Array.new(r, c >>> 1);                    // Allocate new array `arr` with half the capacity of `a`.
+            copyElements!(deref f, deref b, deref a, arr);      // Copy elements from old array `a` to new array `arr`.
+            a := arr;                                           // Update references.
             b := computeSize(c, deref f, deref b);
             f := 0
         } else {
@@ -359,8 +359,8 @@ namespace MutDeque {
         if (aSize == bSize) {
             let MutDeque(_, aArray, aFront, aBack) = d1;
             let MutDeque(_, bArray, bFront, bBack) = d2;
-            let a1 = [Reflect.default(); aSize] @ r3;
-            let b1 = [Reflect.default(); bSize] @ r3;
+            let a1 = Array.new(r3, aSize);
+            let b1 = Array.new(r3, bSize);
             copyElements!(deref aFront, deref aBack, deref aArray, a1);
             copyElements!(deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
@@ -413,17 +413,16 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(d: MutDeque[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(d);
+    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ r;
+        let i = ref (deref f) @ r1;
         let done = () -> deref i == deref b;
         let next = () -> {
             let x = (deref a)[deref i];
             i := deref i + 1 &&& (capacity(d) - 1);
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(upcast done, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.
@@ -448,7 +447,7 @@ namespace MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
+    pub def shuffle(r1: Region[r1], rnd: Random, d: MutDeque[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1), NonDet } = region r3 {
         toArray(r3, d) !> Array.shuffle(rnd) |> Array.toMutDeque(r1)
     }
 

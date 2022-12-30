@@ -37,7 +37,7 @@ namespace Fixpoint/Ast {
     /// Returns `true` if the given denotation is relational.
     ///
     pub def isRelational(den: Denotation[v]): Bool = match den {
-        case Relational => true
+        case Denotation.Relational => true
         case _          => false
     }
 
@@ -47,7 +47,7 @@ namespace Fixpoint/Ast {
     @Internal
     pub def lattice(): Denotation[t] with LowerBound[t], JoinLattice[t], MeetLattice[t] =
         // TODO: Why are these type annotations necessary?
-        Latticenal(
+        Denotation.Latticenal(
             LowerBound.minValue() : t,
             (x: t, y: t) -> PartialOrder.lessEqual(x: t, y: t),
             (x: t, y: t) -> JoinLattice.leastUpperBound(x: t, y: t),
@@ -61,7 +61,7 @@ namespace Fixpoint/Ast {
     pub def box(d: Denotation[t]): Denotation[Boxed] with Boxable[t] = match d {
         case Denotation.Relational => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>
-            Latticenal(
+            Denotation.Latticenal(
                 Boxable.box(bot),
                 Boxable.lift2b(leq),
                 Boxable.lift2(lub),

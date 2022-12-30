@@ -34,7 +34,7 @@ instance Scoped[MutList[a]] {
 }
 
 instance Iterable[MutList] {
-    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) = MutList.iterator(l)
+    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutList.iterator(r1, l)
 }
 
 namespace MutList {
@@ -49,7 +49,7 @@ namespace MutList {
     /// Returns a new empty mutable list with a default capacity.
     ///
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) =
-        MutList(r, ref ([Reflect.default(); minCapacity()] @ r) @ r, ref 0 @ r)
+        MutList(r, ref Array.new(r, minCapacity()) @ r, ref 0 @ r)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -313,7 +313,7 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = [s; n] @ r1;
+        let b = Array.repeat(r1, n, s);
         def loop(i, acc) = {
             if (i >= n)
                 ()
@@ -334,7 +334,7 @@ namespace MutList {
         let a = deref ra;
         let l = deref rl;
         let n = l + 1;
-        let b = [s; n] @ r1;
+        let b = Array.repeat(r1, n, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -360,7 +360,7 @@ namespace MutList {
             let a = deref ra;
             let l = deref rl;
             let x = f(a[0]);
-            let b = [x; Array.length(a)] @ r1;
+            let b = Array.repeat(r1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -384,7 +384,7 @@ namespace MutList {
             let a = deref ra;
             let l = deref rl;
             let x = f(0, a[0]);
-            let b = [x; Array.length(a)] @ r1;
+            let b = Array.repeat(r1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
@@ -523,7 +523,7 @@ namespace MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(r, a, l) = v;
-        a := [Reflect.default(); Array.length(deref a)] @ r;
+        a := Array.new(r, Array.length(deref a));
         l := 0
 
     ///
@@ -703,7 +703,7 @@ namespace MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, [Reflect.default(); c] @ r)
+            Array.updateSequence!(0, deref a, Array.new(r, c))
         }
         else
             ()
@@ -795,17 +795,16 @@ namespace MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(l: MutList[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(l);
+    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutList(_, a, len) = l;
-        let i = ref 0 @ r;
+        let i = ref 0 @ r1;
         let done = () -> deref i == deref len;
         let next = () -> {
             let x = (deref a)[deref i];
             i := deref i + 1;
             x
         };
-        Iterator(done, next)
+        unsafe_cast Iterator.Iterator(done, next) as _ \ { Write(r1), Read(r2) }
 
     ///
     /// Applies `f` to all the elements in `v`.
@@ -938,7 +937,7 @@ namespace MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(r1: Region[r1], rnd: Random.Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
+    pub def shuffle(r1: Region[r1], rnd: Random, v: MutList[a, r1]): MutList[a, r1] \ { Read(r1), Write(r1), NonDet } = region r2 {
         toArray(r2, v) !> Array.shuffle(rnd) |> Array.toMutList(r1)
     }
 

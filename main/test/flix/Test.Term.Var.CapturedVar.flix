@@ -297,7 +297,7 @@ namespace Test/Term/Lit/Var/CapturedVar {
     ///////////////////////////////////////////////////////////////////////////////
     @test
     def testResultCapturedVar01(): Bool =
-        let c: Result[Int32, String] = Ok(123);
+        let c: Result[String, Int32] = Ok(123);
         let x = #R(c).;
         let y = #R(c) :- R(c).;
         let r = query x, y select 42 from R(c);
@@ -305,7 +305,7 @@ namespace Test/Term/Lit/Var/CapturedVar {
 
     @test
     def testResultCapturedVar02(): Bool =
-        let c: Result[Int32, String] = Err("goodbye world!");
+        let c: Result[String, Int32] = Err("goodbye world!");
         let x = #R(c).;
         let y = #R(c) :- R(c).;
         let r = query x, y select 42 from R(c);

@@ -34,44 +34,44 @@ pub enum Boxed with Sendable {
 
 instance Eq[Boxed] {
     pub def eq(b1: Boxed, b2: Boxed): Bool = match (b1, b2) {
-        case (BoxedBool(v1),         BoxedBool(v2))      => v1 == v2
-        case (BoxedChar(v1),         BoxedChar(v2))      => v1 == v2
-        case (BoxedInt8(v1),         BoxedInt8(v2))      => v1 == v2
-        case (BoxedInt16(v1),        BoxedInt16(v2))     => v1 == v2
-        case (BoxedInt32(v1),        BoxedInt32(v2))     => v1 == v2
-        case (BoxedInt64(v1),        BoxedInt64(v2))     => v1 == v2
-        case (BoxedFloat32(v1),      BoxedFloat32(v2))   => v1 == v2
-        case (BoxedFloat64(v1),      BoxedFloat64(v2))   => v1 == v2
-        case (BoxedObject(v1, cmp1), BoxedObject(v2, _)) => cmp1(v1, v2) == EqualTo
-        case _                                           => bug!("Mismatched types.")
+        case (Boxed.BoxedBool(v1),         Boxed.BoxedBool(v2))      => v1 == v2
+        case (Boxed.BoxedChar(v1),         Boxed.BoxedChar(v2))      => v1 == v2
+        case (Boxed.BoxedInt8(v1),         Boxed.BoxedInt8(v2))      => v1 == v2
+        case (Boxed.BoxedInt16(v1),        Boxed.BoxedInt16(v2))     => v1 == v2
+        case (Boxed.BoxedInt32(v1),        Boxed.BoxedInt32(v2))     => v1 == v2
+        case (Boxed.BoxedInt64(v1),        Boxed.BoxedInt64(v2))     => v1 == v2
+        case (Boxed.BoxedFloat32(v1),      Boxed.BoxedFloat32(v2))   => v1 == v2
+        case (Boxed.BoxedFloat64(v1),      Boxed.BoxedFloat64(v2))   => v1 == v2
+        case (Boxed.BoxedObject(v1, cmp1), Boxed.BoxedObject(v2, _)) => cmp1(v1, v2) == Comparison.EqualTo
+        case _                                                       => bug!("Mismatched types.")
     }
 }
 
 instance Order[Boxed] {
     pub def compare(b1: Boxed, b2: Boxed): Comparison = match (b1, b2) {
-        case (BoxedBool(v1),         BoxedBool(v2))      => v1 <=> v2
-        case (BoxedChar(v1),         BoxedChar(v2))      => v1 <=> v2
-        case (BoxedInt8(v1),         BoxedInt8(v2))      => v1 <=> v2
-        case (BoxedInt16(v1),        BoxedInt16(v2))     => v1 <=> v2
-        case (BoxedInt32(v1),        BoxedInt32(v2))     => v1 <=> v2
-        case (BoxedInt64(v1),        BoxedInt64(v2))     => v1 <=> v2
-        case (BoxedFloat32(v1),      BoxedFloat32(v2))   => v1 <=> v2
-        case (BoxedFloat64(v1),      BoxedFloat64(v2))   => v1 <=> v2
-        case (BoxedObject(v1, cmp1), BoxedObject(v2, _)) => cmp1(v1, v2)
-        case _                                           => bug!("Mismatched types.")
+        case (Boxed.BoxedBool(v1),         Boxed.BoxedBool(v2))      => v1 <=> v2
+        case (Boxed.BoxedChar(v1),         Boxed.BoxedChar(v2))      => v1 <=> v2
+        case (Boxed.BoxedInt8(v1),         Boxed.BoxedInt8(v2))      => v1 <=> v2
+        case (Boxed.BoxedInt16(v1),        Boxed.BoxedInt16(v2))     => v1 <=> v2
+        case (Boxed.BoxedInt32(v1),        Boxed.BoxedInt32(v2))     => v1 <=> v2
+        case (Boxed.BoxedInt64(v1),        Boxed.BoxedInt64(v2))     => v1 <=> v2
+        case (Boxed.BoxedFloat32(v1),      Boxed.BoxedFloat32(v2))   => v1 <=> v2
+        case (Boxed.BoxedFloat64(v1),      Boxed.BoxedFloat64(v2))   => v1 <=> v2
+        case (Boxed.BoxedObject(v1, cmp1), Boxed.BoxedObject(v2, _)) => cmp1(v1, v2)
+        case _                                                       => bug!("Mismatched types.")
     }
 }
 
 instance ToString[Boxed] {
     pub def toString(b: Boxed): String = match b {
-        case BoxedBool(v)      => ToString.toString(v)
-        case BoxedChar(v)      => ToString.toString(v)
-        case BoxedInt8(v)      => ToString.toString(v)
-        case BoxedInt16(v)     => ToString.toString(v)
-        case BoxedInt32(v)     => ToString.toString(v)
-        case BoxedInt64(v)     => ToString.toString(v)
-        case BoxedFloat32(v)   => ToString.toString(v)
-        case BoxedFloat64(v)   => ToString.toString(v)
-        case BoxedObject(v, _) => Debug.stringify(v)
+        case Boxed.BoxedBool(v)      => ToString.toString(v)
+        case Boxed.BoxedChar(v)      => ToString.toString(v)
+        case Boxed.BoxedInt8(v)      => ToString.toString(v)
+        case Boxed.BoxedInt16(v)     => ToString.toString(v)
+        case Boxed.BoxedInt32(v)     => ToString.toString(v)
+        case Boxed.BoxedInt64(v)     => ToString.toString(v)
+        case Boxed.BoxedFloat32(v)   => ToString.toString(v)
+        case Boxed.BoxedFloat64(v)   => ToString.toString(v)
+        case Boxed.BoxedObject(v, _) => Debug.stringify(v)
     }
 }

@@ -440,7 +440,7 @@ namespace Option {
     ///
     /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
-    pub def toOk(e: e, o: Option[t]): Result[t, e] = match o {
+    pub def toOk(e: e, o: Option[t]): Result[e, t] = match o {
         case None    => Err(e)
         case Some(a) => Ok(a)
     }
@@ -448,7 +448,7 @@ namespace Option {
     ///
     /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
-    pub def toErr(d: t, o: Option[e]): Result[t, e] = match o {
+    pub def toErr(d: t, o: Option[e]): Result[e, t] = match o {
         case None    => Ok(d)
         case Some(e) => Err(e)
     }
@@ -456,17 +456,17 @@ namespace Option {
     ///
     /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
-    pub def toSuccess(e: e, o: Option[t]): Validation[t, e] = match o {
-        case None    => Failure(Nec.singleton(e))
-        case Some(a) => Success(a)
+    pub def toSuccess(e: e, o: Option[t]): Validation[e, t] = match o {
+        case None    => Validation.Failure(Nec.singleton(e))
+        case Some(a) => Validation.Success(a)
     }
 
     ///
     /// Returns `e` into Validation's `Failure` if `o` is `Some(e)`. Otherwise returns `Success(d)`.
     ///
-    pub def toFailure(d: t, o: Option[e]): Validation[t, e] = match o {
-        case None    => Success(d)
-        case Some(e) => Failure(Nec.singleton(e))
+    pub def toFailure(d: t, o: Option[e]): Validation[e, t] = match o {
+        case None    => Validation.Success(d)
+        case Some(e) => Validation.Failure(Nec.singleton(e))
     }
 
     ///
@@ -577,7 +577,7 @@ namespace Option {
     ///
     /// Returns an iterator over `o` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, o) |> Iterator.zipWithIndex
 
 }

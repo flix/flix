@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-namespace Concurrent/CyclicBarrier {
-
+namespace Concurrent {
   ///
   /// A wrapper around a Java CyclicBarrier
   ///
   @Internal
   pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
+}
+
+namespace Concurrent/CyclicBarrier {
+
+    // TODO NS-REFACTOR can remove these
+    use Concurrent.CyclicBarrier
+    use Concurrent.CyclicBarrier.CyclicBarrier
 
   ///
   /// Create a new CyclicBarrier which will wait for `parties` threads

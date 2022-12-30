@@ -59,7 +59,7 @@ namespace Fixpoint {
     def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ Write(r) = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
-        case RelOp.Project(_) => (Array.new(r, Fixpoint/Tuple.new(Nil), depth), Array.new(r, Reflect.default(), depth))
+        case RelOp.Project(_) => (Array.repeat(r, depth, Fixpoint/Tuple.new(Nil)), Array.new(r, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
     }
 
@@ -109,9 +109,9 @@ namespace Fixpoint {
 
     def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v] =
         match query {
-            case Nil => EqualTo
+            case Nil => Comparison.EqualTo
             case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
-                case EqualTo => evalQuery(env, tl, tuple)
+                case Comparison.EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
         }

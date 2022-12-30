@@ -133,7 +133,7 @@ object NamedAst {
 
     case class ArrayLit(exps: List[NamedAst.Expression], exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
