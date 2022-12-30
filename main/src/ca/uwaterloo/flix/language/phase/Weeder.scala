@@ -1259,29 +1259,6 @@ object Weeder {
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
       }
 
-    case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-
-      (optStartIndex, optEndIndex) match {
-        case (None, None) =>
-          visitExp(base, senv) map {
-            case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Cst(Ast.Constant.Int32(0), loc), WeededAst.Expression.ArrayLength(b, loc), loc)
-          }
-        case (Some(startIndex), None) =>
-          mapN(visitExp(base, senv), visitExp(startIndex, senv)) {
-            case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
-          }
-        case (None, Some(endIndex)) =>
-          mapN(visitExp(base, senv), visitExp(endIndex, senv)) {
-            case (b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Cst(Ast.Constant.Int32(0), loc), i2, loc)
-          }
-        case (Some(startIndex), Some(endIndex)) =>
-          mapN(visitExp(base, senv), visitExp(startIndex, senv), visitExp(endIndex, senv)) {
-            case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
-          }
-      }
-
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
@@ -2973,7 +2950,6 @@ object Weeder {
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
