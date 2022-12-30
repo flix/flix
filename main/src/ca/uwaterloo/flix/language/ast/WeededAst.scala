@@ -130,7 +130,7 @@ object WeededAst {
 
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ArraySlice(region: WeededAst.Expression, base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 

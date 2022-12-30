@@ -105,8 +105,8 @@ namespace Array {
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
     ///
-    pub def slice(_: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        unsafe_cast $ARRAY_SLICE$(a, b, e) as Array[a, r1] \ { Read(r), Write(r1) }
+    pub def slice(r1: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
+        $ARRAY_SLICE$(r1, a, b, e)
 
     ///
     /// Returns the array `a` as a list.
