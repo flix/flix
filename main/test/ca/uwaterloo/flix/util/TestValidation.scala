@@ -406,6 +406,14 @@ class TestValidation extends FunSuite {
     val result = mapN(("abc", ex).toSuccessWithFailures) {
       case s => s.reverse
     }
+    assertResult(SuccessWithFailures("cba", LazyList(ex)))(result)
+  }
+
+  test("toSuccessWithFailures03") {
+    val ex = new RuntimeException()
+    val result = mapN(("abc", ex).toSuccessWithFailures) {
+      case s => s.reverse
+    }
     assertResult(("cba", ex).toSuccessWithFailures)(result)
   }
 
