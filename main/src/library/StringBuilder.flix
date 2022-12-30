@@ -123,7 +123,7 @@ namespace StringBuilder {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Char, Int32), r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2] \ { Read(r2), Write(r1) } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///

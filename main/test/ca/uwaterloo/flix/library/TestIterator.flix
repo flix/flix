@@ -1025,22 +1025,22 @@ namespace TestIterator {
 
     @test
     def zipWithIndex02(): Bool = region r {
-        Iterator.zipWithIndex(Iterator.singleton(r, 2)) |> Iterator.toList == (2, 0) :: Nil
+        Iterator.zipWithIndex(Iterator.singleton(r, 2)) |> Iterator.toList == (0, 2) :: Nil
     }
 
     @test
     def zipWithIndex03(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 1 :: 8 :: Nil)) |> Iterator.toList == (1, 0) :: (8, 1) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 1 :: 8 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 8) :: Nil
     }
 
     @test
     def zipWithIndex04(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 8 :: 1 :: Nil)) |> Iterator.toList == (8, 0) :: (1, 1) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 8 :: 1 :: Nil)) |> Iterator.toList == (0, 8) :: (1, 1) :: Nil
     }
 
     @test
     def zipWithIndex05(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil
     }
 
 
@@ -1769,18 +1769,18 @@ namespace TestIterator {
 
     @test
     def toResultList01(): Bool = region r {
-        (Nil: List[Result[Int32, String]]) |> List.iterator(r) |>
+        (Nil: List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(Nil)
     }
     @test
     def toResultList02(): Bool = region r {
-        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: Nil)
     }
 
     @test
     def toResultList03(): Bool = region r {
-        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
     }
 

@@ -49,10 +49,10 @@ namespace Test/Exp/Ref/Ref {
     def testRef16(): Unit = region r { discard ref Some(42) @ r }
 
     @test
-    def testRef17(): Unit = region r { discard ref Ok(42): Result[Int32, String] @ r }
+    def testRef17(): Unit = region r { discard ref Ok(42): Result[String, Int32] @ r }
 
     @test
-    def testRef18(): Unit = region r { discard ref Err("Goodbye World!"): Result[Int32, String] @ r }
+    def testRef18(): Unit = region r { discard ref Err("Goodbye World!"): Result[String, Int32] @ r }
 
     @test
     def testRefRegion01(): Unit = // Pure

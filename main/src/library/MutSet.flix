@@ -399,7 +399,7 @@ namespace MutSet {
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(a, Int32), r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
         iterator(r1, s) |> Iterator.zipWithIndex
 
     ///

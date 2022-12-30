@@ -151,7 +151,7 @@ namespace GetOpt {
     ///
     pub def getOpt(ordering: ArgOrder[a],
                    optDescriptors: List[OptionDescr[a]],
-                   sourceArgs: List[String]): Validation[{options = List[a], nonOptions = List[String]}, String] =
+                   sourceArgs: List[String]): Validation[String, {options = List[a], nonOptions = List[String]}] =
         let answers = getOpt1(ordering, optDescriptors, sourceArgs);
         match answers.errors ::: List.map(errUnrec, answers.unknowns) {
             case Nil => Validation.Success({options = answers.options, nonOptions = answers.nonOptions})
@@ -298,7 +298,7 @@ namespace GetOpt {
     ///
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
-    def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
+    def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
         /// Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
@@ -317,7 +317,7 @@ namespace GetOpt {
     ///
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
-    def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[OptionDescr[a], GetOptionFailure[a]] =
+    def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         /// This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
         let options = List.filterMap(o -> { let ss = o.optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
         match options {

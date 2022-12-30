@@ -235,7 +235,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r] \ Write(r) =
         Foldable.iterator(r, t) |> Iterator.zipWithIndex
 
     ///

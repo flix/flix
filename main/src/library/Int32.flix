@@ -291,7 +291,7 @@ namespace Int32 {
     /// Leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def parse(radix: Int32, s: String): Result[Int32, String] =
+    pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
             import java.lang.String.strip(): String \ {};
             import static java.lang.Integer.parseInt(String, Int32): Int32 \ {};
