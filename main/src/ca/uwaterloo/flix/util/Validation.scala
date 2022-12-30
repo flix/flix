@@ -543,7 +543,6 @@ object Validation {
   final def toSuccessWithFailures[T, E](t: T, e: E): Validation[T, E] =
     Validation.SuccessWithFailures(t, LazyList(e))
 
-
   /**
     * Adds an implicit `toFailure` method.
     */
