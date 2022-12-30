@@ -927,13 +927,13 @@ namespace List {
         loop(l1, l2, identity)
 
     ///
-    /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a list where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
+    pub def zipWithIndex(l: List[a]): List[(Int32, a)] =
         def loop(ll, i, k) = match ll {
             case Nil       => k(Nil)
-            case (x :: xs) => loop(xs, i + 1, ks -> k((x, i) :: ks))
+            case (x :: xs) => loop(xs, i + 1, ks -> k((i, x) :: ks))
         };
         loop(l, 0, identity)
 
@@ -1141,7 +1141,7 @@ namespace List {
         case None    => [] @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
-            forEach(match (b, i) -> a[i] = b, zipWithIndex(l));
+            forEach(match (i, b) -> a[i] = b, zipWithIndex(l));
             a
         }
 
@@ -1312,7 +1312,7 @@ namespace List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

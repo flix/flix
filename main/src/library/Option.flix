@@ -577,7 +577,7 @@ namespace Option {
     ///
     /// Returns an iterator over `o` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], o: Option[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, o) |> Iterator.zipWithIndex
 
 }

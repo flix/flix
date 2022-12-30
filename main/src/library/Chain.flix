@@ -96,7 +96,7 @@ instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Chain#{", sb);
-        foreach ((x, i) <- enumerator(r, c)) {
+        foreach ((i, x) <- enumerator(r, c)) {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
@@ -771,7 +771,7 @@ namespace Chain {
         case None    => [] @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
-            forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+            forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
             arr
         }
 
@@ -796,7 +796,7 @@ namespace Chain {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///
@@ -908,13 +908,13 @@ namespace Chain {
         Foldable.joinWith(f, sep, c)
 
     ///
-    /// Returns a chain where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a chain where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(c: Chain[a]): Chain[(a, Int32)] =
+    pub def zipWithIndex(c: Chain[a]): Chain[(Int32, a)] =
         def loop(cc, acc, i) = match viewLeft(cc) {
             case ViewLeft.NoneLeft        => acc
-            case ViewLeft.SomeLeft(a, rs) => loop(rs, snoc(acc, (a, i)), i + 1)
+            case ViewLeft.SomeLeft(a, rs) => loop(rs, snoc(acc, (i, a)), i + 1)
         };
         loop(c, Empty, 0)
 

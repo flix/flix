@@ -1226,7 +1226,7 @@ namespace String {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Char, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
 }

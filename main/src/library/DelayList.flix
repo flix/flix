@@ -130,8 +130,8 @@ namespace DelayList {
     pub def toString(l: DelayList[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("DelayList(", sb);
-        foreach ((x, i) <- enumerator(r, l)) {
-            if (i == 0)
+        foreach ((i, x) <- enumerator(r, l)) {
+            if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
@@ -1157,16 +1157,16 @@ namespace DelayList {
         map(x -> f(fst(x), snd(x)), zip(l1, l2))
 
     ///
-    /// Returns a `DelayList` where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a `DelayList` where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
     /// Does not force the tail of `l`.
     ///
-    pub def zipWithIndex(l: DelayList[a]): DelayList[(a, Int32)] =
+    pub def zipWithIndex(l: DelayList[a]): DelayList[(Int32, a)] =
         def loop(ll, i) = match ll {
             case ENil         => ENil
-            case ECons(x, xs) => LCons(((x, i)), lazy loop(      xs, i + 1))
-            case LCons(x, xs) => LCons(((x, i)), lazy loop(force xs, i + 1))
+            case ECons(x, xs) => LCons(((i, x)), lazy loop(      xs, i + 1))
+            case LCons(x, xs) => LCons(((i, x)), lazy loop(force xs, i + 1))
             case LList(xs)    => LList(          lazy loop(force xs, i))
         };
         loop(l, 0)
@@ -1179,7 +1179,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = Array.new(r, length(l));
-        forEach(match (y, i) -> a[i] = y, zipWithIndex(l));
+        forEach(match (i, y) -> a[i] = y, zipWithIndex(l));
         a
 
     ///
@@ -1205,7 +1205,7 @@ namespace DelayList {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

@@ -983,23 +983,23 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((1, 0))
+    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((0, 1))
 
     @test
-    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((1, 0), (2, 1))
+    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((0, 1), (1, 2))
 
     @test
-    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((2, 0), (1, 1))
+    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((0, 2), (1, 1))
 
     @test
-    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((4, 0), (3, 1), (6, 2))
+    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((0, 4), (1, 3), (2, 6))
 
     @test
-    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((1, 0), (2, 1), (3, 2), (4, 3))
+    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((0, 1), (1, 2), (2, 3), (3, 4))
 
     @test
     def zipWithIndex06(): Bool =
-        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
+        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((0, 8), (1, 7), (2, 6), (3, 5), (4, 4), (5, 3), (6, 2), (7, 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //

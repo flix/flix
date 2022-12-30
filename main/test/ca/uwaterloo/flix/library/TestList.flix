@@ -1609,13 +1609,13 @@ def zipWith06(): Bool = List.zipWith((a, b) -> if (b) a+1 else a, 1 :: 2 :: 3 ::
 def zipWithIndex01(): Bool = List.zipWithIndex(Nil : List[Char]) == Nil
 
 @test
-def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (1, 0) :: Nil
+def zipWithIndex02(): Bool = List.zipWithIndex(1 :: Nil) == (0, 1) :: Nil
 
 @test
-def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == ("a", 0) :: ("b", 1) :: Nil
+def zipWithIndex03(): Bool = List.zipWithIndex("a" :: "b" :: Nil) == (0, "a") :: (1, "b") :: Nil
 
 @test
-def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == ((true, 0), 0) :: ((false, 1), 1) :: Nil
+def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :: Nil)) == (0, (0, true)) :: (1, (1, false)) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // zipWithA                                                                //
@@ -2734,14 +2734,14 @@ def distinctWith09(): Bool =
         let z = ref Nil @ r;
         let l = 1 :: 2 :: 3 :: Nil;
         foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == (1, 0) :: (2, 1) :: (3, 2) :: Nil
+        List.reverse(deref z) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
     @test
     def enumerate03(): Bool = region r {
         let z = ref Nil @ r;
         let l = List.range(100, 200);
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        foreach ((i, x) <- List.enumerator(r, l)) z := (x, i) :: deref z;
         List.reverse(deref z) == List.zip(l, List.range(0, 100))
     }
 

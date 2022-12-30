@@ -27,7 +27,7 @@ pub class Iterable[t: Type -> Region -> Type] {
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], t: t[a, r2]): Iterator[(a, Int32), r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def enumerator(r1: Region[r1], t: t[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
         Iterable.iterator(r1, t) |> Iterator.zipWithIndex
 
 }
