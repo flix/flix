@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 
-import java.io.File
+import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -80,6 +80,40 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
+    def xprintastPair(phaseString: String, place: String): (Phase, Either[PrintStream, String]) = {
+      val output = place match {
+        case "stdin" =>
+          Left(System.out)
+        case path =>
+          // Maybe the path should be validated here
+          Right(path)
+      }
+      phaseString.toIntOption match {
+        case None => // The phase is by-name
+          Phase.fromString(phaseString) match {
+            case Result.Ok(phase) =>
+              (phase, output)
+            case Result.Err(e) =>
+              Console.err.println(e)
+              System.exit(1)
+              throw new Error("Unreachable")
+          }
+        case Some(phaseIndex) => // The phase is by-index
+          Phase.fromIndex(phaseIndex) match {
+            case Result.Ok(phase) =>
+              (phase, output)
+            case Result.Err(e) => // Out of bounds phase index
+              Console.err.println(e)
+              System.exit(1)
+              throw new Error("Unreachable")
+          }
+      }
+    }
+
+    // compute the print ast setup
+    val xprintast = cmdOpts.xprintast.map{case (phaseString, place) => xprintastPair(phaseString, place)}.toMap
+    println(xprintast)
+
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
@@ -108,6 +142,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
+      xprintast = xprintast,
       xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
     )
@@ -237,6 +272,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
+                     xprintast: Map[String, String] = Map.empty,
                      xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
@@ -424,6 +460,9 @@ object Main {
       // Xvirtual-threads
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
+
+      // AST printing
+      opt[Map[String, String]]("Xprint-ast").action((m, c) => c.copy(xprintast = m))
 
       //
       // Boolean unification flags.

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
+import java.io.PrintStream
 import java.nio.file.Path
 
 object Options {
@@ -51,6 +52,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
+    xprintast = Map.empty,
     xqmc = false,
     xflexibleregions = false,
   )
@@ -100,6 +102,7 @@ object Options {
   * @param xstatistics        enables statistics collection.
   * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
+  * @param xprintast          prints the chosen AST to a given path.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -127,6 +130,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
+                   xprintast: Map[Phase, Either[PrintStream, String]],
                    xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )
@@ -178,4 +182,188 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+}
+
+
+sealed trait Phase {
+
+  def index: Int = this match {
+    case Phase.Parser           =>  1
+    case Phase.Weeder           =>  2
+    case Phase.Namer            =>  3
+    case Phase.Resolver         =>  4
+    case Phase.Kinder           =>  5
+    case Phase.Deriver          =>  6
+    case Phase.Typer            =>  7
+    case Phase.EntryPoint       =>  8
+    case Phase.Statistics       =>  9
+    case Phase.Stratifier       => 10
+    case Phase.Regions          => 11
+    case Phase.Redundancy       => 12
+    case Phase.Safety           => 13
+    case Phase.Documentor       => 14
+    case Phase.Lowering         => 15
+    case Phase.EarlyTreeShaker  => 16
+    case Phase.Monomoph         => 17
+    case Phase.Simplifier       => 18
+    case Phase.ClosureConv      => 19
+    case Phase.LambdaLift       => 20
+    case Phase.Tailrec          => 21
+    case Phase.Optimizer        => 22
+    case Phase.LateTreeShaker   => 23
+    case Phase.VarNumbering     => 24
+    case Phase.Finalize         => 25
+    case Phase.Eraser           => 26
+  }
+
+  def name: String = this match {
+    case Phase.Parser           => "Parser"
+    case Phase.Weeder           => "Weeder"
+    case Phase.Namer            => "Namer"
+    case Phase.Resolver         => "Resolver"
+    case Phase.Kinder           => "Kinder"
+    case Phase.Deriver          => "Deriver"
+    case Phase.Typer            => "Typer"
+    case Phase.EntryPoint       => "EntryPoint"
+    case Phase.Statistics       => "Statistics"
+    case Phase.Stratifier       => "Stratifier"
+    case Phase.Regions          => "Regions"
+    case Phase.Redundancy       => "Redundancy"
+    case Phase.Safety           => "Safety"
+    case Phase.Documentor       => "Documentor"
+    case Phase.Lowering         => "Lowering"
+    case Phase.EarlyTreeShaker  => "EarlyTreeShaker"
+    case Phase.Monomoph         => "Monomorph"
+    case Phase.Simplifier       => "Sipmlifier"
+    case Phase.ClosureConv      => "ClosureConv"
+    case Phase.LambdaLift       => "LambdaLift"
+    case Phase.Tailrec          => "Tailrec"
+    case Phase.Optimizer        => "Optimizer"
+    case Phase.LateTreeShaker   => "LateTreeShaker"
+    case Phase.VarNumbering     => "VarNumbering"
+    case Phase.Finalize         => "Finalize"
+    case Phase.Eraser           => "Eraser"
+  }
+
+}
+
+object Phase {
+
+  def fromIndex(i: Int): Result[Phase, String] = i match {
+    case 1  => Result.Ok(Phase.Parser)
+    case 2  => Result.Ok(Phase.Weeder)
+    case 3  => Result.Ok(Phase.Namer)
+    case 4  => Result.Ok(Phase.Resolver)
+    case 5  => Result.Ok(Phase.Kinder)
+    case 6  => Result.Ok(Phase.Deriver)
+    case 7  => Result.Ok(Phase.Typer)
+    case 8  => Result.Ok(Phase.EntryPoint)
+    case 9  => Result.Ok(Phase.Statistics)
+    case 10 => Result.Ok(Phase.Stratifier)
+    case 11 => Result.Ok(Phase.Regions)
+    case 12 => Result.Ok(Phase.Redundancy)
+    case 13 => Result.Ok(Phase.Safety)
+    case 14 => Result.Ok(Phase.Documentor)
+    case 15 => Result.Ok(Phase.Lowering)
+    case 16 => Result.Ok(Phase.EarlyTreeShaker)
+    case 17 => Result.Ok(Phase.Monomoph)
+    case 18 => Result.Ok(Phase.Simplifier)
+    case 19 => Result.Ok(Phase.ClosureConv)
+    case 20 => Result.Ok(Phase.LambdaLift)
+    case 21 => Result.Ok(Phase.Tailrec)
+    case 22 => Result.Ok(Phase.Optimizer)
+    case 23 => Result.Ok(Phase.LateTreeShaker)
+    case 24 => Result.Ok(Phase.VarNumbering)
+    case 25 => Result.Ok(Phase.Finalize)
+    case 26 => Result.Ok(Phase.Eraser)
+    case _  => Result.Err(s"'$i' is not a phase index (must be in the inclusive range 1 - 26).")
+  }
+
+  def fromString(s: String): Result[Phase, String] = s.toLowerCase match {
+    case "parser"           => Result.Ok(Phase.Parser)
+    case "weeder"           => Result.Ok(Phase.Weeder)
+    case "namer"            => Result.Ok(Phase.Namer)
+    case "resolver"         => Result.Ok(Phase.Resolver)
+    case "kinder"           => Result.Ok(Phase.Kinder)
+    case "deriver"          => Result.Ok(Phase.Deriver)
+    case "typer"            => Result.Ok(Phase.Typer)
+    case "entrypoint"       => Result.Ok(Phase.EntryPoint)
+    case "statistics"       => Result.Ok(Phase.Statistics)
+    case "stratifier"       => Result.Ok(Phase.Stratifier)
+    case "regions"          => Result.Ok(Phase.Regions)
+    case "redundancy"       => Result.Ok(Phase.Redundancy)
+    case "safety"           => Result.Ok(Phase.Safety)
+    case "documentor"       => Result.Ok(Phase.Documentor)
+    case "lowering"         => Result.Ok(Phase.Lowering)
+    case "earlytreeshaker"  => Result.Ok(Phase.EarlyTreeShaker)
+    case "monomorph"        => Result.Ok(Phase.Monomoph)
+    case "simplifier"       => Result.Ok(Phase.Simplifier)
+    case "closureconv"      => Result.Ok(Phase.ClosureConv)
+    case "lambdalift"       => Result.Ok(Phase.LambdaLift)
+    case "tailrec"          => Result.Ok(Phase.Tailrec)
+    case "optimizer"        => Result.Ok(Phase.Optimizer)
+    case "latetreeshaker"   => Result.Ok(Phase.LateTreeShaker)
+    case "varnumbering"     => Result.Ok(Phase.VarNumbering)
+    case "finalize"         => Result.Ok(Phase.Finalize)
+    case "eraser"           => Result.Ok(Phase.Eraser)
+    case _                  => Result.Err(s"'$s' is not a phase name.")
+  }
+
+  // Front-end
+
+  case object Parser extends Phase
+
+  case object Weeder extends Phase
+
+  case object Namer extends Phase
+
+  case object Resolver extends Phase
+
+  case object Kinder extends Phase
+
+  case object Deriver extends Phase
+
+  case object Typer extends Phase
+
+  case object EntryPoint extends Phase
+
+  case object Statistics extends Phase
+
+  case object Stratifier extends Phase
+
+  case object Regions extends Phase
+
+  case object Redundancy extends Phase
+
+  case object Safety extends Phase
+
+  // Back-end
+
+  case object Documentor extends Phase
+
+  case object Lowering extends Phase
+
+  case object EarlyTreeShaker extends Phase
+
+  case object Monomoph extends Phase
+
+  case object Simplifier extends Phase
+
+  case object ClosureConv extends Phase
+
+  case object LambdaLift extends Phase
+
+  case object Tailrec extends Phase
+
+  case object Optimizer extends Phase
+
+  case object LateTreeShaker extends Phase
+
+  case object VarNumbering extends Phase
+
+  case object Finalize extends Phase
+
+  case object Eraser extends Phase
+
+
 }
