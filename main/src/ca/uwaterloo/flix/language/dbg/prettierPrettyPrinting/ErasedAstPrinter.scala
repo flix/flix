@@ -49,8 +49,8 @@ object ErasedAstPrinter {
       case Expression.Var(sym, _, _) =>
         val output = doc(sym)
         output
-      case Expression.Closure(sym, closureArgs, tpe, loc) =>
-        metaText("Closure")
+      case Expression.Closure(sym, closureArgs, _, _) =>
+        applyf(doc(sym) <> metaText("buildclo"), closureArgs.map(doc(_)))
       case Expression.ApplyClo(exp, args, _, _) =>
         val output = applyf(doc(exp) <> metaText("clo"), args.map(a => doc(a, paren = false)))
         par(output)
