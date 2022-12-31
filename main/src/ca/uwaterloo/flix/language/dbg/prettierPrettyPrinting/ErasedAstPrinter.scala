@@ -90,10 +90,12 @@ object ErasedAstPrinter {
       case Expression.Region(tpe, loc) => metaText("Region")
       case Expression.Scope(sym, exp, tpe, loc) => metaText("Scope")
       case Expression.Is(sym, exp, loc) => metaText("Is")
-      case Expression.Tag(sym, exp, tpe, loc) => metaText("Tag")
+      case Expression.Tag(sym, exp, tpe, loc) =>
+        applyf(doc(sym), List(doc(exp)))
       case Expression.Untag(sym, exp, tpe, loc) => metaText("Untag")
       case Expression.Index(base, offset, tpe, loc) => metaText("Index")
-      case Expression.Tuple(elms, tpe, loc) => metaText("Tuple")
+      case Expression.Tuple(elms, _, _) =>
+        tuplef(elms.map(doc(_, paren = false)))
       case Expression.RecordEmpty(tpe, loc) => metaText("RecordEmpty")
       case Expression.RecordSelect(exp, field, tpe, loc) => metaText("RecordSelect")
       case Expression.RecordExtend(field, value, rest, tpe, loc) => metaText("RecordExtend")
@@ -172,5 +174,7 @@ object ErasedAstPrinter {
   def doc(sym: HoleSym): Doc = text(sym.toString)
 
   def doc(sym: DefnSym): Doc = text(sym.toString)
+
+  def doc(sym: CaseSym): Doc = text(sym.toString)
 
 }
