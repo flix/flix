@@ -185,8 +185,8 @@ object Safety {
       case Expression.ArrayStore(base, index, elm, _, _, _) =>
         visit(base) ::: visit(index) ::: visit(elm)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-        visit(base) ::: visit(beginIndex) ::: visit(endIndex)
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
+        visit(reg) ::: visit(base) ::: visit(beginIndex) ::: visit(endIndex)
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
         visit(exp1) ::: visit(exp2)

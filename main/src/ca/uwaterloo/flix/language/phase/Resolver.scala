@@ -1004,12 +1004,13 @@ object Resolver {
             b => ResolvedAst.Expression.ArrayLength(b, loc)
           }
 
-        case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
+        case NamedAst.Expression.ArraySlice(reg, base, startIndex, endIndex, loc) =>
+          val regVal = visitExp(reg, env0, region)
           val bVal = visitExp(base, env0, region)
           val i1Val = visitExp(startIndex, env0, region)
           val i2Val = visitExp(endIndex, env0, region)
-          mapN(bVal, i1Val, i2Val) {
-            case (b, i1, i2) => ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
+          mapN(regVal, bVal, i1Val, i2Val) {
+            case (r, b, i1, i2) => ResolvedAst.Expression.ArraySlice(r, b, i1, i2, loc)
           }
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
