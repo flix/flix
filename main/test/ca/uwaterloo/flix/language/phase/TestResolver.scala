@@ -23,7 +23,8 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
 
-  test("AmbiguousTag.01") {
+  // TODO NS-REFACTOR impossible after refactor
+  ignore("AmbiguousTag.01") {
     val input =
       s"""
          |enum A {
@@ -40,7 +41,8 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
-  test("AmbiguousTag.02") {
+  // TODO NS-REFACTOR impossible after refactor
+  ignore("AmbiguousTag.02") {
     val input =
       s"""
          |enum A {
