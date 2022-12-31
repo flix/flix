@@ -113,7 +113,7 @@ object Statistics {
       case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) => visitExp(base) ++ visitExp(index)
       case Expression.ArrayLength(base, pur, eff, loc) => visitExp(base)
       case Expression.ArrayStore(base, index, elm, _, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)

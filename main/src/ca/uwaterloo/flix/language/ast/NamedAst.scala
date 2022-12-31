@@ -141,7 +141,7 @@ object NamedAst {
 
     case class ArrayLength(base: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class ArraySlice(region: NamedAst.Expression, base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 

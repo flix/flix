@@ -845,16 +845,6 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArraySlice Expression
-      *
-      * @param base       the array
-      * @param beginIndex the start index
-      * @param endIndex   the end index
-      * @param sp2        the position of the last character in the expression.
-      */
-    case class ArraySlice(base: ParsedAst.Expression, beginIndex: Option[ParsedAst.Expression], endIndex: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Cons expression (of list).
       *
       * @param exp1 the head of the list.
