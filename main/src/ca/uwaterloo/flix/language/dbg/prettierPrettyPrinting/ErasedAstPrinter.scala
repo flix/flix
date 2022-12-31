@@ -132,8 +132,12 @@ object ErasedAstPrinter {
       case Expression.PutStaticField(field, exp, tpe, loc) => metaText("PutStaticField")
       case Expression.NewObject(name, clazz, tpe, methods, loc) => metaText("NewObject")
       case Expression.Spawn(exp1, exp2, tpe, loc) => metaText("Spawn")
-      case Expression.Lazy(exp, tpe, loc) => metaText("Lazy")
-      case Expression.Force(exp, tpe, loc) => metaText("Force")
+      case Expression.Lazy(exp, _, _) =>
+        val output = text("lazy") <+> doc(exp)
+        par(output)
+      case Expression.Force(exp, _, _) =>
+        val output = text("force") <+> doc(exp)
+        par(output)
       case Expression.HoleError(sym, _, _) => text("?") <> doc(sym)
       case Expression.MatchError(_, _) => metaText("MatchError")
       case Expression.BoxBool(exp, _) => text("box") <+> doc(exp)
