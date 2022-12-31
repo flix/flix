@@ -27,19 +27,19 @@ object ErasedAstPrinter {
       defn.sym.toString,
       defn.formals.map(doc),
       returnTypeDoc(defn.tpe),
-      doc(defn.exp, paren = false, topDef = true)
+      doc(defn.exp, paren = false, inBlock = true)
     )
   }
 
   def doc(f: FormalParam)(implicit i: Indent): Doc = {
-    paramf(doc(f.sym), MonoTypePrinter.doc(f.tpe))
+    paramf(text(f.sym.toString) <> text("%") <> text(f.sym.getStackOffset.toString), MonoTypePrinter.doc(f.tpe))
   }
 
-  def doc(sym: VarSym): Doc = text(sym.toString)
+  def doc(sym: VarSym): Doc = text(sym.toString) <> text("%") <> text(sym.getStackOffset.toString)
 
   sealed trait Position
 
-  def doc(exp: Expression, paren: Boolean = true, topDef: Boolean = false)(implicit i: Indent): Doc = {
+  def doc(exp: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     def par(d: Doc): Doc = if (paren) parens(d) else d
 
     exp match {
@@ -73,7 +73,7 @@ object ErasedAstPrinter {
         val output = doc(exp1) <+> OperatorPrinter.doc(op) <+> doc(exp2)
         par(output)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        val output = itef(doc(exp1, paren = false), doc(exp2, paren = false), doc(exp3, paren = false))
+        val output = itef(doc(exp1, paren = false), doc(exp2, paren = false, inBlock = true), doc(exp3, paren = false, inBlock = true))
         par(output)
       case Expression.Branch(exp, branches, tpe, loc) =>
         metaText("Branch")
@@ -81,11 +81,11 @@ object ErasedAstPrinter {
         metaText("JumpTo")
       case Expression.Let(_, _, _, _, _) =>
         val es = collectLetBlock(exp, Nil)
-        val output = if (topDef) seqf(es) else seqBlockf(es)
+        val output = if (inBlock) seqf(es) else seqBlockf(es)
         output
       case Expression.LetRec(_, _, _, _, _, _, _) =>
         val es = collectLetBlock(exp, Nil)
-        val output = if (topDef) seqf(es) else seqBlockf(es)
+        val output = if (inBlock) seqf(es) else seqBlockf(es)
         output
       case Expression.Region(tpe, loc) => metaText("Region")
       case Expression.Scope(sym, exp, tpe, loc) => metaText("Scope")
