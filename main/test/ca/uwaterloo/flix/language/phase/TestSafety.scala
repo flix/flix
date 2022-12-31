@@ -695,7 +695,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Bool)
-        |def f(): Bool = unsafe_cast A(false) as Bool
+        |def f(): Bool = unsafe_cast A.A(false) as Bool
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -715,7 +715,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Int32)
-        |def f(): Int32 = unsafe_cast A(1) as Int32
+        |def f(): Int32 = unsafe_cast A.A(1) as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -735,7 +735,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(String)
-        |def f(): String = unsafe_cast A("a") as String
+        |def f(): String = unsafe_cast A.A("a") as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
