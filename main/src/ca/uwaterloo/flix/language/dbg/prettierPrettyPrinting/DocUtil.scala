@@ -37,8 +37,10 @@ object DocUtil {
 
   object Language {
 
-    def tuplef(t: List[Doc])(implicit i: Indent): Doc =
-      parens(commaSep(t))
+    def tuplef(t: List[Doc])(implicit i: Indent): Doc = t match {
+      case Nil => text("()") // this omits the possible line breaks
+      case _ => parens(commaSep(t))
+    }
 
     def selectiveTuplef(t: List[Doc])(implicit i: Indent): Doc = t match {
       case Nil => text("()")
@@ -214,7 +216,7 @@ object DocUtil {
     }
 
     def castf(exp: Doc, tpe: Doc)(implicit i: Indent): Doc = {
-      text("unsafe_cast") <+> exp <+> text("as") <+> tpe
+      text("unsafe_cast") <> group(nest(breakWith(" ") <> exp) <> breakWith(" ")) <> text("as") <+> tpe
     }
 
     def assignf(asignee: Doc, value: Doc)(implicit i: Indent): Doc = {
