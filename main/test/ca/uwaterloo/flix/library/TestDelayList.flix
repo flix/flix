@@ -15,6 +15,7 @@
  */
 
 namespace TestDelayList {
+    use DelayList.{ENil, ECons, LCons, LList}
 
     /////////////////////////////////////////////////////////////////////////////
     // Eq                                                                      //
@@ -1636,7 +1637,7 @@ namespace TestDelayList {
 
     @test
     def minimumBy05(): Bool =
-        DelayList.minimumBy((_, _) -> LessThan, DelayList.range(0, 99)) == Some(0)
+        DelayList.minimumBy((_, _) -> Comparison.LessThan, DelayList.range(0, 99)) == Some(0)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1686,7 +1687,7 @@ namespace TestDelayList {
 
     @test
     def maximumBy05(): Bool =
-        DelayList.maximumBy((_, _) -> LessThan, DelayList.range(0, 99)) == Some(98)
+        DelayList.maximumBy((_, _) -> Comparison.LessThan, DelayList.range(0, 99)) == Some(98)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2833,31 +2834,31 @@ namespace TestDelayList {
 
     @test
     def order01(): Bool =
-        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == EqualTo
+        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == Comparison.EqualTo
 
     @test
     def order02(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == GreaterThan
+        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == Comparison.GreaterThan
 
     @test
     def order03(): Bool =
-        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == LessThan
+        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
     @test
     def order04(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == EqualTo
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.EqualTo
 
     @test
     def order05(): Bool =
-        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == GreaterThan
+        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.GreaterThan
 
     @test
     def order06(): Bool =
-        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == LessThan
+        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
     @test
     def order07(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == LessThan
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2949,22 +2950,22 @@ namespace TestDelayList {
     @test
     def sequence01(): Bool =
         let l: DelayList[Identity[Int32]] = ENil;
-        DelayList.sequence(l) == Identity(ENil)
+        DelayList.sequence(l) == Identity.Identity(ENil)
 
     @test
     def sequence02(): Bool =
-        let l = List.toDelayList(Identity(1) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: Nil))
 
     @test
     def sequence03(): Bool =
-        let l = List.toDelayList(Identity(1) :: Identity(2) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: Nil))
 
     @test
     def sequence04(): Bool =
-        let l = List.toDelayList(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -2974,32 +2975,32 @@ namespace TestDelayList {
     def traverse01(): Bool = region r {
         let st = ref 0 @ r;
         let l = ENil;
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(ENil) and deref st == 0
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(ENil) and deref st == 0
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: Nil)) and deref st == 1
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: Nil)) and deref st == 1
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: 2 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
     }
 
     @test
     def traverse04(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -16,7 +16,7 @@
 
 namespace TestMultiMap {
 
-    use MultiMap.{empty, singleton, insert, toAssocList}
+    use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 
     def isEven(i: Int32): Bool = i rem 2 == 0
 
@@ -69,19 +69,19 @@ namespace TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == EqualTo
+    def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == Comparison.EqualTo
 
     @test
-    def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == GreaterThan
+    def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == Comparison.GreaterThan
 
     @test
-    def compare03(): Bool = Order.compare(empty(), singleton(1, 'a')) == LessThan
+    def compare03(): Bool = Order.compare(empty(), singleton(1, 'a')) == Comparison.LessThan
 
     @test
-    def compare04(): Bool = Order.compare(singleton(1, 'b'), singleton(1, 'a')) == GreaterThan
+    def compare04(): Bool = Order.compare(singleton(1, 'b'), singleton(1, 'a')) == Comparison.GreaterThan
 
     @test
-    def compare05(): Bool = Order.compare(singleton(1, 'a'), singleton(1, 'b')) == LessThan
+    def compare05(): Bool = Order.compare(singleton(1, 'a'), singleton(1, 'b')) == Comparison.LessThan
 
     /////////////////////////////////////////////////////////////////////////////
     // empty                                                                   //
