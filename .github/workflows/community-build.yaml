@@ -69,3 +69,6 @@ jobs:
           # Install and build the project.
           java -jar flix.jar install ${{ matrix.repo }}
           java -jar flix.jar build
+
+          # Sleep a minute to avoid rate limiting
+          sleep 60

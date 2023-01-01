@@ -77,7 +77,7 @@ object TypedAstOps {
     case Expression.ArrayLoad(base, index, _, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expression.ArrayLength(base, _, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
+    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => sigSymsOf(reg) ++ sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
     case Expression.Ref(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -254,8 +254,8 @@ object TypedAstOps {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-      freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
+      freeVars(reg) ++ freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

@@ -123,8 +123,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Empty
         |}
         |def f(i: Int32, xs: IntList): Int32 = match (i, xs) {
-        |  case (0, Lst(x, _)) => x
-        |  case (p, Lst(x, rs)) => x
+        |  case (0, IntList.Lst(x, _)) => x
+        |  case (p, IntList.Lst(x, rs)) => x
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -138,8 +138,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Empty
         |}
         |def f(l1: IntList, l2: IntList): Int32 = match (l1, l2) {
-        |  case (Empty, Empty) => 0
-        |  case (Lst(x,xs), Lst(y,ys)) => 1
+        |  case (IntList.Empty, IntList.Empty) => 0
+        |  case (IntList.Lst(x,xs), IntList.Lst(y,ys)) => 1
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -153,7 +153,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Empty
         |}
         |def f(xs: IntList): Int32 = match xs {
-        |  case Empty => 42
+        |  case IntList.Empty => 42
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -188,7 +188,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |def f(x: Evil): Evil = match x {
-        |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Good, Good)
+        |  case Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, Evil.Evil(_, _))))))) => Evil.Evil(Evil.Good, Evil.Good)
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -233,11 +233,11 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Empty
         |}
         |def f(xs: IntList): Int32 = match xs {
-        |  case Empty => 0
-        |  case Lst(y,ys) => match ys {
-        |      case Empty => 0
-        |      case Lst(z,zs) => match zs {
-        |           case Empty => 0
+        |  case IntList.Empty => 0
+        |  case IntList.Lst(y,ys) => match ys {
+        |      case IntList.Empty => 0
+        |      case IntList.Lst(z,zs) => match zs {
+        |           case IntList.Empty => 0
         |      }
         |  }
         |}
@@ -314,7 +314,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |
         |instance C[E] {
         |    pub def f(x: E): Int32 = match x {
-        |        case E1 => 1
+        |        case E.E1 => 1
         |    }
         |}
         |""".stripMargin
@@ -331,8 +331,8 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
         |
         |class C[a] {
-        |    pub def f(_x: a): Int32 = match E1 {
-        |        case E1 => 1
+        |    pub def f(_x: a): Int32 = match E.E1 {
+        |        case E.E1 => 1
         |    }
         |}
         |""".stripMargin
@@ -348,7 +348,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |    case E2
         |}
         |
-        |def f(): E = par (E1 <- if (true) E1 else E2) yield E1
+        |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NonExhaustiveMatchError](result)

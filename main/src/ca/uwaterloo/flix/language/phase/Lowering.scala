@@ -484,12 +484,13 @@ object Lowering {
       val e = visitExp(elm)
       LoweredAst.Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+      val r = visitExp(reg)
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArraySlice(b, bi, ei, t, pur, eff, loc)
+      LoweredAst.Expression.ArraySlice(r, b, bi, ei, t, pur, eff, loc)
 
     case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1900,11 +1901,12 @@ object Lowering {
       val i = substExp(index, subst)
       LoweredAst.Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case LoweredAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+      val r = substExp(reg, subst)
       val b = substExp(base, subst)
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
-      LoweredAst.Expression.ArraySlice(b, bi, ei, tpe, pur, eff, loc)
+      LoweredAst.Expression.ArraySlice(r, b, bi, ei, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

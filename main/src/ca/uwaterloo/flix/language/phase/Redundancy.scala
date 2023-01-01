@@ -530,11 +530,12 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expression.ArraySlice(base, begin, end, _, _, _, _) =>
-      val us1 = visitExp(base, env0, rc)
-      val us2 = visitExp(begin, env0, rc)
-      val us3 = visitExp(end, env0, rc)
-      us1 ++ us2 ++ us3
+    case Expression.ArraySlice(reg, base, begin, end, _, _, _, _) =>
+      val us1 = visitExp(reg, env0, rc)
+      val us2 = visitExp(base, env0, rc)
+      val us3 = visitExp(begin, env0, rc)
+      val us4 = visitExp(end, env0, rc)
+      us1 ++ us2 ++ us3 ++ us4
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

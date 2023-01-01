@@ -978,7 +978,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordSelect: Rule1[ParsedAst.Expression] = rule {
-      ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
+      ArrayLoad ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
@@ -1024,10 +1024,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
       SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
-    }
-
-    def ArraySlice: Rule1[ParsedAst.Expression] = rule {
-      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ optional(Expression) ~ optWS ~ operatorX("..") ~ optWS ~ optional(Expression) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
     }
 
     def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
