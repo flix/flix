@@ -204,14 +204,14 @@ namespace TestFile {
     @test
     def testReadLinesIter01(): Bool \ IO = region r {
         match readLinesIter(r, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
     }
 
     @test
     def testReadLinesIter02(): Bool \ IO = region r {
         match readLinesIter(r, "./LICENSE.md") {
-            case Iterator(done, _) => done() == false
+            case Iterator.Iterator(done, _) => done() == false
         }
     }
 
@@ -222,7 +222,7 @@ namespace TestFile {
     @test
     def testReadLinesIterWithWith01(): Bool \ IO = region r {
         match readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
     }
 
@@ -293,28 +293,28 @@ namespace TestFile {
     @test
     def testReadChunks01(): Bool \ IO = region r {
         match readChunks(r, 2, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
     }
 
     @test
     def testReadChunks02(): Bool \ IO = region r {
         match readChunks(r, 2, "./LICENSE.md") {
-            case Iterator(done, _) => done() == false
+            case Iterator.Iterator(done, _) => done() == false
         }
     }
 
     @test
     def testReadChunks03(): Bool \ IO = region r {
         match readChunks(r, 0, "./LICENSE.md") {
-            case Iterator(done, _) => done()
+            case Iterator.Iterator(done, _) => done()
         }
     }
 
     @test
     def testReadChunks04(): Bool \ IO = region r {
         match readChunks(r, -10, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isErr(next())
+            case Iterator.Iterator(_, next) => Result.isErr(next())
         }
     }
 

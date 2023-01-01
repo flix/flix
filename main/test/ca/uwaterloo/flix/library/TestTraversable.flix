@@ -191,7 +191,7 @@ namespace TestTraversable {
         mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, 11 :: 13 :: 15 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
-    // sequenceNel                                                             //
+    // sequenceNel.Nel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -206,56 +206,56 @@ namespace TestTraversable {
 
     @test
     def sequenceNel03(): Bool =
-        let xs = Nel(Some(1), Some(2) :: Nil);
-        sequence(xs) == Some(Nel(1, 2 :: Nil))
+        let xs = Nel.Nel(Some(1), Some(2) :: Nil);
+        sequence(xs) == Some(Nel.Nel(1, 2 :: Nil))
 
     @test
     def sequenceNel04(): Bool =
-        let xs = Nel(Some(1), Some(2) :: Some(3) :: Nil);
-        sequence(xs) == Some(Nel(1, 2 :: 3 :: Nil))
+        let xs = Nel.Nel(Some(1), Some(2) :: Some(3) :: Nil);
+        sequence(xs) == Some(Nel.Nel(1, 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
-    // traverseNel                                                             //
+    // traverseNel.Nel                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def traverseNel01(): Bool =
-        let xs: Nel[Int32] = Nel(1, Nil);
-        traverse(x -> Some(x+1), xs) == Some(Nel(2, Nil))
+        let xs: Nel[Int32] = Nel.Nel(1, Nil);
+        traverse(x -> Some(x+1), xs) == Some(Nel.Nel(2, Nil))
 
     @test
     def traverseNel02(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: Nil);
-        traverse(x -> Some(x+1), xs) == Some(Nel(2, 3 :: Nil))
+        let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
+        traverse(x -> Some(x+1), xs) == Some(Nel.Nel(2, 3 :: Nil))
 
     @test
     def traverseNel03(): Bool =
-        let xs: Nel[Int32] = Nel(1, Nil);
+        let xs: Nel[Int32] = Nel.Nel(1, Nil);
         traverse(_ -> None: Option[Int32], xs) == None
 
     @test
     def traverseNel04(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: Nil);
+        let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
         traverse(_ -> None: Option[Int32], xs) == None
 
     /////////////////////////////////////////////////////////////////////////////
-    // mapAccumLeftNel                                                         //
+    // mapAccumLeftNel.Nel                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def mapAccumLeftNel01(): Bool =
-        let xs: Nel[Int32] = Nel(1, Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Nel(11, Nil))
+        let xs: Nel[Int32] = Nel.Nel(1, Nil);
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (11, Nel.Nel(11, Nil))
 
     @test
     def mapAccumLeftNel02(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (12, Nel(11, 13 :: Nil))
+        let xs: Nel[Int32] = Nel.Nel(1, 2 :: Nil);
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (12, Nel.Nel(11, 13 :: Nil))
 
     @test
     def mapAccumLeftNel03(): Bool =
-        let xs: Nel[Int32] = Nel(1, 2 :: 3 :: Nil);
-        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, Nel(11, 13 :: 15 :: Nil))
+        let xs: Nel[Int32] = Nel.Nel(1, 2 :: 3 :: Nil);
+        mapAccumLeft((acc, x) -> (acc+1, x+acc), 10, xs) == (13, Nel.Nel(11, 13 :: 15 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceChain                                                           //
