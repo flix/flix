@@ -1233,13 +1233,6 @@ object Weeder {
           WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
       }
 
-    case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
-        case (es, e) =>
-          WeededAst.Expression.ArrayLit(es, e, loc)
-      }
-
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       val loc = mkSL(sp1, sp2)
@@ -2948,7 +2941,6 @@ object Weeder {
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)

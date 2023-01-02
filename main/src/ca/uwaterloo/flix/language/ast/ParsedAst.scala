@@ -816,16 +816,6 @@ object ParsedAst {
     case class New(sp1: SourcePosition, qname: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayLit Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param exps the elements of the array.
-      * @param exp  the optional region.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * ArrayLoad Expression
       *
       * @param base  the array.
