@@ -1,9 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
 import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
@@ -13,8 +11,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
-@RunWith(classOf[JUnitRunner])
-class TestPackager extends AnyFunSuite {
+class TestPackager extends FunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 

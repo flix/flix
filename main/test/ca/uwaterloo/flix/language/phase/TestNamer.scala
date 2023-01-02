@@ -19,12 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestNamer extends AnyFunSuite with TestUtils {
+class TestNamer extends FunSuite with TestUtils {
 
   // TODO NS-REFACTOR move to Redundancy
   ignore("AmbiguousVarOrUse.01") {

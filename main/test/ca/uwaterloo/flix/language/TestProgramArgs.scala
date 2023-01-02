@@ -18,12 +18,9 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.util.{Options, Validation}
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestProgramArgs extends AnyFunSuite with TestUtils {
+class TestProgramArgs extends FunSuite with TestUtils {
 
   test("ProgramArgs.01") {
     val arg = "Correct"

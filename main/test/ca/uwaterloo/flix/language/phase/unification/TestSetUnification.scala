@@ -20,12 +20,9 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Result
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestSetUnification extends AnyFunSuite with TestUtils {
+class TestSetUnification extends FunSuite with TestUtils {
 
   implicit val flix: Flix = new Flix()
 

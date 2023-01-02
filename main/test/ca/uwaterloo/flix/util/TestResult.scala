@@ -17,12 +17,9 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.Result._
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestResult extends AnyFunSuite {
+class TestResult extends FunSuite {
 
   test("get01") {
     assertResult(42)(Ok(42).get)

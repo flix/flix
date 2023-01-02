@@ -19,12 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestTyper extends AnyFunSuite with TestUtils {
+class TestTyper extends FunSuite with TestUtils {
 
   test("TestLeq01") {
     val input =

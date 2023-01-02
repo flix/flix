@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
+package ca.uwaterloo.flix.language
 
-class ExampleSuite extends FlixSuite(incremental = true) {
+import ca.uwaterloo.flix.language.fmt.TestFormatType
+import ca.uwaterloo.flix.language.phase.PhaseSuite
+import org.scalatest.Suites
 
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
-
-  mkTestDir("examples")
-  mkTestDir("examples/larger-examples/datalog")
-  mkTestDir("examples/larger-examples/program-analysis")
-
-}
+class LanguageSuite extends Suites(
+  new PhaseSuite,
+  new TestFlixErrors,
+  new TestFormatType
+)

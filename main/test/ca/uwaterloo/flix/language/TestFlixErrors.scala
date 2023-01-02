@@ -19,12 +19,9 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestFlixErrors extends AnyFunSuite with TestUtils {
+class TestFlixErrors extends FunSuite with TestUtils {
 
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
     expectSuccess(v)

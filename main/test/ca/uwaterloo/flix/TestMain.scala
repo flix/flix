@@ -17,12 +17,9 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.LibLevel
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestMain extends AnyFunSuite {
+class TestMain extends FunSuite {
 
   test("init") {
     val args = Array("init")

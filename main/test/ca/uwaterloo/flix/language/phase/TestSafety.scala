@@ -20,12 +20,9 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, UnexpectedPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestSafety extends AnyFunSuite with TestUtils {
+class TestSafety extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
 

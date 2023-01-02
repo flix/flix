@@ -18,12 +18,9 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestFormatType extends AnyFunSuite with TestUtils {
+class TestFormatType extends FunSuite with TestUtils {
 
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(

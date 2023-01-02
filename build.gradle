@@ -25,9 +25,7 @@ dependencies {
 
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
 
-    testImplementation('junit:junit:4.13.2')
-    testImplementation('org.scalatest:scalatest_2.13:3.2.13')
-    testImplementation('org.scalatestplus:junit-4-13_2.13:3.2.2.0')
+    testImplementation('org.scalatest:scalatest_2.13:3.0.8')
 }
 
 tasks.withType(ScalaCompile) {
@@ -74,3 +72,13 @@ jar {
 
     duplicatesStrategy = 'exclude'
 }
+
+task testAll(dependsOn: ['testClasses'], type: JavaExec) {
+    mainClass = 'org.scalatest.tools.Runner'
+    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    classpath = sourceSets.test.runtimeClasspath
+    standardInput = System.in
+}
+
+test.dependsOn testAll
+

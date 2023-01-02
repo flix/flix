@@ -19,12 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.funsuite.AnyFunSuite
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-@RunWith(classOf[JUnitRunner])
-class TestStratifier extends AnyFunSuite with TestUtils {
+class TestStratifier extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
 

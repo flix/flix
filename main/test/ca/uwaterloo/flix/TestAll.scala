@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2015-2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
+import ca.uwaterloo.flix.language.LanguageSuite
+import ca.uwaterloo.flix.library.LibrarySuite
+import ca.uwaterloo.flix.tools.ToolsSuite
+import ca.uwaterloo.flix.util.UtilSuite
+import flix.CompilerSuite
+import flix.experimental.ExperimentalSuite
+import org.scalatest.Suites
 
-class ExampleSuite extends FlixSuite(incremental = true) {
-
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
-
-  mkTestDir("examples")
-  mkTestDir("examples/larger-examples/datalog")
-  mkTestDir("examples/larger-examples/program-analysis")
-
-}
+class TestAll extends Suites(
+  new CompilerSuite,
+  new ExperimentalSuite,
+  new ExampleSuite,
+  new LanguageSuite,
+  new LibrarySuite,
+  new ToolsSuite,
+  new UtilSuite,
+  new TestMain,
+)
