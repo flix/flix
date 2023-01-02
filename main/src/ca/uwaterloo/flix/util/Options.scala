@@ -52,7 +52,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
-    xprintast = Map.empty,
+    xprintast = Set.empty,
     xqmc = false,
     xflexibleregions = false,
   )
@@ -130,7 +130,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
-                   xprintast: Map[Phase, Either[PrintStream, String]],
+                   xprintast: Set[String],
                    xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )
