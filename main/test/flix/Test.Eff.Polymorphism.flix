@@ -17,7 +17,7 @@ namespace Test/Eff/Polymorphism {
 
     @test
     def testEffPoly04(): Bool \ IO =
-        let f = flip(flip((x, y) -> {discard [1, 2, 3]; x and y}));
+        let f = flip(flip((x, y) -> {discard Array#{1, 2, 3} @ Static; x and y}));
         f(true, true)
 
     @test
