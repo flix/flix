@@ -2,7 +2,7 @@ namespace Test/Exp/ArrayLength {
 
     @test
     def testArrayLength01(): Int32 = region r {
-        let x = [] @ r;
+        let x = Array#{} @ r;
         $ARRAY_LENGTH$(x)
     }
 

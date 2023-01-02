@@ -1533,7 +1533,7 @@ namespace TestChain {
     @test
     def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArray(r, c), [] @ r)
+        Array.sameElements(Chain.toArray(r, c), Array#{} @ r)
     }
 
     @test

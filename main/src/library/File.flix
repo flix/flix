@@ -536,7 +536,7 @@ namespace File {
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
-            Ok([] @ r)
+            Ok(Array#{} @ r)
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
@@ -548,7 +548,7 @@ namespace File {
     def readBytesWithHelper(r: Region[r], bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ { Read(r), Write(r) } =
         let nothingRead = (numberRead == -1);
         if (nothingRead) {
-            [] @ r
+            Array#{} @ r
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
@@ -961,7 +961,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let javaStream = walk(javaPath, [] @ r);
+            let javaStream = walk(javaPath, Array#{} @ r);
             let javaIter = iterator(upcast javaStream);
 
             let iter = fromJavaIter(r, javaIter);
@@ -1008,7 +1008,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard move(srcPath, dstPath, [] @ r);
+            discard move(srcPath, dstPath, Array#{} @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
@@ -1099,7 +1099,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard copy(srcPath, dstPath, [] @ r);
+            discard copy(srcPath, dstPath, Array#{} @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>

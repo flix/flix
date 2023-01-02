@@ -393,7 +393,7 @@ def appendLineWith04!(): Bool = region r {
 @test
 def appendLines01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!([] @ r, sb);
+    StringBuilder.appendLines!(Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 
@@ -463,7 +463,7 @@ def appendLinesWith04(): Bool = region r {
 @test
 def appendLinesWith01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, ([] @ r): Array[Int32, _], sb);
+    StringBuilder.appendLinesWith!(Int32.toString, (Array#{} @ r): Array[Int32, _], sb);
     StringBuilder.toString(sb) == ""
 }
 
@@ -498,14 +498,14 @@ def appendLinesWith04!(): Bool = region r {
 @test
 def intercalate01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("", [] @ r, sb);
+    StringBuilder.intercalate!("", Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 
 @test
 def intercalate02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", [] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 

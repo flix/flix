@@ -375,7 +375,7 @@ namespace TestIterator {
 
     @test
     def toArray01(): Bool = region r {
-        Nil: List[Int32] |> List.iterator(r) |> Iterator.toArray(r) `Array.sameElements` [] @ r
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toArray(r) `Array.sameElements` Array#{} @ r
     }
 
     @test

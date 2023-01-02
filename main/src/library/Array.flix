@@ -342,7 +342,7 @@ namespace Array {
     ///
     pub def range(r: Region[r], b: Int32, e: Int32): Array[Int32, r] \ Write(r) =
         if (b >= e)
-            [] @ r
+            Array#{} @ r
         else {
             let f = x -> x + b;
             init(r, f, e - b)
@@ -355,7 +355,7 @@ namespace Array {
     ///
     pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
-            [] @ r
+            Array#{} @ r
         else
             $ARRAY_NEW$(r, x, n)
 
@@ -493,7 +493,7 @@ namespace Array {
     pub def rotateLeft(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
         if (len < 1)
-            [] @ r2
+            Array#{} @ r2
         else
             if (n < 0)
                 rotateRightHelper(r2, Int32.abs(n), arr)
@@ -517,7 +517,7 @@ namespace Array {
     ///
     pub def rotateRight(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         if (length(arr) < 1)
-            [] @ r2
+            Array#{} @ r2
         else
             if (n < 0)
                 rotateLeftHelper(r2, Int32.abs(n), arr)
@@ -594,7 +594,7 @@ namespace Array {
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
         if (len2 <= 0)
-            [] @ r1
+            Array#{} @ r1
         else {
             let b = repeat(r1, len2, x);
             let f = { (i, v) -> let j = i + i; b[j] = v };
@@ -611,7 +611,7 @@ namespace Array {
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs) {
-            case None    => [] @ r1
+            case None    => Array#{} @ r1
             case Some(x) =>
                 let out = repeat(r1, len, x);
                 let overwrite = { (st, a) ->
@@ -673,7 +673,7 @@ namespace Array {
     pub def transpose(r3: Region[r3], a: Array[Array[a, r1], r2]): Array[Array[a, r3], r3] \ { Read(r1, r2), Write(r3) } =
         let ilen = length(a);
         if (ilen == 0)
-            [] @ r3
+            Array#{} @ r3
         else {
             let jlen = length(a[0]);
             if (jlen == 0 or uniformHelper(a, jlen))
@@ -900,7 +900,7 @@ namespace Array {
     pub def flatten(r1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { Read(r), Write(r1) } =
         let len = sumLengths(arrs);
         match headArrays(arrs) {
-            case None => [] @ r1
+            case None => Array#{} @ r1
             case Some(x) => {
                 let out = repeat(r1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
@@ -948,7 +948,7 @@ namespace Array {
     pub def filter(r1: Region[r1], f: a -> Bool \ ef, arr: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         let len = length(arr);
         if (len < 1) {
-            [] @ r1
+            Array#{} @ r1
         } else {
             let out = new(r1, len);
             def loop(i, j) = {
@@ -990,7 +990,7 @@ namespace Array {
     ///
     pub def span(r1: Region[r1], r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r]): (Array[a, r1], Array[a, r2]) \ { ef, Read(r), Write(r1), Write(r2) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => (takeLeft(r1, length(a), a), [] @ r2)
+            case None    => (takeLeft(r1, length(a), a), Array#{} @ r2)
             case Some(i) => (takeLeft(r1, i, a), dropLeft(r2, i, a))
         }
 
@@ -1008,7 +1008,7 @@ namespace Array {
     pub def dropLeft(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         let len = length(a);
         if (n > len)
-            [] @ r1
+            Array#{} @ r1
         else {
             let start = if (n < 0) 0 else n;
             copyOfRange(r1, start, len, a)
@@ -1022,7 +1022,7 @@ namespace Array {
     pub def dropRight(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         let len = length(a);
         if (n >= len)
-            [] @ r1
+            Array#{} @ r1
         else {
             let end = if (n < 0) len else len - n;
             copyOfRange(r1, 0, end, a)
@@ -1039,7 +1039,7 @@ namespace Array {
     ///
     pub def dropWhileLeft(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
-            case None    => [] @ r1
+            case None    => Array#{} @ r1
             case Some(i) => dropLeft(r1, i, a)
         }
 
@@ -1048,7 +1048,7 @@ namespace Array {
     ///
     pub def dropWhileRight(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfRight(x -> not (f(x)), a) {
-            case None    => [] @ r1
+            case None    => Array#{} @ r1
             case Some(i) => copyOfRange(r1, 0, i + 1, a)
         }
 
@@ -1065,7 +1065,7 @@ namespace Array {
     ///
     pub def takeLeft(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         if (n <= 0)
-            [] @ r1
+            Array#{} @ r1
         else {
             let len = length(a);
             let end = if (n > len) len else n;
@@ -1079,7 +1079,7 @@ namespace Array {
     ///
     pub def takeRight(r1: Region[r1], n: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         if (n <= 0)
-            [] @ r1
+            Array#{} @ r1
         else {
             let len = length(a);
             let start = if (n > len) 0 else len - n;
@@ -1192,7 +1192,7 @@ namespace Array {
     pub def unzip(r1: Region[r1], r2: Region[r2], a: Array[(a, b), r3]): (Array[a, r1], Array[b, r2]) \ { Write(r1, r2), Read(r3) } =
         let len = length(a);
         if (len <= 0)
-            ([] @ r1, [] @ r2)
+            (Array#{} @ r1, Array#{} @ r2)
         else {
             let (x, y) = a[0];
             let arr = repeat(r1, len, x);
@@ -1363,7 +1363,7 @@ namespace Array {
     ///
     pub def init(r: Region[r], f: Int32 -> a \ ef, len: Int32): Array[a, r] \ { ef, Write(r) } =
         if (len <= 0)
-            [] @ r
+            Array#{} @ r
         else {
             let x = f(0);
             let a = Array.repeat(r, len, x);

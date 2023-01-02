@@ -2035,7 +2035,7 @@ def forEach02(): Bool \ IO =
     @test
     def toArray01(): Bool = region r {
         let a = List.toArray(r, Nil): Array[Int32, r];
-        Array.sameElements(a, [] @ r)
+        Array.sameElements(a, Array#{} @ r)
     }
 
     @test

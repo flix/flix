@@ -986,7 +986,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r): MutDeque[Int32, _];
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [] @ r)
+        Array.sameElements(a, Array#{} @ r)
     }
 
     @test

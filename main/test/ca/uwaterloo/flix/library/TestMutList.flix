@@ -1925,8 +1925,8 @@ namespace TestMutList {
 
     @test
     def sortWith01(): Bool = region r {
-        let a = MutList.sortWith(r, cmp, Array.toMutList(r, ([] @ r): Array[Int32, r]));
-        a `sameElements` Array.toMutList(r, [] @ r)
+        let a = MutList.sortWith(r, cmp, Array.toMutList(r, (Array#{} @ r): Array[Int32, r]));
+        a `sameElements` Array.toMutList(r, Array#{} @ r)
     }
 
     @test

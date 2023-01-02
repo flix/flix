@@ -185,7 +185,7 @@ def lineSeparator02(): Bool =
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(String.toArray(r, ""), [] @ r)
+        Array.sameElements(String.toArray(r, ""), Array#{} @ r)
     }
 
     @test

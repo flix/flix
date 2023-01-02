@@ -775,12 +775,12 @@ namespace TestDelayList {
 
     @test
     def toArray01(): Bool = region r {
-    	DelayList.toArray(r, ENil: DelayList[Unit])`Array.sameElements` [] @ r
+    	DelayList.toArray(r, ENil: DelayList[Unit])`Array.sameElements` Array#{} @ r
     }
 
     @test
     def toArray02(): Bool = region r {
-    	DelayList.toArray(r, LList(lazy ENil): DelayList[Unit])`Array.sameElements` [] @ r
+    	DelayList.toArray(r, LList(lazy ENil): DelayList[Unit])`Array.sameElements` Array#{} @ r
     }
 
     @test

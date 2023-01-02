@@ -24,7 +24,7 @@ namespace TestArray {
 
     @test
     def toString01(): Bool = region r {
-        Array.toString(([] @ r): Array[Int32, _]) == "Array#{}"
+        Array.toString((Array#{} @ r): Array[Int32, _]) == "Array#{}"
     }
 
     @test
@@ -233,7 +233,7 @@ namespace TestArray {
 
     @test
     def toMutDeque01(): Bool = region r {
-        let a = ([] @ r): Array[Int32, _];
+        let a = (Array#{} @ r): Array[Int32, _];
         let d = new MutDeque(r): MutDeque[Int32, _];
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
@@ -5604,7 +5604,7 @@ namespace TestArray {
 
     @test
     def toDelayList01(): Bool = region r {
-        ([] @ r): Array[Unit, _] |> Array.toDelayList == DelayList.empty()
+        (Array#{} @ r): Array[Unit, _] |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5879,7 +5879,7 @@ namespace TestArray {
 
     @test
     def join01(): Bool = region r {
-        Array.join(",", ([] @ r): Array[Int32, _]) == ""
+        Array.join(",", (Array#{} @ r): Array[Int32, _]) == ""
     }
 
     @test
@@ -5904,7 +5904,7 @@ namespace TestArray {
 
     @test
     def joinWith01(): Bool = region r {
-        Array.joinWith(x -> "${x + 1}", ",", [] @ r) == ""
+        Array.joinWith(x -> "${x + 1}", ",", Array#{} @ r) == ""
     }
 
     @test
@@ -5924,7 +5924,7 @@ namespace TestArray {
 
     @test
     def joinWith05(): Bool = region r {
-        let a: Array[Int32, _] = [] @ r;
+        let a: Array[Int32, _] = Array#{} @ r;
         let s = Array.joinWith(Int32.toString, ",", a);
         s == ""
     }
@@ -5971,7 +5971,7 @@ namespace TestArray {
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(r, ([] @ r): Array[Int32, r]), new MutList(r))
+        MutList.sameElements(Array.toMutList(r, (Array#{} @ r): Array[Int32, r]), new MutList(r))
     }
 
     @test
@@ -6010,7 +6010,7 @@ namespace TestArray {
         discard MutList.pop!(v);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
-        Array.sameElements(MutList.toArray(r, v), [] @ r)
+        Array.sameElements(MutList.toArray(r, v), Array#{} @ r)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -6019,7 +6019,7 @@ namespace TestArray {
 
     @test
     def shuffle01(): Bool \ NonDet = region r {
-        let a = ([] @ r): Array[Int32, _];
+        let a = (Array#{} @ r): Array[Int32, _];
         Array.shuffle(Random.new(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
