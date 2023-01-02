@@ -302,6 +302,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
+    case Request.PrintAst(id, phase) =>
+      if (current)
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> PrintAstProvider.printAst(phase)(index, root, flix))
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+
+    case Request.Phases(id) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> PhasesProvider.phases.map(JString))
+
   }
 
   /**
