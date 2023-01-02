@@ -1095,7 +1095,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FArray: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("Array") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ "@" ~ WS ~ Expression ~> ParsedAst.Expression.FArray
+      SP ~ atomic("Array") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ optWS ~ "@" ~ WS ~ Expression ~> ParsedAst.Expression.FArray
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {

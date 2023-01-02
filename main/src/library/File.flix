@@ -117,7 +117,7 @@ namespace File {
             let javaPath = toPath(javaFile);
             let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
 
-            Ok(readAttributes(javaPath, classOfAttributes, []))
+            Ok(readAttributes(javaPath, classOfAttributes, Array#{} @ r))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -209,7 +209,7 @@ namespace File {
             import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, r]): Bool \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let isRegular = isRegularFile(javaPath, []);
+            let isRegular = isRegularFile(javaPath, Array#{} @ r);
             Ok(isRegular)
         } catch {
             case ex: ##java.io.IOException =>
@@ -1070,7 +1070,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, [upcast getOverwrite()] @ r);
+            discard move(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
 
             Ok()
         } catch {
@@ -1161,7 +1161,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, [upcast getOverwrite()] @ r);
+            discard copy(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
 
             Ok()
         } catch {
