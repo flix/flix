@@ -54,12 +54,12 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
       s"""
          |pub class C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
-         |    pub def cd(x: a): L[a] = DA(x)
+         |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {
-         |        case DA(x) => x
+         |        case D.DA(x) => x
          |    }
          |    pub def cga(g: G[a]): a =
-         |        let G(r) = g;
+         |        let G.G(r) = g;
          |        r.el
          |}
          |""".stripMargin)
@@ -148,9 +148,9 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
       s"""
          |pub class C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
-         |    pub def cd(x: a): D[a] = DA(x)
+         |    pub def cd(x: a): D[a] = D.DA(x)
          |    pub def cda(d: D[a]): a = match d {
-         |        case DA(x) => x
+         |        case D.DA(x) => x
          |    }
          |}
          |""".stripMargin)
@@ -189,8 +189,8 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
          |    pub def cd(x: a): D[a]
          |    pub def cda(d: D[a]): a = match d {
-         |        case DA(x, _)    => x
-         |        case DB(x, _, _) => x
+         |        case D.DA(x, _)    => x
+         |        case D.DB(x, _, _) => x
          |    }
          |    pub def cdaf(x: a, y: a, d: D[a]): Bool
          |}
@@ -205,10 +205,10 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
     flix.addSourceCode(FileE,
       s"""
          |instance C[Int64] {
-         |    pub def cd(x: Int64): D[Int64] = DB(x, x, x)
+         |    pub def cd(x: Int64): D[Int64] = D.DB(x, x, x)
          |    pub def cdaf(x: Int64, y: Int64, d: D[Int64]): Bool = match d {
-         |        case DA(a, b)    => f(x, a) and f(y, b)
-         |        case DB(_, _, _) => false
+         |        case D.DA(a, b)    => f(x, a) and f(y, b)
+         |        case D.DB(_, _, _) => false
          |    }
          |}
          |""".stripMargin)
@@ -290,14 +290,14 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
       s"""
          |pub class C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
-         |    pub def cd(x: a): L[a] = DA(x)
+         |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {
-         |        case DA(x) => x
+         |        case D.DA(x) => x
          |    }
          |    pub def cga(g: G[a]): a =
-         |        let G(d) = g;
+         |        let G.G(d) = g;
          |        match d {
-                      case DA(x) => x
+                      case D.DA(x) => x
          |        }
          |}
          |""".stripMargin)
