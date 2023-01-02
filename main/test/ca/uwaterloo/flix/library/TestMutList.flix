@@ -16,6 +16,7 @@
 
 namespace TestMutList {
     use ToString.toString
+    use MutList.MutList
     use MutList.sameElements
 
     ///
@@ -1735,7 +1736,7 @@ namespace TestMutList {
     @test
     def minimumBy05(): Bool = region r {
         let v = MutList.range(r, 9, 19);
-        let cmp = (x, y) -> if (x < y and x rem 2 == 0) LessThan else GreaterThan;
+        let cmp = (x, y) -> if (x < y and x rem 2 == 0) Comparison.LessThan else Comparison.GreaterThan;
         MutList.minimumBy(cmp, v) == Some(10)
     }
 
@@ -1769,7 +1770,7 @@ namespace TestMutList {
     @test
     def maximumBy05(): Bool = region r {
         let v = MutList.range(r, 9, 19);
-        let cmp = (x, y) -> if (x > y and x rem 2 == 0) GreaterThan else LessThan;
+        let cmp = (x, y) -> if (x > y and x rem 2 == 0) Comparison.GreaterThan else Comparison.LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
     }
 
@@ -1918,9 +1919,9 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith01(): Bool = region r {
@@ -2267,15 +2268,15 @@ namespace TestMutList {
 
     instance Eq[R] {
         pub def eq(a: R, b: R): Bool =
-            let R(x) = a;
-            let R(y) = b;
+            let R.R(x) = a;
+            let R.R(y) = b;
             x.i == y.i and x.s == y.s
     }
 
     @test
     def sortBy10(): Bool = region r {
-        MutList.sortBy(r, rr -> let R(x) = rr; x.i, Array.toMutList(r, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})] @ r))
-        `sameElements` Array.toMutList(r, [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})] @ r)
+        MutList.sortBy(r, rr -> let R.R(x) = rr; x.i, Array.toMutList(r, [R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})] @ r))
+        `sameElements` Array.toMutList(r, [R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})] @ r)
     }
 
 

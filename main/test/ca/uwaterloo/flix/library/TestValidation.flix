@@ -18,6 +18,7 @@ namespace TestValidation {
 
     use Hash.hash
     use Nec.{cons, singleton}
+    use Validation.{Success, Failure}
 
     def necOf2(x: a, y: a): Nec[a] = cons(x, singleton(y))
 
