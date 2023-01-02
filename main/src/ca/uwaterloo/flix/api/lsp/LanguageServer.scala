@@ -307,7 +307,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes a validate request.
     */
-  private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
+  private def processCheck(requestId: String): JValue = {
 
     // Measure elapsed time.
     val t = System.nanoTime()
@@ -336,7 +336,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     } catch {
       case ex: Throwable =>
         // Mark the AST as outdated.
-        current = false
+        this.current = false
         CrashHandler.handleCrash(ex)(flix)
         ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
     }
