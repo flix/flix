@@ -1359,6 +1359,9 @@ object Resolver {
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
+
+        case NamedAst.Expression.Error(m) =>
+          ResolvedAst.Expression.Error(m).toSuccess // TODO: Refactor to toSoftFailure
       }
 
       /**

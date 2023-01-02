@@ -307,6 +307,10 @@ object CodeHinter {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Error(_) =>
+      Nil
+
   }
 
   /**
