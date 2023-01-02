@@ -342,6 +342,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     }
   }
 
+  /**
+    * Helper function for [[processCheck]] which handles successful and soft failure compilations.
+    */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
