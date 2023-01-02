@@ -1308,24 +1308,24 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithA01(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.empty()) == Identity(Chain.empty())
+    def zipWithA01(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Chain.empty(), Chain.empty()) == Identity.Identity(Chain.empty())
 
     @test
-    def zipWithA02(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.empty()) == Identity(Chain.empty())
+    def zipWithA02(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Chain.singleton(1), Chain.empty()) == Identity.Identity(Chain.empty())
 
     @test
-    def zipWithA03(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.empty(), Chain.singleton(true)) == Identity(Chain.empty())
+    def zipWithA03(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Chain.empty(), Chain.singleton(true)) == Identity.Identity(Chain.empty())
 
     @test
-    def zipWithA04(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(true)) == Identity(Chain.singleton(2))
+    def zipWithA04(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Chain.singleton(1), Chain.singleton(true)) == Identity.Identity(Chain.singleton(2))
 
     @test
-    def zipWithA05(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Chain.singleton(1), Chain.singleton(false)) == Identity(Chain.singleton(1))
+    def zipWithA05(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Chain.singleton(1), Chain.singleton(false)) == Identity.Identity(Chain.singleton(1))
 
     @test
-    def zipWith06A(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
+    def zipWith06A(): Bool = Chain.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, List.toChain(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil),
                           List.toChain(false :: true :: true :: false :: false :: true :: true :: true :: Nil)) ==
-                          Identity(List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil))
+                          Identity.Identity(List.toChain(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
@@ -1596,18 +1596,18 @@ namespace TestChain {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toNel                                                                   //
+    // toNel.Nel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def toNel01(): Bool = Chain.toNel(Chain.empty(): Chain[Int32]) == None
 
     @test
-    def toNel02(): Bool = Chain.toNel(Chain.singleton(1)) == Some(Nel(1, Nil))
+    def toNel02(): Bool = Chain.toNel(Chain.singleton(1)) == Some(Nel.Nel(1, Nil))
 
     @test
     def toNel03(): Bool =
-        Chain.toNel(List.toChain(1 :: 2 :: Nil)) == Some(Nel(1, 2 :: Nil))
+        Chain.toNel(List.toChain(1 :: 2 :: Nil)) == Some(Nel.Nel(1, 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toNec                                                                   //
@@ -1698,9 +1698,9 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith01(): Bool =
@@ -1761,22 +1761,22 @@ namespace TestChain {
     @test
     def sequence01(): Bool =
         let c: Chain[Identity[Int32]] = Chain.empty();
-        Chain.sequence(c) == Identity(Chain.empty())
+        Chain.sequence(c) == Identity.Identity(Chain.empty())
 
     @test
     def sequence02(): Bool =
-        let c = Chain.singleton(Identity(1));
-        Chain.sequence(c) == Identity(Chain.singleton(1))
+        let c = Chain.singleton(Identity.Identity(1));
+        Chain.sequence(c) == Identity.Identity(Chain.singleton(1))
 
     @test
     def sequence03(): Bool =
-        let c = List.toChain(Identity(1) :: Identity(2) :: Nil);
-        Chain.sequence(c) == Identity(List.toChain(1 :: 2 :: Nil))
+        let c = List.toChain(Identity.Identity(1) :: Identity.Identity(2) :: Nil);
+        Chain.sequence(c) == Identity.Identity(List.toChain(1 :: 2 :: Nil))
 
     @test
     def sequence04(): Bool =
-        let c = List.toChain(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
-        Chain.sequence(c) == Identity(List.toChain(1 :: 2 :: 3 :: Nil))
+        let c = List.toChain(Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil);
+        Chain.sequence(c) == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -1786,32 +1786,32 @@ namespace TestChain {
     def traverse01(): Bool = region r {
         let st = ref 0 @ r;
         let c = Chain.empty();
-        let ans = Chain.traverse(x -> {st := x; Identity(x)}, c);
-        ans == Identity(Chain.empty()) and deref st == 0
+        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        ans == Identity.Identity(Chain.empty()) and deref st == 0
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref 0 @ r;
         let c = Chain.singleton(1);
-        let ans = Chain.traverse(x -> {st := x; Identity(x)}, c);
-        ans == Identity(Chain.singleton(1)) and deref st == 1
+        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        ans == Identity.Identity(Chain.singleton(1)) and deref st == 1
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref 0 @ r;
         let c = List.toChain(1 :: 2 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity(x)}, c);
-        ans == Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
+        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
     }
 
     @test
     def traverse04(): Bool = region r {
         let st = ref 0 @ r;
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity(x)}, c);
-        ans == Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
+        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

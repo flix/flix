@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 sealed trait Validation[+T, +E] {
 
@@ -207,36 +206,6 @@ object Validation {
     else {
       Success(successValues.toList)
     }
-  }
-
-  /**
-    * Returns the combined stream of `failureStream` and `successFailureStream`.
-    *
-    * Helper function for `fastTraverse`.
-    */
-  private def combineFailureStreams[E, S, T](failureStream: ArrayBuffer[(LazyList[E], Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
-    successFailureStream.map {
-      case (_, e, i) => (e, i)
-    }.appendAll(failureStream).sortInPlaceBy {
-      case (_, idx) => idx
-    }.map {
-      case (e, _) => e
-    }.foldLeft(LazyList.empty[E])(_ #::: _)
-  }
-
-  /**
-    * Returns the combined stream of `successValues` and `successFailureStream`.
-    *
-    * Helper function for `fastTraverse`.
-    */
-  private def combineSuccessStreams[E, S, T](successValues: ArrayBuffer[(S, Int)], successFailureStream: ArrayBuffer[(S, LazyList[E], Int)]) = {
-    successFailureStream.map {
-      case (v, _, i) => (v, i)
-    }.appendAll(successValues).sortInPlaceBy {
-      case (_, idx) => idx
-    }.map {
-      case (v, _) => v
-    }.toList
   }
 
   /**

@@ -172,19 +172,19 @@ def toErr02(): Bool = Option.toErr("default", Some("err")) == Err("err")
 // toSuccess                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSuccess01(): Bool = Option.toSuccess("err", None: Option[Unit]) == Failure(Nec.singleton("err"))
+def toSuccess01(): Bool = Option.toSuccess("err", None: Option[Unit]) == Validation.Failure(Nec.singleton("err"))
 
 @test
-def toSuccess02(): Bool = Option.toSuccess("err", Some(1)) == Success(1)
+def toSuccess02(): Bool = Option.toSuccess("err", Some(1)) == Validation.Success(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // toFailure                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toFailure01(): Bool = Option.toFailure("default", None: Option[Unit]) == Success("default")
+def toFailure01(): Bool = Option.toFailure("default", None: Option[Unit]) == Validation.Success("default")
 
 @test
-def toFailure02(): Bool = Option.toFailure("default", Some("err")) == Failure(Nec.singleton("err"))
+def toFailure02(): Bool = Option.toFailure("default", Some("err")) == Validation.Failure(Nec.singleton("err"))
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //

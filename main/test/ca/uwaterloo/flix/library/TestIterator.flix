@@ -15,6 +15,7 @@
  */
 
 namespace TestIterator {
+    use Iterator.Iterator
 
     /////////////////////////////////////////////////////////////////////////////
     // next                                                                    //
@@ -450,7 +451,7 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toNel                                                                   //
+    // toNel.Nel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -460,12 +461,12 @@ namespace TestIterator {
 
     @test
     def toNel02(): Bool = region r {
-        (1 :: Nil) |> List.iterator(r) |> Iterator.toNel == Some(Nel(1, Nil))
+        (1 :: Nil) |> List.iterator(r) |> Iterator.toNel == Some(Nel.Nel(1, Nil))
     }
 
     @test
     def toNel03(): Bool = region r {
-        Iterator.range(r, 0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
+        Iterator.range(r, 0, 1000) |> Iterator.toNel == Some(Nel.Nel(0, List.range(1, 1000)))
     }
 
 
