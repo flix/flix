@@ -19,9 +19,12 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
-class TestEntryPoint extends FunSuite with TestUtils {
+@RunWith(classOf[JUnitRunner])
+class TestEntryPoint extends AnyFunSuite with TestUtils {
 
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =

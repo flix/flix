@@ -21,9 +21,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
-class TestUnification extends FunSuite with TestUtils {
+@RunWith(classOf[JUnitRunner])
+class TestUnification extends AnyFunSuite with TestUtils {
 
   implicit val flix: Flix = new Flix()
 

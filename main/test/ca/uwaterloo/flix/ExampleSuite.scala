@@ -16,7 +16,10 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class ExampleSuite extends FlixSuite(incremental = true) {
 
   private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)

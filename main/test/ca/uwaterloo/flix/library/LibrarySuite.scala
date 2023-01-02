@@ -17,7 +17,10 @@
 package ca.uwaterloo.flix.library
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class LibrarySuite extends FlixSuite(incremental = true) {
   mkTestDir("main/test/ca/uwaterloo/flix/library/")(Options.TestWithLibAll)
 }

@@ -16,6 +16,8 @@
 package flix.experimental
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 /**
   * Suite of tests for which nonstandard testing options are required.
@@ -26,6 +28,7 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
   * Tests should be promoted out of this suite and into [[flix.CompilerSuite]]
   * as soon as they run without special options.
   */
+@RunWith(classOf[JUnitRunner])
 class ExperimentalSuite extends FlixSuite(incremental = true) {
   implicit val options: Options = Options.TestWithLibNix.copy(xallowredundancies = true)
 }

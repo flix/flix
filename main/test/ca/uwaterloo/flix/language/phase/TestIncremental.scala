@@ -18,11 +18,15 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.TypeError.{UnexpectedArgument}
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
 import java.nio.file.Path
 
-class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
+@RunWith(classOf[JUnitRunner])
+class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
   private val FileA = "FileA.flix"
   private val FileB = "FileB.flix"

@@ -2,9 +2,12 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable._
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
-class TestBoolFormulaTable extends FunSuite {
+@RunWith(classOf[JUnitRunner])
+class TestBoolFormulaTable extends AnyFunSuite {
 
   test("Minimize.True.01") {
     assertResult(expected = True)(actual = minimizeFormula(True))

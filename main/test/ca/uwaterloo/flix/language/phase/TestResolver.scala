@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
+import org.junit.runner.RunWith
+import org.scalatestplus.junit.JUnitRunner
 
-class TestResolver extends FunSuite with TestUtils {
+@RunWith(classOf[JUnitRunner])
+class TestResolver extends AnyFunSuite with TestUtils {
 
   // TODO NS-REFACTOR impossible after refactor
   ignore("AmbiguousTag.01") {
