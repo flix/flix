@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright 2021 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,6 +72,7 @@ instance Foldable[DelayList] {
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
+    override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
