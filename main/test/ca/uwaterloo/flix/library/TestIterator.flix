@@ -368,6 +368,53 @@ namespace TestIterator {
         List.iterator(r, 10 :: -10 :: Nil) |> Iterator.productWith(x -> x + 1) == -99
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool = region r {
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def toList02(): Bool = region r {
+        Iterator.range(r, -10, -5) |> Iterator.toList == -10 :: -9 :: -8 :: -7 :: -6 :: Nil
+    }
+
+    @test
+    def toList03(): Bool = region r {
+        Iterator.repeat(r, 3, 1) |> Iterator.toList == 1 :: 1 ::  1 :: Nil
+    }
+
+    @test
+    def toList04(): Bool = region r {
+        Iterator.range(r, -100, 200) |> Iterator.toList == List.range(-100, 200)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool = region r {
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toChain == Chain.empty()
+    }
+
+    @test
+    def toChain02(): Bool = region r {
+        Iterator.range(r, -10, -5) |> Iterator.toChain == List.toChain(-10 :: -9 :: -8 :: -7 :: -6 :: Nil)
+    }
+
+    @test
+    def toChain03(): Bool = region r {
+        Iterator.repeat(r, 3, 1) |> Iterator.toChain == List.toChain(1 :: 1 ::  1 :: Nil)
+    }
+
+    @test
+    def toChain04(): Bool = region r {
+        Iterator.range(r, -100, 200) |> Iterator.toChain == Chain.range(-100, 200)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -451,7 +498,7 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toNel.Nel                                                                   //
+    // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test

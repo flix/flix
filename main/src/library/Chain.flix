@@ -107,6 +107,9 @@ instance ToString[Chain[a]] with ToString[a] {
     }
 }
 
+instance Collectable[Chain] {
+    pub def collect(iter: Iterator[a, r]): Chain[a] \ r with Order[a] = Iterator.toChain(iter)
+}
 
 namespace Chain {
 
