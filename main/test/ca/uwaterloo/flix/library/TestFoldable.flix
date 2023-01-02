@@ -23,34 +23,34 @@ namespace TestFoldable {
 
     enum Logger[i, a](Chain[i], a)
 
-    def tell(x: i): Logger[i, Unit] = Logger((Chain.singleton(x), ()))
+    def tell(x: i): Logger[i, Unit] = Logger.Logger((Chain.singleton(x), ()))
 
     def runLogger(ma: Logger[i, a]): (List[i], a) =
-        let Logger((w, a)) = ma;
+        let Logger.Logger((w, a)) = ma;
         (Chain.toList(w), a)
 
 
     instance Functor[Logger[i]] {
         pub def map(f: a -> b \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger((w, a)) = ma;
-            Logger((w, f(a)))
+            let Logger.Logger((w, a)) = ma;
+            Logger.Logger((w, f(a)))
     }
 
     instance Applicative[Logger[i]] {
-        pub def point(x: a): Logger[i, a] = Logger(Chain.empty(), x)
+        pub def point(x: a): Logger[i, a] = Logger.Logger(Chain.empty(), x)
 
         pub def ap(mf: Logger[i, a -> b \ ef], ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger((w1, f)) = mf;
-            let Logger((w2, a)) = ma;
-            Logger((Chain.append(w1, w2), f(a)))
+            let Logger.Logger((w1, f)) = mf;
+            let Logger.Logger((w2, a)) = ma;
+            Logger.Logger((Chain.append(w1, w2), f(a)))
         }
 
 
     instance Monad[Logger[i]] {
         pub def flatMap(f: a -> Logger[i, b] \ ef, ma: Logger[i, a]): Logger[i, b] \ ef =
-            let Logger((w1, a)) = ma;
-            let Logger((w2, b)) = f(a);
-            Logger((Chain.append(w1, w2), b))
+            let Logger.Logger((w1, a)) = ma;
+            let Logger.Logger((w2, b)) = f(a);
+            Logger.Logger((Chain.append(w1, w2), b))
     }
 
 
@@ -250,17 +250,17 @@ namespace TestFoldable {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel(1, Nil)), [1])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), [1])
     }
 
     @test
     def toArray02(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
     }
 
     @test
     def toArray03(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
     }
 
 

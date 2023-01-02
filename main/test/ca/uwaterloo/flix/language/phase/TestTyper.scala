@@ -253,7 +253,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
@@ -280,7 +280,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
@@ -335,7 +335,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: E[true]): Int32 = 1
         |}
         |
-        |def bar(): Int32 = C.foo(E(123))    // E(123) has type E[_], not E[true]
+        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[true]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
@@ -352,7 +352,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |pub def f(): Bool = {
         |   let _x = #{
-        |     R(E1).
+        |     R(E.E1).
         |   };
         |   true
         |}
@@ -382,7 +382,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable(NotSendable(42)))
+        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingSendable](result)
@@ -396,7 +396,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable(NotSendable(42), NotSendable(43)))
+        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingSendable](result)
@@ -1588,7 +1588,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |enum Box[a](a)
         |
-        |def g(): Box[Int32] = f(Box(123))
+        |def g(): Box[Int32] = f(Box.Box(123))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedArgument](result)

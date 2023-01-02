@@ -2383,67 +2383,67 @@ namespace TestArray {
 
     @test
     def testCompare01(): Bool = region r {
-        ([]: Array[Int32, _]) `Array.compare` ([]: Array[Int32, _]) == EqualTo
+        ([]: Array[Int32, _]) `Array.compare` ([]: Array[Int32, _]) == Comparison.EqualTo
     }
 
     @test
     def testCompare02(): Bool = region r {
-        ([1] `Array.compare` []) == GreaterThan
+        ([1] `Array.compare` []) == Comparison.GreaterThan
     }
 
     @test
     def testCompare03(): Bool = region r {
-        ([] `Array.compare` [1]) == LessThan
+        ([] `Array.compare` [1]) == Comparison.LessThan
     }
 
     @test
     def testCompare04(): Bool = region r {
-        ([1] `Array.compare` [1]) == EqualTo
+        ([1] `Array.compare` [1]) == Comparison.EqualTo
     }
 
     @test
     def testCompare05(): Bool = region r {
-        ([1] `Array.compare` [2]) == LessThan
+        ([1] `Array.compare` [2]) == Comparison.LessThan
     }
 
     @test
     def testCompare06(): Bool = region r {
-        ([2] `Array.compare` [1]) == GreaterThan
+        ([2] `Array.compare` [1]) == Comparison.GreaterThan
     }
 
     @test
     def testCompare07(): Bool = region r {
-        ([1] `Array.compare` [1,2]) == LessThan
+        ([1] `Array.compare` [1,2]) == Comparison.LessThan
     }
 
     @test
     def testCompare08(): Bool = region r {
-        ([1,2] `Array.compare` [1]) == GreaterThan
+        ([1,2] `Array.compare` [1]) == Comparison.GreaterThan
     }
 
     @test
     def testCompare09(): Bool = region r {
-        ([1] `Array.compare` [0,0]) == GreaterThan
+        ([1] `Array.compare` [0,0]) == Comparison.GreaterThan
     }
 
     @test
     def testCompare10(): Bool = region r {
-        ([0,0] `Array.compare` [1]) == LessThan
+        ([0,0] `Array.compare` [1]) == Comparison.LessThan
     }
 
     @test
     def testCompare11(): Bool = region r {
-        ([1,2] `Array.compare` [1,1]) == GreaterThan
+        ([1,2] `Array.compare` [1,1]) == Comparison.GreaterThan
     }
 
     @test
     def testCompare12(): Bool = region r {
-        ([1,2] `Array.compare` [1,3]) == LessThan
+        ([1,2] `Array.compare` [1,3]) == Comparison.LessThan
     }
 
     @test
     def testCompare13(): Bool = region r {
-        ([1,2,3,4] `Array.compare` [1,2,3,4]) == EqualTo
+        ([1,2,3,4] `Array.compare` [1,2,3,4]) == Comparison.EqualTo
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5054,9 +5054,9 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith01(): Bool = region r {
@@ -5402,15 +5402,15 @@ namespace TestArray {
 
     instance Eq[R] {
         pub def eq(a: R, b: R): Bool =
-            let R(x) = a;
-            let R(y) = b;
+            let R.R(x) = a;
+            let R.R(y) = b;
             x.i == y.i and x.s == y.s
     }
 
     @test
     def sortBy10(): Bool = region reg {
-        Array.sortBy(reg, r -> let R(x) = r; x.i, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})])
-        `sameElements` [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})]
+        Array.sortBy(reg, r -> let R.R(x) = r; x.i, [R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})])
+        `sameElements` [R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})]
     }
 
     /////////////////////////////////////////////////////////////////////////////

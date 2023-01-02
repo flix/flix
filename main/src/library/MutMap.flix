@@ -571,26 +571,23 @@ namespace MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iterator(r, deref mm)
+        unsafe_cast Map.iterator(r1, deref mm) as Iterator[(k, v), r1 and r2]
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+    pub def iteratorKeys(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorKeys(r, deref mm)
+        unsafe_cast Map.iteratorKeys(r1, deref mm) as Iterator[k, r1 and r2]
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+    pub def iteratorValues(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorValues(r, deref mm)
+        unsafe_cast Map.iteratorValues(r1, deref mm) as Iterator[v, r1 and r2]
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

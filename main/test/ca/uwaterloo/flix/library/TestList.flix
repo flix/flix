@@ -1621,24 +1621,24 @@ def zipWithIndex04(): Bool = List.zipWithIndex(List.zipWithIndex(true :: false :
 // zipWithA                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def zipWithA01(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, Nil) == Identity(Nil)
+def zipWithA01(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Nil, Nil) == Identity.Identity(Nil)
 
 @test
-def zipWithA02(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, Nil) == Identity(Nil)
+def zipWithA02(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, 1 :: Nil, Nil) == Identity.Identity(Nil)
 
 @test
-def zipWithA03(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, Nil, true :: Nil) == Identity(Nil)
+def zipWithA03(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, Nil, true :: Nil) == Identity.Identity(Nil)
 
 @test
-def zipWithA04(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, true :: Nil) == Identity(2 :: Nil)
+def zipWithA04(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, 1 :: Nil, true :: Nil) == Identity.Identity(2 :: Nil)
 
 @test
-def zipWithA05(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: Nil, false :: Nil) == Identity(1 :: Nil)
+def zipWithA05(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, 1 :: Nil, false :: Nil) == Identity.Identity(1 :: Nil)
 
 @test
-def zipWithA06(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
+def zipWithA06(): Bool = List.zipWithA((a, b) -> {if (b) a+1 else a} |> Identity.Identity, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil,
                       false :: true :: true :: false :: false :: true :: true :: true :: Nil) ==
-                      Identity(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
+                      Identity.Identity(1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2065,16 +2065,16 @@ def forEach02(): Bool \ IO =
 def toNel01(): Bool = List.toNel(Nil: List[Unit]) == None
 
 @test
-def toNel02(): Bool = List.toNel(1 :: Nil) == Some(Nel(1, Nil))
+def toNel02(): Bool = List.toNel(1 :: Nil) == Some(Nel.Nel(1, Nil))
 
 @test
-def toNel03(): Bool = List.toNel(1 :: 2 :: Nil) == Some(Nel(1, 2 :: Nil))
+def toNel03(): Bool = List.toNel(1 :: 2 :: Nil) == Some(Nel.Nel(1, 2 :: Nil))
 
 @test
-def toNel04(): Bool = List.toNel(1 :: 1 :: Nil) == Some(Nel(1, 1 :: Nil))
+def toNel04(): Bool = List.toNel(1 :: 1 :: Nil) == Some(Nel.Nel(1, 1 :: Nil))
 
 @test
-def toNel05(): Bool = List.toNel(2 :: 1 :: Nil) == Some(Nel(2, 1 :: Nil))
+def toNel05(): Bool = List.toNel(2 :: 1 :: Nil) == Some(Nel.Nel(2, 1 :: Nil))
 
 /////////////////////////////////////////////////////////////////////////////
 // toNec                                                                   //
@@ -2100,9 +2100,9 @@ def toNec05(): Bool = List.toNec(2 :: 1 :: Nil) == Some(Nec.cons(2, Nec.singleto
 /////////////////////////////////////////////////////////////////////////////
 
 def cmp(x: Int32, y: Int32): Comparison =
-    if (x < y) LessThan
-    else if (x == y) EqualTo
-    else GreaterThan
+    if (x < y) Comparison.LessThan
+    else if (x == y) Comparison.EqualTo
+    else Comparison.GreaterThan
 
 @test
 def sortWith01(): Bool =
@@ -2521,7 +2521,7 @@ def distinctWith09(): Bool =
     def minimumBy04(): Bool = List.minimumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(0)
 
     @test
-    def minimumBy05(): Bool = List.minimumBy((_, _) -> LessThan, List.range(0, 99)) == Some(0)
+    def minimumBy05(): Bool = List.minimumBy((_, _) -> Comparison.LessThan, List.range(0, 99)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
@@ -2540,7 +2540,7 @@ def distinctWith09(): Bool =
     def maximumBy04(): Bool = List.maximumBy((x, y) -> x <=> y, 0 :: 3 :: 2 :: 1 :: Nil) == Some(3)
 
     @test
-    def maximumBy05(): Bool = List.maximumBy((_, _) -> LessThan, List.range(0, 99)) == Some(98)
+    def maximumBy05(): Bool = List.maximumBy((_, _) -> Comparison.LessThan, List.range(0, 99)) == Some(98)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2750,29 +2750,29 @@ def distinctWith09(): Bool =
     /////////////////////////////////////////////////////////////////////////////
 
     /// TODO - this does not test order of effects.
-    /// We need a more "effective" monad than Identity to show that effects are
+    /// We need a more "effective" monad than Identity.Identity to show that effects are
     /// sequenced in left-to-right order.
     /// This applies to the `sequence` tests on the other container types as well.
 
     @test
     def sequence01(): Bool =
         let l: List[Identity[Int32]] = Nil;
-        List.sequence(l) == Identity(Nil)
+        List.sequence(l) == Identity.Identity(Nil)
 
     @test
     def sequence02(): Bool =
-        let l = Identity(1) :: Nil;
-        List.sequence(l) == Identity(1 :: Nil)
+        let l = Identity.Identity(1) :: Nil;
+        List.sequence(l) == Identity.Identity(1 :: Nil)
 
     @test
     def sequence03(): Bool =
-        let l = Identity(1) :: Identity(2) :: Nil;
-        List.sequence(l) == Identity(1 :: 2 :: Nil)
+        let l = Identity.Identity(1) :: Identity.Identity(2) :: Nil;
+        List.sequence(l) == Identity.Identity(1 :: 2 :: Nil)
 
     @test
     def sequence04(): Bool =
-        let l = Identity(1) :: Identity(2) :: Identity(3) :: Nil;
-        List.sequence(l) == Identity(1 :: 2 :: 3 :: Nil)
+        let l = Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil;
+        List.sequence(l) == Identity.Identity(1 :: 2 :: 3 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -2782,32 +2782,32 @@ def distinctWith09(): Bool =
     def traverse01(): Bool = region r {
         let st = ref 0 @ r;
         let l = Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nil) and deref st == 0
+        let ans = List.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nil) and deref st == 0
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref 0 @ r;
         let l = 1 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: Nil) and deref st == 1
+        let ans = List.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(1 :: Nil) and deref st == 1
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref 0 @ r;
         let l = 1 :: 2 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: 2 :: Nil) and deref st == 2
+        let ans = List.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(1 :: 2 :: Nil) and deref st == 2
     }
 
     @test
     def traverse04(): Bool = region r {
         let st = ref 0 @ r;
         let l = 1 :: 2 :: 3 :: Nil;
-        let ans = List.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
+        let ans = List.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(1 :: 2 :: 3 :: Nil) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

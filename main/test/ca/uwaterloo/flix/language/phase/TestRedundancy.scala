@@ -357,7 +357,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |        case Blue
          |    }
          |
-         |    def f(): Color = Red
+         |    def f(): Color = Color.Red
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -374,7 +374,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |        case Blue
          |    }
          |
-         |    def f(): Color = Green
+         |    def f(): Color = Color.Green
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

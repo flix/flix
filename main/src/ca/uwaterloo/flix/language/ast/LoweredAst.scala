@@ -169,7 +169,7 @@ object LoweredAst {
       def tpe: Type = Type.Unit
     }
 
-    case class ArraySlice(base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class ArraySlice(region: LoweredAst.Expression, base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Ref(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 

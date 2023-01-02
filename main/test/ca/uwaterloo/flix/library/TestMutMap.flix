@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 namespace TestMutMap {
+    use MutMap.MutMap
 
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
