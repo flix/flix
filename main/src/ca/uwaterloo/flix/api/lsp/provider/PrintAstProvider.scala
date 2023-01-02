@@ -37,7 +37,9 @@ object PrintAstProvider {
     // The optional root should be reused if present and the phase is in the
     // code-gen part of the compiler.
 
-    ("title" -> s"$phase.$IrFileExtension") ~ ("content" -> "def main(): String = \"Work in progress!\"\n")
+    val content = "def main(): String = \"Work in progress!\"\n"
+
+    ("title" -> s"$phase.$IrFileExtension") ~ ("content" -> content)
   }
 
 }
