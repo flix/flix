@@ -51,7 +51,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
-    xprintast = Set.empty,
+    xprintasts = Set.empty,
     xqmc = false,
     xflexibleregions = false,
   )
@@ -129,7 +129,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
-                   xprintast: Set[String],
+                   xprintasts: Set[String],
                    xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )

@@ -108,7 +108,7 @@ object Main {
       xnobooleffects = cmdOpts.xnobooleffects,
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
-      xprintast = cmdOpts.xprintast,
+      xprintasts = cmdOpts.xprintasts,
       xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
     )
@@ -238,7 +238,7 @@ object Main {
                      xnobooleffects: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
-                     xprintast: Set[String] = Set.empty,
+                     xprintasts: Set[String] = Set.empty,
                      xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
@@ -427,8 +427,8 @@ object Main {
       opt[Unit]("Xvirtual-threads").action((_, c) => c.copy(xvirtualthreads = true)).
         text("[experimental] enables virtual threads (requires Java 19 with `--enable-preview`.)")
 
-      // AST printing
-      opt[Seq[String]]("Xprint-ast").action((m, c) => c.copy(xprintast = m.toSet))
+      // xprint-asts
+      opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
 
       //
       // Boolean unification flags.
