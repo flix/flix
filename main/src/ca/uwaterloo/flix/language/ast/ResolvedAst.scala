@@ -40,6 +40,7 @@ object ResolvedAst {
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
   sealed trait Declaration
+
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
@@ -213,7 +214,9 @@ object ResolvedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Error(m: CompilationMessage, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Error(m: CompilationMessage) extends ResolvedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 

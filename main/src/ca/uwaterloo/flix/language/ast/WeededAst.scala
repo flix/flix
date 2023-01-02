@@ -207,7 +207,9 @@ object WeededAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Error(m: CompilationMessage, loc: SourceLocation) extends WeededAst.Expression
+    case class Error(m: CompilationMessage) extends WeededAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 
