@@ -44,7 +44,7 @@ object FormatExpression {
     case TypedAst.Expression.ArrayLoad(base, index, _, _, _, _) => s"ArrayLoad($base, $index)"
     case TypedAst.Expression.ArrayLength(base, _, _, _) => s"ArrayLength($base)"
     case TypedAst.Expression.ArrayStore(base, index, elm, _, _, _) => s"ArrayStore($base, $index, $elm)"
-    case TypedAst.Expression.ArraySlice(base, begin, end, _, _, _, _) => s"ArraySlice($base, $begin, $end)"
+    case TypedAst.Expression.ArraySlice(reg, base, begin, end, _, _, _, _) => s"ArraySlice($reg, $base, $begin, $end)"
     case TypedAst.Expression.Ref(exp1, exp2, _, _, _, _) => s"Ref($exp1, $exp2)"
     case TypedAst.Expression.Deref(exp, _, _, _, _) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, _, _, _, _) => s"Assign($exp1, $exp2)"

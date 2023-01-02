@@ -716,9 +716,9 @@ object Namer {
         case b => NamedAst.Expression.ArrayLength(b, loc)
       }
 
-    case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
-      mapN(visitExp(base, ns0), visitExp(startIndex, ns0), visitExp(endIndex, ns0)) {
-        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, loc)
+    case WeededAst.Expression.ArraySlice(reg, base, startIndex, endIndex, loc) =>
+      mapN(visitExp(reg, ns0), visitExp(base, ns0), visitExp(startIndex, ns0), visitExp(endIndex, ns0)) {
+        case (r, b, i1, i2) => NamedAst.Expression.ArraySlice(r, b, i1, i2, loc)
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>

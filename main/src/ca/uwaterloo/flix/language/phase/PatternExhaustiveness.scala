@@ -178,7 +178,7 @@ object PatternExhaustiveness {
       case Expression.ArrayLoad(base, index, _, _, _, _) => List(base, index).flatMap(visitExp(_, root))
       case Expression.ArrayStore(base, index, elm, _, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
       case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => List(base, beginIndex, endIndex).flatMap(visitExp(_, root))
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => List(reg, base, beginIndex, endIndex).flatMap(visitExp(_, root))
       case Expression.Ref(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
