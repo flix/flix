@@ -1913,7 +1913,11 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Error(m) =>
-        InferMonad.point((Nil, Type.freshVar(Kind.Star, m.loc), Type.freshVar(Kind.Bool, m.loc), Type.freshVar(Kind.Effect, m.loc)))
+        val constrs = Nil
+        val resultTyp = Type.freshVar(Kind.Star, m.loc)
+        val resultPur = Type.freshVar(Kind.Bool, m.loc)
+        val resultEff = Type.freshVar(Kind.Effect, m.loc)
+        InferMonad.point((constrs, resultTyp, resultPur, resultEff))
 
     }
 
