@@ -119,6 +119,10 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
+instance Collectable[List] {
+    pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
+}
+
 namespace List {
 
     ///

@@ -20,6 +20,24 @@ namespace TestList {
     use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
+// Collectable.collect                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def collect01(): Bool = region r {
+    Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Nil
+}
+
+@test
+def collect02(): Bool = region r {
+    Collectable.collect(Iterator.singleton(r, 1)) == 1 :: Nil
+}
+
+@test
+def collect03(): Bool = region r {
+    Collectable.collect(Iterator.range(r, 1, 3)) == 1 :: 2 :: Nil
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test

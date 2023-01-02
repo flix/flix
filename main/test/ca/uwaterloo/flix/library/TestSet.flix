@@ -20,6 +20,24 @@ namespace TestSet {
     use Hash.hash
 
 /////////////////////////////////////////////////////////////////////////////
+// Collectable.collect                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def collect01(): Bool = region r {
+    Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Set.empty()
+}
+
+@test
+def collect02(): Bool = region r {
+    Collectable.collect(Iterator.singleton(r, 1)) == Set#{1}
+}
+
+@test
+def collect03(): Bool = region r {
+    Collectable.collect(Iterator.range(r, 1, 3)) == Set#{1, 2}
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test

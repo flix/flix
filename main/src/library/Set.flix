@@ -90,6 +90,10 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
+instance Collectable[Set] {
+    pub def collect(iter: Iterator[a, r]): Set[a] \ r with Order[a] = Iterator.toSet(iter)
+}
+
 namespace Set {
 
     ///
