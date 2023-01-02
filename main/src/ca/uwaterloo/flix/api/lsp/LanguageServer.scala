@@ -316,52 +316,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          this.root = Some(root)
-          this.index = Indexer.visitRoot(root)
-          this.current = true
-          this.currentErrors = Nil
-
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
-
-          // Print query time.
-          // println(s"lsp/check: ${e / 1_000_000}ms")
-
-          // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-          if (codeHints.isEmpty) {
-            // Case 1: No code hints.
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-          } else {
-            // Case 2: Code hints are available.
-            val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-          }
+          processSuccessfulCheck(requestId, root, LazyList.empty, t)
 
         case SoftFailure(root, errors) =>
-          // Case 2: Compilation was almost successful. Build the reverse index.
-          this.root = Some(root)
-          this.index = Indexer.visitRoot(root)
-          this.current = true
-          this.currentErrors = errors.toList
-
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
-
-          // Print query time.
-          // println(s"lsp/check: ${e / 1_000_000}ms")
-
-          // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-          if (codeHints.isEmpty) {
-            // Case 1: No code hints.
-            val results = PublishDiagnosticsParams.fromMessages(errors)
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-          } else {
-            // Case 2: Code hints are available.
-            val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-          }
+          // Case 2: Compilation had non-critical errors. Build the reverse index.
+          processSuccessfulCheck(requestId, root, errors, t)
 
         case Failure(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
@@ -380,6 +339,31 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         current = false
         CrashHandler.handleCrash(ex)(flix)
         ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
+    }
+  }
+
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
+    this.root = Some(root)
+    this.index = Indexer.visitRoot(root)
+    this.current = true
+    this.currentErrors = errors.toList
+
+    // Compute elapsed time.
+    val e = System.nanoTime() - t0
+
+    // Print query time.
+    // println(s"lsp/check: ${e / 1_000_000}ms")
+
+    // Compute Code Quality hints.
+    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    if (codeHints.isEmpty) {
+      // Case 1: No code hints.
+      val results = PublishDiagnosticsParams.fromMessages(errors)
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    } else {
+      // Case 2: Code hints are available.
+      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
     }
   }
 
