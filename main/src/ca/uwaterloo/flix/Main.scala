@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.api.lsp.LanguageServer
+import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
