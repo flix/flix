@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+
 object PhasesProvider {
   val phases: List[String] = List(
     "Parser",

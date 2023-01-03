@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
-object PrintAstProvider {
+object ShowAstProvider {
 
   private val IrFileExtension = "flix.ir"
 
@@ -32,7 +32,7 @@ object PrintAstProvider {
     *
     * - `content` (a string with the ir representation).
     */
-  def printAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
+  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
 
     // The optional root should be reused if present and the phase is in the
     // code-gen part of the compiler.
