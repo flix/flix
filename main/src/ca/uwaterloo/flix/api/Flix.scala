@@ -195,6 +195,7 @@ class Flix {
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
+    "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 

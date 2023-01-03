@@ -16,6 +16,24 @@
 
 namespace TestChain {
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Collectable.collect                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def collect01(): Bool = region r {
+        Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Chain.empty()
+    }
+
+    @test
+    def collect02(): Bool = region r {
+        Collectable.collect(Iterator.singleton(r, 1)) == List.toChain(1 :: Nil)
+    }
+
+    @test
+    def collect03(): Bool = region r {
+        Collectable.collect(Iterator.range(r, 1, 3)) == List.toChain(1 :: 2 :: Nil)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // empty                                                                   //

@@ -201,6 +201,15 @@ namespace Iterator {
     pub def toList(iter: Iterator[a, r]): List[a] \ Read(r) =
         foldRight((a, acc) -> a :: acc, Nil, iter)
 
+
+    ///
+    /// Returns the contents of `iter` as a chain.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toChain(iter: Iterator[a, r]): Chain[a] \ Read(r) =
+        foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
+
     ///
     /// Returns the contents of `iter` as a map.
     ///

@@ -140,7 +140,7 @@ namespace Concurrent/Channel {
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
-        let size = ref 0;
+        let size = ref 0 @ Static;
         Mpmc.Mpmc(
             MpmcAdmin.MpmcAdmin(
                 newId(),

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.Success
+import ca.uwaterloo.flix.util.Validation.{Failure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -316,7 +316,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Processes a validate request.
     */
-  private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
+  private def processCheck(requestId: String): JValue = {
 
     // Measure elapsed time.
     val t = System.nanoTime()
@@ -325,45 +325,57 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          this.root = Some(root)
-          this.index = Indexer.visitRoot(root)
-          this.current = true
-          this.currentErrors = Nil
+          processSuccessfulCheck(requestId, root, LazyList.empty, t)
 
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
+        case SoftFailure(root, errors) =>
+          // Case 2: Compilation had non-critical errors. Build the reverse index.
+          processSuccessfulCheck(requestId, root, errors, t)
 
-          // Print query time.
-          // println(s"lsp/check: ${e / 1_000_000}ms")
-
-          // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-          if (codeHints.isEmpty) {
-            // Case 1: No code hints.
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-          } else {
-            // Case 2: Code hints are available.
-            val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-          }
-
-        case failure =>
-          // Case 2: Compilation failed. Send back the error messages.
+        case Failure(errors) =>
+          // Case 3: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.
           this.current = false
-          this.currentErrors = failure.errors.toList
+          this.currentErrors = errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(failure.errors)
+          val results = PublishDiagnosticsParams.fromMessages(errors)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
       case ex: Throwable =>
         // Mark the AST as outdated.
-        current = false
+        this.current = false
         CrashHandler.handleCrash(ex)(flix)
         ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
+    }
+  }
+
+  /**
+    * Helper function for [[processCheck]] which handles successful and soft failure compilations.
+    */
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
+    this.root = Some(root)
+    this.index = Indexer.visitRoot(root)
+    this.current = true
+    this.currentErrors = errors.toList
+
+    // Compute elapsed time.
+    val e = System.nanoTime() - t0
+
+    // Print query time.
+    // println(s"lsp/check: ${e / 1_000_000}ms")
+
+    // Compute Code Quality hints.
+    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    if (codeHints.isEmpty) {
+      // Case 1: No code hints.
+      val results = PublishDiagnosticsParams.fromMessages(errors)
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    } else {
+      // Case 2: Code hints are available.
+      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
     }
   }
 
