@@ -23,23 +23,23 @@ import org.json4s.JsonDSL._
 
 object ShowAstProvider {
 
-  private val IrFileExtension = "flix.ir"
+  private val IrFileExtension = "flixir"
 
   /**
     * Returns a JSON object with
     *
     * - `title` (a string like `Namer.flix.ir`)
     *
-    * - `content` (a string with the ir representation).
+    * - `text` (a string with the ir representation).
     */
   def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
 
     // The optional root should be reused if present and the phase is in the
     // code-gen part of the compiler.
 
-    val content = "def main(): String = \"Work in progress!\"\n"
+    val text = "def main(): String = \"Work in progress!\"\n"
 
-    ("title" -> s"$phase.$IrFileExtension") ~ ("content" -> content)
+    ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
   }
 
 }
