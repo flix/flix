@@ -309,7 +309,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.ListPhases(id) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> PhasesProvider.phases.map(JString))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ListPhasesProvider.phases.map(JString))
 
   }
 

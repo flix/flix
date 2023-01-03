@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 
-object PhasesProvider {
+object ListPhasesProvider {
   val phases: List[String] = List(
     "Parser",
     "Weeder",
@@ -35,7 +35,7 @@ object PhasesProvider {
     "Lowering",
     "EarlyTreeShaker",
     "Monomorph",
-    "Sipmlifier",
+    "Simplifier",
     "ClosureConv",
     "LambdaLift",
     "Tailrec",
@@ -45,4 +45,8 @@ object PhasesProvider {
     "Finalize",
     "Eraser"
   )
+
+  def main(args: Array[String]): Unit = {
+    println(phases)
+  }
 }
