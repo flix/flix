@@ -53,7 +53,7 @@ namespace DelayMap {
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         let _ = parallelForce(m);
-        let first = ref true;
+        let first = ref true @ r;
         StringBuilder.appendString!("DelayMap#{", sb);
         foreach ((k, v) <- DelayMap.iterator(r, m)) {
             if (deref first) {

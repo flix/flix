@@ -82,7 +82,7 @@ namespace MultiMap {
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
-        let first = ref true;
+        let first = ref true @ r;
         StringBuilder.appendString!("MultiMap#{", sb);
         foreach ((k, v) <- MultiMap.iterator(r, m)) {
             if (deref first) {
