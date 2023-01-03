@@ -15,38 +15,43 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider
 
+import ca.uwaterloo.flix.language.phase._
 
 object ListPhasesProvider {
   val phases: List[String] = List(
-    "Parser",
-    "Weeder",
-    "Namer",
-    "Resolver",
-    "Kinder",
-    "Deriver",
-    "Typer",
-    "EntryPoint",
-    "Statistics",
-    "Stratifier",
-    "Regions",
-    "Redundancy",
-    "Safety",
-    "Documentor",
-    "Lowering",
-    "EarlyTreeShaker",
-    "Monomorph",
-    "Simplifier",
-    "ClosureConv",
-    "LambdaLift",
-    "Tailrec",
-    "Optimizer",
-    "LateTreeShaker",
-    "VarNumbering",
-    "Finalize",
-    "Eraser"
+    classOf[Parser].getSimpleName, // Parser is different because its a class
+    simpleName(Weeder.getClass),
+    simpleName(Namer.getClass),
+    simpleName(Resolver.getClass),
+    simpleName(Kinder.getClass),
+    simpleName(Deriver.getClass),
+    simpleName(Typer.getClass),
+    simpleName(EntryPoint.getClass),
+    simpleName(Statistics.getClass),
+    simpleName(Stratifier.getClass),
+    simpleName(Regions.getClass),
+    simpleName(Redundancy.getClass),
+    simpleName(Safety.getClass),
+    simpleName(Documentor.getClass),
+    simpleName(Lowering.getClass),
+    simpleName(EarlyTreeShaker.getClass),
+    simpleName(Monomorph.getClass),
+    simpleName(Simplifier.getClass),
+    simpleName(ClosureConv.getClass),
+    simpleName(LambdaLift.getClass),
+    simpleName(Tailrec.getClass),
+    simpleName(Optimizer.getClass),
+    simpleName(LateTreeShaker.getClass),
+    simpleName(VarNumbering.getClass),
+    simpleName(Finalize.getClass),
+    simpleName(Eraser.getClass)
   )
 
-  def main(args: Array[String]): Unit = {
-    println(phases)
+  /**
+    * Returns the source name of a scala object (without the internally
+    * suffixed `$`.
+    */
+  private def simpleName(obj: Class[_]): String = {
+    obj.getSimpleName.dropRight(1)
   }
 }
