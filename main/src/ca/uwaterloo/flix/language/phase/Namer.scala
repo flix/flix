@@ -644,23 +644,23 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }
 
-    case WeededAst.Expression.Choose(star, exps, rules, loc) =>
+    case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
       val rulesVal = traverse(rules) {
-        case WeededAst.ChoiceRule(pat0, exp0) =>
+        case WeededAst.RelationalChoiceRule(pat0, exp0) =>
           val p = pat0.map {
-            case WeededAst.ChoicePattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
-            case WeededAst.ChoicePattern.Absent(loc) => NamedAst.ChoicePattern.Absent(loc)
-            case WeededAst.ChoicePattern.Present(ident, loc) =>
+            case WeededAst.RelationalChoicePattern.Wild(loc) => NamedAst.RelationalChoicePattern.Wild(loc)
+            case WeededAst.RelationalChoicePattern.Absent(loc) => NamedAst.RelationalChoicePattern.Absent(loc)
+            case WeededAst.RelationalChoicePattern.Present(ident, loc) =>
               val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-              NamedAst.ChoicePattern.Present(sym, loc)
+              NamedAst.RelationalChoicePattern.Present(sym, loc)
           }
           mapN(visitExp(exp0, ns0)) {
-            case e => NamedAst.ChoiceRule(p, e)
+            case e => NamedAst.RelationalChoiceRule(p, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
+        case (es, rs) => NamedAst.Expression.RelationalChoose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>

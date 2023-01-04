@@ -166,28 +166,28 @@ namespace Test/Def/Generalization {
     // TODO: Broken
     /*@test
     def testLeq29(x: Choice[String, true, true]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }*/
 
     @test
     def testLeq30(x: Choice[String, _, true]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
     def testLeq31(x: Choice[String, true, _]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
     def testLeq32(x: Choice[String, _, _]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }

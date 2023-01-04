@@ -147,9 +147,9 @@ object CodeHinter {
         case MatchTypeRule(_, _, exp) => visitExp(exp)
       }
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ rules.flatMap {
-        case ChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
     case Expression.Tag(_, exp, _, _, _, _) =>

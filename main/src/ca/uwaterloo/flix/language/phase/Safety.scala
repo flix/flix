@@ -149,9 +149,9 @@ object Safety {
         visit(exp) ::: missingDefault :::
           rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
 
-      case Expression.Choose(exps, rules, _, _, _, _) =>
+      case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
         exps.flatMap(visit) :::
-          rules.flatMap { case ChoiceRule(_, exp) => visit(exp) }
+          rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _, _) =>
         visit(exp)

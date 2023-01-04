@@ -376,25 +376,25 @@ object Monomorph {
             }
         }.next() // We are safe to get next() because the last case will always match
 
-      case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+      case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
         val es = exps.map(visitExp(_, env0, subst))
         val rs = rules.map {
-          case ChoiceRule(pat, exp) =>
+          case RelationalChoiceRule(pat, exp) =>
             val patAndEnv = pat.map {
-              case ChoicePattern.Wild(loc) => (ChoicePattern.Wild(loc), Map.empty)
-              case ChoicePattern.Absent(loc) => (ChoicePattern.Absent(loc), Map.empty)
-              case ChoicePattern.Present(sym, tpe1, loc) =>
+              case RelationalChoicePattern.Wild(loc) => (RelationalChoicePattern.Wild(loc), Map.empty)
+              case RelationalChoicePattern.Absent(loc) => (RelationalChoicePattern.Absent(loc), Map.empty)
+              case RelationalChoicePattern.Present(sym, tpe1, loc) =>
                 val freshVar = Symbol.freshVarSym(sym)
-                (ChoicePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
+                (RelationalChoicePattern.Present(freshVar, subst(tpe1), loc), Map(sym -> freshVar))
             }
             val p = patAndEnv.map(_._1)
             val env1 = patAndEnv.map(_._2).foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
               case (acc, m) => acc ++ m
             }
             val e = visitExp(exp, env0 ++ env1, subst)
-            ChoiceRule(p, e)
+            RelationalChoiceRule(p, e)
         }
-        Expression.Choose(es, rs, subst(tpe), pur, eff, loc)
+        Expression.RelationalChoose(es, rs, subst(tpe), pur, eff, loc)
 
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0, subst)
