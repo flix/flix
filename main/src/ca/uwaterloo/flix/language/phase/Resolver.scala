@@ -898,26 +898,26 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
           }
 
-        case NamedAst.Expression.Choose(star, exps, rules, loc) =>
+        case NamedAst.Expression.RelationalChoose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0, region))
           val rulesVal = traverse(rules) {
-            case NamedAst.ChoiceRule(pat0, exp0) =>
+            case NamedAst.RelationalChoiceRule(pat0, exp0) =>
               val p = pat0.map {
-                case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
-                case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
-                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
+                case NamedAst.RelationalChoicePattern.Wild(loc) => ResolvedAst.RelationalChoicePattern.Wild(loc)
+                case NamedAst.RelationalChoicePattern.Absent(loc) => ResolvedAst.RelationalChoicePattern.Absent(loc)
+                case NamedAst.RelationalChoicePattern.Present(sym, loc) => ResolvedAst.RelationalChoicePattern.Present(sym, loc)
               }
               val env = pat0.foldLeft(env0) {
-                case (acc, NamedAst.ChoicePattern.Wild(_)) => acc
-                case (acc, NamedAst.ChoicePattern.Absent(_)) => acc
-                case (acc, NamedAst.ChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
+                case (acc, NamedAst.RelationalChoicePattern.Wild(_)) => acc
+                case (acc, NamedAst.RelationalChoicePattern.Absent(_)) => acc
+                case (acc, NamedAst.RelationalChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
               }
               mapN(visitExp(exp0, env, region)) {
-                case e => ResolvedAst.ChoiceRule(p, e)
+                case e => ResolvedAst.RelationalChoiceRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.RelationalChoose(star, es, rs, loc)
           }
 
         case NamedAst.Expression.Tuple(elms, loc) =>

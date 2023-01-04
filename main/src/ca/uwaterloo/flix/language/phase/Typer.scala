@@ -33,6 +33,7 @@ import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
+import scala.annotation.tailrec
 
 object Typer {
 
@@ -1002,7 +1003,7 @@ object Typer {
           resultEff = Type.mkUnion(eff :: bodyEffs, loc)
         } yield (constrs ++ bodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Choose(star, exps0, rules0, tvar, loc) =>
+      case KindedAst.Expression.RelationalChoose(star, exps0, rules0, tvar, loc) =>
 
         /**
           * Performs type inference on the given match expressions `exps` and nullity `vars`.
@@ -1028,9 +1029,9 @@ object Typer {
           *
           * Returns a pair of list of the types and purects of the rule expressions.
           */
-        def visitRuleBodies(rs: List[KindedAst.ChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type], List[Type])] = {
-          def visitRuleBody(r: KindedAst.ChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = r match {
-            case KindedAst.ChoiceRule(_, exp0) => visitExp(exp0)
+        def visitRuleBodies(rs: List[KindedAst.RelationalChoiceRule]): InferMonad[(List[List[Ast.TypeConstraint]], List[Type], List[Type], List[Type])] = {
+          def visitRuleBody(r: KindedAst.RelationalChoiceRule): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = r match {
+            case KindedAst.RelationalChoiceRule(_, exp0) => visitExp(exp0)
           }
 
           traverseM(rs)(visitRuleBody).map(unzip4)
@@ -1041,9 +1042,9 @@ object Typer {
           *
           * NB: Requires that the `ts` types are Choice-types.
           */
-        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[KindedAst.ChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
-          def visitRuleBody(r: KindedAst.ChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
-            case KindedAst.ChoiceRule(r, exp0) =>
+        def transformResultTypes(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], rs: List[KindedAst.RelationalChoiceRule], ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+          def visitRuleBody(r: KindedAst.RelationalChoiceRule, resultType: Type): InferMonad[(Type, Type, Type)] = r match {
+            case KindedAst.RelationalChoiceRule(r, exp0) =>
               val cond = mkOverApprox(isAbsentVars, isPresentVars, r)
               val innerType = Type.freshVar(Kind.Star, exp0.loc)
               val isAbsentVar = Type.freshVar(Kind.Bool, exp0.loc)
@@ -1054,7 +1055,7 @@ object Typer {
           }
 
           ///
-          /// Simply compute the mgu of the `ts` types if this is not a star choose.
+          /// Simply compute the mgu of the `ts` types if this is not a star relational_choose.
           ///
           if (!star) {
             return unifyTypeM(ts, loc)
@@ -1079,15 +1080,15 @@ object Typer {
           * If a pattern is `Absent`  its corresponding `isPresentVar` must be `false` (i.e. to prevent the value from being `Present`).
           * If a pattern is `Present` its corresponding `isAbsentVar`  must be `false` (i.e. to prevent the value from being `Absent`).
           */
-        def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.ChoicePattern]): Type =
+        def mkUnderApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
           isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
-            case (acc, (_, KindedAst.ChoicePattern.Wild(_))) =>
+            case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, ((isAbsentVar, _), KindedAst.ChoicePattern.Present(_, _, _))) =>
+            case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 2: A `Present` pattern forces the `isAbsentVar` to be equal to `false`.
               Type.mkAnd(acc, Type.mkEquiv(isAbsentVar, Type.False, loc), loc)
-            case (acc, ((_, isPresentVar), KindedAst.ChoicePattern.Absent(_))) =>
+            case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 3: An `Absent` pattern forces the `isPresentVar` to be equal to `false`.
               Type.mkAnd(acc, Type.mkEquiv(isPresentVar, Type.False, loc), loc)
           }
@@ -1099,15 +1100,15 @@ object Typer {
           * If a pattern is `Absent` it *may* match if its corresponding `isAbsent` is `true`.
           * If a pattern is `Present` it *may* match if its corresponding `isPresentVar`is `true`.
           */
-        def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.ChoicePattern]): Type =
+        def mkOverApprox(isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var], r: List[KindedAst.RelationalChoicePattern]): Type =
           isAbsentVars.zip(isPresentVars).zip(r).foldLeft(Type.True) {
-            case (acc, (_, KindedAst.ChoicePattern.Wild(_))) =>
+            case (acc, (_, KindedAst.RelationalChoicePattern.Wild(_))) =>
               // Case 1: No constraint is generated for a wildcard.
               acc
-            case (acc, ((isAbsentVar, _), KindedAst.ChoicePattern.Absent(_))) =>
+            case (acc, ((isAbsentVar, _), KindedAst.RelationalChoicePattern.Absent(_))) =>
               // Case 2: An `Absent` pattern may match if the `isAbsentVar` is `true`.
               Type.mkAnd(acc, isAbsentVar, loc)
-            case (acc, ((_, isPresentVar), KindedAst.ChoicePattern.Present(_, _, _))) =>
+            case (acc, ((_, isPresentVar), KindedAst.RelationalChoicePattern.Present(_, _, _))) =>
               // Case 3: A `Present` pattern may match if the `isPresentVar` is `true`.
               Type.mkAnd(acc, isPresentVar, loc)
           }
@@ -1115,7 +1116,7 @@ object Typer {
         /**
           * Constructs a disjunction of the constraints of each choice rule.
           */
-        def mkOuterDisj(m: List[List[KindedAst.ChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
+        def mkOuterDisj(m: List[List[KindedAst.RelationalChoicePattern]], isAbsentVars: List[Type.Var], isPresentVars: List[Type.Var]): Type =
           m.foldLeft(Type.False) {
             case (acc, rule) => Type.mkOr(acc, mkUnderApprox(isAbsentVars, isPresentVars, rule), loc)
           }
@@ -1123,16 +1124,16 @@ object Typer {
         /**
           * Performs type inference and unification with the `matchTypes` against the given choice rules `rs`.
           */
-        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[KindedAst.ChoiceRule]): InferMonad[List[List[Type]]] = {
-          def unifyWithRule(r: KindedAst.ChoiceRule): InferMonad[List[Type]] = {
+        def unifyMatchTypesAndRules(matchTypes: List[Type], rs: List[KindedAst.RelationalChoiceRule]): InferMonad[List[List[Type]]] = {
+          def unifyWithRule(r: KindedAst.RelationalChoiceRule): InferMonad[List[Type]] = {
             traverseM(matchTypes.zip(r.pat)) {
-              case (matchType, KindedAst.ChoicePattern.Wild(_)) =>
+              case (matchType, KindedAst.RelationalChoicePattern.Wild(_)) =>
                 // Case 1: The pattern is wildcard. No variable is bound and there is type to constrain.
                 liftM(matchType)
-              case (matchType, KindedAst.ChoicePattern.Absent(_)) =>
+              case (matchType, KindedAst.RelationalChoicePattern.Absent(_)) =>
                 // Case 2: The pattern is a `Absent`. No variable is bound and there is type to constrain.
                 liftM(matchType)
-              case (matchType, KindedAst.ChoicePattern.Present(sym, tvar, loc)) =>
+              case (matchType, KindedAst.RelationalChoicePattern.Present(sym, tvar, loc)) =>
                 // Case 3: The pattern is `Present`. Must constraint the type of the local variable with the type of the match expression.
                 unifyTypeM(matchType, sym.tvar, tvar, loc)
             }
@@ -2081,21 +2082,21 @@ object Typer {
         }
         TypedAst.Expression.TypeMatch(e1, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Choose(_, exps, rules, tvar, loc) =>
+      case KindedAst.Expression.RelationalChoose(_, exps, rules, tvar, loc) =>
         val es = exps.map(visitExp(_, subst0))
         val rs = rules.map {
-          case KindedAst.ChoiceRule(pat0, exp) =>
+          case KindedAst.RelationalChoiceRule(pat0, exp) =>
             val pat = pat0.map {
-              case KindedAst.ChoicePattern.Wild(loc) => TypedAst.ChoicePattern.Wild(loc)
-              case KindedAst.ChoicePattern.Absent(loc) => TypedAst.ChoicePattern.Absent(loc)
-              case KindedAst.ChoicePattern.Present(sym, tvar, loc) => TypedAst.ChoicePattern.Present(sym, subst0(tvar), loc)
+              case KindedAst.RelationalChoicePattern.Wild(loc) => TypedAst.RelationalChoicePattern.Wild(loc)
+              case KindedAst.RelationalChoicePattern.Absent(loc) => TypedAst.RelationalChoicePattern.Absent(loc)
+              case KindedAst.RelationalChoicePattern.Present(sym, tvar, loc) => TypedAst.RelationalChoicePattern.Present(sym, subst0(tvar), loc)
             }
-            TypedAst.ChoiceRule(pat, visitExp(exp, subst0))
+            TypedAst.RelationalChoiceRule(pat, visitExp(exp, subst0))
         }
         val tpe = subst0(tvar)
         val pur = Type.mkAnd(rs.map(_.exp.pur), loc)
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
-        TypedAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
+        TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
@@ -2770,7 +2771,32 @@ object Typer {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.sym, declaredType)
+        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType))
+    }
+  }
+
+  /**
+    * Opens schema types `#{A(Int32) | {}}` becomes `#{A(Int32) | r}` with a fresh
+    * `r`. This only happens for if the row type is the topmost type, i.e. this
+    * doesn't happen inside tuples or other such nesting.
+    */
+  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+    @tailrec
+    def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
+        acc(Type.freshVar(TypeConstructor.SchemaRowEmpty.kind, loc))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), rest, loc3) =>
+        transformRow(rest, inner =>
+          // copy into acc, just replacing `rest` with `inner`
+          acc(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), inner, loc3))
+        )
+      case other => acc(other)
+    }
+
+    tpe match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), row, loc2) =>
+        Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), transformRow(row, x => x), loc2)
+      case other => other
     }
   }
 
