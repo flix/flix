@@ -88,12 +88,42 @@ namespace Test/Exp/Fixpoint/Compose {
 
     @test
     def testFixpointCompose13(): Bool = {
-        let ans = query openRow(#{Coolio("quack!").}) select s from Duck(s);
+        let ans = query coolioQuack(#{Coolio("quack!").}) select s from Duck(s);
         ans == List#{"quack!"}
     }
 
-    def openRow(p: #{Coolio(String)}): #{Coolio(String), Duck(String) | r} = {
+    def coolioQuack(p: #{Coolio(String)}): #{Coolio(String), Duck(String) | r} = {
         p <+> #{Duck(s) :- Coolio(s).}
+    }
+
+    @test
+    def testFixpointCompose14(): Bool = {
+        let ans = query duckOutOfNothing(#{}) select s from Duck(s);
+        ans == List#{"quack!"}
+    }
+
+    def duckOutOfNothing(p: #{}): #{Duck(String) | r} = {
+        p <+> #{Duck("quack!").}
+    }
+
+    @test
+    def testFixpointCompose15(): Bool = {
+        let ans = query duckVille(#{Rip(1). Rap(2). Rup(3).}) select s from Duck(s);
+        ans == List#{"quack!"}
+    }
+
+    def duckVille(p: #{Rip(Int32), Rap(Int32), Rup(Int32)}): #{Rip(Int32), Rap(Int32), Rup(Int32), Duck(String) | r} = {
+        p <+> #{Duck("quack!").}
+    }
+
+    @test
+    def testFixpointCompose16(): Bool = {
+        let ans = query noComparison(#{Apples(()).}, #{Oranges(()).}) select s from Apples(s);
+        ans == List#{()}
+    }
+
+    def noComparison(p1: #{Apples(Unit)}, p2: #{Oranges(Unit)}): #{Apples(Unit), Oranges(Unit) | r} = {
+        p1 <+> p2
     }
 
 }
