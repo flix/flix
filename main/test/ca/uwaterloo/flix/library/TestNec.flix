@@ -1060,6 +1060,22 @@ namespace TestNec {
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool \ IO =
+        let r = ref 21;
+        Nec.forEachWithIndex((i, _) -> r := i, singleton(1));
+        0 == deref r
+
+    @test
+    def forEachWithIndex02(): Bool \ IO =
+        let r = ref 21;
+        Nec.forEachWithIndex((i, _) -> r := i, necOf3(1, 2, 3));
+        2 == deref r
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

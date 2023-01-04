@@ -1411,6 +1411,22 @@ namespace TestChain {
         3 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool \ IO =
+        let r = ref 21;
+        Chain.forEachWithIndex((i, _) -> r := i, Chain.empty());
+        21 == deref r
+
+    @test
+    def forEachWithIndex02(): Bool \ IO =
+        let r = ref 21;
+        Chain.forEachWithIndex((i, _) -> r := i, List.toChain(1 :: 2 :: 3 :: Nil));
+        2 == deref r
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

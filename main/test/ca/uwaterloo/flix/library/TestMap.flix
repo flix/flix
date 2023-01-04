@@ -1919,6 +1919,22 @@ def forEach02(): Bool \ IO =
     1 == deref r
 
 /////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forEachWithIndex01(): Bool \ IO =
+    let r = ref 21;
+    Map.forEachWithIndex((i, _, _) -> r := i, Map#{});
+    21 == deref r
+
+@test
+def forEachWithIndex02(): Bool \ IO =
+    let r = ref 21;
+    Map.forEachWithIndex((i, _, _) -> r := i, Map#{1 => "Hello World!"});
+    0 == deref r
+
+/////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 

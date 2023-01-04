@@ -2045,6 +2045,21 @@ def forEach02(): Bool \ IO =
     List.forEach(x -> r := x, 1 :: 2 :: 3 :: Nil);
     3 == deref r
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool \ IO =
+        let r = ref 21;
+        List.forEachWithIndex((i, _) -> r := i, Nil);
+        21 == deref r
+
+    @test
+    def forEachWithIndex02(): Bool \ IO =
+        let r = ref 21;
+        List.forEachWithIndex((i, _) -> r := i, 1 :: 2 :: 3 :: Nil);
+        2 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //

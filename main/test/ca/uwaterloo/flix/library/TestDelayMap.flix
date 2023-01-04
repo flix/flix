@@ -1409,6 +1409,23 @@ namespace TestDelayMap {
             DelayMap.forEach((k, _) -> r := k);
         1 == deref r
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool \ IO =
+        let r = ref 21;
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.forEachWithIndex((i, _, _) -> r := i);
+        21 == deref r
+
+    @test
+    def forEachWithIndex02(): Bool \ IO =
+        let r = ref 21;
+        Map#{1 => "Hello World!"} |> Map.toDelayMap |>
+            DelayMap.forEachWithIndex((i, _, _) -> r := i);
+        0 == deref r
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
