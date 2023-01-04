@@ -1133,12 +1133,12 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
       }
 
-    case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
+    case ParsedAst.Expression.RelationalChoose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.ChoiceRule(sp1, pat, _, sp2) <- rules) {
+      for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
@@ -1147,18 +1147,18 @@ object Weeder {
 
       val expsVal = traverse(exps)(visitExp(_, senv))
       val rulesVal = traverse(rules) {
-        case ParsedAst.ChoiceRule(_, pat, exp, _) =>
+        case ParsedAst.RelationalChoiceRule(_, pat, exp, _) =>
           val p = pat.map {
-            case ParsedAst.ChoicePattern.Wild(sp1, sp2) => WeededAst.ChoicePattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.ChoicePattern.Absent(sp1, sp2) => WeededAst.ChoicePattern.Absent(mkSL(sp1, sp2))
-            case ParsedAst.ChoicePattern.Present(sp1, ident, sp2) => WeededAst.ChoicePattern.Present(ident, mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Wild(sp1, sp2) => WeededAst.RelationalChoicePattern.Wild(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Absent(sp1, sp2) => WeededAst.RelationalChoicePattern.Absent(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Present(sp1, ident, sp2) => WeededAst.RelationalChoicePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp, senv)) {
-            case e => WeededAst.ChoiceRule(p.toList, e)
+            case e => WeededAst.RelationalChoiceRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expression.Choose(star, es, rs, mkSL(sp1, sp2))
+        case (es, rs) => WeededAst.Expression.RelationalChoose(star, es, rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -2940,7 +2940,7 @@ object Weeder {
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.RelationalChoose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

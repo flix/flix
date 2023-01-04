@@ -419,11 +419,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.TypeMatch(e, rs, t, pur, eff, loc)
 
-    case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
-      val rs = rules.map(visitChoiceRule)
+      val rs = rules.map(visitRelationalChoiceRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.Choose(es, rs, t, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
 
     case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -882,19 +882,19 @@ object Lowering {
   }
 
   /**
-    * Lowers the given choice rule `rule0`.
+    * Lowers the given relational choice rule `rule0`.
     */
-  private def visitChoiceRule(rule0: TypedAst.ChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.ChoiceRule = rule0 match {
-    case TypedAst.ChoiceRule(pat, exp) =>
+  private def visitRelationalChoiceRule(rule0: TypedAst.RelationalChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.RelationalChoiceRule = rule0 match {
+    case TypedAst.RelationalChoiceRule(pat, exp) =>
       val p = pat.map {
-        case TypedAst.ChoicePattern.Wild(loc) => LoweredAst.ChoicePattern.Wild(loc)
-        case TypedAst.ChoicePattern.Absent(loc) => LoweredAst.ChoicePattern.Absent(loc)
-        case TypedAst.ChoicePattern.Present(sym, tpe, loc) =>
+        case TypedAst.RelationalChoicePattern.Wild(loc) => LoweredAst.RelationalChoicePattern.Wild(loc)
+        case TypedAst.RelationalChoicePattern.Absent(loc) => LoweredAst.RelationalChoicePattern.Absent(loc)
+        case TypedAst.RelationalChoicePattern.Present(sym, tpe, loc) =>
           val t = visitType(tpe)
-          LoweredAst.ChoicePattern.Present(sym, t, loc)
+          LoweredAst.RelationalChoicePattern.Present(sym, t, loc)
       }
       val e = visitExp(exp)
-      LoweredAst.ChoiceRule(p, e)
+      LoweredAst.RelationalChoiceRule(p, e)
   }
 
   /**
@@ -1844,14 +1844,14 @@ object Lowering {
 
     case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       val rs = rules map {
-        case LoweredAst.ChoiceRule(pat, exp) =>
+        case LoweredAst.RelationalChoiceRule(pat, exp) =>
           // TODO: Substitute in patterns?
-          LoweredAst.ChoiceRule(pat, substExp(exp, subst))
+          LoweredAst.RelationalChoiceRule(pat, substExp(exp, subst))
       }
-      LoweredAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
