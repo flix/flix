@@ -915,7 +915,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def ChooseKind: Rule1[Boolean] = rule {
-        (keyword("choose*") ~ push(true)) | (keyword("choose") ~ push(false))
+        (keyword("relational_choose*") ~ push(true)) | (keyword("relational_choose") ~ push(false))
       }
 
       rule {
