@@ -2743,7 +2743,7 @@ def distinctWith09(): Bool =
     def enumerate01(): Bool = region r {
         let z = ref Nil @ r;
         let l = Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        Iterator.forEach(match (i, x) ->  z := (i, x) :: deref z, List.enumerator(r, l));
         List.reverse(deref z) == Nil: List[(Int32, Int32)]
     }
 
@@ -2751,7 +2751,7 @@ def distinctWith09(): Bool =
     def enumerate02(): Bool = region r {
         let z = ref Nil @ r;
         let l = 1 :: 2 :: 3 :: Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        Iterator.forEach(match (i, x) ->  z := (i, x) :: deref z, List.enumerator(r, l));
         List.reverse(deref z) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
@@ -2759,8 +2759,8 @@ def distinctWith09(): Bool =
     def enumerate03(): Bool = region r {
         let z = ref Nil @ r;
         let l = List.range(100, 200);
-        foreach ((i, x) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == List.zip(l, List.range(0, 100))
+        Iterator.forEach(match (i, x) -> z := (i, x) :: deref z, List.enumerator(r, l));
+        List.reverse(deref z) == List.zip(List.range(0, 100), l)
     }
 
     /////////////////////////////////////////////////////////////////////////////

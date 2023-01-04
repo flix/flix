@@ -82,13 +82,14 @@ namespace MultiMap {
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
+        let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
-        forEachWithIndex((i, k, v) -> {
+        Map.forEachWithIndex((i, k, v) -> {
             if (i < 1)
                 StringBuilder.appendString!("${k} => ${v}", sb)
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
-            }, m);
+            }, m1);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
