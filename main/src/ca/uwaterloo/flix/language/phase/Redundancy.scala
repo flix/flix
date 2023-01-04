@@ -462,10 +462,10 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val usedMatch = visitExps(exps, env0, rc)
       val usedRules = rules.map {
-        case ChoiceRule(pat, exp) =>
+        case RelationalChoiceRule(pat, exp) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -978,8 +978,8 @@ object Redundancy {
   /**
     * Returns the free variables in the list of choice patterns `ps`.
     */
-  private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
-    case ChoicePattern.Present(sym, _, _) => sym
+  private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
+    case RelationalChoicePattern.Present(sym, _, _) => sym
   }.toSet
 
   /**
