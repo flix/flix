@@ -668,13 +668,13 @@ object Simplifier {
       }
 
     /**
-      * Eliminates the choose construct by translations to if-then-else expressions.
+      * Eliminates the relational_choose construct by translations to if-then-else expressions.
       */
     def simplifyChoose(exps0: List[LoweredAst.Expression], rules0: List[LoweredAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
-      // choose (x, y, ...) {
+      // relational_choose (x, y, ...) {
       //   case PATTERN_1 => BODY_1
       //   case PATTERN_2 => BODY_2
       //   ...

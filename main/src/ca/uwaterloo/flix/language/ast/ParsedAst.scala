@@ -732,7 +732,7 @@ object ParsedAst {
       * Choose Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param star  whether this is a choose* expression.
+      * @param star  whether this is a relational_choose* expression.
       * @param exps  the match expressions.
       * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.

@@ -1055,7 +1055,7 @@ object Typer {
           }
 
           ///
-          /// Simply compute the mgu of the `ts` types if this is not a star choose.
+          /// Simply compute the mgu of the `ts` types if this is not a star relational_choose.
           ///
           if (!star) {
             return unifyTypeM(ts, loc)
