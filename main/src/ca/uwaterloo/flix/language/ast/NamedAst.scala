@@ -117,7 +117,7 @@ object NamedAst {
 
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.RelationalChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -243,15 +243,15 @@ object NamedAst {
 
   }
 
-  sealed trait ChoicePattern
+  sealed trait RelationalChoicePattern
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -385,7 +385,7 @@ object NamedAst {
 
   case class HandlerRule(op: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression)
 
-  case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
+  case class RelationalChoiceRule(pat: List[NamedAst.RelationalChoicePattern], exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 

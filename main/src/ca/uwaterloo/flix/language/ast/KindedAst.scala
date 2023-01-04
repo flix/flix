@@ -101,7 +101,7 @@ object KindedAst {
 
     case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.RelationalChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -227,17 +227,17 @@ object KindedAst {
 
   }
 
-  sealed trait ChoicePattern {
+  sealed trait RelationalChoicePattern {
     def loc: SourceLocation
   }
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -287,7 +287,7 @@ object KindedAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.Var)
 
-  case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
+  case class RelationalChoiceRule(pat: List[KindedAst.RelationalChoicePattern], exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 
