@@ -86,4 +86,14 @@ namespace Test/Exp/Fixpoint/Compose {
         let rb = solve c3 <+> c4;
         (ra, rb)
 
+    @test
+    def testFixpointCompose13(): Bool = {
+        let ans = query openRow(#{Coolio("quack!").}) select s from Duck(s);
+        ans == List#{"quack!"}
+    }
+
+    def openRow(p: #{Coolio(String)}): #{Coolio(String), Duck(String) | r} = {
+        p <+> #{Duck(s) :- Coolio(s).}
+    }
+
 }
