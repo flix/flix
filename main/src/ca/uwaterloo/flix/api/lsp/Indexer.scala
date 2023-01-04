@@ -230,9 +230,9 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {
-        case ChoiceRule(_, exp) => visitExp(exp)
+        case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>

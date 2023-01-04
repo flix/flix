@@ -106,7 +106,7 @@ object WeededAst {
 
     case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.MatchTypeRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Choose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.ChoiceRule], loc: SourceLocation) extends WeededAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.RelationalChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -232,15 +232,15 @@ object WeededAst {
 
   }
 
-  sealed trait ChoicePattern
+  sealed trait RelationalChoicePattern
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(ident: Name.Ident, loc: SourceLocation) extends ChoicePattern
+    case class Present(ident: Name.Ident, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -371,7 +371,7 @@ object WeededAst {
 
   case class HandlerRule(op: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression)
 
-  case class ChoiceRule(pat: List[WeededAst.ChoicePattern], exp: WeededAst.Expression)
+  case class RelationalChoiceRule(pat: List[WeededAst.RelationalChoicePattern], exp: WeededAst.Expression)
 
   case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
 
