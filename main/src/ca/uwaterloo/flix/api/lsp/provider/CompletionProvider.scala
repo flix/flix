@@ -184,7 +184,7 @@ object CompletionProvider {
     val letRegex = raw"\s*let\s+[^\s]*".r
     val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
     val namespaceRegex = raw"\s*namespace\s+.*".r
-    val tripleQuestionMarkRegex = raw"\s+\?\?\?".r
+    val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
     // if any of the following matches we know the next must be an expression
