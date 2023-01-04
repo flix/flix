@@ -33,6 +33,7 @@ import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import java.io.PrintWriter
+import scala.annotation.tailrec
 
 object Typer {
 
@@ -2770,7 +2771,32 @@ object Typer {
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (KindedAst.FormalParam(sym, _, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar.sym, declaredType)
+        macc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(declaredType))
+    }
+  }
+
+  /**
+    * Opens schema types `#{A(Int32) | {}}` becomes `#{A(Int32) | r}` with a fresh
+    * `r`. This only happens for if the row type is the topmost type, i.e. this
+    * doesn't happen inside tuples or other such nesting.
+    */
+  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
+    @tailrec
+    def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
+        acc(Type.freshVar(TypeConstructor.SchemaRowEmpty.kind, loc))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), rest, loc3) =>
+        transformRow(rest, inner =>
+          // copy into acc, just replacing `rest` with `inner`
+          acc(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), inner, loc3))
+        )
+      case other => acc(other)
+    }
+
+    tpe match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), row, loc2) =>
+        Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), transformRow(row, x => x), loc2)
+      case other => other
     }
   }
 
