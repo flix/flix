@@ -33,10 +33,6 @@ instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[MutList] {
-    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutList.iterator(r1, l)
-}
-
 namespace MutList {
 
     ///

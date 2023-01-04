@@ -112,15 +112,12 @@ namespace Map {
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Map#{", sb);
-        let first = ref true @ r;
-        foreach ((k, v) <- Map.iterator(r, m)) {
-            if (deref first) {
-                first := false;
+        forEachWithIndex((i, k, v) -> {
+            if (i < 1)
                 StringBuilder.appendString!("${k} => ${v}", sb)
-            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
-        };
+            }, m);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -846,11 +843,19 @@ namespace Map {
         d
 
     ///
-    /// Applies `f` to every element of `xs`.
+    /// Applies `f` to every `(key, value)` of `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
         let Map(t) = m;
         RedBlackTree.forEach(f, t)
+
+    ///
+    /// Applies `f` to tuple `(index, key, value)` formed of the keys and values of
+    /// Map `m` and the index of the traversal.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
+        let Map(t) = m;
+        RedBlackTree.forEachWithIndex(f, t)
 
     ///
     /// Build a map by applying `f` to the seed value `st`.

@@ -458,6 +458,18 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Applies `f` to every key-value pair of `t` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region r {
+        let ix = ref 0 @ r;
+        def loop(tt) = match tt {
+            case Node(_, a, k, v, b) => loop(a); let i = deref ix; f(i, k, v); ix := i+1; loop(b)
+            case _                   => ()
+        };
+        loop(t)
+    }
+
+    ///
     /// Helper function for `insert` and `delete`.
     ///
     def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
