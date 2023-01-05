@@ -1169,7 +1169,7 @@ object Weeder {
         case (es, rs) => WeededAst.Expression.RelationalChoose(star, es, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Choose(sp1, star, exp, rules, sp2) => ???
+    case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) => ???
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
       /*
@@ -2951,7 +2951,7 @@ object Weeder {
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.RelationalChoose(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.RestrictableChoose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
