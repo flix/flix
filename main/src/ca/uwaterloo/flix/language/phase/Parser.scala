@@ -712,7 +712,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
-        Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
+        RelationalChoose | Choose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FArray | FList |
@@ -890,7 +890,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Choose: Rule1[ParsedAst.Expression.RelationalChoose] = {
+    def RelationalChoose: Rule1[ParsedAst.Expression.RelationalChoose] = {
       def MatchOne: Rule1[Seq[ParsedAst.Expression]] = rule {
         Expression ~> ((e: ParsedAst.Expression) => Seq(e))
       }
@@ -920,6 +920,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ ChooseKind ~ WS ~ (MatchMany | MatchOne) ~ optWS ~ "{" ~ optWS ~ oneOrMore(CaseMany | CaseOne).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RelationalChoose
+      }
+    }
+
+    def Choose: Rule1[ParsedAst.Expression.Choose] = {
+      def Rule: Rule1[ParsedAst.MatchRule] = rule {
+        keyword("case") ~ WS ~ Pattern ~ optWS ~ optional(keyword("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Stm ~> ParsedAst.MatchRule
+      }
+
+      def ChooseKind: Rule1[Boolean] = rule {
+        (keyword("choose*") ~ push(true)) | (keyword("choose") ~ push(false))
+      }
+
+      rule {
+        SP ~ ChooseKind ~ WS ~ Expression ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Choose
       }
     }
 
