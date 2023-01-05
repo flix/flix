@@ -33,6 +33,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, _) => f(sym)
     case t: UnkindedType.Cst => t
     case t: UnkindedType.Enum => t
+    case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
@@ -71,6 +72,7 @@ sealed trait UnkindedType {
     case UnkindedType.Var(sym, loc) => SortedSet(sym)
     case UnkindedType.Cst(tc, loc) => SortedSet.empty
     case UnkindedType.Enum(sym, loc) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(sym, loc) => SortedSet.empty
     case UnkindedType.UnappliedAlias(sym, loc) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
     case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) =>
@@ -115,6 +117,18 @@ object UnkindedType {
   case class Enum(sym: Symbol.EnumSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case Enum(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+    * An unkinded restrictable enum.
+    */
+  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case RestrictableEnum(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -408,6 +422,7 @@ object UnkindedType {
     case tpe: Var => tpe
     case tpe: Cst => tpe
     case tpe: Enum => tpe
+    case tpe: RestrictableEnum => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Arrow(purAndEff, arity, loc) => Arrow(purAndEff.map(eraseAliases), arity, loc)
     case ReadWrite(tpe, loc) => ReadWrite(eraseAliases(tpe), loc)
