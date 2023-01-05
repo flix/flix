@@ -350,8 +350,50 @@ object Weeder {
   /**
     * Performs weeding on the given enum declaration `d0`.
     */
-  private def visitRestrictableEnum(d0: ParsedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] =
-    ???
+  private def visitRestrictableEnum(d0: ParsedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.RestrictableEnum], WeederError] = d0 match {
+    case ParsedAst.Declaration.RestrictableEnum(doc0, ann0, mods, sp1, ident, index0, tparams0, tpe0, derives, cases0, sp2) =>
+      val doc = visitDoc(doc0)
+      val annVal = visitAnnotations(ann0)
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
+      val index = visitTypeParam(index0)
+      val tparamsVal = visitTypeParams(tparams0)
+
+      val casesVal = (tpe0, cases0) match {
+        // Case 1: empty enum
+        case (None, None) => Map.empty.toSuccess
+        // Case 2: singleton enum
+        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0))).toSuccess
+        // Case 3: multiton enum
+        case (None, Some(cs0)) =>
+          /*
+           * Check for `DuplicateTag`.
+           */
+          Validation.fold[ParsedAst.RestrictableCase, Map[Name.Ident, WeededAst.RestrictableCase], WeederError](cs0, Map.empty) {
+            case (macc, caze: ParsedAst.RestrictableCase) =>
+              val tagName = caze.ident
+              macc.get(tagName) match {
+                case None => (macc + (tagName -> visitRestrictableCase(caze))).toSuccess
+                case Some(otherTag) =>
+                  val enumName = ident.name
+                  val loc1 = otherTag.ident.loc
+                  val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
+                  Failure(LazyList(
+                    // NB: We report an error at both source locations.
+                    DuplicateTag(enumName, tagName, loc1, loc2),
+                    DuplicateTag(enumName, tagName, loc2, loc1)
+                  ))
+              }
+          }
+        // Case 4: both singleton and multiton syntax used: Error.
+        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
+
+      }
+
+      mapN(annVal, modVal, tparamsVal, casesVal) {
+        case (ann, mod, tparams, cases) =>
+          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives.toList, cases.values.toList, mkSL(sp1, sp2)))
+      }
+  }
 
   /**
     * Performs weeding on the given enum case `c0`.
@@ -360,6 +402,15 @@ object Weeder {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(ident, tpe)
+  }
+
+  /**
+    * Performs weeding on the given enum case `c0`.
+    */
+  private def visitRestrictableCase(c0: ParsedAst.RestrictableCase)(implicit flix: Flix): WeededAst.RestrictableCase = c0 match {
+    case ParsedAst.RestrictableCase(_, ident, tpe0, _) =>
+      val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
+      WeededAst.RestrictableCase(ident, tpe)
   }
 
   /**

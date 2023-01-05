@@ -87,6 +87,7 @@ object Namer {
     case decl: WeededAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: WeededAst.Declaration.Def => visitDef(decl, ns0)
     case decl: WeededAst.Declaration.Enum => visitEnum(decl, ns0)
+    case decl: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: WeededAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: WeededAst.Declaration.Effect => visitEffect(decl, ns0)
     case decl: WeededAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
@@ -331,6 +332,10 @@ object Namer {
       }
   }
 
+  /**
+    * Performs naming on the given enum `enum0`.
+    */
+  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ???
 
   /**
     * Performs naming on the given enum case.
