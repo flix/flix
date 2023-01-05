@@ -184,6 +184,7 @@ object CompletionProvider {
     val letRegex = raw"\s*let\s+[^\s]*".r
     val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
     val namespaceRegex = raw"\s*namespace\s+.*".r
+    val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
     // if any of the following matches we know the next must be an expression
@@ -191,13 +192,13 @@ object CompletionProvider {
     val doubleColonRegex = raw".*::\s*[^\s]*".r
     val tripleColonRegex = raw".*:::\s*[^\s]*".r
 
-    // We check type and effect first because for example follwing def we do not want completions other than type and effect if applicable.
+    // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
       case typeRegex() | typeAliasRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
-      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() => Nil
+      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
