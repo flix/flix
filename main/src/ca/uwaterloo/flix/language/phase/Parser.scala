@@ -227,7 +227,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def RestrictionParameter: Rule1[ParsedAst.TypeParam] = rule {
-        "<" ~ optWS ~ SP ~ Names.Variable ~ push(None: Option[ParsedAst.Kind]) ~ SP ~ optWS ~ ">" ~> ParsedAst.TypeParam
+        "[" ~ optWS ~ SP ~ Names.Variable ~ push(None: Option[ParsedAst.Kind]) ~ SP ~ optWS ~ "]" ~> ParsedAst.TypeParam
       }
 
       rule {
