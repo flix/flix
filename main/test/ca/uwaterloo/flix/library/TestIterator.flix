@@ -684,6 +684,25 @@ namespace TestIterator {
         3 == deref res
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let res = ref 21 @ r;
+        Nil |> List.iterator(r) |>
+            Iterator.forEachWithIndex((i, _) -> res := i);
+        21 == deref res
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let res = ref 21 @ r;
+        (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
+            Iterator.forEachWithIndex((i, _) -> res := i);
+        2 == deref res
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // lazyFilter                                                              //

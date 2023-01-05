@@ -18,10 +18,6 @@ instance Scoped[Array[a]] {
     pub def regionOf(_: Array[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[Array] {
-    pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = Array.iterator(r1, a)
-}
-
 namespace Array {
 
     ///

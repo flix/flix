@@ -388,7 +388,6 @@ namespace TestRedBlackTree {
         let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parForAll(threads() - 1, (k, v) -> k > v, t)
 
-
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -407,6 +406,26 @@ namespace TestRedBlackTree {
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEach((k, _) -> x := k, t);
         1 == deref x
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let x = ref 21 @ r;
+        let Map.Map(t) = Map#{};
+        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
+        21 == deref x
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let x = ref 21 @ r;
+        let Map.Map(t) = Map#{1 => "Hello World!"};
+        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
+        0 == deref x
     }
 
     /////////////////////////////////////////////////////////////////////////////

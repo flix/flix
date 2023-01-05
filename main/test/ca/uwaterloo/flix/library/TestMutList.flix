@@ -1539,13 +1539,13 @@ namespace TestMutList {
     @test
     def iterator01(): Bool = region r {
         let l = new MutList(r): MutList[Int32, r];
-        Iterable.iterator(r, l) |> invokeIsEmpty(100)
+        MutList.iterator(r, l) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator02(): Bool = region r {
         let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
-        not (Iterable.iterator(r, l) |> invokeIsEmpty(100))
+        not (MutList.iterator(r, l) |> invokeIsEmpty(100))
     }
 
     @test
@@ -1554,19 +1554,19 @@ namespace TestMutList {
         discard MutList.pop!(l);
         discard MutList.pop!(l);
         discard MutList.pop!(l);
-        Iterable.iterator(r, l) |> invokeIsEmpty(100)
+        MutList.iterator(r, l) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator04(): Bool = region r {
         let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
-        Iterable.iterator(r, l) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        MutList.iterator(r, l) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def iterator05(): Bool = region r {
         let l = MutList.range(r, 0, 100);
-        Iterable.iterator(r, l) |> Iterator.toList == List.range(0, 100) and
+        MutList.iterator(r, l) |> Iterator.toList == List.range(0, 100) and
         MutList.toList(l) == List.range(0, 100)
     }
 

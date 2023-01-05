@@ -39,10 +39,6 @@ instance Scoped[MutDeque[a]] {
     pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[MutDeque] {
-    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutDeque.iterator(r1, d)
-}
-
 namespace MutDeque {
 
     ///

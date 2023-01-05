@@ -788,16 +788,18 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Nel.forEach(x -> r := x, Nel.singleton(1));
-        1 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEach(x -> ri := x, Nel.singleton(1));
+        1 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Nel.forEach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
-        3 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
