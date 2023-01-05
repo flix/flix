@@ -94,6 +94,10 @@ instance Collectable[Set] {
     pub def collect(iter: Iterator[a, r]): Set[a] \ r with Order[a] = Iterator.toSet(iter)
 }
 
+instance Iterable[Set] {
+    pub def iterator(rh: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) = Set.iterator(rh, s)
+}
+
 namespace Set {
 
     ///
@@ -102,12 +106,12 @@ namespace Set {
     pub def toString(s: Set[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Set#{", sb);
-        foreach ((i, x) <- enumerator(r, s)) {
+        Set.forEachWithIndex((i, x) -> {
             if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+        }, s);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -566,6 +570,13 @@ namespace Set {
     pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
         let Set(t) = s;
         RedBlackTree.forEach((x, _) -> f(x), t)
+
+    ///
+    /// Applies `f` to every element of `s` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: Set[a]): Unit \ ef =
+        let Set(t) = s;
+        RedBlackTree.forEachWithIndex((i, x, _) -> f(i, x), t)
 
     ///
     /// Build a set by applying `f` to the seed value `st`.

@@ -1341,16 +1341,36 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    Set.forEach(x -> r := x, Set#{});
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Set.forEach(x -> ri := x, Set#{});
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    Set.forEach(x -> r := x, Set#{42});
-    42 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Set.forEach(x -> ri := x, Set#{42});
+    42 == deref ri
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forEachWithIndex01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Set.forEachWithIndex((i, _) -> ri := i, Set#{});
+    21 == deref ri
+}
+
+@test
+def forEachWithIndex02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Set.forEachWithIndex((i, _) -> ri := i, Set#{42});
+    0 == deref ri
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //
