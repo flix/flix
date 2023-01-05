@@ -26,6 +26,33 @@ namespace TestMutList {
         let MutList(_, a, _) = v;
         Array.length(deref a)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.toString(l) == "MutList#{}"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.push!(1, l);
+        MutList.toString(l) == "MutList#{1}"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.push!(1, l);
+        MutList.push!(2, l);
+        MutList.push!(3, l);
+        MutList.push!(4, l);
+        MutList.push!(5, l);
+        MutList.toString(l) == "MutList#{1, 2, 3, 4, 5}"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
