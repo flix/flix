@@ -289,6 +289,16 @@ namespace Iterator {
     }
 
     ///
+    /// Applies `f` to every element of `iter` along with that element's index.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = region r {
+        let ix = ref 0 @ r;
+        forEach(x -> {let i = deref ix; f(i, x); ix := i + 1}, iter)
+    }
+
+    ///
     /// Returns an iterator with every element of the iterator `iter` that
     /// satisfies the predicate `f`.
     ///

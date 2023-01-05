@@ -2034,60 +2034,64 @@ def toMapWith05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    List.forEach(x -> r := x, Nil);
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEach(x -> ri := x, Nil);
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    List.forEach(x -> r := x, 1 :: 2 :: 3 :: Nil);
-    3 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEach(x -> ri := x, 1 :: 2 :: 3 :: Nil);
+    3 == deref ri
+}
 
-    /////////////////////////////////////////////////////////////////////////////
-    // forEachWithIndex                                                        //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool \ IO =
-        let r = ref 21;
-        List.forEachWithIndex((i, _) -> r := i, Nil);
-        21 == deref r
+@test
+def forEachWithIndex01(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEachWithIndex((i, _) -> ri := i, Nil);
+    21 == deref ri
+}
 
-    @test
-    def forEachWithIndex02(): Bool \ IO =
-        let r = ref 21;
-        List.forEachWithIndex((i, _) -> r := i, 1 :: 2 :: 3 :: Nil);
-        2 == deref r
+@test
+def forEachWithIndex02(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEachWithIndex((i, _) -> ri := i, 1 :: 2 :: 3 :: Nil);
+    2 == deref ri
+}
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region r {
-        let a = List.toArray(r, Nil): Array[Int32, r];
-        Array.sameElements(a, [] @ r)
-    }
+@test
+def toArray01(): Bool = region r {
+    let a = List.toArray(r, Nil): Array[Int32, r];
+    Array.sameElements(a, [] @ r)
+}
 
-    @test
-    def toArray02(): Bool = region r {
-        let a = List.toArray(r, 1 :: Nil);
-        Array.sameElements(a, [1] @ r)
-    }
+@test
+def toArray02(): Bool = region r {
+    let a = List.toArray(r, 1 :: Nil);
+    Array.sameElements(a, [1] @ r)
+}
 
-    @test
-    def toArray03(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: Nil);
-        Array.sameElements(a, [1, 2] @ r)
-    }
+@test
+def toArray03(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: Nil);
+    Array.sameElements(a, [1, 2] @ r)
+}
 
-    @test
-    def toArray04(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
-        Array.sameElements(a, [1, 2, 3] @ r)
-    }
+@test
+def toArray04(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
+    Array.sameElements(a, [1, 2, 3] @ r)
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
