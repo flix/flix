@@ -137,6 +137,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Def |
       Declarations.Law |
       Declarations.Enum |
+      Declarations.RestrictableEnum |
       Declarations.TypeAlias |
       Declarations.Relation |
       Declarations.Lattice |
@@ -202,6 +203,35 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("enum") ~ WS ~ Names.Type ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Enum
+      }
+    }
+
+    def RestrictableEnum: Rule1[ParsedAst.Declaration] = {
+      def Case: Rule1[ParsedAst.RestrictableCase] = rule {
+        SP ~ Names.Tag ~ optional(Types.Tuple) ~ SP ~> ParsedAst.RestrictableCase
+      }
+
+      def CaseList: Rule1[Seq[ParsedAst.RestrictableCase]] = rule {
+        NonEmptyCaseList | push(Nil)
+      }
+
+      def NonEmptyCaseList: Rule1[Seq[ParsedAst.RestrictableCase]] = rule {
+        // Note: We use the case keyword as part of the separator with or without a comma.
+        keyword("case") ~ WS ~ oneOrMore(Case).separatedBy(
+          (optWS ~ "," ~ optWS ~ keyword("case") ~ WS) | (WS ~ keyword("case") ~ WS) | (optWS ~ "," ~ optWS)
+        )
+      }
+
+      def Body = namedRule("CaseBody") {
+        optional(optWS ~ "{" ~ optWS ~ CaseList ~ optWS ~ "}")
+      }
+
+      def RestrictionParameter: Rule1[ParsedAst.TypeParam] = rule {
+        "<" ~ optWS ~ SP ~ Names.Variable ~ push(None: Option[ParsedAst.Kind]) ~ SP ~ optWS ~ ">" ~> ParsedAst.TypeParam
+      }
+
+      rule {
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("restrictable") ~ WS ~ keyword("enum") ~ WS ~ Names.Type ~ RestrictionParameter ~ TypeParams ~ optional(Types.Tuple) ~ Derivations ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.RestrictableEnum
       }
     }
 

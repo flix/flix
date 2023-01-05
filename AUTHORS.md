@@ -53,3 +53,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Daniel Anker Hermansen](https://github.com/Daniel-Anker-Hermansen)
 - [Anna Blume Jakobsen](https://github.com/AnnaBlume99)
 - [Andreas Stenbæk Larsen](https://github.com/AStenbaek)
+- [Yisrael Union](https://github.com/yisraelU)

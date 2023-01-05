@@ -114,6 +114,8 @@ object Weeder {
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
 
+    case d: ParsedAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
+
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
     case d: ParsedAst.Declaration.Relation => visitRelation(d)
@@ -344,6 +346,12 @@ object Weeder {
           List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives.toList, cases.values.toList, mkSL(sp1, sp2)))
       }
   }
+
+  /**
+    * Performs weeding on the given enum declaration `d0`.
+    */
+  private def visitRestrictableEnum(d0: ParsedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] =
+    ???
 
   /**
     * Performs weeding on the given enum case `c0`.
