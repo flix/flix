@@ -1081,6 +1081,8 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
+    case UnkindedType.RestrictableEnum(sym, loc) => ??? // TODO RESTR-VARS
+
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 
 
@@ -1341,6 +1343,8 @@ object Kinder {
           kenv => acc ++ kenv
         }
       }
+
+    case UnkindedType.RestrictableEnum(_, _) => ??? // TODO RESTR-VARS
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
