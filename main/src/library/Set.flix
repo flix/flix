@@ -106,7 +106,7 @@ namespace Set {
     pub def toString(s: Set[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Set#{", sb);
-        Set.forEachWithIndex((i, x) -> {
+        forEachWithIndex((i, x) -> {
             if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else

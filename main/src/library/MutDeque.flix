@@ -67,6 +67,22 @@ namespace MutDeque {
     def maxLoadFactor(): Float32 = 3.0f32 / 4.0f32
 
     ///
+    /// Returns a string representation of the given MutDeque `d`.
+    ///
+    pub def toString(d: MutDeque[a, r]): String \ Read(r) with ToString[a] = region r2 {
+        let sb = new StringBuilder(r2);
+        StringBuilder.appendString!("MutDeque#{", sb);
+        forEachWithIndex((i, x) -> {
+            if (i < 1)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+            }, d);
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
     /// Returns an empty MutDeque.
     ///
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) =
@@ -439,6 +455,15 @@ namespace MutDeque {
             }
         };
         loop(deref front)
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the MutDeque `d`
+    /// along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, d: MutDeque[a, r]): Unit \ { ef, Read(r) } = region rh {
+        let ix = ref 0 @ rh;
+        forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, d)
+    }
 
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.

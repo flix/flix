@@ -17,6 +17,34 @@
 namespace TestMutDeque {
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        let d: MutDeque[Int32, r] = new MutDeque(r);
+        MutDeque.toString(d) == "MutDeque#{}"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        let d: MutDeque[Int32, r] = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.toString(d) == "MutDeque#{1}"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        let d: MutDeque[Int32, r] = new MutDeque(r);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        MutDeque.pushBack(4, d);
+        MutDeque.pushBack(5, d);
+        MutDeque.toString(d) == "MutDeque#{1, 2, 3, 4, 5}"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1209,6 +1237,36 @@ namespace TestMutDeque {
         List.reverse(deref l) |> List.join("") == "FT"
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let d = new MutDeque(r);
+        let ri = ref 21 @ r;
+        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        21 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let d = new MutDeque(r);
+        let ri = ref 21 @ r;
+        MutDeque.pushBack(0, d);
+        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex03(): Bool = region r {
+        let d = new MutDeque(r);
+        let ri = ref 21 @ r;
+        MutDeque.pushBack(0, d);
+        MutDeque.pushBack(1, d);
+        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        1 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

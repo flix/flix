@@ -55,7 +55,7 @@ namespace Array {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
             StringBuilder.appendString!("${x}", sb)
         };
-        Array.forEach(f, a);
+        forEach(f, a);
 
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
