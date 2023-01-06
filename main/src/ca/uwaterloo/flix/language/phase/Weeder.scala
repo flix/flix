@@ -1822,28 +1822,12 @@ object Weeder {
     * - The guard is absent
     *
     * - The patterns are only tags with possible terms of variables and wildcards
-    *
-    * - The body is a direct tag if the choose is of star variant
     */
   private def createRestrictableChoiceRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChoiceRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
-      case Some(ginner) =>
-        WeederError.UnsupportedRestrictableChooseRule(
-          s"Choose${if (star) "*" else ""} cases do not allow guards,",
-          "",
-          ginner.loc).toFailure
+      case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
       case None => ().toSuccess
-    }
-    // Check that bodies are tags for choose*
-    val bVal = b0 match {
-      case _ if !star => b0.toSuccess
-      case Expression.Apply(Expression.Ambiguous(_, _), _, _) => b0.toSuccess
-      case Expression.Ambiguous(_, _) => b0.toSuccess
-      case _ => WeederError.UnsupportedRestrictableChooseRule(
-        s"Choose* case expressions must be an enum constructor.",
-        "Body is not an enum constructor.",
-        b0.loc).toFailure
     }
     // Check that patterns are only tags of variables (or wildcards as variables)
     val pVal = p0 match {
@@ -1853,31 +1837,19 @@ object Weeder {
             traverse(elms) {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
-              case other => WeederError.UnsupportedRestrictableChooseRule(
-                s"Choose${if (star) "*" else ""} case patterns can only be enum constructors of variables.",
-                "Non-variable.",
-                other.loc
-              ).toFailure
+              case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
-          case other => WeederError.UnsupportedRestrictableChooseRule(
-            s"Choose${if (star) "*" else ""} case patterns can only be enum constructors of variables.",
-            "Non-variable.",
-            other.loc
-          ).toFailure
+          case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
         }
-      case _ => WeederError.UnsupportedRestrictableChooseRule(
-        s"Choose${if (star) "*" else ""} case patterns can only be enum constructors.",
-        "Non-enum pattern.",
-        p0.loc
-      ).toFailure
+      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
-    mapN(gVal, bVal, pVal) {
-      case (_, b, p) => WeededAst.RestrictableChoiceRule(p, b)
+    mapN(gVal, pVal) {
+      case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
     }
   }
 
