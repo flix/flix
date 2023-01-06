@@ -261,13 +261,13 @@ object NamedAst {
 
   object RestrictableChoicePattern {
 
-    sealed trait VarPlace
+    sealed trait VarOrWild
 
-    case class Wild(loc: SourceLocation) extends VarPlace
+    case class Wild(loc: SourceLocation) extends VarOrWild
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarPlace
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(qname: Name.QName, pat: List[VarPlace], loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
 
   }
 

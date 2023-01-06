@@ -1039,7 +1039,7 @@ object Namer {
     * Names the given pattern `pat0`
     */
   private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoicePattern)(implicit flix: Flix): NamedAst.RestrictableChoicePattern = {
-    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarPlace): NamedAst.RestrictableChoicePattern.VarPlace = vp match {
+    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarOrWild): NamedAst.RestrictableChoicePattern.VarOrWild = vp match {
       case RestrictableChoicePattern.Wild(loc) => NamedAst.RestrictableChoicePattern.Wild(loc)
       case RestrictableChoicePattern.Var(ident, loc) =>
         // make a fresh variable symbol for the local variable.
