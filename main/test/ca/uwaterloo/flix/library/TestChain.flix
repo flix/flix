@@ -1399,16 +1399,36 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Chain.forEach(x -> r := x, Chain.empty());
-        21 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Chain.forEach(x -> ri := x, Chain.empty());
+        21 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Chain.forEach(x -> r := x, List.toChain(1 :: 2 :: 3 :: Nil));
-        3 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Chain.forEach(x -> ri := x, List.toChain(1 :: 2 :: 3 :: Nil));
+        3 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Chain.forEachWithIndex((i, _) -> ri := i, Chain.empty());
+        21 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Chain.forEachWithIndex((i, _) -> ri := i, List.toChain(1 :: 2 :: 3 :: Nil));
+        2 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

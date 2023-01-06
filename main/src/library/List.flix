@@ -123,6 +123,10 @@ instance Collectable[List] {
     pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
 }
 
+instance Iterable[List] {
+    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(rh, l)
+}
+
 namespace List {
 
     ///
@@ -130,7 +134,7 @@ namespace List {
     ///
     pub def toString(l: List[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
-        foreach (x <- iterator(r, l))
+        foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
@@ -1137,6 +1141,16 @@ namespace List {
         case Nil     => ()
         case x :: xs => f(x); forEach(f, xs)
     }
+
+    ///
+    /// Applies `f` to every element of `l` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: List[a]): Unit \ ef =
+        def loop(ll, i) = match ll {
+            case Nil     => ()
+            case x :: xs => f(i, x); loop(xs, i+1)
+        };
+        loop(l, 0)
 
     ///
     /// Returns the list `l` as an array.

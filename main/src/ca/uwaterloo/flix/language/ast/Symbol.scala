@@ -396,7 +396,30 @@ object Symbol {
   }
 
   /**
-    * Enum Symbol.
+    * Restrictable Enum Symbol.
+    */
+  final class RestrictableEnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: RestrictableEnumSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Case Symbol.
     */
   final class CaseSym(val enumSym: Symbol.EnumSym, val name: String, val loc: SourceLocation) extends Symbol {
     /**
@@ -404,6 +427,34 @@ object Symbol {
       */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: CaseSym => this.enumSym == that.enumSym && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(enumSym, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = enumSym.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = enumSym.namespace :+ enumSym.name
+  }
+
+  /**
+    * Restrictable Case Symbol.
+    */
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: RestrictableCaseSym => this.enumSym == that.enumSym && this.name == that.name
       case _ => false
     }
 

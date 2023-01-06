@@ -96,12 +96,12 @@ instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Chain#{", sb);
-        foreach ((i, x) <- enumerator(r, c)) {
+        Chain.forEachWithIndex((i, x) -> {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+            }, c);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -109,6 +109,10 @@ instance ToString[Chain[a]] with ToString[a] {
 
 instance Collectable[Chain] {
     pub def collect(iter: Iterator[a, r]): Chain[a] \ r with Order[a] = Iterator.toChain(iter)
+}
+
+instance Iterable[Chain] {
+    pub def iterator(rh: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(rh, c)
 }
 
 namespace Chain {
@@ -730,6 +734,16 @@ namespace Chain {
         case ViewLeft.NoneLeft => ()
         case ViewLeft.SomeLeft(x, xs) => f(x); forEach(f, xs)
     }
+
+    ///
+    /// Applies `f` to every element of `c` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Chain[a]): Unit \ ef =
+        def loop(v, i) = match v {
+            case ViewLeft.NoneLeft => ()
+            case ViewLeft.SomeLeft(x, xs) => f(i, x); loop(viewLeft(xs), i+1)
+        };
+        loop(viewLeft(c), 0)
 
     ///
     /// Returns `c` as a list.

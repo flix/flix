@@ -2034,45 +2034,64 @@ def toMapWith05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    List.forEach(x -> r := x, Nil);
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEach(x -> ri := x, Nil);
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    List.forEach(x -> r := x, 1 :: 2 :: 3 :: Nil);
-    3 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEach(x -> ri := x, 1 :: 2 :: 3 :: Nil);
+    3 == deref ri
+}
 
+/////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+@test
+def forEachWithIndex01(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEachWithIndex((i, _) -> ri := i, Nil);
+    21 == deref ri
+}
 
-    @test
-    def toArray01(): Bool = region r {
-        let a = List.toArray(r, Nil): Array[Int32, r];
-        Array.sameElements(a, [] @ r)
-    }
+@test
+def forEachWithIndex02(): Bool = region r {
+    let ri = ref 21 @ r;
+    List.forEachWithIndex((i, _) -> ri := i, 1 :: 2 :: 3 :: Nil);
+    2 == deref ri
+}
 
-    @test
-    def toArray02(): Bool = region r {
-        let a = List.toArray(r, 1 :: Nil);
-        Array.sameElements(a, [1] @ r)
-    }
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray03(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: Nil);
-        Array.sameElements(a, [1, 2] @ r)
-    }
+@test
+def toArray01(): Bool = region r {
+    let a = List.toArray(r, Nil): Array[Int32, r];
+    Array.sameElements(a, [] @ r)
+}
 
-    @test
-    def toArray04(): Bool = region r {
-        let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
-        Array.sameElements(a, [1, 2, 3] @ r)
-    }
+@test
+def toArray02(): Bool = region r {
+    let a = List.toArray(r, 1 :: Nil);
+    Array.sameElements(a, [1] @ r)
+}
+
+@test
+def toArray03(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: Nil);
+    Array.sameElements(a, [1, 2] @ r)
+}
+
+@test
+def toArray04(): Bool = region r {
+    let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
+    Array.sameElements(a, [1, 2, 3] @ r)
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2743,7 +2762,7 @@ def distinctWith09(): Bool =
     def enumerate01(): Bool = region r {
         let z = ref Nil @ r;
         let l = Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        Iterator.forEach(match (i, x) ->  z := (i, x) :: deref z, List.enumerator(r, l));
         List.reverse(deref z) == Nil: List[(Int32, Int32)]
     }
 
@@ -2751,7 +2770,7 @@ def distinctWith09(): Bool =
     def enumerate02(): Bool = region r {
         let z = ref Nil @ r;
         let l = 1 :: 2 :: 3 :: Nil;
-        foreach ((x, i) <- List.enumerator(r, l)) z := (x, i) :: deref z;
+        Iterator.forEach(match (i, x) ->  z := (i, x) :: deref z, List.enumerator(r, l));
         List.reverse(deref z) == (0, 1) :: (1, 2) :: (2, 3) :: Nil
     }
 
@@ -2759,8 +2778,8 @@ def distinctWith09(): Bool =
     def enumerate03(): Bool = region r {
         let z = ref Nil @ r;
         let l = List.range(100, 200);
-        foreach ((i, x) <- List.enumerator(r, l)) z := (x, i) :: deref z;
-        List.reverse(deref z) == List.zip(l, List.range(0, 100))
+        Iterator.forEach(match (i, x) -> z := (i, x) :: deref z, List.enumerator(r, l));
+        List.reverse(deref z) == List.zip(List.range(0, 100), l)
     }
 
     /////////////////////////////////////////////////////////////////////////////

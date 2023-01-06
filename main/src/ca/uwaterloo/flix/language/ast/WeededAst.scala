@@ -44,6 +44,8 @@ object WeededAst {
 
     case class Enum(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: List[WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
+    case class RestrictableEnum(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, index: WeededAst.TypeParam, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: List[WeededAst.RestrictableCase], loc: SourceLocation) extends WeededAst.Declaration
+
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Effect(doc: Ast.Doc, ann: List[WeededAst.Annotation], mod: Ast.Modifiers, ident: Name.Ident, ops: List[WeededAst.Declaration.Op], loc: SourceLocation) extends WeededAst.Declaration
@@ -352,6 +354,8 @@ object WeededAst {
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
   case class Case(ident: Name.Ident, tpe: WeededAst.Type)
+
+  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 

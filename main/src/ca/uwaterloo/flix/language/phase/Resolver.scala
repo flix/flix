@@ -224,6 +224,7 @@ object Resolver {
     case _: UnkindedType.Arrow => Nil
     case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
     case _: UnkindedType.Enum => Nil
+    case _: UnkindedType.RestrictableEnum => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
   }
 
@@ -2124,6 +2125,8 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.RestrictableEnum => ??? // TODO RESTR-VARS
+
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
@@ -2914,6 +2917,7 @@ object Resolver {
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
 
       }
 
@@ -2945,6 +2949,7 @@ object Resolver {
 
       // Case 3: Enum. Return an object type.
       case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
+      case _: UnkindedType.RestrictableEnum => Class.forName("java.lang.Object").toSuccess
 
       // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
@@ -3020,7 +3025,9 @@ object Resolver {
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ClassSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)

@@ -53,16 +53,13 @@ namespace DelayMap {
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         let _ = parallelForce(m);
-        let first = ref true @ r;
         StringBuilder.appendString!("DelayMap#{", sb);
-        foreach ((k, v) <- DelayMap.iterator(r, m)) {
-            if (deref first) {
-                first := false;
+        forEachWithIndex((i, k, v) -> {
+            if (i < 1)
                 StringBuilder.appendString!("${k} => ${v}", sb)
-            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
-        };
+            }, m);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -803,7 +800,7 @@ namespace DelayMap {
         Map.toMutDeque(r, m1)
 
     ///
-    /// Applies `f` to every element of `xs`.
+    /// Applies `f` to every `(key, value)` of `m`.
     ///
     @Experimental
     pub def forEach(f: (k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef =
@@ -811,6 +808,17 @@ namespace DelayMap {
         let DMap(t) = m;
         let f1 = (k, v) -> f(k, force v);
         RedBlackTree.forEach(f1, t)
+
+    ///
+    /// Applies `f` to tuple `(index, key, value)` formed of the keys and values of
+    /// DelayMap `m` and the index of the traversal.
+    ///
+    @Experimental
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region r {
+       let ix = ref 0 @ r;
+       let f1 = (k, v) -> {let i = deref ix; f(i, k, v); ix := i+1};
+       forEach(f1, m)
+    }
 
     ///
     /// Returns the sum of all values in `m`.

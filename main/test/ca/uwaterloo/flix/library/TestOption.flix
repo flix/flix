@@ -534,16 +534,18 @@ def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    Option.forEach(x -> r := x, None);
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21;
+    Option.forEach(x -> ri := x, None);
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    Option.forEach(x -> r := x, Some(42));
-    42 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21;
+    Option.forEach(x -> ri := x, Some(42));
+    42 == deref ri
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // point                                                                   //

@@ -82,16 +82,14 @@ namespace MultiMap {
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
-        let first = ref true @ r;
+        let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
-        foreach ((k, v) <- MultiMap.iterator(r, m)) {
-            if (deref first) {
-                first := false;
+        Map.forEachWithIndex((i, k, v) -> {
+            if (i < 1)
                 StringBuilder.appendString!("${k} => ${v}", sb)
-            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
-        };
+            }, m1);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -561,6 +559,16 @@ namespace MultiMap {
     pub def forEach(f: (k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef =
         let MultiMap(m1) = m;
         Map.forEach((k, s) -> Set.forEach(f(k), s), m1)
+
+    ///
+    /// Applies `f` to tuple `(index, key, value)` formed of the keys and values of
+    /// MultiMap `m` and the index of the traversal.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region r {
+        let ix = ref 0 @ r;
+        let f1 = (k , v) -> {let i = deref ix; f(i, k, v); ix := i + 1};
+        forEach(f1, m)
+    }
 
     ///
     /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.

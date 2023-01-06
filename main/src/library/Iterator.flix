@@ -26,23 +26,11 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[Iterator] {
-    pub def iterator(r1: Region[r1], iter: Iterator[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
-        let _ = r1; // Avoid redundancy error
-        unsafe_cast iter as Iterator[a, r1 and r2] \ { Write(r1), Read(r2) }
-}
-
 ///
 /// Alias for `Foldable.iterator`.
 ///
 pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
     Foldable.iterator(r, t)
-
-///
-/// Alias for `Foldable.iterator |> Iterable.enumerator`.
-///
-pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t) |> Iterable.enumerator(r)
 
 namespace Iterator {
 
@@ -298,6 +286,16 @@ namespace Iterator {
     pub def forEach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
         case Iterator(done, _) if done() => ()
         case Iterator(_, next)           => f(next()); forEach(f, iter)
+    }
+
+    ///
+    /// Applies `f` to every element of `iter` along with that element's index.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = region r {
+        let ix = ref 0 @ r;
+        forEach(x -> {let i = deref ix; f(i, x); ix := i + 1}, iter)
     }
 
     ///
