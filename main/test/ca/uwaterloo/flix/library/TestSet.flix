@@ -1405,8 +1405,8 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter01(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true)
             None
@@ -1416,10 +1416,11 @@ def unfoldWithIter01(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{}
+}
 
 @test
-def unfoldWithIter02(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter02(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 0)
             None
@@ -1429,10 +1430,11 @@ def unfoldWithIter02(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0'}
+}
 
 @test
-def unfoldWithIter03(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter03(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 1)
             None
@@ -1442,10 +1444,11 @@ def unfoldWithIter03(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0', '1'}
+}
 
 @test
-def unfoldWithIter04(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter04(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1455,10 +1458,11 @@ def unfoldWithIter04(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+}
 
 @test
-def unfoldWithIter05(): Bool \ IO =
-    let x = ref 5;
+def unfoldWithIter05(): Bool = region r {
+    let x = ref 5 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1468,10 +1472,11 @@ def unfoldWithIter05(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'5', '6', '7', '8', '9'}
+}
 
 @test
-def unfoldWithIter06(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter06(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1481,6 +1486,7 @@ def unfoldWithIter06(): Bool \ IO =
             Some(c)
         };
     Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
+}
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

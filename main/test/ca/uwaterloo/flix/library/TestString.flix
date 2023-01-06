@@ -1486,8 +1486,8 @@ def unfold08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter01(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true)
             None
@@ -1497,10 +1497,11 @@ def unfoldWithIter01(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == ""
+}
 
 @test
-def unfoldWithIter02(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter02(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 0)
             None
@@ -1510,10 +1511,11 @@ def unfoldWithIter02(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == "a"
+}
 
 @test
-def unfoldWithIter03(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter03(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 1)
             None
@@ -1523,10 +1525,11 @@ def unfoldWithIter03(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == "ab"
+}
 
 @test
-def unfoldWithIter04(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter04(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1536,10 +1539,11 @@ def unfoldWithIter04(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == "abcdefghij"
+}
 
 @test
-def unfoldWithIter05(): Bool \ IO =
-    let x = ref 5;
+def unfoldWithIter05(): Bool = region r {
+    let x = ref 5 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1549,10 +1553,11 @@ def unfoldWithIter05(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == "fghij"
+}
 
 @test
-def unfoldWithIter06(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter06(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1562,6 +1567,7 @@ def unfoldWithIter06(): Bool \ IO =
             Some(c)
         };
     String.unfoldWithIter(step) == "acegi"
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldString                                                            //
@@ -1605,8 +1611,8 @@ def unfoldString08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldStringWithIter01(): Bool \ IO =
-    let x = ref 0;
+def unfoldStringWithIter01(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true)
             None
@@ -1618,10 +1624,11 @@ def unfoldStringWithIter01(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == ""
+}
 
 @test
-def unfoldStringWithIter02(): Bool \ IO =
-    let x = ref 0;
+def unfoldStringWithIter02(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 0)
             None
@@ -1633,10 +1640,11 @@ def unfoldStringWithIter02(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa."
+}
 
 @test
-def unfoldStringWithIter03(): Bool \ IO =
-    let x = ref 0;
+def unfoldStringWithIter03(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 1)
             None
@@ -1648,10 +1656,11 @@ def unfoldStringWithIter03(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb."
+}
 
 @test
-def unfoldStringWithIter04(): Bool \ IO =
-    let x = ref 0;
+def unfoldStringWithIter04(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1663,10 +1672,11 @@ def unfoldStringWithIter04(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
+}
 
 @test
-def unfoldStringWithIter05(): Bool \ IO =
-    let x = ref 5;
+def unfoldStringWithIter05(): Bool = region r {
+    let x = ref 5 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1678,10 +1688,11 @@ def unfoldStringWithIter05(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
+}
 
 @test
-def unfoldStringWithIter06(): Bool \ IO =
-    let x = ref 0;
+def unfoldStringWithIter06(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -1693,6 +1704,7 @@ def unfoldStringWithIter06(): Bool \ IO =
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
