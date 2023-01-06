@@ -183,7 +183,7 @@ object CompletionProvider {
     val classRegex = raw"\s*class\s+.*".r
     val letRegex = raw"\s*let\s+[^\s]*".r
     val letStarRegex = raw"\s*let[\*]\s+[^\s]*".r
-    val namespaceRegex = raw"\s*namespace\s+.*".r
+    val modRegex = raw"\s*mod\s+.*".r
     val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
@@ -198,7 +198,7 @@ object CompletionProvider {
       case withRegex() => getWithCompletions()
       case typeRegex() | typeAliasRegex() => getTypeCompletions()
       case effectRegex() => getEffectCompletions()
-      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | namespaceRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
+      case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
