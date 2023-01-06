@@ -308,6 +308,7 @@ object Documentor {
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""
+    case Kind.CaseSet(sym) => s"CaseSet[${sym.toString}]"
     case Kind.Arrow(k1, k2) => visitKind(k1) + " -> " + visitKind(k2)
   }
 
