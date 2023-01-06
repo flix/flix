@@ -110,6 +110,8 @@ object WeededAst {
 
     case class RelationalChoose(star: Boolean, exps: List[WeededAst.Expression], rules: List[WeededAst.RelationalChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
+    case class RestrictableChoose(star: Boolean, exp: WeededAst.Expression, rules: List[WeededAst.RestrictableChoiceRule], loc: SourceLocation) extends WeededAst.Expression
+
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Expression
@@ -246,6 +248,22 @@ object WeededAst {
 
   }
 
+  sealed trait RestrictableChoicePattern {
+    def loc: SourceLocation
+  }
+
+  object RestrictableChoicePattern {
+
+    sealed trait VarPlace
+
+    case class Wild(loc: SourceLocation) extends VarPlace
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends VarPlace
+
+    case class Tag(qname: Name.QName, pat: List[VarPlace], loc: SourceLocation) extends RestrictableChoicePattern
+
+  }
+
 
   sealed trait Predicate
 
@@ -376,6 +394,8 @@ object WeededAst {
   case class HandlerRule(op: Name.Ident, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression)
 
   case class RelationalChoiceRule(pat: List[WeededAst.RelationalChoicePattern], exp: WeededAst.Expression)
+
+  case class RestrictableChoiceRule(pat: WeededAst.RestrictableChoicePattern, exp: WeededAst.Expression)
 
   case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
 

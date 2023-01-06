@@ -390,6 +390,29 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an unsupported restrictable choose rule.
+    *
+    * @param summary  a summary of the error.
+    * @param short    a short name for the arrow pointing to the location.
+    * @param loc      the location where the error occurs.
+    */
+  case class UnsupportedRestrictableChooseRule(summary: String, short: String, loc: SourceLocation) extends WeederError {
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, short)}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.
