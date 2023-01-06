@@ -53,6 +53,7 @@ sealed trait BackendObjType {
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
     case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
+    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, "UncaughtExceptionHandler")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -61,6 +62,7 @@ sealed trait BackendObjType {
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
+    case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   }
 
   /**
@@ -992,40 +994,55 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkField(ThreadsField)
+      cm.mkField(ParentThreadField)
+      cm.mkField(ChildExceptionField)
+
       cm.mkConstructor(Constructor)
+
       cm.mkMethod(SpawnMethod)
       cm.mkMethod(ExitMethod)
+      cm.mkMethod(ReportChildExceptionMethod)
+      cm.mkMethod(ReThrowChildExceptionMethod)
 
       cm.closeClassMaker()
     }
 
-    // private ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+    // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
     def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+
+    // private Thread parentThread = Thread.currentThread();
+    def ParentThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "parentThread", JvmName.Thread.toTpe)
+
+    // private volatile Throwable childException = null;
+    def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
+      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      PUTFIELD(ParentThreadField) ~
+      thisLoad() ~ ACONST_NULL() ~
+      PUTFIELD(ChildExceptionField) ~
       RETURN()
     ))
 
     // final public void spawn(Runnable r) {
     //   Thread t = new Thread(r);
+    //   t.setUncaughtExceptionHandler(new UncaughtExceptionHandler(this));
     //   t.start();
     //   threads.add(t);
     // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
-      (
-        if (flix.options.xvirtualthreads) {
-          ALOAD(1) ~ INVOKESTATIC(Thread.StartVirtualThreadMethod)
-        } else {
-          NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
-          DUP() ~ INVOKEVIRTUAL(Thread.StartMethod)
-        }
-      ) ~
+      NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
+      invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+        DUP() ~ thisLoad() ~
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
         thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
         INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
         RETURN()
@@ -1048,6 +1065,61 @@ object BackendObjType {
         } ~
         RETURN()
       }
+    ))
+
+    // final public void reportChildException(Throwable e) {
+    //   childException = e;
+    //   parentThread.interrupt();
+    // }
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
+      thisLoad() ~ ALOAD(1) ~ 
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ GETFIELD(ParentThreadField) ~ 
+      INVOKEVIRTUAL(Thread.InterruptMethod) ~
+      RETURN()
+    ))
+
+    // final public void reThrowChildException() throws Throwable {
+    //   if (childException != null)
+    //     throw childException;
+    // }
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
+      thisLoad() ~ GETFIELD(ChildExceptionField) ~
+      ifTrue(Condition.NONNULL) {
+        thisLoad() ~ GETFIELD(ChildExceptionField) ~
+        ATHROW()
+      } ~
+      RETURN()
+    ))
+  }
+
+  case object UncaughtExceptionHandler extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
+
+      cm.mkField(RegionField)
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(UncaughtExceptionMethod)
+
+      cm.closeClassMaker()
+    }
+
+    // private final Region r;
+    def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "r", BackendObjType.Region.toTpe)
+
+    // UncaughtExceptionHandler(Region r) { this.r = r; }
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
+      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      RETURN()
+    ))
+
+    // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
+      thisLoad() ~ GETFIELD(RegionField) ~ 
+      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      RETURN()
     ))
   }
 
@@ -1171,10 +1243,22 @@ object BackendObjType {
     def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "start",
       MethodDescriptor.NothingToVoid, None)
 
-    def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
-      mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
-
     def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "join",
        MethodDescriptor.NothingToVoid, None)
+
+    def CurrentThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "currentThread",
+      mkDescriptor()(this.toTpe), None)
+
+    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "interrupt", 
+      MethodDescriptor.NothingToVoid, None)
+
+    def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "setUncaughtExceptionHandler",
+      mkDescriptor(ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void), None)
+  }
+
+  case object ThreadUncaughtExceptionHandler extends BackendObjType {
+
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "uncaughtException",
+      mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
   }
 }
