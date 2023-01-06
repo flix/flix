@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, mapN, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
@@ -45,12 +45,12 @@ object Typer {
     val classesVal = visitClasses(root, classEnv, oldRoot, changeSet)
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
-    val enumsVal = visitEnums(root)
+    val enums = visitEnums(root)
     val effsVal = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
 
-    Validation.mapN(classesVal, instancesVal, defsVal, enumsVal, effsVal) {
-      case (classes, instances, defs, enums, effs) =>
+    Validation.mapN(classesVal, instancesVal, defsVal, effsVal) {
+      case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
         TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
@@ -136,14 +136,13 @@ object Typer {
     * Reassembles a single class.
     */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann0, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
+    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val annVal = visitAnnotations(ann0, root)
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
-      mapN(annVal, sigsVal, lawsVal) {
-        case (ann, sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+      mapN(sigsVal, lawsVal) {
+        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
       }
   }
 
@@ -164,11 +163,10 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, ann0, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
-      val annVal = visitAnnotations(ann0, root)
+    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
-      mapN(annVal, defsVal) {
-        case (ann, defs) => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
+      mapN(defsVal) {
+        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
       }
   }
 
@@ -192,11 +190,10 @@ object Typer {
     * Performs type inference and reassembly on the given effect `eff`.
     */
   private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Effect, TypeError] = eff match {
-    case KindedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
-      val annVal = visitAnnotations(ann0, root)
+    case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
       val opsVal = traverse(ops0)(visitOp(_, root))
-      mapN(annVal, opsVal) {
-        case (ann, ops) => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
+      mapN(opsVal) {
+        case (ops) => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
@@ -223,9 +220,8 @@ object Typer {
         case (spec, exp) => TypedAst.Sig(sym, spec, Some(exp))
       }
     case KindedAst.Sig(sym, spec0, None) =>
-      visitSpec(spec0, root, Substitution.empty) map {
-        spec => TypedAst.Sig(sym, spec, None)
-      }
+      val spec = visitSpec(spec0, root, Substitution.empty)
+      TypedAst.Sig(sym, spec, None).toSuccess
   }
 
   /**
@@ -233,22 +229,18 @@ object Typer {
     */
   private def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Op, TypeError] = op match {
     case KindedAst.Op(sym, spec0) =>
-      visitSpec(spec0, root, Substitution.empty) map {
-        case spec => TypedAst.Op(sym, spec)
-      }
+      val spec = visitSpec(spec0, root, Substitution.empty)
+      TypedAst.Op(sym, spec).toSuccess
   }
 
   /**
     * Performs type inference and reassembly on the given Spec `spec`.
     */
-  private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): Validation[TypedAst.Spec, TypeError] = spec match {
-    case KindedAst.Spec(doc, ann0, mod, tparams0, fparams0, sc, tpe, pur, eff, tconstrs, loc) =>
-      val annVal = visitAnnotations(ann0, root)
+  private def visitSpec(spec: KindedAst.Spec, root: KindedAst.Root, subst: Substitution)(implicit flix: Flix): TypedAst.Spec = spec match {
+    case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, eff, tconstrs, loc) =>
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
-      Validation.mapN(annVal) {
-        ann => TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
-      }
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
   }
 
   /**
@@ -383,7 +375,7 @@ object Typer {
               /// Compute the expression, type parameters, and formal parameters with the substitution applied everywhere.
               ///
               val exp = reassembleExp(exp0, root, subst)
-              val specVal = visitSpec(spec0, root, subst)
+              val spec = visitSpec(spec0, root, subst)
 
               ///
               /// Compute a type scheme that matches the type variables that appear in the expression body.
@@ -396,9 +388,7 @@ object Typer {
               val finalInferredTconstrs = partialTconstrs.map(subst.apply)
               val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
 
-              specVal map {
-                spec => (spec, TypedAst.Impl(exp, inferredScheme))
-              }
+              (spec, TypedAst.Impl(exp, inferredScheme)).toSuccess
 
             case Err(e) => Validation.Failure(LazyList(e))
           }
@@ -408,7 +398,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on all enums in the given AST root.
     */
-  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] =
+  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] =
     flix.subphase("Enums") {
       // Visit every enum in the ast.
       val result = root.enums.toList.map {
@@ -416,24 +406,21 @@ object Typer {
       }
 
       // Sequence the results and convert them back to a map.
-      Validation.sequence(result).map(_.toMap)
+      result.toMap
     }
 
   /**
     * Performs type resolution on the given enum and its cases.
     */
-  private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum0 match {
+  private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.EnumSym, TypedAst.Enum) = enum0 match {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpe, loc) =>
-      val annVal = visitAnnotations(ann, root)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
         case (name, KindedAst.Case(caseSym, tagType, sc)) =>
           name -> TypedAst.Case(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
       }
 
-      Validation.mapN(annVal) {
-        ann => enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
-      }
+      enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -449,39 +436,6 @@ object Typer {
 
       root.typeAliases.values.map(visitTypeAlias).toMap
     }
-
-  /**
-    * Visits all annotations.
-    */
-  private def visitAnnotations(ann: List[KindedAst.Annotation], root: KindedAst.Root)(implicit flix: Flix): Validation[List[TypedAst.Annotation], TypeError] = {
-    traverse(ann)(inferAnnotation(_, root))
-  }
-
-  /**
-    * Performs type inference on the given annotation `ann0`.
-    */
-  private def inferAnnotation(ann0: KindedAst.Annotation, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Annotation, TypeError] = ann0 match {
-    case KindedAst.Annotation(name, exps, loc) =>
-      //
-      // Perform type inference on the arguments.
-      //
-      val result = for {
-        (constrs, tpes, purs, effs) <- traverseM(exps)(inferExp(_, root)).map(unzip4)
-        _ <- unifyTypeM(Type.Pure :: purs, loc)
-        _ <- unifyTypeM(Type.Empty :: effs, loc)
-      } yield Type.Int32
-
-      //
-      // Run the type inference monad with an empty substitution and rigidity env.
-      //
-      val initialSubst = Substitution.empty
-      val renv = RigidityEnv.empty
-      result.run(initialSubst, renv).toValidation.map {
-        case (subst, _, _) =>
-          val es = exps.map(reassembleExp(_, root, subst))
-          TypedAst.Annotation(name, es, loc)
-      }
-  }
 
   /**
     * Infers the type of the given expression `exp0`.
