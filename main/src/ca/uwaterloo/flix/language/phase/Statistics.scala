@@ -103,6 +103,7 @@ object Statistics {
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.RecordEmpty(tpe, loc) => Counter.empty
       case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) => visitExp(exp)

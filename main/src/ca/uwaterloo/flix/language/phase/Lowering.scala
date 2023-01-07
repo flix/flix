@@ -430,6 +430,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
 
+    case TypedAst.Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      ??? // TODO RESTR-VARS
+
     case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
       val t = visitType(tpe)

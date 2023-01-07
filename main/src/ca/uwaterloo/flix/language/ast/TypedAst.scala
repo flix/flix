@@ -159,6 +159,8 @@ object TypedAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {

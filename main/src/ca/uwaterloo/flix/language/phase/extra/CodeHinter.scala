@@ -155,6 +155,9 @@ object CodeHinter {
     case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Tuple(exps, _, _, _, _) =>
       visitExps(exps)
 
