@@ -48,8 +48,8 @@ object CodeHinter {
     val tagUses = enum0.cases.keys.flatMap(sym => index.usesOf(sym))
     val enumUses = index.usesOf(enum0.sym)
     val uses = enumUses ++ tagUses
-    val isDeprecated = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
-    val isExperimental = enum0.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val isDeprecated = enum0.ann.isDeprecated
+    val isExperimental = enum0.ann.isExperimental
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
     val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
     (deprecated ++ experimental).toList
@@ -60,9 +60,9 @@ object CodeHinter {
     */
   private def visitClass(typeclass: TypedAst.Class)(implicit root: Root, index: Index): List[CodeHint] = {
     val uses = index.usesOf(typeclass.sym)
-    val isDeprecated = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val isDeprecated = typeclass.ann.isDeprecated
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil
-    val isExperimental = typeclass.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val isExperimental = typeclass.ann.isExperimental
     val experimental = if (isExperimental) uses.map(CodeHint.Experimental) else Nil
     (deprecated ++ experimental).toList
   }
@@ -362,7 +362,7 @@ object CodeHinter {
     */
   private def lazyWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.LazyWhenPure])
+    defn.spec.ann.isLazyWhenPure
   }
 
   /**
@@ -371,7 +371,7 @@ object CodeHinter {
     */
   private def parallelWhenPure(sym: Symbol.DefnSym)(implicit root: Root): Boolean = {
     val defn = root.defs(sym)
-    defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.ParallelWhenPure])
+    defn.spec.ann.isParallelWhenPure
   }
 
   /**
@@ -401,7 +401,7 @@ object CodeHinter {
     */
   private def checkDeprecated(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
-    val isDeprecated = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Deprecated])
+    val isDeprecated = defn.spec.ann.isDeprecated
     if (isDeprecated) {
       CodeHint.Deprecated(loc) :: Nil
     } else {
@@ -414,7 +414,7 @@ object CodeHinter {
     */
   private def checkExperimental(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
-    val isExperimental = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Experimental])
+    val isExperimental = defn.spec.ann.isExperimental
     if (isExperimental) {
       CodeHint.Experimental(loc) :: Nil
     } else {
@@ -427,7 +427,7 @@ object CodeHinter {
     */
   private def checkParallel(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
-    val isParallel = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Parallel])
+    val isParallel = defn.spec.ann.isParallel
     if (isParallel) {
       CodeHint.Parallel(loc) :: Nil
     } else {
@@ -440,7 +440,7 @@ object CodeHinter {
     */
   private def checkUnsafe(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
-    val isUnsafe = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Unsafe])
+    val isUnsafe = defn.spec.ann.isUnsafe
     if (isUnsafe) {
       CodeHint.Unsafe(loc) :: Nil
     } else {
@@ -453,7 +453,7 @@ object CodeHinter {
     */
   private def checkLazy(sym: Symbol.DefnSym, loc: SourceLocation)(implicit root: Root): List[CodeHint] = {
     val defn = root.defs(sym)
-    val isLazy = defn.spec.ann.exists(ann => ann.name.isInstanceOf[Ast.Annotation.Lazy])
+    val isLazy = defn.spec.ann.isLazy
     if (isLazy) {
       CodeHint.Lazy(loc) :: Nil
     } else {

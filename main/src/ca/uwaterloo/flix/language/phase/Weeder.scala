@@ -2239,7 +2239,7 @@ object Weeder {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[List[WeededAst.Annotation], WeederError] = {
+  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
     // collect seen annotations.
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
@@ -2248,7 +2248,7 @@ object Weeder {
       case x: ParsedAst.Annotation => seen.get(x.ident.name) match {
         case None =>
           seen += (x.ident.name -> x)
-          visitAnnotation(x)
+          visitAnnotation(x.ident)
         case Some(otherAnn) =>
           val name = x.ident.name
           val loc1 = mkSL(otherAnn.sp1, otherAnn.sp2)
@@ -2261,27 +2261,15 @@ object Weeder {
       }
     }
 
-    sequence(result)
-  }
-
-  /**
-    * Weeds the given parsed annotation `past`.
-    */
-  private def visitAnnotation(past: ParsedAst.Annotation)(implicit flix: Flix): Validation[WeededAst.Annotation, WeederError] = {
-    val loc = mkSL(past.sp1, past.sp2)
-
-    val tagVal = visitAnnotationTag(past.ident)
-    val argsVal = traverse(past.args.getOrElse(Nil))(visitArgument(_, SyntacticEnv.Top))
-
-    mapN(tagVal, argsVal) {
-      case (tag, args) => WeededAst.Annotation(tag, args, loc)
+    sequence(result) map {
+      case anns => Ast.Annotations(anns)
     }
   }
 
   /**
-    * Performs weeding on the given annotation tag.
+    * Performs weeding on the given annotation.
     */
-  private def visitAnnotationTag(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
+  private def visitAnnotation(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
