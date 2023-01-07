@@ -151,7 +151,5 @@ object Doc {
 
   def <+\>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> nest(breakWith(" ") <> d2)
 
-  val INDENT: Indent = indentationLevel(4)
-
 }
 

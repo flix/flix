@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.AstPrinter
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 object ShowAstProvider {
-
-  private val IrFileExtension = "flixir"
 
   /**
     * Returns a JSON object with
@@ -39,7 +38,7 @@ object ShowAstProvider {
 
     val text = "def main(): String = \"Work in progress!\"\n"
 
-    ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+    ("title" -> s"$phase.${AstPrinter.IREXTENSION}") ~ ("text" -> text)
   }
 
 }

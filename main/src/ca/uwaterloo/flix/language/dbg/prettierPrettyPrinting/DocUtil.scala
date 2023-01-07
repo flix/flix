@@ -224,7 +224,7 @@ object DocUtil {
     }
 
     def stringf(s: String)(implicit i: Indent): Doc =
-      applyf("String", List(text(s)))
+      text("\"") <> text(s) <> text("\"")
 
     /**
       * `<txt>`

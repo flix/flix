@@ -17,8 +17,8 @@ object ErasedAstPrinter {
     val defs = root.
       defs.
       toList.
-      sortBy{case (sym, _) => sym.namespace.mkString("/")}/*.filter { case (sym, _) => sym.namespace == List("One") }*/.
-      map { case (_, defn) => doc(defn) }
+      sortBy{case (sym, _) => sym.toString}.
+      map{case (_, defn) => doc(defn)}
     group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
   }
 
