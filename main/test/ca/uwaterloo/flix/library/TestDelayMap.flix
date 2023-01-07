@@ -1396,19 +1396,40 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
+    def forEach01(): Bool = region r {
+        let ri = ref 21;
         Map#{} |> Map.toDelayMap |>
-            DelayMap.forEach((k, _) -> r := k);
-        21 == deref r
+            DelayMap.forEach((k, _) -> ri := k);
+        21 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
+    def forEach02(): Bool = region r {
+        let ri = ref 21;
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
-            DelayMap.forEach((k, _) -> r := k);
-        1 == deref r
+            DelayMap.forEach((k, _) -> ri := k);
+        1 == deref ri
+    }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Map#{} |> Map.toDelayMap |>
+            DelayMap.forEachWithIndex((i, _, _) -> ri := i);
+        21 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Map#{1 => "Hello World!"} |> Map.toDelayMap |>
+            DelayMap.forEachWithIndex((i, _, _) -> ri := i);
+        0 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //

@@ -8,18 +8,41 @@ def main(): Unit \ IO = region r {
         let xs = Array.repeat(r, 8, 'a');
 
         // Print contents of `xs`.
-        foreach (x <- xs)
-            println(x);
+        Array.forEach(println, xs);
 
-        // Enumerate the chars of `s` along
+        ///
+        /// Enumerator loops are not currently supported
+        /// in Flix. Supported for them will be revived
+        /// when `foreach` loops desugar to Streams
+        /// rather than Iterators.
+        ///
+        // ~~~Enumerate the chars of `s` along
         // with the index of the char.
         // The loop has a guard to avoid
         // out of bounds errors.
         // It also matches the pattern of the
-        // value returned by `enumerator.`
-        foreach ((i, x) <- String.enumerator(r, s);
-                 if i < Array.length(xs))
-                    xs[i] = x;
+        // value returned by `enumerator.`~~~
+        /// foreach ((x, i) <- String.enumerator(r, s);
+        ///          if i < Array.length(xs))
+        ///             xs[i] = x;
 
+        /// Enumerator loops can currently be simulated
+        /// with `forEach` or `forEachWithIndex`.
+        Iterator.forEach(match (i, x) -> {
+            if (i < Array.length(xs))
+                xs[i] = x
+            else
+                ()
+            }, String.enumerator(r, s));
+        println(xs);
+
+        Iterator.forEachWithIndex((i, x) -> {
+            if (i < Array.length(xs))
+                xs[i] = x
+            else
+                ()
+            }, String.iterator(r, s));
         println(xs)
+
+
 }
