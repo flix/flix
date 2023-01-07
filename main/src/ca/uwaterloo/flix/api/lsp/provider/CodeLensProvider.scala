@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{CodeLens, Command, Index, Range}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Annotation, Root, Spec}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import org.json4s.JsonAST.{JArray, JObject, JString}
 import org.json4s.JsonDSL._
@@ -91,10 +91,7 @@ object CodeLensProvider {
   /**
     * Returns `true` if the given `defn` is marked as a test.
     */
-  private def isTest(s: Spec): Boolean = s.ann.exists {
-    case Annotation(Ast.Annotation.Test(_), _, _) => true
-    case _ => false
-  }
+  private def isTest(s: Spec): Boolean = s.ann.isTest
 
   /**
     * Returns `true` if the given type `tpe` is the Unit type.
