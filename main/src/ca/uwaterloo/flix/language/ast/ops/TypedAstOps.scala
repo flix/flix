@@ -130,20 +130,6 @@ object TypedAstOps {
   }
 
   /**
-    * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
-    */
-  def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Test]] annotation.
-    */
-  def isTest(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Test]
-  }
-
-  /**
     * Returns the free variables in the given expression `exp0`.
     */
   def freeVars(exp0: Expression): Map[Symbol.VarSym, Type] = exp0 match {

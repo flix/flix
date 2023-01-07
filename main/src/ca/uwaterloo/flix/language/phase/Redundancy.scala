@@ -1003,7 +1003,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
-    !isTest(decl.spec.ann) &&
+    !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&

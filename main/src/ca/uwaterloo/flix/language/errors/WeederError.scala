@@ -390,6 +390,59 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate the presence of a guard in a restrictable choice rule.
+    *
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
+    */
+  case class RestrictableChoiceGuard(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"cases of $operationName do not allow guards."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Disallowed guard.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+
+  /**
+    * An error raised to indicate an unsupported restrictable choice rule pattern.
+    *
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
+    */
+  case class UnsupportedRestrictedChoicePattern(star: Boolean, loc: SourceLocation) extends WeederError {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"Unsupported $operationName pattern, only enums with variables are allowed."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Unsupported pattern.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.
