@@ -110,7 +110,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(eqClassSym, loc),
         tpe = tpe,
@@ -149,7 +149,7 @@ object Deriver {
       val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(
@@ -260,7 +260,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(orderClassSym, loc),
         tpe = tpe,
@@ -346,7 +346,7 @@ object Deriver {
 
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(
@@ -478,7 +478,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(toStringClassSym, loc),
         tpe = tpe,
@@ -513,7 +513,7 @@ object Deriver {
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
@@ -613,7 +613,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(hashClassSym, loc),
         tpe = tpe,
@@ -650,7 +650,7 @@ object Deriver {
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         tparams = tparams,
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
@@ -735,7 +735,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(boxableClassSym, loc),
         tpe = tpe,
@@ -773,7 +773,7 @@ object Deriver {
 
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
-        ann = Nil,
+        ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
         clazz = Ast.ClassSymUse(sendableClassSym, loc),
         tpe = tpe,

@@ -1768,7 +1768,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Annotation: Rule1[ParsedAst.Annotation] = rule {
-    SP ~ "@" ~ Names.Annotation ~ OptArgumentList ~ SP ~> ParsedAst.Annotation
+    SP ~ "@" ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
   }
 
   /////////////////////////////////////////////////////////////////////////////

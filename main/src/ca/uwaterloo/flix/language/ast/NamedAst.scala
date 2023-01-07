@@ -39,26 +39,26 @@ object NamedAst {
 
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Effect(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
+    case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -374,8 +374,6 @@ object NamedAst {
     case class Implicit(tparams: List[NamedAst.TypeParam.Implicit]) extends TypeParams
 
   }
-
-  case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
 
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
