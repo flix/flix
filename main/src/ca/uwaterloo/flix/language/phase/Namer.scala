@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -334,7 +335,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ???
+  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ??? // TODO RESTR-VARS
 
   /**
     * Performs naming on the given enum case.
@@ -652,6 +653,20 @@ object Namer {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => NamedAst.Expression.RelationalChoose(star, es, rs, loc)
+      }
+
+    case WeededAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
+      val expVal = visitExp(exp, ns0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.RestrictableChoiceRule(pat0, exp0) =>
+          val p = visitRestrictablePattern(pat0)
+          val eVal = visitExp(exp0, ns0)
+          mapN(eVal) {
+            case e => NamedAst.RestrictableChoiceRule(p, e)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (es, rs) => NamedAst.Expression.RestrictableChoose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
@@ -1003,6 +1018,24 @@ object Namer {
       case Some(id) =>
         val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
         NamedAst.Pattern.ArrayHeadSpread(sym, elms map visitPattern, loc)
+    }
+  }
+
+  /**
+    * Names the given pattern `pat0`
+    */
+  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoicePattern)(implicit flix: Flix): NamedAst.RestrictableChoicePattern = {
+    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarOrWild): NamedAst.RestrictableChoicePattern.VarOrWild = vp match {
+      case RestrictableChoicePattern.Wild(loc) => NamedAst.RestrictableChoicePattern.Wild(loc)
+      case RestrictableChoicePattern.Var(ident, loc) =>
+        // make a fresh variable symbol for the local variable.
+        val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+        NamedAst.RestrictableChoicePattern.Var(sym, loc)
+    }
+
+    pat0 match {
+      case WeededAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+        NamedAst.RestrictableChoicePattern.Tag(qname, pat.map(visitVarPlace), loc)
     }
   }
 

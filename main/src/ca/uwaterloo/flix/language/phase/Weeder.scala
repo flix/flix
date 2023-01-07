@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1220,7 +1221,17 @@ object Weeder {
         case (es, rs) => WeededAst.Expression.RelationalChoose(star, es, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) => ???
+    case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) =>
+      val expVal = visitExp(exp, senv)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchRule(pat, guard, body) =>
+          flatMapN(visitPattern(pat), traverseOpt(guard)(visitExp(_, senv)), visitExp(body, senv)) {
+            case (p, g, b) => createRestrictableChoiceRule(star, p, g, b)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => WeededAst.Expression.RestrictableChoose(star, e, rs, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
       /*
@@ -1802,6 +1813,44 @@ object Weeder {
           WeededAst.Expression.Mask(call, loc)
       }
 
+  }
+
+  /**
+    * Returns a restrictable choice rule from an already visited pattern, guard, and body.
+    * It is checked that
+    *
+    * - The guard is absent
+    *
+    * - The patterns are only tags with possible terms of variables and wildcards
+    */
+  private def createRestrictableChoiceRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChoiceRule, WeederError] = {
+    // Check that guard is not present
+    val gVal = g0 match {
+      case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
+      case None => ().toSuccess
+    }
+    // Check that patterns are only tags of variables (or wildcards as variables)
+    val pVal = p0 match {
+      case Pattern.Tag(qname, pat, loc) =>
+        val innerVal = pat match {
+          case Pattern.Tuple(elms, _) =>
+            traverse(elms) {
+              case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
+              case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
+              case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+            }
+          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
+          case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
+          case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+        }
+        mapN(innerVal) {
+          case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
+        }
+      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+    }
+    mapN(gVal, pVal) {
+      case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
+    }
   }
 
   /**

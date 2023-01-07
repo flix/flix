@@ -119,6 +119,8 @@ object NamedAst {
 
     case class RelationalChoose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.RelationalChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
+    case class RestrictableChoose(star: Boolean, exp: NamedAst.Expression, rules: List[NamedAst.RestrictableChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Expression
@@ -255,6 +257,20 @@ object NamedAst {
 
   }
 
+  sealed trait RestrictableChoicePattern
+
+  object RestrictableChoicePattern {
+
+    sealed trait VarOrWild
+
+    case class Wild(loc: SourceLocation) extends VarOrWild
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
+
+    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
+
+  }
+
   sealed trait Predicate
 
   object Predicate {
@@ -384,6 +400,8 @@ object NamedAst {
   case class HandlerRule(op: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression)
 
   case class RelationalChoiceRule(pat: List[NamedAst.RelationalChoicePattern], exp: NamedAst.Expression)
+
+  case class RestrictableChoiceRule(pat: NamedAst.RestrictableChoicePattern, exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 

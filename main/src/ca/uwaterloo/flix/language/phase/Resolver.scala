@@ -906,6 +906,8 @@ object Resolver {
             case (es, rs) => ResolvedAst.Expression.RelationalChoose(star, es, rs, loc)
           }
 
+        case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) => ??? // TODO RESTR-VARS
+
         case NamedAst.Expression.Tuple(elms, loc) =>
           val esVal = traverse(elms)(e => visitExp(e, env0, region))
           mapN(esVal) {
