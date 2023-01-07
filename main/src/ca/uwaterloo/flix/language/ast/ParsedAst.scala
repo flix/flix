@@ -1971,10 +1971,9 @@ object ParsedAst {
     *
     * @param sp1   the position of the first character in the annotation.
     * @param ident the name of the annotation.
-    * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
 
   /**
     * An enum representing the handler of a `try` expression.

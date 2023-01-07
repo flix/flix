@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -316,18 +317,17 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitEnum(enum0: WeededAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
-    case WeededAst.Declaration.Enum(doc, ann0, mod0, ident, tparams0, derives, cases0, loc) =>
+    case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
       val tparams = getTypeParams(tparams0)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
       val casesVal = traverse(cases0)(visitCase(_, sym))
 
-      mapN(annVal, casesVal) {
-        case (ann, cases) =>
+      mapN(casesVal) {
+        case cases =>
           NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
@@ -335,7 +335,7 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ???
+  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ??? // TODO RESTR-VARS
 
   /**
     * Performs naming on the given enum case.
@@ -367,18 +367,17 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann0, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0))
 
-      mapN(annVal, superClassesVal, sigsVal, lawsVal) {
-        case (ann, superClasses, sigs, laws) =>
+      mapN(superClassesVal, sigsVal, lawsVal) {
+        case (superClasses, sigs, laws) =>
           NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
       }
   }
@@ -387,14 +386,13 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
-      flatMapN(annVal, tpeVal, tconstrsVal) {
-        case (ann, tpe, tconstrs) =>
+      flatMapN(tpeVal, tconstrsVal) {
+        case (tpe, tconstrs) =>
           val defsVal = traverse(defs0)(visitDef(_, ns0))
           mapN(defsVal) {
             defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns0.parts, loc)
@@ -431,14 +429,13 @@ object Namer {
         case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
-          val annVal = traverse(ann)(visitAnnotation(_, ns0))
           val expVal = traverseOpt(exp0)(visitExp(_, ns0))
 
-          mapN(annVal, expVal) {
-            case (as, exp) =>
+          mapN(expVal) {
+            case exp =>
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -464,14 +461,13 @@ object Namer {
         case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
-          val annVal = traverse(ann)(visitAnnotation(_, ns0))
           val expVal = visitExp(exp, ns0)
 
-          mapN(annVal, expVal) {
-            case (as, e) =>
+          mapN(expVal) {
+            case e =>
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -481,15 +477,14 @@ object Namer {
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: WeededAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
-    case WeededAst.Declaration.Effect(doc, ann0, mod0, ident, ops0, loc) =>
+    case WeededAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
       val opsVal = traverse(ops0)(visitOp(_, ns0, sym))
 
-      mapN(annVal, opsVal) {
-        case (ann, ops) => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      mapN(opsVal) {
+        case ops => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
@@ -497,29 +492,21 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: WeededAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
-    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, tconstrsVal) {
+      mapN(fparamsVal, tpeVal, tconstrsVal) {
         case (fparams, tpe, tconstrs) =>
+          val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+          val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
 
-          // Then visit the parts depending on the parameters
-          val annVal = traverse(ann0)(visitAnnotation(_, ns0))
-
-          mapN(annVal) {
-            ann =>
-
-              val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
-              val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
-
-              val sym = Symbol.mkOpSym(effSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
-              NamedAst.Declaration.Op(sym, spec)
-          }
+          val sym = Symbol.mkOpSym(effSym, ident)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+          NamedAst.Declaration.Op(sym, spec)
       }
   }
 
@@ -666,6 +653,20 @@ object Namer {
       }
       mapN(expsVal, rulesVal) {
         case (es, rs) => NamedAst.Expression.RelationalChoose(star, es, rs, loc)
+      }
+
+    case WeededAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
+      val expVal = visitExp(exp, ns0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.RestrictableChoiceRule(pat0, exp0) =>
+          val p = visitRestrictablePattern(pat0)
+          val eVal = visitExp(exp0, ns0)
+          mapN(eVal) {
+            case e => NamedAst.RestrictableChoiceRule(p, e)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (es, rs) => NamedAst.Expression.RestrictableChoose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
@@ -1021,6 +1022,24 @@ object Namer {
   }
 
   /**
+    * Names the given pattern `pat0`
+    */
+  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoicePattern)(implicit flix: Flix): NamedAst.RestrictableChoicePattern = {
+    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarOrWild): NamedAst.RestrictableChoicePattern.VarOrWild = vp match {
+      case RestrictableChoicePattern.Wild(loc) => NamedAst.RestrictableChoicePattern.Wild(loc)
+      case RestrictableChoicePattern.Var(ident, loc) =>
+        // make a fresh variable symbol for the local variable.
+        val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+        NamedAst.RestrictableChoicePattern.Var(sym, loc)
+    }
+
+    pat0 match {
+      case WeededAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+        NamedAst.RestrictableChoicePattern.Tag(qname, pat.map(visitVarPlace), loc)
+    }
+  }
+
+  /**
     * Names the given head predicate `head`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
@@ -1296,16 +1315,6 @@ object Namer {
     case WeededAst.Type.Write(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeTypeVars(tpe)
-  }
-
-  /**
-    * Translates the given weeded annotation to a named annotation.
-    */
-  private def visitAnnotation(ann: WeededAst.Annotation, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
-    case WeededAst.Annotation(name, args, loc) =>
-      mapN(traverse(args)(visitExp(_, ns0))) {
-        case as => NamedAst.Annotation(name, as, loc)
-      }
   }
 
   /**

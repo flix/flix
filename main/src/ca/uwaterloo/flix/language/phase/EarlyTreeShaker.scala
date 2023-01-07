@@ -87,22 +87,12 @@ object EarlyTreeShaker {
   /**
     * Returns `true` if `defn` is annotated with `@benchmark`
     */
-  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
-    a.name match {
-      case Annotation.Benchmark(_) => true
-      case _ => false
-    }
-  }
+  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.isBenchmark
 
   /**
     * Returns `true` if `defn` is annotated with `@test`
     */
-  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
-    a.name match {
-      case Annotation.Test(_) => true
-      case _ => false
-    }
-  }
+  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.isTest
 
   /**
     * Returns the symbols reachable from the given symbol `sym`.

@@ -43,10 +43,9 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(def0: LoweredAst.Def): SimplifiedAst.Def = {
-      val ann = Ast.Annotations(def0.spec.ann.map(a => a.name))
       val fs = def0.spec.fparams.map(visitFormalParam)
       val exp = visitExp(def0.impl.exp)
-      SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
+      SimplifiedAst.Def(def0.spec.ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
     }
 
     /**
@@ -777,8 +776,7 @@ object Simplifier {
         val cases = cases0 map {
           case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, tagType, tagLoc)
         }
-        val sAnn = Ast.Annotations(ann.map(a => a.name))
-        k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
+        k -> SimplifiedAst.Enum(ann, mod, sym, cases, enumType, loc)
     }
 
     SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources).toSuccess
