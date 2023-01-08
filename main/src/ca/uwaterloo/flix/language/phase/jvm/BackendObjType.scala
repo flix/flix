@@ -1010,10 +1010,10 @@ object BackendObjType {
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
     def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
-    // private Thread parentThread = Thread.currentThread();
+    // private final Thread parentThread = Thread.currentThread();
     def ParentThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "parentThread", JvmName.Thread.toTpe)
 
-    // private volatile Throwable childException = null;
+    // private final volatile Throwable childException = null;
     def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
