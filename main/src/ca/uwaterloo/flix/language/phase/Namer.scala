@@ -754,6 +754,12 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Of(qname, exp, loc) =>
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => e // TODO RESTR-VARS
+      }
+
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
