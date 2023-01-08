@@ -65,6 +65,7 @@ object TypedAstOps {
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.RelationalChoose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.RestrictableTag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expression.RecordEmpty(_, _) => Set.empty
     case Expression.RecordSelect(exp, _, _, _, _, _) => sigSymsOf(exp)
@@ -204,6 +205,9 @@ object TypedAstOps {
       es ++ rs
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>

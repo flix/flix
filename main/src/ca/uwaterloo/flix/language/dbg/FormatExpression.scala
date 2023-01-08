@@ -34,6 +34,7 @@ object FormatExpression {
     case TypedAst.Expression.TypeMatch(exp, rules, _, _, _, _) => s"TypeMatch($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.RelationalChoose(exps, rules, _, _, _, _) => s"Choose($exps, $rules)"
     case TypedAst.Expression.Tag(sym, exp, _, _, _, _) => s"Tag($sym, $exp)"
+    case TypedAst.Expression.RestrictableTag(sym, exp, _, _, _, _) => s"RestrictableTag($sym, $exp)"
     case TypedAst.Expression.Tuple(elms, _, _, _, _) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(_, _) => s"RecordEmpty"
     case TypedAst.Expression.RecordSelect(exp, field, _, _, _, _) => s"RecordSelect($exp, $field)"

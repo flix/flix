@@ -1193,6 +1193,8 @@ object Typer {
           } yield (constrs, resultTyp, resultPur, resultEff)
         }
 
+      case KindedAst.Expression.RestrictableTag(_, _, _, _) => ??? // TODO RESTR-VARS
+
       case KindedAst.Expression.Tuple(elms, loc) =>
         for {
           (elementConstrs, elementTypes, elementPurs, elementEffs) <- traverseM(elms)(visitExp).map(unzip4)
@@ -2069,6 +2071,12 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.RestrictableTag(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.RestrictableTag(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))

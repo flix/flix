@@ -489,6 +489,9 @@ object Redundancy {
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
 
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
+      ??? // TODO RESTR-VARS
+
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
 

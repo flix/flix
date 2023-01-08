@@ -580,6 +580,11 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an enum case sym.
+    */
+  case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a class sym.
     */
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)

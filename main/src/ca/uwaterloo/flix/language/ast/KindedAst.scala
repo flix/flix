@@ -105,6 +105,8 @@ object KindedAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
     case class RecordEmpty(loc: SourceLocation) extends KindedAst.Expression
