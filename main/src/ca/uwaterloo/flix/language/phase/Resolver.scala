@@ -1349,7 +1349,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.Error(m) =>
-          ResolvedAst.Expression.Error(m).toSuccess // TODO: Refactor to toSoftFailure
+          ResolvedAst.Expression.Error(m).toSoftFailure
       }
 
       /**

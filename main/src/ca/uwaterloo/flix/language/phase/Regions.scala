@@ -408,7 +408,7 @@ object Regions {
       }
 
     case Expression.Error(_, _, _, _) =>
-      ().toSuccess // TODO: Refactor to toSoftFailure
+      ().toSoftFailure
 
   }
 

@@ -471,7 +471,7 @@ object Stratifier {
       }
 
     case Expression.Error(_, _, _, _) =>
-      exp0.toSuccess // TODO: Refactor to toSoftFailure
+      exp0.toSoftFailure
 
   }
 

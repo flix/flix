@@ -984,7 +984,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Error(m) =>
-      NamedAst.Expression.Error(m).toSuccess // TODO: Refactor to SoftFailure
+      NamedAst.Expression.Error(m).toSoftFailure
 
   }
 
