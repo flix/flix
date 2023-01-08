@@ -51,6 +51,7 @@ object Options {
     xnobooleffects = false,
     xnooptimizer = false,
     xvirtualthreads = false,
+    xprintasts = Set.empty,
     xqmc = false,
     xflexibleregions = false,
   )
@@ -100,6 +101,7 @@ object Options {
   * @param xstatistics        enables statistics collection.
   * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
+  * @param xprintast          prints the chosen AST to a given path.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -127,6 +129,7 @@ case class Options(lib: LibLevel,
                    xnobooleffects: Boolean,
                    xnooptimizer: Boolean,
                    xvirtualthreads: Boolean,
+                   xprintasts: Set[String],
                    xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )

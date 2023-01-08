@@ -462,10 +462,10 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val usedMatch = visitExps(exps, env0, rc)
       val usedRules = rules.map {
-        case ChoiceRule(pat, exp) =>
+        case RelationalChoiceRule(pat, exp) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -978,8 +978,8 @@ object Redundancy {
   /**
     * Returns the free variables in the list of choice patterns `ps`.
     */
-  private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
-    case ChoicePattern.Present(sym, _, _) => sym
+  private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
+    case RelationalChoicePattern.Present(sym, _, _) => sym
   }.toSet
 
   /**
@@ -1000,7 +1000,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
-    !isTest(decl.spec.ann) &&
+    !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&

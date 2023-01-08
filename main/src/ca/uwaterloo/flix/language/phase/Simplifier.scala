@@ -43,10 +43,9 @@ object Simplifier {
       * Translates the given definition `def0` to the SimplifiedAst.
       */
     def visitDef(def0: LoweredAst.Def): SimplifiedAst.Def = {
-      val ann = Ast.Annotations(def0.spec.ann.map(a => a.name))
       val fs = def0.spec.fparams.map(visitFormalParam)
       val exp = visitExp(def0.impl.exp)
-      SimplifiedAst.Def(ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
+      SimplifiedAst.Def(def0.spec.ann, def0.spec.mod, def0.sym, fs, exp, def0.impl.inferredScheme.base, def0.sym.loc)
     }
 
     /**
@@ -110,7 +109,7 @@ object Simplifier {
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
 
-      case LoweredAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+      case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
         simplifyChoose(exps, rules, tpe, loc)
 
       case LoweredAst.Expression.Tag(Ast.CaseSymUse(sym, _), e, tpe, pur, _, loc) =>
@@ -668,13 +667,13 @@ object Simplifier {
       }
 
     /**
-      * Eliminates the choose construct by translations to if-then-else expressions.
+      * Eliminates the relational_choose construct by translations to if-then-else expressions.
       */
-    def simplifyChoose(exps0: List[LoweredAst.Expression], rules0: List[LoweredAst.ChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
+    def simplifyChoose(exps0: List[LoweredAst.Expression], rules0: List[LoweredAst.RelationalChoiceRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expression = {
       //
       // Given the code:
       //
-      // choose (x, y, ...) {
+      // relational_choose (x, y, ...) {
       //   case PATTERN_1 => BODY_1
       //   case PATTERN_2 => BODY_2
       //   ...
@@ -727,16 +726,16 @@ object Simplifier {
       // All the if-then-else branches.
       //
       val branches = rules0.foldRight(unmatchedExp: SimplifiedAst.Expression) {
-        case (LoweredAst.ChoiceRule(pat, body), acc) =>
+        case (LoweredAst.RelationalChoiceRule(pat, body), acc) =>
           val init = SimplifiedAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc): SimplifiedAst.Expression
           val condExp = freshMatchVars.zip(pat).zip(exps).foldRight(init) {
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Absent(_)), (matchExp, _)), acc) =>
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Absent(_)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val caseSym = new Symbol.CaseSym(sym, "Absent", SourceLocation.Unknown)
               val isAbsent = SimplifiedAst.Expression.Is(caseSym, varExp, varExp.purity, loc)
               SimplifiedAst.Expression.Binary(SemanticOperator.BoolOp.And, BinaryOperator.LogicalAnd, isAbsent, acc, Type.Bool, acc.purity, loc)
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Present(matchVar, _, _)), (matchExp, _)), acc) =>
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Present(matchVar, _, _)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val caseSym = new Symbol.CaseSym(sym, "Present", SourceLocation.Unknown)
               val isPresent = SimplifiedAst.Expression.Is(caseSym, varExp, varExp.purity, loc)
@@ -744,9 +743,9 @@ object Simplifier {
           }
           val bodyExp = visitExp(body)
           val thenExp = freshMatchVars.zip(pat).zip(exps).foldRight(bodyExp) {
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Wild(_)), matchExp), acc) => acc
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Absent(_)), matchExp), acc) => acc
-            case (((freshMatchVar, LoweredAst.ChoicePattern.Present(matchVar, tpe, _)), (matchExp, _)), acc) =>
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Wild(_)), matchExp), acc) => acc
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Absent(_)), matchExp), acc) => acc
+            case (((freshMatchVar, LoweredAst.RelationalChoicePattern.Present(matchVar, tpe, _)), (matchExp, _)), acc) =>
               val varExp = SimplifiedAst.Expression.Var(freshMatchVar, matchExp.tpe, loc)
               val caseSym = new Symbol.CaseSym(sym, "Present", SourceLocation.Unknown)
               val purity = Pure
@@ -777,8 +776,7 @@ object Simplifier {
         val cases = cases0 map {
           case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, tagType, tagLoc)
         }
-        val sAnn = Ast.Annotations(ann.map(a => a.name))
-        k -> SimplifiedAst.Enum(sAnn, mod, sym, cases, enumType, loc)
+        k -> SimplifiedAst.Enum(ann, mod, sym, cases, enumType, loc)
     }
 
     SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources).toSuccess

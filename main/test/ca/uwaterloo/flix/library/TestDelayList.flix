@@ -768,6 +768,54 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == "TF"
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let l = ENil;
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == ""
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let l = LList(lazy ENil);
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == ""
+    }
+
+    @test
+    def forEachWithIndex03(): Bool = region r {
+        let l = LCons(1, lazy LList(lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "F"
+    }
+
+    @test
+    def forEachWithIndex04(): Bool = region r {
+        let l = LCons(-1, lazy LList(lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "F"
+    }
+
+    @test
+    def forEachWithIndex05(): Bool = region r {
+        let l = ECons(1, LCons(-1, lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "FT"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //

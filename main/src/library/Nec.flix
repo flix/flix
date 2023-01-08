@@ -126,12 +126,12 @@ instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Nec#{", sb);
-        foreach ((i, x) <- enumerator(r, c)) {
+        Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+        }, c);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -734,6 +734,16 @@ namespace Nec {
         case ViewLeft.OneLeft(x)      => f(x)
         case ViewLeft.SomeLeft(x, rs) => f(x); forEach(f, rs)
     }
+
+    ///
+    /// Applies `f` to every element of `c` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Nec[a]): Unit \ ef =
+        def loop(v, i) = match v {
+            case ViewLeft.OneLeft(x)      => f(i, x)
+            case ViewLeft.SomeLeft(x, rs) => f(i, x); loop(viewLeft(rs), i+1)
+        };
+        loop(viewLeft(c), 0)
 
     ///
     /// Returns `c` as a list.

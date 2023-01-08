@@ -27,11 +27,23 @@ instance Scoped[MutSet[t]] {
     pub def regionOf(_: MutSet[t, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[MutSet] {
-    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutSet.iterator(r1, s)
-}
-
 namespace MutSet {
+
+    ///
+    /// Returns a string representation of the given mutable set `s`.
+    ///
+    pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("MutSet#{", sb);
+        forEachWithIndex((i, x) -> {
+            if (i == 0)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+        }, s);
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a fresh empty set.
@@ -388,6 +400,14 @@ namespace MutSet {
     pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } =
         let MutSet(ms) = s;
         Set.forEach(f, deref ms)
+
+    ///
+    /// Applies `f` to every element of the mutable set `s` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, Read(r) } = region rh {
+        let ix = ref 0 @ rh;
+        forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, s)
+    }
 
     ///
     /// Returns an iterator over `s`.

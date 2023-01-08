@@ -204,6 +204,12 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+    * A type constructor that represents the type of enums.
+    */
+  @IntroducedBy(Kinder.getClass)
+  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represent the type of JVM classes.
     */
   case class Native(clazz: Class[_]) extends TypeConstructor {

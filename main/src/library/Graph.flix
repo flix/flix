@@ -478,9 +478,9 @@ namespace Graph {
         let sb = new StringBuilder(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
-        foreach((x, y) <- Foldable.iterator(r, g)) {
+        Foldable.forEach(match (x, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)}")
-        };
+        }, g);
         output("}");
         StringBuilder.toString(sb)
     }
@@ -494,9 +494,9 @@ namespace Graph {
         let sb = new StringBuilder(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
-        foreach((x, w, y) <- Foldable.iterator(r, g)) {
+        Foldable.forEach(match (x, w, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")
-        };
+        }, g);
         output("}");
         StringBuilder.toString(sb)
     }

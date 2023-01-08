@@ -557,17 +557,18 @@ namespace TestReducible {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Reducible.forEach(x -> r := x, Nel.Nel(1, Nil));
-        1 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
+        1 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Reducible.forEach(x -> r := x, Nel.Nel(1, 2 :: 3 :: Nil));
-        3 == deref r
-
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
+        3 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
