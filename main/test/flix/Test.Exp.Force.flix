@@ -76,13 +76,13 @@ namespace Test/Exp/Force {
 
     @test
     def testArrayOfIntForce01(): Bool \ IO =
-        let v = [1, 2];
+        let v = Array#{1, 2} @ Static;
         let x = lazy v;
         v[0] == (force x)[0]
 
     @test
     def testArrayOfStringForce01(): Bool \ IO =
-        let v = ["str", "str2"];
+        let v = Array#{"str", "str2"} @ Static;
         let x = lazy v;
         v[0] == (force x)[0]
 

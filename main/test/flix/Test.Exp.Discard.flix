@@ -22,73 +22,73 @@ namespace Test/Exp/Discard {
 
     @test
     def testBoolDiscard01(): Unit \ IO =
-        let arr = [true];
+        let arr = Array#{true} @ Static;
         discard arr[0]
 
     @test
     def testCharDiscard01(): Unit \ IO =
-        let arr = ['q'];
+        let arr = Array#{'q'} @ Static;
         discard arr[0]
 
     @test
     def testFloat32Discard01(): Unit \ IO =
-        let arr = [32.0f32];
+        let arr = Array#{32.0f32} @ Static;
         discard arr[0]
 
     @test
     def testFloat64Discard01(): Unit \ IO =
-        let arr = [64.0f64];
+        let arr = Array#{64.0f64} @ Static;
         discard arr[0]
 
     @test
     def testBigDecimalDiscard01(): Unit \ IO =
-        let arr = [9999999.0ff];
+        let arr = Array#{9999999.0ff} @ Static;
         discard arr[0]
 
 
     @test
     def testInt8Discard01(): Unit \ IO =
-        let arr = [8i8];
+        let arr = Array#{8i8} @ Static;
         discard arr[0]
 
     @test
     def testInt16Discard01(): Unit \ IO =
-        let arr = [16i16];
+        let arr = Array#{16i16} @ Static;
         discard arr[0]
 
     @test
     def testInt32Discard01(): Unit \ IO =
-        let arr = [32i32];
+        let arr = Array#{32i32} @ Static;
         discard arr[0]
 
     @test
     def testInt64Discard01(): Unit \ IO =
-        let arr = [64i64];
+        let arr = Array#{64i64} @ Static;
         discard arr[0]
 
     @test
     def testBigIntDiscard01(): Unit \ IO =
-        let arr = [9999999ii];
+        let arr = Array#{9999999ii} @ Static;
         discard arr[0]
 
     @test
     def testStringDiscard01(): Unit \ IO =
-        let arr = ["cool string"];
+        let arr = Array#{"cool string"} @ Static;
         discard arr[0]
 
     @test
     def testArrayOfIntDiscard01(): Unit \ IO =
-        let arr = [[2]];
+        let arr = Array#{Array#{2} @ Static} @ Static;
         discard arr[0]
 
     @test
     def testArrayOfStringDiscard01(): Unit \ IO =
-        let arr = [["cool string"]];
+        let arr = Array#{Array#{"cool string"} @ Static} @ Static;
         discard arr[0]
 
     @test
     def testTupleDiscard01(): Unit \ IO =
-        let arr = [("fst", "snd")];
+        let arr = Array#{("fst", "snd")} @ Static;
         discard arr[0]
 
     enum Enum {
@@ -97,7 +97,7 @@ namespace Test/Exp/Discard {
 
     @test
     def testEnumDiscard01(): Unit \ IO =
-        let arr = [Enum.Data(32)];
+        let arr = Array#{Enum.Data(32)} @ Static;
         discard arr[0]
 
     pub enum Poly[a, b] {
@@ -109,7 +109,7 @@ namespace Test/Exp/Discard {
 
     @test
     def testPolyDiscard01(): Unit \ IO =
-        let arr = [Poly.That("hello")];
+        let arr = Array#{Poly.That("hello")} @ Static;
         discard arr[0]
 
 

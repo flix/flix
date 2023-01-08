@@ -200,37 +200,37 @@ namespace Test/Exp/ArrayLength {
 
     @test
     def testArrayLength34(): Int32 = region r {
-        let x = Array#{Array#{1, 2, 3}} @ r;
+        let x = Array#{Array#{1, 2, 3} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
     @test
     def testArrayLength35(): Int32 = region r {
-        let x = Array#{Array#{1, 2}, Array#{1, 2}} @ r;
+        let x = Array#{Array#{1, 2} @ r, Array#{1, 2} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
     @test
     def testArrayLength36(): Int32 = region r {
-        let x = Array#{Array#{1}, Array#{1, 2, 3, 4, 5, 6, 7, 8}} @ r;
+        let x = Array#{Array#{1} @ r, Array#{1, 2, 3, 4, 5, 6, 7, 8} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
     @test
     def testArrayLength37(): Int32 = region r {
-        let x = Array#{Array#{1, 2, 3, 4, 5}, Array#{2}} @ r;
+        let x = Array#{Array#{1, 2, 3, 4, 5} @ r, Array#{2} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
     @test
     def testArrayLength38(): Int32 = region r {
-        let x = Array#{Array#{1, 2, 3}, Array#{1, 2, 3}, Array#{1, 2, 3}} @ r;
+        let x = Array#{Array#{1, 2, 3} @ r, Array#{1, 2, 3} @ r, Array#{1, 2, 3} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
     @test
     def testArrayLength39(): Int32 = region r {
-        let x = Array#{Array#{None, Some(1), None}, Array#{Some(2), Some(45), Some(9), None}} @ r;
+        let x = Array#{Array#{None, Some(1), None} @ r, Array#{Some(2), Some(45), Some(9), None} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 
@@ -242,7 +242,7 @@ namespace Test/Exp/ArrayLength {
 
     @test
     def testArrayLength41(): Int32 = region r {
-        let x = Array#{Array#{1 :: Nil}, Array#{3 :: 4 :: 5 :: Nil}} @ r;
+        let x = Array#{Array#{1 :: Nil} @ r, Array#{3 :: 4 :: 5 :: Nil} @ r} @ r;
         $ARRAY_LENGTH$(x)
     }
 }

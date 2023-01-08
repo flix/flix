@@ -451,13 +451,13 @@ namespace Test/Exp/ArrayLoad {
     }
 
     @test
-    def testArrayLoad77(): OptionArray#{Int32} = region r {
+    def testArrayLoad77(): Option[Int32] = region r {
         let x = Array#{Some(5), Some(6), Some(7)} @ r;
         x[1]
     }
 
     @test
-    def testArrayLoad78(): OptionArray#{Int32} = region r {
+    def testArrayLoad78(): Option[Int32] = region r {
         let x = Array#{Array#{None, Some(4), Some(999)} @ r, Array#{Some(9), Some(5), None, None} @ r} @ r;
         x[1][2]
     }
@@ -465,7 +465,7 @@ namespace Test/Exp/ArrayLoad {
     @test
     def testArrayLoad79(): Unit = region r {
         let x = Array#{Array#{1 :: Nil} @ r, Array#{3 :: Nil} @ r} @ r;
-        discard x[0]
+        discard x[0];
         ()
     }
 }

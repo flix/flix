@@ -225,7 +225,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore38(): Unit = region r {
         let x = Array#{Array#{(7 , 10)} @ r, Array#{(7 , 10)} @ r} @ r;
-        x[1] = Array#{(19 , 10} @ r
+        x[1] = Array#{(19 , 10)} @ r
     }
 
     @test

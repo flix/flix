@@ -1179,7 +1179,7 @@ class TestTyper extends FunSuite with TestUtils {
     // Regression test. See https://github.com/flix/flix/issues/4062
     val input =
       """
-        |def mkArray(): Array[Int32, Static] \ IO = []
+        |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
         |def zero(): Int32 & Pure = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
