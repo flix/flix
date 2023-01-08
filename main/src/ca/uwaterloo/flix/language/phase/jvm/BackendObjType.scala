@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
@@ -118,7 +119,7 @@ object BackendObjType {
         RETURN()
     ))
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       pushString("()") ~ ARETURN()
@@ -145,7 +146,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", tpe)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
@@ -390,7 +391,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(continuation.Constructor) ~ RETURN()
     ))
 
-    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"arg$index", args(index))
 
     def ToStringMethod: InstanceMethod = {
       val argString = args match {
@@ -422,7 +423,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "result", result)
+    def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "result", result)
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(this.toTpe))
 
@@ -476,7 +477,7 @@ object BackendObjType {
 
     def interface: Record.type = Record
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       throwUnsupportedOperationException(
@@ -520,11 +521,11 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", String.toTpe)
+    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "label", String.toTpe)
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", value)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", value)
 
-    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", Record.toTpe)
+    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "rest", Record.toTpe)
 
     def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
@@ -660,19 +661,19 @@ object BackendObjType {
       ))
 
     def SourceField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "source", String.toTpe)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "source", String.toTpe)
 
     def BeginLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "beginLine", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginLine", BackendType.Int32)
 
     def BeginColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "beginCol", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginCol", BackendType.Int32)
 
     def EndLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "endLine", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endLine", BackendType.Int32)
 
     def EndColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "endCol", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Int32)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       // create string builder
@@ -806,10 +807,10 @@ object BackendObjType {
       ))
 
     def CounterField: StaticField =
-      StaticField(this.jvmName, IsPrivate, IsFinal, "counter", JvmName.AtomicLong.toTpe)
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "counter", JvmName.AtomicLong.toTpe)
 
     def ArgsField: StaticField =
-      StaticField(this.jvmName, IsPrivate, IsFinal, "args", BackendType.Array(String.toTpe))
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "args", BackendType.Array(String.toTpe))
 
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
@@ -872,10 +873,10 @@ object BackendObjType {
       ))
 
     private def HoleField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, "hole", String.toTpe)
+      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "hole", String.toTpe)
 
     private def LocationField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, "location", ReifiedSourceLocation.toTpe)
+      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
       withName(1, JavaObject.toTpe) { other =>
@@ -952,7 +953,7 @@ object BackendObjType {
         RETURN()
     ))
 
-    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, "location", ReifiedSourceLocation.toTpe)
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
       withName(1, JavaObject.toTpe) { otherObj =>
@@ -1008,13 +1009,13 @@ object BackendObjType {
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
     // private final Thread parentThread = Thread.currentThread();
-    def ParentThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "parentThread", JvmName.Thread.toTpe)
+    def ParentThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "parentThread", JvmName.Thread.toTpe)
 
-    // private final volatile Throwable childException = null;
-    def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "childException", JvmName.Throwable.toTpe)
+    // private volatile Throwable childException = null;
+    def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
@@ -1106,7 +1107,7 @@ object BackendObjType {
     }
 
     // private final Region r;
-    def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "r", BackendObjType.Region.toTpe)
+    def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
 
     // UncaughtExceptionHandler(Region r) { this.r = r; }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
