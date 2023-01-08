@@ -407,7 +407,7 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
-    case Expression.Error(_) =>
+    case Expression.Error(_, _, _, _) =>
       ().toSuccess // TODO: Refactor to toSoftFailure
 
   }
