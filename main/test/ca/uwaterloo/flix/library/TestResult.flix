@@ -524,16 +524,18 @@ namespace TestResult {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Result.forEach(x -> r := x, Ok(42): Result[Int32, Int32]);
-        42 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Result.forEach(x -> ri := x, Ok(42): Result[Int32, Int32]);
+        42 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Result.forEach(x -> r := x, Err(42): Result[Int32, Int32]);
-        21 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Result.forEach(x -> ri := x, Err(42): Result[Int32, Int32]);
+        21 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //

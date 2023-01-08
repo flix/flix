@@ -33,10 +33,6 @@ instance Scoped[MutList[a]] {
     pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[MutList] {
-    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } = MutList.iterator(r1, l)
-}
-
 namespace MutList {
 
     ///
@@ -44,6 +40,22 @@ namespace MutList {
     ///
     @Internal
     pub def minCapacity(): Int32 = 8
+
+    ///
+    /// Returns a string representation of the given MutList `l`.
+    ///
+    pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region r2 {
+        let sb = new StringBuilder(r2);
+        StringBuilder.appendString!("MutList#{", sb);
+        forEachWithIndex((i, x) -> {
+            if (i < 1)
+                StringBuilder.appendString!("${x}", sb)
+            else
+                StringBuilder.appendString!(", ${x}", sb)
+            }, l);
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns a new empty mutable list with a default capacity.
@@ -824,7 +836,7 @@ namespace MutList {
         loop(0)
 
     ///
-    /// Applies `f` to all the elements in `v`.
+    /// Applies `f` to all the elements in `v` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, v: MutList[a, r]): Unit \ { ef, Read(r) } =
         let MutList(_, ra, rl) = v;

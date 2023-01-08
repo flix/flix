@@ -196,11 +196,10 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
-    case TypedAst.Instance(doc, ann0, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
-      val ann = ann0.map(visitAnnotation)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
@@ -208,8 +207,7 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
@@ -225,8 +223,7 @@ object Lowering {
     * Lowers the given `effect`.
     */
   private def visitEffect(effect: TypedAst.Effect)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Effect = effect match {
-    case TypedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
       LoweredAst.Effect(doc, ann, mod, sym, ops, loc)
   }
@@ -263,8 +260,7 @@ object Lowering {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val signatures = signatures0.map(sig => sigs(sig.sym))
@@ -276,8 +272,7 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann0, mod, tparams0, fparams, declaredScheme, retTpe, pur, eff, tconstrs, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, pur, eff, tconstrs, loc) =>
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
@@ -292,15 +287,6 @@ object Lowering {
       val e = visitExp(exp)
       val s = visitScheme(inferredScheme)
       LoweredAst.Impl(e, s)
-  }
-
-  /**
-    * Lowers the given `ann0`.
-    */
-  private def visitAnnotation(ann: TypedAst.Annotation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Annotation = ann match {
-    case TypedAst.Annotation(name, args0, loc) =>
-      val args = args0.map(visitExp)
-      LoweredAst.Annotation(name, args, loc)
   }
 
   /**
@@ -419,11 +405,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.TypeMatch(e, rs, t, pur, eff, loc)
 
-    case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
-      val rs = rules.map(visitChoiceRule)
+      val rs = rules.map(visitRelationalChoiceRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.Choose(es, rs, t, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
 
     case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -886,19 +872,19 @@ object Lowering {
   }
 
   /**
-    * Lowers the given choice rule `rule0`.
+    * Lowers the given relational choice rule `rule0`.
     */
-  private def visitChoiceRule(rule0: TypedAst.ChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.ChoiceRule = rule0 match {
-    case TypedAst.ChoiceRule(pat, exp) =>
+  private def visitRelationalChoiceRule(rule0: TypedAst.RelationalChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.RelationalChoiceRule = rule0 match {
+    case TypedAst.RelationalChoiceRule(pat, exp) =>
       val p = pat.map {
-        case TypedAst.ChoicePattern.Wild(loc) => LoweredAst.ChoicePattern.Wild(loc)
-        case TypedAst.ChoicePattern.Absent(loc) => LoweredAst.ChoicePattern.Absent(loc)
-        case TypedAst.ChoicePattern.Present(sym, tpe, loc) =>
+        case TypedAst.RelationalChoicePattern.Wild(loc) => LoweredAst.RelationalChoicePattern.Wild(loc)
+        case TypedAst.RelationalChoicePattern.Absent(loc) => LoweredAst.RelationalChoicePattern.Absent(loc)
+        case TypedAst.RelationalChoicePattern.Present(sym, tpe, loc) =>
           val t = visitType(tpe)
-          LoweredAst.ChoicePattern.Present(sym, t, loc)
+          LoweredAst.RelationalChoicePattern.Present(sym, t, loc)
       }
       val e = visitExp(exp)
-      LoweredAst.ChoiceRule(p, e)
+      LoweredAst.RelationalChoiceRule(p, e)
   }
 
   /**
@@ -1848,14 +1834,14 @@ object Lowering {
 
     case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       val rs = rules map {
-        case LoweredAst.ChoiceRule(pat, exp) =>
+        case LoweredAst.RelationalChoiceRule(pat, exp) =>
           // TODO: Substitute in patterns?
-          LoweredAst.ChoiceRule(pat, substExp(exp, subst))
+          LoweredAst.RelationalChoiceRule(pat, substExp(exp, subst))
       }
-      LoweredAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

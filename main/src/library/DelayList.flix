@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright 2021 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,6 +72,7 @@ instance Foldable[DelayList] {
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
+    override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -130,12 +131,12 @@ namespace DelayList {
     pub def toString(l: DelayList[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("DelayList(", sb);
-        foreach ((i, x) <- enumerator(r, l)) {
-            if (i < 1)
+        forEachWithIndex((i, x) -> {
+            if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+            }, l);
         StringBuilder.appendString!(")", sb);
         StringBuilder.toString(sb)
     }
@@ -665,6 +666,18 @@ namespace DelayList {
         case ECons(x, xs) => f(x); forEach(f,       xs)
         case LCons(x, xs) => f(x); forEach(f, force xs)
         case LList(xs)    =>       forEach(f, force xs)
+    }
+
+    ///
+    /// Applies `f` to every element of `l` along with that element's index.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region r {
+        let ix = ref 0 @ r;
+        let f1 = x -> {let i = deref ix; f(i, x); ix := i+1};
+        forEach(f1, l)
     }
 
     ///

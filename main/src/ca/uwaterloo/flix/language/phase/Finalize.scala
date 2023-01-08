@@ -396,6 +396,8 @@ object Finalize {
 
             case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
+            case TypeConstructor.RestrictableEnum(sym, _) => ??? // TODO RESTR-VARS
+
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
             case TypeConstructor.Array => MonoType.Array(args.head)

@@ -30,6 +30,22 @@ instance Newable[MutMap[k, v]] {
 namespace MutMap {
 
     ///
+    /// Returns a string representation of the given MutMap `m`.
+    ///
+    pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("MutMap#{", sb);
+        forEachWithIndex((i, k, v) -> {
+            if (i < 1)
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
+            }, m);
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
     /// Returns a fresh empty mutable map.
     ///
     pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) =
@@ -562,11 +578,20 @@ namespace MutMap {
         Map.toSet(deref mm)
 
     ///
-    /// Applies `f` to every element in the mutable map `m`.
+    /// Applies `f` to all the `(key, value)` pairs in the mutable map `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.forEach(f, deref mm)
+
+    ///
+    /// Apply the effectful function `f` to all the `(key, value)` pairs in the mutable map `m`
+    /// along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } = region rh {
+        let ix = ref 0 @ rh;
+        forEach((k, v) -> {let i = deref ix; f(i, k, v); ix := i+1}, m)
+    }
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

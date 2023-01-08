@@ -347,7 +347,7 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
+    case Expression.RelationalChoose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _, _) =>
@@ -618,6 +618,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
+    case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Ref => true

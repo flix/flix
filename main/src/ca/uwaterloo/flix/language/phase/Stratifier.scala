@@ -189,13 +189,13 @@ object Stratifier {
         case (m, rs) => Expression.TypeMatch(m, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ChoiceRule(pat, exp) => mapN(visitExp(exp))(ChoiceRule(pat, _))
+        case RelationalChoiceRule(pat, exp) => mapN(visitExp(exp))(RelationalChoiceRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.Choose(es, rs, tpe, pur, eff, loc)
+        case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
@@ -578,12 +578,12 @@ object Stratifier {
         case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val dg1 = exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
+        case (acc, RelationalChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
 

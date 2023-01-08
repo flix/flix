@@ -1907,16 +1907,36 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    Map.forEach((k, _) -> r := k, Map#{});
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEach((k, _) -> ri := k, Map#{});
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    Map.forEach((k, _) -> r := k, Map#{1 => "Hello World!"});
-    1 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEach((k, _) -> ri := k, Map#{1 => "Hello World!"});
+    1 == deref ri
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forEachWithIndex01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{});
+    21 == deref ri
+}
+
+@test
+def forEachWithIndex02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{1 => "Hello World!"});
+    0 == deref ri
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //

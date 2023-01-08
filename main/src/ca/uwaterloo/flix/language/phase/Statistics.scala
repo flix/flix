@@ -101,7 +101,7 @@ object Statistics {
       case Expression.Discard(exp, pur, eff, loc) => visitExp(exp)
       case Expression.Match(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
-      case Expression.Choose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitChoiceRule))
+      case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.RecordEmpty(tpe, loc) => Counter.empty
@@ -174,8 +174,8 @@ object Statistics {
   /**
     * Counts AST nodes in the given rule.
     */
-  private def visitChoiceRule(rule: ChoiceRule): Counter = rule match {
-    case ChoiceRule(pat, exp) => visitExp(exp)
+  private def visitRelationalChoiceRule(rule: RelationalChoiceRule): Counter = rule match {
+    case RelationalChoiceRule(pat, exp) => visitExp(exp)
   }
 
   /**
