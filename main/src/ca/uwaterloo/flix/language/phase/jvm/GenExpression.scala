@@ -329,13 +329,9 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       visitor.visitLabel(finallyBlock)
-      visitor.visitVarInsn(AsmOps.getStoreInstruction(JvmType.Reference(JvmName.Throwable)),
-        sym.getStackOffset + 2)
       visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
-      visitor.visitVarInsn(AsmOps.getLoadInstruction(JvmType.Reference(JvmName.Throwable)),
-        sym.getStackOffset + 2)
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
