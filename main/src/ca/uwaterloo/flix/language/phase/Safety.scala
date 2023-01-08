@@ -156,6 +156,9 @@ object Safety {
       case Expression.Tag(_, exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.RestrictableTag(_, exp, _, _, _, _) =>
+        visit(exp)
+
       case Expression.Tuple(elms, _, _, _, _) =>
         elms.flatMap(visit)
 
