@@ -293,14 +293,8 @@ object TypedAst {
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Error(m: CompilationMessage) extends TypedAst.Expression {
+    case class Error(m: CompilationMessage, tpe: Type, pur: Type, eff: Type) extends TypedAst.Expression {
       override def loc: SourceLocation = m.loc
-
-      override def tpe: Type = Type.Unit
-
-      override def pur: Type = Type.Pure
-
-      override def eff: Type = Type.Empty
     }
 
   }

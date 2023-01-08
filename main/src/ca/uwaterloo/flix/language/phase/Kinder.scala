@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -809,7 +809,10 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.Error(m) =>
-      KindedAst.Expression.Error(m).toSuccess // TODO: Refactor to SoftFailure
+      val tvar = Type.freshVar(Kind.Star, m.loc)
+      val pvar = Type.freshVar(Kind.Bool, m.loc)
+      val evar = Type.freshVar(Kind.Effect, m.loc)
+      KindedAst.Expression.Error(m, tvar, pvar, evar).toSuccess // TODO: Refactor to SoftFailure
 
   }
 
