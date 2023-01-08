@@ -104,7 +104,7 @@ namespace File {
         }
 
     ///
-    /// Returns the BacisFileAttributes of the file `f`.
+    /// Returns the BasicFileAttributes of the file `f`.
     ///
     def getAttributes(f: String): Result[String, ##java.nio.file.attribute.BasicFileAttributes] \ IO = region r {
         try {
