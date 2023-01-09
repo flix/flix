@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var, Xor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -68,6 +68,7 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     case Not(f1) => !evaluate(f1, trueVars)
     case Or(f1, f2) => evaluate(f1, trueVars) || evaluate(f2, trueVars)
     case And(f1, f2) => evaluate(f1, trueVars) && evaluate(f2, trueVars)
+    case Xor(f1, f2) => evaluate(f1, trueVars) ^ evaluate(f2, trueVars)
   }
 
   override def mkTrue: BoolFormula = True
@@ -156,11 +157,14 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     case _ => BoolFormula.Or(f1, f2)
   }
 
+  override def mkXor(f1: BoolFormula, f2: BoolFormula): BoolFormula = BoolFormula.Xor(f1, f2)
+
   override def map(f: BoolFormula)(fn: Int => BoolFormula): BoolFormula = f match {
     case True => True
     case False => False
     case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
     case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
+    case Xor(f1, f2) => mkXor(map(f1)(fn), map(f2)(fn))
     case Not(f1) => mkNot(map(f1)(fn))
     case Var(sym) => fn(sym)
   }
@@ -178,6 +182,7 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     case False => Type.False
     case And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Or(f1, f2) => Type.mkApply(Type.Or, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
+    case Xor(f1, f2) => toTypeClassic(super.mkXor(f1, f2), env)
     case Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
     case Var(id) => env.getBackward(id) match {
       case Some(sym) => Type.Var(sym, SourceLocation.Unknown)

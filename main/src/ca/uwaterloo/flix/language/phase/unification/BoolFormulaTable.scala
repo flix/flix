@@ -173,6 +173,20 @@ object BoolFormulaTable {
         val minf2 = alphaRenameAndLookup(f2)
         (Or(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
       }
+
+    case Xor(formula1, formula2) =>
+      // This case is similar to the above cases.
+      val (f1, fvs1) = minimizeFormulaRecursively(formula1)
+      val (f2, fvs2) = minimizeFormulaRecursively(formula2)
+      val fvs = fvs1 ++ fvs2
+
+      if (fvs.subsetOf(VarSet)) {
+        (Xor(f1, f2), fvs)
+      } else {
+        val minf1 = alphaRenameAndLookup(f1)
+        val minf2 = alphaRenameAndLookup(f2)
+        (Xor(minf1, minf2), minf1.freeVars ++ minf2.freeVars)
+      }
   }
 
   /**
@@ -246,6 +260,7 @@ object BoolFormulaTable {
     case Not(f) => !eval(f, env)
     case And(f1, f2) => eval(f1, env) && eval(f2, env)
     case Or(f1, f2) => eval(f1, env) || eval(f2, env)
+    case Xor(f1, f2) => eval(f1, env) ^ eval(f2, env)
   }
 
   /**

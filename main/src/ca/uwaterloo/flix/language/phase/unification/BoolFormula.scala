@@ -37,6 +37,7 @@ sealed trait BoolFormula {
     case BoolFormula.Not(f) => f.freeVars
     case BoolFormula.And(f1, f2) => f1.freeVars ++ f2.freeVars
     case BoolFormula.Or(f1, f2) => f1.freeVars ++ f2.freeVars
+    case BoolFormula.Xor(f1, f2) => f1.freeVars ++ f2.freeVars
   }
 
   /**
@@ -51,6 +52,7 @@ sealed trait BoolFormula {
     case BoolFormula.Not(t) => t.size
     case BoolFormula.And(t1, t2) => t1.size + t2.size + 1
     case BoolFormula.Or(t1, t2) => t1.size + t2.size + 1
+    case BoolFormula.Xor(t1, t2) => t1.size + t2.size + 1
   }
 
   /**
@@ -66,6 +68,7 @@ sealed trait BoolFormula {
     }
     case BoolFormula.And(f1, f2) => s"(and $f1 $f2)"
     case BoolFormula.Or(f1, f2) => s"(or $f1 $f2)"
+    case BoolFormula.Xor(f1, f2) => s"(xor $f1 $f2)"
   }
 
 }
@@ -103,6 +106,11 @@ object BoolFormula {
   case class Or(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
 
   /**
+    * Represents f1 XOR f2
+    */
+  case class Xor(f1: BoolFormula, f2: BoolFormula) extends BoolFormula
+
+  /**
     * Substitutes all variables in `f` using the substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a (new) variable.
@@ -117,6 +125,7 @@ object BoolFormula {
     case Not(f1) => Not(substitute(f1, m))
     case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
     case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
+    case Xor(f1, f2) => Xor(substitute(f1, m), substitute(f2, m))
   }
 
   /**
