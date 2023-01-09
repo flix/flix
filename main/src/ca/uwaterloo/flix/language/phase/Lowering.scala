@@ -768,7 +768,8 @@ object Lowering {
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
 
-    case TypedAst.Expression.Error(m, _, _, _) => ???
+    case TypedAst.Expression.Error(m, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
 
   }
 
