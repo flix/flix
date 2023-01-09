@@ -190,6 +190,11 @@ object JvmBackend {
       val regionClass = GenRegionClass.gen()
 
       //
+      // Generate the UncaughtExceptionHandler class.
+      //
+      val uncaughtExceptionHandlerClass = GenUncaughtExceptionHandlerClass.gen()
+
+      //
       // Collect all the classes and interfaces together.
       //
       List(
@@ -215,7 +220,8 @@ object JvmBackend {
         holeErrorClass,
         matchErrorClass,
         globalClass,
-        regionClass
+        regionClass,
+        uncaughtExceptionHandlerClass
       ).reduce(_ ++ _)
     }
 
