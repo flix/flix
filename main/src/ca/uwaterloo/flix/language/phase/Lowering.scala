@@ -96,7 +96,7 @@ object Lowering {
     lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.Mpmc")
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
 
-    lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/ReentrantLock.ReentrantLock")
+    lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
   }
 
   private object Sigs {
@@ -196,11 +196,10 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
-    case TypedAst.Instance(doc, ann0, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val defs = defs0.map(visitDef)
-      val ann = ann0.map(visitAnnotation)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
   }
 
@@ -208,8 +207,7 @@ object Lowering {
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.Enum(doc, ann0, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
@@ -225,8 +223,7 @@ object Lowering {
     * Lowers the given `effect`.
     */
   private def visitEffect(effect: TypedAst.Effect)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Effect = effect match {
-    case TypedAst.Effect(doc, ann0, mod, sym, ops0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
       LoweredAst.Effect(doc, ann, mod, sym, ops, loc)
   }
@@ -263,8 +260,7 @@ object Lowering {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val signatures = signatures0.map(sig => sigs(sig.sym))
@@ -276,8 +272,7 @@ object Lowering {
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann0, mod, tparams0, fparams, declaredScheme, retTpe, pur, eff, tconstrs, loc) =>
-      val ann = ann0.map(visitAnnotation)
+    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, pur, eff, tconstrs, loc) =>
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
@@ -292,15 +287,6 @@ object Lowering {
       val e = visitExp(exp)
       val s = visitScheme(inferredScheme)
       LoweredAst.Impl(e, s)
-  }
-
-  /**
-    * Lowers the given `ann0`.
-    */
-  private def visitAnnotation(ann: TypedAst.Annotation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Annotation = ann match {
-    case TypedAst.Annotation(name, args0, loc) =>
-      val args = args0.map(visitExp)
-      LoweredAst.Annotation(name, args, loc)
   }
 
   /**
@@ -419,16 +405,19 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.TypeMatch(e, rs, t, pur, eff, loc)
 
-    case TypedAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = visitExps(exps)
-      val rs = rules.map(visitChoiceRule)
+      val rs = rules.map(visitRelationalChoiceRule)
       val t = visitType(tpe)
-      LoweredAst.Expression.Choose(es, rs, t, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
 
     case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
+
+    case TypedAst.Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      ??? // TODO RESTR-VARS
 
     case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
@@ -484,12 +473,13 @@ object Lowering {
       val e = visitExp(elm)
       LoweredAst.Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+      val r = visitExp(reg)
       val b = visitExp(base)
       val bi = visitExp(beginIndex)
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArraySlice(b, bi, ei, t, pur, eff, loc)
+      LoweredAst.Expression.ArraySlice(r, b, bi, ei, t, pur, eff, loc)
 
     case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -638,7 +628,7 @@ object Lowering {
     // becomes:
     //     let ch1 = ?ch1;
     //     let ch2 = ?ch2;
-    //     match selectFrom([mpmcAdmin(ch1), mpmcAdmin(ch2)]) @ Static, false) {  // true if no default
+    //     match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
     //         case (0, locks) =>
     //             let x = unsafeGetAndUnlock(ch1, locks);
     //             ?handlech1
@@ -656,8 +646,8 @@ object Lowering {
       val t = visitType(tpe)
 
       val channels = rs map { case LoweredAst.SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
-      val adminArray = mkChannelAdminArray(rs, channels, loc)
-      val selectExp = mkChannelSelect(adminArray, d, loc)
+      val admins = mkChannelAdminList(rs, channels, loc)
+      val selectExp = mkChannelSelect(admins, d, loc)
       val cases = mkChannelCases(rs, channels, pur, eff, loc)
       val defaultCase = mkSelectDefaultCase(d, t, loc)
       val matchExp = LoweredAst.Expression.Match(selectExp, cases ++ defaultCase, t, pur, eff, loc)
@@ -881,19 +871,19 @@ object Lowering {
   }
 
   /**
-    * Lowers the given choice rule `rule0`.
+    * Lowers the given relational choice rule `rule0`.
     */
-  private def visitChoiceRule(rule0: TypedAst.ChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.ChoiceRule = rule0 match {
-    case TypedAst.ChoiceRule(pat, exp) =>
+  private def visitRelationalChoiceRule(rule0: TypedAst.RelationalChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.RelationalChoiceRule = rule0 match {
+    case TypedAst.RelationalChoiceRule(pat, exp) =>
       val p = pat.map {
-        case TypedAst.ChoicePattern.Wild(loc) => LoweredAst.ChoicePattern.Wild(loc)
-        case TypedAst.ChoicePattern.Absent(loc) => LoweredAst.ChoicePattern.Absent(loc)
-        case TypedAst.ChoicePattern.Present(sym, tpe, loc) =>
+        case TypedAst.RelationalChoicePattern.Wild(loc) => LoweredAst.RelationalChoicePattern.Wild(loc)
+        case TypedAst.RelationalChoicePattern.Absent(loc) => LoweredAst.RelationalChoicePattern.Absent(loc)
+        case TypedAst.RelationalChoicePattern.Present(sym, tpe, loc) =>
           val t = visitType(tpe)
-          LoweredAst.ChoicePattern.Present(sym, t, loc)
+          LoweredAst.RelationalChoicePattern.Present(sym, t, loc)
       }
       val e = visitExp(exp)
-      LoweredAst.ChoiceRule(p, e)
+      LoweredAst.RelationalChoiceRule(p, e)
   }
 
   /**
@@ -1339,31 +1329,31 @@ object Lowering {
   }
 
   /**
-    * Make the array of MpmcAdmin objects which will be passed to `selectFrom`
+    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
     */
-  private def mkChannelAdminArray(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], loc: SourceLocation): LoweredAst.Expression = {
+  private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expression)], loc: SourceLocation): LoweredAst.Expression = {
     val admins = rs.zip(channels) map {
       case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
         val admin = LoweredAst.Expression.Def(Defs.ChannelMpmcAdmin, Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc), loc)
         LoweredAst.Expression.Apply(admin, List(LoweredAst.Expression.Var(chanSym, c.tpe, loc)), Types.ChannelMpmcAdmin, Type.Pure, Type.Empty, loc)
     }
-    mkArray(admins, Types.ChannelMpmcAdmin, loc)
+    mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
 
   /**
-    * Construct a call to `selectFrom` given an array of MpmcAdmin objects and optional default
+    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default
     */
-  private def mkChannelSelect(adminArray: LoweredAst.Expression, default: Option[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
+  private def mkChannelSelect(admins: LoweredAst.Expression, default: Option[LoweredAst.Expression], loc: SourceLocation): LoweredAst.Expression = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val selectTpe = Type.mkImpureUncurriedArrow(List(adminArray.tpe, Type.Bool), selectRetTpe, loc)
+    val selectTpe = Type.mkImpureUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
     val select = LoweredAst.Expression.Def(Defs.ChannelSelectFrom, selectTpe, loc)
     val blocking = default match {
       case Some(_) => LoweredAst.Expression.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
       case None => LoweredAst.Expression.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
     }
-    LoweredAst.Expression.Apply(select, List(adminArray, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
+    LoweredAst.Expression.Apply(select, List(admins, blocking), selectRetTpe, Type.Impure, Type.Empty, loc)
   }
 
   /**
@@ -1459,17 +1449,6 @@ object Lowering {
     // Construct a call to the liftXb function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
-  }
-
-  /**
-    * Returns a pure array expression constructed from the given list of expressions `exps`.
-    */
-  private def mkArray(exps: List[LoweredAst.Expression], elmType: Type, loc: SourceLocation): LoweredAst.Expression = {
-    val tpe = Type.mkArray(elmType, Type.Pure, loc)
-    val pur = Type.Pure
-    val eff = Type.Empty
-    val reg = LoweredAst.Expression.Cst(Ast.Constant.Unit, Type.Unit, loc)
-    LoweredAst.Expression.ArrayLit(exps, reg, tpe, pur, eff, loc)
   }
 
   /**
@@ -1854,14 +1833,14 @@ object Lowering {
 
     case LoweredAst.Expression.TypeMatch(_, _, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       val rs = rules map {
-        case LoweredAst.ChoiceRule(pat, exp) =>
+        case LoweredAst.RelationalChoiceRule(pat, exp) =>
           // TODO: Substitute in patterns?
-          LoweredAst.ChoiceRule(pat, substExp(exp, subst))
+          LoweredAst.RelationalChoiceRule(pat, substExp(exp, subst))
       }
-      LoweredAst.Expression.Choose(es, rs, tpe, pur, eff, loc)
+      LoweredAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
@@ -1911,11 +1890,12 @@ object Lowering {
       val i = substExp(index, subst)
       LoweredAst.Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case LoweredAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+      val r = substExp(reg, subst)
       val b = substExp(base, subst)
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
-      LoweredAst.Expression.ArraySlice(b, bi, ei, tpe, pur, eff, loc)
+      LoweredAst.Expression.ArraySlice(r, b, bi, ei, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

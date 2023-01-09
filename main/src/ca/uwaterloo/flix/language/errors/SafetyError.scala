@@ -15,6 +15,26 @@ sealed trait SafetyError extends CompilationMessage {
 object SafetyError {
 
   /**
+    * An error raised to indicate an unexpected pattern bound in a body atom.
+    *
+    * @param loc the position of the body atom containing the unexpected pattern.
+    */
+  case class UnexpectedPatternInBodyAtom(loc: SourceLocation) extends SafetyError {
+    def summary: String = s"Unexpected pattern in body atom."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected pattern in body atom.
+         |
+         |${code(loc, "pattern occurs in this body atom.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an illegal use of a non-positively bound variable in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal variable.

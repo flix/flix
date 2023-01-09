@@ -168,8 +168,8 @@ namespace Graph {
             // length `w` using only intermediate nodes of rank less than
             // `k`. The `k` parameter is to control the number of iterations.
             // Direct paths use no intermediate vertices.
-            Dist(x, x, 0; Down(0)) :- Node(x).
-            Dist(x, y, 0; Down(w)) :- Edge(x, w, y).
+            Dist(x, x, 0; Down.Down(0)) :- Node(x).
+            Dist(x, y, 0; Down.Down(w)) :- Edge(x, w, y).
             // If there exists a path of length `w` without using node `k+1`
             // then that path is also valid using node `k+1`.
             Dist(x, y, k+1; w) :- Dist(x, y, k; w), NodeCount(c), if k < c.
@@ -209,12 +209,12 @@ namespace Graph {
         let edges = inject g into Edge;
         let dists = #{
             // Initialize all node distances to zero.
-            Dist(x, x; Down(0)) :- Edge(x, _, _).
-            Dist(x, x; Down(0)) :- Edge(_, _, x).
+            Dist(x, x; Down.Down(0)) :- Edge(x, _, _).
+            Dist(x, x; Down.Down(0)) :- Edge(_, _, x).
             // Add distances from the edges.
-            Dist(x, y; Down(d)) :- Edge(x, d, y).
+            Dist(x, y; Down.Down(d)) :- Edge(x, d, y).
             // Add transitive distances.
-            Dist(x, y; d1 + Down(d2)) :- Dist(x, z; d1) , Edge(z, d2, y).
+            Dist(x, y; d1 + Down.Down(d2)) :- Dist(x, z; d1) , Edge(z, d2, y).
         };
         let mapping = #{
             Mapping((x, y), destructDown(d)) :- fix Dist(x, y; d).
@@ -232,8 +232,8 @@ namespace Graph {
     pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let dists = #{
-            Dist(src; Down(0)).
-            Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y).
+            Dist(src; Down.Down(0)).
+            Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
         let mapping = #{
             Mapping(x, destructDown(d)) :- fix Dist(x; d).
@@ -278,8 +278,8 @@ namespace Graph {
     pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let nodes = #{
-            Dist(src; Down(0)) :- if limit >= 0.
-            Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y),
+            Dist(src; Down.Down(0)) :- if limit >= 0.
+            Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y),
                                     if destructDown(d) + w <= limit.
             Node(x) :- fix Dist(x; _).
         };
@@ -296,8 +296,8 @@ namespace Graph {
     pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let nodes = #{
-            Dist(src; Down(0)) :- if limit >= 0.
-            Dist(y; d + Down(1)) :- Dist(x; d), Edge(x, y),
+            Dist(src; Down.Down(0)) :- if limit >= 0.
+            Dist(y; d + Down.Down(1)) :- Dist(x; d), Edge(x, y),
                                     if destructDown(d) + 1 <= limit.
             Node(x) :- fix Dist(x; _).
         };
@@ -370,8 +370,8 @@ namespace Graph {
     pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Boxable[t] = {
         let edges = inject g into Edge;
         let frontiers = #{
-            Dist(src; Down(0)).
-            Dist(y; n + Down(1)) :- Dist(x; n), Edge(x, y).
+            Dist(src; Down.Down(0)).
+            Dist(y; n + Down.Down(1)) :- Dist(x; n), Edge(x, y).
 
             // Find the max frontier.
             Frontiers(;Set#{destructDown(n)}) :- fix Dist(_; n).
@@ -478,9 +478,9 @@ namespace Graph {
         let sb = new StringBuilder(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
-        foreach((x, y) <- Foldable.iterator(r, g)) {
+        Foldable.forEach(match (x, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)}")
-        };
+        }, g);
         output("}");
         StringBuilder.toString(sb)
     }
@@ -494,9 +494,9 @@ namespace Graph {
         let sb = new StringBuilder(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
-        foreach((x, w, y) <- Foldable.iterator(r, g)) {
+        Foldable.forEach(match (x, w, y) -> {
             output("  ${graphvizId(x)} -> ${graphvizId(y)} [label = ${w}]")
-        };
+        }, g);
         output("}");
         StringBuilder.toString(sb)
     }
@@ -555,7 +555,7 @@ namespace Graph {
     /// Returns the value inside the `d` value.
     ///
     def destructDown(d: Down[a]): a = {
-        let Down(a) = d;
+        let Down.Down(a) = d;
         a
     }
 

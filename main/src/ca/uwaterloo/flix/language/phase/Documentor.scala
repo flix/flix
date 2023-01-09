@@ -64,11 +64,7 @@ object Documentor {
     //
     val classesByNS = root.classes.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        def isInternal(clazz: TypedAst.Class): Boolean =
-          clazz.ann.exists(a => a.name match {
-            case Ast.Annotation.Internal(_) => true
-            case _ => false
-          })
+        def isInternal(clazz: TypedAst.Class): Boolean = clazz.ann.isInternal
 
         val filtered = decls.filter(clazz => clazz.mod.isPublic && !isInternal(clazz)).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -90,11 +86,7 @@ object Documentor {
     //
     val enumsByNS = root.enums.values.groupBy(getNameSpace).flatMap {
       case (ns, decls) =>
-        def isInternal(enum0: TypedAst.Enum): Boolean =
-          enum0.ann.exists(a => a.name match {
-            case Ast.Annotation.Internal(_) => true
-            case _ => false
-          })
+        def isInternal(enum0: TypedAst.Enum): Boolean = enum0.ann.isInternal
 
         val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -125,11 +117,7 @@ object Documentor {
         def isPublic(decl: TypedAst.Def): Boolean =
           decl.spec.mod.isPublic
 
-        def isInternal(decl: TypedAst.Def): Boolean =
-          decl.spec.ann.exists(a => a.name match {
-            case Ast.Annotation.Internal(_) => true
-            case _ => false
-          })
+        def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
         val filtered = decls.filter(decl => isPublic(decl) && !isInternal(decl)).toList
         val sorted = filtered.sortBy(_.sym.name)
@@ -308,14 +296,15 @@ object Documentor {
     case Kind.RecordRow => "Record"
     case Kind.SchemaRow => "Schema"
     case Kind.Predicate => ""
+    case Kind.CaseSet(sym) => s"CaseSet[${sym.toString}]"
     case Kind.Arrow(k1, k2) => visitKind(k1) + " -> " + visitKind(k2)
   }
 
   /**
     * Returns the given annotations `ann` as a JSON value.
     */
-  private def visitAnnotations(ann: List[Annotation]): JArray = {
-    JArray(ann.map(_.name).map(_.toString))
+  private def visitAnnotations(ann: Ast.Annotations): JArray = {
+    JArray(ann.annotations.map(_.toString))
   }
 
   /**

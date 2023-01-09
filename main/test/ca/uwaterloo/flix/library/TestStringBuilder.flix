@@ -570,7 +570,7 @@ def intercalate06!(): Bool = region r {
     def enumerator02(): Bool = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("abc", sb);
-        StringBuilder.enumerator(r, sb) |> Iterator.toList == ('a', 0) :: ('b', 1) :: ('c', 2) :: Nil
+        StringBuilder.enumerator(r, sb) |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
     }
 
 

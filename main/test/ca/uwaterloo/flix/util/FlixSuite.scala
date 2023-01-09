@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.Validation.Success
 import org.scalatest.FunSuite
 
 import java.nio.file.{Files, Path, Paths}
@@ -65,9 +65,9 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       flix.compile() match {
         case Success(compilationResult) =>
           runTests(name, compilationResult)
-        case Failure(errors) =>
-          val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
+        case failure =>
+          val es = failure.errors.map(_.message(flix.getFormatter)).mkString("\n")
+          fail(s"Unable to compile. Failed with: ${failure.errors.length} errors.\n\n$es")
       }
     } finally {
       // Remove the source path.
@@ -85,14 +85,16 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       val testsByName = tests.toList.sortBy(_._1.name)
 
       // Evaluate each tests with a clue of its source location.
-      for ((sym, TestFn(_, _, run)) <- testsByName) {
-        withClue(sym.loc.format) {
-          // Evaluate the function.
-          val result = run()
-          // Expect the true value, if boolean.
-          if (result.isInstanceOf[java.lang.Boolean]) {
-            if (result != true) {
-              fail("Expected true, but got false.")
+      for ((sym, TestFn(_, skip, run)) <- testsByName) {
+        if (!skip) {
+          withClue(sym.loc.format) {
+            // Evaluate the function.
+            val result = run()
+            // Expect the true value, if boolean.
+            if (result.isInstanceOf[java.lang.Boolean]) {
+              if (result != true) {
+                fail("Expected true, but got false.")
+              }
             }
           }
         }

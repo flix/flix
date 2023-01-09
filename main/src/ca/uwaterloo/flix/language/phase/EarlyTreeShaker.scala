@@ -87,22 +87,12 @@ object EarlyTreeShaker {
   /**
     * Returns `true` if `defn` is annotated with `@benchmark`
     */
-  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
-    a.name match {
-      case Annotation.Benchmark(_) => true
-      case _ => false
-    }
-  }
+  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.isBenchmark
 
   /**
     * Returns `true` if `defn` is annotated with `@test`
     */
-  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.exists { a =>
-    a.name match {
-      case Annotation.Test(_) => true
-      case _ => false
-    }
-  }
+  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.isTest
 
   /**
     * Returns the symbols reachable from the given symbol `sym`.
@@ -192,7 +182,7 @@ object EarlyTreeShaker {
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ visitExps(rules.map(_.exp))
 
     case Expression.Tag(_, exp, _, _, _, _) =>
@@ -228,8 +218,8 @@ object EarlyTreeShaker {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-      visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
+      visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

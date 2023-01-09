@@ -267,7 +267,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns an iterator over `t`.
     ///
     pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) =
-        Reducible.toArray(r, t) |> Array.iterator
+        Reducible.toArray(r, t) |> Array.iterator(r)
 
     ///
     /// Returns `t` as a list.
@@ -285,7 +285,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as a non-empty list.
     ///
     pub def toNel(t: t[a]): Nel[a] =
-        Reducible.reduceLeftTo((acc, a) -> Nel.append(acc, Nel(a, Nil)), a -> Nel(a, Nil), t)
+        Reducible.reduceLeftTo((acc, a) -> Nel.append(acc, Nel.Nel(a, Nil)), a -> Nel.Nel(a, Nil), t)
 
     ///
     /// Returns `t` as a set.

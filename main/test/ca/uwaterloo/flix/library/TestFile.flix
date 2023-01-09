@@ -202,107 +202,120 @@ namespace TestFile {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIter01(): Bool \ IO =
-        match readLinesIter("./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+    def testReadLinesIter01(): Bool \ IO = region r {
+        match readLinesIter(r, "./LICENSE.md") {
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
+    }
 
     @test
-    def testReadLinesIter02(): Bool \ IO =
-        match readLinesIter("./LICENSE.md") {
-            case Iterator(done, _) => done() == false
+    def testReadLinesIter02(): Bool \ IO = region r {
+        match readLinesIter(r, "./LICENSE.md") {
+            case Iterator.Iterator(done, _) => done() == false
         }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readLinesIterWith                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadLinesIterWithWith01(): Bool \ IO =
-        match readLinesIterWith({charSet = "utf8"}, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+    def testReadLinesIterWithWith01(): Bool \ IO = region r {
+        match readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md") {
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readBytes                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytes01(): Bool \ IO =
-        Result.isOk(readBytes("./LICENSE.md"))
+    def testReadBytes01(): Bool \ IO = region r {
+        Result.isOk(readBytes(r, "./LICENSE.md"))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readBytesWith                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadBytesWith01(): Bool \ IO =
-        Result.isOk(readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md"))
+    def testReadBytesWith01(): Bool \ IO = region r {
+        Result.isOk(readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md"))
+    }
 
     @test
-    def testReadBytesWith02(): Bool \ IO =
-        match readBytesWith({offset = 2i64, count = 2}, "./LICENSE.md") {
+    def testReadBytesWith02(): Bool \ IO = region r {
+        match readBytesWith(r, {offset = 2i64, count = 2}, "./LICENSE.md") {
             case Ok(v) => Array.length(v) == 2
             case _     => false
         }
+    }
 
     @test
-    def testReadBytesWith03(): Bool \ IO =
-        match readBytesWith({offset = 10i64, count = 4}, "./LICENSE.md") {
+    def testReadBytesWith03(): Bool \ IO = region r {
+        match readBytesWith(r, {offset = 10i64, count = 4}, "./LICENSE.md") {
             case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
             case _     => false
         }
+    }
 
     @test
-    def testReadBytesWith04(): Bool \ IO =
-        match readBytesWith({offset = 0i64, count = 0}, "./LICENSE.md") {
+    def testReadBytesWith04(): Bool \ IO = region r {
+        match readBytesWith(r, {offset = 0i64, count = 0}, "./LICENSE.md") {
             case Ok(v) => v `Array.sameElements` []
             case _     => false
         }
+    }
 
     @test
-    def testReadBytesWith05(): Bool \ IO =
-        match readBytesWith({offset = -10i64, count = 0}, "./LICENSE.md") {
+    def testReadBytesWith05(): Bool \ IO = region r {
+        match readBytesWith(r, {offset = -10i64, count = 0}, "./LICENSE.md") {
             case Ok(v) => v `Array.sameElements` []
             case _     => false
         }
+    }
 
     @test
-    def testReadBytesWith06(): Bool \ IO =
-        Result.isErr(readBytesWith({offset = 0i64, count = -10}, "./LICENSE.md"))
+    def testReadBytesWith06(): Bool \ IO = region r {
+        Result.isErr(readBytesWith(r, {offset = 0i64, count = -10}, "./LICENSE.md"))
+    }
 
     @test
-    def testReadBytesWith07(): Bool \ IO =
-        Result.isErr(readBytesWith({offset = -10i64, count = 10}, "./LICENSE.md"))
-
+    def testReadBytesWith07(): Bool \ IO = region r {
+        Result.isErr(readBytesWith(r, {offset = -10i64, count = 10}, "./LICENSE.md"))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // readChunks                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testReadChunks01(): Bool \ IO =
-        match readChunks(2, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isOk(next())
+    def testReadChunks01(): Bool \ IO = region r {
+        match readChunks(r, 2, "./LICENSE.md") {
+            case Iterator.Iterator(_, next) => Result.isOk(next())
         }
+    }
 
     @test
-    def testReadChunks02(): Bool \ IO =
-        match readChunks(2, "./LICENSE.md") {
-            case Iterator(done, _) => done() == false
+    def testReadChunks02(): Bool \ IO = region r {
+        match readChunks(r, 2, "./LICENSE.md") {
+            case Iterator.Iterator(done, _) => done() == false
         }
+    }
 
     @test
-    def testReadChunks03(): Bool \ IO =
-        match readChunks(0, "./LICENSE.md") {
-            case Iterator(done, _) => done()
+    def testReadChunks03(): Bool \ IO = region r {
+        match readChunks(r, 0, "./LICENSE.md") {
+            case Iterator.Iterator(done, _) => done()
         }
+    }
 
     @test
-    def testReadChunks04(): Bool \ IO =
-        match readChunks(-10, "./LICENSE.md") {
-            case Iterator(_, next) => Result.isErr(next())
+    def testReadChunks04(): Bool \ IO = region r {
+        match readChunks(r, -10, "./LICENSE.md") {
+            case Iterator.Iterator(_, next) => Result.isErr(next())
         }
-
+    }
 
 }

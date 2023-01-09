@@ -163,11 +163,12 @@ object PatternExhaustiveness {
         val expsErrs = (exp :: ruleExps).flatMap(visitExp(_, root))
         expsErrs
 
-      case Expression.Choose(exps, rules, _, _, _, _) =>
+      case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
         val ruleExps = rules.map(_.exp)
         (exps ::: ruleExps).flatMap(visitExp(_, root))
 
       case Expression.Tag(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.RestrictableTag(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(visitExp(_, root))
       case Expression.RecordEmpty(_, _) => Nil
       case Expression.RecordSelect(base, _, _, _, _, _) => visitExp(base, root)
@@ -178,7 +179,7 @@ object PatternExhaustiveness {
       case Expression.ArrayLoad(base, index, _, _, _, _) => List(base, index).flatMap(visitExp(_, root))
       case Expression.ArrayStore(base, index, elm, _, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
       case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => List(base, beginIndex, endIndex).flatMap(visitExp(_, root))
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => List(reg, base, beginIndex, endIndex).flatMap(visitExp(_, root))
       case Expression.Ref(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))

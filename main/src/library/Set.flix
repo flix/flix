@@ -90,6 +90,14 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
+instance Collectable[Set] {
+    pub def collect(iter: Iterator[a, r]): Set[a] \ r with Order[a] = Iterator.toSet(iter)
+}
+
+instance Iterable[Set] {
+    pub def iterator(rh: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) = Set.iterator(rh, s)
+}
+
 namespace Set {
 
     ///
@@ -98,12 +106,12 @@ namespace Set {
     pub def toString(s: Set[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Set#{", sb);
-        foreach ((x, i) <- enumerator(r, s)) {
+        forEachWithIndex((i, x) -> {
             if (i == 0)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+        }, s);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -207,7 +215,7 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
-        def min() = reduceLeft((x, y) -> if (cmp(x, y) == LessThan) x else y, s);
+        def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         typematch cmp {
             case g: (a, a) -> Comparison \ {} =>
                 if (useParallelEvaluation(s))
@@ -239,7 +247,7 @@ namespace Set {
     ///
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
-        def max() = reduceLeft((x, y) -> if (cmp(x, y) == GreaterThan) x else y, s);
+        def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         typematch cmp {
             case g: (a, a) -> Comparison \ {} =>
                 if (useParallelEvaluation(s))
@@ -554,7 +562,7 @@ namespace Set {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
-        MutSet(ref s @ r)
+        MutSet.MutSet(ref s @ r)
 
     ///
     /// Applies `f` to every element of `s`.
@@ -562,6 +570,13 @@ namespace Set {
     pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =
         let Set(t) = s;
         RedBlackTree.forEach((x, _) -> f(x), t)
+
+    ///
+    /// Applies `f` to every element of `s` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: Set[a]): Unit \ ef =
+        let Set(t) = s;
+        RedBlackTree.forEachWithIndex((i, x, _) -> f(i, x), t)
 
     ///
     /// Build a set by applying `f` to the seed value `st`.
@@ -596,7 +611,7 @@ namespace Set {
     /// Returns the set `s` as a `DelayList`.
     ///
     pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> ECons(x, acc), ENil, s)
+        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, s)
 
     ///
     /// Returns an iterator over `s`.
@@ -608,7 +623,7 @@ namespace Set {
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
     ///

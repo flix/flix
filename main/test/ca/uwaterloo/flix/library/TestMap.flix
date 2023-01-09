@@ -1907,16 +1907,36 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def forEach01(): Bool \ IO =
-    let r = ref 21;
-    Map.forEach((k, _) -> r := k, Map#{});
-    21 == deref r
+def forEach01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEach((k, _) -> ri := k, Map#{});
+    21 == deref ri
+}
 
 @test
-def forEach02(): Bool \ IO =
-    let r = ref 21;
-    Map.forEach((k, _) -> r := k, Map#{1 => "Hello World!"});
-    1 == deref r
+def forEach02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEach((k, _) -> ri := k, Map#{1 => "Hello World!"});
+    1 == deref ri
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// forEachWithIndex                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def forEachWithIndex01(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{});
+    21 == deref ri
+}
+
+@test
+def forEachWithIndex02(): Bool = region r {
+    let ri = ref 21 @ r;
+    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{1 => "Hello World!"});
+    0 == deref ri
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfold                                                                  //
@@ -2062,75 +2082,75 @@ def testInvert06(): Bool = Map.invert(Map#{1 => "a", 2 => "b", 3 => "a", 4 => "b
 
 @test
 def query01(): Bool =
-    Map.query(_ -> EqualTo, Map#{}: Map[Unit, Unit]) == Nil
+    Map.query(_ -> Comparison.EqualTo, Map#{}: Map[Unit, Unit]) == Nil
 
 @test
 def query02(): Bool =
-    Map.query(_ -> EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
+    Map.query(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
 
 @test
 def query03(): Bool =
-    Map.query(x -> if (x < 2) LessThan else if (x > 2) GreaterThan else EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
+    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
 
 @test
 def query04(): Bool =
-    Map.query(x -> if (x < 'b') LessThan else if (x > 'c') GreaterThan else EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
+    Map.query(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
 
 @test
 def query05(): Bool =
     let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
-    Map.query(x -> if (x < 5) LessThan else if (x >= 10) GreaterThan else EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
+    Map.query(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
 
 @test
 def query06(): Bool =
     let m = Map.unfold(s -> if (s > 75) None else Some(s, Char.fromInt32(s + 48), s + 1), 25);
-    Map.query(x -> if (x < 25) LessThan else if (x >= 75) GreaterThan else EqualTo, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
+    Map.query(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
 
 @test
 def query07(): Bool =
-    Map.query(x -> if (x < 42) LessThan else if (x > 42) GreaterThan else EqualTo, Map#{42 => true}) == (42, true) :: Nil
+    Map.query(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
 
 @test
 def query08(): Bool =
-    Map.query(x -> if (x < 1) LessThan else if (x > 1) GreaterThan else EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
+    Map.query(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
 
 @test
 def query09(): Bool =
-    Map.query(x -> if (x < 2) LessThan else if (x > 3) GreaterThan else EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
+    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
 
 @test
 def query10(): Bool =
-    Map.query(x -> if (x < 4) LessThan else if (x > 4) GreaterThan else EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
+    Map.query(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
 
 @test
 def query11(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 1) LessThan else if (fst(x) > 1) GreaterThan else EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+    Map.query(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
 
 @test
 def query12(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 3) LessThan else if (fst(x) > 3) GreaterThan else EqualTo, m) == ((3, 1), 5) :: Nil
+    Map.query(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
 
 @test
 def query13(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) > 2) GreaterThan else EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+    Map.query(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
 
 @test
 def query14(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 2) LessThan else EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.query(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
 def query15(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
-        if (cmp == GreaterThan)
+        if (cmp == Comparison.GreaterThan)
             cmp
         else
-            EqualTo
+            Comparison.EqualTo
         };
     Map.query(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
 
@@ -2139,10 +2159,10 @@ def query16(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
-        if (cmp == LessThan)
+        if (cmp == Comparison.LessThan)
             cmp
         else
-            EqualTo
+            Comparison.EqualTo
         };
     Map.query(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
@@ -2151,10 +2171,10 @@ def query17(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
-        if (cmp == LessThan)
+        if (cmp == Comparison.LessThan)
             cmp
         else
-            EqualTo
+            Comparison.EqualTo
         };
     Map.query(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
 
@@ -2163,10 +2183,10 @@ def query18(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
-        if (cmp == GreaterThan)
+        if (cmp == Comparison.GreaterThan)
             cmp
         else
-            EqualTo
+            Comparison.EqualTo
         };
     Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
@@ -2519,22 +2539,22 @@ def query18(): Bool =
     @test
     def sequence01(): Bool =
         let m: Map[Int32, Identity[Char]] = Map#{};
-        Map.sequence(m) == Identity(Map#{})
+        Map.sequence(m) == Identity.Identity(Map#{})
 
     @test
     def sequence02(): Bool =
-        let m = Map#{1 => Identity('a')};
-        Map.sequence(m) == Identity(Map#{1 => 'a'})
+        let m = Map#{1 => Identity.Identity('a')};
+        Map.sequence(m) == Identity.Identity(Map#{1 => 'a'})
 
     @test
     def sequence03(): Bool =
-        let m = Map#{1 => Identity('a'), 2 => Identity('b')};
-        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b'})
+        let m = Map#{1 => Identity.Identity('a'), 2 => Identity.Identity('b')};
+        Map.sequence(m) == Identity.Identity(Map#{1 => 'a', 2 => 'b'})
 
     @test
     def sequence04(): Bool =
-        let m = Map#{1 => Identity('a'), 2 => Identity('b'), 3 => Identity('c')};
-        Map.sequence(m) == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'})
+        let m = Map#{1 => Identity.Identity('a'), 2 => Identity.Identity('b'), 3 => Identity.Identity('c')};
+        Map.sequence(m) == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'})
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -2544,32 +2564,32 @@ def query18(): Bool =
     def traverse01(): Bool = region r {
         let st = ref '#' @ r;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
-        ans == Identity(Map#{}) and deref st == '#'
+        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        ans == Identity.Identity(Map#{}) and deref st == '#'
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref '#' @ r;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
-        ans == Identity(Map#{1 => 'a'}) and deref st == 'a'
+        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        ans == Identity.Identity(Map#{1 => 'a'}) and deref st == 'a'
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref '#' @ r;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
-        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
+        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
     }
 
     @test
     def traverse04(): Bool = region r {
         let st = ref '#' @ r;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverse(x -> {st := x; Identity(x)}, m);
-        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
+        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2580,32 +2600,32 @@ def query18(): Bool =
     def traverseWithKey01(): Bool = region r {
         let st = ref (0, '#') @ r;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
-        ans == Identity(Map#{}) and deref st == (0, '#')
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        ans == Identity.Identity(Map#{}) and deref st == (0, '#')
     }
 
     @test
     def traverseWithKey02(): Bool = region r {
         let st = ref (0, '#') @ r;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
-        ans == Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        ans == Identity.Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
     }
 
     @test
     def traverseWithKey03(): Bool = region r {
         let st = ref (0, '#') @ r;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
-        ans == Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
     }
 
     @test
     def traverseWithKey04(): Bool = region r {
         let st = ref (0, '#') @ r;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity(v)}, m);
-        ans == Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
+        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
     }
 
     /////////////////////////////////////////////////////////////////////////////

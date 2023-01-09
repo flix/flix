@@ -1,6 +1,7 @@
 namespace TestNel {
 
     use Hash.hash
+    use Nel.Nel
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -696,36 +697,36 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((1, 0), Nil)
+    def zipWithIndex01(): Bool = Nel.zipWithIndex(Nel(1, Nil)) == Nel((0, 1), Nil)
 
     @test
-    def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((1, 0), (2, 1) :: Nil)
+    def zipWithIndex02(): Bool = Nel.zipWithIndex(Nel(1, 2 :: Nil)) == Nel((0, 1), (1, 2) :: Nil)
 
     @test
-    def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((2, 0), (1, 1) :: Nil)
+    def zipWithIndex03(): Bool = Nel.zipWithIndex(Nel(2, 1 :: Nil)) == Nel((0, 2), (1, 1) :: Nil)
 
     @test
-    def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: Nil)
+    def zipWithIndex04(): Bool = Nel.zipWithIndex(Nel(1, 2 :: 3 :: Nil)) == Nel((0, 1), (1, 2) :: (2, 3) :: Nil)
 
     @test
     def zipWithIndex05(): Bool =
-        Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((1, 0), (2, 1) :: (3, 2) :: (4, 3) :: (5, 4) :: Nil)
+        Nel.zipWithIndex(Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)) == Nel((0, 1), (1, 2) :: (2, 3) :: (3, 4) :: (4, 5) :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+    def zipWithA01(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, Nil), Nel(1, Nil)) == Identity.Identity(Nel(2, Nil))
 
     @test
-    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity(Nel(2, Nil))
+    def zipWithA02(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, 2 :: Nil), Nel(1, Nil)) == Identity.Identity(Nel(2, Nil))
 
     @test
-    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, Nil))
+    def zipWithA03(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, Nil), Nel(1, 2 :: Nil)) == Identity.Identity(Nel(2, Nil))
 
     @test
-    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity(Nel(2, 4 :: Nil))
+    def zipWithA04(): Bool = Nel.zipWithA((x, y) -> Identity.Identity(x + y), Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Identity.Identity(Nel(2, 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -787,16 +788,18 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Nel.forEach(x -> r := x, Nel.singleton(1));
-        1 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEach(x -> ri := x, Nel.singleton(1));
+        1 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Nel.forEach(x -> r := x, Nel(1, 2 :: 3 :: Nil));
-        3 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
+        3 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
@@ -862,9 +865,9 @@ namespace TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith02(): Bool =
@@ -999,18 +1002,18 @@ namespace TestNel {
 
     @test
     def sequence01(): Bool =
-        let l = Nel.singleton(Identity(1));
-        Nel.sequence(l) == Identity(Nel.singleton(1))
+        let l = Nel.singleton(Identity.Identity(1));
+        Nel.sequence(l) == Identity.Identity(Nel.singleton(1))
 
     @test
     def sequence02(): Bool =
-        let l = Nel.cons(Identity(1), Nel.singleton(Identity(2)));
-        Nel.sequence(l) == Identity(Nel.cons(1, Nel.singleton(2)))
+        let l = Nel.cons(Identity.Identity(1), Nel.singleton(Identity.Identity(2)));
+        Nel.sequence(l) == Identity.Identity(Nel.cons(1, Nel.singleton(2)))
 
     @test
     def sequence03(): Bool =
-        let l = Nel.cons(Identity(1), Nel.cons(Identity(2), Nel.singleton(Identity(3))));
-        Nel.sequence(l) == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3))))
+        let l = Nel.cons(Identity.Identity(1), Nel.cons(Identity.Identity(2), Nel.singleton(Identity.Identity(3))));
+        Nel.sequence(l) == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3))))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -1020,24 +1023,24 @@ namespace TestNel {
     def traverse01(): Bool = region r {
         let st = ref 0 @ r;
         let l = Nel.singleton(1);
-        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nel.singleton(1)) and deref st == 1
+        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref 0 @ r;
         let l = Nel.cons(1, Nel.singleton(2));
-        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
+        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref 0 @ r;
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        let ans = Nel.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
+        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

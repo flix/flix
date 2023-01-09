@@ -55,7 +55,7 @@ namespace Fixpoint {
             case Model(_) => d
             case Join(Model(m), cs) => region r {
                 let db = Map.map(Map.toMutMap(r), m) |> Map.toMutMap(r);
-                compiler(cs) |> interpretWithDatabase(db) |> toModel
+                compiler(cs) |> interpretWithDatabase(r, db) |> toModel
             }
             case _ => bug!("Datalog normalization bug")
         };
@@ -99,10 +99,10 @@ namespace Fixpoint {
         case Model(db) =>
             Map.query(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
-                    case EqualTo => EqualTo
+                    case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
-                case _ => LessThan
+                case _ => Comparison.LessThan
             }, db) |>
             List.toMap |>
             Model
@@ -720,10 +720,10 @@ namespace Fixpoint {
             let pFacts = new MutList(r);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
-                    case EqualTo => EqualTo
+                    case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
-                case _ => LessThan
+                case _ => Comparison.LessThan
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>

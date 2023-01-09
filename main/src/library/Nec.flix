@@ -37,20 +37,20 @@ instance Order[Nec[a]] with Order[a] {
     /// Compares `c1` and `c2` lexicographically.
     ///
     pub def compare(c1: Nec[a], c2: Nec[a]): Comparison =
-        use Nec.ViewLeft.{OneLeft, SomeLeft};
+        use Nec.ViewLeft;
         match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
-            case (OneLeft(x), OneLeft(y))           => x <=> y
-            case (OneLeft(x), SomeLeft(y, _))       => match (x <=> y) {
-                case EqualTo => LessThan
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
+                case Comparison.EqualTo => Comparison.LessThan
                 case cmp     => cmp
             }
-            case (SomeLeft(x, _), OneLeft(y))       => match (x <=> y) {
-                case EqualTo => GreaterThan
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
+                case Comparison.EqualTo => Comparison.GreaterThan
                 case cmp     => cmp
             }
-            case (SomeLeft(x, xs), SomeLeft(y, ys)) =>
+            case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>
                 let cmp = x <=> y;
-                if (cmp == EqualTo) xs <=> ys else cmp
+                if (cmp == Comparison.EqualTo) xs <=> ys else cmp
         }
 }
 
@@ -126,12 +126,12 @@ instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Nec#{", sb);
-        foreach ((x, i) <- enumerator(r, c)) {
+        Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
                 StringBuilder.appendString!("${x}", sb)
             else
                 StringBuilder.appendString!(", ${x}", sb)
-        };
+        }, c);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -198,32 +198,32 @@ namespace Nec {
     /// Returns the first element of `c`.
     ///
     pub def head(c: Nec[a]): a = match viewLeft(c) {
-        case OneLeft(x)     => x
-        case SomeLeft(x, _) => x
+        case ViewLeft.OneLeft(x)     => x
+        case ViewLeft.SomeLeft(x, _) => x
     }
 
     ///
     /// Returns the last element of `c`.
     ///
     pub def last(c: Nec[a]): a = match viewRight(c) {
-        case OneRight(x)     => x
-        case SomeRight(_, x) => x
+        case ViewRight.OneRight(x)     => x
+        case ViewRight.SomeRight(_, x) => x
     }
 
     ///
     /// Returns the list of elements in `c` without the last element.
     ///
     pub def init(c: Nec[a]): List[a] = match viewRight(c) {
-        case OneRight(_)      => Nil
-        case SomeRight(rs, _) => toList(rs)
+        case ViewRight.OneRight(_)      => Nil
+        case ViewRight.SomeRight(rs, _) => toList(rs)
     }
 
     ///
     /// Returns all elements in `c` without the first element.
     ///
     pub def tail(c: Nec[a]): List[a] = match viewLeft(c) {
-        case OneLeft(_)      => Nil
-        case SomeLeft(_, rs) => toList(rs)
+        case ViewLeft.OneLeft(_)      => Nil
+        case ViewLeft.SomeLeft(_, rs) => toList(rs)
     }
 
     ///
@@ -239,15 +239,15 @@ namespace Nec {
     ///
     /// Deconstruct a Nec from left-to-right.
     ///
-    /// Returns `SomeLeft(x, rs)` if the Nec has at least two elements, where `x` is the leftmost
+    /// Returns `ViewLeft.SomeLeft(x, rs)` if the Nec has at least two elements, where `x` is the leftmost
     /// element of the Nec `c`, and `rs` is the rest of the Nec.
     ///
-    /// Returns `OneLeft` if the Nec has a single element.
+    /// Returns `ViewLeft.OneLeft` if the Nec has a single element.
     ///
     pub def viewLeft(c: Nec[a]): ViewLeft[a] =
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewLeft[a] -> ViewLeft[a]) = match (c1, rs) {
-            case (NecOne(x), None)      => k(OneLeft(x))
-            case (NecOne(x), Some(rs1)) => k(SomeLeft(x, rs1))
+            case (NecOne(x), None)      => k(ViewLeft.OneLeft(x))
+            case (NecOne(x), Some(rs1)) => k(ViewLeft.SomeLeft(x, rs1))
             case (Nec(l, r), None)      => loop(l, Some(r),  k)
             case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)),  k)
         };
@@ -257,15 +257,15 @@ namespace Nec {
     ///
     /// Deconstruct a Nec from right-to-left.
     ///
-    /// Returns `SomeRight(rs, x)` if the Nec has at least two elements, where `x` is the rightmost
+    /// Returns `ViewRight.SomeRight(rs, x)` if the Nec has at least two elements, where `x` is the rightmost
     /// element of the Nec `c`, and `rs` is the front of the Nec.
     ///
-    /// Returns `OneRight` if the Nec has a single element.
+    /// Returns `ViewRight.OneRight` if the Nec has a single element.
     ///
     pub def viewRight(c: Nec[a]): ViewRight[a] =
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewRight[a] -> ViewRight[a]) = match (c1, rs) {
-            case (NecOne(x), None)      => k(OneRight(x))
-            case (NecOne(x), Some(rs1)) => k(SomeRight(rs1, x))
+            case (NecOne(x), None)      => k(ViewRight.OneRight(x))
+            case (NecOne(x), Some(rs1)) => k(ViewRight.SomeRight(rs1, x))
             case (Nec(l, r), None)      => loop(r, Some(l),  k)
             case (Nec(l, r), Some(rs1)) => loop(r, Some(append(rs1, l)),  k)
         };
@@ -276,9 +276,9 @@ namespace Nec {
     ///
     pub def memberOf(a: a, c: Nec[a]): Bool with Eq[a] =
         def loop(c1) = match viewLeft(c1) {
-            case OneLeft(x)               => x == a
-            case SomeLeft(x, _) if x == a => true
-            case SomeLeft(_, c2)          => loop(c2)
+            case ViewLeft.OneLeft(x)               => x == a
+            case ViewLeft.SomeLeft(x, _) if x == a => true
+            case ViewLeft.SomeLeft(_, c2)          => loop(c2)
         };
         loop(c)
 
@@ -311,8 +311,8 @@ namespace Nec {
     ///
     pub def indexOf(a: a, c: Nec[a]): Option[Int32] with Eq[a] =
         def loop(acc: Int32, c1: Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => if (x == a) Some(acc) else None
-            case SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
+            case ViewLeft.OneLeft(x)      => if (x == a) Some(acc) else None
+            case ViewLeft.SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
         };
         loop(0, c)
 
@@ -325,16 +325,16 @@ namespace Nec {
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from left to right.
     ///
     pub def findLeft(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = match viewLeft(c) {
-        case OneLeft(x)      => if (f(x)) Some(x) else None
-        case SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
+        case ViewLeft.OneLeft(x)      => if (f(x)) Some(x) else None
+        case ViewLeft.SomeLeft(x, rs) => if (f(x)) Some(x) else findLeft(f, rs)
     }
 
     ///
     /// Optionally returns the first element of `c` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = match viewRight(c) {
-        case OneRight(x)      => if (f(x)) Some(x) else None
-        case SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
+        case ViewRight.OneRight(x)      => if (f(x)) Some(x) else None
+        case ViewRight.SomeRight(rs, x) => if (f(x)) Some(x) else findRight(f, rs)
     }
 
     ///
@@ -360,8 +360,8 @@ namespace Nec {
     ///
     pub def map(f: a -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case OneLeft(x)      => {let a = f(x); k(NecOne(a))}
-            case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
+            case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
         loop(c, upcast(identity))
 
@@ -372,8 +372,8 @@ namespace Nec {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
-            case SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
+            case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
         loop(c, 0, upcast(identity))
 
@@ -384,8 +384,8 @@ namespace Nec {
     ///
     pub def ap(f: Nec[a -> b \ ef], c: Nec[a]) : Nec[b] \ ef =
         def loop(f1: Nec[a -> b \ ef], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(f1) {
-            case OneLeft(f2)      => k(map(f2, c))
-            case SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
+            case ViewLeft.OneLeft(f2)      => k(map(f2, c))
+            case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
         loop(f, upcast(identity))
 
@@ -394,8 +394,8 @@ namespace Nec {
     ///
     pub def flatMap(f: a -> Nec[b] \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
-            case OneLeft(x)      => {let a = f(x); k(a)}
-            case SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
+            case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
         loop(c, upcast(identity))
 
@@ -405,13 +405,13 @@ namespace Nec {
     pub def reverse(c: Nec[a]): Nec[a] =
         // Use an accumulator rather than CPS, as it will be built "naturally" in reverse order.
         def loop(c1: Nec[a], acc: Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => cons(x, acc)
-            case SomeLeft(x, rs) => loop(rs, cons(x, acc))
+            case ViewLeft.OneLeft(x)      => cons(x, acc)
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, cons(x, acc))
         };
         // Do one step before the loop so we have some content.
         match viewLeft(c) {
-            case OneLeft(x)      => singleton(x)
-            case SomeLeft(x, rs) => loop(rs, singleton(x))
+            case ViewLeft.OneLeft(x)      => singleton(x)
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, singleton(x))
         }
 
     ///
@@ -426,8 +426,8 @@ namespace Nec {
     /// That is, `c` is the first permutation and `reverse(c)` is the last permutation.
     ///
     pub def permutations(c: Nec[a]): Nec[List[a]] = match viewLeft(c) {
-        case OneLeft(x)      => singleton(x :: Nil)
-        case SomeLeft(x, xs) => match fromList(List.permutations(x :: toList(xs))) {
+        case ViewLeft.OneLeft(x)      => singleton(x :: Nil)
+        case ViewLeft.SomeLeft(x, xs) => match fromList(List.permutations(x :: toList(xs))) {
             case Some(ans) => ans
             case None      => unreachable!()
         }
@@ -438,8 +438,8 @@ namespace Nec {
     /// That is, `l` is the first subsequence and `Nil` is the last subsequence.
     ///
     pub def subsequences(c: Nec[a]): Nec[List[a]] = match viewLeft(c) {
-        case OneLeft(x)      => cons(x :: Nil, singleton(Nil))
-        case SomeLeft(x, xs) => match fromList(List.subsequences(x :: toList(xs))) {
+        case ViewLeft.OneLeft(x)      => cons(x :: Nil, singleton(Nil))
+        case ViewLeft.SomeLeft(x, xs) => match fromList(List.subsequences(x :: toList(xs))) {
             case Some(ans) => ans
             case None      => unreachable!()
         }
@@ -466,13 +466,13 @@ namespace Nec {
     ///
     pub def intersperse(sep: a, c: Nec[a]): Nec[a] =
         def loop(c1: Nec[a], k: Nec[a] -> Nec[a]) = match viewLeft(c1) {
-            case OneLeft(x)      => k(cons(sep, singleton(x)))
-            case SomeLeft(x, rs) => loop(rs, ks -> k(cons(sep, cons(x, ks))))
+            case ViewLeft.OneLeft(x)      => k(cons(sep, singleton(x)))
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons(sep, cons(x, ks))))
         };
         // Do one step before the loop so we have some content.
         match viewLeft(c) {
-            case OneLeft(x)      => singleton(x)
-            case SomeLeft(x, rs) => loop(rs, ks -> cons(x, ks))
+            case ViewLeft.OneLeft(x)      => singleton(x)
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> cons(x, ks))
         }
 
     ///
@@ -480,8 +480,8 @@ namespace Nec {
     ///
     pub def count(f: a -> Bool \ ef, c: Nec[a]): Int32 \ ef =
         def loop(c1: Nec[a], acc: Int32) = match viewLeft(c1) {
-            case OneLeft(x)      => if (f(x)) acc + 1 else acc
-            case SomeLeft(x, rs) => loop(rs, if (f(x)) acc + 1 else acc)
+            case ViewLeft.OneLeft(x)      => if (f(x)) acc + 1 else acc
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, if (f(x)) acc + 1 else acc)
         };
         loop(c, 0)
 
@@ -513,8 +513,8 @@ namespace Nec {
     /// Returns the concatenation of the elements in `c`.
     ///
     pub def flatten(c: Nec[Nec[a]]): Nec[a] = match viewLeft(c) {
-        case OneLeft(xs)       => xs
-        case SomeLeft(xs, xss) => foldLeft(append, xs, xss)
+        case ViewLeft.OneLeft(xs)       => xs
+        case ViewLeft.SomeLeft(xs, xss) => foldLeft(append, xs, xss)
     }
 
     ///
@@ -523,8 +523,8 @@ namespace Nec {
     /// Returns `false` if `c` is empty.
     ///
     pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => if (f(x)) true else exists(f, rs)
+        case ViewLeft.OneLeft(x)      => f(x)
+        case ViewLeft.SomeLeft(x, rs) => if (f(x)) true else exists(f, rs)
     }
 
     ///
@@ -533,8 +533,8 @@ namespace Nec {
     /// Returns `true` if `c` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => if (not f(x)) false else forAll(f, rs)
+        case ViewLeft.OneLeft(x)      => f(x)
+        case ViewLeft.SomeLeft(x, rs) => if (not f(x)) false else forAll(f, rs)
     }
 
     ///
@@ -542,8 +542,8 @@ namespace Nec {
     ///
     pub def filter(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1: Nec[a], k: List[a] -> List[a] \ ef) = match viewLeft(c1) {
-            case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
-            case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
+            case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
+            case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
         loop(c, upcast(identity))
 
@@ -560,8 +560,8 @@ namespace Nec {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b \ ef, acc: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(acc, x)
-        case SomeLeft(x, rs) => {
+        case ViewLeft.OneLeft(x)      => f(acc, x)
+        case ViewLeft.SomeLeft(x, rs) => {
             let b = f(acc, x);
             foldLeft(f, b, rs)
         }
@@ -573,8 +573,8 @@ namespace Nec {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = match viewRight(c) {
-        case OneRight(x)      => f(x, s)
-        case SomeRight(rs, x) => {
+        case ViewRight.OneRight(x)      => f(x, s)
+        case ViewRight.SomeRight(rs, x) => {
             let b = f(x, s);
             foldRight(f, b, rs)
         }
@@ -587,8 +587,8 @@ namespace Nec {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x, upcast(_ -> z))
-        case SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
+        case ViewLeft.OneLeft(x)      => f(x, upcast(_ -> z))
+        case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
     ///
@@ -602,11 +602,11 @@ namespace Nec {
     ///
     pub def filterMap(f: a -> Option[b] \ ef, c: Nec[a]): List[b] \ ef =
         def loop(l, k) = match viewLeft(l) {
-            case OneLeft(x)      => match (f(x)) {
+            case ViewLeft.OneLeft(x)      => match (f(x)) {
                 case Some(a) => k(a :: Nil)
                 case None    => k(Nil)
             }
-            case SomeLeft(x, rs) => match f(x) {
+            case ViewLeft.SomeLeft(x, rs) => match f(x) {
                 case Some(a) => loop(rs, ks -> k(a :: ks))
                 case None    => loop(rs, k)
             }
@@ -619,8 +619,8 @@ namespace Nec {
     /// Returns `None` if f(c) for every element of c is `None`.
     ///
     pub def findMap(f: a -> Option[b] \ ef, c: Nec[a]): Option[b] \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => match f(x) {
+        case ViewLeft.OneLeft(x)      => f(x)
+        case ViewLeft.SomeLeft(x, rs) => match f(x) {
             case Some(v) => Some(v)
             case None    => findMap(f, rs)
         }
@@ -634,10 +634,10 @@ namespace Nec {
     ///
     pub def zip(c1: Nec[a], c2: Nec[b]): Nec[(a,b)] =
         def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[(a,b)] -> Nec[(a,b)]) = match (viewLeft(nec1), viewLeft(nec2)) {
-            case (SomeLeft(x, xs), SomeLeft(y, ys)) => loop(xs, ys, ks -> k(cons((x, y), ks)))
-            case (OneLeft(x), OneLeft(y))           => k(NecOne((x, y)))
-            case (SomeLeft(x, _), OneLeft(y))       => k(NecOne((x, y)))
-            case (OneLeft(x), SomeLeft(y, _))       => k(NecOne((x, y)))
+            case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) => loop(xs, ys, ks -> k(cons((x, y), ks)))
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(NecOne((x, y)))
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => k(NecOne((x, y)))
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(NecOne((x, y)))
         };
         loop(c1, c2, k -> k)
 
@@ -649,10 +649,10 @@ namespace Nec {
     ///
     pub def zipWith(f: (a, b) -> c \ ef, c1: Nec[a], c2: Nec[b]): Nec[c] \ ef =
         def loop(nec1: Nec[a], nec2: Nec[b], k: Nec[c] -> Nec[c] \ ef) = match (viewLeft(nec1), viewLeft(nec2)) {
-            case (OneLeft(x), OneLeft(y))           => {let a = f(x, y); k(singleton(a))}
-            case (OneLeft(x), SomeLeft(y, _))       => {let a = f(x, y); k(singleton(a))}
-            case (SomeLeft(x, _), OneLeft(y))       => {let a = f(x, y); k(singleton(a))}
-            case (SomeLeft(x, rs), SomeLeft(y, qs)) => {
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => {let a = f(x, y); k(singleton(a))}
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => {let a = f(x, y); k(singleton(a))}
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => {let a = f(x, y); k(singleton(a))}
+            case (ViewLeft.SomeLeft(x, rs), ViewLeft.SomeLeft(y, qs)) => {
                 let a = f(x, y);
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
@@ -665,19 +665,19 @@ namespace Nec {
     ///
     pub def unzip(c: Nec[(a, b)]): (Nec[a], Nec[b]) =
         def loop(c1: Nec[(a, b)], k: (Nec[a], Nec[b]) -> (Nec[a], Nec[b])) = match viewLeft(c1) {
-            case OneLeft((a, b))      => k(singleton(a), singleton(b))
-            case SomeLeft((a, b), rs) => loop(rs, (ks, ls) -> k(cons(a, ks), cons(b, ls)))
+            case ViewLeft.OneLeft((a, b))      => k(singleton(a), singleton(b))
+            case ViewLeft.SomeLeft((a, b), rs) => loop(rs, (ks, ls) -> k(cons(a, ks), cons(b, ls)))
         };
         loop(c, (ks, ls) -> (ks, ls))
 
     ///
-    /// Returns a Nec where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a Nec where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(c: Nec[a]): Nec[(a, Int32)] =
+    pub def zipWithIndex(c: Nec[a]): Nec[(Int32, a)] =
         def loop(c1, k, i) = match viewLeft(c1) {
-            case OneLeft(x)      => k(NecOne(x, i))
-            case SomeLeft(x, rs) => loop(rs, ks -> k(cons((x, i), ks)), i + 1)
+            case ViewLeft.OneLeft(x)      => k(NecOne(i, x))
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(cons((i, x), ks)), i + 1)
         };
         loop(c, k -> k, 0)
 
@@ -686,10 +686,10 @@ namespace Nec {
     ///
     pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Nec[a], ys: Nec[b]): f[Nec[c]] \ ef with Applicative[f] =
         def loop(v1, v2, k) = match (v1, v2) {
-            case (SomeLeft(x, c1), SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
-            case (SomeLeft(x, _), OneLeft(y))       => k(singleton <$> f(x,y))
-            case (OneLeft(x), SomeLeft(y, _))       => k(singleton <$> f(x,y))
-            case (OneLeft(x), OneLeft(y))           => k(singleton <$> f(x,y))
+            case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
+            case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => k(singleton <$> f(x,y))
+            case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
+            case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
         };
         loop(viewLeft(xs), viewLeft(ys), upcast(identity))
 
@@ -699,11 +699,11 @@ namespace Nec {
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewLeft(c1) {
-            case OneLeft(x)      => {
+            case ViewLeft.OneLeft(x)      => {
                 let (s2, x1) = f(s1, x);
                 k((s2, NecOne(x1)))
             }
-            case SomeLeft(x, rs) => {
+            case ViewLeft.SomeLeft(x, rs) => {
                 let (s2, x1) = f(s1, x);
                 loop(s2, rs, match (s3, ks) -> k((s3, cons(x1, ks))))
             }
@@ -716,11 +716,11 @@ namespace Nec {
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Nec[a]): (s, Nec[b]) \ ef =
         def loop(s1, c1, k) = match viewRight(c1) {
-            case OneRight(x)      => {
+            case ViewRight.OneRight(x)      => {
                 let (s2, x1) = f(s1, x);
                 k((s2, NecOne(x1)))
             }
-            case SomeRight(rs, x) => {
+            case ViewRight.SomeRight(rs, x) => {
                 let (s2, x1) = f(s1, x);
                 loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, x1))))
            }
@@ -731,9 +731,19 @@ namespace Nec {
     /// Applies `f` to every element of `c`.
     ///
     pub def forEach(f: a -> Unit \ ef, c: Nec[a]): Unit \ ef = match viewLeft(c) {
-        case OneLeft(x)      => f(x)
-        case SomeLeft(x, rs) => f(x); forEach(f, rs)
+        case ViewLeft.OneLeft(x)      => f(x)
+        case ViewLeft.SomeLeft(x, rs) => f(x); forEach(f, rs)
     }
+
+    ///
+    /// Applies `f` to every element of `c` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Nec[a]): Unit \ ef =
+        def loop(v, i) = match v {
+            case ViewLeft.OneLeft(x)      => f(i, x)
+            case ViewLeft.SomeLeft(x, rs) => f(i, x); loop(viewLeft(rs), i+1)
+        };
+        loop(viewLeft(c), 0)
 
     ///
     /// Returns `c` as a list.
@@ -783,8 +793,8 @@ namespace Nec {
     ///
     pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
-        let arr = [x; length(c)] @ r;
-        forEach(match (b, i) -> arr[i] = b, zipWithIndex(c));
+        let arr = Array.repeat(r, length(c), x);
+        forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
         arr
 
     ///
@@ -804,21 +814,21 @@ namespace Nec {
         };
         let next = () -> match (deref cursor) {
             case None             => bug!("Empty Iterator!")
-            case Some(OneLeft(x)) => {
+            case Some(ViewLeft.OneLeft(x)) => {
                 cursor := None;
                 x
             }
-            case Some(SomeLeft(x, xs)) => {
+            case Some(ViewLeft.SomeLeft(x, xs)) => {
                 cursor := Some(viewLeft(xs));
                 x
             }
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///
@@ -894,8 +904,8 @@ namespace Nec {
     ///
     pub def sequence(c: Nec[m[a]]): m[Nec[a]] with Applicative[m] =
         def loop(l2, k) = match viewLeft(l2) {
-            case OneLeft(x)      => k(NecOne <$> x)
-            case SomeLeft(x, rs) => loop(rs, ks -> k(consA(x, ks)))
+            case ViewLeft.OneLeft(x)      => k(NecOne <$> x)
+            case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> k(consA(x, ks)))
         };
         loop(c, ks -> ks)
 
@@ -905,8 +915,8 @@ namespace Nec {
     ///
     pub def traverse(f: a -> m[b] \ ef, c: Nec[a]): m[Nec[b]] \ ef with Applicative[m] =
         def loop(l2, k) = match viewLeft(l2) {
-            case OneLeft(x)      => k(NecOne <$> f(x))
-            case SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
+            case ViewLeft.OneLeft(x)      => k(NecOne <$> f(x))
+            case ViewLeft.SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
         };
         loop(c, upcast(identity))
 
@@ -929,8 +939,8 @@ namespace Nec {
     /// Applies `combine` to all elements in `c` until a single value is obtained.
     ///
     pub def reduce(c: Nec[a]): a with SemiGroup[a] = match viewLeft(c) {
-        case OneLeft(x)      => x
-        case SomeLeft(x, xs) => foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
+        case ViewLeft.OneLeft(x)      => x
+        case ViewLeft.SomeLeft(x, xs) => foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
     }
 
     ///
@@ -939,8 +949,8 @@ namespace Nec {
     /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
     ///
     pub def reduceLeft(f: (a, a) -> a \ ef, c: Nec[a]): a \ ef = match viewLeft(c) {
-        case OneLeft(x)      => x
-        case SomeLeft(x, xs) => foldLeft(f, x, xs)
+        case ViewLeft.OneLeft(x)      => x
+        case ViewLeft.SomeLeft(x, xs) => foldLeft(f, x, xs)
     }
 
     ///
@@ -949,8 +959,8 @@ namespace Nec {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, c: Nec[a]): a \ ef = match viewRight(c) {
-        case OneRight(x)      => x
-        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), x, xs)
+        case ViewRight.OneRight(x)      => x
+        case ViewRight.SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), x, xs)
     }
 
     ///
@@ -959,8 +969,8 @@ namespace Nec {
     /// with the remainder of `c` using `f` going from left to right.
     ///
     pub def reduceLeftTo(f: (b, a) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewLeft(c) {
-        case OneLeft(x)      => g(x)
-        case SomeLeft(x, xs) => foldLeft(f, g(x), xs)
+        case ViewLeft.OneLeft(x)      => g(x)
+        case ViewLeft.SomeLeft(x, xs) => foldLeft(f, g(x), xs)
     }
 
     ///
@@ -969,8 +979,8 @@ namespace Nec {
     /// with the remainder of `c` using `f` going from right to left.
     ///
     pub def reduceRightTo(f: (a, b) -> b \ ef1, g: a -> b \ ef2, c: Nec[a]): b \ {ef1, ef2} = match viewRight(c) {
-        case OneRight(x)      => g(x)
-        case SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
+        case ViewRight.OneRight(x)      => g(x)
+        case ViewRight.SomeRight(xs, x) => foldRight((a, acc) -> f(a, acc), g(x), xs)
     }
 
     ///
@@ -978,8 +988,8 @@ namespace Nec {
     ///
     pub def dropWhileLeft(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1) = match viewLeft(c1) {
-            case OneLeft(x)      => if (f(x)) Nil else (x :: Nil)
-            case SomeLeft(x, rs) => if (f(x)) loop(rs) else x :: toList(rs)
+            case ViewLeft.OneLeft(x)      => if (f(x)) Nil else (x :: Nil)
+            case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs) else x :: toList(rs)
         };
         loop(c)
 
@@ -988,8 +998,8 @@ namespace Nec {
     ///
     pub def dropWhileRight(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1) = match viewRight(c1) {
-            case OneRight(x)      => if (f(x)) Nil else (x :: Nil)
-            case SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs `snoc` x)
+            case ViewRight.OneRight(x)      => if (f(x)) Nil else (x :: Nil)
+            case ViewRight.SomeRight(rs, x) => if (f(x)) loop(rs) else toList(rs `snoc` x)
         };
         loop(c)
 
@@ -998,8 +1008,8 @@ namespace Nec {
     ///
     pub def takeWhileLeft(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1, k) = match viewLeft(c1) {
-            case OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
-            case SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
+            case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
+            case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
         };
         loop(c, upcast(identity))
 
@@ -1009,15 +1019,15 @@ namespace Nec {
     ///
     pub def takeWhileRight(f: a -> Bool \ ef, c: Nec[a]): List[a] \ ef =
         def loop(c1, ac) = match viewRight(c1) {
-            case OneRight(x)      => if (f(x)) (x :: ac) else ac
-            case SomeRight(rs, x) => if (f(x)) loop(rs, x :: ac) else ac
+            case ViewRight.OneRight(x)      => if (f(x)) (x :: ac) else ac
+            case ViewRight.SomeRight(rs, x) => if (f(x)) loop(rs, x :: ac) else ac
         };
         loop(c, Nil)
 
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region r {
+    pub def shuffle(rnd: Random, c: Nec[a]): Option[Nec[a]] \ NonDet = region r {
         toArray(r, c) !> Array.shuffle(rnd) |> Array.toNec
     }
 

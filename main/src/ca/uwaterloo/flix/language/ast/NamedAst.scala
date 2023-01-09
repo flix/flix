@@ -39,26 +39,26 @@ object NamedAst {
 
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Class(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Effect(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
+    case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: List[NamedAst.Annotation], mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -117,7 +117,9 @@ object NamedAst {
 
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.ChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[NamedAst.Expression], rules: List[NamedAst.RelationalChoiceRule], loc: SourceLocation) extends NamedAst.Expression
+
+    case class RestrictableChoose(star: Boolean, exp: NamedAst.Expression, rules: List[NamedAst.RestrictableChoiceRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class Tuple(elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -133,7 +135,7 @@ object NamedAst {
 
     case class ArrayLit(exps: List[NamedAst.Expression], exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -141,7 +143,7 @@ object NamedAst {
 
     case class ArrayLength(base: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class ArraySlice(region: NamedAst.Expression, base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -243,15 +245,29 @@ object NamedAst {
 
   }
 
-  sealed trait ChoicePattern
+  sealed trait RelationalChoicePattern
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoicePattern
+
+  }
+
+  sealed trait RestrictableChoicePattern
+
+  object RestrictableChoicePattern {
+
+    sealed trait VarOrWild
+
+    case class Wild(loc: SourceLocation) extends VarOrWild
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
+
+    case class Tag(qname: Name.QName, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
 
   }
 
@@ -359,8 +375,6 @@ object NamedAst {
 
   }
 
-  case class Annotation(name: Ast.Annotation, args: List[NamedAst.Expression], loc: SourceLocation)
-
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
@@ -385,7 +399,9 @@ object NamedAst {
 
   case class HandlerRule(op: Name.Ident, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression)
 
-  case class ChoiceRule(pat: List[NamedAst.ChoicePattern], exp: NamedAst.Expression)
+  case class RelationalChoiceRule(pat: List[NamedAst.RelationalChoicePattern], exp: NamedAst.Expression)
+
+  case class RestrictableChoiceRule(pat: NamedAst.RestrictableChoicePattern, exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: Option[NamedAst.Expression], exp: NamedAst.Expression)
 

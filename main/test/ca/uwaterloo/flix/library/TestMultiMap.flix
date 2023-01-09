@@ -16,7 +16,7 @@
 
 namespace TestMultiMap {
 
-    use MultiMap.{empty, singleton, insert, toAssocList}
+    use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 
     def isEven(i: Int32): Bool = i rem 2 == 0
 
@@ -69,19 +69,19 @@ namespace TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == EqualTo
+    def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == Comparison.EqualTo
 
     @test
-    def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == GreaterThan
+    def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == Comparison.GreaterThan
 
     @test
-    def compare03(): Bool = Order.compare(empty(), singleton(1, 'a')) == LessThan
+    def compare03(): Bool = Order.compare(empty(), singleton(1, 'a')) == Comparison.LessThan
 
     @test
-    def compare04(): Bool = Order.compare(singleton(1, 'b'), singleton(1, 'a')) == GreaterThan
+    def compare04(): Bool = Order.compare(singleton(1, 'b'), singleton(1, 'a')) == Comparison.GreaterThan
 
     @test
-    def compare05(): Bool = Order.compare(singleton(1, 'a'), singleton(1, 'b')) == LessThan
+    def compare05(): Bool = Order.compare(singleton(1, 'a'), singleton(1, 'b')) == Comparison.LessThan
 
     /////////////////////////////////////////////////////////////////////////////
     // empty                                                                   //
@@ -1412,6 +1412,65 @@ namespace TestMultiMap {
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
             MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
             deref rk == 3 and deref rv == 3
+        }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool =
+        region r {
+            let ri = ref 0 @ r;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = empty(): MultiMap[Int32, Int32];
+            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            deref ri == 0 and deref rk == 0 and deref rv == 0
+        }
+
+    @test
+    def forEachWithIndex02(): Bool =
+        region r {
+            let ri = ref 0 @ r;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = singleton(1, 4);
+            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            deref ri == 0 and deref rk == 1 and deref rv == 4
+        }
+
+    @test
+    def forEachWithIndex03(): Bool =
+        region r {
+            let ri = ref 0 @ r;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = singleton(1, 4) |> insert(2, 4);
+            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            deref ri == 1 and deref rk == 2 and deref rv == 4
+        }
+
+    @test
+    def forEachWithIndex04(): Bool =
+        region r {
+            let ri = ref 0 @ r;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
+            let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
+            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            deref ri == 2 and deref rk == 2 and deref rv == 4
+        }
+
+    @test
+    def forEachWithIndex05(): Bool =
+        region r {
+            let ri = ref 0 @ r;
+            let rk = ref 0;
+            let rv = ref 0;
+            let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
+            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            deref ri == 3 and deref rk == 3 and deref rv == 3
         }
 
 }

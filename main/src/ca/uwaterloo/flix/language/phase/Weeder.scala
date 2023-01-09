@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, TypeParams}
+import ca.uwaterloo.flix.language.ast.WeededAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -45,7 +46,7 @@ object Weeder {
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
-    "namespace", "null", "opaque", "override", "pub", "ref", "region",
+    "null", "opaque", "override", "pub", "ref", "region",
     "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
   )
@@ -113,6 +114,8 @@ object Weeder {
     case d: ParsedAst.Declaration.Law => visitLaw(d)
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
+
+    case d: ParsedAst.Declaration.RestrictableEnum => visitRestrictableEnum(d)
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
@@ -346,12 +349,69 @@ object Weeder {
   }
 
   /**
+    * Performs weeding on the given enum declaration `d0`.
+    */
+  private def visitRestrictableEnum(d0: ParsedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.RestrictableEnum], WeederError] = d0 match {
+    case ParsedAst.Declaration.RestrictableEnum(doc0, ann0, mods, sp1, ident, index0, tparams0, tpe0, derives, cases0, sp2) =>
+      val doc = visitDoc(doc0)
+      val annVal = visitAnnotations(ann0)
+      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public, Ast.Modifier.Opaque))
+      val index = visitTypeParam(index0)
+      val tparamsVal = visitTypeParams(tparams0)
+
+      val casesVal = (tpe0, cases0) match {
+        // Case 1: empty enum
+        case (None, None) => Map.empty.toSuccess
+        // Case 2: singleton enum
+        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0))).toSuccess
+        // Case 3: multiton enum
+        case (None, Some(cs0)) =>
+          /*
+           * Check for `DuplicateTag`.
+           */
+          Validation.fold[ParsedAst.RestrictableCase, Map[Name.Ident, WeededAst.RestrictableCase], WeederError](cs0, Map.empty) {
+            case (macc, caze: ParsedAst.RestrictableCase) =>
+              val tagName = caze.ident
+              macc.get(tagName) match {
+                case None => (macc + (tagName -> visitRestrictableCase(caze))).toSuccess
+                case Some(otherTag) =>
+                  val enumName = ident.name
+                  val loc1 = otherTag.ident.loc
+                  val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
+                  Failure(LazyList(
+                    // NB: We report an error at both source locations.
+                    DuplicateTag(enumName, tagName, loc1, loc2),
+                    DuplicateTag(enumName, tagName, loc2, loc1)
+                  ))
+              }
+          }
+        // Case 4: both singleton and multiton syntax used: Error.
+        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
+
+      }
+
+      mapN(annVal, modVal, tparamsVal, casesVal) {
+        case (ann, mod, tparams, cases) =>
+          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives.toList, cases.values.toList, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
     * Performs weeding on the given enum case `c0`.
     */
   private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): WeededAst.Case = c0 match {
     case ParsedAst.Case(_, ident, tpe0, _) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
       WeededAst.Case(ident, tpe)
+  }
+
+  /**
+    * Performs weeding on the given enum case `c0`.
+    */
+  private def visitRestrictableCase(c0: ParsedAst.RestrictableCase)(implicit flix: Flix): WeededAst.RestrictableCase = c0 match {
+    case ParsedAst.RestrictableCase(_, ident, tpe0, _) =>
+      val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
+      WeededAst.RestrictableCase(ident, tpe)
   }
 
   /**
@@ -657,6 +717,8 @@ object Weeder {
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expression.PutChannel(e1, e2, loc).toSuccess
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
+          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, e3, loc).toSuccess
+          case ("ARRAY_SLICE", e1 :: e2 :: e3 :: e4 :: Nil) => WeededAst.Expression.ArraySlice(e1, e2, e3, e4, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
 
           case _ => WeederError.IllegalIntrinsic(loc).toFailure
@@ -740,21 +802,24 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForEach(_, frags, exp, _) =>
+    case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
       //
       // Rewrites a foreach loop to Iterator.forEach call.
       //
 
+      val loc = mkSL(sp1, sp2)
       val fqnForEach = "Iterator.forEach"
       val fqnIterator = "Iterable.iterator"
+      val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+      val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
-      foldRight(frags)(visitExp(exp, senv)) {
+      val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
               val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val iterable = mkApplyFqn(fqnIterator, List(e1), e1.loc)
+              val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
               val fparams = List(lambda, iterable)
               mkApplyFqn(fqnForEach, fparams, loc)
           }
@@ -765,6 +830,8 @@ object Weeder {
             WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
           }
       }
+
+      mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
 
     case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
       //
@@ -1126,12 +1193,12 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
       }
 
-    case ParsedAst.Expression.Choose(sp1, star, exps, rules, sp2) =>
+    case ParsedAst.Expression.RelationalChoose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
       //
       val expectedArity = exps.length
-      for (ParsedAst.ChoiceRule(sp1, pat, _, sp2) <- rules) {
+      for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
           return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
@@ -1140,18 +1207,30 @@ object Weeder {
 
       val expsVal = traverse(exps)(visitExp(_, senv))
       val rulesVal = traverse(rules) {
-        case ParsedAst.ChoiceRule(_, pat, exp, _) =>
+        case ParsedAst.RelationalChoiceRule(_, pat, exp, _) =>
           val p = pat.map {
-            case ParsedAst.ChoicePattern.Wild(sp1, sp2) => WeededAst.ChoicePattern.Wild(mkSL(sp1, sp2))
-            case ParsedAst.ChoicePattern.Absent(sp1, sp2) => WeededAst.ChoicePattern.Absent(mkSL(sp1, sp2))
-            case ParsedAst.ChoicePattern.Present(sp1, ident, sp2) => WeededAst.ChoicePattern.Present(ident, mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Wild(sp1, sp2) => WeededAst.RelationalChoicePattern.Wild(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Absent(sp1, sp2) => WeededAst.RelationalChoicePattern.Absent(mkSL(sp1, sp2))
+            case ParsedAst.RelationalChoicePattern.Present(sp1, ident, sp2) => WeededAst.RelationalChoicePattern.Present(ident, mkSL(sp1, sp2))
           }
           mapN(visitExp(exp, senv)) {
-            case e => WeededAst.ChoiceRule(p.toList, e)
+            case e => WeededAst.RelationalChoiceRule(p.toList, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => WeededAst.Expression.Choose(star, es, rs, mkSL(sp1, sp2))
+        case (es, rs) => WeededAst.Expression.RelationalChoose(star, es, rs, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.RestrictableChoose(sp1, star, exp, rules, sp2) =>
+      val expVal = visitExp(exp, senv)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchRule(pat, guard, body) =>
+          flatMapN(visitPattern(pat), traverseOpt(guard)(visitExp(_, senv)), visitExp(body, senv)) {
+            case (p, g, b) => createRestrictableChoiceRule(star, p, g, b)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => WeededAst.Expression.RestrictableChoose(star, e, rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -1233,13 +1312,6 @@ object Weeder {
           WeededAst.Expression.ArrayLit(es, e, loc)
       }
 
-    case ParsedAst.Expression.ArrayNew(sp1, exp1, exp2, exp3, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp1, senv), visitExp(exp2, senv), traverseOpt(exp3)(visitExp(_, senv))) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.ArrayNew(e1, e2, e3, loc)
-      }
-
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       val loc = mkSL(sp1, sp2)
@@ -1258,29 +1330,6 @@ object Weeder {
             case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
           }
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
-      }
-
-    case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-
-      (optStartIndex, optEndIndex) match {
-        case (None, None) =>
-          visitExp(base, senv) map {
-            case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Cst(Ast.Constant.Int32(0), loc), WeededAst.Expression.ArrayLength(b, loc), loc)
-          }
-        case (Some(startIndex), None) =>
-          mapN(visitExp(base, senv), visitExp(startIndex, senv)) {
-            case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
-          }
-        case (None, Some(endIndex)) =>
-          mapN(visitExp(base, senv), visitExp(endIndex, senv)) {
-            case (b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Cst(Ast.Constant.Int32(0), loc), i2, loc)
-          }
-        case (Some(startIndex), Some(endIndex)) =>
-          mapN(visitExp(base, senv), visitExp(startIndex, senv), visitExp(endIndex, senv)) {
-            case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
-          }
       }
 
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
@@ -1304,6 +1353,16 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
+      }
+
+    case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
+      /*
+       * Rewrites an `FArray` expression into an array literal.
+       */
+      val loc = mkSL(sp1, sp2).asSynthetic
+
+      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
+        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), loc)
       }
 
     case ParsedAst.Expression.FList(sp1, sp2, exps) =>
@@ -1453,6 +1512,12 @@ object Weeder {
       val f = visitPurityAndEffect(expectedEff)
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      }
+
+    case ParsedAst.Expression.Of(name, exp, sp2) =>
+      val sp1 = name.sp1
+      mapN(visitExp(exp, senv))  {
+        case e => WeededAst.Expression.Of(name, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Cast(sp1, exp, declaredType, declaredEff, sp2) =>
@@ -1757,6 +1822,44 @@ object Weeder {
   }
 
   /**
+    * Returns a restrictable choice rule from an already visited pattern, guard, and body.
+    * It is checked that
+    *
+    * - The guard is absent
+    *
+    * - The patterns are only tags with possible terms of variables and wildcards
+    */
+  private def createRestrictableChoiceRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChoiceRule, WeederError] = {
+    // Check that guard is not present
+    val gVal = g0 match {
+      case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
+      case None => ().toSuccess
+    }
+    // Check that patterns are only tags of variables (or wildcards as variables)
+    val pVal = p0 match {
+      case Pattern.Tag(qname, pat, loc) =>
+        val innerVal = pat match {
+          case Pattern.Tuple(elms, _) =>
+            traverse(elms) {
+              case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
+              case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
+              case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+            }
+          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
+          case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
+          case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
+        }
+        mapN(innerVal) {
+          case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
+        }
+      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+    }
+    mapN(gVal, pVal) {
+      case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
+    }
+  }
+
+  /**
     * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
     *
     * This is also known as `ParsedAst.Expression.LambdaMatch`
@@ -1924,7 +2027,7 @@ object Weeder {
               // Doing a manual flatMap to keep the function tail-recursive
               translateHexCode(code, mkSL(sp1, sp2)) match {
                 case Validation.Success(char) => visit(rest2, char :: acc)
-                case Validation.Failure(errors) => Validation.Failure(errors)
+                case failure => Validation.Failure(failure.errors)
               }
             // Case 3.3.2: `\\u` followed by less than 4 literals
             case rest2 =>
@@ -2191,7 +2294,7 @@ object Weeder {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[List[WeededAst.Annotation], WeederError] = {
+  private def visitAnnotations(xs: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
     // collect seen annotations.
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
@@ -2200,7 +2303,7 @@ object Weeder {
       case x: ParsedAst.Annotation => seen.get(x.ident.name) match {
         case None =>
           seen += (x.ident.name -> x)
-          visitAnnotation(x)
+          visitAnnotation(x.ident)
         case Some(otherAnn) =>
           val name = x.ident.name
           val loc1 = mkSL(otherAnn.sp1, otherAnn.sp2)
@@ -2213,27 +2316,15 @@ object Weeder {
       }
     }
 
-    sequence(result)
-  }
-
-  /**
-    * Weeds the given parsed annotation `past`.
-    */
-  private def visitAnnotation(past: ParsedAst.Annotation)(implicit flix: Flix): Validation[WeededAst.Annotation, WeederError] = {
-    val loc = mkSL(past.sp1, past.sp2)
-
-    val tagVal = visitAnnotationTag(past.ident)
-    val argsVal = traverse(past.args.getOrElse(Nil))(visitArgument(_, SyntacticEnv.Top))
-
-    mapN(tagVal, argsVal) {
-      case (tag, args) => WeededAst.Annotation(tag, args, loc)
+    sequence(result) map {
+      case anns => Ast.Annotations(anns)
     }
   }
 
   /**
-    * Performs weeding on the given annotation tag.
+    * Performs weeding on the given annotation.
     */
-  private def visitAnnotationTag(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
+  private def visitAnnotation(ident: Name.Ident)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ident.name match {
     case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
     case "test" => Ast.Annotation.Test(ident.loc).toSuccess
     case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
@@ -2953,7 +3044,8 @@ object Weeder {
     case ParsedAst.Expression.Static(sp1, _) => sp1
     case ParsedAst.Expression.Scope(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Choose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.RelationalChoose(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.RestrictableChoose(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.TypeMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
@@ -2962,12 +3054,11 @@ object Weeder {
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
+    case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
@@ -2976,6 +3067,7 @@ object Weeder {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Of(qname, _, _) => qname.sp1
     case ParsedAst.Expression.Cast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Mask(sp1, _, _) => sp1
     case ParsedAst.Expression.Upcast(sp1, _, _) => sp1

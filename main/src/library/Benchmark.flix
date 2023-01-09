@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+///
+/// A benchmark has a name and a function to execute. The function is always
+/// impure since timing is considered a side-effect in this context.
+///
+pub enum Benchmark {
+    case Benchmark({name = String, f = Unit -> Unit \ IO})
+}
+
 namespace Benchmark {
 
-    ///
-    /// A benchmark has a name and a function to execute. The function is always
-    /// impure since timing is considered a side-effect in this context.
-    ///
-    pub enum Benchmark {
-        case Benchmark({name = String, f = Unit -> Unit \ IO})
-    }
 
     ///
     /// Returns the minimum number of iterations a benchmark can be executed.
@@ -61,7 +63,7 @@ namespace Benchmark {
     /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO =
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region r {
         if (Array.length(bs) == 0) {
             println("No benchmarks");
             1
@@ -70,7 +72,7 @@ namespace Benchmark {
             let t = nanoTime();
             printHeader();
             println("");
-            let benchmarksWithEstimates = warmupAndEstimate(Static, bs);
+            let benchmarksWithEstimates = warmupAndEstimate(r, bs);
             println("");
             println("");
             printCols();
@@ -80,6 +82,7 @@ namespace Benchmark {
             println("Total time elapsed: ${toSeconds(e)} seconds. Time budget was: ${toSeconds(budget)} seconds.");
             0
         }
+    }
 
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
@@ -113,7 +116,7 @@ namespace Benchmark {
         let t = nanoTime();
         loop(r.f, n);
         let e = nanoTime() - t;
-        Success({name = r.name, rounds = n, total = e})
+        BenchmarkResult.Success({name = r.name, rounds = n, total = e})
 
     ///
     /// Returns the number of nanoseconds it is estimated that a warm JVM
@@ -170,7 +173,7 @@ namespace Benchmark {
     /// Prints information about the given benchmark result `s`.
     ///
     def printRow(s: BenchmarkResult): Unit \ IO = {
-        let Success(r) = s;
+        let BenchmarkResult.Success(r) = s;
         let avgNs = r.total / Int32.toInt64(r.rounds);
         let avgMs = toMicroSeconds(avgNs);
         let namePart = String.padRight(40, ' ', r.name);

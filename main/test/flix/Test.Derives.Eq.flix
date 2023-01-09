@@ -111,7 +111,7 @@ namespace Test/Derives/Eq {
     def testEq23(): Bool = MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)) == MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))
 
     @test
-    def testEq24(): Bool = OpaqueType(123) == OpaqueType(123)
+    def testEq24(): Bool = OpaqueType.OpaqueType(123) == OpaqueType.OpaqueType(123)
 
     @test
     def testNeq01(): Bool = Enum.EmptyCase != Enum.SingletonCase(123)
@@ -141,5 +141,5 @@ namespace Test/Derives/Eq {
     def testNeq09(): Bool = MutRecursiveEnum1.EmptyCase != MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
 
     @test
-    def testNeq10(): Bool = OpaqueType(123) != OpaqueType(456)
+    def testNeq10(): Bool = OpaqueType.OpaqueType(123) != OpaqueType.OpaqueType(456)
 }

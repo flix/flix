@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -194,6 +195,7 @@ class Flix {
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
+    "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
@@ -203,6 +205,7 @@ class Flix {
 
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
+    "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
 
     "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),

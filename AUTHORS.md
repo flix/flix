@@ -51,4 +51,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Darius Tan](https://github.com/thinking-tower)
 - [Paul Butcher](https://github.com/paulbutcher)
 - [Daniel Anker Hermansen](https://github.com/Daniel-Anker-Hermansen)
-- [Anna Blume Jakobsen](https://https://github.com/AnnaBlume99)
+- [Anna Blume Jakobsen](https://github.com/AnnaBlume99)
+- [Andreas Stenbæk Larsen](https://github.com/AStenbaek)
+- [Yisrael Union](https://github.com/yisraelU)

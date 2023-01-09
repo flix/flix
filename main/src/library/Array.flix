@@ -18,10 +18,6 @@ instance Scoped[Array[a]] {
     pub def regionOf(_: Array[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[Array] {
-    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) = Array.iterator(a)
-}
-
 namespace Array {
 
     ///
@@ -32,16 +28,16 @@ namespace Array {
         def loop(i) = {
             if (i < len) {
                 let cmp = a[i] <=> b[i];
-                if (cmp == EqualTo)
+                if (cmp == Comparison.EqualTo)
                     loop(i + 1)
                 else
                     cmp
             } else if (i < Array.length(a)) {
-                GreaterThan
+                Comparison.GreaterThan
             } else if (i < Array.length(b)) {
-                LessThan
+                Comparison.LessThan
             } else {
-                EqualTo
+                Comparison.EqualTo
             }
         };
         loop(0)
@@ -53,42 +49,44 @@ namespace Array {
         let sb = new StringBuilder(r2);
         let first = ref true @ r2;
 
-        StringBuilder.appendString!("[", sb);
+        StringBuilder.appendString!("Array#{", sb);
 
         let f = (x) -> {
             if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
             StringBuilder.appendString!("${x}", sb)
         };
-        Array.forEach(f, a);
+        forEach(f, a);
 
-        StringBuilder.appendString!("]", sb);
+        StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
 
     ///
-    /// Returns a fresh array of length `l` filled with the element `x`.
+    /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    /// Equivalent to the expression `[x; l]`.
+    pub def new(r: Region[r], l: Int32): Array[a, r] \ Write(r) =
+        $ARRAY_NEW$(r, Reflect.default(), l)
+
     ///
-    pub def new(r: Region[r], x: a, l: Int32): Array[a, r] \ Write(r) =
-        [x; l] @ r
+    /// Retrieves the value at position `i` in the array `a`.
+    ///
+    pub def get(i: Int32, a: Array[a, r]): a \ Read(r) =
+        a[i]
+
+    ///
+    /// Stores the value `x` at position `i` in the array `a`.
+    ///
+    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
+        a[i] = x
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
     ///
     pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
-        if (0 <= i and i < Array.length(a))
+        if (0 <= i and i < length(a))
             Some(a[i])
         else
             None
-
-    ///
-    /// Stores the value `x` at position `i` in the array `a`.
-    ///
-    /// Equivalent to the expression `a[i] = x`.
-    ///
-    pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
-        a[i] = x
 
     ///
     /// Returns `true` if the given array `a` is empty.
@@ -103,10 +101,8 @@ namespace Array {
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
     ///
-    /// Equivalent to the expression `a[b..e]`.
-    ///
-    pub def slice(_: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        unsafe_cast a[b..e] as Array[a, r1] \ { Read(r), Write(r1) }
+    pub def slice(r1: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
+        $ARRAY_SLICE$(r1, a, b, e)
 
     ///
     /// Returns the array `a` as a list.
@@ -151,9 +147,9 @@ namespace Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, ECons(a[i], acc))
+                loop(i - 1, DelayList.ECons(a[i], acc))
         };
-        loop(length(a) - 1, ENil)
+        loop(length(a) - 1, DelayList.ENil)
 
     ///
     /// Returns the array `arr` as a chain.
@@ -308,8 +304,8 @@ namespace Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(a: a, arr: Array[a, r]): Array[Int32, r] \ { Read(r), Write(r) } with Eq[a] =
-        findIndices(b -> a == b, arr)
+    pub def indices(r: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ { Read(r), Write(r) } with Eq[a] =
+        findIndices(r, b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
@@ -351,29 +347,28 @@ namespace Array {
     ///
     /// Returns an array with the element `x` repeated `n` times.
     ///
-    /// Returns `[]` if `n <= 0`.
+    /// Returns the empty array if `n <= 0`.
     ///
     pub def repeat(r: Region[r], n: Int32, x: a): Array[a, r] \ Write(r) =
         if (n <= 0)
             [] @ r
         else
-            new(r, x, n)
+            $ARRAY_NEW$(r, x, n)
 
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
-        scanLeft(f, s, arr)
+    pub def scan(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+        scanLeft(r, f, s, arr)
 
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanLeft(r: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(arr) + 1;
-        let r = Scoped.regionOf(arr);
-        let b = new(r, s, len);
+        let b = repeat(r, len, s);
         def loop(i, acc) = {
             if (i >= len)
                 ()
@@ -391,10 +386,9 @@ namespace Array {
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
+    pub def scanRight(r: Region[r], f: (a, b) -> b \ ef, s: b, a: Array[a, r]): Array[b, r] \ { ef, Read(r), Write(r) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
-        let b = new(r, s, len + 1);
+        let b = repeat(r, len + 1, s);
         def loop(i, acc) = {
             if (i < 0)
                 ()
@@ -492,15 +486,15 @@ namespace Array {
     ///
     /// Rotate the contents of array `arr` by `n` steps to the left.
     ///
-    pub def rotateLeft(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def rotateLeft(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
         if (len < 1)
-            [] @ Scoped.regionOf(arr)
+            [] @ r2
         else
             if (n < 0)
-                rotateRightHelper(Int32.abs(n), arr)
+                rotateRightHelper(r2, Int32.abs(n), arr)
             else
-                rotateLeftHelper(n, arr)
+                rotateLeftHelper(r2, n, arr)
 
     ///
     /// Helper function for `rotateLeft` and `rotateRight`.
@@ -509,23 +503,22 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
-        let r = Scoped.regionOf(arr);
         let f = i -> { let i1 = n + i; arr[i1 rem len] };
-        init(r, f, len)
+        init(r2, f, len)
 
     ///
     /// Rotate the contents of array `arr` by `n` steps to the right.
     ///
-    pub def rotateRight(n: Int32, arr: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    pub def rotateRight(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         if (length(arr) < 1)
-            [] @ Scoped.regionOf(arr)
+            [] @ r2
         else
             if (n < 0)
-                rotateLeftHelper(Int32.abs(n), arr)
+                rotateLeftHelper(r2, Int32.abs(n), arr)
             else
-                rotateRightHelper(n, arr)
+                rotateRightHelper(r2, n, arr)
 
     ///
     /// Helper function for `rotateRight` and `rotateLeft`.
@@ -534,13 +527,12 @@ namespace Array {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, a: Array[a, r]): Array[a, r] \ { Read(r), Write(r) } =
+    def rotateRightHelper(r2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
         let n1 = n rem len;
         let start = len - n1;
         let f = i -> { let i1 = start + i; a[i1 rem len]};
-        init(r, f, len)
+        init(r2, f, len)
 
     ///
     /// Returns a copy of `a` with the element at index `i` replaced by `x`.
@@ -584,12 +576,12 @@ namespace Array {
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
+    pub def patch!(i: Int32, n: Int32, a: Array[a, r1], b: Array[a, r2]): Unit \ { Read(r1), Write(r2) } = region r3 {
         let len1 = length(a);
-        let r2 = Scoped.regionOf(b);
         let size = if (n > len1) len1 else n;
-        let sub = copyOfRange(r2, 0, size, a);
+        let sub = copyOfRange(r3, 0, size, a);
         updateSequence!(i, sub, b)
+    }
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -600,7 +592,7 @@ namespace Array {
         if (len2 <= 0)
             [] @ r1
         else {
-            let b = new(r1, x, len2);
+            let b = repeat(r1, len2, x);
             let f = { (i, v) -> let j = i + i; b[j] = v };
             forEachWithIndex(f, a);
             b
@@ -617,7 +609,7 @@ namespace Array {
         match headArrays(arrs) {
             case None    => [] @ r1
             case Some(x) =>
-                let out = new(r1, x, len);
+                let out = repeat(r1, len, x);
                 let overwrite = { (st, a) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -906,7 +898,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => [] @ r1
             case Some(x) => {
-                let out = new(r1, x, len);
+                let out = repeat(r1, len, x);
                 discard foldLeft((pos, a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -954,7 +946,7 @@ namespace Array {
         if (len < 1) {
             [] @ r1
         } else {
-            let out = new(r1, arr[0], len);
+            let out = new(r1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1128,10 +1120,9 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r2] \ { Read(r2), Write(r2, r1) } =
+    pub def groupBy(r1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { Read(r2), Write(r1) } =
         let xs = toList(a);
-        let r2 = Scoped.regionOf(a);
-        groupByHelper(r1, f, xs, Nil) |> List.toArray(r2)
+        groupByHelper(r1, f, xs, Nil) |> List.toArray(r1)
 
     ///
     /// Helper function for `groupBy`.
@@ -1200,8 +1191,8 @@ namespace Array {
             ([] @ r1, [] @ r2)
         else {
             let (x, y) = a[0];
-            let arr = new(r1, x, len);
-            let brr = new(r2, y, len);
+            let arr = repeat(r1, len, x);
+            let brr = repeat(r2, len, y);
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = a[i];
@@ -1301,7 +1292,7 @@ namespace Array {
         let len = length(a);
         let c = Order.max(len, minCap);
         let copy = copyOfRange(r1, 0, c, a);
-        MutList(ref copy @ r1, ref len @ r1)
+        MutList.MutList(r1, ref copy @ r1, ref len @ r1)
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -1349,10 +1340,9 @@ namespace Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Array[Int32, r] \ { ef, Read(r), Write(r) } =
+    pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, Read(r1), Write(r2) } =
         let len = length(a);
-        let r = Scoped.regionOf(a);
-        let l = new MutList(r);
+        let l = new MutList(r2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1362,7 +1352,7 @@ namespace Array {
             }
         };
         loop(0);
-        MutList.toArray(r, l)
+        MutList.toArray(r2, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1372,7 +1362,7 @@ namespace Array {
             [] @ r
         else {
             let x = f(0);
-            let a = [x; len] @ r;
+            let a = Array.repeat(r, len, x);
             def loop(i) = {
                 if (i < len) {
                     a[i] = f(i);
@@ -1404,28 +1394,27 @@ namespace Array {
             false
 
     ///
-    /// Returns an iterator over `a` in the same region as `a`.
+    /// Returns an iterator over `a`
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(a: Array[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(a);
-        let i = ref 0 @ r;
-        let done = () -> deref i == length(a);
+    pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+        let i = ref 0 @ r1;
+        let done = () -> unsafe_cast deref i == length(a) as _ \ { Write(r1), Read(r2) };
         let next = () -> {
             let x = a[deref i];
             i := deref i + 1;
             x
         };
-        Iterator(done, next)
+        unsafe_cast Iterator.Iterator(done, next) as _ \ { Write(r1), Read(r2) }
 
     ///
-    /// Returns an iterator over `a` in the same region as `a` zipped with the indices of the elements.
+    /// Returns an iterator over `a` zipped with the indices of the elements.
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(a: Array[a, r]): Iterator[(a, Int32), r] \ { Read(r), Write(r) } =
-        iterator(a) |> Iterator.zipWithIndex
+    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
+        iterator(r1, a) |> Iterator.zipWithIndex
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1603,7 +1592,7 @@ namespace Array {
     def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (cmp(a[j], pivot) == LessThan) {
+            if (cmp(a[j], pivot) == Comparison.LessThan) {
                 swap!(ix, j, a);
                 ix+1
             } else
@@ -1681,7 +1670,7 @@ namespace Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, a: Array[a, r]): Unit & r \ NonDet =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit & r \ NonDet =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

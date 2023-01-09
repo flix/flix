@@ -30,6 +30,22 @@ instance Newable[MutMap[k, v]] {
 namespace MutMap {
 
     ///
+    /// Returns a string representation of the given MutMap `m`.
+    ///
+    pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region r {
+        let sb = new StringBuilder(r);
+        StringBuilder.appendString!("MutMap#{", sb);
+        forEachWithIndex((i, k, v) -> {
+            if (i < 1)
+                StringBuilder.appendString!("${k} => ${v}", sb)
+            else
+                StringBuilder.appendString!(", ${k} => ${v}", sb)
+            }, m);
+        StringBuilder.appendString!("}", sb);
+        StringBuilder.toString(sb)
+    }
+
+    ///
     /// Returns a fresh empty mutable map.
     ///
     pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) =
@@ -71,7 +87,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumKeyBy(cmp, deref mm)
@@ -93,7 +108,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.minimumValueBy(cmp, deref mm)
@@ -114,7 +128,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumKeyBy(cmp, deref mm)
@@ -136,7 +149,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
-    @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.maximumValueBy(cmp, deref mm)
@@ -341,7 +353,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def map(r1: Region[r1], f: v1 -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
         mapWithKey(r1, _ -> f, m)
 
@@ -350,7 +361,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def mapWithKey(r1: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, Read(r), Write(r1) } =
         let MutMap(mm) = m;
         MutMap(ref Map.mapWithKey(f, deref mm) @ r1)
@@ -464,7 +474,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.count(f, deref mm)
@@ -488,7 +497,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.sumWith(f, deref mm)
@@ -512,7 +520,6 @@ namespace MutMap {
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
-    @ParallelWhenPure
     pub def productWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.productWith(f, deref mm)
@@ -571,35 +578,41 @@ namespace MutMap {
         Map.toSet(deref mm)
 
     ///
-    /// Applies `f` to every element in the mutable map `m`.
+    /// Applies `f` to all the `(key, value)` pairs in the mutable map `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } =
         let MutMap(mm) = m;
         Map.forEach(f, deref mm)
 
     ///
+    /// Apply the effectful function `f` to all the `(key, value)` pairs in the mutable map `m`
+    /// along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, Read(r) } = region rh {
+        let ix = ref 0 @ rh;
+        forEach((k, v) -> {let i = deref ix; f(i, k, v); ix := i+1}, m)
+    }
+
+    ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(m: MutMap[k, v, r]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iterator(r, deref mm)
+        unsafe_cast Map.iterator(r1, deref mm) as Iterator[(k, v), r1 and r2]
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(m: MutMap[k, v, r]): Iterator[k, r] \ Write(r) =
+    pub def iteratorKeys(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorKeys(r, deref mm)
+        unsafe_cast Map.iteratorKeys(r1, deref mm) as Iterator[k, r1 and r2]
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(m: MutMap[k, v, r]): Iterator[v, r] \ Write(r) =
+    pub def iteratorValues(r1: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutMap(mm) = m;
-        let r = Scoped.regionOf(m);
-        Map.iteratorValues(r, deref mm)
+        unsafe_cast Map.iteratorValues(r1, deref mm) as Iterator[v, r1 and r2]
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

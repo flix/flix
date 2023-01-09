@@ -152,11 +152,11 @@ namespace RedBlackTree {
     ///
     pub def insert(k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt, sk) = match tt {
-            case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
+            case Leaf                  => sk(Node(Color.Red, Leaf, k, v, Leaf))
             case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
-                case EqualTo     => sk(Node(c, a, k, v, b))
-                case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
+                case Comparison.LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
+                case Comparison.EqualTo     => sk(Node(c, a, k, v, b))
+                case Comparison.GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
             case _ => sk(tt)
         };
@@ -169,11 +169,11 @@ namespace RedBlackTree {
     ///
     pub def insertWith(f: (k, v, v) -> v \ ef, k: k, v: v, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         def loop(tt, sk) = match tt {
-            case Leaf                  => sk(Node(Red, Leaf, k, v, Leaf))
+            case Leaf                  => sk(Node(Color.Red, Leaf, k, v, Leaf))
             case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
-                case EqualTo     => sk(Node(c, a, k, f(k, v, v1), b))
-                case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
+                case Comparison.LessThan    => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
+                case Comparison.EqualTo     => sk(Node(c, a, k, f(k, v, v1), b))
+                case Comparison.GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
             case _ => sk(tt)
         };
@@ -188,12 +188,12 @@ namespace RedBlackTree {
         def loop(tt, sk) = match tt {
             case Leaf                  => sk(tt)
             case Node(c, a, k1, v1, b) => match k <=> k1 {
-                case LessThan => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
-                case EqualTo  => match f(k1, v1) {
+                case Comparison.LessThan => loop(a, ks -> sk(balance(Node(c, ks, k1, v1, b))))
+                case Comparison.EqualTo  => match f(k1, v1) {
                     case None    => sk(tt)
                     case Some(v) => sk(Node(c, a, k, v, b))
                 }
-                case GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
+                case Comparison.GreaterThan => loop(b, ks -> sk(balance(Node(c, a, k1, v1, ks))))
             }
             case _ => sk(tt)
         };
@@ -206,21 +206,21 @@ namespace RedBlackTree {
     ///
     pub def remove(k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
         def loop(tt, sk) = match tt {
-        case Node(Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == EqualTo) Leaf else tt)
-        case Node(Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == EqualTo) DoubleBlackLeaf else tt)
-        case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
+        case Node(Color.Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == Comparison.EqualTo) Leaf else tt)
+        case Node(Color.Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt)
+        case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
             match k <=> k2 {
-                case LessThan    => loop(Node(Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Black, ks, k2, v2, Leaf)))
-                case EqualTo     => sk(Node(Black, Leaf, k1, v1, Leaf))
-                case GreaterThan => sk(Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
+                case Comparison.LessThan    => loop(Node(Color.Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Color.Black, ks, k2, v2, Leaf)))
+                case Comparison.EqualTo     => sk(Node(Color.Black, Leaf, k1, v1, Leaf))
+                case Comparison.GreaterThan => sk(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
             }
         case Node(c, a, k1, v1, b) =>
             match k <=> k1 {
-                case LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
-                case EqualTo  =>
+                case Comparison.LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
+                case Comparison.EqualTo  =>
                     let (k2, v2, e) = minDelete(b);
                     sk(rotate(Node(c, a, k2, v2, e)))
-                case GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
+                case Comparison.GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
             }
             case _ => sk(tt)
         };
@@ -233,9 +233,9 @@ namespace RedBlackTree {
     ///
     pub def get(k: k, t: RedBlackTree[k, v]): Option[v] with Order[k] = match t {
         case Node(_, a, k1, v, b) => match k <=> k1 {
-            case LessThan    => get(k, a)
-            case EqualTo     => Some(v)
-            case GreaterThan => get(k, b)
+            case Comparison.LessThan    => get(k, a)
+            case Comparison.EqualTo     => Some(v)
+            case Comparison.GreaterThan => get(k, b)
         }
         case _ => None
     }
@@ -245,9 +245,9 @@ namespace RedBlackTree {
     ///
     pub def memberOf(k: k, t: RedBlackTree[k, v]): Bool with Order[k] = match t {
         case Node(_, a, k1, _, b) => match k <=> k1 {
-           case LessThan    => memberOf(k, a)
-           case EqualTo     => true
-           case GreaterThan => memberOf(k, b)
+           case Comparison.LessThan    => memberOf(k, a)
+           case Comparison.EqualTo     => true
+           case Comparison.GreaterThan => memberOf(k, b)
         }
         case _ => false
     }
@@ -458,21 +458,33 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Applies `f` to every key-value pair of `t` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region r {
+        let ix = ref 0 @ r;
+        def loop(tt) = match tt {
+            case Node(_, a, k, v, b) => loop(a); let i = deref ix; f(i, k, v); ix := i+1; loop(b)
+            case _                   => ()
+        };
+        loop(t)
+    }
+
+    ///
     /// Helper function for `insert` and `delete`.
     ///
     def balance(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Black, Node(Red, Node(Red, a, k1, v1, b), k2, v2, c), k3, v3, d) =>
-            Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case Node(Black, Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case Node(Black, a, k1, v1, Node(Red, Node(Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case Node(Black, a, k1, v1, Node(Red, b, k2, v2, Node(Red, c, k3, v3, d))) =>
-            Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case Node(DoubleBlack, a, k1, v1, Node(Red, Node(Red, b, k2, v2, c), k3, v3, d)) =>
-            Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
-        case Node(DoubleBlack, Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)), k3, v3, d) =>
-            Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
+        case Node(Color.Black, Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c), k3, v3, d) =>
+            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.Black, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
+            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.Black, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
+            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Red, c, k3, v3, d))) =>
+            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, Node(Color.Red, b, k2, v2, c), k3, v3, d)) =>
+            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
+        case Node(Color.DoubleBlack, Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)), k3, v3, d) =>
+            Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
         case _ => t
     }
 
@@ -480,10 +492,10 @@ namespace RedBlackTree {
     /// Helper function for `insert`.
     ///
     def blacken(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Red, Node(Red, a, k1, v1, b), k2, v2, c) =>
-            Node(Black, Node(Red, a, k1, v1, b), k2, v2, c)
-        case Node(Red, a, k1, v1, Node(Red, b, k2, v2, c)) =>
-            Node(Black, a, k1, v1, Node(Red, b, k2, v2, c))
+        case Node(Color.Red, Node(Color.Red, a, k1, v1, b), k2, v2, c) =>
+            Node(Color.Black, Node(Color.Red, a, k1, v1, b), k2, v2, c)
+        case Node(Color.Red, a, k1, v1, Node(Color.Red, b, k2, v2, c)) =>
+            Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, c))
         case _ => t
     }
 
@@ -491,30 +503,30 @@ namespace RedBlackTree {
     /// Helper function for `delete`.
     ///
     def rotate(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Red, Node(DoubleBlack, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
-            balance(Node(Black, Node(Red, Node(Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Red, DoubleBlackLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
-            balance(Node(Black, Node(Red, Leaf, k2, v2, c), k3, v3, d))
-        case Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(DoubleBlack, c, k3, v3, d)) =>
-            balance(Node(Black, a, k1, v1, Node(Red, b, k2, v2, Node(Black, c, k3, v3, d))))
-        case Node(Red, Node(Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
-            balance(Node(Black, a, k1, v1, Node(Red, b, k2, v2, Leaf)))
-        case Node(Black, Node(DoubleBlack, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
-            balance(Node(DoubleBlack, Node(Red, Node(Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Black, DoubleBlackLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
-            balance(Node(DoubleBlack, Node(Red, Leaf, k2, v2, c), k3, v3, d))
-        case Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(DoubleBlack, c, k3, v3, d)) =>
-            balance(Node(DoubleBlack, a, k1, v1, Node(Red, b, k2, v2, Node(Black, c, k3, v3, d))))
-        case Node(Black, Node(Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
-            balance(Node(DoubleBlack, a, k1, v1, Node(Red, b, k2, v2, Leaf)))
-        case Node(Black, Node(DoubleBlack, a, k4, v4, b), k1, v1, Node(Red, Node(Black, c, k2, v2, d), k3, v3, e)) =>
-            Node(Black, balance(Node(Black, Node(Red, Node(Black, a, k4, v4, b), k1, v1, c), k2, v2, d)), k3, v3, e)
-        case Node(Black, DoubleBlackLeaf, k1, v1, Node(Red, Node(Black, c, k2, v2, d), k3, v3, e)) =>
-            Node(Black, balance(Node(Black, Node(Red, Leaf, k1, v1, c), k2, v2, d)), k3, v3, e)
-        case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, Node(DoubleBlack, d, k3, v3, e)) =>
-            Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Node(Black, d, k3, v3, e)))))
-        case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, DoubleBlackLeaf) =>
-            Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Leaf))))
+        case Node(Color.Red, Node(Color.DoubleBlack, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+            balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
+        case Node(Color.Red, DoubleBlackLeaf, k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+            balance(Node(Color.Black, Node(Color.Red, Leaf, k2, v2, c), k3, v3, d))
+        case Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.DoubleBlack, c, k3, v3, d)) =>
+            balance(Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Black, c, k3, v3, d))))
+        case Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
+            balance(Node(Color.Black, a, k1, v1, Node(Color.Red, b, k2, v2, Leaf)))
+        case Node(Color.Black, Node(Color.DoubleBlack, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+            balance(Node(Color.DoubleBlack, Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
+        case Node(Color.Black, DoubleBlackLeaf, k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+            balance(Node(Color.DoubleBlack, Node(Color.Red, Leaf, k2, v2, c), k3, v3, d))
+        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.DoubleBlack, c, k3, v3, d)) =>
+            balance(Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, b, k2, v2, Node(Color.Black, c, k3, v3, d))))
+        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
+            balance(Node(Color.DoubleBlack, a, k1, v1, Node(Color.Red, b, k2, v2, Leaf)))
+        case Node(Color.Black, Node(Color.DoubleBlack, a, k4, v4, b), k1, v1, Node(Color.Red, Node(Color.Black, c, k2, v2, d), k3, v3, e)) =>
+            Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Node(Color.Black, a, k4, v4, b), k1, v1, c), k2, v2, d)), k3, v3, e)
+        case Node(Color.Black, DoubleBlackLeaf, k1, v1, Node(Color.Red, Node(Color.Black, c, k2, v2, d), k3, v3, e)) =>
+            Node(Color.Black, balance(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, c), k2, v2, d)), k3, v3, e)
+        case Node(Color.Black, Node(Color.Red, a, k4, v4, Node(Color.Black, b, k1, v1, c)), k2, v2, Node(Color.DoubleBlack, d, k3, v3, e)) =>
+            Node(Color.Black, a, k4, v4, balance(Node(Color.Black, b, k1, v1, Node(Color.Red, c, k2, v2, Node(Color.Black, d, k3, v3, e)))))
+        case Node(Color.Black, Node(Color.Red, a, k4, v4, Node(Color.Black, b, k1, v1, c)), k2, v2, DoubleBlackLeaf) =>
+            Node(Color.Black, a, k4, v4, balance(Node(Color.Black, b, k1, v1, Node(Color.Red, c, k2, v2, Leaf))))
         case _ => t
     }
 
@@ -522,8 +534,8 @@ namespace RedBlackTree {
     /// Helper function for `delete`.
     ///
     def redden(t: RedBlackTree[k, v]): RedBlackTree[k, v] = match t {
-        case Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
-            Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d))
+        case Node(Color.Black, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d)) =>
+            Node(Color.Red, Node(Color.Black, a, k1, v1, b), k2, v2, Node(Color.Black, c, k3, v3, d))
         case DoubleBlackLeaf => Leaf
         case _ => t
     }
@@ -533,26 +545,26 @@ namespace RedBlackTree {
     ///
     def minDelete(t: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
         def loop(tt, sk) = match tt {
-            case Node(Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
-            case Node(Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
-            case Node(Black, Leaf, k1, v1, Node(Red, Leaf, k2, v2, Leaf)) =>
-                sk((k1, v1, Node(Black, Leaf, k2, v2, Leaf)))
+            case Node(Color.Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
+            case Node(Color.Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
+            case Node(Color.Black, Leaf, k1, v1, Node(Color.Red, Leaf, k2, v2, Leaf)) =>
+                sk((k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf)))
             case Node(c, a, k1, v1, b) => loop(a, match (k3, v3, e) -> sk((k3, v3, rotate(Node(c, e, k1, v1, b)))))
             case _ => unreachable!()
         };
         loop(t, identity)
 
     ///
-    /// Applies `f` to all key-value pairs from `t` where `p(k)` returns `EqualTo`.
+    /// Applies `f` to all key-value pairs from `t` where `p(k)` returns `Comparison.EqualTo`.
     ///
     /// The function `f` must be impure.
     ///
     pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
-                case LessThan    => queryWith(p, f, b)
-                case EqualTo     => queryWith(p, f, a); f(k, v); queryWith(p, f, b)
-                case GreaterThan => queryWith(p, f, a)
+                case Comparison.LessThan    => queryWith(p, f, b)
+                case Comparison.EqualTo     => queryWith(p, f, a); f(k, v); queryWith(p, f, b)
+                case Comparison.GreaterThan => queryWith(p, f, a)
             }
         case _ => ()
     }
@@ -592,7 +604,7 @@ namespace RedBlackTree {
     ///
     pub def blackHeight(t: RedBlackTree[k, v]): Int32 =
         def loop(tt, acc) = match tt {
-            case Node(Black, a, _, _, _) => loop(a, 1 + acc)
+            case Node(Color.Black, a, _, _, _) => loop(a, 1 + acc)
             case Node(_, a, _, _, _)     => loop(a, acc)
             case _                       => acc
         };
@@ -900,7 +912,7 @@ namespace RedBlackTree {
     ///
     @Parallel
     pub def parMinimumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
-        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == LessThan) (kl, vl) else (kr, vr), t)
+        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Applies `cmp` over the tree `t` in parallel and optionally returns the largest
@@ -912,7 +924,7 @@ namespace RedBlackTree {
     ///
     @Parallel
     pub def parMaximumBy(n: Int32, cmp: (k, v, k, v) -> Comparison, t: RedBlackTree[k, v]): Option[(k, v)] =
-        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == GreaterThan) (kl, vl) else (kr, vr), t)
+        parLimitBy(n, (kl, vl, kr, vr) -> if (cmp(kl, vl, kr, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), t)
 
     ///
     /// Helper function for `minimumBy` & `maximumBy`.
@@ -1042,7 +1054,7 @@ namespace RedBlackTree {
                 (k, v)
             }
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the

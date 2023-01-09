@@ -107,64 +107,64 @@ namespace Test/Exp/Force {
 
     @test
     def testNestedForce03(): Bool =
-        let x = Both(lazy 2, lazy "2");
+        let x = Poly.Both(lazy 2, lazy "2");
         2 == match x {
-            case Both(a, _) => force a
+            case Poly.Both(a, _) => force a
             case _ => 0
         }
 
     @test
     def testNestedForce04(): Bool =
         let x = lazy 15;
-        Both(20, 25) == Both(5 + force x, 10 + force x)
+        Poly.Both(20, 25) == Poly.Both(5 + force x, 10 + force x)
 
     @test
     def testNestedForce05(): Bool =
-        let x = lazy (This(lazy 5));
+        let x = lazy (Poly.This(lazy 5));
         5 == match (force x) {
-            case This(a) => force a
+            case Poly.This(a) => force a
             case _ => -1
         }
 
     @test
     def testNestedForce01(): Bool =
-        let x = lazy Card(Hearts, N(4));
+        let x = lazy Card.Card(Suit.Hearts, Rank.N(4));
         match (force x) {
-            case Card(Hearts, N(n)) => n == 4
+            case Card.Card(Suit.Hearts, Rank.N(n)) => n == 4
             case _ => false
         }
 
     @test
     def testPolyForce01(): Bool =
-        let x = lazy This(123);
+        let x = lazy Poly.This(123);
         let y = force x;
         match y {
-            case This(n) => n == 123
+            case Poly.This(n) => n == 123
             case _ => false
         }
 
     @test
     def testPolyForce02(): Bool =
-        let x = lazy That("str");
+        let x = lazy Poly.That("str");
         let y = force x;
         match y {
-            case That(s) => s == "str"
+            case Poly.That(s) => s == "str"
             case _ => false
         }
 
     @test
     def testPolyForce03(): Bool =
-        let x = lazy Both("str", 123);
+        let x = lazy Poly.Both("str", 123);
         let y = force x;
         match y {
-            case Both(_, n) => n == 123
+            case Poly.Both(_, n) => n == 123
             case _ => false
         }
 
     @test
     def testOptionForce01(): Bool =
-        let x = lazy None;
-        None: Poly[Unit, Unit] == force x
+        let x = lazy Poly.None;
+        Poly.None: Poly[Unit, Unit] == force x
 
     @test
     def testPrecedenceForce01(): Bool =
@@ -212,10 +212,10 @@ namespace Test/Exp/Force {
 
     instance Eq[Poly[a, b]] with Eq[a], Eq[b] {
         pub def eq(p1: Poly[a, b], p2: Poly[a, b]): Bool = match (p1, p2) {
-            case (None, None) => true
-            case (This(x1), This(y1)) => x1 == y1
-            case (That(x1), That(y1)) => x1 == y1
-            case (Both(x1, x2), Both(y1, y2)) => x1 == y1 and x2 == y2
+            case (Poly.None, Poly.None) => true
+            case (Poly.This(x1), Poly.This(y1)) => x1 == y1
+            case (Poly.That(x1), Poly.That(y1)) => x1 == y1
+            case (Poly.Both(x1, x2), Poly.Both(y1, y2)) => x1 == y1 and x2 == y2
             case _ => false
         }
     }

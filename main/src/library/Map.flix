@@ -112,15 +112,12 @@ namespace Map {
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
         let sb = new StringBuilder(r);
         StringBuilder.appendString!("Map#{", sb);
-        let first = ref true @ r;
-        foreach ((k, v) <- Map.iterator(r, m)) {
-            if (deref first) {
-                first := false;
+        forEachWithIndex((i, k, v) -> {
+            if (i < 1)
                 StringBuilder.appendString!("${k} => ${v}", sb)
-            }
             else
                 StringBuilder.appendString!(", ${k} => ${v}", sb)
-        };
+            }, m);
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -212,7 +209,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
-        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == LessThan) (kl, vl) else (kr, vr), m);
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -243,7 +240,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
-        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == LessThan) (kl, vl) else (kr, vr), m);
+        def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -274,7 +271,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
-        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (k, k) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -305,7 +302,7 @@ namespace Map {
     ///
     @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
-        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == GreaterThan) (kl, vl) else (kr, vr), m);
+        def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         typematch cmp {
             case g: (v, v) -> Comparison \ {} =>
                 if (useParallelEvaluation(m))
@@ -805,7 +802,7 @@ namespace Map {
     /// Returns `m` as a mutable set.
     ///
     pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap(ref m @ r)
+        MutMap.MutMap(ref m @ r)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -823,7 +820,7 @@ namespace Map {
     /// Returns the map `m` as a `DelayList` of key-value pairs.
     ///
     pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> ECons((k, v), acc), ENil, m)
+        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
 
     ///
     /// Returns the map `m` as a chain of key-value pairs.
@@ -835,7 +832,7 @@ namespace Map {
     /// Returns a MultiMap where key `k` is mapped to the singleton set containing `v`.
     ///
     pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
-        MultiMap(Map.map(Set.singleton, m))
+        MultiMap.MultiMap(Map.map(Set.singleton, m))
 
     ///
     /// Returns `m` as a MutDeque.
@@ -846,11 +843,19 @@ namespace Map {
         d
 
     ///
-    /// Applies `f` to every element of `xs`.
+    /// Applies `f` to every `(key, value)` of `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
         let Map(t) = m;
         RedBlackTree.forEach(f, t)
+
+    ///
+    /// Applies `f` to tuple `(index, key, value)` formed of the keys and values of
+    /// Map `m` and the index of the traversal.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
+        let Map(t) = m;
+        RedBlackTree.forEachWithIndex(f, t)
 
     ///
     /// Build a map by applying `f` to the seed value `st`.
@@ -928,7 +933,7 @@ namespace Map {
     pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
         let Map(t) = m;
         let f = (_, v) -> lazy v;
-        DMap(RedBlackTree.mapWithKey(f, t))
+        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Returns the result of running all the actions in the map `m`.

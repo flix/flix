@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for type errors.
@@ -744,7 +744,7 @@ object TypeError {
          |
          |${code(loc, s"expected: '${cyan(formatType(expected, Some(renv)))}'")}
          |
-         |The function '${magenta(sym.toString)}' expects its ${ith}th argument to be of type '${formatType(expected, Some(renv))}'.
+         |The function '${magenta(sym.toString)}' expects its ${Grammar.ordinal(ith)} argument to be of type '${formatType(expected, Some(renv))}'.
          |
          |Expected: ${formatType(expected, Some(renv))}
          |  Actual: ${formatType(actual, Some(renv))}

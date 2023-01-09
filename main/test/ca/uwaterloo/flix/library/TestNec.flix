@@ -80,34 +80,34 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testCompare01(): Bool = Order.compare(singleton(1), singleton(1)) == EqualTo
+    def testCompare01(): Bool = Order.compare(singleton(1), singleton(1)) == Comparison.EqualTo
 
     @test
-    def testCompare02(): Bool = Order.compare(singleton(1), singleton(2)) == LessThan
+    def testCompare02(): Bool = Order.compare(singleton(1), singleton(2)) == Comparison.LessThan
 
     @test
-    def testCompare03(): Bool = Order.compare(singleton(2), singleton(1)) == GreaterThan
+    def testCompare03(): Bool = Order.compare(singleton(2), singleton(1)) == Comparison.GreaterThan
 
     @test
-    def testCompare04(): Bool = Order.compare(singleton(1), necOf2(1, 2)) == LessThan
+    def testCompare04(): Bool = Order.compare(singleton(1), necOf2(1, 2)) == Comparison.LessThan
 
     @test
-    def testCompare05(): Bool = Order.compare(necOf2(1, 2), singleton(1)) == GreaterThan
+    def testCompare05(): Bool = Order.compare(necOf2(1, 2), singleton(1)) == Comparison.GreaterThan
 
     @test
-    def testCompare06(): Bool = Order.compare(singleton(1), necOf2(0,0)) == GreaterThan
+    def testCompare06(): Bool = Order.compare(singleton(1), necOf2(0,0)) == Comparison.GreaterThan
 
     @test
-    def testCompare07(): Bool = Order.compare(necOf2(0, 0), singleton(1)) == LessThan
+    def testCompare07(): Bool = Order.compare(necOf2(0, 0), singleton(1)) == Comparison.LessThan
 
     @test
-    def testCompare08(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 1)) == GreaterThan
+    def testCompare08(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 1)) == Comparison.GreaterThan
 
     @test
-    def testCompare09(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 3)) == LessThan
+    def testCompare09(): Bool = Order.compare(necOf2(1, 2), necOf2(1, 3)) == Comparison.LessThan
 
     @test
-    def testCompare10(): Bool = Order.compare(necOf4(1, 2, 3, 4), necOf4(1, 2, 3, 4)) == EqualTo
+    def testCompare10(): Bool = Order.compare(necOf4(1, 2, 3, 4), necOf4(1, 2, 3, 4)) == Comparison.EqualTo
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
@@ -983,39 +983,39 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((1, 0))
+    def zipWithIndex01(): Bool = Nec.zipWithIndex(singleton(1)) == singleton((0, 1))
 
     @test
-    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((1, 0), (2, 1))
+    def zipWithIndex02(): Bool = Nec.zipWithIndex(necOf2(1, 2)) == necOf2((0, 1), (1, 2))
 
     @test
-    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((2, 0), (1, 1))
+    def zipWithIndex03(): Bool = Nec.zipWithIndex(necOf2(2, 1)) == necOf2((0, 2), (1, 1))
 
     @test
-    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((4, 0), (3, 1), (6, 2))
+    def zipWithIndex04(): Bool = Nec.zipWithIndex(necOf3(4, 3, 6)) == necOf3((0, 4), (1, 3), (2, 6))
 
     @test
-    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((1, 0), (2, 1), (3, 2), (4, 3))
+    def zipWithIndex05(): Bool = Nec.zipWithIndex(necOf4(1, 2, 3, 4)) == necOf4((0, 1), (1, 2), (2, 3), (3, 4))
 
     @test
     def zipWithIndex06(): Bool =
-        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((8, 0), (7, 1), (6, 2), (5, 3), (4, 4), (3, 5), (2, 6), (1, 7))
+        Nec.zipWithIndex(necOf8(8, 7, 6, 5, 4, 3, 2, 1)) == necOf8((0, 8), (1, 7), (2, 6), (3, 5), (4, 4), (5, 3), (6, 2), (7, 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithA01(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), singleton(1)) == Identity(singleton(2))
+    def zipWithA01(): Bool = Nec.zipWithA((x, y) -> Identity.Identity(x + y), singleton(1), singleton(1)) == Identity.Identity(singleton(2))
 
     @test
-    def zipWithA02(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), singleton(1)) == Identity(singleton(2))
+    def zipWithA02(): Bool = Nec.zipWithA((x, y) -> Identity.Identity(x + y), necOf2(1, 2), singleton(1)) == Identity.Identity(singleton(2))
 
     @test
-    def zipWithA03(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), singleton(1), necOf2(1, 2)) == Identity(singleton(2))
+    def zipWithA03(): Bool = Nec.zipWithA((x, y) -> Identity.Identity(x + y), singleton(1), necOf2(1, 2)) == Identity.Identity(singleton(2))
 
     @test
-    def zipWithA04(): Bool = Nec.zipWithA((x, y) -> Identity(x + y), necOf2(1, 2), necOf2(1, 2)) == Identity(necOf2(2, 4))
+    def zipWithA04(): Bool = Nec.zipWithA((x, y) -> Identity.Identity(x + y), necOf2(1, 2), necOf2(1, 2)) == Identity.Identity(necOf2(2, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // mapAccumLeft                                                            //
@@ -1048,16 +1048,36 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Nec.forEach(x -> r := x, singleton(1));
-        1 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEach(x -> ri := x, singleton(1));
+        1 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Nec.forEach(x -> r := x, necOf3(1, 2, 3));
-        3 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEach(x -> ri := x, necOf3(1, 2, 3));
+        3 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEachWithIndex((i, _) -> ri := i, singleton(1));
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEachWithIndex((i, _) -> ri := i, necOf3(1, 2, 3));
+        2 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -1252,9 +1272,9 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith02(): Bool =
@@ -1388,18 +1408,18 @@ namespace TestNec {
 
     @test
     def sequence05(): Bool =
-        let l = Nec.singleton(Identity(1));
-        Nec.sequence(l) == Identity(Nec.singleton(1))
+        let l = Nec.singleton(Identity.Identity(1));
+        Nec.sequence(l) == Identity.Identity(Nec.singleton(1))
 
     @test
     def sequence06(): Bool =
-        let l = necOf2(Identity(1), Identity(2));
-        Nec.sequence(l) == Identity(necOf2(1, 2))
+        let l = necOf2(Identity.Identity(1), Identity.Identity(2));
+        Nec.sequence(l) == Identity.Identity(necOf2(1, 2))
 
     @test
     def sequence07(): Bool =
-        let l = necOf3(Identity(1), Identity(2), Identity(3));
-        Nec.sequence(l) == Identity(necOf3(1, 2, 3))
+        let l = necOf3(Identity.Identity(1), Identity.Identity(2), Identity.Identity(3));
+        Nec.sequence(l) == Identity.Identity(necOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -1421,24 +1441,24 @@ namespace TestNec {
     def traverse05(): Bool = region r {
         let st = ref 0 @ r;
         let l = Nec.singleton(1);
-        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(Nec.singleton(1)) and deref st == 1
+        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(Nec.singleton(1)) and deref st == 1
     }
 
     @test
     def traverse06(): Bool = region r {
         let st = ref 0 @ r;
         let l = necOf2(1, 2);
-        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(necOf2(1, 2)) and deref st == 2
+        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(necOf2(1, 2)) and deref st == 2
     }
 
     @test
     def traverse07(): Bool = region r {
         let st = ref 0 @ r;
         let l = necOf3(1, 2, 3);
-        let ans = Nec.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(necOf3(1, 2, 3)) and deref st == 3
+        let ans = Nec.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(necOf3(1, 2, 3)) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

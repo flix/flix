@@ -199,7 +199,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `DelayList`.
     ///
     pub def toDelayList(t: t[a]): DelayList[a] =
-        Foldable.foldRight((x, acc) -> ECons(x, acc), ENil, t)
+        Foldable.foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, t)
 
     ///
     /// Returns `t` as an immutable list.
@@ -230,12 +230,12 @@ pub class Foldable[t : Type -> Type] {
             i := j + 1;
             x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r] \ Write(r) =
         Foldable.iterator(r, t) |> Iterator.zipWithIndex
 
     ///

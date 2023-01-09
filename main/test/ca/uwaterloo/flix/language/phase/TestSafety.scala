@@ -18,13 +18,57 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildcard, IllegalNonPositivelyBoundVariable, IllegalRelationalUseOfLatticeVariable, UnexpectedPatternInBodyAtom}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestSafety extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
+
+  test("UnexpectedBodyAtomPattern.01") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(x) :- B(Some(x)).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
+  test("UnexpectedBodyAtomPattern.02") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(1) :- B(Some(2)).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
+  test("UnexpectedBodyAtomPattern.03") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Option[Int32]) } = #{
+        |    A(1) :- B(None).
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
+
+  test("UnexpectedBodyAtomPattern.04") {
+    val input =
+      """
+        |pub def f(): #{ A(Int32), B(Unit), C(List[Int32]) } = #{
+        |    A(x) :- B(()), C(x::_).
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[UnexpectedPatternInBodyAtom](result)
+  }
 
   test("NonPositivelyBoundVariable.01") {
     val input =
@@ -651,7 +695,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Bool)
-        |def f(): Bool = unsafe_cast A(false) as Bool
+        |def f(): Bool = unsafe_cast A.A(false) as Bool
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -671,7 +715,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Int32)
-        |def f(): Int32 = unsafe_cast A(1) as Int32
+        |def f(): Int32 = unsafe_cast A.A(1) as Int32
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -691,7 +735,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(String)
-        |def f(): String = unsafe_cast A("a") as String
+        |def f(): String = unsafe_cast A.A("a") as String
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)

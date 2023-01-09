@@ -26,21 +26,11 @@ instance Scoped[Iterator[a]] {
     pub def regionOf(_: Iterator[a, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
-instance Iterable[Iterator] {
-    pub def iterator(iter: Iterator[a, r]): Iterator[a, r] \ Write(r) = unsafe_cast iter as _ \ Write(r)
-}
-
 ///
 /// Alias for `Foldable.iterator`.
 ///
 pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
     Foldable.iterator(r, t)
-
-///
-/// Alias for `Foldable.iterator |> Iterable.enumerator`.
-///
-pub def enumerator(r: Region[r], t: t[a]): Iterator[(a, Int32), r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t) |> Iterable.enumerator
 
 namespace Iterator {
 
@@ -199,6 +189,15 @@ namespace Iterator {
     pub def toList(iter: Iterator[a, r]): List[a] \ Read(r) =
         foldRight((a, acc) -> a :: acc, Nil, iter)
 
+
+    ///
+    /// Returns the contents of `iter` as a chain.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toChain(iter: Iterator[a, r]): Chain[a] \ Read(r) =
+        foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
+
     ///
     /// Returns the contents of `iter` as a map.
     ///
@@ -214,7 +213,7 @@ namespace Iterator {
     ///
     pub def toNel(iter: Iterator[a, r]): Option[Nel[a]] \ Read(r) = match toList(iter) {
         case Nil     => None
-        case x :: xs => Some(Nel(x, xs))
+        case x :: xs => Some(Nel.Nel(x, xs))
     }
 
     ///
@@ -287,6 +286,16 @@ namespace Iterator {
     pub def forEach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
         case Iterator(done, _) if done() => ()
         case Iterator(_, next)           => f(next()); forEach(f, iter)
+    }
+
+    ///
+    /// Applies `f` to every element of `iter` along with that element's index.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = region r {
+        let ix = ref 0 @ r;
+        forEach(x -> {let i = deref ix; f(i, x); ix := i + 1}, iter)
     }
 
     ///
@@ -436,11 +445,11 @@ namespace Iterator {
     /// The original iterator `iter` should *not* be reused.
     ///
     @Lazy
-    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
         let Iterator(done, next) = iter;
         let i = ref 0 @ Scoped.regionOf(iter);
         let next1 = () -> {
-            let x = (next(), deref i);
+            let x = (deref i, next());
             i := deref i + 1;
             x
         };
@@ -449,7 +458,7 @@ namespace Iterator {
     ///
     /// Alias for `zipWithIndex`.
     ///
-    pub def enumerator(iter: Iterator[a, r]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
         zipWithIndex(iter)
 
     ///
@@ -527,7 +536,7 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     @Lazy
-    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[a, b] \ ef): Iterator[a, r and ef] \ Write(r) =
+    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, r and ef] \ Write(r) =
         let cursor = ref None @ r;
         let done = () -> match deref cursor {
             case None    => match f() {
@@ -881,7 +890,7 @@ namespace Iterator {
     /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
     /// If the iterator has no errors then the result is wrapped with `Ok`.
     ///
-    pub def toResultList(iter: Iterator[Result[a, e], r]): Result[List[a], e] \ Read(r) =
+    pub def toResultList(iter: Iterator[Result[e, a], r]): Result[e, List[a]] \ Read(r) =
         let Iterator(done, next) = iter;
         def loop(fk, sk) = {
             if (done())

@@ -13,7 +13,7 @@ namespace Test/Exp/Concurrency/Buffered {
         Channel.send(true, tx);
         true == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannel03(): Bool \ {} = region r {
         let (tx, rx) = Channel.buffered(r, 1);
@@ -48,7 +48,7 @@ namespace Test/Exp/Concurrency/Buffered {
         Channel.send(42i32, tx);
         42i32 == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannel08(): Bool \ {} = region r {
         let (tx, rx) = Channel.buffered(r, 1);
@@ -76,7 +76,7 @@ namespace Test/Exp/Concurrency/Buffered {
         Channel.send(None, tx);
         None == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannel12(): Bool \ {} = region r {
         let (tx, rx) = Channel.buffered(r, 1);
@@ -86,14 +86,14 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel13(): Bool \ {} = region r {
-        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(r, 1);
+        let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(r, 1);
         Channel.send(Ok(123), tx);
         Ok(123) == Channel.recv(rx)
     }
 
     @test
     def testBufferedChannel14(): Bool \ {} = region r {
-        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(r, 1);
+        let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(r, 1);
         Channel.send(Err("Goodbye World!"), tx);
         Err("Goodbye World!") == Channel.recv(rx)
     }
@@ -127,14 +127,14 @@ namespace Test/Exp/Concurrency/Buffered {
         spawn Channel.send(true, tx) @ r;
         true == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannelWithSpawn03(): Bool \ IO = region r {
         let (tx, rx) = Channel.buffered(r, 1);
         spawn Channel.send(123.456f32, tx) @ r;
         123.456f32 == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannelWithSpawn04(): Bool \ IO = region r {
         let (tx, rx) = Channel.buffered(r, 1);
@@ -155,7 +155,7 @@ namespace Test/Exp/Concurrency/Buffered {
         spawn Channel.send(42i16, tx) @ r;
         42i16 == Channel.recv(rx)
     }
-    
+
     @test
     def testBufferedChannelWithSpawn07(): Bool \ IO = region r {
         let (tx, rx) = Channel.buffered(r, 1);
@@ -200,14 +200,14 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn13(): Bool \ IO = region r {
-        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(r, 1);
+        let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(r, 1);
         spawn Channel.send(Ok(123), tx) @ r;
         Ok(123) == Channel.recv(rx)
     }
 
     @test
     def testBufferedChannelWithSpawn14(): Bool \ IO = region r {
-        let (tx, rx): (Sender[Result[Int32, String], _], Receiver[Result[Int32, String], _]) = Channel.buffered(r, 1);
+        let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(r, 1);
         spawn Channel.send(Err("Goodbye World!"), tx) @ r;
         Err("Goodbye World!") == Channel.recv(rx)
     }

@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -149,11 +149,14 @@ object Safety {
         visit(exp) ::: missingDefault :::
           rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
 
-      case Expression.Choose(exps, rules, _, _, _, _) =>
+      case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
         exps.flatMap(visit) :::
-          rules.flatMap { case ChoiceRule(_, exp) => visit(exp) }
+          rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _, _) =>
+        visit(exp)
+
+      case Expression.RestrictableTag(_, exp, _, _, _, _) =>
         visit(exp)
 
       case Expression.Tuple(elms, _, _, _, _) =>
@@ -185,8 +188,8 @@ object Safety {
       case Expression.ArrayStore(base, index, elm, _, _, _) =>
         visit(base) ::: visit(index) ::: visit(elm)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-        visit(base) ::: visit(beginIndex) ::: visit(endIndex)
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
+        visit(reg) ::: visit(base) ::: visit(beginIndex) ::: visit(endIndex)
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
         visit(exp1) ::: visit(exp2)
@@ -572,7 +575,26 @@ object Safety {
     //
     val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
 
-    err1 concat err2
+    //
+    // Check that patterns in atom body are legal
+    //
+    val err3 = c0.body.flatMap(s => checkBodyPattern(s))
+
+    err1 ++ err2 ++ err3
+  }
+
+  /**
+    * Performs safety check on the pattern of an atom body.
+    */
+  private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
+    case Predicate.Body.Atom(_,_,_,_,terms,_,loc) =>
+      terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
+        case Pattern.Var(_, _, _) => acc
+        case Pattern.Wild(_, _) => acc
+        case Pattern.Cst(_, _, _) => acc
+        case _ => UnexpectedPatternInBodyAtom(loc) :: acc
+      })
+    case _ => Nil
   }
 
   /**

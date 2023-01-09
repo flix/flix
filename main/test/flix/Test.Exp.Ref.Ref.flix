@@ -1,58 +1,58 @@
 namespace Test/Exp/Ref/Ref {
 
     @test
-    def testRef01(): Ref[Unit, Static] \ IO = ref ()
+    def testRef01(): Unit = region r { discard ref () @ r }
 
     @test
-    def testRef02(): Ref[Bool, Static] \ IO = ref true
+    def testRef02(): Unit = region r { discard ref true @ r }
 
     @test
-    def testRef03(): Ref[Bool, Static] \ IO = ref false
+    def testRef03(): Unit = region r { discard ref false @ r }
 
     @test
-    def testRef04(): Ref[Char, Static] \ IO = ref 'a'
+    def testRef04(): Unit = region r { discard ref 'a' @ r }
 
     @test
-    def testRef05(): Ref[Float32, Static] \ IO = ref 0.0f32
+    def testRef05(): Unit = region r { discard ref 0.0f32 @ r }
 
     @test
-    def testRef06(): Ref[Float64, Static] \ IO = ref 0.0f64
+    def testRef06(): Unit = region r { discard ref 0.0f64 @ r }
 
     @test
-    def testRef07(): Ref[Int8, Static] \ IO = ref 0i8
+    def testRef07(): Unit = region r { discard ref 0i8 @ r }
 
     @test
-    def testRef08(): Ref[Int16, Static] \ IO = ref 0i16
+    def testRef08(): Unit = region r { discard ref 0i16 @ r }
 
     @test
-    def testRef09(): Ref[Int32, Static] \ IO = ref 0i32
+    def testRef09(): Unit = region r { discard ref 0i32 @ r }
 
     @test
-    def testRef10(): Ref[Int64, Static] \ IO = ref 0i64
+    def testRef10(): Unit = region r { discard ref 0i64 @ r }
 
     @test
-    def testRef11(): Ref[BigInt, Static] \ IO = ref 0ii
+    def testRef11(): Unit = region r { discard ref 0ii @ r }
 
     @test
-    def testRef12(): Ref[BigDecimal, Static] \ IO = ref 0.0ff
+    def testRef12(): Unit = region r { discard ref 0.0ff @ r }
 
     @test
-    def testRef13(): Ref[String, Static] \ IO = ref "Hello World!"
+    def testRef13(): Unit = region r { discard ref "Hello World!" @ r }
 
     @test
-    def testRef14(): Ref[(Int32, Int32, Int32), Static] \ IO = ref (1, 2, 3)
+    def testRef14(): Unit = region r { discard ref (1, 2, 3) @ r }
 
     @test
-    def testRef15(): Ref[Option[Int32], Static] \ IO = ref None : Option[Int32]
+    def testRef15(): Unit = region r { discard ref None : Option[Int32] @ r }
 
     @test
-    def testRef16(): Ref[Option[Int32], Static] \ IO = ref Some(42)
+    def testRef16(): Unit = region r { discard ref Some(42) @ r }
 
     @test
-    def testRef17(): Ref[Result[Int32, String], Static] \ IO = ref Ok(42): Result[Int32, String]
+    def testRef17(): Unit = region r { discard ref Ok(42): Result[String, Int32] @ r }
 
     @test
-    def testRef18(): Ref[Result[Int32, String], Static] \ IO = ref Err("Goodbye World!"): Result[Int32, String]
+    def testRef18(): Unit = region r { discard ref Err("Goodbye World!"): Result[String, Int32] @ r }
 
     @test
     def testRefRegion01(): Unit = // Pure

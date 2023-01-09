@@ -189,18 +189,23 @@ object Stratifier {
         case (m, rs) => Expression.TypeMatch(m, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ChoiceRule(pat, exp) => mapN(visitExp(exp))(ChoiceRule(pat, _))
+        case RelationalChoiceRule(pat, exp) => mapN(visitExp(exp))(RelationalChoiceRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.Choose(es, rs, tpe, pur, eff, loc)
+        case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
+      }
+
+    case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.RestrictableTag(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
@@ -251,9 +256,9 @@ object Stratifier {
         case (b, i, e) => Expression.ArrayStore(b, i, e, pur, eff, loc)
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, pur, eff, loc) =>
-      mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, pur, eff, loc)
+    case Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
+      mapN(visitExp(reg), visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
+        case (r, b, i1, i2) => Expression.ArraySlice(r, b, i1, i2, tpe, pur, eff, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
@@ -574,16 +579,19 @@ object Stratifier {
         case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val dg1 = exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
+        case (acc, RelationalChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -620,8 +628,8 @@ object Stratifier {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) =>
-      labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
+    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
+      labelledGraphOfExp(reg) + labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)

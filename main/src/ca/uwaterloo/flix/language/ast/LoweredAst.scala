@@ -33,23 +33,23 @@ object LoweredAst {
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
 
-  case class Class(doc: Ast.Doc, ann: List[LoweredAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: LoweredAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[LoweredAst.Sig], laws: List[LoweredAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: LoweredAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[LoweredAst.Sig], laws: List[LoweredAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: List[LoweredAst.Annotation], mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[LoweredAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[LoweredAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: LoweredAst.Spec, impl: Option[LoweredAst.Impl])
 
   case class Def(sym: Symbol.DefnSym, spec: LoweredAst.Spec, impl: LoweredAst.Impl)
 
-  case class Spec(doc: Ast.Doc, ann: List[LoweredAst.Annotation], mod: Ast.Modifiers, tparams: List[LoweredAst.TypeParam], fparams: List[LoweredAst.FormalParam], declaredScheme: Scheme, retTpe: Type, pur: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[LoweredAst.TypeParam], fparams: List[LoweredAst.FormalParam], declaredScheme: Scheme, retTpe: Type, pur: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
 
   case class Impl(exp: LoweredAst.Expression, inferredScheme: Scheme)
 
-  case class Enum(doc: Ast.Doc, ann: List[LoweredAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[LoweredAst.TypeParam], tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Ast.Doc, ann: List[LoweredAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[LoweredAst.Op], loc: SourceLocation)
+  case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[LoweredAst.Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: LoweredAst.Spec)
 
@@ -137,7 +137,7 @@ object LoweredAst {
 
     case class TypeMatch(exp: LoweredAst.Expression, rules: List[LoweredAst.MatchTypeRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
-    case class Choose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.ChoiceRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class RelationalChoose(exps: List[LoweredAst.Expression], rules: List[LoweredAst.RelationalChoiceRule], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -169,7 +169,7 @@ object LoweredAst {
       def tpe: Type = Type.Unit
     }
 
-    case class ArraySlice(base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class ArraySlice(region: LoweredAst.Expression, base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Ref(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -263,17 +263,17 @@ object LoweredAst {
 
   }
 
-  sealed trait ChoicePattern {
+  sealed trait RelationalChoicePattern {
     def loc: SourceLocation
   }
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -304,8 +304,6 @@ object LoweredAst {
     }
 
   }
-
-  case class Annotation(name: Ast.Annotation, args: List[LoweredAst.Expression], loc: SourceLocation)
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation)
 
@@ -339,7 +337,7 @@ object LoweredAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[LoweredAst.FormalParam], exp: LoweredAst.Expression)
 
-  case class ChoiceRule(pat: List[LoweredAst.ChoicePattern], exp: LoweredAst.Expression)
+  case class RelationalChoiceRule(pat: List[LoweredAst.RelationalChoicePattern], exp: LoweredAst.Expression)
 
   case class MatchRule(pat: LoweredAst.Pattern, guard: Option[LoweredAst.Expression], exp: LoweredAst.Expression)
 

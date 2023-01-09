@@ -42,26 +42,26 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Class(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression]) extends Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression) extends Declaration
 
-    case class Enum(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.Case], loc: SourceLocation) extends Declaration
+    case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.Case], loc: SourceLocation) extends Declaration
 
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class Effect(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Declaration.Op], loc: SourceLocation) extends Declaration
+    case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Declaration.Op], loc: SourceLocation) extends Declaration
 
     case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: List[ResolvedAst.Annotation], mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -112,9 +112,11 @@ object ResolvedAst {
 
     case class TypeMatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchTypeRule], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.ChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.RelationalChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -136,7 +138,7 @@ object ResolvedAst {
 
     case class ArrayLength(base: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArraySlice(region: ResolvedAst.Expression, base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ref(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -238,17 +240,17 @@ object ResolvedAst {
 
   }
 
-  sealed trait ChoicePattern {
+  sealed trait RelationalChoicePattern {
     def loc: SourceLocation
   }
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -290,8 +292,6 @@ object ResolvedAst {
 
   }
 
-  case class Annotation(name: Ast.Annotation, exps: List[ResolvedAst.Expression], loc: SourceLocation)
-
   case class Attribute(ident: Name.Ident, tpe: UnkindedType, loc: SourceLocation)
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
@@ -316,7 +316,7 @@ object ResolvedAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression)
 
-  case class ChoiceRule(pat: List[ResolvedAst.ChoicePattern], exp: ResolvedAst.Expression)
+  case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

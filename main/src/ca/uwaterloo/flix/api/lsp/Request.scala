@@ -140,6 +140,16 @@ object Request {
   case class InlayHint(requestId: String, uri: String, range: Range) extends Request
 
   /**
+    * A request to show the AST following a specific phase.
+    */
+  case class ShowAst(requestId: String, phase: String) extends Request
+
+  /**
+    * A request to get the ordered list of phases.
+    */
+  case class ListPhases(requestId: String) extends Request
+
+  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {

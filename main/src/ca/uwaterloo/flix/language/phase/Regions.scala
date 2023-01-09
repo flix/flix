@@ -141,16 +141,21 @@ object Regions {
         case (m, rs) => checkType(tpe, loc)
       }
 
-    case Expression.Choose(exps, rules, tpe, _, _, loc) =>
+    case Expression.RelationalChoose(exps, rules, tpe, _, _, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ChoiceRule(pat, exp) => flatMapN(visitExp(exp))(_ => ().toSuccess)
+        case RelationalChoiceRule(pat, exp) => flatMapN(visitExp(exp))(_ => ().toSuccess)
       }
       flatMapN(expsVal, rulesVal) {
         case (es, rs) => checkType(tpe, loc)
       }
 
     case Expression.Tag(_, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
+    case Expression.RestrictableTag(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -203,9 +208,9 @@ object Regions {
         case (b, i, e) => ().toSuccess
       }
 
-    case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (b, i1, i2) => checkType(tpe, loc)
+    case Expression.ArraySlice(exp1, exp2, exp3, exp4, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitExp(exp4)) {
+        case (r, b, i1, i2) => checkType(tpe, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, _, _, loc) =>

@@ -32,8 +32,9 @@ namespace Debug {
     /// Returns an automatic string representation of `x`.
     ///
     @Internal @Unsafe
-    pub def stringify(x: a): String = {
+    pub def stringify(x: a): String = region r {
         import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
+        let _ = r;
         typematch x {
             case _: Unit => "()"
             case b: Bool =>  if (b) "true" else "false"
@@ -77,47 +78,47 @@ namespace Debug {
                     "\"" + escape(s) + "\""
                 }
             case y: Array[Unit, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: Array[Bool, _] =>
-                import static java.util.Arrays.toString(Array[Bool, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Bool, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Bool, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Bool, r]) as _ \ {}
             case y: Array[Char, _] =>
-                import static java.util.Arrays.toString(Array[Char, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Char, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Char, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Char, r]) as _ \ {}
             case y: Array[Float32, _] =>
-                import static java.util.Arrays.toString(Array[Float32, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Float32, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Float32, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Float32, r]) as _ \ {}
             case y: Array[Float64, _] =>
-                import static java.util.Arrays.toString(Array[Float64, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Float64, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Float64, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Float64, r]) as _ \ {}
             case y: Array[BigDecimal, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: Array[Int8, _] =>
-                import static java.util.Arrays.toString(Array[Int8, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int8, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Int8, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Int8, r]) as _ \ {}
             case y: Array[Int16, _] =>
-                import static java.util.Arrays.toString(Array[Int16, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int16, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Int16, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Int16, r]) as _ \ {}
             case y: Array[Int32, _] =>
-                import static java.util.Arrays.toString(Array[Int32, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int32, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Int32, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Int32, r]) as _ \ {}
             case y: Array[Int64, _] =>
-                import static java.util.Arrays.toString(Array[Int64, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int64, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[Int64, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[Int64, r]) as _ \ {}
             case y: Array[BigInt, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: Array[String, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: Array[Array[_, _], _] =>
-                import static java.util.Arrays.deepToString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast deepToString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.deepToString(Array[##java.lang.Object, r]): String;
+                unsafe_cast deepToString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: Array[_, _] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, Static]): String;
-                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, Static]) as _ \ {}
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
+                unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
             case y: _ =>
                 import static java.util.Objects.toString(##java.lang.Object): String;
                 unsafe_cast toString(unsafe_cast y as ##java.lang.Object) as _ \ {}

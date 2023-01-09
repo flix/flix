@@ -35,21 +35,21 @@ object KindedAst {
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: KindedAst.Spec, exp: Option[KindedAst.Expression])
 
   case class Def(sym: Symbol.DefnSym, spec: KindedAst.Spec, exp: KindedAst.Expression)
 
-  case class Spec(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, pur: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[KindedAst.TypeParam], fparams: List[KindedAst.FormalParam], sc: Scheme, tpe: Type, pur: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Ast.Doc, ann: List[KindedAst.Annotation], mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[KindedAst.Op], loc: SourceLocation)
+  case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[KindedAst.Op], loc: SourceLocation)
 
   case class Op(sym: Symbol.OpSym, spec: KindedAst.Spec)
 
@@ -101,9 +101,11 @@ object KindedAst {
 
     case class TypeMatch(exp: KindedAst.Expression, rules: List[KindedAst.MatchTypeRule], loc: SourceLocation) extends KindedAst.Expression
 
-    case class Choose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.ChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class RelationalChoose(star: Boolean, exps: List[KindedAst.Expression], rules: List[KindedAst.RelationalChoiceRule], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Tuple(elms: List[KindedAst.Expression], loc: SourceLocation) extends KindedAst.Expression
 
@@ -125,7 +127,7 @@ object KindedAst {
 
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArraySlice(base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class ArraySlice(region: KindedAst.Expression, base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -227,17 +229,17 @@ object KindedAst {
 
   }
 
-  sealed trait ChoicePattern {
+  sealed trait RelationalChoicePattern {
     def loc: SourceLocation
   }
 
-  object ChoicePattern {
+  object RelationalChoicePattern {
 
-    case class Wild(loc: SourceLocation) extends ChoicePattern
+    case class Wild(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Absent(loc: SourceLocation) extends ChoicePattern
+    case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
-    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends ChoicePattern
+    case class Present(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends RelationalChoicePattern
 
   }
 
@@ -267,8 +269,6 @@ object KindedAst {
 
   }
 
-  case class Annotation(name: Ast.Annotation, exps: List[KindedAst.Expression], loc: SourceLocation)
-
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme)
@@ -287,7 +287,7 @@ object KindedAst {
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[KindedAst.FormalParam], exp: KindedAst.Expression, tvar: Type.Var)
 
-  case class ChoiceRule(pat: List[KindedAst.ChoicePattern], exp: KindedAst.Expression)
+  case class RelationalChoiceRule(pat: List[KindedAst.RelationalChoicePattern], exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 

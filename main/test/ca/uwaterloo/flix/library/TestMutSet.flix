@@ -17,6 +17,34 @@
 namespace TestMutSet {
 
     /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        let s: MutSet[Int32, r] = new MutSet(r);
+        MutSet.toString(s) == "MutSet#{}"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(1, s);
+        MutSet.toString(s) == "MutSet#{1}"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        let s = new MutSet(r);
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.add!(3, s);
+        MutSet.add!(4, s);
+        MutSet.add!(5, s);
+        MutSet.toString(s) == "MutSet#{1, 2, 3, 4, 5}"
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -582,6 +610,70 @@ namespace TestMutSet {
         MutDeque.pushFront(1, d2);
 
         d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEach01(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.forEach(x -> ri := x, s);
+        21 == deref ri
+    }
+
+    @test
+    def forEach02(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.add!(0, s);
+        MutSet.forEach(x -> ri := x, s);
+        0 == deref ri
+    }
+
+    @test
+    def forEach03(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.add!(0, s);
+        MutSet.add!(1, s);
+        MutSet.add!(2, s);
+        MutSet.forEach(x -> ri := x, s);
+        2 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.forEachWithIndex((i, _) -> ri := i, s);
+        21 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.add!(100, s);
+        MutSet.forEachWithIndex((i, _) -> ri := i, s);
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex03(): Bool = region r {
+        let s = new MutSet(r);
+        let ri = ref 21 @ r;
+        MutSet.add!(100, s);
+        MutSet.add!(101, s);
+        MutSet.add!(102, s);
+        MutSet.forEachWithIndex((i, _) -> ri := i, s);
+        2 == deref ri
     }
 
 }

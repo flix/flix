@@ -101,8 +101,9 @@ object Statistics {
       case Expression.Discard(exp, pur, eff, loc) => visitExp(exp)
       case Expression.Match(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
-      case Expression.Choose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitChoiceRule))
+      case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.RecordEmpty(tpe, loc) => Counter.empty
       case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) => visitExp(exp)
@@ -113,7 +114,7 @@ object Statistics {
       case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) => visitExp(base) ++ visitExp(index)
       case Expression.ArrayLength(base, pur, eff, loc) => visitExp(base)
       case Expression.ArrayStore(base, index, elm, _, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-      case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _, _) => visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -173,8 +174,8 @@ object Statistics {
   /**
     * Counts AST nodes in the given rule.
     */
-  private def visitChoiceRule(rule: ChoiceRule): Counter = rule match {
-    case ChoiceRule(pat, exp) => visitExp(exp)
+  private def visitRelationalChoiceRule(rule: RelationalChoiceRule): Counter = rule match {
+    case RelationalChoiceRule(pat, exp) => visitExp(exp)
   }
 
   /**

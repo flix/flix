@@ -1,5 +1,6 @@
 namespace Test/Derives/Order {
     use Order.compare
+    use Comparison.{EqualTo, LessThan, GreaterThan}
 
     pub enum Enum with Eq, Order {
       case EmptyCase
@@ -112,7 +113,7 @@ namespace Test/Derives/Order {
     def testEq23(): Bool = compare(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)), MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))) == EqualTo
 
     @test
-    def testEq24(): Bool = compare(OpaqueType(123), OpaqueType(123)) == EqualTo
+    def testEq24(): Bool = compare(OpaqueType.OpaqueType(123), OpaqueType.OpaqueType(123)) == EqualTo
 
     @test
     def testLt01(): Bool = Enum.EmptyCase < Enum.SingletonCase(123)
@@ -142,5 +143,5 @@ namespace Test/Derives/Order {
     def testLt09(): Bool = MutRecursiveEnum1.EmptyCase < MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase)
 
     @test
-    def testLt10(): Bool = OpaqueType(123) < OpaqueType(456)
+    def testLt10(): Bool = OpaqueType.OpaqueType(123) < OpaqueType.OpaqueType(456)
 }

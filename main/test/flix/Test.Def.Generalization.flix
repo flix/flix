@@ -22,7 +22,7 @@ namespace Test/Def/Generalization {
     def testGen06(): Option[a] -> Option[a] = x -> x
 
     @test
-    def testGen07(): Result[t, e] -> Result[t, e] = x -> x
+    def testGen07(): Result[e, t] -> Result[e, t] = x -> x
 
     @test
     def testGen09(): {f = a} -> {f = a} = x -> x
@@ -92,40 +92,40 @@ namespace Test/Def/Generalization {
     def testLeq04(): List[Option[a]] = Nil
 
     @test
-    def testLeq05(): List[Result[t, e]] = Nil
+    def testLeq05(): List[Result[e, t]] = Nil
 
     @test
-    def testLeq06(): Result[Int32, a] = Ok(21)
+    def testLeq06(): Result[e, Int32] = Ok(21)
 
     @test
-    def testLeq07(): Result[Int32, Bool] = Ok(21)
+    def testLeq07(): Result[Bool, Int32] = Ok(21)
 
     @test
-    def testLeq08(): Result[Int32, String] = Ok(21)
+    def testLeq08(): Result[String, Int32] = Ok(21)
 
     @test
-    def testLeq09(): Result[Int32, Result[t, e]] = Ok(21)
+    def testLeq09(): Result[Result[e, t], Int32] = Ok(21)
 
     @test
-    def testLeq10(): Result[a, Int32] = Err(21)
+    def testLeq10(): Result[Int32, a] = Err(21)
 
     @test
-    def testLeq11(): Result[Bool, Int32] = Err(21)
+    def testLeq11(): Result[Int32, Bool] = Err(21)
 
     @test
-    def testLeq12(): Result[String, Int32] = Err(21)
+    def testLeq12(): Result[Int32, String] = Err(21)
 
     @test
-    def testLeq13(): Result[Result[t, e], Int32] = Err(21)
+    def testLeq13(): Result[Int32, Result[e, t]] = Err(21)
 
     @test
-    def testLeq14(): List[Result[Int32, Option[a]]] = Ok(21) :: Nil
+    def testLeq14(): List[Result[Option[a], Int32]] = Ok(21) :: Nil
 
     @test
-    def testLeq15(): List[Result[Int32, Result[t, e]]] = Ok(21) :: Nil
+    def testLeq15(): List[Result[Result[e, t], Int32]] = Ok(21) :: Nil
 
     @test
-    def testLeq16(): List[Result[Int32, Map[k, v]]] = Ok(21) :: Nil
+    def testLeq16(): List[Result[Map[k, v], Int32]] = Ok(21) :: Nil
 
     @test
     def testLeq17(): a -> (b -> a) = x -> (_ -> x)
@@ -166,28 +166,28 @@ namespace Test/Def/Generalization {
     // TODO: Broken
     /*@test
     def testLeq29(x: Choice[String, true, true]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }*/
 
     @test
     def testLeq30(x: Choice[String, _, true]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
     def testLeq31(x: Choice[String, true, _]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }
 
     @test
     def testLeq32(x: Choice[String, _, _]): Int32 =
-        choose x {
+        relational_choose x {
             case Absent     => 1
             case Present(_) => 2
         }

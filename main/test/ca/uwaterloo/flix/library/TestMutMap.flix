@@ -14,6 +14,35 @@
  * limitations under the License.
  */
 namespace TestMutMap {
+    use MutMap.MutMap
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        let m: MutMap[Int32, Int32, r] = new MutMap(r);
+        MutMap.toString(m) == "MutMap#{}"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        let m = new MutList(r);
+        MutMap.put!(1, 101, m);
+        MutMap.toString(m) == "MutMap#{1 => 101}"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        let m = new MutMap(r);
+        MutMap.put!(1, 101, m);
+        MutMap.put!(2, 102, m);
+        MutMap.put!(3, 103, m);
+        MutMap.put!(4, 104, m);
+        MutMap.put!(5, 105, m);
+        MutMap.toString(m) == "MutMap#{1 => 101, 2 => 102, 3 => 103, 4 => 104, 5 => 105}"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
@@ -479,6 +508,70 @@ namespace TestMutMap {
         MutDeque.pushFront((1, 'a'), d2);
 
         d1 `MutDeque.sameElements` d2
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEach01(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.forEach((k, v) -> ri := k+v, m);
+        21 == deref ri
+    }
+
+    @test
+    def forEach02(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.put!(0, 100, m);
+        MutMap.forEach((k, v) -> ri := k+v, m);
+        100 == deref ri
+    }
+
+    @test
+    def forEach03(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.put!(0, 100, m);
+        MutMap.put!(1, 101, m);
+        MutMap.put!(2, 102, m);
+        MutMap.forEach((k, v) -> ri := k+v, m);
+        104 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.forEachWithIndex((i, _, _) -> ri := i, m);
+        21 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.put!(0, 100, m);
+        MutMap.forEachWithIndex((i, _, _) -> ri := i, m);
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex03(): Bool = region r {
+        let m = new MutMap(r);
+        let ri = ref 21 @ r;
+        MutMap.put!(0, 100, m);
+        MutMap.put!(1, 101, m);
+        MutMap.put!(2, 102, m);
+        MutMap.forEachWithIndex((i, _, _) -> ri := i, m);
+        2 == deref ri
     }
 
 }

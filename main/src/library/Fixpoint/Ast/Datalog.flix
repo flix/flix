@@ -33,56 +33,56 @@ namespace Fixpoint/Ast {
 
     instance PredSymsOf[Datalog[v]] {
         pub def predSymsOf(x: Datalog[v]): Set[PredSym] = match x {
-            case Datalog(facts, rules) =>
+            case Datalog.Datalog(facts, rules) =>
                 let factSyms = facts |> List.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> List.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
-            case Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
-            case Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
+            case Datalog.Model(m)              => Map.keysOf(m) |> Set.toList |> List.map(predSymsOf) |> Monoid.fold
+            case Datalog.Join(v1, v2)          => predSymsOf(v1) ++ predSymsOf(v2)
         }
     }
 
     instance SubstitutePredSym[Datalog[v]] {
         pub def substitute(x: Datalog[v], s: Map[PredSym, PredSym]): Datalog[v] = match x {
-            case Datalog(facts, rules) =>
+            case Datalog.Datalog(facts, rules) =>
                 let newFacts = List.map(c -> substitute(c, s), facts);
                 let newRules = List.map(c -> substitute(c, s), rules);
-                Datalog(newFacts, newRules)
-            case Model(m) =>
+                Datalog.Datalog(newFacts, newRules)
+            case Datalog.Model(m) =>
                 def f(macc, sym, v) = {
                     let newSym = substitute(sym, s);
                     Map.insert(newSym, v, macc)
                 };
-                Model(Map.foldLeftWithKey(f, Map.empty(), m))
-            case Join(v1, v2) => Join(substitute(v1, s), substitute(v2, s))
+                Datalog.Model(Map.foldLeftWithKey(f, Map.empty(), m))
+            case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
         }
     }
 
     instance ToString[Datalog[v]] {
         pub def toString(cs: Datalog[v]): String = match cs {
-            case Datalog(facts, rules) => region r {
+            case Datalog.Datalog(facts, rules) => region r {
                 let sb = new StringBuilder(r);
                 let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
-                foreach (f <- List.iterator(r, facts)) appendConstraint(f);
-                foreach (ru <- List.iterator(r, rules)) appendConstraint(ru);
+                foreach (f <- facts) appendConstraint(f);
+                foreach (ru <- rules) appendConstraint(ru);
                 StringBuilder.toString(sb)
             }
-            case Model(db) => region r {
+            case Datalog.Model(db) => region r {
                 use Fixpoint/Ram.toDenotation;
                 let sb = new StringBuilder(r);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
-                    case Relational => Map.forEach((tuple, _) -> {
+                    case Denotation.Relational => Map.forEach((tuple, _) -> {
                         let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
                     }, rel)
-                    case Latticenal(_) => Map.forEach((tuple, lat) -> {
+                    case Denotation.Latticenal(_) => Map.forEach((tuple, lat) -> {
                         let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
             }
-            case Join(d1, d2) => region r {
+            case Datalog.Join(d1, d2) => region r {
                 let sb = new StringBuilder(r);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);

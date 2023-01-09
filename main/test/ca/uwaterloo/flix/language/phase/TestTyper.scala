@@ -253,7 +253,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
@@ -280,7 +280,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |instance C[Box[a]] with C[a] {
         |    pub def foo(x: Box[a]): String = match x {
-        |        case Box(y) => C.foo(y)
+        |        case Box.Box(y) => C.foo(y)
         |    }
         |}
         |
@@ -335,7 +335,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    pub def foo(x: E[true]): Int32 = 1
         |}
         |
-        |def bar(): Int32 = C.foo(E(123))    // E(123) has type E[_], not E[true]
+        |def bar(): Int32 = C.foo(E.E(123))    // E(123) has type E[_], not E[true]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MissingInstance](result)
@@ -352,7 +352,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |pub def f(): Bool = {
         |   let _x = #{
-        |     R(E1).
+        |     R(E.E1).
         |   };
         |   true
         |}
@@ -382,7 +382,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable(NotSendable(42)))
+        |def foo(): TrySendable[NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingSendable](result)
@@ -396,7 +396,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |def requiresSendable(x: a): a with Sendable[a] = x
         |
-        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable(NotSendable(42), NotSendable(43)))
+        |def foo(): TrySendable[NotSendable, NotSendable] = requiresSendable(TrySendable.TrySendable(NotSendable.NotSendable(42), NotSendable.NotSendable(43)))
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MissingSendable](result)
@@ -443,7 +443,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Absent => 1
         |        }
         |    };
@@ -464,7 +464,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Present(_) => 1
         |        }
         |    };
@@ -485,7 +485,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Absent => 1
         |        }
         |    };
@@ -506,7 +506,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Present(_) => 1
         |        }
         |    };
@@ -527,7 +527,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent) => 1
         |        }
         |    };
@@ -548,7 +548,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent) => 1
         |        }
         |    };
@@ -569,7 +569,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent) => 1
         |        }
         |    };
@@ -590,7 +590,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent) => 1
         |        }
         |    };
@@ -611,7 +611,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent) => 1
         |        }
         |    };
@@ -632,7 +632,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |        }
         |    };
@@ -653,7 +653,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |        }
         |    };
@@ -674,7 +674,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |        }
         |    };
@@ -695,7 +695,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |        }
         |    };
@@ -716,7 +716,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |        }
         |    };
@@ -737,7 +737,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)         => 1
         |            case (Present(_), Present(_)) => 2
         |        }
@@ -759,7 +759,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)         => 1
         |            case (Present(_), Present(_)) => 2
         |        }
@@ -781,7 +781,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |            case (Present(_), Absent) => 2
         |        }
@@ -803,7 +803,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_)) => 1
         |            case (Present(_), Absent) => 2
         |        }
@@ -825,7 +825,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Present(_))       => 1
         |            case (Present(_), Absent)       => 2
         |            case (Present(_), Present(_))   => 3
@@ -848,7 +848,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Int32 =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)           => 1
         |            case (Absent, Present(_))       => 2
         |            case (Present(_), Absent)       => 3
@@ -871,7 +871,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)    => 1
         |            case (Present(_), Absent)    => 2
         |        }
@@ -893,7 +893,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)    => 1
         |            case (Present(_), Absent)    => 2
         |        }
@@ -915,7 +915,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (Absent, Absent)    => 1
         |            case (Present(_), Absent)    => 2
         |        }
@@ -937,7 +937,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (_, Absent)    => 1
         |            case (_, Absent)    => 2
         |        }
@@ -959,7 +959,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (_, Absent)    => 1
         |            case (_, Absent)    => 2
         |        }
@@ -981,7 +981,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    let f = (x, y) -> {
-        |        choose (x, y) {
+        |        relational_choose (x, y) {
         |            case (_, Absent)    => 1
         |            case (_, Absent)    => 2
         |        }
@@ -1002,7 +1002,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |pub def foo(x: Choice[String, true, _]): Int32 =
-        |    choose x {
+        |    relational_choose x {
         |        case Absent => 1
         |    }
         |
@@ -1020,7 +1020,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         |pub def foo(x: Choice[String, _, true]): Int32 =
-        |    choose x {
+        |    relational_choose x {
         |        case Present(_) => 1
         |    }
         |
@@ -1039,10 +1039,10 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Unit =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Absent     => unsafe_cast 1 as _ \ IO
         |        };
-        |        choose x {
+        |        relational_choose x {
         |            case Present(_) => unsafe_cast 2 as _ \ IO
         |        }
         |    };
@@ -1063,10 +1063,10 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def foo(): Unit =
         |    let f = x -> {
-        |        choose x {
+        |        relational_choose x {
         |            case Absent     => unsafe_cast 1 as _ \ IO
         |        };
-        |        choose x {
+        |        relational_choose x {
         |            case Present(_) => unsafe_cast 2 as _ \ IO
         |        }
         |    };
@@ -1092,12 +1092,12 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |pub def f(): Bool =
         |    let f = x -> {
-        |        choose* x {
+        |        relational_choose* x {
         |            case Absent     => Absent
         |            case Present(v) => Present(v)
         |        }
         |    };
-        |    let isAbsent = x -> choose x {
+        |    let isAbsent = x -> relational_choose x {
         |        case Absent => true
         |    };
         |    isAbsent(f(Present(123)))
@@ -1117,12 +1117,12 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |pub def f(): Bool =
         |    let f = x -> {
-        |        choose* x {
+        |        relational_choose* x {
         |            case Absent     => Present(123)
         |            case Present(_) => Absent
         |        }
         |    };
-        |    let isAbsent = x -> choose x {
+        |    let isAbsent = x -> relational_choose x {
         |        case Absent => true
         |    };
         |    isAbsent(f(Absent))
@@ -1141,12 +1141,12 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |pub def f(): Bool =
         |    let f = (x, y) -> {
-        |        choose* (x, y) {
+        |        relational_choose* (x, y) {
         |            case (Absent, Absent)         => Absent
         |            case (Present(_), Present(_)) => Present(42)
         |        }
         |    };
-        |    let isAbsent = x -> choose x {
+        |    let isAbsent = x -> relational_choose x {
         |        case Absent => true
         |    };
         |    isAbsent(f(Present(123), Present(456)))
@@ -1588,7 +1588,7 @@ class TestTyper extends FunSuite with TestUtils {
         |
         |enum Box[a](a)
         |
-        |def g(): Box[Int32] = f(Box(123))
+        |def g(): Box[Int32] = f(Box.Box(123))
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedArgument](result)

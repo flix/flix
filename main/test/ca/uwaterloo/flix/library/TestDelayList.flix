@@ -15,6 +15,7 @@
  */
 
 namespace TestDelayList {
+    use DelayList.{ENil, ECons, LCons, LList}
 
     /////////////////////////////////////////////////////////////////////////////
     // Eq                                                                      //
@@ -767,6 +768,54 @@ namespace TestDelayList {
         StringBuilder.toString(sb) == "TF"
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let l = ENil;
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == ""
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let l = LList(lazy ENil);
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == ""
+    }
+
+    @test
+    def forEachWithIndex03(): Bool = region r {
+        let l = LCons(1, lazy LList(lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "F"
+    }
+
+    @test
+    def forEachWithIndex04(): Bool = region r {
+        let l = LCons(-1, lazy LList(lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "F"
+    }
+
+    @test
+    def forEachWithIndex05(): Bool = region r {
+        let l = ECons(1, LCons(-1, lazy ENil));
+        let sb = new StringBuilder(r);
+        let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        DelayList.forEachWithIndex(fn, l);
+        StringBuilder.toString(sb) == "FT"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -1495,24 +1544,24 @@ namespace TestDelayList {
 
     @test
     def zipWithIndex01(): Bool =
-        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Unit, Int32)]
+        DelayList.zipWithIndex(ENil: DelayList[Unit]) == ENil: DelayList[(Int32, Unit)]
 
     @test
     def zipWithIndex02(): Bool =
-        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((1, 0), ENil)
+        DelayList.zipWithIndex(ECons(1, ENil)) == ECons((0, 1), ENil)
 
     @test
     def zipWithIndex03(): Bool =
-        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((1, 0), lazy ENil)
+        DelayList.zipWithIndex(LCons(1, lazy ENil)) == LCons((0, 1), lazy ENil)
 
     @test
     def zipWithIndex04(): Bool =
-        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((1, 0), ENil))
+        DelayList.zipWithIndex(LList(lazy ECons(1, ENil))) == LList(lazy ECons((0, 1), ENil))
 
     @test
     def zipWithIndex05(): Bool =
         let l = DelayList.zipWithIndex(LList(lazy LList(lazy LCons(5, lazy ECons(7, ENil)))));
-        l == LList(lazy LList(lazy LCons((5, 0), lazy ECons((7, 1), ENil))))
+        l == LList(lazy LList(lazy LCons((0, 5), lazy ECons((1, 7), ENil))))
 
     @test
     def zipWithIndex0(): Bool =
@@ -1525,7 +1574,7 @@ namespace TestDelayList {
             LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
             LList(lazy LCons((3, 3), lazy LList(lazy
             LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
-            LList(lazy LCons((10, 6), lazy LList(lazy ENil)))))))))))))))
+            LList(lazy LCons((6, 10), lazy LList(lazy ENil)))))))))))))))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
@@ -1636,7 +1685,7 @@ namespace TestDelayList {
 
     @test
     def minimumBy05(): Bool =
-        DelayList.minimumBy((_, _) -> LessThan, DelayList.range(0, 99)) == Some(0)
+        DelayList.minimumBy((_, _) -> Comparison.LessThan, DelayList.range(0, 99)) == Some(0)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1686,7 +1735,7 @@ namespace TestDelayList {
 
     @test
     def maximumBy05(): Bool =
-        DelayList.maximumBy((_, _) -> LessThan, DelayList.range(0, 99)) == Some(98)
+        DelayList.maximumBy((_, _) -> Comparison.LessThan, DelayList.range(0, 99)) == Some(98)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2833,31 +2882,31 @@ namespace TestDelayList {
 
     @test
     def order01(): Bool =
-        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == EqualTo
+        (ENil: DelayList[Unit] <=> ENil: DelayList[Unit]) == Comparison.EqualTo
 
     @test
     def order02(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == GreaterThan
+        (((1 :: Nil) |> List.toDelayList) <=> ENil: DelayList[Int32]) == Comparison.GreaterThan
 
     @test
     def order03(): Bool =
-        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == LessThan
+        (ENil: DelayList[Int32] <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
     @test
     def order04(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == EqualTo
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.EqualTo
 
     @test
     def order05(): Bool =
-        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == GreaterThan
+        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.GreaterThan
 
     @test
     def order06(): Bool =
-        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == LessThan
+        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
     @test
     def order07(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == LessThan
+        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2949,22 +2998,22 @@ namespace TestDelayList {
     @test
     def sequence01(): Bool =
         let l: DelayList[Identity[Int32]] = ENil;
-        DelayList.sequence(l) == Identity(ENil)
+        DelayList.sequence(l) == Identity.Identity(ENil)
 
     @test
     def sequence02(): Bool =
-        let l = List.toDelayList(Identity(1) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: Nil))
 
     @test
     def sequence03(): Bool =
-        let l = List.toDelayList(Identity(1) :: Identity(2) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: Nil))
 
     @test
     def sequence04(): Bool =
-        let l = List.toDelayList(Identity(1) :: Identity(2) :: Identity(3) :: Nil);
-        DelayList.sequence(l) == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
+        let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil);
+        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
@@ -2974,32 +3023,32 @@ namespace TestDelayList {
     def traverse01(): Bool = region r {
         let st = ref 0 @ r;
         let l = ENil;
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(ENil) and deref st == 0
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(ENil) and deref st == 0
     }
 
     @test
     def traverse02(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: Nil)) and deref st == 1
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: Nil)) and deref st == 1
     }
 
     @test
     def traverse03(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: 2 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
     }
 
     @test
     def traverse04(): Bool = region r {
         let st = ref 0 @ r;
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity(x)}, l);
-        ans == Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
+        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////

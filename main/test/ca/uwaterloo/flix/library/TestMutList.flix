@@ -16,15 +16,43 @@
 
 namespace TestMutList {
     use ToString.toString
+    use MutList.MutList
     use MutList.sameElements
 
     ///
     /// Helper function to test capacity of internal array.
     ///
     def capacity(v: MutList[a, r]): Int32 \ Read(r) =
-        let MutList(a, _) = v;
+        let MutList(_, a, _) = v;
         Array.length(deref a)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toString01(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.toString(l) == "MutList#{}"
+    }
+
+    @test
+    def toString02(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.push!(1, l);
+        MutList.toString(l) == "MutList#{1}"
+    }
+
+    @test
+    def toString03(): Bool = region r {
+        let l: MutList[Int32, r] = new MutList(r);
+        MutList.push!(1, l);
+        MutList.push!(2, l);
+        MutList.push!(3, l);
+        MutList.push!(4, l);
+        MutList.push!(5, l);
+        MutList.toString(l) == "MutList#{1, 2, 3, 4, 5}"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sameElements                                                            //
@@ -575,7 +603,7 @@ namespace TestMutList {
 
     @test
     def scanLeft01(): Bool = region r {
-        let v = MutList.scanLeft((x, y) -> x + y, 0, new MutList(r));
+        let v = MutList.scanLeft(r, (x, y) -> x + y, 0, new MutList(r));
         MutList.length(v) == 1 and MutList.head(v) == Some(0)
     }
 
@@ -589,13 +617,13 @@ namespace TestMutList {
         MutList.push!(6, v2);
         MutList.push!(10, v2);
         MutList.push!(15, v2);
-        let v3 = MutList.scanLeft((x, y) -> x + y, 0, v1);
+        let v3 = MutList.scanLeft(r, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
 
     @test
     def scanLeft03(): Bool = region r {
-        let v = MutList.scanLeft((x, y) -> x + y, 7, MutList.range(r, 5, 13));
+        let v = MutList.scanLeft(r, (x, y) -> x + y, 7, MutList.range(r, 5, 13));
         MutList.last(v) == Some(75)
     }
 
@@ -606,7 +634,7 @@ namespace TestMutList {
 
     @test
     def scanRight01(): Bool = region r {
-        let v = MutList.scanRight((x, y) -> x + y, 0, new MutList(r));
+        let v = MutList.scanRight(r, (x, y) -> x + y, 0, new MutList(r));
         MutList.length(v) == 1 and MutList.head(v) == Some(0)
     }
 
@@ -620,13 +648,13 @@ namespace TestMutList {
         MutList.push!(9, v2);
         MutList.push!(5, v2);
         MutList.push!(0, v2);
-        let v3 = MutList.scanRight((x, y) -> x + y, 0, v1);
+        let v3 = MutList.scanRight(r, (x, y) -> x + y, 0, v1);
         MutList.sameElements(v2, v3)
     }
 
     @test
     def scanRight03(): Bool = region r {
-        let v = MutList.scanRight((x, y) -> x + y, 7, MutList.range(r, 5, 13));
+        let v = MutList.scanRight(r, (x, y) -> x + y, 7, MutList.range(r, 5, 13));
         MutList.last(v) == Some(7)
     }
 
@@ -972,16 +1000,16 @@ namespace TestMutList {
     @test
     def copy04(): Bool = region r {
         let v1 = MutList.range(r, 0, 1000);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(r, v1);
+        let MutList(_, l1, n1) = v1;
+        let MutList(_, l2, n2) = MutList.copy(r, v1);
         (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2)
     }
 
     @test
     def copy05(): Bool = region r {
         let v1 = MutList.range(r, 0, 3);
-        let MutList(l1, n1) = v1;
-        let MutList(l2, n2) = MutList.copy(r, v1);
+        let MutList(_, l1, n1) = v1;
+        let MutList(_, l2, n2) = MutList.copy(r, v1);
         (deref n1 == deref n2) and (deref l1 `Array.sameElements` deref l2) and
             (Array.length(deref l2) == 8)
     }
@@ -1538,13 +1566,13 @@ namespace TestMutList {
     @test
     def iterator01(): Bool = region r {
         let l = new MutList(r): MutList[Int32, r];
-        Iterable.iterator(l) |> invokeIsEmpty(100)
+        MutList.iterator(r, l) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator02(): Bool = region r {
         let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
-        not (Iterable.iterator(l) |> invokeIsEmpty(100))
+        not (MutList.iterator(r, l) |> invokeIsEmpty(100))
     }
 
     @test
@@ -1553,19 +1581,19 @@ namespace TestMutList {
         discard MutList.pop!(l);
         discard MutList.pop!(l);
         discard MutList.pop!(l);
-        Iterable.iterator(l) |> invokeIsEmpty(100)
+        MutList.iterator(r, l) |> invokeIsEmpty(100)
     }
 
     @test
     def iterator04(): Bool = region r {
         let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
-        Iterable.iterator(l) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        MutList.iterator(r, l) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def iterator05(): Bool = region r {
         let l = MutList.range(r, 0, 100);
-        Iterable.iterator(l) |> Iterator.toList == List.range(0, 100) and
+        MutList.iterator(r, l) |> Iterator.toList == List.range(0, 100) and
         MutList.toList(l) == List.range(0, 100)
     }
 
@@ -1735,7 +1763,7 @@ namespace TestMutList {
     @test
     def minimumBy05(): Bool = region r {
         let v = MutList.range(r, 9, 19);
-        let cmp = (x, y) -> if (x < y and x rem 2 == 0) LessThan else GreaterThan;
+        let cmp = (x, y) -> if (x < y and x rem 2 == 0) Comparison.LessThan else Comparison.GreaterThan;
         MutList.minimumBy(cmp, v) == Some(10)
     }
 
@@ -1769,7 +1797,7 @@ namespace TestMutList {
     @test
     def maximumBy05(): Bool = region r {
         let v = MutList.range(r, 9, 19);
-        let cmp = (x, y) -> if (x > y and x rem 2 == 0) GreaterThan else LessThan;
+        let cmp = (x, y) -> if (x > y and x rem 2 == 0) Comparison.GreaterThan else Comparison.LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
     }
 
@@ -1918,9 +1946,9 @@ namespace TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     def cmp(x: Int32, y: Int32): Comparison =
-        if (x < y) LessThan
-        else if (x == y) EqualTo
-        else GreaterThan
+        if (x < y) Comparison.LessThan
+        else if (x == y) Comparison.EqualTo
+        else Comparison.GreaterThan
 
     @test
     def sortWith01(): Bool = region r {
@@ -2267,15 +2295,15 @@ namespace TestMutList {
 
     instance Eq[R] {
         pub def eq(a: R, b: R): Bool =
-            let R(x) = a;
-            let R(y) = b;
+            let R.R(x) = a;
+            let R.R(y) = b;
             x.i == y.i and x.s == y.s
     }
 
     @test
     def sortBy10(): Bool = region r {
-        MutList.sortBy(r, rr -> let R(x) = rr; x.i, Array.toMutList(r, [R({i = 2, s = "A"}), R({i = 1, s = "B"}), R({i = 3, s = "C"})] @ r))
-        `sameElements` Array.toMutList(r, [R({i = 1, s = "B"}), R({i = 2, s = "A"}), R({i = 3, s = "C"})] @ r)
+        MutList.sortBy(r, rr -> let R.R(x) = rr; x.i, Array.toMutList(r, [R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})] @ r))
+        `sameElements` Array.toMutList(r, [R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})] @ r)
     }
 
 

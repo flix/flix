@@ -16,14 +16,14 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.Validation.{Failure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -42,10 +42,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 import scala.collection.mutable
-import ca.uwaterloo.flix.util.collection.MultiMap
-import scala.util.Using
-import java.io.IOException
-import java.nio.file.Files
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -85,7 +81,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current AST root. The root is null until the source code is compiled.
     */
-  private var root: Root = _
+  private var root: Option[Root] = None
 
   /**
     * The current reverse index. The index is empty until the source code is compiled.
@@ -213,6 +209,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
+
     case Request.AddUri(id, uri, src) =>
       addSourceCode(uri, src)
       ("id" -> id) ~ ("status" -> "success")
@@ -267,50 +264,59 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root.orNull, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root.orNull)
 
     case Request.Implementation(id, uri, pos) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
 
     case Request.Rename(id, newName, uri, pos) =>
-      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root)
+      ("id" -> id) ~ RenameProvider.processRename(newName, uri, pos)(index, root.orNull)
 
     case Request.DocumentSymbols(id, uri) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processDocumentSymbols(uri)(root.orNull).map(_.toJSON))
 
     case Request.WorkspaceSymbols(id, query) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root).map(_.toJSON))
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> SymbolProvider.processWorkspaceSymbols(query)(root.orNull).map(_.toJSON))
 
     case Request.Uses(id, uri, pos) =>
-      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root)
+      ("id" -> id) ~ FindReferencesProvider.findRefs(uri, pos)(index, root.orNull)
 
     case Request.SemanticTokens(id, uri) =>
       if (current)
-        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root)
+        ("id" -> id) ~ SemanticTokensProvider.provideSemanticTokens(uri)(index, root.orNull)
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
       if (current)
-        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root, flix).map(_.toJSON))
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+
+    case Request.ShowAst(id, phase) =>
+      if (current)
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
+      else
+        ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
+
+    case Request.ListPhases(id) =>
+      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ListPhasesProvider.phases.map(JString))
 
   }
 
   /**
     * Processes a validate request.
     */
-  private def processCheck(requestId: String)(implicit ws: WebSocket): JValue = {
+  private def processCheck(requestId: String): JValue = {
 
     // Measure elapsed time.
     val t = System.nanoTime()
@@ -319,30 +325,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          this.root = root
-          this.index = Indexer.visitRoot(root)
-          this.current = true
-          this.currentErrors = Nil
+          processSuccessfulCheck(requestId, root, LazyList.empty, t)
 
-          // Compute elapsed time.
-          val e = System.nanoTime() - t
-
-          // Print query time.
-          // println(s"lsp/check: ${e / 1_000_000}ms")
-
-          // Compute Code Quality hints.
-          val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-          if (codeHints.isEmpty) {
-            // Case 1: No code hints.
-            ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e)
-          } else {
-            // Case 2: Code hints are available.
-            val results = PublishDiagnosticsParams.fromCodeHints(codeHints)
-            ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-          }
+        case SoftFailure(root, errors) =>
+          // Case 2: Compilation had non-critical errors. Build the reverse index.
+          processSuccessfulCheck(requestId, root, errors, t)
 
         case Failure(errors) =>
-          // Case 2: Compilation failed. Send back the error messages.
+          // Case 3: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.
           this.current = false
@@ -353,11 +343,39 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
-      case t: Throwable =>
+      case ex: Throwable =>
         // Mark the AST as outdated.
-        current = false
-        t.printStackTrace(System.err)
-        ("id" -> requestId) ~ ("status" -> "failure")
+        this.current = false
+        CrashHandler.handleCrash(ex)(flix)
+        ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> Nil)
+    }
+  }
+
+  /**
+    * Helper function for [[processCheck]] which handles successful and soft failure compilations.
+    */
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
+    this.root = Some(root)
+    this.index = Indexer.visitRoot(root)
+    this.current = true
+    this.currentErrors = errors.toList
+
+    // Compute elapsed time.
+    val e = System.nanoTime() - t0
+
+    // Print query time.
+    // println(s"lsp/check: ${e / 1_000_000}ms")
+
+    // Compute Code Quality hints.
+    val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
+    if (codeHints.isEmpty) {
+      // Case 1: No code hints.
+      val results = PublishDiagnosticsParams.fromMessages(errors)
+      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
+    } else {
+      // Case 2: Code hints are available.
+      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
     }
   }
 

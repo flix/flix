@@ -50,12 +50,12 @@ instance Order[List[a]] with Order[a] {
     /// Compares `l1` and `l2` lexicographically.
     ///
     pub def compare(l1: List[a], l2: List[a]): Comparison = match (l1, l2) {
-        case (_ :: _, Nil) => GreaterThan
-        case (Nil, Nil) => EqualTo
-        case (Nil, _ :: _) => LessThan
+        case (_ :: _, Nil) => Comparison.GreaterThan
+        case (Nil, Nil) => Comparison.EqualTo
+        case (Nil, _ :: _) => Comparison.LessThan
         case (z :: zs, w :: ws) =>
             let cmp = z <=> w;
-            if (cmp == EqualTo) zs <=> ws else cmp
+            if (cmp == Comparison.EqualTo) zs <=> ws else cmp
     }
 
 }
@@ -119,6 +119,14 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
+instance Collectable[List] {
+    pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
+}
+
+instance Iterable[List] {
+    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(rh, l)
+}
+
 namespace List {
 
     ///
@@ -126,7 +134,7 @@ namespace List {
     ///
     pub def toString(l: List[a]): String with ToString[a] = region r {
         let sb = new StringBuilder(r);
-        foreach (x <- iterator(r, l))
+        foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
@@ -927,13 +935,13 @@ namespace List {
         loop(l1, l2, identity)
 
     ///
-    /// Returns a list where each element `e` is mapped to `(e, i)` where `i`
+    /// Returns a list where each element `e` is mapped to `(i, e)` where `i`
     /// is the index of `e`.
     ///
-    pub def zipWithIndex(l: List[a]): List[(a, Int32)] =
+    pub def zipWithIndex(l: List[a]): List[(Int32, a)] =
         def loop(ll, i, k) = match ll {
             case Nil       => k(Nil)
-            case (x :: xs) => loop(xs, i + 1, ks -> k((x, i) :: ks))
+            case (x :: xs) => loop(xs, i + 1, ks -> k((i, x) :: ks))
         };
         loop(l, 0, identity)
 
@@ -1077,8 +1085,8 @@ namespace List {
     /// Returns the elements of `l` as a `DelayList`.
     ///
     pub def toDelayList(l: List[a]): DelayList[a] = match l {
-        case Nil     => ENil
-        case x :: xs => LCons(x, lazy toDelayList(xs))
+        case Nil     => DelayList.ENil
+        case x :: xs => DelayList.LCons(x, lazy toDelayList(xs))
     }
 
     ///
@@ -1135,13 +1143,23 @@ namespace List {
     }
 
     ///
+    /// Applies `f` to every element of `l` along with that element's index.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: List[a]): Unit \ ef =
+        def loop(ll, i) = match ll {
+            case Nil     => ()
+            case x :: xs => f(i, x); loop(xs, i+1)
+        };
+        loop(l, 0)
+
+    ///
     /// Returns the list `l` as an array.
     ///
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
         case None    => [] @ r
-        case Some(x) =>
-            let a = [x; length(l)] @ r;
-            forEach(match (b, i) -> a[i] = b, zipWithIndex(l));
+        case Some(_) =>
+            let a = Array.new(r, length(l));
+            forEach(match (i, b) -> a[i] = b, zipWithIndex(l));
             a
         }
 
@@ -1152,7 +1170,7 @@ namespace List {
     ///
     pub def toNel(l: List[a]): Option[Nel[a]] = match l {
         case Nil     => None
-        case x :: xs => Some(Nel(x, xs))
+        case x :: xs => Some(Nel.Nel(x, xs))
     }
 
     ///
@@ -1237,7 +1255,7 @@ namespace List {
     ///
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
-    pub def unfoldWithOkIter(next: Unit -> Result[Option[a], e] \ ef): Result[List[a], e] \ ef =
+    pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
         def loop(k) = match next() {
             case Ok(None)    => k(Ok(Nil))
             case Err(e)      => k(Err(e))
@@ -1307,12 +1325,12 @@ namespace List {
                 cursor := xs;
                 x
         };
-        Iterator(done, next)
+        Iterator.Iterator(done, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(a, Int32), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///
@@ -1365,7 +1383,7 @@ namespace List {
         def loop(acc1, acc2, k) = match (acc1, acc2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
-                if (cmp == LessThan or cmp == EqualTo) loop(xs, acc2, ks -> k(x :: ks))
+                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, acc2, ks -> k(x :: ks))
                 else                                   loop(acc1, ys, ks -> k(y :: ks))
             }
             case (Nil    , y :: ys) => k(y :: ys)
@@ -1377,7 +1395,7 @@ namespace List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: List[a]): List[a] \ NonDet = region r {
+    pub def shuffle(rnd: Random, l: List[a]): List[a] \ NonDet = region r {
         toArray(r, l) !> Array.shuffle(rnd) |> Array.toList
     }
 

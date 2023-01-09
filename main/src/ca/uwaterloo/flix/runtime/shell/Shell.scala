@@ -24,13 +24,11 @@ import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
-
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
-import ca.uwaterloo.flix.util.Validation.Failure
 
 class Shell(sourceProvider: SourceProvider, options: Options) {
 
@@ -289,7 +287,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
           case Validation.Success(_) =>
             // Compilation succeeded.
             w.println("Ok.")
-          case Validation.Failure(_) =>
+          case _failure =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
             flix.remSourceCode(name)
@@ -353,15 +351,14 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     val checkResult = flix.check()
     checkResult match {
       case Validation.Success(root) => this.root = Some(root)
-      case Failure(_) => // no-op
+      case _failure => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
     result match {
       case Validation.Success(_) => // Compilation successful, no-op
-
-      case Validation.Failure(errors) =>
-        for (msg <- flix.mkMessages(errors)) {
+      case failure =>
+        for (msg <- flix.mkMessages(failure.errors)) {
           terminal.writer().print(msg)
         }
         terminal.writer().println()
@@ -390,7 +387,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
           case None =>
         }
 
-      case Validation.Failure(_) =>
+      case _failure =>
     }
   }
 }

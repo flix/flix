@@ -347,10 +347,14 @@ object SemanticTokensProvider {
           acc ++ Iterator(t) ++ visitType(tpe) ++ visitExp(exp)
       }
 
-    case Expression.Choose(exps, rules, tpe, eff, loc, _) =>
+    case Expression.RelationalChoose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t) ++ visitExp(exp)
+
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(_, loc), exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitExp(exp)
 
@@ -386,8 +390,8 @@ object SemanticTokensProvider {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -614,6 +618,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
+    case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
     case TypeConstructor.Ref => true

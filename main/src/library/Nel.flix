@@ -29,13 +29,13 @@ instance ToString[Nel[a]] with ToString[a] {
 
 instance Hash[Nel[a]] with Hash[a] {
     pub def hash(l: Nel[a]): Int32 = match l {
-        case Nel(x, xs) => Hash.hash(xs) `Hash.combine` Hash.hash(x)
+        case Nel.Nel(x, xs) => Hash.hash(xs) `Hash.combine` Hash.hash(x)
     }
 }
 
 instance Eq[Nel[a]] with Eq[a] {
     pub def eq(l1: Nel[a], l2: Nel[a]): Bool = match (l1, l2) {
-        case (Nel(x, xs), Nel(y, ys)) => x == y and xs == ys
+        case (Nel.Nel(x, xs), Nel.Nel(y, ys)) => x == y and xs == ys
     }
 }
 
@@ -44,9 +44,9 @@ instance Order[Nel[a]] with Order[a] {
     /// Compares `l1` and `l2` lexicographically.
     ///
     pub def compare(l1: Nel[a], l2: Nel[a]): Comparison = match (l1, l2) {
-        case (Nel(x, xs), Nel(y, ys)) =>
+        case (Nel.Nel(x, xs), Nel.Nel(y, ys)) =>
             let cmp = x <=> y;
-            if (cmp == EqualTo) xs <=> ys else cmp
+            if (cmp == Comparison.EqualTo) xs <=> ys else cmp
     }
 }
 
@@ -523,16 +523,16 @@ namespace Nel {
         (Nel(a, l1), Nel(b, l2))
 
     ///
-    /// Returns a new non-empty list where each element `e` is mapped to `(e, i)`
+    /// Returns a new non-empty list where each element `e` is mapped to `(i, e)`
     /// where `i` is the index of `e`.
     ///
-    pub def zipWithIndex(l: Nel[a]): Nel[(a, Int32)] =
+    pub def zipWithIndex(l: Nel[a]): Nel[(Int32, a)] =
         def loop(ll, k, i) = match ll {
-            case (x :: xs) => loop(xs, ks -> (k((x, i) :: ks)), i + 1)
+            case (x :: xs) => loop(xs, ks -> (k((i, x) :: ks)), i + 1)
             case Nil       => k(Nil)
         };
         match l {
-            case Nel(x, xs) => Nel((x, 0), loop(xs, identity, 1))
+            case Nel(x, xs) => Nel((0, x), loop(xs, identity, 1))
         }
 
     ///
@@ -687,7 +687,7 @@ namespace Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random.Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
+    pub def shuffle(rnd: Random, l: Nel[a]): Option[Nel[a]] \ NonDet = region r {
         toArray(r, l) !> Array.shuffle(rnd) |> Array.toNel
     }
 

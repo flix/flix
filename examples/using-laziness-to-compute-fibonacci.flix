@@ -1,7 +1,7 @@
 /// An infinite sequence of Fibonacci numbers
 def fibs(): DelayList[Int32] =
-    LCons(0,
-        lazy LCons(1,
+    DelayList.LCons(0,
+        lazy DelayList.LCons(1,
             lazy DelayList.zipWith(
                 (x, y) -> x + y, fibs(), DelayList.tail(fibs()))))
 

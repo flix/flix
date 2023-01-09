@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, Source}
+import ca.uwaterloo.flix.language.ast.WeededAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
@@ -87,6 +88,7 @@ object Namer {
     case decl: WeededAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: WeededAst.Declaration.Def => visitDef(decl, ns0)
     case decl: WeededAst.Declaration.Enum => visitEnum(decl, ns0)
+    case decl: WeededAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: WeededAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
     case decl: WeededAst.Declaration.Effect => visitEffect(decl, ns0)
     case decl: WeededAst.Declaration.Law => throw InternalCompilerException("unexpected law", decl.loc)
@@ -315,22 +317,25 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitEnum(enum0: WeededAst.Declaration.Enum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = enum0 match {
-    case WeededAst.Declaration.Enum(doc, ann0, mod0, ident, tparams0, derives, cases0, loc) =>
+    case WeededAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives, cases0, loc) =>
       val sym = Symbol.mkEnumSym(ns0, ident)
 
       // Compute the type parameters.
       val tparams = getTypeParams(tparams0)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
       val casesVal = traverse(cases0)(visitCase(_, sym))
 
-      mapN(annVal, casesVal) {
-        case (ann, cases) =>
+      mapN(casesVal) {
+        case cases =>
           NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
 
+  /**
+    * Performs naming on the given enum `enum0`.
+    */
+  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ??? // TODO RESTR-VARS
 
   /**
     * Performs naming on the given enum case.
@@ -362,18 +367,17 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann0, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0))
 
-      mapN(annVal, superClassesVal, sigsVal, lawsVal) {
-        case (ann, superClasses, sigs, laws) =>
+      mapN(superClassesVal, sigsVal, lawsVal) {
+        case (superClasses, sigs, laws) =>
           NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
       }
   }
@@ -382,14 +386,13 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, ann0, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
-      flatMapN(annVal, tpeVal, tconstrsVal) {
-        case (ann, tpe, tconstrs) =>
+      flatMapN(tpeVal, tconstrsVal) {
+        case (tpe, tconstrs) =>
           val defsVal = traverse(defs0)(visitDef(_, ns0))
           mapN(defsVal) {
             defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns0.parts, loc)
@@ -426,14 +429,13 @@ object Namer {
         case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
-          val annVal = traverse(ann)(visitAnnotation(_, ns0))
           val expVal = traverseOpt(exp0)(visitExp(_, ns0))
 
-          mapN(annVal, expVal) {
-            case (as, exp) =>
+          mapN(expVal) {
+            case exp =>
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -459,14 +461,13 @@ object Namer {
         case (fparams, tpe, purAndEff, tconstrs) =>
 
           // Then visit the parts depending on the parameters
-          val annVal = traverse(ann)(visitAnnotation(_, ns0))
           val expVal = visitExp(exp, ns0)
 
-          mapN(annVal, expVal) {
-            case (as, e) =>
+          mapN(expVal) {
+            case e =>
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, as, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -476,15 +477,14 @@ object Namer {
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: WeededAst.Declaration.Effect, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Effect, NameError] = eff0 match {
-    case WeededAst.Declaration.Effect(doc, ann0, mod0, ident, ops0, loc) =>
+    case WeededAst.Declaration.Effect(doc, ann, mod0, ident, ops0, loc) =>
       val sym = Symbol.mkEffectSym(ns0, ident)
 
-      val annVal = traverse(ann0)(visitAnnotation(_, ns0))
       val mod = visitModifiers(mod0, ns0)
       val opsVal = traverse(ops0)(visitOp(_, ns0, sym))
 
-      mapN(annVal, opsVal) {
-        case (ann, ops) => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      mapN(opsVal) {
+        case ops => NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
@@ -492,29 +492,21 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: WeededAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffectSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Op, NameError] = op0 match {
-    case WeededAst.Declaration.Op(doc, ann0, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Op(doc, ann, mod0, ident, fparams0, tpe0, tconstrs0, loc) =>
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, tconstrsVal) {
+      mapN(fparamsVal, tpeVal, tconstrsVal) {
         case (fparams, tpe, tconstrs) =>
+          val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
+          val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
 
-          // Then visit the parts depending on the parameters
-          val annVal = traverse(ann0)(visitAnnotation(_, ns0))
-
-          mapN(annVal) {
-            ann =>
-
-              val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
-              val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
-
-              val sym = Symbol.mkOpSym(effSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
-              NamedAst.Declaration.Op(sym, spec)
-          }
+          val sym = Symbol.mkOpSym(effSym, ident)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+          NamedAst.Declaration.Op(sym, spec)
       }
   }
 
@@ -644,23 +636,37 @@ object Namer {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }
 
-    case WeededAst.Expression.Choose(star, exps, rules, loc) =>
+    case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
       val rulesVal = traverse(rules) {
-        case WeededAst.ChoiceRule(pat0, exp0) =>
+        case WeededAst.RelationalChoiceRule(pat0, exp0) =>
           val p = pat0.map {
-            case WeededAst.ChoicePattern.Wild(loc) => NamedAst.ChoicePattern.Wild(loc)
-            case WeededAst.ChoicePattern.Absent(loc) => NamedAst.ChoicePattern.Absent(loc)
-            case WeededAst.ChoicePattern.Present(ident, loc) =>
+            case WeededAst.RelationalChoicePattern.Wild(loc) => NamedAst.RelationalChoicePattern.Wild(loc)
+            case WeededAst.RelationalChoicePattern.Absent(loc) => NamedAst.RelationalChoicePattern.Absent(loc)
+            case WeededAst.RelationalChoicePattern.Present(ident, loc) =>
               val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-              NamedAst.ChoicePattern.Present(sym, loc)
+              NamedAst.RelationalChoicePattern.Present(sym, loc)
           }
           mapN(visitExp(exp0, ns0)) {
-            case e => NamedAst.ChoiceRule(p, e)
+            case e => NamedAst.RelationalChoiceRule(p, e)
           }
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => NamedAst.Expression.Choose(star, es, rs, loc)
+        case (es, rs) => NamedAst.Expression.RelationalChoose(star, es, rs, loc)
+      }
+
+    case WeededAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
+      val expVal = visitExp(exp, ns0)
+      val rulesVal = traverse(rules) {
+        case WeededAst.RestrictableChoiceRule(pat0, exp0) =>
+          val p = visitRestrictablePattern(pat0)
+          val eVal = visitExp(exp0, ns0)
+          mapN(eVal) {
+            case e => NamedAst.RestrictableChoiceRule(p, e)
+          }
+      }
+      mapN(expVal, rulesVal) {
+        case (es, rs) => NamedAst.Expression.RestrictableChoose(star, es, rs, loc)
       }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
@@ -697,7 +703,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), traverseOpt(exp3)(visitExp(_, ns0))) {
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0), visitExp(exp3, ns0)) {
         case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
@@ -716,9 +722,9 @@ object Namer {
         case b => NamedAst.Expression.ArrayLength(b, loc)
       }
 
-    case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
-      mapN(visitExp(base, ns0), visitExp(startIndex, ns0), visitExp(endIndex, ns0)) {
-        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, loc)
+    case WeededAst.Expression.ArraySlice(reg, base, startIndex, endIndex, loc) =>
+      mapN(visitExp(reg, ns0), visitExp(base, ns0), visitExp(startIndex, ns0), visitExp(endIndex, ns0)) {
+        case (r, b, i1, i2) => NamedAst.Expression.ArraySlice(r, b, i1, i2, loc)
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
@@ -746,6 +752,12 @@ object Namer {
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
+      }
+
+    case WeededAst.Expression.Of(qname, exp, loc) =>
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => e // TODO RESTR-VARS
       }
 
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -1012,6 +1024,24 @@ object Namer {
       case Some(id) =>
         val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
         NamedAst.Pattern.ArrayHeadSpread(sym, elms map visitPattern, loc)
+    }
+  }
+
+  /**
+    * Names the given pattern `pat0`
+    */
+  private def visitRestrictablePattern(pat0: WeededAst.RestrictableChoicePattern)(implicit flix: Flix): NamedAst.RestrictableChoicePattern = {
+    def visitVarPlace(vp: WeededAst.RestrictableChoicePattern.VarOrWild): NamedAst.RestrictableChoicePattern.VarOrWild = vp match {
+      case RestrictableChoicePattern.Wild(loc) => NamedAst.RestrictableChoicePattern.Wild(loc)
+      case RestrictableChoicePattern.Var(ident, loc) =>
+        // make a fresh variable symbol for the local variable.
+        val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+        NamedAst.RestrictableChoicePattern.Var(sym, loc)
+    }
+
+    pat0 match {
+      case WeededAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+        NamedAst.RestrictableChoicePattern.Tag(qname, pat.map(visitVarPlace), loc)
     }
   }
 
@@ -1291,16 +1321,6 @@ object Namer {
     case WeededAst.Type.Write(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Empty(_) => Nil
     case WeededAst.Type.Ascribe(tpe, _, _) => freeTypeVars(tpe)
-  }
-
-  /**
-    * Translates the given weeded annotation to a named annotation.
-    */
-  private def visitAnnotation(ann: WeededAst.Annotation, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Annotation, NameError] = ann match {
-    case WeededAst.Annotation(name, args, loc) =>
-      mapN(traverse(args)(visitExp(_, ns0))) {
-        case as => NamedAst.Annotation(name, as, loc)
-      }
   }
 
   /**

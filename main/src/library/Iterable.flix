@@ -15,19 +15,13 @@
  */
 
 ///
-/// A type class for mutable data structures that can be iterated.
+/// A type class for immutable data structures that can be iterated.
 ///
-pub class Iterable[t: Type -> Region -> Type] {
+pub class Iterable[t: Type -> Type] {
 
     ///
-    /// Returns an iterator over `t` in the same region as `t`.
+    /// Returns an iterator over `t`.
     ///
-    pub def iterator(t: t[a, r]): Iterator[a, r] \ Write(r)
-
-    ///
-    /// Returns an iterator over `t` in the same region as `t` zipped with the indices of the elements.
-    ///
-    pub def enumerator(t: t[a, r]): Iterator[(a, Int32), r] \ Write(r) =
-        Iterable.iterator(t) |> Iterator.zipWithIndex
+    pub def iterator(r1: Region[r], t: t[a]): Iterator[a, r] \ { Write(r) }
 
 }

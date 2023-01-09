@@ -15,6 +15,7 @@
  */
 
 namespace TestIterator {
+    use Iterator.Iterator
 
     /////////////////////////////////////////////////////////////////////////////
     // next                                                                    //
@@ -367,6 +368,53 @@ namespace TestIterator {
         List.iterator(r, 10 :: -10 :: Nil) |> Iterator.productWith(x -> x + 1) == -99
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool = region r {
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toList == Nil
+    }
+
+    @test
+    def toList02(): Bool = region r {
+        Iterator.range(r, -10, -5) |> Iterator.toList == -10 :: -9 :: -8 :: -7 :: -6 :: Nil
+    }
+
+    @test
+    def toList03(): Bool = region r {
+        Iterator.repeat(r, 3, 1) |> Iterator.toList == 1 :: 1 ::  1 :: Nil
+    }
+
+    @test
+    def toList04(): Bool = region r {
+        Iterator.range(r, -100, 200) |> Iterator.toList == List.range(-100, 200)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toChain                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toChain01(): Bool = region r {
+        Nil: List[Int32] |> List.iterator(r) |> Iterator.toChain == Chain.empty()
+    }
+
+    @test
+    def toChain02(): Bool = region r {
+        Iterator.range(r, -10, -5) |> Iterator.toChain == List.toChain(-10 :: -9 :: -8 :: -7 :: -6 :: Nil)
+    }
+
+    @test
+    def toChain03(): Bool = region r {
+        Iterator.repeat(r, 3, 1) |> Iterator.toChain == List.toChain(1 :: 1 ::  1 :: Nil)
+    }
+
+    @test
+    def toChain04(): Bool = region r {
+        Iterator.range(r, -100, 200) |> Iterator.toChain == Chain.range(-100, 200)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
@@ -460,12 +508,12 @@ namespace TestIterator {
 
     @test
     def toNel02(): Bool = region r {
-        (1 :: Nil) |> List.iterator(r) |> Iterator.toNel == Some(Nel(1, Nil))
+        (1 :: Nil) |> List.iterator(r) |> Iterator.toNel == Some(Nel.Nel(1, Nil))
     }
 
     @test
     def toNel03(): Bool = region r {
-        Iterator.range(r, 0, 1000) |> Iterator.toNel == Some(Nel(0, List.range(1, 1000)))
+        Iterator.range(r, 0, 1000) |> Iterator.toNel == Some(Nel.Nel(0, List.range(1, 1000)))
     }
 
 
@@ -636,6 +684,25 @@ namespace TestIterator {
         3 == deref res
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let res = ref 21 @ r;
+        Nil |> List.iterator(r) |>
+            Iterator.forEachWithIndex((i, _) -> res := i);
+        21 == deref res
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let res = ref 21 @ r;
+        (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
+            Iterator.forEachWithIndex((i, _) -> res := i);
+        2 == deref res
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // lazyFilter                                                              //
@@ -1025,22 +1092,22 @@ namespace TestIterator {
 
     @test
     def zipWithIndex02(): Bool = region r {
-        Iterator.zipWithIndex(Iterator.singleton(r, 2)) |> Iterator.toList == (2, 0) :: Nil
+        Iterator.zipWithIndex(Iterator.singleton(r, 2)) |> Iterator.toList == (0, 2) :: Nil
     }
 
     @test
     def zipWithIndex03(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 1 :: 8 :: Nil)) |> Iterator.toList == (1, 0) :: (8, 1) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 1 :: 8 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 8) :: Nil
     }
 
     @test
     def zipWithIndex04(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 8 :: 1 :: Nil)) |> Iterator.toList == (8, 0) :: (1, 1) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 8 :: 1 :: Nil)) |> Iterator.toList == (0, 8) :: (1, 1) :: Nil
     }
 
     @test
     def zipWithIndex05(): Bool = region r {
-        Iterator.zipWithIndex(List.iterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (1, 0) :: (4, 1) :: (11, 2) :: (2, 3) :: (-22, 4) :: (17, 5) :: Nil
+        Iterator.zipWithIndex(List.iterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil
     }
 
 
@@ -1769,18 +1836,18 @@ namespace TestIterator {
 
     @test
     def toResultList01(): Bool = region r {
-        (Nil: List[Result[Int32, String]]) |> List.iterator(r) |>
+        (Nil: List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(Nil)
     }
     @test
     def toResultList02(): Bool = region r {
-        ((Ok(1) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: Nil)
     }
 
     @test
     def toResultList03(): Bool = region r {
-        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[Int32, String]]) |> List.iterator(r) |>
+        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[String, Int32]]) |> List.iterator(r) |>
             Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
     }
 

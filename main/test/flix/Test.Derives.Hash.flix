@@ -112,7 +112,7 @@ namespace Test/Derives/Hash {
     def testHashEq23(): Bool = hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase))) == hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.RecursiveCase(MutRecursiveEnum1.EmptyCase)))
 
     @test
-    def testHashEq24(): Bool = hash(OpaqueType(123)) == hash(OpaqueType(123))
+    def testHashEq24(): Bool = hash(OpaqueType.OpaqueType(123)) == hash(OpaqueType.OpaqueType(123))
 
     @test
     def testHashNeq01(): Bool = hash(Enum.EmptyCase) != hash(Enum.SingletonCase(123))
@@ -142,5 +142,5 @@ namespace Test/Derives/Hash {
     def testHashNeq09(): Bool = hash(MutRecursiveEnum1.EmptyCase) != hash(MutRecursiveEnum1.RecursiveCase(MutRecursiveEnum2.EmptyCase))
 
     @test
-    def testHashNeq10(): Bool = hash(OpaqueType(123)) != hash(OpaqueType(456))
+    def testHashNeq10(): Bool = hash(OpaqueType.OpaqueType(123)) != hash(OpaqueType.OpaqueType(456))
 }

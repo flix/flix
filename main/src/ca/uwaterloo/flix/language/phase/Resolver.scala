@@ -224,6 +224,7 @@ object Resolver {
     case _: UnkindedType.Arrow => Nil
     case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
     case _: UnkindedType.Enum => Nil
+    case _: UnkindedType.RestrictableEnum => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
   }
 
@@ -383,17 +384,16 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Class(doc, ann0, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
       val tparam = Params.resolveTparam(tparam0)
       val env = env0 ++ mkTypeParamEnv(List(tparam))
-      val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
       // ignore the parameter of the super class; we don't use it
       val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
       val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
       val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-      mapN(annVal, sigsListVal, superClassesVal, lawsVal) {
-        case (ann, sigsList, superClasses, laws) =>
+      mapN(sigsListVal, superClassesVal, lawsVal) {
+        case (sigsList, superClasses, laws) =>
           val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
           ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
       }
@@ -403,16 +403,15 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
-    case NamedAst.Declaration.Instance(doc, ann0, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
       val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-      val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val clazzVal = lookupClassForImplementation(clazz0, env, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
-      flatMapN(annVal, clazzVal, tpeVal, tconstrsVal) {
-        case (ann, clazz, tpe, tconstrs) =>
+      flatMapN(clazzVal, tpeVal, tconstrsVal) {
+        case (clazz, tpe, tconstrs) =>
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
           val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
           mapN(defsVal) {
@@ -463,7 +462,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann0, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
 
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
       val env1 = env0 ++ mkTypeParamEnv(tparams.tparams)
@@ -471,13 +470,12 @@ object Resolver {
       flatMapN(fparamsVal) {
         case fparams =>
           val env = env1 ++ mkFormalParamEnv(fparams)
-          val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
           val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
           val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
 
-          mapN(annVal, tpeVal, purAndEffVal, tconstrsVal) {
-            case (ann, tpe, purAndEff, tconstrs) =>
+          mapN(tpeVal, purAndEffVal, tconstrsVal) {
+            case (tpe, purAndEff, tconstrs) =>
               // add the inherited type constraint to the the list
               ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
           }
@@ -488,14 +486,13 @@ object Resolver {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
-    case NamedAst.Declaration.Enum(doc, ann0, mod, sym, tparams0, derives0, cases0, loc) =>
+    case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives0, cases0, loc) =>
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
       val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-      val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val derivesVal = resolveDerivations(derives0, env, ns0, root)
       val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
-      mapN(annVal, derivesVal, casesVal) {
-        case (ann, derives, cases) =>
+      mapN(derivesVal, casesVal) {
+        case (derives, cases) =>
           ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
       }
   }
@@ -515,12 +512,11 @@ object Resolver {
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
   private def resolveEffect(eff0: NamedAst.Declaration.Effect, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Effect, ResolutionError] = eff0 match {
-    case NamedAst.Declaration.Effect(doc, ann0, mod, sym, ops0, loc) =>
+    case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
       // TODO NS-REFACTOR maybe start a new env
-      val annVal = traverse(ann0)(visitAnnotation(_, env, taenv, ns0, root))
       val opsVal = traverse(ops0)(resolveOp(_, env, taenv, ns0, root))
-      mapN(annVal, opsVal) {
-        case (ann, ops) => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
+      mapN(opsVal) {
+        case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
@@ -549,16 +545,6 @@ object Resolver {
       } else {
         ResolutionError.IllegalSignature(sym, sym.loc).toFailure
       }
-  }
-
-  /**
-    * Performs name resolution on the given annotation `a0` in the given namespace `ns0`.
-    */
-  private def visitAnnotation(a0: NamedAst.Annotation, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Annotation, ResolutionError] = {
-    val argsVal = traverse(a0.args)(Expressions.resolve(_, env, taenv, ns0, root))
-    mapN(argsVal) {
-      args => ResolvedAst.Annotation(a0.name, args, a0.loc)
-    }
   }
 
   object Expressions {
@@ -898,27 +884,29 @@ object Resolver {
             case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
           }
 
-        case NamedAst.Expression.Choose(star, exps, rules, loc) =>
+        case NamedAst.Expression.RelationalChoose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0, region))
           val rulesVal = traverse(rules) {
-            case NamedAst.ChoiceRule(pat0, exp0) =>
+            case NamedAst.RelationalChoiceRule(pat0, exp0) =>
               val p = pat0.map {
-                case NamedAst.ChoicePattern.Wild(loc) => ResolvedAst.ChoicePattern.Wild(loc)
-                case NamedAst.ChoicePattern.Absent(loc) => ResolvedAst.ChoicePattern.Absent(loc)
-                case NamedAst.ChoicePattern.Present(sym, loc) => ResolvedAst.ChoicePattern.Present(sym, loc)
+                case NamedAst.RelationalChoicePattern.Wild(loc) => ResolvedAst.RelationalChoicePattern.Wild(loc)
+                case NamedAst.RelationalChoicePattern.Absent(loc) => ResolvedAst.RelationalChoicePattern.Absent(loc)
+                case NamedAst.RelationalChoicePattern.Present(sym, loc) => ResolvedAst.RelationalChoicePattern.Present(sym, loc)
               }
               val env = pat0.foldLeft(env0) {
-                case (acc, NamedAst.ChoicePattern.Wild(_)) => acc
-                case (acc, NamedAst.ChoicePattern.Absent(_)) => acc
-                case (acc, NamedAst.ChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
+                case (acc, NamedAst.RelationalChoicePattern.Wild(_)) => acc
+                case (acc, NamedAst.RelationalChoicePattern.Absent(_)) => acc
+                case (acc, NamedAst.RelationalChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
               }
               mapN(visitExp(exp0, env, region)) {
-                case e => ResolvedAst.ChoiceRule(p, e)
+                case e => ResolvedAst.RelationalChoiceRule(p, e)
               }
           }
           mapN(expsVal, rulesVal) {
-            case (es, rs) => ResolvedAst.Expression.Choose(star, es, rs, loc)
+            case (es, rs) => ResolvedAst.Expression.RelationalChoose(star, es, rs, loc)
           }
+
+        case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) => ??? // TODO RESTR-VARS
 
         case NamedAst.Expression.Tuple(elms, loc) =>
           val esVal = traverse(elms)(e => visitExp(e, env0, region))
@@ -977,11 +965,10 @@ object Resolver {
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
           val e1Val = visitExp(exp1, env0, region)
           val e2Val = visitExp(exp2, env0, region)
-          val erVal = traverseOpt(exp3)(visitExp(_, env0, region))
-          mapN(e1Val, e2Val, erVal) {
-            case (e1, e2, er) =>
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.ArrayNew(e1, e2, reg, loc)
+          val e3Val = visitExp(exp3, env0, region)
+          mapN(e1Val, e2Val, e3Val) {
+            case (e1, e2, e3) =>
+              ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
           }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
@@ -1005,12 +992,13 @@ object Resolver {
             b => ResolvedAst.Expression.ArrayLength(b, loc)
           }
 
-        case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
+        case NamedAst.Expression.ArraySlice(reg, base, startIndex, endIndex, loc) =>
+          val regVal = visitExp(reg, env0, region)
           val bVal = visitExp(base, env0, region)
           val i1Val = visitExp(startIndex, env0, region)
           val i2Val = visitExp(endIndex, env0, region)
-          mapN(bVal, i1Val, i2Val) {
-            case (b, i1, i2) => ResolvedAst.Expression.ArraySlice(b, i1, i2, loc)
+          mapN(regVal, bVal, i1Val, i2Val) {
+            case (r, b, i1, i2) => ResolvedAst.Expression.ArraySlice(r, b, i1, i2, loc)
           }
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
@@ -2124,6 +2112,8 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.RestrictableEnum => ??? // TODO RESTR-VARS
+
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
@@ -2914,6 +2904,7 @@ object Resolver {
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
+        case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
 
       }
 
@@ -2945,6 +2936,7 @@ object Resolver {
 
       // Case 3: Enum. Return an object type.
       case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
+      case _: UnkindedType.RestrictableEnum => Class.forName("java.lang.Object").toSuccess
 
       // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
@@ -3020,7 +3012,9 @@ object Resolver {
   private def infallableLookupSym(sym: Symbol, root: NamedAst.Root)(implicit flix: Flix): List[NamedAst.Declaration] = sym match {
     case sym: Symbol.DefnSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.RestrictableEnumSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.CaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.RestrictableCaseSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ClassSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)

@@ -41,13 +41,14 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         valueOf(true)
 
     @test
-    def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO =
-        import static java.nio.file.Path.of(String, Array[String, Static]): ##java.nio.file.Path \ IO as of1;
+    def testInvokeInterfaceStaticMethod02(): ##java.nio.file.Path \ IO = region r {
+        import static java.nio.file.Path.of(String, Array[String, r]): ##java.nio.file.Path \ IO as of1;
         try {
             of1("end", ["p1", "p2", "p3"])
         } catch {
             case _: ##java.nio.file.InvalidPathException => unsafe_cast null as ##java.nio.file.Path
         }
+    }
 
     @test
     def testInvokeInheritedStaticMethod01(): Bool =
@@ -55,9 +56,10 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         staticMethod(1) == 2
 
     @test
-    def testInvokeStaticMethodWithArrayParam(): Bool \ IO =
-        import static java.util.Arrays.fill(Array[##java.lang.Object, Static], ##java.lang.Object): Unit \ IO;
+    def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region r {
+        import static java.util.Arrays.fill(Array[##java.lang.Object, r], ##java.lang.Object): Unit \ IO;
         let a = ["this", "that"];
-        fill(unsafe_cast a as Array[##java.lang.Object, Static], super_cast "foo");
+        fill(unsafe_cast a as Array[##java.lang.Object, r], super_cast "foo");
         true
+    }
 }

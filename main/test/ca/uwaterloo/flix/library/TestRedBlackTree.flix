@@ -37,18 +37,18 @@ namespace TestRedBlackTree {
 
     @test
     def testEmptyAfterRemove01(): Bool =
-        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty())))
+        Map.Map(RedBlackTree.empty()) == Map.Map(RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty())))
 
     @test
     def testEmptyAfterRemove02(): Bool =
-        Map(RedBlackTree.empty()) == Map(RedBlackTree.remove(2, RedBlackTree.remove(1,
+        Map.Map(RedBlackTree.empty()) == Map.Map(RedBlackTree.remove(2, RedBlackTree.remove(1,
             RedBlackTree.remove(0, toTree(List.range(0, 3))))))
 
     @test
     def testEmptyAfterRemove03(): Bool =
         let tree =
         List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
-        Map(tree) == Map(RedBlackTree.empty())
+        Map.Map(tree) == Map.Map(RedBlackTree.empty())
 
     @test
     def testBinarySearchTreeInvariant01(): Bool =
@@ -151,7 +151,7 @@ namespace TestRedBlackTree {
     ///
     def checkBinarySearchTreeInvariant(tree: RedBlackTree[k, v]): Bool with Order[k] = match tree {
         case Node(_, a, xK, _, b) =>
-            if (RedBlackTree.exists((yK, _) -> (yK <=> xK) == GreaterThan, a) or RedBlackTree.exists((zK, _) -> (zK <=> xK) == LessThan, b))
+            if (RedBlackTree.exists((yK, _) -> (yK <=> xK) == Comparison.GreaterThan, a) or RedBlackTree.exists((zK, _) -> (zK <=> xK) == Comparison.LessThan, b))
                 false
             else
                 checkBinarySearchTreeInvariant(a) and checkBinarySearchTreeInvariant(b)
@@ -218,32 +218,32 @@ namespace TestRedBlackTree {
 
     @test
     def mapWithKey01(): Bool =
-        let Map(t) = Map#{}: Map[Unit, Unit];
-        let m = Map(RedBlackTree.mapWithKey((_, v) -> v, t));
+        let Map.Map(t) = Map#{}: Map[Unit, Unit];
+        let m = Map.Map(RedBlackTree.mapWithKey((_, v) -> v, t));
         m == Map#{}
 
     @test
     def mapWithKey02(): Bool =
-        let Map(t) = Map#{1 => 4};
-        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        let Map.Map(t) = Map#{1 => 4};
+        let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
         m == Map#{1 => 5}
 
     @test
     def mapWithKey03(): Bool =
-        let Map(t) = Map#{2 => -1, 0 => 0};
-        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        let Map.Map(t) = Map#{2 => -1, 0 => 0};
+        let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
         m == Map#{2 => 1, 0 => 0}
 
     @test
     def mapWithKey04(): Bool =
-        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
-        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        let Map.Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
+        let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
         m == Map#{2 => 1, 5 => 20, 11 => 2}
 
     @test
     def mapWithKey05(): Bool =
-        let Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
-        let m = Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
+        let Map.Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
+        let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
         m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
 
     @test
@@ -257,15 +257,15 @@ namespace TestRedBlackTree {
 
     @test
     def mapWithKey07(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
     @test
     def mapWithKey08(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -274,12 +274,12 @@ namespace TestRedBlackTree {
 
     @test
     def parCount01(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k == v, t) == 2000
 
     @test
     def parCount02(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parCount(threads() - 1, (k, v) -> k - 1000 == v, t) == 2000
 
 
@@ -290,13 +290,13 @@ namespace TestRedBlackTree {
     @test
     def parMinimumBy01(): Bool =
         let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
+        let Map.Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 0)
 
     @test
     def parMinimumBy02(): Bool =
         let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
+        let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMinimumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 0)
 
 
@@ -307,13 +307,13 @@ namespace TestRedBlackTree {
     @test
     def parMaximumBy01(): Bool =
         let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, range) |> List.toMap;
+        let Map.Map(t) = List.zip(range, range) |> List.toMap;
         RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(1999, 1999)
 
     @test
     def parMaximumBy02(): Bool =
         let range = List.range(0, 2000);
-        let Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
+        let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
         RedBlackTree.parMaximumBy(threads() - 1, (_, x, _, y) -> x <=> y, t) == Some(0, 1999)
 
 
@@ -348,20 +348,20 @@ namespace TestRedBlackTree {
     @test
     def parExists01(): Bool =
         let l = List.range(1, 2001);
-        let Map(t) = List.zip(l, l) |> List.toMap;
+        let Map.Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == 1002, t)
 
     @test
     def parExists02(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
-        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parExists(threads() - 1, (k, v) -> k == 1002 and v == -999, t)
 
     @test
     def parExists03(): Bool =
         let l = List.range(1, 2001);
-        let Map(t) = List.zip(l, l) |> List.toMap;
+        let Map.Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parExists(threads() - 1, (k, v) -> k < 0 or v > 3000, t)
 
 
@@ -372,22 +372,21 @@ namespace TestRedBlackTree {
     @test
     def parForAll01(): Bool =
         let l = List.range(1, 2001);
-        let Map(t) = List.zip(l, l) |> List.toMap;
+        let Map.Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parForAll(threads() - 1, (k, v) -> k == v, t)
 
     @test
     def parForAll02(): Bool =
         let l = List.range(1, 2001);
-        let Map(t) = List.zip(l, l) |> List.toMap;
+        let Map.Map(t) = List.zip(l, l) |> List.toMap;
         not RedBlackTree.parForAll(threads() - 1, (k, _) -> k == 1, t)
 
     @test
     def parForAll03(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
-        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parForAll(threads() - 1, (k, v) -> k > v, t)
-
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
@@ -396,7 +395,7 @@ namespace TestRedBlackTree {
     @test
     def forEach01(): Bool = region r {
         let x = ref 21 @ r;
-        let Map(t) = Map#{};
+        let Map.Map(t) = Map#{};
         RedBlackTree.forEach((k, _) -> x := k, t);
         21 == deref x
     }
@@ -404,9 +403,29 @@ namespace TestRedBlackTree {
     @test
     def forEach02(): Bool = region r {
         let x = ref 21 @ r;
-        let Map(t) = Map#{1 => "Hello World!"};
+        let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEach((k, _) -> x := k, t);
         1 == deref x
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let x = ref 21 @ r;
+        let Map.Map(t) = Map#{};
+        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
+        21 == deref x
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let x = ref 21 @ r;
+        let Map.Map(t) = Map#{1 => "Hello World!"};
+        RedBlackTree.forEachWithIndex((i, _, _) -> x := i, t);
+        0 == deref x
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -415,22 +434,22 @@ namespace TestRedBlackTree {
 
     @test
     def foldMap01(): Bool =
-        let Map(t) = Map#{};
+        let Map.Map(t) = Map#{};
         RedBlackTree.foldMap((k, v) -> k + v, t) == 0
 
     @test
     def foldMap02(): Bool =
-        let Map(t) = Map#{1 => 2, 3 => 5};
+        let Map.Map(t) = Map#{1 => 2, 3 => 5};
         RedBlackTree.foldMap((k, v) -> k + v, t) == (1 + 2 + 3 + 5)
 
     @test
     def foldMap03(): Bool =
-        let Map(t) = Map#{1 => 2, 3 => 5};
+        let Map.Map(t) = Map#{1 => 2, 3 => 5};
         RedBlackTree.foldMap((k, v) -> 2 * (k + v), t) == (2 * (1 + 2) + 2 * (3 + 5))
 
     @test
     def foldMap04(): Bool =
-        let Map(t) = Map#{1 => "a", 2 => "b"};
+        let Map.Map(t) = Map#{1 => "a", 2 => "b"};
         RedBlackTree.foldMap((k, v) -> "${k}" + v, t) == "1a2b"
 
 
@@ -444,32 +463,32 @@ namespace TestRedBlackTree {
 
     @test
     def sumValues02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.sumValues(t) == 1
 
     @test
     def sumValues03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.sumValues(t) == 6
 
     @test
     def sumValues04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.sumValues(t) == 3
 
     @test
     def sumValues05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
         RedBlackTree.sumValues(t) == -10
 
     @test
     def sumValues06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.sumValues(t) == 0
 
     @test
     def sumValues07(): Bool =
-        let Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
+        let Map.Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
         RedBlackTree.sumValues(t) == 5050
 
 
@@ -483,32 +502,32 @@ namespace TestRedBlackTree {
 
     @test
     def sumKeys02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.sumKeys(t) == 1
 
     @test
     def sumKeys03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.sumKeys(t) == 6
 
     @test
     def sumKeys04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.sumKeys(t) == 3
 
     @test
     def sumKeys05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
         RedBlackTree.sumKeys(t) == -12
 
     @test
     def sumKeys06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.sumKeys(t) == 0
 
     @test
     def sumKeys07(): Bool =
-        let Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
+        let Map.Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
         RedBlackTree.sumKeys(t) == 5050
 
 
@@ -522,27 +541,27 @@ namespace TestRedBlackTree {
 
     @test
     def sumWith02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 2
 
     @test
     def sumWith03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 12
 
     @test
     def sumWith04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 6
 
     @test
     def sumWith05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
         RedBlackTree.sumWith((k, v) -> k + v, t) == -20
 
     @test
     def sumWith06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.sumWith((k, v) -> k + v, t) == 0
 
 
@@ -552,12 +571,12 @@ namespace TestRedBlackTree {
 
     @test
     def parSumWith01(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 3998000
 
     @test
     def parSumWith02(): Bool =
-        let Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
+        let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         RedBlackTree.parSumWith(threads() - 1, (k, v) -> k + v, t) == 1998000
 
 
@@ -571,27 +590,27 @@ namespace TestRedBlackTree {
 
     @test
     def productValues02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.productValues(t) == 1
 
     @test
     def productValues03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.productValues(t) == 6
 
     @test
     def productValues04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.productValues(t) == -18
 
     @test
     def productValues05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
         RedBlackTree.productValues(t) == 24
 
     @test
     def productValues06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.productValues(t) == -100
 
 
@@ -605,27 +624,27 @@ namespace TestRedBlackTree {
 
     @test
     def productKeys02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.productKeys(t) == 1
 
     @test
     def productKeys03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.productKeys(t) == 6
 
     @test
     def productKeys04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.productKeys(t) == -18
 
     @test
     def productKeys05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
         RedBlackTree.productKeys(t) == 40
 
     @test
     def productKeys06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.productKeys(t) == -100
 
 
@@ -639,27 +658,27 @@ namespace TestRedBlackTree {
 
     @test
     def productWith02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.productWith((k, v) -> k + v, t) == 2
 
     @test
     def productWith03(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
         RedBlackTree.productWith((k, v) -> k + v, t) == 48
 
     @test
     def productWith04(): Bool =
-        let Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
+        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
         RedBlackTree.productWith((k, v) -> k + v, t) == -288
 
     @test
     def productWith05(): Bool =
-        let Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
+        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
         RedBlackTree.productWith((k, v) -> k + v, t) == 384
 
     @test
     def productWith06(): Bool =
-        let Map(t) = Map#{10 => 10, -10 => -10};
+        let Map.Map(t) = Map#{10 => 10, -10 => -10};
         RedBlackTree.productWith((k, v) -> k + v, t) == -400
 
 
@@ -670,14 +689,14 @@ namespace TestRedBlackTree {
     @test
     def parProductWith01(): Bool =
         let l = List.range(1, 2001);
-        let Map(t) = List.zip(l, l) |> List.toMap;
+        let Map.Map(t) = List.zip(l, l) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
 
     @test
     def parProductWith02(): Bool =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
-        let Map(t) = List.zip(l1, l2) |> List.toMap;
+        let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
         RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l1) * List.product(l2)
 
 
@@ -691,17 +710,17 @@ namespace TestRedBlackTree {
 
     @test
     def joinKeys02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.joinKeys(",", t) == "1"
 
     @test
     def joinKeys03(): Bool =
-        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
         RedBlackTree.joinKeys(",", t) == "0,1,2"
 
     @test
     def joinKeys04(): Bool =
-        let Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
+        let Map.Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
         RedBlackTree.joinKeys(",", t) == "0,1,2"
 
 
@@ -715,17 +734,17 @@ namespace TestRedBlackTree {
 
     @test
     def joinValues02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.joinValues(",", t) == "1"
 
     @test
     def joinValues03(): Bool =
-        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
         RedBlackTree.joinValues(",", t) == "1,2,2"
 
     @test
     def joinValues04(): Bool =
-        let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
+        let Map.Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinValues(",", t) == "1,2,2"
 
 
@@ -739,17 +758,17 @@ namespace TestRedBlackTree {
 
     @test
     def joinWith02(): Bool =
-        let Map(t) = Map#{1 => 1};
+        let Map.Map(t) = Map#{1 => 1};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "1 => 1"
 
     @test
     def joinWith03(): Bool =
-        let Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
+        let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
     @test
     def joinWith04(): Bool =
-        let Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
+        let Map.Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
         RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
 
     /////////////////////////////////////////////////////////////////////////////
@@ -852,32 +871,32 @@ namespace TestRedBlackTree {
     def mapAWithKey01(): Bool = region r {
         let st = ref '#' @ r;
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
-        ans == Identity(RedBlackTree.empty()) and deref st == '#'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty()) and deref st == '#'
     }
 
     @test
     def mapAWithKey02(): Bool = region r {
         let st = ref '#' @ r;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
-        ans == Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
     }
 
     @test
     def mapAWithKey03(): Bool = region r {
         let st = ref '#' @ r;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
-        ans == Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
     }
 
     @test
     def mapAWithKey04(): Bool = region r {
         let st = ref '#' @ r;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity(x)}, t);
-        ans == Identity(RedBlackTree.empty()
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
                             |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'
     }
