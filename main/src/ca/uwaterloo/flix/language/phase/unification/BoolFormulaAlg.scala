@@ -15,19 +15,17 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var, Xor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.annotation.tailrec
 import scala.collection.immutable.{IntMap, SortedSet}
 
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
   */
-class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
+class BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
   override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
 
@@ -184,19 +182,21 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
-  override def minimize(f: BoolFormula): BoolFormula =
-    if(flix.options.xqmc) {
-      f match {
-        case BoolFormula.True => BoolFormula.True
-        case BoolFormula.False => BoolFormula.False
-        case BoolFormula.Var(_) => f
-        case _ => QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
-      }
+  override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
 
-    } else {
-      BoolFormulaTable.minimizeFormula(f)
-    }
+  /**
+    * Minimizes `f` via the Quine-McCluskey algorithm
+    */
+  def minimizeQMC(f: BoolFormula): BoolFormula = f match {
+    case BoolFormula.True => BoolFormula.True
+    case BoolFormula.False => BoolFormula.False
+    case BoolFormula.Var(_) => f
+    case _ => QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
+  }
 
+  /**
+    * Collects all min terms for `f`.
+    */
   private def collectMinTerms(f: BoolFormula, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
     val all = collectAll(f, vars.toList, List.empty)
     all.map[IntMap[BoolVal]](l => {
@@ -212,6 +212,9 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     })
   }
 
+  /**
+    * Enumerates all assignments to `f` and returns the true ones as a set.
+    */
   private def collectAll(f: BoolFormula, l: List[Int], env: List[Int]): Set[List[Int]] = l match {
     case Nil =>
       // All variables are bound. Return the set of positive vars

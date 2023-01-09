@@ -61,6 +61,16 @@ class QuineMcCluskey {
     coverToType(cover, env)
   }
 
+  /**
+    * The Quine-McCluskey algorithm
+    * Takes the min terms of a formula as input
+    * Collects prime implicants and uses them
+    * to find a cover, then translates the cover
+    * to a BoolFormula
+    *
+    * Note: the implementation does not find a
+    * minimal, but instead a greedy cover
+    */
   def qmcToBoolFormula(minTerms: Set[IntMap[BoolVal]]): BoolFormula = {
     val primeImplicants = collectPrimeImplicants(minTerms)
     val cover = findCover(minTerms, primeImplicants)
@@ -97,6 +107,10 @@ class QuineMcCluskey {
     Type.mkAnd(typeVars, SourceLocation.Unknown)
   }
 
+  /**
+    * Converting a cover to a BoolFormula by making each prime
+    * implicant into an AND and OR'ing them together
+    */
   private def coverToBoolFormula(cover: Set[IntMap[BoolVal]]): BoolFormula = {
     if(cover.isEmpty) {
       return BoolFormula.False
@@ -109,6 +123,12 @@ class QuineMcCluskey {
     }
   }
 
+  /**
+    * Converting a prime implicant to a BoolFormula
+    * "Don't care"'s are thrown away, 0's are mapped to
+    * NOTs of vars and 1's are mapped to vars and these
+    * are AND'ed together
+    */
   private def primeImpToBoolFormula(primeImp: IntMap[BoolVal]): BoolFormula = {
     val formVars: List[BoolFormula] = primeImp.filter(kv => kv._2 != BoolVal.DontCare).map[BoolFormula](kv => {
       val formVar = kv._1
@@ -161,8 +181,10 @@ class QuineMcCluskey {
       for(m1 <- collectedSoFar) {
         for(m2 <- newTerms) {
           val (newMap, i_covered, j_covered) = offByOne(m1, m2)
-          if(newMap.nonEmpty && !(collectedSoFar contains newMap)) {
-            toAdd.add(newMap)
+          if(newMap.nonEmpty) {
+            if(!(collectedSoFar contains newMap)) {
+              toAdd.add(newMap)
+            }
             if(i_covered) {
               result.remove(m1)
             }
