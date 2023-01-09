@@ -56,8 +56,7 @@ class QuineMcCluskey {
     * minimal, but instead a greedy cover
     */
   def qmc(minTerms: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    //val primeImplicants = collectPrimeImplicants(minTerms.filter(ms => ms._2 == 0), minTerms.filter(ms => ms._2 != 0))
-    val primeImplicants = collectPrimeImplicants2(minTerms)
+    val primeImplicants = collectPrimeImplicants(minTerms)
     val cover = findCover(minTerms, primeImplicants)
     coverToType(cover, env)
   }
@@ -92,23 +91,39 @@ class QuineMcCluskey {
     Type.mkAnd(typeVars, SourceLocation.Unknown)
   }
 
-  private def collectPrimeImplicants2(minTerms: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
-    //keep track of "new"...
+  /**
+    * Finds the prime implicants from the min terms.
+    * Checks every pair of min terms to see if they
+    * can be combined until a fixpoint is reached.
+    * Removes all terms from the result that are covered
+    * by other terms.
+    */
+  private def collectPrimeImplicants(minTerms: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
+    //keeps track of all seen terms
     val collectedSoFar: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
+    //the terms where we have not checked for merges with collectedSoFar yet
+    var newTerms: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
+    //the resulting prime implicants
     val result: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
 
-    for(ms <- minTerms) {
-      collectedSoFar.add(ms)
-      result.add(ms)
-    }
+    collectedSoFar.addAll(minTerms)
+    newTerms.addAll(minTerms)
+    result.addAll(minTerms)
 
     var somethingChanged = true
+    //next rounds "newTerms"
     var toAdd: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
 
+    //Fixpoint algorithm - checks pairs from
+    //collectedSoFar and newTerms to find new
+    //ways to merge terms
+    //When a new term is found remove the
+    //inputs from "result" if they are covered by
+    //the new term
     while(somethingChanged) {
       for(m1 <- collectedSoFar) {
-        for(m2 <- collectedSoFar) {
-          val (newMap, i_covered, j_covered) = offByOne2(m1, m2)
+        for(m2 <- newTerms) {
+          val (newMap, i_covered, j_covered) = offByOne(m1, m2)
           if(newMap.nonEmpty && !(collectedSoFar contains newMap)) {
             toAdd.add(newMap)
             if(i_covered) {
@@ -120,8 +135,11 @@ class QuineMcCluskey {
           }
         }
       }
+
+      //set-up for next round
       somethingChanged = toAdd.nonEmpty
       collectedSoFar.addAll(toAdd)
+      newTerms = toAdd
       result.addAll(toAdd)
       toAdd = mutable.Set.empty
     }
@@ -130,72 +148,28 @@ class QuineMcCluskey {
   }
 
   /**
-    * Finds the prime implicants from the min terms.
-    * The min terms are given as two sets: those with
-    * size (# of "don't cares") 0 and those with larger
-    * size.
+    * Checks whether two terms can be merged to a new term
+    * Returns the new term and whether the input terms
+    * are covered by this new term
+    * Returns an empty map to signal failure to merge
     */
-  private def collectPrimeImplicants(size0: Set[(IntMap[BoolVal], Int)], larger: Set[(IntMap[BoolVal], Int)]): Set[IntMap[BoolVal]] = {
-    //The min terms with the current size
-    var thisLevel: mutable.Set[(IntMap[BoolVal], Int)] = mutable.Set.empty
-    for (s <- size0) {
-      thisLevel.add(s)
-    }
-    var nextLevel: mutable.Set[(IntMap[BoolVal], Int)] = mutable.Set.empty
-    var currentSize = 0
-    val primeImplicants: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
-
-    while (thisLevel.nonEmpty) {
-      //Compare all pairs of terms on this level to see
-      //whether they can be merged. If they can add them
-      //to the next level. If any term cannot be merged
-      //at all add it to the set of prime implicants.
-      //Note: this is too many comparisons - optimally
-      //we should only compare each term to those that
-      //one more 1 than them.
-      for ((m1, _) <- thisLevel) {
-        var used = false
-        for ((m2, _) <- thisLevel) {
-          val newMap = offByOne(m1, m2)
-          if (newMap.nonEmpty) {
-            used = true
-            nextLevel = nextLevel ++ Set((newMap, currentSize + 1))
-          }
-        }
-        if (!used) {
-          primeImplicants.add(m1)
-        }
-      }
-
-      thisLevel = nextLevel
-      nextLevel = mutable.Set.empty
-      currentSize = currentSize + 1
-
-      //Add those terms where the size is now correct
-      for ((map, size) <- larger) {
-        if (size == currentSize) {
-          thisLevel = thisLevel ++ Set((map, size))
-        }
-      }
-    }
-
-    //If there are any terms that were too large to ever
-    //be used, add them to the result
-    for ((map, size) <- larger) {
-      if (size > currentSize) {
-        primeImplicants.add(map)
-      }
-    }
-
-    primeImplicants.toSet
-  }
-
-  private def offByOne2(i: IntMap[BoolVal], j: IntMap[BoolVal]): (IntMap[BoolVal], Boolean, Boolean) = {
+  private def offByOne(i: IntMap[BoolVal], j: IntMap[BoolVal]): (IntMap[BoolVal], Boolean, Boolean) = {
     var newMap: IntMap[BoolVal] = IntMap.empty
     var eqSoFar = true
     var i_covered = true
     var j_covered = true
 
+    //Check compatibility on every variable (the
+    //set of variables is the same for any term)
+    //If the two terms agree on the value for the
+    //variable, add that value to the result
+    //If they disagree, but one value is "don't care"
+    //use the other value ("don't care" is not longer
+    //covered)
+    //If they disagree with true and false, return
+    //failure if this is not the first time
+    //If it is the first time, set the value to "don't
+    //care" and keep going
     for(x <- i.keySet) {
       val newXVal: BoolVal = (i(x), j(x)) match {
         case (BoolVal.True, BoolVal.True) => BoolVal.True
@@ -221,33 +195,6 @@ class QuineMcCluskey {
       (IntMap.empty, false, false)
     } else {
       (newMap, i_covered, j_covered)
-    }
-  }
-
-  /**
-    * Checks whether two terms of the same size have only
-    * one variable where their values differ and returns
-    * the merged term if so.
-    */
-  private def offByOne(i: IntMap[BoolVal], j: IntMap[BoolVal]): IntMap[BoolVal] = {
-    var eqSoFar = true
-    var changedVar: Int = -1
-
-    for (x <- i.keySet) {
-      if (i(x) != j(x)) {
-        if (eqSoFar) {
-          eqSoFar = false
-          changedVar = x
-        } else {
-          return IntMap.empty
-        }
-      }
-    }
-
-    if (eqSoFar) {
-      IntMap.empty
-    } else {
-      i.updated(changedVar, BoolVal.DontCare)
     }
   }
 
@@ -284,8 +231,8 @@ class QuineMcCluskey {
       }
     }
 
-    //Cover the rest of the min terms greedily (choosing the PI)
-    //that covers as many min terms as possible
+    //Cover the rest of the min terms greedily (choosing the PI
+    //that covers as many min terms as possible)
     //Keep going until all min terms are covered
     while (coverMap.nonEmpty) {
       //Greedily choose a PI
