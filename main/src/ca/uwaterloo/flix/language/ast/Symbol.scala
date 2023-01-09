@@ -114,6 +114,13 @@ object Symbol {
   }
 
   /**
+    * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkRestrictableEnumSym(ns: NName, ident: Ident): RestrictableEnumSym = {
+    new RestrictableEnumSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
@@ -126,6 +133,13 @@ object Symbol {
     */
   def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
     new CaseSym(sym, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the restrictable case symbol for the given name `ident` in the given `enum`.
+    */
+  def mkRestrictableCaseSym(sym: Symbol.RestrictableEnumSym, ident: Ident): RestrictableCaseSym = {
+    new RestrictableCaseSym(sym, ident.name, ident.loc)
   }
 
   /**
