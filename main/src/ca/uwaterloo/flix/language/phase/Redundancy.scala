@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
@@ -490,6 +489,9 @@ object Redundancy {
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
 
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
+      ??? // TODO RESTR-VARS
+
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
 
@@ -731,6 +733,10 @@ object Redundancy {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
+
+    case Expression.Error(_, _, _, _) =>
+      Used.empty
+
   }
 
   /**

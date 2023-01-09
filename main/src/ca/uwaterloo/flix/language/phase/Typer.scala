@@ -1193,6 +1193,8 @@ object Typer {
           } yield (constrs, resultTyp, resultPur, resultEff)
         }
 
+      case KindedAst.Expression.RestrictableTag(_, _, _, _) => ??? // TODO RESTR-VARS
+
       case KindedAst.Expression.Tuple(elms, loc) =>
         for {
           (elementConstrs, elementTypes, elementPurs, elementEffs) <- traverseM(elms)(visitExp).map(unzip4)
@@ -1869,6 +1871,9 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        InferMonad.point((Nil, tvar, pvar, evar))
+
     }
 
     /**
@@ -2059,6 +2064,12 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.RestrictableTag(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.RestrictableTag(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
@@ -2424,6 +2435,13 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Error(m, tpe, pur, eff)
+
     }
 
     /**

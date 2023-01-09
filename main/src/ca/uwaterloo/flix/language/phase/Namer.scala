@@ -754,6 +754,12 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
       }
 
+    case WeededAst.Expression.Of(qname, exp, loc) =>
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => e // TODO RESTR-VARS
+      }
+
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
@@ -982,6 +988,10 @@ object Namer {
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
+
+    case WeededAst.Expression.Error(m) =>
+      NamedAst.Expression.Error(m).toSoftFailure
+
   }
 
   /**

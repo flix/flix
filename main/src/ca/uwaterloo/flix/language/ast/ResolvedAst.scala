@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -39,6 +40,7 @@ object ResolvedAst {
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
   sealed trait Declaration
+
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
@@ -115,6 +117,8 @@ object ResolvedAst {
     case class RelationalChoose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.RelationalChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -211,6 +215,10 @@ object ResolvedAst {
     case class FixpointInject(exp: ResolvedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Error(m: CompilationMessage) extends ResolvedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 

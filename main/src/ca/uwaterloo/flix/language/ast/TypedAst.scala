@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 import ca.uwaterloo.flix.language.phase.Lowering
@@ -159,6 +160,8 @@ object TypedAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
@@ -291,6 +294,10 @@ object TypedAst {
     case class FixpointInject(exp: TypedAst.Expression, pred: Name.Pred, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Error(m: CompilationMessage, tpe: Type, pur: Type, eff: Type) extends TypedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 

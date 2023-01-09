@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.CodeHint
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
@@ -153,6 +153,9 @@ object CodeHinter {
       }
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Tuple(exps, _, _, _, _) =>
@@ -307,6 +310,10 @@ object CodeHinter {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      Nil
+
   }
 
   /**

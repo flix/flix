@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -474,6 +474,12 @@ object Kinder {
         exp => KindedAst.Expression.Tag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.RestrictableTag(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        exp => KindedAst.Expression.RestrictableTag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.Tuple(elms0, loc) =>
       val elmsVal = traverse(elms0)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(elmsVal) {
@@ -807,6 +813,13 @@ object Kinder {
       mapN(exp1Val, exp2Val) {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
+
+    case ResolvedAst.Expression.Error(m) =>
+      val tvar = Type.freshVar(Kind.Star, m.loc)
+      val pvar = Type.freshVar(Kind.Bool, m.loc)
+      val evar = Type.freshVar(Kind.Effect, m.loc)
+      KindedAst.Expression.Error(m, tvar, pvar, evar).toSoftFailure
+
   }
 
   /**

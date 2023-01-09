@@ -203,6 +203,11 @@ object Stratifier {
         case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
       }
 
+    case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.RestrictableTag(sym, e, tpe, pur, eff, loc)
+      }
+
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
         case es => Expression.Tuple(es, tpe, pur, eff, loc)
@@ -469,6 +474,10 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      exp0.toSoftFailure
+
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
@@ -584,6 +593,9 @@ object Stratifier {
       dg1 + dg2
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -756,6 +768,10 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      LabelledGraph.empty
+
   }
 
   /**
