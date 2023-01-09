@@ -185,15 +185,14 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     * are mapped to 2 ("don't care"). Also gives the
     * number of "don't care" variables in each min term.
     */
-  private def collectMinTerms(f: DD, vars: SortedSet[Int]): Set[(IntMap[BoolVal], Int)] = {
+  private def collectMinTerms(f: DD, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
     val terms = collectTerms(f, vars, IntMap.empty)
     val noEmptyTerms = terms.filter(t => t.nonEmpty)
     noEmptyTerms.map { t =>
       val keys = t.keySet
       val dontCares = vars -- keys
-      val size = dontCares.size
       val dontCareMap = dontCares.foldLeft(IntMap.empty[BoolVal])((acc, dc) => acc ++ IntMap(dc -> BoolVal.DontCare))
-      (t ++ dontCareMap, size)
+      t ++ dontCareMap
     }
   }
 

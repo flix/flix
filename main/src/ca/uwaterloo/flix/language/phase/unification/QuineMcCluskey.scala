@@ -22,6 +22,10 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import scala.collection.mutable
 import scala.collection.immutable.IntMap
 
+/**
+  * The representation of a variable being true, false
+  * or either ("don't care").
+  */
 sealed trait BoolVal
 
 object BoolVal {
@@ -33,6 +37,9 @@ object BoolVal {
 }
 
 object QuineMcCluskey {
+  /**
+    * A global object to run the Quine-McCluskey algorithm
+    */
   val Global: QuineMcCluskey = new QuineMcCluskey()
 }
 
@@ -40,16 +47,17 @@ class QuineMcCluskey {
 
   /**
     * The Quine-McCluskey algorithm
-    * Takes the min terms as input
-    * Collect prime implicants
-    * and use them to find a cover,
-    * then translates the cover to a
-    * Type based on the environment
+    * Takes the min terms of a formula as input
+    * Collects prime implicants and uses them
+    * to find a cover, then translates the cover
+    * to a Type based on the environment
+    *
     * Note: the implementation does not find a
     * minimal, but instead a greedy cover
     */
-  def qmc(minTerms: Set[(IntMap[BoolVal], Int)], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    val primeImplicants = collectPrimeImplicants(minTerms.filter(ms => ms._2 == 0), minTerms.filter(ms => ms._2 != 0))
+  def qmc(minTerms: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    //val primeImplicants = collectPrimeImplicants(minTerms.filter(ms => ms._2 == 0), minTerms.filter(ms => ms._2 != 0))
+    val primeImplicants = collectPrimeImplicants2(minTerms)
     val cover = findCover(minTerms, primeImplicants)
     coverToType(cover, env)
   }
@@ -82,6 +90,43 @@ class QuineMcCluskey {
       }
     }).toList
     Type.mkAnd(typeVars, SourceLocation.Unknown)
+  }
+
+  private def collectPrimeImplicants2(minTerms: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
+    //keep track of "new"...
+    val collectedSoFar: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
+    val result: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
+
+    for(ms <- minTerms) {
+      collectedSoFar.add(ms)
+      result.add(ms)
+    }
+
+    var somethingChanged = true
+    var toAdd: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
+
+    while(somethingChanged) {
+      for(m1 <- collectedSoFar) {
+        for(m2 <- collectedSoFar) {
+          val (newMap, i_covered, j_covered) = offByOne2(m1, m2)
+          if(newMap.nonEmpty && !(collectedSoFar contains newMap)) {
+            toAdd.add(newMap)
+            if(i_covered) {
+              result.remove(m1)
+            }
+            if(j_covered) {
+              result.remove(m2)
+            }
+          }
+        }
+      }
+      somethingChanged = toAdd.nonEmpty
+      collectedSoFar.addAll(toAdd)
+      result.addAll(toAdd)
+      toAdd = mutable.Set.empty
+    }
+
+    result.toSet
   }
 
   /**
@@ -145,6 +190,40 @@ class QuineMcCluskey {
     primeImplicants.toSet
   }
 
+  private def offByOne2(i: IntMap[BoolVal], j: IntMap[BoolVal]): (IntMap[BoolVal], Boolean, Boolean) = {
+    var newMap: IntMap[BoolVal] = IntMap.empty
+    var eqSoFar = true
+    var i_covered = true
+    var j_covered = true
+
+    for(x <- i.keySet) {
+      val newXVal: BoolVal = (i(x), j(x)) match {
+        case (BoolVal.True, BoolVal.True) => BoolVal.True
+        case (BoolVal.False, BoolVal.False) => BoolVal.False
+        case (BoolVal.DontCare, BoolVal.DontCare) => BoolVal.DontCare
+
+        case (y, BoolVal.DontCare) => j_covered = false; y
+        case (BoolVal.DontCare, z) => i_covered = false; z
+
+        case _ =>
+          if(eqSoFar) {
+            eqSoFar = false
+            BoolVal.DontCare
+          } else {
+            return (IntMap.empty, false, false)
+          }
+
+      }
+      newMap = newMap ++ IntMap((x, newXVal))
+    }
+
+    if(eqSoFar) {
+      (IntMap.empty, false, false)
+    } else {
+      (newMap, i_covered, j_covered)
+    }
+  }
+
   /**
     * Checks whether two terms of the same size have only
     * one variable where their values differ and returns
@@ -176,12 +255,12 @@ class QuineMcCluskey {
     * Finds a small cover for the given min terms
     * The cover is not minimal, but greedy
     */
-  private def findCover(minTerms: Set[(IntMap[BoolVal], Int)], primeImplicants: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
+  private def findCover(minTerms: Set[IntMap[BoolVal]], primeImplicants: Set[IntMap[BoolVal]]): Set[IntMap[BoolVal]] = {
     val cover: mutable.Set[IntMap[BoolVal]] = mutable.Set.empty
 
     //For each min term find the PIs that cover it
     val coverMap: mutable.Map[IntMap[BoolVal], Set[IntMap[BoolVal]]] = mutable.Map.empty
-    for ((term, _) <- minTerms) {
+    for (term <- minTerms) {
       val coveredBy = canBeCoveredBy(term, primeImplicants)
       coverMap.update(term, coveredBy)
     }
