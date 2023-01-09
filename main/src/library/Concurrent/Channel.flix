@@ -349,8 +349,6 @@ namespace Concurrent/Channel {
         selectLock: ReentrantLock,
         selectCondition: Condition
     ): (Int32, List[ReentrantLock]) \ IO =
-        // bug if the thread is interrupted
-        if (threadInterrupted()) bug!("thread interrupted") else
 
         // Lock all locks in sorted order. This avoids the case
         // where a channel receives an element while the later channels are
@@ -455,25 +453,13 @@ namespace Concurrent/Channel {
     // ------------- Helper Methods --------------------------------------------
 
 
-    ///
-    /// Wrapper for `java.lang.Thread:interrupted()`.
-    ///
-    def threadInterrupted(): Bool \ IO =
-        import static java.lang.Thread.interrupted(): Bool \ IO;
-        interrupted()
 
     ///
-    /// Unsafe wrapper for `Concurrent/Condition.awaitUninterruptibly(c)` that
-    /// handles `Err` with `bug!`.
+    /// Unsafe wrapper for `Concurrent/Condition.await(c)` 
     /// The channel lock is expected to be held.
     ///
     def awaitCondition(c: Condition): Unit \ IO =
-        match Concurrent/Condition.awaitUninterruptibly(c) {
-            case Ok(_) => ()
-            case Err(_) =>
-                // Error: await without holding the corresponding lock
-                bug!("Implementation error: lock not held")
-        }
+        Concurrent/Condition.await(c)
 
     ///
     /// Unsafe wrapper for `Concurrent/Condition.signalAll(c)` that handles

@@ -116,7 +116,7 @@ object GenTupleClasses {
       val fieldName = s"field$ind"
 
       // Defining fields of the tuple
-      AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = false)
+      AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = false, isVolatile = false)
     }
 
     // Emit the code for the constructor

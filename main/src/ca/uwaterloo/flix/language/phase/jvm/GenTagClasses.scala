@@ -117,11 +117,11 @@ object GenTagClasses {
     visitor.visitSource(classType.name.toInternalName, null)
 
     // Generate the value field.
-    AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true, isVolatile = false)
 
     // Generate static `INSTANCE` field if it is a singleton
     if (JvmOps.isUnitTag(tag)) {
-      AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false)
+      AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false, isVolatile = false)
     }
 
     // Generate the constructor of the generated class.
