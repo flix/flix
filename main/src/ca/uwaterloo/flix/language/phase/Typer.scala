@@ -1872,15 +1872,7 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
-        val constrs = Nil
-        val expectedType = Type.freshVar(Kind.Star, m.loc)
-        val expectedPur = Type.freshVar(Kind.Bool, m.loc)
-        val expectedEff = Type.freshVar(Kind.Effect, m.loc)
-        for {
-          resultTyp <- unifyTypeM(tvar, expectedType, m.loc)
-          resultPur <- unifyTypeM(pvar, expectedPur, m.loc)
-          resultEff <- unifyTypeM(evar, expectedEff, m.loc)
-        } yield (constrs, resultTyp, resultPur, resultEff)
+        (Nil, tvar, pvar, evar)
     }
 
     /**
