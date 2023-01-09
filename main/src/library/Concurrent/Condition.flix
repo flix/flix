@@ -27,29 +27,14 @@ namespace Concurrent {
         use Concurrent.Condition;
         use Concurrent.Condition.Condition;
 
-
-        ///
-        /// An enum reflecting the two exceptions occurring in condition methods, lock state errors and thread interruptions.
-        ///
-        @Internal
-        pub enum ConditionError {
-            case MonitorStateError(##java.lang.IllegalMonitorStateException)
-            case InterruptedError(##java.lang.InterruptedException)
-        }
-
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
         @Internal
-        pub def await(condition: Condition): Result[ConditionError, Unit] \ IO =
+        pub def await(condition: Condition): Unit \ IO =
             import java.util.concurrent.locks.Condition.await(): Unit \ IO;
             let Condition(c) = condition;
-            try {
-                Ok(await(c))
-            } catch {
-                case e: ##java.lang.InterruptedException => Err(ConditionError.InterruptedError(e))
-                case e: ##java.lang.IllegalMonitorStateException => Err(ConditionError.MonitorStateError(e))
-            }
+            await(c)
 
         ///
         /// Causes the current thread to wait until it is signalled or interrupted, or the specified waiting
@@ -57,28 +42,10 @@ namespace Concurrent {
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
         @Internal
-        pub def awaitTimeout(condition: Condition, timeout: Int64): Result[ConditionError, Int64] \ IO =
+        pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
             import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
             let Condition(c) = condition;
-            try {
-                Ok(awaitNanos(c, timeout))
-            } catch {
-                case e: ##java.lang.InterruptedException => Err(ConditionError.InterruptedError(e))
-                case e: ##java.lang.IllegalMonitorStateException => Err(ConditionError.MonitorStateError(e))
-            }
-
-        ///
-        /// Causes the current thread to wait until it is signalled.
-        ///
-        @Internal
-        pub def awaitUninterruptibly(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.awaitUninterruptibly(): Unit \ IO;
-            let Condition(c) = condition;
-            try {
-                Ok(awaitUninterruptibly(c))
-            } catch {
-                case e: ##java.lang.IllegalMonitorStateException => Err(e)
-            }
+            awaitNanos(c, timeout)
 
         ///
         /// Wakes up one waiting thread.
