@@ -64,6 +64,7 @@ object GenLazyClasses {
     * force will only evaluate the expression the first time, based on expression == null.
     * After that point it will store the result in value and just return that. Since force is
     * synchronized, this check should be done inline and not through force, unless expression != null.
+    * Note that expression is volatile to ensure that this check is correctly synchronized.
     */
   private def genByteCode(classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
@@ -75,8 +76,8 @@ object GenLazyClasses {
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
 
-    AsmOps.compileField(visitor, "expression", JvmType.Object, isStatic = false, isPrivate = false)
-    AsmOps.compileField(visitor, "value", erasedType, isStatic = false, isPrivate = false)
+    AsmOps.compileField(visitor, "expression", JvmType.Object, isStatic = false, isPrivate = false, isVolatile = true)
+    AsmOps.compileField(visitor, "value", erasedType, isStatic = false, isPrivate = false, isVolatile = false)
     compileForceMethod(visitor, classType, erasedType, valueType)
 
     // Emit the code for the constructor

@@ -91,7 +91,7 @@ object GenClosureClasses {
       val erasedArgType = JvmOps.getErasedJvmType(argType)
 
       // `clo$index` field
-      AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false)
+      AsmOps.compileField(visitor, s"clo$index", erasedArgType, isStatic = false, isPrivate = false, isVolatile = false)
     }
 
     val defn = root.defs(closure.sym)
