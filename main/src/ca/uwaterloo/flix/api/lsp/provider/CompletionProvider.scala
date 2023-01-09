@@ -502,11 +502,7 @@ object CompletionProvider {
     * Returns `true` if the given definition `decl` should be included in the suggestions.
     */
   private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean =
-      decl.spec.ann.exists(a => a.name match {
-        case Ast.Annotation.Internal(_) => true
-        case _ => false
-      })
+    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
 
     val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
     val isNamespace = word.nonEmpty && word.head.isUpper

@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Test}
-import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
@@ -67,6 +65,7 @@ object TypedAstOps {
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.RelationalChoose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.RestrictableTag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expression.RecordEmpty(_, _) => Set.empty
     case Expression.RecordSelect(exp, _, _, _, _, _) => sigSymsOf(exp)
@@ -115,6 +114,7 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointInject(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Error(_, _, _, _) => Set.empty
   }
 
   /**
@@ -126,20 +126,6 @@ object TypedAstOps {
       inst <- instsPerClass
       defn <- inst.defs
     } yield defn
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
-    */
-  def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Test]] annotation.
-    */
-  def isTest(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Test]
   }
 
   /**
@@ -219,6 +205,9 @@ object TypedAstOps {
       es ++ rs
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -387,6 +376,10 @@ object TypedAstOps {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       freeVars(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      Map.empty
+
   }
 
   /**

@@ -522,7 +522,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Assign
+    Expressions.Of
   }
 
   def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
@@ -570,6 +570,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
       }
+    }
+
+    def Of: Rule1[ParsedAst.Expression] = rule {
+      (Names.QName ~ WS ~ keyword("of") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Of) | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -1768,7 +1772,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Annotation: Rule1[ParsedAst.Annotation] = rule {
-    SP ~ "@" ~ Names.Annotation ~ OptArgumentList ~ SP ~> ParsedAst.Annotation
+    SP ~ "@" ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
   }
 
   /////////////////////////////////////////////////////////////////////////////

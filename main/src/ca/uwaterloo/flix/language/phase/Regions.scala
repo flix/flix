@@ -155,6 +155,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.RestrictableTag(_, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Tuple(elms, tpe, _, _, loc) =>
       flatMapN(traverse(elms)(visitExp)) {
         case es => checkType(tpe, loc)
@@ -406,6 +411,10 @@ object Regions {
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      ().toSoftFailure
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

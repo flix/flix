@@ -148,16 +148,16 @@ object ParsedAst {
     /**
       * Restrictable Enum Declaration.
       *
-      * @param doc      the optional comment associated with the declaration.
-      * @param ann      the associated annotations.
-      * @param mod      the associated modifiers.
-      * @param sp1      the position of the first character in the declaration.
-      * @param ident    the name of the enum.
-      * @param index    the type parameter the describes the restriction of tags.
-      * @param tparams  the type parameters.
-      * @param derives  the derivations of the enum.
-      * @param cases    the cases of the enum.
-      * @param sp2      the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param ann     the associated annotations.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the enum.
+      * @param index   the type parameter the describes the restriction of tags.
+      * @param tparams the type parameters.
+      * @param derives the derivations of the enum.
+      * @param cases   the cases of the enum.
+      * @param sp2     the position of the last character in the declaration.
       */
     case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -974,6 +974,15 @@ object ParsedAst {
       * @param sp2       the position of the last character in the expression.
       */
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Of Expression.
+      *
+      * @param name the tag of the expression.
+      * @param exp  the expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
@@ -1971,10 +1980,9 @@ object ParsedAst {
     *
     * @param sp1   the position of the first character in the annotation.
     * @param ident the name of the annotation.
-    * @param args  the arguments passed to the annotation.
     * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Argument]], sp2: SourcePosition)
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
 
   /**
     * An enum representing the handler of a `try` expression.

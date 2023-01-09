@@ -248,6 +248,41 @@ object Ast {
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
+      * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
+      */
+    def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Experimental` annotation.
+      */
+    def isExperimental: Boolean = annotations exists (_.isInstanceOf[Annotation.Experimental])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Internal` annotation.
+      */
+    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Lazy` annotation.
+      */
+    def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
+      */
+    def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@Parallel` annotation.
+      */
+    def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@ParallelWhenPure` annotation.
+      */
+    def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
+
+    /**
       * Returns `true` if `this` sequence contains the `@Skip` annotation.
       */
     def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])
@@ -257,6 +292,10 @@ object Ast {
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
+    /**
+      * Returns `true` if `this` sequence contains the `@Unsafe` annotation.
+      */
+    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
 
   /**
@@ -539,6 +578,11 @@ object Ast {
     * Represents a use of an enum case sym.
     */
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of an enum case sym.
+    */
+  case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
 
   /**
     * Represents a use of a class sym.
