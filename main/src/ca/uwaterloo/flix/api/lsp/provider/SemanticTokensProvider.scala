@@ -531,6 +531,10 @@ object SemanticTokensProvider {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      Iterator.empty
+
   }
 
   /**

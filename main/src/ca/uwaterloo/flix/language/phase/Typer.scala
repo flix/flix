@@ -1871,6 +1871,9 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        InferMonad.point((Nil, tvar, pvar, evar))
+
     }
 
     /**
@@ -2432,6 +2435,13 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Error(m, tpe, pur, eff)
+
     }
 
     /**

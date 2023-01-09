@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.{CompilationMessage, ast}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -202,6 +202,10 @@ object KindedAst {
     case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class Error(m: CompilationMessage, tpe: Type.Var, pur: Type.Var, eff: Type.Var) extends KindedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 

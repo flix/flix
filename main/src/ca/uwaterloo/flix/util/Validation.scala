@@ -509,8 +509,11 @@ object Validation {
   /**
     * Adds an implicit `toSoftFailure` method.
     */
-  implicit class ToSoftFailure[+T, +E](val te: (T, E)) {
-    def toSoftFailure[U >: T, F >: E]: Validation[U, F] = Validation.SoftFailure(te._1, LazyList(te._2))
+  implicit class ToSoftFailure[+T](val t: T) {
+    /**
+      * Returns a [[Validation.SoftFailure]] containing [[t]] with no errors.
+      */
+    def toSoftFailure[U >: T, E]: Validation[U, E] = Validation.SoftFailure(t, LazyList.empty[E])
   }
 
   /**
