@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -235,6 +235,7 @@ object PatternExhaustiveness {
       case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Error(_, _, _, _) => Nil
     }
   }
 
