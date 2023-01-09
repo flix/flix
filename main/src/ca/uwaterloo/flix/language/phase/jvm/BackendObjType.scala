@@ -995,7 +995,7 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkField(ThreadsField)
-      cm.mkField(ParentThreadField)
+      cm.mkField(RegionThreadField)
       cm.mkField(ChildExceptionField)
 
       cm.mkConstructor(Constructor)
@@ -1011,8 +1011,8 @@ object BackendObjType {
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
     def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
 
-    // private final Thread parentThread = Thread.currentThread();
-    def ParentThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "parentThread", JvmName.Thread.toTpe)
+    // private final Thread regionThread = Thread.currentThread();
+    def RegionThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "regionThread", JvmName.Thread.toTpe)
 
     // private volatile Throwable childException = null;
     def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
@@ -1023,7 +1023,7 @@ object BackendObjType {
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
       thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-      PUTFIELD(ParentThreadField) ~
+      PUTFIELD(RegionThreadField) ~
       thisLoad() ~ ACONST_NULL() ~
       PUTFIELD(ChildExceptionField) ~
       RETURN()
@@ -1070,12 +1070,12 @@ object BackendObjType {
 
     // final public void reportChildException(Throwable e) {
     //   childException = e;
-    //   parentThread.interrupt();
+    //   regionThread.interrupt();
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
       thisLoad() ~ ALOAD(1) ~ 
       PUTFIELD(ChildExceptionField) ~
-      thisLoad() ~ GETFIELD(ParentThreadField) ~ 
+      thisLoad() ~ GETFIELD(RegionThreadField) ~ 
       INVOKEVIRTUAL(Thread.InterruptMethod) ~
       RETURN()
     ))
