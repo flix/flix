@@ -98,6 +98,9 @@ class QuineMcCluskey {
   }
 
   private def coverToBoolFormula(cover: Set[IntMap[BoolVal]]): BoolFormula = {
+    if(cover.isEmpty) {
+      return BoolFormula.False
+    }
     val formList = cover.foldLeft(List.empty[BoolFormula])((acc, m) => acc ++ List(primeImpToBoolFormula(m)))
     if (formList.size == 1) {
       formList.head
@@ -115,7 +118,10 @@ class QuineMcCluskey {
         BoolFormula.Var(formVar)
       }
     }).toList
-    if (formVars.size == 1) {
+    if(formVars.isEmpty) {
+      BoolFormula.True
+    }
+    else if (formVars.size == 1) {
       formVars.head
     } else {
       formVars.reduce((b1, b2) => BoolFormula.And(b1, b2))

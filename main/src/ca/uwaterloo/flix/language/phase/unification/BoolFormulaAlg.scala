@@ -186,7 +186,13 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
 
   override def minimize(f: BoolFormula): BoolFormula =
     if(flix.options.xqmc) {
-      QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
+      f match {
+        case BoolFormula.True => BoolFormula.True
+        case BoolFormula.False => BoolFormula.False
+        case BoolFormula.Var(_) => f
+        case _ => QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
+      }
+
     } else {
       BoolFormulaTable.minimizeFormula(f)
     }
