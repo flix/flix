@@ -195,6 +195,7 @@ object BoolFormula {
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
+    case Xor(t1, t2) => toBoolType(Or(And(t1, Not(t2)), And(Not(t1), t2)), m, loc)
   }
 
   /**
@@ -213,6 +214,7 @@ object BoolFormula {
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
+    case Xor(t1, t2) => toEffType(Or(And(t1, Not(t2)), And(Not(t1), t2)), m, loc)
   }
 
 
