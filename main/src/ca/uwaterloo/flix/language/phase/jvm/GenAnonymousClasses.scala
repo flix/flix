@@ -123,7 +123,7 @@ object GenAnonymousClasses {
       val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(method.retTpe))
 
       // Create the field that will store the closure implementing the body of the method
-      AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false)
+      AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)
 
       // Drop the first formal parameter (which always represents `this`)
       val paramTypes = fparams.tail.map(_.tpe)
