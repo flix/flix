@@ -416,8 +416,16 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
 
-    case TypedAst.Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
-      ??? // TODO RESTR-VARS
+    case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, pur, eff, loc) =>
+      // Lower a restrictable tag into a normal tag.
+      val caseSym0 = sym0.sym
+      val enumSym0 = caseSym0.enumSym
+      val enumSym = new Symbol.EnumSym(enumSym0.namespace, enumSym0.name, enumSym0.loc)
+      val caseSym = new Symbol.CaseSym(enumSym, caseSym0.name, caseSym0.loc)
+      val sym = CaseSymUse(caseSym, sym0.loc)
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Tag(sym, e, t, pur, eff, loc)
 
     case TypedAst.Expression.Tuple(elms, tpe, pur, eff, loc) =>
       val es = visitExps(elms)
@@ -767,6 +775,10 @@ object Lowering {
       val defExp = LoweredAst.Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
+
+    case TypedAst.Expression.Error(m, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected error expression near", m.loc)
+
   }
 
   /**

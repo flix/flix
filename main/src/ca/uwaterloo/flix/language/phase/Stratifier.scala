@@ -474,6 +474,10 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      exp0.toSoftFailure
+
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
@@ -764,6 +768,10 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      LabelledGraph.empty
+
   }
 
   /**
