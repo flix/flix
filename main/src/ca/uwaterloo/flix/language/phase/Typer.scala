@@ -1872,7 +1872,8 @@ object Typer {
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
-        (Nil, tvar, pvar, evar)
+        InferMonad.point((Nil, tvar, pvar, evar))
+
     }
 
     /**
