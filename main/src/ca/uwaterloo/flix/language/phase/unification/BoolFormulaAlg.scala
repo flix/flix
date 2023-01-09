@@ -169,20 +169,12 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     case Var(sym) => fn(sym)
   }
 
-  override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    if (flix.options.xqmc) {
-      toTypeQMC(f, env)
-    } else {
-      toTypeClassic(f, env)
-    }
-  }
-
-  private def toTypeClassic(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+  override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
     case True => Type.True
     case False => Type.False
     case And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
     case Or(f1, f2) => Type.mkApply(Type.Or, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
-    case Xor(f1, f2) => toTypeClassic(super.mkXor(f1, f2), env)
+    case Xor(f1, f2) => toType(super.mkXor(f1, f2), env)
     case Not(f1) => Type.Apply(Type.Not, toType(f1, env), SourceLocation.Unknown)
     case Var(id) => env.getBackward(id) match {
       case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
@@ -190,11 +182,14 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
     }
   }
 
-  private def toTypeQMC(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    val vars = freeVars(f)
-    val minTerms = collectMinTerms(f, vars)
-    QuineMcCluskey.Global.qmc(minTerms, env)
-  }
+  override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
+
+  override def minimize(f: BoolFormula): BoolFormula =
+    if(flix.options.xqmc) {
+      QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
+    } else {
+      BoolFormulaTable.minimizeFormula(f)
+    }
 
   private def collectMinTerms(f: BoolFormula, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
     val all = collectAll(f, vars.toList, List.empty)
@@ -213,14 +208,10 @@ class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
 
   private def collectAll(f: BoolFormula, l: List[Int], env: List[Int]): Set[List[Int]] = l match {
     case Nil =>
-      // All variables are bound. Compute the truth value.
+      // All variables are bound. Return the set of positive vars
       if (evaluate(f, env)) Set(env) else Set.empty
     case x :: xs =>
       // Recurse on two cases: x = false and x = true.
       collectAll(f, xs, env) ++ collectAll(f, xs, x :: env)
   }
-
-  override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
-
-  override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
 }

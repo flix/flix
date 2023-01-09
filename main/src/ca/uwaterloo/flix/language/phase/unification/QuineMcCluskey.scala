@@ -55,10 +55,16 @@ class QuineMcCluskey {
     * Note: the implementation does not find a
     * minimal, but instead a greedy cover
     */
-  def qmc(minTerms: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+  def qmcToType(minTerms: Set[IntMap[BoolVal]], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
     val primeImplicants = collectPrimeImplicants(minTerms)
     val cover = findCover(minTerms, primeImplicants)
     coverToType(cover, env)
+  }
+
+  def qmcToBoolFormula(minTerms: Set[IntMap[BoolVal]]): BoolFormula = {
+    val primeImplicants = collectPrimeImplicants(minTerms)
+    val cover = findCover(minTerms, primeImplicants)
+    coverToBoolFormula(cover)
   }
 
   /**
@@ -89,6 +95,31 @@ class QuineMcCluskey {
       }
     }).toList
     Type.mkAnd(typeVars, SourceLocation.Unknown)
+  }
+
+  private def coverToBoolFormula(cover: Set[IntMap[BoolVal]]): BoolFormula = {
+    val formList = cover.foldLeft(List.empty[BoolFormula])((acc, m) => acc ++ List(primeImpToBoolFormula(m)))
+    if (formList.size == 1) {
+      formList.head
+    } else {
+      formList.reduce((b1, b2) => BoolFormula.Or(b1, b2))
+    }
+  }
+
+  private def primeImpToBoolFormula(primeImp: IntMap[BoolVal]): BoolFormula = {
+    val formVars: List[BoolFormula] = primeImp.filter(kv => kv._2 != BoolVal.DontCare).map[BoolFormula](kv => {
+      val formVar = kv._1
+      if (kv._2 == BoolVal.False) {
+        BoolFormula.Not(BoolFormula.Var(formVar))
+      } else {
+        BoolFormula.Var(formVar)
+      }
+    }).toList
+    if (formVars.size == 1) {
+      formVars.head
+    } else {
+      formVars.reduce((b1, b2) => BoolFormula.And(b1, b2))
+    }
   }
 
   /**
