@@ -25,32 +25,37 @@ def main(): Unit \ IO = region r {
     /// On the right side of the arrow we get
     /// an iterator over `l`.
     ///
-    foreach (x <- List.iterator(r, l))
+    foreach (x <- l)
         println(x);
 
     ///
-    /// Note that we can match the pattern that
+    /// Enumerator loops are not currently supported
+    /// in Flix. Supported for them will be revived
+    /// when `foreach` loops desugar to Streams
+    /// rather than Iterators.
+    ///
+    /// ~~~ Note that we can match the pattern that
     /// the iterator on the right returns.
     ///
     /// In this case, the enumerator is an iterator
     /// which also contains the index of the element.
     ///
     /// This may be familiar to you if you have
-    /// some experience with Rust.
+    /// some experience with Rust. ~~~
     ///
-    foreach ((x, i) <- List.enumerator(r, l))
-        println("${(x, i)}");
+    // foreach ((x, i) <- List.enumerator(r, l))
+    //     println("${(x, i)}");
 
     ///
     /// foreach-loops are in fact just syntactic
-    /// sugar for `foreach` functions.
+    /// sugar for `forEach` functions.
     ///
-    /// Thus, by the type of `foreach` the last
+    /// Thus, by the type of `forEach` the last
     /// expression in the foreach loop must be
     /// of type unit.
     ///
     let z = ref Nil;
-    foreach (x <- List.iterator(r, l))
+    foreach (x <- l)
         z := x :: deref z;
 
     ///
@@ -70,9 +75,9 @@ def main(): Unit \ IO = region r {
     ///
     let k = 4 :: 5 :: 6 :: Nil;
     let w = ref Nil;
-    foreach (a <- List.iterator(r, l)) {
+    foreach (a <- l) {
         w := a :: deref w;
-        foreach (b <- List.iterator(r, k))
+        foreach (b <- k)
             w := b :: deref w
     };
 
@@ -100,8 +105,8 @@ def main(): Unit \ IO = region r {
     /// some experience with Scala's for-loops.
     ///
     let e = ref Nil;
-    foreach (a <- List.iterator(r, l);
-             b <- List.iterator(r, k))
+    foreach (a <- l;
+             b <- k)
                 e := (a, b) :: deref e;
 
     ///
@@ -130,9 +135,9 @@ def main(): Unit \ IO = region r {
     /// for-loops.
     ///
     let c = ref Nil;
-    foreach (a <- List.iterator(r, l);
+    foreach (a <- l;
              if a > 1;
-             b <- List.iterator(r, k);
+             b <- k;
              if b < 6)
                 c := (a, b) :: deref c;
 
@@ -141,8 +146,8 @@ def main(): Unit \ IO = region r {
     /// at the end of the parenthesis.
     ///
     let d = ref Nil;
-    foreach (a <- List.iterator(r, l);
-             b <- List.iterator(r, k);
+    foreach (a <- l;
+             b <- k;
              if a > 1 and b < 6)
                 d := (a, b) :: deref d;
 

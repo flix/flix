@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import ca.uwaterloo.flix.language.ast.Ast.Annotation.{Benchmark, Test}
-import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
@@ -65,8 +63,9 @@ object TypedAstOps {
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
     case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expression.Choose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.RestrictableTag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
     case Expression.RecordEmpty(_, _) => Set.empty
     case Expression.RecordSelect(exp, _, _, _, _, _) => sigSymsOf(exp)
@@ -115,6 +114,7 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointInject(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Error(_, _, _, _) => Set.empty
   }
 
   /**
@@ -126,20 +126,6 @@ object TypedAstOps {
       inst <- instsPerClass
       defn <- inst.defs
     } yield defn
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Benchmark]] annotation.
-    */
-  def isBenchmark(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Benchmark]
-  }
-
-  /**
-    * Returns `true` if the given annotations contains the [[Test]] annotation.
-    */
-  def isTest(xs: List[Annotation]): Boolean = xs.exists {
-    case Annotation(name, _, _) => name.isInstanceOf[Test]
   }
 
   /**
@@ -209,16 +195,19 @@ object TypedAstOps {
         case (acc, MatchTypeRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
       val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, ChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
+        case (acc, RelationalChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
       }
       es ++ rs
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -387,6 +376,10 @@ object TypedAstOps {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       freeVars(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      Map.empty
+
   }
 
   /**
@@ -415,10 +408,10 @@ object TypedAstOps {
   /**
     * Returns the free variables in the given pattern `pat0`.
     */
-  private def freeVars(pat0: ChoicePattern): Set[Symbol.VarSym] = pat0 match {
-    case ChoicePattern.Wild(_) => Set.empty
-    case ChoicePattern.Absent(_) => Set.empty
-    case ChoicePattern.Present(sym, _, _) => Set(sym)
+  private def freeVars(pat0: RelationalChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case RelationalChoicePattern.Wild(_) => Set.empty
+    case RelationalChoicePattern.Absent(_) => Set.empty
+    case RelationalChoicePattern.Present(sym, _, _) => Set(sym)
   }
 
   /**

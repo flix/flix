@@ -1048,16 +1048,36 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool \ IO =
-        let r = ref 21;
-        Nec.forEach(x -> r := x, singleton(1));
-        1 == deref r
+    def forEach01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEach(x -> ri := x, singleton(1));
+        1 == deref ri
+    }
 
     @test
-    def forEach02(): Bool \ IO =
-        let r = ref 21;
-        Nec.forEach(x -> r := x, necOf3(1, 2, 3));
-        3 == deref r
+    def forEach02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEach(x -> ri := x, necOf3(1, 2, 3));
+        3 == deref ri
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forEachWithIndex                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forEachWithIndex01(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEachWithIndex((i, _) -> ri := i, singleton(1));
+        0 == deref ri
+    }
+
+    @test
+    def forEachWithIndex02(): Bool = region r {
+        let ri = ref 21 @ r;
+        Nec.forEachWithIndex((i, _) -> ri := i, necOf3(1, 2, 3));
+        2 == deref ri
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

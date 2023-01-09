@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
@@ -462,10 +461,10 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val usedMatch = visitExps(exps, env0, rc)
       val usedRules = rules.map {
-        case ChoiceRule(pat, exp) =>
+        case RelationalChoiceRule(pat, exp) =>
           // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
 
@@ -489,6 +488,9 @@ object Redundancy {
     case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
+
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
+      ??? // TODO RESTR-VARS
 
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -731,6 +733,10 @@ object Redundancy {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
+
+    case Expression.Error(_, _, _, _) =>
+      Used.empty
+
   }
 
   /**
@@ -978,8 +984,8 @@ object Redundancy {
   /**
     * Returns the free variables in the list of choice patterns `ps`.
     */
-  private def freeVars(ps: List[ChoicePattern]): Set[Symbol.VarSym] = ps.collect {
-    case ChoicePattern.Present(sym, _, _) => sym
+  private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
+    case RelationalChoicePattern.Present(sym, _, _) => sym
   }.toSet
 
   /**
@@ -1000,7 +1006,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
-    !isTest(decl.spec.ann) &&
+    !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&

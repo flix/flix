@@ -189,18 +189,23 @@ object Stratifier {
         case (m, rs) => Expression.TypeMatch(m, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.Choose(exps, rules, tpe, pur, eff, loc) =>
+    case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
       val expsVal = traverse(exps)(visitExp)
       val rulesVal = traverse(rules) {
-        case ChoiceRule(pat, exp) => mapN(visitExp(exp))(ChoiceRule(pat, _))
+        case RelationalChoiceRule(pat, exp) => mapN(visitExp(exp))(RelationalChoiceRule(pat, _))
       }
       mapN(expsVal, rulesVal) {
-        case (es, rs) => Expression.Choose(es, rs, tpe, pur, eff, loc)
+        case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
+      }
+
+    case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.RestrictableTag(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
@@ -469,6 +474,10 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      exp0.toSoftFailure
+
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
@@ -574,16 +583,19 @@ object Stratifier {
         case (acc, MatchTypeRule(_, _, b)) => acc + labelledGraphOfExp(b)
       }
 
-    case Expression.Choose(exps, rules, _, _, _, _) =>
+    case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       val dg1 = exps.foldLeft(LabelledGraph.empty) {
         case (acc, exp) => acc + labelledGraphOfExp(exp)
       }
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, ChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
+        case (acc, RelationalChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
 
     case Expression.Tag(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -756,6 +768,10 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      LabelledGraph.empty
+
   }
 
   /**
