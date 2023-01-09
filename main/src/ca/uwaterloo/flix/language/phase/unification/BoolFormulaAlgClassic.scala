@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
+
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
   */
-class BoolFormulaAlgClassic extends BoolFormulaAlg {
+class BoolFormulaAlgClassic(implicit flix: Flix) extends BoolFormulaAlg {
 
   override def mkNot(f: BoolFormula): BoolFormula = f match {
     case BoolFormula.True =>

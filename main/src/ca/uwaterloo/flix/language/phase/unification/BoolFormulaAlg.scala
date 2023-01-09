@@ -15,18 +15,19 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 import scala.annotation.tailrec
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{IntMap, SortedSet}
 
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
   */
-class BoolFormulaAlg extends BoolAlg[BoolFormula] {
+class BoolFormulaAlg(implicit flix: Flix) extends BoolAlg[BoolFormula] {
 
   override def isTrue(f: BoolFormula): Boolean = f == BoolFormula.True
 
@@ -164,7 +165,15 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Var(sym) => fn(sym)
   }
 
-  override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
+  override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    if (flix.options.xqmc) {
+      toTypeQMC(f, env)
+    } else {
+      toTypeClassic(f, env)
+    }
+  }
+
+  private def toTypeClassic(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
     case True => Type.True
     case False => Type.False
     case And(f1, f2) => Type.mkApply(Type.And, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
@@ -174,6 +183,36 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
       case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
+  }
+
+  private def toTypeQMC(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    val vars = freeVars(f)
+    val minTerms = collectMinTerms(f, vars)
+    QuineMcCluskey.Global.qmc(minTerms, env)
+  }
+
+  private def collectMinTerms(f: BoolFormula, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
+    val all = collectAll(f, vars.toList, List.empty)
+    all.map[IntMap[BoolVal]](l => {
+      //make a map with all positive
+      val posMap = l.foldLeft[IntMap[BoolVal]](IntMap.empty)((m, i) => m ++ IntMap((i, BoolVal.True)))
+
+      //make a map with all negative (vars - pos)
+      val negVars = vars -- l.toSet
+      val negMap = negVars.foldLeft[IntMap[BoolVal]](IntMap.empty)((m, i) => m ++ IntMap((i, BoolVal.False)))
+
+      //concatenate
+      posMap ++ negMap
+    })
+  }
+
+  private def collectAll(f: BoolFormula, l: List[Int], env: List[Int]): Set[List[Int]] = l match {
+    case Nil =>
+      // All variables are bound. Compute the truth value.
+      if (evaluate(f, env)) Set(env) else Set.empty
+    case x :: xs =>
+      // Recurse on two cases: x = false and x = true.
+      collectAll(f, xs, env) ++ collectAll(f, xs, x :: env)
   }
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
