@@ -49,8 +49,8 @@ namespace TestReducible {
         Reducible.reduceLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
     @test
-    def reduceLeft08(): Bool \ IO =
-        let l = ref Nil;
+    def reduceLeft08(): Bool = region r {
+        let l = ref Nil @ r;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
             if (acc == 0)
@@ -61,7 +61,7 @@ namespace TestReducible {
         };
         discard Reducible.reduceLeft(f, Nel.Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
@@ -96,8 +96,8 @@ namespace TestReducible {
         Reducible.reduceRight((a, acc) -> (acc - a) * ((a rem 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
     @test
-    def reduceRight08(): Bool \ IO =
-        let l = ref Nil;
+    def reduceRight08(): Bool = region r {
+        let l = ref Nil @ r;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
             if (acc == 0)
@@ -108,7 +108,7 @@ namespace TestReducible {
         };
         discard Reducible.reduceRight(f, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
@@ -173,11 +173,11 @@ namespace TestReducible {
         Reducible.foldLeft((acc, a) -> (acc - a) * ((a rem 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
 
     @test
-    def foldLeft07(): Bool \ IO =
-        let l = ref Nil;
+    def foldLeft07(): Bool = region r {
+        let l = ref Nil @ r;
         discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -208,11 +208,11 @@ namespace TestReducible {
         Reducible.foldRight((a, acc) -> (acc - a) * ((a rem 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRight07(): Bool \ IO =
-        let l = ref Nil;
+    def foldRight07(): Bool = region r {
+        let l = ref Nil @ r;
         discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
@@ -243,11 +243,11 @@ namespace TestReducible {
         Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a rem 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
-    def foldRightWithCont07(): Bool \ IO =
-        let l = ref Nil;
+    def foldRightWithCont07(): Bool = region r {
+        let l = ref Nil @ r;
         discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
@@ -599,11 +599,11 @@ namespace TestReducible {
         Reducible.findLeft(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findLeft07(): Bool \ IO =
-        let l = ref Nil;
+    def findLeft07(): Bool = region r {
+        let l = ref Nil @ r;
         discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
@@ -634,11 +634,11 @@ namespace TestReducible {
         Reducible.findRight(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
     @test
-    def findRight07(): Bool \ IO =
-        let l = ref Nil;
+    def findRight07(): Bool = region r {
+        let l = ref Nil @ r;
         discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
         (deref l) == 1 :: 2 :: 3 :: Nil
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //

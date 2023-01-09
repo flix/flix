@@ -94,10 +94,11 @@ def map02(): Bool = Option.map(i -> 2*i, Some(1)) == Some(2)
 def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 
 @test
-def map04(): Bool \ IO =
-    let n = ref 2;
+def map04(): Bool = region r {
+    let n = ref 2 @ r;
     discard Option.map(i -> n := i, Some(4));
     4 == deref n
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
@@ -535,14 +536,14 @@ def unzip02(): Bool = Option.unzip(Some((1, true))) == (Some(1), Some(true))
 
 @test
 def forEach01(): Bool = region r {
-    let ri = ref 21;
+    let ri = ref 21 @ r;
     Option.forEach(x -> ri := x, None);
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region r {
-    let ri = ref 21;
+    let ri = ref 21 @ r;
     Option.forEach(x -> ri := x, Some(42));
     42 == deref ri
 }
