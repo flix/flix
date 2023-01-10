@@ -63,6 +63,7 @@ sealed trait BackendObjType {
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
+    case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   }
 
@@ -1036,8 +1037,14 @@ object BackendObjType {
     //   threads.add(t);
     // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
-      NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-      invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
+      (
+        if (flix.options.xvirtualthreads) {
+          INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
+        } else {
+          NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
+          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
+        }
+      ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
         thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
         DUP() ~ thisLoad() ~
@@ -1255,6 +1262,15 @@ object BackendObjType {
 
     def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "setUncaughtExceptionHandler",
       mkDescriptor(ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void), None)
+
+    def OfVirtualMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "ofVirtual",
+      mkDescriptor()(ThreadBuilderOfVirtual.toTpe), None)
+  }
+
+  case object ThreadBuilderOfVirtual extends BackendObjType {
+
+    def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
+      mkDescriptor(JvmName.Runnable.toTpe)(BackendObjType.Thread.toTpe))
   }
 
   case object ThreadUncaughtExceptionHandler extends BackendObjType {
