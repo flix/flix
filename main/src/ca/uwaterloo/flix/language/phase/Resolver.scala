@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, VarText}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
+import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChoicePattern}
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -938,7 +938,28 @@ object Resolver {
             case (es, rs) => ResolvedAst.Expression.RelationalChoose(star, es, rs, loc)
           }
 
-        case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) => ??? // TODO RESTR-VARS
+        case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
+          val expVal = visitExp(exp, env0, region)
+          val rulesVal = traverse(rules) {
+            case NamedAst.RestrictableChoiceRule(pat0, exp0) =>
+              val pVal = pat0 match {
+                case RestrictableChoicePattern.Tag(qname, pat, loc) => ??? // TODO RESTR-VARS (depends on 'of' PR)
+              }
+              val env = pat0 match {
+                case RestrictableChoicePattern.Tag(qname, pat, loc) =>
+                  pat.foldLeft(env0) {
+                    case (acc, NamedAst.RestrictableChoicePattern.Var(sym, loc)) => acc + (sym.text -> Resolution.Var(sym))
+                    case (acc, NamedAst.RestrictableChoicePattern.Wild(loc)) => acc
+                  }
+              }
+              val eVal = visitExp(exp0, env, region)
+              mapN(pVal, eVal) {
+                case (p, e) => ResolvedAst.RestrictableChoiceRule(p, e)
+              }
+          }
+          mapN(expVal, rulesVal) {
+            case (e, rs) => ResolvedAst.Expression.RestrictableChoose(star, e, rs, loc)
+          }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
           val esVal = traverse(elms)(e => visitExp(e, env0, region))
