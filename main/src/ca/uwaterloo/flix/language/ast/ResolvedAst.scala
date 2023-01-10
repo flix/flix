@@ -54,7 +54,11 @@ object ResolvedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.Case], loc: SourceLocation) extends Declaration
 
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: ResolvedAst.TypeParam, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
+
     case class Case(sym: Symbol.CaseSym, tpe: UnkindedType) extends Declaration
+
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
