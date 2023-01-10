@@ -155,6 +155,7 @@ object Lowering {
     val sigs = ParOps.parMap(root.sigs.values)((s: TypedAst.Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values)((insts: List[TypedAst.Instance]) => insts.map(i => visitInstance(i)(root, flix)))
     val enums = ParOps.parMap(root.enums.values)((e: TypedAst.Enum) => visitEnum(e)(root, flix))
+    val restrictableEnums = ParOps.parMap(root.restrictableEnums.values)((e: TypedAst.RestrictableEnum) => visitRestrictableEnum(e)(root, flix))
     val effects = ParOps.parMap(root.effects.values)((e: TypedAst.Effect) => visitEffect(e)(root, flix))
     val aliases = ParOps.parMap(root.typeAliases.values)((a: TypedAst.TypeAlias) => visitTypeAlias(a)(root, flix))
 
@@ -218,6 +219,34 @@ object Lowering {
       }
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
+
+  /**
+    * Lowers the given enum `enum0`.
+    */
+  private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, _, tparams0, derives, cases0, tpe0, loc) =>
+      // index is erased since related checking has concluded.
+      // Restrictable tag is lowered into a regular tag
+      val tparams = tparams0.map(visitTypeParam)
+      val tpe = visitType(tpe0)
+      val cases = cases0.map {
+        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
+          val caseTpeDeprecated = visitType(caseTpeDeprecated0)
+          val caseSc = visitScheme(caseSc0)
+          val caseSym = visitRestrictableCaseSym(caseSym0)
+          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+      }
+      val sym = visitRestrictableEnumSym(sym0)
+      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+  }
+
+  private def visitRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
+    val enumSym = visitRestrictableEnumSym(sym.enumSym)
+    new Symbol.CaseSym(enumSym, sym.name, sym.loc)
+  }
+
+  private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
+    new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
 
   /**
     * Lowers the given `effect`.
@@ -418,10 +447,7 @@ object Lowering {
 
     case TypedAst.Expression.RestrictableTag(sym0, exp, tpe, pur, eff, loc) =>
       // Lower a restrictable tag into a normal tag.
-      val caseSym0 = sym0.sym
-      val enumSym0 = caseSym0.enumSym
-      val enumSym = new Symbol.EnumSym(enumSym0.namespace, enumSym0.name, enumSym0.loc)
-      val caseSym = new Symbol.CaseSym(enumSym, caseSym0.name, caseSym0.loc)
+      val caseSym = visitRestrictableCaseSym(sym0.sym)
       val sym = CaseSymUse(caseSym, sym0.loc)
       val e = visitExp(exp)
       val t = visitType(tpe)
