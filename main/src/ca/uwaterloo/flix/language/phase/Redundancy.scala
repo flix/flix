@@ -73,6 +73,7 @@ object Redundancy {
     val usedRes =
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
+        checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
         checkUnusedEffects(usedAll)(root)
@@ -196,6 +197,11 @@ object Redundancy {
         }
     }
   }
+
+  /**
+    * Checks for unused enum symbols and tags.
+    */
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = used // TODO RESTR-VARS
 
   /**
     * Checks for unused type parameters in enums.
@@ -490,7 +496,8 @@ object Redundancy {
       Used.of(sym.enumSym, sym) ++ us
 
     case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
-      ??? // TODO RESTR-VARS
+      val us = visitExp(exp, env0, rc)
+      Used.of(sym.enumSym, sym) ++ us
 
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -1089,12 +1096,17 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = MultiMap.singleton(sym, caze))
+
+    /**
+      * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
+      */
+    def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -1136,6 +1148,7 @@ object Redundancy {
     * A representation of used symbols.
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
+                          restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
                           defSyms: Set[Symbol.DefnSym],
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
@@ -1157,6 +1170,7 @@ object Redundancy {
       } else {
         Used(
           this.enumSyms ++ that.enumSyms,
+          this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.defSyms ++ that.defSyms,
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,
