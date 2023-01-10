@@ -201,28 +201,7 @@ object Redundancy {
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = {
-    root.restrictableEnums.foldLeft(used) {
-      case (acc, (sym, decl)) if decl.mod.isPublic =>
-        // Enum is public. No usage requirements.
-        acc
-      case (acc, (sym, decl)) =>
-        // Enum is non-public.
-        // Lookup usage information for this specific enum.
-        used.enumSyms.get(sym) match {
-          case None =>
-            // Case 1: Enum is never used.
-            acc + UnusedEnumSym(sym)
-          case Some(usedTags) =>
-            // Case 2: Enum is used and here are its used tags.
-            // Check if there is any unused tag.
-            decl.cases.foldLeft(acc) {
-              case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.sym)
-              case (innerAcc, _) => innerAcc
-            }
-        }
-    }
-  }
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = ??? // TODO RESTR-VARS
 
   /**
     * Checks for unused type parameters in enums.
