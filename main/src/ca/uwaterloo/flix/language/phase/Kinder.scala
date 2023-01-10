@@ -593,6 +593,13 @@ object Kinder {
           KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.Of(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
+
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))

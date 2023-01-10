@@ -1042,7 +1042,7 @@ object Resolver {
           val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
           val eVal = visitExp(exp, env0, region)
           mapN(tagVal, eVal) {
-            case (tag, e) => ??? // TODO RESTR-VARS
+            case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
           }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -1844,7 +1844,7 @@ object Resolver {
   }
 
   /**
-    * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
   private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
     // look up the name
@@ -1865,10 +1865,13 @@ object Resolver {
     // TODO NS-REFACTOR check accessibility
   }
 
-  private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
+  /**
+    * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    */
+  private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
     // look up the name
     val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect { // TODO RESTR-VARS disallowing case for now
-      case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
+      case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
     }
 
     matches match {
