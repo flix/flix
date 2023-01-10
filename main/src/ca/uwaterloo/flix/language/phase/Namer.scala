@@ -152,6 +152,14 @@ object Namer {
         }
       }
 
+    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
+      val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
+      flatMapN(table1Val) {
+        case table1 => fold(cases, table1) {
+          case (table, d) => tableDecl(d, table)
+        }
+      }
+
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
@@ -168,6 +176,10 @@ object Namer {
 
     case caze@NamedAst.Declaration.Case(sym, _) =>
       addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
+
+    case caze@NamedAst.Declaration.RestrictableCase(sym, _) =>
+      // TODO RESTR-VARS add to case table?
+      tryAddToTable(table0, sym.namespace, sym.name, caze)
   }
 
   /**
@@ -335,7 +347,22 @@ object Namer {
   /**
     * Performs naming on the given enum `enum0`.
     */
-  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Enum, NameError] = ??? // TODO RESTR-VARS
+  private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
+    case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives, cases0, loc) =>
+      val sym = Symbol.mkRestrictableEnumSym(ns0, ident)
+
+      // Compute the type parameters.
+      val index = getTypeParam(index0)
+      val tparams = getTypeParams(tparams0)
+
+      val mod = visitModifiers(mod0, ns0)
+      val casesVal = traverse(cases0)(visitRestrictableCase(_, sym))
+
+      mapN(casesVal) {
+        case cases =>
+          NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
+      }
+  }
 
   /**
     * Performs naming on the given enum case.
@@ -346,6 +373,18 @@ object Namer {
         case tpe =>
           val caseSym = Symbol.mkCaseSym(enumSym, ident)
           NamedAst.Declaration.Case(caseSym, tpe)
+      }
+  }
+
+  /**
+    * Performs naming on the given enum case.
+    */
+  private def visitRestrictableCase(case0: WeededAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
+    case WeededAst.RestrictableCase(ident, tpe0) =>
+      mapN(visitType(tpe0)) {
+        case tpe =>
+          val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
+          NamedAst.Declaration.RestrictableCase(caseSym, tpe)
       }
   }
 
@@ -757,7 +796,7 @@ object Namer {
     case WeededAst.Expression.Of(qname, exp, loc) =>
       val expVal = visitExp(exp, ns0)
       mapN(expVal) {
-        case e => e // TODO RESTR-VARS
+        case e => NamedAst.Expression.Of(qname, e, loc)
       }
 
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -1492,10 +1531,12 @@ object Namer {
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
+    case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.loc
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
     case NamedAst.Declaration.Case(sym, tpe) => sym.loc
+    case NamedAst.Declaration.RestrictableCase(sym, tpe) => sym.loc
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }

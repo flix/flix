@@ -232,7 +232,7 @@ object AsmOps {
     *
     * public static Nil unitInstance;
     */
-  def compileField(visitor: ClassWriter, fieldName: String, fieldType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
+  def compileField(visitor: ClassWriter, fieldName: String, fieldType: JvmType, isStatic: Boolean, isPrivate: Boolean, isVolatile: Boolean): Unit = {
     val visibility =
       if (isPrivate) {
         ACC_PRIVATE
@@ -247,7 +247,14 @@ object AsmOps {
         0
       }
 
-    val field = visitor.visitField(visibility + access, fieldName, fieldType.toDescriptor, null, null)
+    val volatility =
+      if (isVolatile) {
+        ACC_VOLATILE
+      } else {
+        0
+      }
+
+    val field = visitor.visitField(visibility + access + volatility, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
