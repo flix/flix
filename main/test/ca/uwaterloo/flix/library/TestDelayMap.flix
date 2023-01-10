@@ -90,8 +90,8 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def insertWithFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def insertWithFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard List.toDelayMap((1, 1) :: Nil) |>
             DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
             DelayMap.insertWith((v, _) -> { l := "a" :: deref l; v }, 1, 1) |>
@@ -100,10 +100,11 @@ namespace TestDelayMap {
             DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1) |>
             DelayMap.insertWith((v, _) -> { l := "b" :: deref l; v }, 1, 1);
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+    }
 
     //@test
-    //def insertWithFusion02(): Bool \ IO =
-    //    let l = ref Nil;
+    //def insertWithFusion02(): Bool = region r {
+    //    let l = ref Nil @ r;
     //    let m = List.toDelayMap((1, 1) :: Nil) |>
     //    DelayMap.insertWith((v, _) -> unsafe_cast { l := "a" :: deref l; v } as _ \ {}, 1, 1) |>
     //    DelayMap.insertWith((v, _) -> unsafe_cast { l := "a" :: deref l; v } as _ \ {}, 1, 1) |>
@@ -113,7 +114,7 @@ namespace TestDelayMap {
     //    DelayMap.insertWith((v, _) -> unsafe_cast { l := "b" :: deref l; v } as _ \ {}, 1, 1);
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
-
+    //}
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
@@ -264,22 +265,23 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def mapFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
             DelayMap.map(v -> { l := "a" :: deref l; v }) |>
             DelayMap.map(v -> { l := "b" :: deref l; v });
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+    }
 
     //@test
-    //def mapFusion02(): Bool \ IO =
-    //    let l = ref Nil;
+    //def mapFusion02(): Bool = region r {
+    //    let l = ref Nil @ r;
     //    let m = ((1, 1) :: (2, 2) :: (3, 3) :: Nil) |> List.toDelayMap |>
     //    DelayMap.map(v -> unsafe_cast { l := "a" :: deref l; v } as _ \ {}) |>
     //    DelayMap.map(v -> unsafe_cast { l := "b" :: deref l; v } as _ \ {});
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
-
+    //}
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithKey                                                              //
@@ -753,22 +755,23 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def unionWithKeyFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def unionWithKeyFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
             DelayMap.unionWithKey((_, _, v) -> { l := "a" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
             DelayMap.unionWithKey((_, _, v) -> { l := "b" :: deref l; v }, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     //@test
-    //def unionWithKeyFusion02(): Bool \ IO =
-    //    let l = ref Nil;
+    //def unionWithKeyFusion02(): Bool = region r {
+    //    let l = ref Nil @ r;
     //    let m = Map#{1 => 1, 2 => 2, 3 => 3} |> Map.toDelayMap |>
     //    DelayMap.unionWithKey((_, _, v) -> unsafe_cast { l := "a" :: deref l; v } as _ \ {}, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3})) |>
     //    DelayMap.unionWithKey((_, _, v) -> unsafe_cast { l := "b" :: deref l; v } as _ \ {}, Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}));
     //    let _ = DelayMap.toMap(m);
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
-
+    //}
 
     /////////////////////////////////////////////////////////////////////////////
     // adjust                                                                  //
@@ -1046,8 +1049,8 @@ namespace TestDelayMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def updateWithKeyFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def updateWithKeyFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 1) |>
             DelayMap.updateWithKey((_, v) -> { l := "a" :: deref l; Some(v) }, 2) |>
@@ -1056,10 +1059,11 @@ namespace TestDelayMap {
             DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) }, 2) |>
             DelayMap.updateWithKey((_, v) -> { l := "b" :: deref l; Some(v) }, 3);
         List.reverse(deref l) == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil
+    }
 
     //@test
-    //def updateWithKeyFusion02(): Bool \ IO =
-    //    let l = ref Nil;
+    //def updateWithKeyFusion02(): Bool = region r {
+    //    let l = ref Nil @ r;
     //    let _ = Map.toDelayMap(Map#{1 => 1, 2 => 2, 3 => 3}) |>
     //        DelayMap.updateWithKey((_, v) -> unsafe_cast { l := "a" :: deref l; Some(v) } as _ \ {}, 1) |>
     //        DelayMap.updateWithKey((_, v) -> unsafe_cast { l := "a" :: deref l; Some(v) } as _ \ {}, 2) |>
@@ -1069,7 +1073,7 @@ namespace TestDelayMap {
     //        DelayMap.updateWithKey((_, v) -> unsafe_cast { l := "b" :: deref l; Some(v) } as _ \ {}, 3) |>
     //        DelayMap.toMap;
     //    List.reverse(deref l) == "a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil
-
+    //}
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -1397,7 +1401,7 @@ namespace TestDelayMap {
 
     @test
     def forEach01(): Bool = region r {
-        let ri = ref 21;
+        let ri = ref 21 @ r;
         Map#{} |> Map.toDelayMap |>
             DelayMap.forEach((k, _) -> ri := k);
         21 == deref ri
@@ -1405,7 +1409,7 @@ namespace TestDelayMap {
 
     @test
     def forEach02(): Bool = region r {
-        let ri = ref 21;
+        let ri = ref 21 @ r;
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
             DelayMap.forEach((k, _) -> ri := k);
         1 == deref ri

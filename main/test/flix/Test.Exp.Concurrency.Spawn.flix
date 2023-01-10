@@ -59,4 +59,34 @@ namespace Test/Exp/Concurrency/Spawn {
 //        let a = [1, 2, 3] @ r;
 //        spawn () @ Scoped.regionOf(a)
 //    }
+
+    @test
+    def testExceptionsInChildThread01(): Bool \ IO = 
+        try {
+            region r {
+                spawn {
+                    spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+                } @ r;
+                Thread.sleep(Time/Duration.fromSeconds(1));
+                false
+            }
+        } catch {
+            case _: ##java.lang.NullPointerException => true
+        }
+
+
+    @test
+    def testExceptionsInChildThread02(): Bool \ IO = region r {
+        spawn {
+            spawn { 
+                try {
+                    String.concat(unsafe_cast null as String, "foo")
+                } catch {
+                    case _: ##java.lang.NullPointerException => ""
+                }
+            } @ r
+        } @ r;
+        Thread.sleep(Time/Duration.fromSeconds(1));
+        true
+    }
 }

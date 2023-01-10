@@ -1377,8 +1377,8 @@ namespace TestMultiMap {
     @test
     def forEach02(): Bool =
         region r {
-            let rk = ref 0;
-            let rv = ref 0;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
             let m = singleton(1, 4);
             MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
             deref rk == 1 and deref rv == 4
@@ -1407,8 +1407,8 @@ namespace TestMultiMap {
     @test
     def forEach05(): Bool =
         region r {
-            let rk = ref 0;
-            let rv = ref 0;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
             MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
             deref rk == 3 and deref rv == 3
@@ -1466,8 +1466,8 @@ namespace TestMultiMap {
     def forEachWithIndex05(): Bool =
         region r {
             let ri = ref 0 @ r;
-            let rk = ref 0;
-            let rv = ref 0;
+            let rk = ref 0 @ r;
+            let rv = ref 0 @ r;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
             MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
             deref ri == 3 and deref rk == 3 and deref rv == 3

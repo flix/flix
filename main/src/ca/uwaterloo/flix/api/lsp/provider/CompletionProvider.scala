@@ -870,8 +870,8 @@ object CompletionProvider {
     val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix)) Priority.boost _ else Priority.low _
 
-    val enums = root.enums.map {
-      case (_, t) =>
+    val enums = root.enums.collect {
+      case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
         CompletionItem(label = s"$name${formatTParams(t.tparams)}",
