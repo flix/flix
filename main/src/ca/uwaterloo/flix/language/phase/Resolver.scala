@@ -1088,6 +1088,13 @@ object Resolver {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
           }
 
+        case NamedAst.Expression.Of(qname, exp, loc) =>
+          val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
+          val eVal = visitExp(exp, env0, region)
+          mapN(tagVal, eVal) {
+            case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
+          }
+
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
@@ -1887,12 +1894,34 @@ object Resolver {
   }
 
   /**
-    * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
   private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
     // look up the name
     val matches = tryLookupName(qname, allowCase = true, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
+    }
+
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      // Case 1: Exactly one match. Success.
+      case caze :: Nil => caze.toSuccess
+      // Case 2: Multiple matches. Error
+      case cazes =>
+        val locs = cazes.map(_.sym.loc).sorted
+        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+    }
+    // TODO NS-REFACTOR check accessibility
+  }
+
+  /**
+    * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    */
+  private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
+    // look up the name
+    val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect { // TODO RESTR-VARS disallowing case for now
+      case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
     }
 
     matches match {
