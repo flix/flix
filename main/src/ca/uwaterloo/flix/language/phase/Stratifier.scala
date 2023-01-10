@@ -198,6 +198,8 @@ object Stratifier {
         case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
@@ -591,6 +593,8 @@ object Stratifier {
         case (acc, RelationalChoiceRule(_, exp)) => acc + labelledGraphOfExp(exp)
       }
       dg1 + dg2
+
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
 
     case Expression.Tag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)

@@ -153,6 +153,8 @@ object Safety {
         exps.flatMap(visit) :::
           rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
+      case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+
       case Expression.Tag(_, exp, _, _, _, _) =>
         visit(exp)
 

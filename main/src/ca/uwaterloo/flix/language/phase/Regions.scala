@@ -150,6 +150,8 @@ object Regions {
         case (es, rs) => checkType(tpe, loc)
       }
 
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+
     case Expression.Tag(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
