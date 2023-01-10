@@ -129,6 +129,37 @@ object Kinder {
       }
   }
 
+  private def visitRestrictableEnum(enum0: ResolvedAst.Declaration.RestrictableEnum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableEnum, KindError] = enum0 match {
+    case ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives, cases0, loc) =>
+      val kenvIndex = getKindEnvFromIndex(index0, sym)
+
+      val kenvTparams = getKindEnvFromTypeParamsDefaultStar(tparams0)
+
+      val kenvVal = kenvIndex ++ kenvTparams
+
+      flatMapN(kenvVal) {
+        case kenv =>
+          val indexVal = visitIndex(index0, sym, kenv)
+          val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
+
+          flatMapN(indexVal, tparamsVal) {
+            case (index, tparams) =>
+              // MATT
+              val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+              val tpe = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+              val casesVal = traverse(cases0) {
+                case case0 => mapN(visitCase(case0, tparams, tpe, kenv, taenv, root)) {
+                  caze => caze.sym -> caze
+                }
+              }
+              mapN(casesVal) {
+                case cases => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
+              }
+          }
+      }
+
+  }
+
   /**
     * Performs kinding on the given type alias.
     * Returns the kind of the type alias.
@@ -1132,6 +1163,21 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given index parameter of the given enum sym under the given kind environment.
+    */
+  private def visitIndex(index: ResolvedAst.TypeParam, enum: Symbol.RestrictableEnumSym, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = {
+    val (name, sym0, loc) = index match {
+      case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)
+      case ResolvedAst.TypeParam.Unkinded(uName, uSym, uLoc) => (uName, uSym, uLoc)
+    }
+
+    val symVal = visitTypeVarSym(sym0, Kind.CaseSet(enum), kenv, loc)
+    mapN(symVal) {
+      case sym => KindedAst.TypeParam(name, sym, loc)
+    }
+  }
+
+  /**
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.FormalParam, KindError] = fparam0 match {
@@ -1398,6 +1444,14 @@ object Kinder {
   private def getKindEnvFromTypeParamDefaultStar(tparam0: ResolvedAst.TypeParam)(implicit flix: Flix): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
     case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.Star)
+  }
+
+  /**
+    * Gets a kind environment from the type param, defaulting the to kind of the given enum's tags if it is unkinded.
+    */
+  private def getKindEnvFromIndex(tparam0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym)(implicit flix: Flix): KindEnv = tparam0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.CaseSet(sym))
   }
 
   /**
