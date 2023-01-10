@@ -55,15 +55,16 @@ object GenLazyClasses {
     * The specific lazy class has an associated value type (tpe) which
     * is either a jvm primitive or object.
     *
-    * The lazy class has two fields - expression: () -> tpe,
-    * and value: tpe. These are all public. force(context) is a public
+    * The lazy class has three fields - expression: () -> tpe, value: tpe, 
+    * and lock. The first two are public. force(context) is a public
     * method, which returns a value of type tpe given a context to call the
     * expression closure in. It will set expression = null, which can be checked in
     * order to check the validity of value.
     *
     * force will only evaluate the expression the first time, based on expression == null.
-    * After that point it will store the result in value and just return that. Since force is
-    * synchronized, this check should be done inline and not through force, unless expression != null.
+    * After that point it will store the result in value and just return that. Since force
+    * claims a lock (which is expensive) this check should be done inline and not through
+    * force, unless expression != null.
     * Note that expression is volatile to ensure that this check is correctly synchronized.
     */
   private def genByteCode(classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -78,6 +79,7 @@ object GenLazyClasses {
 
     AsmOps.compileField(visitor, "expression", JvmType.Object, isStatic = false, isPrivate = false, isVolatile = true)
     AsmOps.compileField(visitor, "value", erasedType, isStatic = false, isPrivate = false, isVolatile = false)
+    AsmOps.compileField(visitor, "lock", JvmType.Reference(JvmName.ReentrantLock), isStatic = false, isPrivate = true, isVolatile = false)
     compileForceMethod(visitor, classType, erasedType, valueType)
 
     // Emit the code for the constructor
@@ -91,10 +93,25 @@ object GenLazyClasses {
     * The force method takes a context as argument to call the expression closure in.
     * The result of the expression given in the constructor is then returned.
     * This is only actually evaluated the first time, and saved to return directly
-    * afterwards. force is synchronized to make sure that expression is never evaluated twice.
+    * afterwards.
     *
     * If lazy has associated type of Obj, the returned object needs to be casted
     * to whatever expected type.
+    * 
+    * The generated code is of the form (assuming that the valueType is String)
+    *
+    * public String force() {
+    *   lock.lockInterruptibly();
+    *   try {
+    *     if (expression != null) {
+    *       value = expression();
+    *       expression = null;
+    *     }
+    *     return value;
+    *   } finally {
+    *     lock.unlock();
+    *   }
+    * }
     */
   private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     val erasedValueTypeDescriptor = erasedType.toDescriptor
@@ -105,9 +122,22 @@ object GenLazyClasses {
 
     // Header of the method.
     val returnDescription = AsmOps.getMethodDescriptor(Nil, erasedType)
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_SYNCHRONIZED, "force", returnDescription, null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "force", returnDescription, null, null)
     method.visitCode()
 
+    // lock.lockInterruptibly()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, internalClassType, "lock", JvmName.ReentrantLock.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReentrantLock.toInternalName, "lockInterruptibly", JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    // Try block
+    val beforeTryBlock = new Label()
+    val afterTryBlock = new Label()
+    val finallyBlock = new Label()
+    val afterFinally = new Label()
+    method.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
+
+    method.visitLabel(beforeTryBlock)
     // [this] this is pushed to retrieve initialized to check if the Lazy object has already been evaluated.
     method.visitVarInsn(ALOAD, 0)
     // [this.initialized] the condition can now be checked.
@@ -115,14 +145,8 @@ object GenLazyClasses {
 
     // [] if expression is null (multiple threads tried to initialize) return value field, else continue
     val continue = new Label
-    method.visitJumpInsn(IFNONNULL, continue)
+    method.visitJumpInsn(IFNULL, continue)
 
-    // return lazy.value if lazy is already initialized
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
-    method.visitInsn(returnIns)
-
-    method.visitLabel(continue)
     // [this] to assign the expression value
     method.visitVarInsn(ALOAD, 0)
     // [this, this] push this to get the expression.
@@ -142,13 +166,33 @@ object GenLazyClasses {
     // [] expression is now null.
     method.visitFieldInsn(PUTFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
 
+    method.visitLabel(continue)
     // [this] this is pushed to retrieve this.value.
     method.visitVarInsn(ALOAD, 0)
     // [this.value] the return value is now on the stack.
     method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
 
+    // Finally block for non-exception case
+    method.visitLabel(afterTryBlock)
+
+    // lock.unlock()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, internalClassType, "lock", JvmName.ReentrantLock.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReentrantLock.toInternalName, "unlock", JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
+
     // [] Return the value of appropriate type.
     method.visitInsn(returnIns)
+
+    // Finally block for exception case
+    method.visitLabel(finallyBlock)
+
+    // lock.unlock()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, internalClassType, "lock", JvmName.ReentrantLock.toDescriptor)
+    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReentrantLock.toInternalName, "unlock", JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    // Rethrow exception
+    method.visitInsn(ATHROW)
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(1, 1)
@@ -175,6 +219,14 @@ object GenLazyClasses {
     constructor.visitVarInsn(ALOAD, 1)
     // [] expression has the value of the argument.
     constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "expression", JvmType.Object.toDescriptor)
+
+    // lock = new ReentrantLock()
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitTypeInsn(NEW, JvmName.ReentrantLock.toInternalName)
+    constructor.visitInsn(DUP)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.ReentrantLock.toInternalName, "<init>",
+      JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
+    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "lock", JvmName.ReentrantLock.toDescriptor)
 
     // [] Return nothing.
     constructor.visitInsn(RETURN)
