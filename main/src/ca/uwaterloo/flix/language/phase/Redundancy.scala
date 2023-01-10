@@ -201,7 +201,7 @@ object Redundancy {
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = ??? // TODO RESTR-VARS
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = used // TODO RESTR-VARS
 
   /**
     * Checks for unused type parameters in enums.
