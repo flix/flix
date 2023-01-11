@@ -346,7 +346,7 @@ object ResolvedAst {
 
   case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, exp: ResolvedAst.Expression)
+  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

@@ -943,7 +943,15 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.RestrictableChoiceRule(pat0, exp0) =>
               val pVal = pat0 match {
-                case RestrictableChoicePattern.Tag(qname, pat, loc) => ??? // TODO RESTR-VARS (depends on 'of' PR)
+                case NamedAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+                  val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
+                  val pats = pat.map {
+                    case NamedAst.RestrictableChoicePattern.Wild(loc) => ResolvedAst.RestrictableChoicePattern.Wild(loc)
+                    case NamedAst.RestrictableChoicePattern.Var(sym, loc) => ResolvedAst.RestrictableChoicePattern.Var(sym, loc)
+                  }
+                  mapN(tagVal) {
+                    case tag => ResolvedAst.RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
+                  }
               }
               val env = pat0 match {
                 case RestrictableChoicePattern.Tag(qname, pat, loc) =>
@@ -952,9 +960,23 @@ object Resolver {
                     case (acc, NamedAst.RestrictableChoicePattern.Wild(loc)) => acc
                   }
               }
+
               val eVal = visitExp(exp0, env, region)
-              mapN(pVal, eVal) {
-                case (p, e) => ResolvedAst.RestrictableChoiceRule(p, e)
+              flatMapN(pVal, eVal) {
+                case (p, e) =>
+                  val symVal = if (star) {
+                    e match {
+                      case ResolvedAst.Expression.RestrictableTag(sym, exp, loc) => Some(sym.sym).toSuccess
+                      case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
+                      case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
+                    }
+                  } else {
+                    None.toSuccess
+                  }
+
+                  mapN(symVal) {
+                    case sym => ResolvedAst.RestrictableChoiceRule(p, sym, e)
+                  }
               }
           }
           mapN(expVal, rulesVal) {
