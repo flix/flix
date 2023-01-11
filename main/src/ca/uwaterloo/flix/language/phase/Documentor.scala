@@ -97,6 +97,28 @@ object Documentor {
     }
 
     //
+    // Instances (for use in RestrictableEnum documentation)
+    //
+    val instancesByRestrictableEnum = root.instances.values.flatten.groupBy(getRestrictableEnum).collect {
+      case (Some(enum), insts) => (enum, insts.toList)
+    }
+
+    //
+    // Restrictable Enums.
+    //
+    val restrictableEnumsByNS = root.restrictableEnums.values.groupBy(getNameSpace).flatMap {
+      case (ns, decls) =>
+        def isInternal(enum0: TypedAst.RestrictableEnum): Boolean = enum0.ann.isInternal
+
+        val filtered = decls.filter(enum => enum.mod.isPublic && !isInternal(enum)).toList
+        val sorted = filtered.sortBy(_.sym.name)
+        if (sorted.isEmpty)
+          None
+        else
+          Some(ns -> JArray(sorted.map(visitRestrictableEnum(_, instancesByRestrictableEnum))))
+    }
+
+    //
     // Type Aliases.
     //
     val typeAliasesByNS = root.typeAliases.values.groupBy(getNameSpace).flatMap {
@@ -139,6 +161,7 @@ object Documentor {
         ("namespaces" -> namespacesSorted) ~
         ("classes" -> classesByNS) ~
         ("enums" -> enumsByNS) ~
+        ("restrictableEnums" -> restrictableEnumsByNS)
         ("typeAliases" -> typeAliasesByNS) ~
         ("defs" -> defsByNS)
 
@@ -163,6 +186,15 @@ object Documentor {
     case _ => None
   }
 
+  /**
+    * Returns the restrictable enum that is in the head position of the instance's type, if it exists.
+    * Returns `None` if the type is not an `enum` type.
+    */
+  def getRestrictableEnum(inst: TypedAst.Instance): Option[Symbol.RestrictableEnumSym] = inst.tpe.baseType match {
+    case Type.Cst(TypeConstructor.RestrictableEnum(sym, _), _) => Some(sym)
+    case _ => None
+  }
+
 
   /**
     * Returns the namespace of the given class `decl`.
@@ -179,6 +211,15 @@ object Documentor {
     * Returns the namespace of the given enum `decl`.
     */
   private def getNameSpace(decl: TypedAst.Enum): String =
+    if (decl.sym.namespace == Nil)
+      RootNS
+    else
+      decl.sym.namespace.mkString("/")
+
+  /**
+    * Returns the namespace of the given enum `decl`.
+    */
+  private def getNameSpace(decl: TypedAst.RestrictableEnum): String =
     if (decl.sym.namespace == Nil)
       RootNS
     else
@@ -271,6 +312,14 @@ object Documentor {
     * Returns the given enum symbol `sym` as a JSON value.
     */
   private def visitEnumSym(sym: Symbol.EnumSym): JObject =
+    ("namespace" -> sym.namespace) ~
+      ("name" -> sym.name) ~
+      ("loc" -> visitSourceLocation(sym.loc))
+
+  /**
+    * Returns the given enum symbol `sym` as a JSON value.
+    */
+  private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): JObject =
     ("namespace" -> sym.namespace) ~
       ("name" -> sym.name) ~
       ("loc" -> visitSourceLocation(sym.loc))
@@ -385,10 +434,35 @@ object Documentor {
   }
 
   /**
+    * Returns the given RestrictableEnum `enum` as a JSON value.
+    */
+  private def visitRestrictableEnum(enum0: RestrictableEnum, instances: Map[Symbol.RestrictableEnumSym, List[Instance]])(implicit flix: Flix): JObject = enum0 match {
+    case RestrictableEnum(doc, ann, _, sym, index, tparams, derives, cases, _, loc) =>
+      ("doc" -> visitDoc(doc)) ~
+        ("ann" -> visitAnnotations(ann)) ~
+        ("sym" -> visitRestrictableEnumSym(sym)) ~
+        ("index" -> visitTypeParam(index)) ~
+        ("tparams" -> tparams.map(visitTypeParam)) ~
+        ("cases" -> cases.values.toList.sortBy(_.loc).map(visitRestrictableCase)) ~
+        ("derives" -> derives.map { d => visitClassSym(d.clazz) }) ~
+        ("instances" -> instances.getOrElse(sym, Nil).map { i => visitClassSym(i.clazz.sym) }) ~
+        ("loc" -> visitSourceLocation(loc))
+  }
+
+  /**
     * Returns the given case `caze` as a JSON value.
     */
   private def visitCase(caze: Case)(implicit flix: Flix): JObject = caze match {
     case Case(sym, _, _, _) =>
+      val tpe = FormatType.formatType(caze.tpe)
+      ("tag" -> sym.name) ~ ("tpe" -> tpe)
+  }
+
+  /**
+    * Returns the given case `caze` as a JSON value.
+    */
+  private def visitRestrictableCase(caze: RestrictableCase)(implicit flix: Flix): JObject = caze match {
+    case RestrictableCase(sym, _, _, _) =>
       val tpe = FormatType.formatType(caze.tpe)
       ("tag" -> sym.name) ~ ("tpe" -> tpe)
   }
