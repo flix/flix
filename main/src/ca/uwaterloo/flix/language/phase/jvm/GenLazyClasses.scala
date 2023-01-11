@@ -134,7 +134,6 @@ object GenLazyClasses {
     val beforeTryBlock = new Label()
     val afterTryBlock = new Label()
     val finallyBlock = new Label()
-    val afterFinally = new Label()
     method.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
     method.visitLabel(beforeTryBlock)
