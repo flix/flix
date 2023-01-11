@@ -235,7 +235,10 @@ object Indexer {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      visitExp(exp) ++ traverse(rules) {
+        case RestrictableChoiceRule(_, body) => visitExp(body)
+      }
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
