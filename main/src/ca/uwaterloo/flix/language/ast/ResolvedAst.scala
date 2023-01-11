@@ -156,6 +156,8 @@ object ResolvedAst {
 
     case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Of(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Mask(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
@@ -344,7 +346,7 @@ object ResolvedAst {
 
   case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, exp: ResolvedAst.Expression)
+  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

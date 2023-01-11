@@ -943,7 +943,15 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.RestrictableChoiceRule(pat0, exp0) =>
               val pVal = pat0 match {
-                case RestrictableChoicePattern.Tag(qname, pat, loc) => ??? // TODO RESTR-VARS (depends on 'of' PR)
+                case NamedAst.RestrictableChoicePattern.Tag(qname, pat, loc) =>
+                  val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
+                  val pats = pat.map {
+                    case NamedAst.RestrictableChoicePattern.Wild(loc) => ResolvedAst.RestrictableChoicePattern.Wild(loc)
+                    case NamedAst.RestrictableChoicePattern.Var(sym, loc) => ResolvedAst.RestrictableChoicePattern.Var(sym, loc)
+                  }
+                  mapN(tagVal) {
+                    case tag => ResolvedAst.RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), pats, loc)
+                  }
               }
               val env = pat0 match {
                 case RestrictableChoicePattern.Tag(qname, pat, loc) =>
@@ -952,9 +960,23 @@ object Resolver {
                     case (acc, NamedAst.RestrictableChoicePattern.Wild(loc)) => acc
                   }
               }
+
               val eVal = visitExp(exp0, env, region)
-              mapN(pVal, eVal) {
-                case (p, e) => ResolvedAst.RestrictableChoiceRule(p, e)
+              flatMapN(pVal, eVal) {
+                case (p, e) =>
+                  val symVal = if (star) {
+                    e match {
+                      case ResolvedAst.Expression.RestrictableTag(sym, exp, loc) => Some(sym.sym).toSuccess
+                      case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
+                      case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
+                    }
+                  } else {
+                    None.toSuccess
+                  }
+
+                  mapN(symVal) {
+                    case sym => ResolvedAst.RestrictableChoiceRule(p, sym, e)
+                  }
               }
           }
           mapN(expVal, rulesVal) {
@@ -1086,6 +1108,13 @@ object Resolver {
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, expectedTypVal, expectedEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
+          }
+
+        case NamedAst.Expression.Of(qname, exp, loc) =>
+          val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
+          val eVal = visitExp(exp, env0, region)
+          mapN(tagVal, eVal) {
+            case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
           }
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -1887,12 +1916,34 @@ object Resolver {
   }
 
   /**
-    * Finds the enum that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
   private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
     // look up the name
     val matches = tryLookupName(qname, allowCase = true, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
+    }
+
+    matches match {
+      // Case 0: No matches. Error.
+      case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
+      // Case 1: Exactly one match. Success.
+      case caze :: Nil => caze.toSuccess
+      // Case 2: Multiple matches. Error
+      case cazes =>
+        val locs = cazes.map(_.sym.loc).sorted
+        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+    }
+    // TODO NS-REFACTOR check accessibility
+  }
+
+  /**
+    * Finds the restrictable enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
+    */
+  private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
+    // look up the name
+    val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect { // TODO RESTR-VARS disallowing case for now
+      case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
     }
 
     matches match {

@@ -53,7 +53,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -1137,6 +1137,9 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
+
+      case KindedAst.Expression.RestrictableChoose(star, exps0, rules0, tvar, loc) => ??? // TODO RESTR-VARS
+
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
@@ -1388,6 +1391,8 @@ object Typer {
           resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Bool, loc)), actual = actualPur, loc)
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.Of(sym, exp, tpe, loc) => ??? // TODO RESTR-VARS
 
       case KindedAst.Expression.Cast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
@@ -2059,6 +2064,8 @@ object Typer {
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.RestrictableChoose(_, exps, rules, tvar, loc) => ??? // TODO RESTR-VARS
+
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
@@ -2177,6 +2184,8 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.Of(_, _, _, _) => ??? // TODO RESTR-VARS
 
       case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)

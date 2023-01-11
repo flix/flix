@@ -796,7 +796,7 @@ object Namer {
     case WeededAst.Expression.Of(qname, exp, loc) =>
       val expVal = visitExp(exp, ns0)
       mapN(expVal) {
-        case e => e // TODO RESTR-VARS
+        case e => NamedAst.Expression.Of(qname, e, loc)
       }
 
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>

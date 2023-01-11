@@ -64,6 +64,7 @@ object TypedAstOps {
     case Expression.Match(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expression.TypeMatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.RelationalChoose(exps, rules, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.Tag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.RestrictableTag(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(sigSymsOf).toSet
@@ -187,7 +188,8 @@ object TypedAstOps {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (guard.toList.flatMap(freeVars) ++ freeVars(exp)) -- freeVars(pat).keys
+        case (acc, MatchRule(pat, guard, exp)) =>
+          acc ++ ( (guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys )
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
@@ -203,6 +205,13 @@ object TypedAstOps {
         case (acc, RelationalChoiceRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
       }
       es ++ rs
+
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      val e = freeVars(exp)
+      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, RestrictableChoiceRule(pat, exp)) => acc ++ (freeVars(exp) -- freeVars(pat).toList)
+      }
+      e ++ rs
 
     case Expression.Tag(_, exp, _, _, _, _) =>
       freeVars(exp)
@@ -412,6 +421,18 @@ object TypedAstOps {
     case RelationalChoicePattern.Wild(_) => Set.empty
     case RelationalChoicePattern.Absent(_) => Set.empty
     case RelationalChoicePattern.Present(sym, _, _) => Set(sym)
+  }
+
+  /**
+    * Returns the free variables in the given restrictable pattern `pat0`.
+    */
+  private def freeVars(pat0: RestrictableChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case RestrictableChoicePattern.Tag(_, pat, _) => pat.flatMap(freeVars).toSet
+  }
+
+  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoicePattern.Wild(_) => None
+    case RestrictableChoicePattern.Var(sym, _) => Some(sym)
   }
 
   /**
