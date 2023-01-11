@@ -221,7 +221,7 @@ object Lowering {
   }
 
   /**
-    * Lowers the given enum `enum0`.
+    * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
     case TypedAst.RestrictableEnum(doc, ann, mod, sym0, _, tparams0, derives, cases0, tpe0, loc) =>
@@ -240,11 +240,17 @@ object Lowering {
       LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
   }
 
+  /**
+    * Lowers `sym` from a restrictable case sym into a regular case sym.
+    */
   private def visitRestrictableCaseSym(sym: Symbol.RestrictableCaseSym): Symbol.CaseSym = {
     val enumSym = visitRestrictableEnumSym(sym.enumSym)
     new Symbol.CaseSym(enumSym, sym.name, sym.loc)
   }
 
+  /**
+    * Lowers `sym` from a restrictable enum sym into a regular enum sym.
+    */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
     new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
 
