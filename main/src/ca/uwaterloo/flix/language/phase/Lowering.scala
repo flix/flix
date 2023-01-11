@@ -446,6 +446,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
 
+    case TypedAst.Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
+      ??? // TODO RESTR-VARS
+
     case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)

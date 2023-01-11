@@ -512,6 +512,37 @@ object Redundancy {
       }
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      // Visit the match expression.
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules map {
+        case RestrictableChoiceRule(pat, body) =>
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the pattern, guard and body.
+          val usedPat = visitRestrictablePat(pat)
+          val usedBody = visitExp(body, extendedEnv, rc)
+          val usedPatAndBody = usedPat ++ usedBody
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedPatAndBody)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+          // Combine everything together.
+          (usedPatAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+
     case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
@@ -842,6 +873,15 @@ object Redundancy {
   }
 
   /**
+    * Returns the symbols used in the given pattern `pat`.
+    */
+  private def visitRestrictablePat(pat0: RestrictableChoicePattern): Used = pat0 match {
+    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _) =>
+      // Ignore the pattern since there is only variables, no nesting.
+      Used.of(sym.enumSym, sym)
+  }
+
+  /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
   private def visitPats(ps: List[Pattern]): Used = ps.foldLeft(Used.empty) {
@@ -1015,6 +1055,21 @@ object Redundancy {
   private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
     case RelationalChoicePattern.Present(sym, _, _) => sym
   }.toSet
+
+  /**
+    * Returns the free variables in the restrictable pattern `p`.
+    */
+  private def freeVars(p: RestrictableChoicePattern): Set[Symbol.VarSym] = p match {
+    case RestrictableChoicePattern.Tag(_, pat, _) => pat.flatMap(freeVars).toSet
+  }
+
+  /**
+    * Returns the free variables in the VarOrWild.
+    */
+  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoicePattern.Wild(_) => None
+    case RestrictableChoicePattern.Var(sym, _) => Some(sym)
+  }
 
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
