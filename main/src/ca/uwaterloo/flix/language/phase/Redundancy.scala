@@ -201,7 +201,28 @@ object Redundancy {
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = used // TODO RESTR-VARS
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = {
+    root.restrictableEnums.foldLeft(used) {
+      case (acc, (sym, decl)) if decl.mod.isPublic =>
+        // Enum is public. No usage requirements.
+        acc
+      case (acc, (sym, decl)) =>
+        // Enum is non-public.
+        // Lookup usage information for this specific enum.
+        used.restrictableEnumSyms.get(sym) match {
+          case None =>
+            // Case 1: Enum is never used.
+            acc + UnusedRestrictableEnumSym(sym)
+          case Some(usedTags) =>
+            // Case 2: Enum is used and here are its used tags.
+            // Check if there is any unused tag.
+            decl.cases.foldLeft(acc) {
+              case (innerAcc, (tag, caze)) if deadRestrictableTag(tag, usedTags) => innerAcc + UnusedRestrictableEnumTag(sym, caze.sym)
+              case (innerAcc, _) => innerAcc
+            }
+        }
+    }
+  }
 
   /**
     * Checks for unused type parameters in enums.
@@ -1037,6 +1058,13 @@ object Redundancy {
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
   private def deadTag(tag: Symbol.CaseSym, usedTags: Set[Symbol.CaseSym]): Boolean =
+    !tag.name.startsWith("_") &&
+      !usedTags.contains(tag)
+
+  /**
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
+  private def deadRestrictableTag(tag: Symbol.RestrictableCaseSym, usedTags: Set[Symbol.RestrictableCaseSym]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 

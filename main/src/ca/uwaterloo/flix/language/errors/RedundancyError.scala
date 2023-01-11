@@ -155,12 +155,75 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the restrictable enum with the symbol `sym` is not used.
+    */
+  case class UnusedRestrictableEnumSym(sym: Symbol.RestrictableEnumSym) extends RedundancyError {
+    def summary: String = "Unused enum."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+         |
+         |${code(sym.loc, "unused enum.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the enum.
+         |  (2)  Remove the enum.
+         |  (3)  Mark the enum as public.
+         |  (4)  Prefix the enum name with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
     * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
     *
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
+    def summary: String = s"Unused case '${tag.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
+         |
+         |${code(tag.loc, "unused tag.")}
+         |""".stripMargin
+
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the case.
+         |  (2)  Remove the case.
+         |  (3)  Prefix the case with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that in the restrictable enum with symbol `sym` the case `tag` is not used.
+    *
+    * @param sym the enum symbol.
+    * @param tag the unused tag.
+    */
+  case class UnusedRestrictableEnumTag(sym: Symbol.RestrictableEnumSym, tag: Symbol.RestrictableCaseSym) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
