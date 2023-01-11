@@ -594,7 +594,12 @@ object Stratifier {
       }
       dg1 + dg2
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      val dg1 = labelledGraphOfExp(exp)
+      val dg2 = rules.foldLeft(LabelledGraph.empty) {
+        case (acc, RestrictableChoiceRule(pat, body)) => acc + labelledGraphOfExp(body)
+      }
+      dg1 + dg2
 
     case Expression.Tag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
