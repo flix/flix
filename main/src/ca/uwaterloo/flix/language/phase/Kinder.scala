@@ -81,6 +81,13 @@ object Kinder {
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
+        // Extra type annotations are required due to limitations in Scala's type inference.
+        val restrictableEnums = Validation.sequence(ParOps.parMap(root.restrictableEnums)({
+          pair: (Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum) =>
+            val (sym, enum) = pair
+            visitRestrictableEnum(enum, taenv, root).map(sym -> _)
+        }))
+
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)

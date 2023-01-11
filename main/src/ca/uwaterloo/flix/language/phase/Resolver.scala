@@ -83,6 +83,7 @@ object Resolver {
                   table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
+                  table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
                   uses.toMap,
