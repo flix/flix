@@ -188,7 +188,8 @@ object TypedAstOps {
 
     case Expression.Match(exp, rules, _, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, MatchRule(pat, guard, exp)) => acc ++ (guard.toList.flatMap(freeVars) ++ freeVars(exp)) -- freeVars(pat).keys
+        case (acc, MatchRule(pat, guard, exp)) =>
+          acc ++ ( (guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(exp)) -- freeVars(pat).keys )
       }
 
     case Expression.TypeMatch(exp, rules, _, _, _, _) =>
