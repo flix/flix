@@ -205,7 +205,12 @@ object TypedAstOps {
       }
       es ++ rs
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      val e = freeVars(exp)
+      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, RestrictableChoiceRule(pat, exp)) => acc ++ (freeVars(exp) -- freeVars(pat).toList)
+      }
+      e ++ rs
 
     case Expression.Tag(_, exp, _, _, _, _) =>
       freeVars(exp)
@@ -415,6 +420,18 @@ object TypedAstOps {
     case RelationalChoicePattern.Wild(_) => Set.empty
     case RelationalChoicePattern.Absent(_) => Set.empty
     case RelationalChoicePattern.Present(sym, _, _) => Set(sym)
+  }
+
+  /**
+    * Returns the free variables in the given restrictable pattern `pat0`.
+    */
+  private def freeVars(pat0: RestrictableChoicePattern): Set[Symbol.VarSym] = pat0 match {
+    case RestrictableChoicePattern.Tag(_, pat, _) => pat.flatMap(freeVars).toSet
+  }
+
+  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoicePattern.Wild(_) => None
+    case RestrictableChoicePattern.Var(sym, _) => Some(sym)
   }
 
   /**

@@ -412,7 +412,7 @@ object TypedAst {
 
   case class RelationalChoiceRule(pat: List[TypedAst.RelationalChoicePattern], exp: TypedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: List[TypedAst.RestrictableChoicePattern], exp: TypedAst.Expression)
+  case class RestrictableChoiceRule(pat: TypedAst.RestrictableChoicePattern, exp: TypedAst.Expression)
 
   case class MatchRule(pat: TypedAst.Pattern, guard: Option[TypedAst.Expression], exp: TypedAst.Expression)
 
