@@ -634,6 +634,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.All => true
+    case TypeConstructor.CaseConstant(_) => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -653,6 +654,10 @@ object SemanticTokensProvider {
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
     case TypeConstructor.Empty => false
+    case TypeConstructor.CaseComplement(_) => false
+    case TypeConstructor.CaseUnion(_) => false
+    case TypeConstructor.CaseIntersection(_) => false
+    case TypeConstructor.CaseEmpty(_) => false
   }
 
   /**
