@@ -876,7 +876,7 @@ object Redundancy {
     * Returns the symbols used in the given pattern `pat`.
     */
   private def visitRestrictablePat(pat0: RestrictableChoicePattern): Used = pat0 match {
-    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _) =>
+    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
       // Ignore the pattern since there is only variables, no nesting.
       Used.of(sym.enumSym, sym)
   }
@@ -1060,15 +1060,15 @@ object Redundancy {
     * Returns the free variables in the restrictable pattern `p`.
     */
   private def freeVars(p: RestrictableChoicePattern): Set[Symbol.VarSym] = p match {
-    case RestrictableChoicePattern.Tag(_, pat, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoicePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
   }
 
   /**
     * Returns the free variables in the VarOrWild.
     */
   private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
-    case RestrictableChoicePattern.Wild(_) => None
-    case RestrictableChoicePattern.Var(sym, _) => Some(sym)
+    case RestrictableChoicePattern.Wild(_, _) => None
+    case RestrictableChoicePattern.Var(sym, _, _) => Some(sym)
   }
 
   /**

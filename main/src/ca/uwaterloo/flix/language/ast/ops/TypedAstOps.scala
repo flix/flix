@@ -427,12 +427,12 @@ object TypedAstOps {
     * Returns the free variables in the given restrictable pattern `pat0`.
     */
   private def freeVars(pat0: RestrictableChoicePattern): Set[Symbol.VarSym] = pat0 match {
-    case RestrictableChoicePattern.Tag(_, pat, _) => pat.flatMap(freeVars).toSet
+    case RestrictableChoicePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
   }
 
   private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
-    case RestrictableChoicePattern.Wild(_) => None
-    case RestrictableChoicePattern.Var(sym, _) => Some(sym)
+    case RestrictableChoicePattern.Wild(_, _) => None
+    case RestrictableChoicePattern.Var(sym, _, _) => Some(sym)
   }
 
   /**

@@ -249,6 +249,13 @@ object Lowering {
   }
 
   /**
+    * Lowers `sym` from a restrictable case sym use into a regular case sym use.
+    */
+  private def visitRestrictableCaseSymUse(sym: Ast.RestrictableCaseSymUse): Ast.CaseSymUse = {
+    Ast.CaseSymUse(visitRestrictableCaseSym(sym.sym), sym.sym.loc)
+  }
+
+  /**
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
@@ -446,8 +453,12 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.RelationalChoose(es, rs, t, pur, eff, loc)
 
-    case TypedAst.Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
-      ??? // TODO RESTR-VARS
+    case TypedAst.Expression.RestrictableChoose(_, exp, rules, tpe, pur, eff, loc) =>
+      // lower into an ordinary match
+      val e = visitExp(exp)
+      val rs = rules.map(visitRestrictableChoiceRule)
+      val t = visitType(tpe)
+      LoweredAst.Expression.Match(e, rs, t, pur, eff, loc)
 
     case TypedAst.Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -931,6 +942,25 @@ object Lowering {
       }
       val e = visitExp(exp)
       LoweredAst.RelationalChoiceRule(p, e)
+  }
+
+  /**
+    * Lowers the given restrictable choice rule `rule0` to a match rule.
+    */
+  private def visitRestrictableChoiceRule(rule0: TypedAst.RestrictableChoiceRule)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.MatchRule = rule0 match {
+    case TypedAst.RestrictableChoiceRule(pat, exp) =>
+      val e = visitExp(exp)
+      pat match {
+        case TypedAst.RestrictableChoicePattern.Tag(sym, pat, tpe, loc) =>
+          val termPatterns = pat.map {
+            case TypedAst.RestrictableChoicePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
+            case TypedAst.RestrictableChoicePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
+          }
+          val tuplepat = LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuplish(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+          val tagSym = visitRestrictableCaseSymUse(sym)
+          val p = LoweredAst.Pattern.Tag(tagSym, tuplepat, tpe, loc)
+          LoweredAst.MatchRule(p, None, e)
+      }
   }
 
   /**
