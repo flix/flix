@@ -15,21 +15,20 @@ dependencies {
     implementation 'org.scala-lang:scala-library:2.13.5'
     implementation 'org.scala-lang:scala-reflect:2.13.5'
 
-    implementation files('lib/org.java_websocket-1.3.9.jar')
-    implementation files('lib/org.jline-3.5.1.jar')
-    implementation files('lib/org.json4s-ast-3.5.5.jar')
-    implementation files('lib/org.json4s-core-3.5.5.jar')
-    implementation files('lib/org.json4s-native-3.5.5.jar')
-    implementation files('lib/org.objectweb.asm-9.2.jar')
-    implementation files('lib/org.parboiled-2.2.1.jar')
-    implementation files('lib/org.scalactic-3.0.8.jar')
-    implementation files('lib/org.scalatest-3.0.8.jar')
-    implementation files('lib/scala.collection.parallel-0.2.0.jar')
-    implementation files('lib/scala.xml-1.2.0.jar')
-    implementation files('lib/scopt_2.13-4.0.1.jar')
-    implementation files('lib/shapeless-2.3.3.jar')
-    implementation files('lib/guava-25.1-jre.jar')
+    implementation('org.java-websocket:Java-WebSocket:1.3.9')
+    implementation('org.jline:jline:3.5.1')
+    implementation('org.json4s:json4s-native_2.13:3.5.5')
+    implementation('org.ow2.asm:asm:9.2')
+    implementation('org.parboiled:parboiled_2.13:2.2.1')
+    implementation('org.scalactic:scalactic_2.13:3.0.8')
+    implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
+    implementation('com.github.scopt:scopt_2.13:4.0.1')
+    implementation('com.google.guava:guava:25.1-jre')
+    // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
+
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
+
+    testImplementation('org.scalatest:scalatest_2.13:3.0.8')
 }
 
 tasks.withType(ScalaCompile) {
