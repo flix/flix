@@ -919,11 +919,11 @@ object Kinder {
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
   private def visitRestrictableChoiceRule(rule0: ResolvedAst.RestrictableChoiceRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RestrictableChoiceRule(pat0, exp0) =>
+    case ResolvedAst.RestrictableChoiceRule(pat0, sym, exp0) =>
       val patVal = visitRestrictableChoicePattern(pat0)
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, exp)
+        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, sym, exp)
       }
   }
 
