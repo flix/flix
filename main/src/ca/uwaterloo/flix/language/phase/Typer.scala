@@ -1138,7 +1138,7 @@ object Typer {
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
 
-      case KindedAst.Expression.RelationalChoose(star, exps0, rules0, tvar, loc) => ??? // TODO RESTR-VARS
+      case KindedAst.Expression.RestrictableChoose(star, exps0, rules0, tvar, loc) => ??? // TODO RESTR-VARS
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
@@ -2064,7 +2064,7 @@ object Typer {
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.RelationalChoose(_, exps, rules, tvar, loc) => ??? // TODO RESTR-VARS
+      case KindedAst.Expression.RestrictableChoose(_, exps, rules, tvar, loc) => ??? // TODO RESTR-VARS
 
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
