@@ -354,11 +354,11 @@ object TypedAst {
 
     sealed trait VarOrWild
 
-    case class Wild(loc: SourceLocation) extends VarOrWild
+    case class Wild(tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoicePattern
 
   }
 

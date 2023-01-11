@@ -664,6 +664,18 @@ object Type {
   }
 
   /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    *
+    * Returns Unit if the list is empty.
+    * Returns the head of the list if it is a singleton list.
+    */
+  def mkTuplish(ts: List[Type], loc: SourceLocation): Type = ts match {
+    case Nil => Type.mkUnit(loc)
+    case t :: Nil => t
+    case list => mkTuple(list, loc)
+  }
+
+  /**
     * Constructs the a native type.
     */
   def mkNative(clazz: Class[_], loc: SourceLocation): Type = Type.Cst(TypeConstructor.Native(clazz), loc)
