@@ -47,7 +47,7 @@ object KindedAst {
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
-  case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, KindedAst.Case], tpeDeprecated: Type, loc: SourceLocation)
+  case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.RestrictableCaseSym, KindedAst.RestrictableCase], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
@@ -280,6 +280,8 @@ object KindedAst {
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme)
+
+  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
