@@ -113,7 +113,7 @@ object Kind {
   }
 
   /**
-    * Returns the kind: k1 -> (k2 ... -> kn) for the given list of kinds `ks`.
+    * Returns the kind: k1 -> (k2 ... -> (kn -> *)) for the given list of kinds `ks`.
     */
   def mkArrow(ks: List[Kind]): Kind = ks match {
     case Nil => Star
