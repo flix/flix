@@ -597,7 +597,7 @@ object Stratifier {
     case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
       val dg1 = labelledGraphOfExp(exp)
       val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RestrictableChoiceRule(pat, body)) => acc + labelledGraphOfExp(body)
+        case (acc, RestrictableChoiceRule(_, body)) => acc + labelledGraphOfExp(body)
       }
       dg1 + dg2
 
