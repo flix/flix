@@ -152,7 +152,10 @@ object CodeHinter {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      visitExp(exp) ++ rules.flatMap {
+        case RestrictableChoiceRule(_, body) => visitExp(body)
+      }
 
     case Expression.Tag(_, exp, _, _, _, _) =>
       visitExp(exp)
