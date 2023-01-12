@@ -1183,7 +1183,12 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
-    case UnkindedType.RestrictableEnum(sym, loc) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, loc) =>
+      val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+      }
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 
@@ -1451,7 +1456,15 @@ object Kinder {
         }
       }
 
-    case UnkindedType.RestrictableEnum(_, _) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, _) =>
+      val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      val args = Kind.kindArgs(tyconKind)
+
+      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)

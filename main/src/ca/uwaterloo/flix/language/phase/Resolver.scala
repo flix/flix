@@ -503,14 +503,14 @@ object Resolver {
       }
   }
 
-    /**
+  /**
     * Performs name resolution on the given restrictable enum `e0` in the given namespace `ns0`.
     */
   def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives0, cases0, loc) =>
       val index = Params.resolveTparam(index0)
       val tparams = resolveTypeParams(tparams0, env0, ns0, root)
-      val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+      val env = env0 ++ mkTypeParamEnv(index :: tparams.tparams)
       val derivesVal = resolveDerivations(derives0, env, ns0, root)
       val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
       mapN(derivesVal, casesVal) {
@@ -681,6 +681,36 @@ object Resolver {
       }
 
       /**
+        * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+        */
+      def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, loc: SourceLocation): ResolvedAst.Expression = {
+        // Check if the tag value has Unit type.
+        if (isUnitType(caze.tpe)) {
+          // Case 1: The tag value has Unit type. Construct the Unit expression.
+          val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
+          ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, loc)
+        } else {
+          // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
+          // If the tag is `Some` we construct the lambda: x -> Some(x).
+
+          // Construct a fresh symbol for the formal parameter.
+          val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
+
+          // Construct the formal parameter for the fresh symbol.
+          val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
+
+          // Construct a variable expression for the fresh symbol.
+          val varExp = ResolvedAst.Expression.Var(freshVar, loc)
+
+          // Construct the tag expression on the fresh symbol expression.
+          val tagExp = ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), varExp, loc)
+
+          // Assemble the lambda expressions.
+          ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
+        }
+      }
+
+      /**
         * Resolve the application expression, performing currying over the subexpressions.
         */
       def visitApply(exp: NamedAst.Expression.Apply, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
@@ -747,6 +777,22 @@ object Resolver {
         }
       }
 
+      /**
+        * Resolves the tag application.
+        */
+      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        val esVal = traverse(exps)(visitExp(_, env0, region))
+        mapN(esVal) {
+          // Case 1: one expression. No tuple.
+          case e :: Nil =>
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, outerLoc)
+          // Case 2: multiple expressions. Make them a tuple
+          case es =>
+            val exp = ResolvedAst.Expression.Tuple(es, outerLoc)
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+        }
+      }
+
 
       /**
         * Local visitor.
@@ -762,6 +808,7 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
             case ResolvedTerm.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
             case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
+            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -804,6 +851,7 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
             case ResolvedTerm.Var(_) => visitApply(app, env0, region)
             case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, env0, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -1860,6 +1908,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Def) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Var(_) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
@@ -1876,6 +1925,9 @@ object Resolver {
         }
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
         ResolvedTerm.Tag(caze).toSuccess
+      // TODO NS-REFACTOR check accessibility
+      case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
+        ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
         // Multiple case matches. Error.
@@ -2009,6 +2061,7 @@ object Resolver {
         case typeName =>
           lookupType(qname, env, ns0, root) match {
             case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+            case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
@@ -2020,6 +2073,7 @@ object Resolver {
         // Disambiguate type.
         lookupType(qname, env, ns0, root) match {
           case TypeLookupResult.Enum(enum) => getEnumTypeIfAccessible(enum, ns0, loc)
+          case TypeLookupResult.RestrictableEnum(enum) => getRestrictableEnumTypeIfAccessible(enum, ns0, loc)
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
@@ -2220,7 +2274,10 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
-      case _: UnkindedType.RestrictableEnum => ??? // TODO RESTR-VARS
+      case _: UnkindedType.RestrictableEnum =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
 
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
@@ -2302,6 +2359,7 @@ object Resolver {
       */
     def orElse(other: => TypeLookupResult): TypeLookupResult = this match {
       case res: TypeLookupResult.Enum => res
+      case res: TypeLookupResult.RestrictableEnum => res
       case res: TypeLookupResult.TypeAlias => res
       case res: TypeLookupResult.Effect => res
       case res: TypeLookupResult.JavaClass => res
@@ -2314,6 +2372,11 @@ object Resolver {
       * The result is an enum.
       */
     case class Enum(enum0: NamedAst.Declaration.Enum) extends TypeLookupResult
+
+    /**
+      * The result is a restrictable enum.
+      */
+    case class RestrictableEnum(enum0: NamedAst.Declaration.RestrictableEnum) extends TypeLookupResult
 
     /**
       * The result is a type alias.
@@ -2353,8 +2416,11 @@ object Resolver {
         case enum: NamedAst.Declaration.Enum =>
           // Case 3: found an enum
           TypeLookupResult.Enum(enum)
+        case enum: NamedAst.Declaration.RestrictableEnum =>
+          // Case 4: found a restrictable enum
+          TypeLookupResult.RestrictableEnum(enum)
         case effect: NamedAst.Declaration.Effect =>
-          // Case 4: found an effect
+          // Case 5: found an effect
           TypeLookupResult.Effect(effect)
       }.getOrElse(TypeLookupResult.NotFound)
     }
@@ -2366,11 +2432,14 @@ object Resolver {
       case Resolution.Declaration(enum: NamedAst.Declaration.Enum) =>
         // Case 2: found an enum
         TypeLookupResult.Enum(enum)
+      case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) =>
+        // Case 3: found a restrictable enum
+        TypeLookupResult.RestrictableEnum(enum)
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
-        // Case 3: found an effect
+        // Case 4: found an effect
         TypeLookupResult.Effect(effect)
       case Resolution.JavaClass(clazz) =>
-        // Case 4: found a Java class
+        // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
     }.getOrElse(TypeLookupResult.NotFound)
 
@@ -2730,6 +2799,38 @@ object Resolver {
     ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
   }
 
+  /**
+    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An enum is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getRestrictableEnumIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (enum0.mod.isPublic)
+      return enum0.toSuccess
+
+
+    //
+    // Check if the enum is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = enum0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return enum0.toSuccess
+
+    //
+    // The enum is not accessible.
+    //
+    ResolutionError.InaccessibleRestrictableEnum(enum0.sym, ns0, loc).toFailure
+  }
+
 
   /**
     * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
@@ -2739,6 +2840,16 @@ object Resolver {
   private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => mkEnum(enum.sym, loc)
+    }
+
+  /**
+    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
+    getRestrictableEnumIfAccessible(enum0, ns0, loc) map {
+      case enum => mkRestrictableEnum(enum.sym, loc)
     }
 
   /**
@@ -3343,6 +3454,8 @@ object Resolver {
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedTerm
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedTerm
+
+    case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedTerm
   }
 
   /**
