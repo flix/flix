@@ -25,22 +25,56 @@ import ca.uwaterloo.flix.language.phase.unification.Unification.{liftM, unifyTyp
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
+import scala.collection.mutable
+
 object RestrictableChooseInference {
 
   /**
     * Returns the domain of the list of rules,
     * i.e., the set of tags in the patterns.
     */
-  private def dom(rules: List[KindedAst.RestrictableChoiceRule]): List[Symbol.RestrictableCaseSym] = {
+  private def dom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.map {
       case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _), _, _) => sym.sym
+    }.toSet
+  }
+
+  /**
+    * Returns the codomain of the list of rules,
+    * i.e., the set of tags in the rule bodies.
+    */
+  private def codom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
+    rules.map {
+      case KindedAst.RestrictableChoiceRule(_, sym, exp) => sym.getOrElse(throw InternalCompilerException("unexpected missing case sym", exp.loc))
+    }.toSet
+  }
+
+  /**
+    * Returns the stable set of the list of rules,
+    * i.e., the set of tags that are only mapped from themselves.
+    */
+  private def stable(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
+    val maybeStableSyms = mutable.Set.empty[Symbol.RestrictableCaseSym]
+    val unstableSyms = mutable.Set.empty[Symbol.RestrictableCaseSym]
+    rules.foreach {
+      case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(symInUse, _, _, _), symOutOpt, exp) =>
+        val symIn = symInUse.sym
+        val symOut = symOutOpt.getOrElse(throw InternalCompilerException("unexpected missing case sym", exp.loc))
+        if (symIn == symOut) {
+          // Case 1: Maps from itself. Might be stable.
+          maybeStableSyms.add(symOut)
+        } else {
+          // Case 2: Maps from something else. Definitely not stable.
+          unstableSyms.add(symOut)
+        }
     }
+    maybeStableSyms.toSet -- unstableSyms.toSet
   }
 
   /**
     * Converts the list of restrictable case symbols to a set type.
     */
-  private def toType(syms: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
+  private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
     syms.map {
         case sym => Type.Cst(TypeConstructor.CaseConstant(sym), loc.asSynthetic)
       }.reduceLeft[Type] {
@@ -111,7 +145,72 @@ object RestrictableChooseInference {
         resultEff = Type.mkUnion(eff:: effs, loc)
       } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
-    case KindedAst.Expression.RestrictableChoose(true, exp, rules, tpe, loc) => ???
+    case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
+
+      // Get the enum symbols for the matched type
+      val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
+        case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym.enumSym
+      }
+
+      val enum = root.restrictableEnums(enumSym)
+
+      // Make fresh vars for all the type parameters
+      // This will unify with the enum type to extract the index
+      val targsIn = (enum.index :: enum.tparams).map {
+        case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc.asSynthetic, sym.isRegion)
+      }
+      val enumConstructorKind = Kind.mkArrow(targsIn.map(_.kind))
+      val enumConstructor = Type.Cst(TypeConstructor.RestrictableEnum(enumSym, enumConstructorKind), loc.asSynthetic)
+
+      // Make fresh vars for all the type parameters
+      // This will unify with the enum type to extract the index
+      val targsOut = (enum.index :: enum.tparams).map {
+        case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc.asSynthetic, sym.isRegion)
+      }
+
+      // The expected enum type.
+      val enumTypeIn = Type.mkApply(enumConstructor, targsIn, loc.asSynthetic)
+      val enumTypeOut = Type.mkApply(enumConstructor, targsOut, loc.asSynthetic)
+
+      val domM = toType(dom(rules0), enumSym, loc.asSynthetic)
+      val codomM = toType(codom(rules0), enumSym, loc.asSynthetic)
+      val stableM = toType(stable(rules0), enumSym, loc.asSynthetic)
+
+      for {
+        // Γ ⊢ e: τ_in
+        (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
+        patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
+        _ <- unifyTypeM(tpe :: patTpes, loc)
+
+        // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
+        _ <- unifyTypeM(enumTypeIn, tpe, loc)
+
+        // φ_in <: dom(M)
+        _ <- unifySubset(targsIn.head, domM, enumSym, loc.asSynthetic)
+
+        // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
+        (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
+
+        // τ_out = (... + l^out_i(τ^out_i) + ...)[φ_out]
+        _ <- unifyTypeM(enumTypeOut :: tpes, loc)
+
+        // φ_out <: (φ_in ∩ stable(M)) ∪ (codom(M) - stable(M))
+        set = Type.mkCaseUnion(
+          Type.mkCaseIntersection(targsIn.head, stableM, enumSym, loc),
+          Type.mkCaseDifference(codomM, stableM, enumSym, loc),
+          enumSym,
+          loc
+        )
+        _ <- unifySubset(targsOut.head, set, enumSym, loc)
+
+        resultTconstrs = constrs ::: constrss.flatten
+
+        // τ_out
+        resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
+        resultPur = Type.mkAnd(pur :: purs, loc)
+        resultEff = Type.mkUnion(eff:: effs, loc)
+      } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+
   }
 
   /**
