@@ -681,6 +681,36 @@ object Resolver {
       }
 
       /**
+        * Curry the tag, wrapping it in a lambda expression if it is not nullary.
+        */
+      def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, loc: SourceLocation): ResolvedAst.Expression = {
+        // Check if the tag value has Unit type.
+        if (isUnitType(caze.tpe)) {
+          // Case 1: The tag value has Unit type. Construct the Unit expression.
+          val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
+          ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, loc)
+        } else {
+          // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
+          // If the tag is `Some` we construct the lambda: x -> Some(x).
+
+          // Construct a fresh symbol for the formal parameter.
+          val freshVar = Symbol.freshVarSym("x" + Flix.Delimiter, BoundBy.FormalParam, loc)
+
+          // Construct the formal parameter for the fresh symbol.
+          val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, None, loc)
+
+          // Construct a variable expression for the fresh symbol.
+          val varExp = ResolvedAst.Expression.Var(freshVar, loc)
+
+          // Construct the tag expression on the fresh symbol expression.
+          val tagExp = ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), varExp, loc)
+
+          // Assemble the lambda expressions.
+          ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
+        }
+      }
+
+      /**
         * Resolve the application expression, performing currying over the subexpressions.
         */
       def visitApply(exp: NamedAst.Expression.Apply, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
@@ -747,6 +777,22 @@ object Resolver {
         }
       }
 
+      /**
+        * Resolves the tag application.
+        */
+      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        val esVal = traverse(exps)(visitExp(_, env0, region))
+        mapN(esVal) {
+          // Case 1: one expression. No tuple.
+          case e :: Nil =>
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, outerLoc)
+          // Case 2: multiple expressions. Make them a tuple
+          case es =>
+            val exp = ResolvedAst.Expression.Tuple(es, outerLoc)
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+        }
+      }
+
 
       /**
         * Local visitor.
@@ -762,6 +808,7 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
             case ResolvedTerm.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
             case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
+            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -804,6 +851,7 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
             case ResolvedTerm.Var(_) => visitApply(app, env0, region)
             case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, env0, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -1860,6 +1908,7 @@ object Resolver {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Def) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Sig) => decl
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Case) => decl
+      case decl@Resolution.Declaration(_: NamedAst.Declaration.RestrictableCase) => decl
       case decl@Resolution.Var(_) => decl
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
@@ -1876,6 +1925,9 @@ object Resolver {
         }
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
         ResolvedTerm.Tag(caze).toSuccess
+      // TODO NS-REFACTOR check accessibility
+      case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
+        ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
         // Multiple case matches. Error.
@@ -3402,6 +3454,8 @@ object Resolver {
     case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedTerm
 
     case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedTerm
+
+    case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedTerm
   }
 
   /**
