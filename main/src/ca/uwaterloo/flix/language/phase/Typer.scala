@@ -1196,7 +1196,8 @@ object Typer {
           } yield (constrs, resultTyp, resultPur, resultEff)
         }
 
-      case KindedAst.Expression.RestrictableTag(_, _, _, _) => ??? // TODO RESTR-VARS
+      case exp@KindedAst.Expression.RestrictableTag(_, _, _, _) =>
+        RestrictableChooseInference.inferRestrictableTag(exp, root)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         for {

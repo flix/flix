@@ -213,6 +213,52 @@ object RestrictableChooseInference {
 
   }
 
+  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
+    case KindedAst.Expression.RestrictableTag(symUse, exp, tvar, loc) =>
+      // Lookup the enum declaration.
+      val enumSym = symUse.sym.enumSym
+      val decl = root.restrictableEnums(enumSym)
+
+      // Lookup the case declaration.
+      val caze = decl.cases(symUse.sym)
+
+      // Make fresh vars for all the type parameters
+      // This will unify with the enum type to extract the index
+      val targs = (decl.index :: decl.tparams).map {
+        case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc.asSynthetic, sym.isRegion)
+      }
+      val enumConstructorKind = Kind.mkArrow(targs.map(_.kind))
+      val enumConstructor = Type.Cst(TypeConstructor.RestrictableEnum(enumSym, enumConstructorKind), loc.asSynthetic)
+
+      // The expected enum type.
+      val enumType = Type.mkApply(enumConstructor, targs, loc.asSynthetic)
+
+      // Instantiate the type scheme of the case.
+      val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+
+      // φ ∪ {l_i}
+      val index = Type.mkCaseUnion(
+        Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
+        Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic),
+        enumSym,
+        loc.asSynthetic
+      )
+
+      //
+      // The tag type is a function from the type of variant to the type of the enum.
+      //
+      for {
+        // τ = (... + l_i(τ_i) + ...)[φ ∪ {l_i}]
+        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+        _ <- unifyTypeM(enumType, tvar, loc)
+        _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        _ <- unifyTypeM(targs.head, index, loc)
+        resultTyp = tvar
+        resultPur = pur
+        resultEff = eff
+      } yield (constrs, resultTyp, resultPur, resultEff)
+  }
+
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
