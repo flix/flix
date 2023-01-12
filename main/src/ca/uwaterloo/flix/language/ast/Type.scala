@@ -879,6 +879,16 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 + tpe2`
+    *
+    * Must not be used before kinding.
+    */
+  def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    // TODO RESTR-VARS maybe optimize
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
     * Returns the type `tpe1 & tpe2`
     *
     * Must not be used before kinding.
