@@ -19,10 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
@@ -54,7 +54,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */ , effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -2596,53 +2596,6 @@ object Typer {
     */
   private def inferPatterns(pats0: List[KindedAst.Pattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferPattern(_, root))
-  }
-
-  /**
-    * Infers the type of the given restrictable choice pattern `pat0`.
-    */
-  private def inferRestrictableChoicePattern(pat0: KindedAst.RestrictableChoicePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
-    /**
-      * Local pattern visitor.
-      */
-    def visit(p: KindedAst.RestrictableChoicePattern): InferMonad[Type] = p match {
-      case KindedAst.RestrictableChoicePattern.Tag(symUse, pat, tvar, loc) =>
-        // Lookup the enum declaration.
-        val decl = root.restrictableEnums(symUse.sym.enumSym)
-
-        // Lookup the case declaration.
-        val caze = decl.cases(symUse.sym)
-
-        // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
-
-        //
-        // The tag type is a function from the type of variant to the type of the enum.
-        //
-        for {
-          tpes <- traverseM(pat)(inferVarOrWild)
-          tpe = Type.mkTuplish(tpes, loc)
-          _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
-          resultTyp = tvar
-        } yield resultTyp
-    }
-
-    visit(pat0)
-  }
-
-  /**
-    * Infers the type of the given restrictable choice pattern `pat0`.
-    */
-  private def inferVarOrWild(pat: KindedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): InferMonad[Type] = pat match {
-    case KindedAst.RestrictableChoicePattern.Wild(tvar, loc) => liftM(tvar)
-    case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
-  }
-
-  /**
-    * Infers the type of the given patterns `pats0`.
-    */
-  def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
-    traverseM(pats0)(inferRestrictableChoicePattern(_, root))
   }
 
   /**

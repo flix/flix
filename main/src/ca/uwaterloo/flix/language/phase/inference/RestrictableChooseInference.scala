@@ -1,11 +1,27 @@
-package ca.uwaterloo.flix.language.phase.unification
+/*
+ * Copyright 2023 Matthew Lutze
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ca.uwaterloo.flix.language.phase.inference
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.language.phase.Typer.inferExp
+import ca.uwaterloo.flix.language.phase.unification.InferMonad
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
-import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypeM
+import ca.uwaterloo.flix.language.phase.unification.Unification.{liftM, unifyTypeM}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
@@ -76,7 +92,7 @@ object RestrictableChooseInference {
       for {
         // Γ ⊢ e: τ_in
         (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
-        patTpes <- Typer.inferRestrictableChoicePatterns(rules0.map(_.pat), root)
+        patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
         _ <- unifyTypeM(tpe :: patTpes, loc)
 
         // τ_in = (... + l_i(τ_i) + ...)[φ_in]
@@ -96,6 +112,53 @@ object RestrictableChooseInference {
       } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
     case KindedAst.Expression.RestrictableChoose(true, exp, rules, tpe, loc) => ???
+  }
+
+  /**
+    * Infers the type of the given restrictable choice pattern `pat0`.
+    */
+  private def inferRestrictableChoicePattern(pat0: KindedAst.RestrictableChoicePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+    /**
+      * Local pattern visitor.
+      */
+    def visit(p: KindedAst.RestrictableChoicePattern): InferMonad[Type] = p match {
+      case KindedAst.RestrictableChoicePattern.Tag(symUse, pat, tvar, loc) =>
+        // Lookup the enum declaration.
+        val decl = root.restrictableEnums(symUse.sym.enumSym)
+
+        // Lookup the case declaration.
+        val caze = decl.cases(symUse.sym)
+
+        // Instantiate the type scheme of the case.
+        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+
+        //
+        // The tag type is a function from the type of variant to the type of the enum.
+        //
+        for {
+          tpes <- traverseM(pat)(inferVarOrWild)
+          tpe = Type.mkTuplish(tpes, loc)
+          _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+          resultTyp = tvar
+        } yield resultTyp
+    }
+
+    visit(pat0)
+  }
+
+  /**
+    * Infers the type of the given restrictable choice pattern `pat0`.
+    */
+  private def inferVarOrWild(pat: KindedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): InferMonad[Type] = pat match {
+    case KindedAst.RestrictableChoicePattern.Wild(tvar, _) => liftM(tvar)
+    case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
+  }
+
+  /**
+    * Infers the type of the given patterns `pats0`.
+    */
+  private def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+    traverseM(pats0)(inferRestrictableChoicePattern(_, root))
   }
 
 }
