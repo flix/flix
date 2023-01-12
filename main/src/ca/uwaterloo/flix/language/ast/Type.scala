@@ -833,6 +833,16 @@ object Type {
   }
 
   /**
+    * Returns the complement of the given type.
+    *
+    * Must not be used before kinding.
+    */
+  def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
+    // TODO RESTR-VARS maybe optimize
+    case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
+  }
+
+  /**
     * Returns the type `tpe1 + tpe2`
     *
     * Must not be used before kinding.
@@ -869,6 +879,16 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 & tpe2`
+    *
+    * Must not be used before kinding.
+    */
+  def mkCaseIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    // TODO RESTR-VARS maybe optimize
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
     * Returns the intersection of all the given types.
     *
     * Must not be used before kinding.
@@ -884,6 +904,13 @@ object Type {
     * Must not be used before kinding.
     */
   def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
+
+  /**
+    * Returns the difference of the given types.
+    *
+    * Must not be used before kinding.
+    */
+  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.

@@ -28,6 +28,7 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],

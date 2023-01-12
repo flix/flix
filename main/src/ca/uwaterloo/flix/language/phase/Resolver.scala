@@ -83,6 +83,7 @@ object Resolver {
                   table.instances.m, // TODO NS-REFACTOR use ListMap elsewhere for this too
                   table.defs,
                   table.enums,
+                  table.restrictableEnums,
                   table.effects,
                   table.typeAliases,
                   uses.toMap,
@@ -3008,6 +3009,11 @@ object Resolver {
         case TypeConstructor.SchemaRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseConstant(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseEmpty(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseUnion(_) => ResolutionError.IllegalType(tpe, loc).toFailure
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

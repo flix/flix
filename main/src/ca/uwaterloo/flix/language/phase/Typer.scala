@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
@@ -53,7 +54,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */ , effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -61,7 +62,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -440,7 +441,7 @@ object Typer {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -1137,8 +1138,7 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-
-      case KindedAst.Expression.RestrictableChoose(star, exps0, rules0, tvar, loc) => ??? // TODO RESTR-VARS
+      case exp@KindedAst.Expression.RestrictableChoose(_, _, _, _, _) => RestrictableChooseInference.infer(exp, root)
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {

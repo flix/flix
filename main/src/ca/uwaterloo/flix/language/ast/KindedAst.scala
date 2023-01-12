@@ -28,6 +28,7 @@ object KindedAst {
                   instances: Map[Symbol.ClassSym, List[KindedAst.Instance]],
                   defs: Map[Symbol.DefnSym, KindedAst.Def],
                   enums: Map[Symbol.EnumSym, KindedAst.Enum],
+                  restrictableEnums: Map[Symbol.RestrictableEnumSym, KindedAst.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
@@ -261,11 +262,11 @@ object KindedAst {
 
     sealed trait VarOrWild
 
-    case class Wild(loc: SourceLocation) extends VarOrWild
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
+    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends RestrictableChoicePattern
 
   }
 

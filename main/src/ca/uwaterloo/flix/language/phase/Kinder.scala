@@ -81,6 +81,13 @@ object Kinder {
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
+        // Extra type annotations are required due to limitations in Scala's type inference.
+        val restrictableEnumsVal = Validation.sequence(ParOps.parMap(root.restrictableEnums)({
+          pair: (Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum) =>
+            val (sym, enum) = pair
+            visitRestrictableEnum(enum, taenv, root).map(sym -> _)
+        }))
+
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
@@ -97,9 +104,9 @@ object Kinder {
             visitEffect(eff, taenv, root).map(sym -> _)
         }))
 
-        mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
-          case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
+        mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
+          case (enums, restrictableEnums, classes, defs, instances, effects) =>
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -1017,7 +1024,7 @@ object Kinder {
     case ResolvedAst.RestrictableChoicePattern.Tag(sym, pat0, loc) =>
       val patVal = traverse(pat0)(visitRestrictableChoicePatternVarOrWild)
       mapN(patVal) {
-        case pat => KindedAst.RestrictableChoicePattern.Tag(sym, pat, loc)
+        case pat => KindedAst.RestrictableChoicePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
   }
 
@@ -1025,7 +1032,7 @@ object Kinder {
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
   private def visitRestrictableChoicePatternVarOrWild(pat0: ResolvedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern.VarOrWild, KindError] = pat0 match {
-    case ResolvedAst.RestrictableChoicePattern.Wild(loc) => KindedAst.RestrictableChoicePattern.Wild(loc).toSuccess
+    case ResolvedAst.RestrictableChoicePattern.Wild(loc) => KindedAst.RestrictableChoicePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
     case ResolvedAst.RestrictableChoicePattern.Var(sym, loc) => KindedAst.RestrictableChoicePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
