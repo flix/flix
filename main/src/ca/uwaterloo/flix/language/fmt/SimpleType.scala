@@ -547,7 +547,7 @@ object SimpleType {
           t.typeArguments.map(visit) match {
             case Nil => Intersection(Hole :: Hole :: Nil)
             case arg :: Nil => Intersection(arg :: Hole :: Nil)
-            case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
             case _ => throw new OverAppliedType(t.loc)
           }
 
@@ -555,7 +555,7 @@ object SimpleType {
           t.typeArguments.map(visit) match {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
-            case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
             case _ => throw new OverAppliedType(t.loc)
           }
 
