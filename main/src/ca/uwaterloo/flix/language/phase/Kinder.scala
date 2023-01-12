@@ -1183,7 +1183,12 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
-    case UnkindedType.RestrictableEnum(sym, loc) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, loc) =>
+      val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+      }
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 

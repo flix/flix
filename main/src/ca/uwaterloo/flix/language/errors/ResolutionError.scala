@@ -283,6 +283,33 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Restrictable Enum Error.
+    *
+    * @param sym the enum symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible enum.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
+
+  }
+
+  /**
     * Opaque Enum Error.
     *
     * @param sym the enum symbol.
