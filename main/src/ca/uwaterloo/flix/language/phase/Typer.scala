@@ -62,7 +62,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, restictableEnums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -441,7 +441,7 @@ object Typer {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -1138,53 +1138,7 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
-
-      case KindedAst.Expression.RestrictableChoose(true, exp0, rules0, tvar, loc) => ??? // TODO RESTR-VARS
-
-      case KindedAst.Expression.RestrictableChoose(false, exp0, rules0, tvar, loc) =>
-        // dom(M)
-        val leftSyms = rules0.map(_.pat).map {
-          case KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _) => sym.sym
-        }
-
-        val enumSym = rules0.headOption.getOrElse(throw InternalCompilerException("unexpected empty choose", loc)).pat match {
-          case RestrictableChoicePattern.Tag(sym, pat, tvar, loc) => sym.sym.enumSym
-        }
-
-        val index = root.restrictableEnums(enumSym).index
-        val tparams = root.restrictableEnums(enumSym).tparams
-
-        val targs = (index :: tparams).map {
-          case KindedAst.TypeParam(name, sym, loc) => Type.freshVar(sym.kind, loc.asSynthetic, sym.isRegion)
-        }
-        val enumConstructorKind = Kind.mkArrow(targs.map(_.kind))
-        val enumConstructor = Type.Cst(TypeConstructor.RestrictableEnum(enumSym, enumConstructorKind), loc.asSynthetic)
-
-
-        val enumType = Type.mkApply(enumConstructor, targs, loc.asSynthetic)
-
-        val dom = leftSyms.map {
-          case sym => Type.Cst(TypeConstructor.CaseConstant(sym), loc.asSynthetic): Type
-        }.reduceLeft[Type] {
-          case (acc: Type, tpe: Type) => Type.mkApply(
-            Type.Cst(TypeConstructor.CaseUnion(enumSym), loc.asSynthetic),
-            List(acc, tpe),
-            loc.asSynthetic
-          ): Type
-        }
-
-        for {
-          (constrs, tpe, pur, eff) <- visitExp(exp0)
-          patTpe <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
-          _ <- unifyTypeM(tpe :: patTpe, loc)
-          _ <- unifyTypeM(enumType, tpe, loc)
-          _ <- unifyTypeM(Type.mkCaseDifference(targs.head, dom, enumSym, loc.asSynthetic), Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc.asSynthetic), loc.asSynthetic)
-          (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
-          resultTconstrs = constrs ::: constrss.flatten
-          resultTpe <- unifyTypeM(tpes, loc)
-          resultPur = Type.mkAnd(pur :: purs, loc)
-          resultEff = Type.mkUnion(eff:: effs, loc)
-        } yield (resultTconstrs, resultTpe, resultPur, resultEff)
+      case exp@KindedAst.Expression.RestrictableChoose(_, _, _, _, _) => RestrictableChooseInference.infer(exp, root)
 
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
@@ -2687,7 +2641,7 @@ object Typer {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferRestrictableChoicePattern(_, root))
   }
 
