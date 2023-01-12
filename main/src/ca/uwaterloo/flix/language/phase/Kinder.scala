@@ -1456,7 +1456,15 @@ object Kinder {
         }
       }
 
-    case UnkindedType.RestrictableEnum(_, _) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, _) =>
+      val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      val args = Kind.kindArgs(tyconKind)
+
+      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
