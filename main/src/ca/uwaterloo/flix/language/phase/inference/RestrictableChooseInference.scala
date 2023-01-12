@@ -248,10 +248,11 @@ object RestrictableChooseInference {
       // The tag type is a function from the type of variant to the type of the enum.
       //
       for {
-        // τ = (... + l_i(τ_i) + ...)[φ ∪ {l_i}]
+        // Γ ⊢ e: τ
         (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
-        _ <- unifyTypeM(enumType, tvar, loc)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        // τ = (... + l_i(τ_i) + ...)[φ ∪ {l_i}]
+        _ <- unifyTypeM(enumType, tvar, loc)
         _ <- unifyTypeM(targs.head, index, loc)
         resultTyp = tvar
         resultPur = pur
