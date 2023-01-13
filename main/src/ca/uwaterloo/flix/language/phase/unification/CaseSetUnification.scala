@@ -73,7 +73,7 @@ object CaseSetUnification {
     /// Run the expensive boolean unification algorithm.
     ///
     implicit val universe: Universe = Universe(cases, enumSym)
-    booleanUnification(simplify(eraseAliases(tpe1)), simplify(eraseAliases(tpe2)), renv)
+    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
   }
 
   /**

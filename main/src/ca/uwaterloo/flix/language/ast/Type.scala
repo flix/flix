@@ -65,6 +65,19 @@ sealed trait Type {
   }
 
   /**
+    * Gets all the cases in the given type.
+    */
+  def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
+    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
+    case Type.Alias(_, _, tpe, _) => tpe.cases
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
