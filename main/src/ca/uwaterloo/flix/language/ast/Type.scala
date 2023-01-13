@@ -902,6 +902,7 @@ object Type {
     case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
     case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
     case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 

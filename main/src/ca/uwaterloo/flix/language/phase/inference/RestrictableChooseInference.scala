@@ -77,13 +77,13 @@ object RestrictableChooseInference {
   private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
     syms.map {
         case sym => Type.Cst(TypeConstructor.CaseConstant(sym), loc.asSynthetic)
-      }.reduceLeft[Type] {
+      }.reduceLeftOption[Type] {
         case (acc, tpe) => Type.mkApply(
           Type.Cst(TypeConstructor.CaseUnion(enumSym), loc.asSynthetic),
           List(acc, tpe),
           loc.asSynthetic
         )
-      }
+      }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc))
   }
 
   /**
@@ -183,7 +183,7 @@ object RestrictableChooseInference {
         // φ_out <: (φ_in ∩ stable(M)) ∪ (codom(M) - stable(M))
         set = Type.mkCaseUnion(
           Type.mkCaseIntersection(indexInVar, stableM, enumSym, loc),
-          Type.mkCaseDifference(codomM, stableM, enumSym, loc),
+          toType(codom(rules0) -- stable(rules0), enumSym, loc),
           enumSym,
           loc
         )

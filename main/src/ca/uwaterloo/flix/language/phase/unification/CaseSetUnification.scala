@@ -27,7 +27,7 @@ object CaseSetUnification {
 
   // TODO RESTR-VARS hack
   object Hack {
-    val EnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
+    val EnumSym: Symbol.RestrictableEnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
     val Cases = List(
       Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
       Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
@@ -73,7 +73,7 @@ object CaseSetUnification {
     /// Run the expensive boolean unification algorithm.
     ///
     implicit val universe: Universe = Universe(cases, enumSym)
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    booleanUnification(simplify(eraseAliases(tpe1)), simplify(eraseAliases(tpe2)), renv)
   }
 
   /**
@@ -489,6 +489,27 @@ object CaseSetUnification {
     case object Empty extends Nnf
 
     case object All extends Nnf
+  }
+
+  private def simplify(t: Type)(implicit universe: Universe): Type = {
+    fromDnf(dnf(t))
+  }
+  private def fromDnf(t: Dnf)(implicit universe: Universe): Type = t match {
+    case Dnf.Union(inters) => inters.filterNot(isEmptyIntersection).map(fromIntersection).reduceOption(mkUnion).getOrElse(mkEmpty())
+  }
+
+  private def fromAtom(a: Atom)(implicit universe: Universe): Type = a match {
+    case Atom.Var(sym) => Type.Var(sym, SourceLocation.Unknown)
+    case Atom.Case(sym) => Type.Cst(TypeConstructor.CaseConstant(sym), SourceLocation.Unknown)
+  }
+
+  private def fromLiteral(l: Literal)(implicit universe: Universe): Type = l match {
+    case Literal.Positive(atom) => fromAtom(atom)
+    case Literal.Negative(atom) => mkComplement(fromAtom(atom))
+  }
+
+  private def fromIntersection(i: Intersection)(implicit universe: Universe): Type = {
+    i.map(fromLiteral).reduceOption(mkIntersection).getOrElse(mkAll())
   }
 
   /**
