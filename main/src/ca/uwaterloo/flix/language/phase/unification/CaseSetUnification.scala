@@ -25,6 +25,19 @@ import scala.annotation.tailrec
 
 object CaseSetUnification {
 
+  // TODO RESTR-VARS hack
+  object Hack {
+    val EnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
+    val Cases = List(
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "And", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Or", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Xor", SourcePosition.Unknown)),
+    )
+    val Universe: Universe = CaseSetUnification.Universe(Cases, EnumSym)
+  }
+
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
@@ -36,25 +49,25 @@ object CaseSetUnification {
       return Ok(Substitution.empty)
     }
 
-    //    tpe1 match {
-    //      case x: Type.Var if renv.isFlexible(x.sym) =>
-    //        if (tpe2 eq Type.All)
-    //          return Ok(Substitution.singleton(x.sym, Type.All))
-    //        if (tpe2 eq Type.Empty)
-    //          return Ok(Substitution.singleton(x.sym, Type.Empty))
-    //
-    //      case _ => // nop
-    //    }
-    //
-    //    tpe2 match {
-    //      case y: Type.Var if renv.isFlexible(y.sym) =>
-    //        if (tpe1 eq Type.All)
-    //          return Ok(Substitution.singleton(y.sym, Type.All))
-    //        if (tpe1 eq Type.Empty)
-    //          return Ok(Substitution.singleton(y.sym, Type.Empty))
-    //
-    //      case _ => // nop
-    //    }
+//        tpe1 match {
+//          case x: Type.Var if renv.isFlexible(x.sym) =>
+//            if (tpe2 eq Type.All)
+//              return Ok(Substitution.singleton(x.sym, Type.All))
+//            if (tpe2 eq Type.Empty)
+//              return Ok(Substitution.singleton(x.sym, Type.Empty))
+//
+//          case _ => // nop
+//        }
+//
+//        tpe2 match {
+//          case y: Type.Var if renv.isFlexible(y.sym) =>
+//            if (tpe1 eq Type.All)
+//              return Ok(Substitution.singleton(y.sym, Type.All))
+//            if (tpe1 eq Type.Empty)
+//              return Ok(Substitution.singleton(y.sym, Type.Empty))
+//
+//          case _ => // nop
+//        }
 
     ///
     /// Run the expensive boolean unification algorithm.
@@ -355,7 +368,7 @@ object CaseSetUnification {
 
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
-  private def mkAll()(implicit universe: Universe): Type = universe.All
+  private def mkAll()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseAll(universe.enumSym), SourceLocation.Unknown)
 
   private object COMPLEMENT {
     @inline
@@ -399,8 +412,9 @@ object CaseSetUnification {
 
   private object ALL {
     @inline
-    def unapply(tpe: Type)(implicit universe: Universe): Boolean = {
-      tpe == universe.All
+    def unapply(tpe: Type)(implicit universe: Universe): Boolean = tpe match {
+      case Type.Cst(TypeConstructor.CaseAll(_), _) => true
+      case _ => false
     }
   }
 
@@ -516,6 +530,7 @@ object CaseSetUnification {
       nnf(mkComplement(tpe2))
     )
     case EMPTY() => Nnf.All // MATT ???
+    case ALL() => Nnf.Empty // MATT ???
     case _ => throw InternalCompilerException(s"unexpected type: $t", t.loc)
   }
 
@@ -594,16 +609,5 @@ object CaseSetUnification {
     diffConst || negation || allNegConsts
   }
 
-  private case class Universe(cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) {
-    val All: Type = cases.map {
-      sym => Type.Cst(TypeConstructor.CaseConstant(sym), SourceLocation.Unknown)
-    }.reduceLeftOption[Type] {
-      case (acc, tpe) =>
-        Type.mkApply(
-          Type.Cst(TypeConstructor.CaseUnion(enumSym), SourceLocation.Unknown),
-          List(acc, tpe),
-          SourceLocation.Unknown
-        )
-    }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), SourceLocation.Unknown))
-  }
+  case class Universe(cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)
 }

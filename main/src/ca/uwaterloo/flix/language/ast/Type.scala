@@ -838,7 +838,8 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
-    // TODO RESTR-VARS maybe optimize
+    case Type.Cst(TypeConstructor.CaseEmpty(sym), _) => Type.Cst(TypeConstructor.CaseAll(sym), loc)
+    case Type.Cst(TypeConstructor.CaseAll(sym), _) => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
     case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
   }
 
@@ -884,7 +885,10 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (Type.Cst(TypeConstructor.CaseEmpty(_), _), t) => t
+    case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
+    case (all@Type.Cst(TypeConstructor.CaseAll(_), _), _) => all
+    case (_, all@Type.Cst(TypeConstructor.CaseAll(_), _)) => all
     case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -894,7 +898,10 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (empty@Type.Cst(TypeConstructor.CaseEmpty(_), _), _) => empty
+    case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
+    case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
+    case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 

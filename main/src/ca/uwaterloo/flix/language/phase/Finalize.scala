@@ -441,6 +441,7 @@ object Finalize {
 
             case TypeConstructor.CaseConstant(sym) => MonoType.Unit
             case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
+            case TypeConstructor.CaseAll(sym) => MonoType.Unit
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
             case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
             case TypeConstructor.CaseUnion(sym) => MonoType.Unit
