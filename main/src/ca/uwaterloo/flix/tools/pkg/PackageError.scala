@@ -25,10 +25,12 @@ object PackageError {
 
   case class ManifestNotReadable(path: Path) extends PackageError
 
+  case class MissingRequiredProperty(path: Path, msg: String) extends PackageError
+
   case class ManifestParseError(path: Path, msg: String) extends PackageError
 
+  case class UnableToDownload( msg: String) extends PackageError
 
+  /// ...
 
 }
-
-

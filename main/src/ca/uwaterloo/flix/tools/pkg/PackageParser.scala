@@ -15,14 +15,14 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Result
 import org.tomlj.Toml
 
 import java.nio.file.Path
 
 object PackageParser {
 
-  def parse(path: Path): Validation[Manifest, PackageError] = {
+  def parse(path: Path): Result[Manifest, PackageError] = {
     // TODO: File exists, is a regular file, is readable, etc.
     val parser = Toml.parse(path)
     ???
