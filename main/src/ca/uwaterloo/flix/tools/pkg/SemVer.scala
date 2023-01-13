@@ -15,4 +15,19 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-case class Manifest(name: String, description: String, version: SemVer)
+object SemVer {
+
+  /**
+    * An ordering on Semantic Versions
+    */
+  implicit def semVerOrdering: Ordering[SemVer] =
+    Ordering.by((_: SemVer).major)
+      .orElseBy(_.minor)
+      .orElseBy(_.patch)
+
+}
+
+/**
+  * A semantic version number.
+  */
+case class SemVer(major: Int, minor: Int, patch: Int)

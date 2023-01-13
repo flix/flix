@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.github.GitHub.SemVer
-
 sealed trait Dependency
 
 object Dependency {
@@ -26,5 +24,3 @@ object Dependency {
   case class MavenDependency(groupId: String, artifactId: String, version: SemVer, kind: DependencyKind) extends Dependency
 
 }
-
-
