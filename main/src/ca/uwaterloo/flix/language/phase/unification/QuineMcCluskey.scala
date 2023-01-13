@@ -89,14 +89,15 @@ object QuineMcCluskey {
     * NOTs of vars and 1's are mapped to vars
     */
   private def primeImpToType(primeImp: IntMap[BoolVal], env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    val typeVars = primeImp.filter(kv => kv._2 != BoolVal.DontCare).map[Type](kv => {
-      val symVar = env.getBackward(kv._1).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: ${kv._1}", SourceLocation.Unknown))
-      if (kv._2 == BoolVal.False) {
+    val typeVars = primeImp.filter{ case (_, boolValue) => boolValue != BoolVal.DontCare}.map[Type]{
+      case (formVar, boolValue) =>
+      val symVar = env.getBackward(formVar).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: ${formVar}", SourceLocation.Unknown))
+      if (boolValue == BoolVal.False) {
         Type.mkNot(Type.Var(symVar, symVar.loc), symVar.loc)
       } else {
         Type.Var(symVar, symVar.loc)
       }
-    }).toList
+    }.toList
     Type.mkAnd(typeVars, SourceLocation.Unknown)
   }
 
@@ -109,11 +110,7 @@ object QuineMcCluskey {
       return BoolFormula.False
     }
     val formList = cover.foldLeft(List.empty[BoolFormula])((acc, m) => acc ++ List(primeImpToBoolFormula(m)))
-    if (formList.size == 1) {
-      formList.head
-    } else {
-      formList.reduce((b1, b2) => BoolFormula.Or(b1, b2))
-    }
+    formList.reduce((b1, b2) => BoolFormula.Or(b1, b2))
   }
 
   /**
@@ -123,19 +120,16 @@ object QuineMcCluskey {
     * are AND'ed together
     */
   private def primeImpToBoolFormula(primeImp: IntMap[BoolVal]): BoolFormula = {
-    val formVars: List[BoolFormula] = primeImp.filter(kv => kv._2 != BoolVal.DontCare).map[BoolFormula](kv => {
-      val formVar = kv._1
-      if (kv._2 == BoolVal.False) {
+    val formVars: List[BoolFormula] = primeImp.filter{ case (_, boolValue) => boolValue != BoolVal.DontCare}.map[BoolFormula]{
+      case (formVar, boolValue) =>
+      if (boolValue == BoolVal.False) {
         BoolFormula.Not(BoolFormula.Var(formVar))
       } else {
         BoolFormula.Var(formVar)
       }
-    }).toList
+    }.toList
     if(formVars.isEmpty) {
       BoolFormula.True
-    }
-    else if (formVars.size == 1) {
-      formVars.head
     } else {
       formVars.reduce((b1, b2) => BoolFormula.And(b1, b2))
     }
