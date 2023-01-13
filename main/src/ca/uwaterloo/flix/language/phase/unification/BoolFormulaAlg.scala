@@ -155,38 +155,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => BoolFormula.Or(f1, f2)
   }
 
-  override def mkXor(f1: BoolFormula, f2: BoolFormula): BoolFormula = (f1, f2) match {
-    // T XOR y => ¬y
-    case (BoolFormula.True, _) =>
-      mkNot(f2)
-
-    // F XOR y => y
-    case (BoolFormula.False, _) =>
-      f2
-
-    // x XOR T => ¬x
-    case (_, BoolFormula.True) =>
-      mkNot(f1)
-
-    // x XOR F => x
-    case (_, BoolFormula.False) =>
-      f1
-
-    // ¬x XOR x => T
-    case (BoolFormula.Not(x), y) if x == y =>
-      BoolFormula.True
-
-    // x XOR ¬x => T
-    case (x, BoolFormula.Not(y)) if x == y =>
-      BoolFormula.True
-
-    // x XOR x => F
-    case _ if f1 == f2 =>
-      BoolFormula.False
-
-    case _ => BoolFormula.Xor(f1, f2)
-  }
-
+  override def mkXor(f1: BoolFormula, f2: BoolFormula): BoolFormula = BoolFormula.Xor(f1, f2)
 
   override def map(f: BoolFormula)(fn: Int => BoolFormula): BoolFormula = f match {
     case True => True
