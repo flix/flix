@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Matthew Lutze
+ *  Copyright 2023 Matthew Lutze
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ object CaseSetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    implicit val universe = Universe(cases, enumSym)
+    implicit val universe: Universe = Universe(cases, enumSym)
     booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
   }
 
@@ -552,14 +552,14 @@ object CaseSetUnification {
   /**
     * Returns true if the given DNF set represents an empty set.
     */
-  private def isEmpty(t1: Dnf): Boolean = t1 match {
+  private def isEmpty(t1: Dnf)(implicit universe: Universe): Boolean = t1 match {
     case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
   }
 
   /**
     * Returns true if `t1` represents an empty intersection of effects.
     */
-  private def isEmptyIntersection(t1: Intersection): Boolean = {
+  private def isEmptyIntersection(t1: Intersection)(implicit universe: Universe): Boolean = {
     val pos = t1.collect {
       case Literal.Positive(atom) => atom
     }
@@ -577,7 +577,21 @@ object CaseSetUnification {
     // 2. It contains an atom in both the positive and negative sets
     val negation = (pos & neg).nonEmpty
 
-    diffConst || negation
+    // 3. It contains all the negative constants
+    val allNegConsts = universe.cases.forall {
+      case c => neg.exists {
+        case Atom.Case(sym) => c == sym
+        case Atom.Var(_) => false
+      }
+    }
+
+//    if (diffConst || negation || allNegConsts) {
+//      println(s" IS EMPTY: $t1")
+//    } else {
+//      println(s"NOT EMPTY: $t1")
+//    }
+
+    diffConst || negation || allNegConsts
   }
 
   private case class Universe(cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) {
