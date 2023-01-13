@@ -96,7 +96,20 @@ object Unification {
       }
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
-      CaseSetUnification.unify(tpe1, tpe2, renv, ???, sym1)
+      // TODO RESTR-VARS EVIL HACK HERE
+      val enumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
+      val cases = List(
+        Symbol.mkRestrictableCaseSym(enumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
+        Symbol.mkRestrictableCaseSym(enumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
+        Symbol.mkRestrictableCaseSym(enumSym, Name.Ident(SourcePosition.Unknown, "And", SourcePosition.Unknown)),
+        Symbol.mkRestrictableCaseSym(enumSym, Name.Ident(SourcePosition.Unknown, "Or", SourcePosition.Unknown)),
+        Symbol.mkRestrictableCaseSym(enumSym, Name.Ident(SourcePosition.Unknown, "Xor", SourcePosition.Unknown)),
+      )
+      if (sym1 != enumSym) {
+        Err(UnificationError.HackError("Restrictable enum must be Expr with cases Var, Not, And, Or, Xor"))
+      } else {
+        CaseSetUnification.unify(tpe1, tpe2, renv, cases, enumSym)
+      }
 
     //
     // Record Rows
@@ -200,6 +213,9 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
+
+        case Result.Err(UnificationError.HackError(message)) =>
+          Err(TypeError.HackError(message, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
