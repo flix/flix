@@ -199,6 +199,9 @@ object RestrictableChooseInference {
 
   }
 
+  /**
+    * Performs type inference on the given restrictable tag expression.
+    */
   def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
     case KindedAst.Expression.RestrictableTag(symUse, exp, tvar, loc) =>
       // Lookup the enum declaration.
