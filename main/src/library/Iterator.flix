@@ -15,7 +15,7 @@
  */
 
 pub enum Iterator[a: Type, ef: Bool, r: Region] {
-    case Iterator(Region[r], Unit -> Step[a] \ {r, ef})
+    case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
 
 /*
@@ -656,7 +656,7 @@ namespace Iterator {
                 start := false;
                 innerIter
             } else {
-                append(ofList(r, deref sepList), innerIter)
+                append(List.toIterator(r, deref sepList), innerIter)
             }
         };
         flatMap(step, iter)
@@ -725,8 +725,8 @@ namespace Iterator {
         };
         loop(e -> Err(e), ks -> Ok(ks))
 
-    pub def cons(x: a, iter: Cursor[a, ef, r]): Cursor[a, ef, r] \ Write(r) =
-        let Cursor(r, iterF) = iter;
+    pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ Write(r) =
+        let Iterator(r, iterF) = iter;
         let first = ref true @ r;
         let f = () ->  {
             if (deref first) {
@@ -737,9 +737,10 @@ namespace Iterator {
                 iterF()
         };
         let iter1F = () -> f();
-        Cursor(r, iter1F)
+        Iterator(r, iter1F)
 
-    pub def concat(iter: Cursor[Cursor[a, ef1, r], ef2, r]): Cursor[a, ef1 and ef2, r] \ Write(r) =
+    pub def concat(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 and ef2, r] \ Write(r) =
         flatMap(identity, iter)
 
+    /// TODO add fromJavaIterator
 }

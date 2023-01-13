@@ -938,7 +938,7 @@ namespace File {
             let javaIter = iterator(javaStream);
 
             let iter = fromJavaIter(r, javaIter);
-            Ok(Iterator.mapL(pathToString, iter))
+            Ok(Iterator.map(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -965,7 +965,7 @@ namespace File {
             let javaIter = iterator(upcast javaStream);
 
             let iter = fromJavaIter(r, javaIter);
-            Ok(Iterator.mapL(pathToString, iter))
+            Ok(Iterator.map(pathToString, iter))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;

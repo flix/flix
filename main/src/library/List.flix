@@ -1134,6 +1134,18 @@ namespace List {
     pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
         List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
 
+    pub def toIterator(r: Region[r], xs: List[a]): Iterator[a, ef, r] \ Write(r) =
+        use Iterator.Step.{Done, Ans};
+        let ls = ref xs @ r;
+        let f = () -> {
+            match (deref ls) {
+                case Nil => Done
+                case x :: rs => ls := rs; Ans(x)
+            }
+        };
+        Iterator(r, f)
+
+
     ///
     /// Applies `f` to every element of `l`.
     ///

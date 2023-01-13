@@ -63,7 +63,7 @@ instance Foldable[RedBlackTree[k]] {
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
     override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
+        RedBlackTree.iterator(r, t) |> Iterator.map(match (_, v) -> v)
 }
 
 instance UnorderedFoldable[RedBlackTree[k]] {

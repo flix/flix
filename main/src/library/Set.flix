@@ -618,7 +618,7 @@ namespace Set {
     ///
     pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
         let Set(t) = s;
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(fst)
+        RedBlackTree.iterator(r, t) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
