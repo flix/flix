@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.github
 
+import ca.uwaterloo.flix.tools.pkg.SemVer
 import ca.uwaterloo.flix.util.StreamOps
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.parse
@@ -26,20 +27,6 @@ import java.net.URL
   * An interface for the GitHub API.
   */
 object GitHub {
-
-  /**
-    * A semantic version number.
-    */
-  // TODO support prereleases
-  case class SemVer(major: Int, minor: Int, patch: Int)
-
-  /**
-    * An ordering on Semantic Versions
-    */
-  implicit def semVerOrdering: Ordering[SemVer] =
-    Ordering.by((_: SemVer).major)
-      .orElseBy(_.minor)
-      .orElseBy(_.patch)
 
   /**
     * A GitHub project.
