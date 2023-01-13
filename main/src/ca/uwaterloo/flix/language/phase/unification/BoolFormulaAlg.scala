@@ -186,7 +186,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case BoolFormula.True => BoolFormula.True
     case BoolFormula.False => BoolFormula.False
     case BoolFormula.Var(_) => f
-    case _ => QuineMcCluskey.Global.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
+    case _ => QuineMcCluskey.qmcToBoolFormula(collectMinTerms(f, freeVars(f)))
   }
 
   /**

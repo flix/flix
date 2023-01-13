@@ -37,13 +37,6 @@ object BoolVal {
 }
 
 object QuineMcCluskey {
-  /**
-    * A global object to run the Quine-McCluskey algorithm
-    */
-  val Global: QuineMcCluskey = new QuineMcCluskey()
-}
-
-class QuineMcCluskey {
 
   /**
     * The Quine-McCluskey algorithm

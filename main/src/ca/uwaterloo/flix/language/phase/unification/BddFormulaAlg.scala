@@ -175,7 +175,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
 
     //Otherwise find the cover and convert it to a Type
     val minTerms = collectMinTerms(f, freeVars(f))
-    QuineMcCluskey.Global.qmcToType(minTerms, env)
+    QuineMcCluskey.qmcToType(minTerms, env)
   }
 
   /**
