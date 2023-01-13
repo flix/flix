@@ -178,7 +178,7 @@ object RestrictableChooseInference {
         (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
 
         // τ_out = (... + l^out_i(τ^out_i) + ...)[φ_out]
-        _ <- unifyTypeM(enumTypeOut :: tpes, loc)
+//        _ <- unifyTypeM(enumTypeOut :: tpes, loc)
 
         // φ_out <: (φ_in ∩ stable(M)) ∪ (codom(M) - stable(M))
         set = Type.mkCaseUnion(
