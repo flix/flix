@@ -95,6 +95,9 @@ object Unification {
         BoolUnification.unify(tpe1, tpe2, renv)
       }
 
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+      CaseSetUnification.unify(tpe1, tpe2, renv, ???, sym1)
+
     //
     // Record Rows
     //
