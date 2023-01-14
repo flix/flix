@@ -107,23 +107,27 @@ namespace StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, ef, r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
         import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
         let StringBuilder(msb) = sb;
         let len = length(sb);
         let i = ref 0 @ r1;
-        let done = () -> unsafe_cast { deref i >= len } as _ \ { r1, r2 };
         let next = () -> {
-            let x = charAt(msb, deref i);
-            i := deref i + 1;
-            x
+            let pos = deref i;
+            if (pos < len) {
+                let x = charAt(msb, pos);
+                i := deref i + 1;
+                Some(x)
+            } else {
+                None
+            }
         };
-        Iterator.Iterator(done, next)
+        Iterator.new(r1, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), ef, r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2, r1] \ { Read(r2), Write(r1) } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///

@@ -43,9 +43,9 @@ namespace Iterator {
     }
 
     ///
-    /// Returns an empty iterator.
+    /// Returns an iterator built with the stepper function `f`.
     ///
-    pub def new(r: Region[r], f: Unit -> Option[a] \ r): Iterator[a, ef, r] =
+    pub def new(r: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
         let f1 = () -> match f() {
             case Some(a) => Ans(a)
             case None    => Done
@@ -64,18 +64,7 @@ namespace Iterator {
     /// Returns an iterator containing only a single element, `x`.
     ///
     pub def singleton(r: Region[r], x: a): Iterator[a, ef, r] \ Write(r) =
-        let d = ref false @ r;
-        let done = () -> deref d;
-        let next = () -> {
-            if (done()) {
-                bug!("Empty Iterator!")
-            }
-            else {
-                d := true;
-                x
-            }
-        };
-        Iterator(done, next)
+        repeat(r, 1, x)
 
     ///
     /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
@@ -530,6 +519,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
+    /// SPT TODO - check effect of `iter`
     pub def take(n: Int32, iter: Iterator[a, ef and r, r]): Iterator[a, ef, r] \ Write(r) =
         let Iterator(r, iterF) = iter;
         let ix = ref n @ r;
@@ -656,10 +646,23 @@ namespace Iterator {
                 start := false;
                 innerIter
             } else {
-                append(List.toIterator(r, deref sepList), innerIter)
+                append(ofList(r, deref sepList), innerIter)
             }
         };
         flatMap(step, iter)
+
+    ///
+    /// Helper for append.
+    ///
+    def ofList(r: Region[r], xs: List[a]): Iterator[a, true, r] \ Write(r) =
+        let ls = ref xs @ r;
+        let f = () -> {
+            match (deref ls) {
+                case Nil => Done
+                case x :: rs => ls := rs; Ans(x)
+            }
+        };
+        Iterator(r, f)
 
     ///
     /// Returns the concatenation of the string representation
@@ -717,11 +720,13 @@ namespace Iterator {
     /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
     /// If the iterator has no errors then the result is wrapped with `Ok`.
     ///
-    pub def toResultList(iter: Iterator[Result[e, a], ef, r]): Result[e, List[a]] \ Read(r) =
-        let Iterator(done, next) = iter;
+    pub def toResultList(iter: Iterator[Result[e, a], ef, r]): Result[e, List[a]] \ { ef, Read(r) } =
+        let Iterator(_, next) = iter;
         def loop(fk, sk) = match next() {
-            case Ok(a)  => loop(fk, ks -> sk(a :: ks))
-            case Err(e) => fk(e)
+            case Ans(Ok(a))  => loop(fk, ks -> sk(a :: ks))
+            case Ans(Err(e)) => fk(e)
+            case Skip        => loop(fk, sk)
+            case Done        => sk(Nil)
         };
         loop(e -> Err(e), ks -> Ok(ks))
 

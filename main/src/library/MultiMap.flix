@@ -573,7 +573,7 @@ namespace MultiMap {
     ///
     /// Returns an iterator over all key-value pairs in `m` i.e. `k => Set#{v_1, ..., v_n}`.
     ///
-    pub def iterator(r: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), ef, r] \ Write(r) =
+    pub def iterator(r: Region[r], m: MultiMap[k, v]): Iterator[(k, Set[v]), r, r] \ Write(r) =
         let MultiMap(m1) = m;
         Map.iterator(r, m1)
 

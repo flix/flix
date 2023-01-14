@@ -69,7 +69,7 @@ instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, ef, r] \ Write(r) = Chain.iterator(r, c)
+    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(r, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -108,11 +108,11 @@ instance ToString[Chain[a]] with ToString[a] {
 }
 
 instance Collectable[Chain] {
-    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ r with Order[a] = Iterator.toChain(iter)
+    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
 }
 
 instance Iterable[Chain] {
-    pub def iterator(rh: Region[r], c: Chain[a]): Iterator[a, ef, r] \ Write(r) = Chain.iterator(rh, c)
+    pub def iterator(rh: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rh, c)
 }
 
 namespace Chain {
@@ -795,25 +795,25 @@ namespace Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, ef, r] \ Write(r) =
+    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
         let cursor = ref viewLeft(c) @ r;
         let done = () -> match (deref cursor) {
             case ViewLeft.NoneLeft    => true
             case ViewLeft.SomeLeft(_) => false
         };
         let next = () -> match (deref cursor) {
-            case ViewLeft.NoneLeft        => bug!("Empty Iterator!")
+            case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) => {
                 cursor := viewLeft(xs);
-                x
+                Some(x)
             }
         };
-        Iterator.Iterator(done, next)
+        Iterator.new(r, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), ef, r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///

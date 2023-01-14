@@ -1212,21 +1212,25 @@ namespace String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: String): Iterator[Char, ef, r] \ Write(r) =
-        let len = length(s);
+    pub def iterator(r: Region[r], s: String): Iterator[Char, r, r] \ Write(r) =
+        let len = String.length(s);
         let i = ref 0 @ r;
-        let done = () -> deref i >= len;
         let next = () -> {
-            let x = charAt(deref i, s);
-            i := deref i + 1;
-            x
+            let pos = deref i;
+            if (pos < len) {
+                let x = String.charAt(deref i, s);
+                i := deref i + 1;
+                Some(x)
+            } else {
+                None
+            }
         };
-        Iterator.Iterator(done, next)
+        Iterator.new(r, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), ef, r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), r, r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
 }

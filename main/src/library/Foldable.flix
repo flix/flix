@@ -219,23 +219,26 @@ pub class Foldable[t : Type -> Type] {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(r: Region[r], t: t[a]): Iterator[a, ef, r] \ Write(r) =
+    pub def iterator(r: Region[r], t: t[a]): Iterator[a, r, r] \ Write(r) =
         let arr = Foldable.toArray(r, t);
         let len = Array.length(arr);
         let i = ref 0 @ r;
-        let done = () -> (deref i) >= len;
         let next = () -> {
-            let j = deref i;
-            let x = arr[j];
-            i := j + 1;
-            x
+            if ((deref i) < len) {
+                let j = deref i;
+                let x = arr[j];
+                i := j + 1;
+                Some(x)
+            } else {
+                None
+            }
         };
-        Iterator.Iterator(done, next)
+        Iterator.new(r, next)
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), ef, r] \ Write(r) =
+    pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         Foldable.iterator(r, t) |> Iterator.zipWithIndex
 
     ///
