@@ -198,7 +198,14 @@ object Stratifier {
         case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case RestrictableChoiceRule(pat, body) => mapN(visitExp(body))(RestrictableChoiceRule(pat, _))
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, pur, eff, loc)
+      }
 
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
