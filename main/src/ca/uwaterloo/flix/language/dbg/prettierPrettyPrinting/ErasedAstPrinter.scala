@@ -62,7 +62,8 @@ object ErasedAstPrinter {
         val output = doc(sym)
         output
       case Expression.Closure(sym, closureArgs, _, _) =>
-        applyf(doc(sym) <> metaText("buildclo"), closureArgs.map(doc(_)))
+        val output = applyf(doc(sym) <> metaText("buildclo"), closureArgs.map(doc(_)))
+        output
       case Expression.ApplyClo(exp, args, _, _) =>
         val output = applyf(doc(exp) <> metaText("clo"), args.map(a => doc(a, paren = false)))
         par(output)
@@ -88,9 +89,11 @@ object ErasedAstPrinter {
         val output = itef(doc(exp1, paren = false), doc(exp2, paren = false, inBlock = true), doc(exp3, paren = false, inBlock = true))
         par(output)
       case Expression.Branch(exp, branches, tpe, loc) =>
-        metaText("Branch")
+        val output = metaText("Branch")
+        output
       case Expression.JumpTo(sym, tpe, loc) =>
-        metaText("JumpTo")
+        val output = metaText("JumpTo")
+        output
       case e@Expression.Let(_, _, _, _, _) =>
         val es = collectLetBlock(e, Nil)
         val output = if (inBlock) seqf(es) else seqBlockf(es)
@@ -100,21 +103,28 @@ object ErasedAstPrinter {
         val output = if (inBlock) seqf(es) else seqBlockf(es)
         output
       case Expression.Region(_, _) =>
-        metaText("Region")
+        val output = metaText("Region")
+        output
       case Expression.Scope(sym, exp, _, _) =>
-        scopef(text(sym.toString), doc(exp, paren = false))
+        val output = scopef(text(sym.toString), doc(exp, paren = false, inBlock = true))
+        par(output)
       case Expression.Is(sym, exp, loc) => metaText("Is")
       case Expression.Tag(sym, exp, tpe, loc) =>
-        applyf(doc(sym), List(doc(exp)))
+        val output = applyf(doc(sym), List(doc(exp)))
+        output
       case Expression.Untag(sym, exp, tpe, loc) => metaText("Untag")
       case Expression.Index(base, offset, _, _) =>
-        tupleIndexf(doc(base), offset)
+        val output = tupleIndexf(doc(base), offset)
+        par(output)
       case Expression.Tuple(elms, _, _) =>
-        tuplef(elms.map(doc(_, paren = false)))
+        val output = tuplef(elms.map(doc(_, paren = false)))
+        output
       case Expression.RecordEmpty(_, _) =>
-        emptyRecordf()
-      case Expression.RecordSelect(exp, field, tpe, loc) =>
-        recordSelectf(doc(exp), text(field.name))
+        val output = emptyRecordf()
+        output
+      case Expression.RecordSelect(exp, field, _, _) =>
+        val output = recordSelectf(doc(exp), text(field.name))
+        par(output)
       case e@Expression.RecordExtend(_, _, _, _, _) =>
 
         @tailrec
@@ -128,9 +138,12 @@ object ErasedAstPrinter {
         }
 
         recordDoc(e, Nil)
-      case Expression.RecordRestrict(field, rest, tpe, loc) => metaText("RecordRestrict")
+      case Expression.RecordRestrict(field, rest, tpe, loc) =>
+        val output = metaText("RecordRestrict")
+        output
       case Expression.ArrayLit(elms, _, _) =>
-        arrayListf(elms.map(doc(_, paren = false)))
+        val output = arrayListf(elms.map(doc(_, paren = false)))
+        output
       case Expression.ArrayNew(elm, len, tpe, loc) => metaText("ArrayNew")
       case Expression.ArrayLoad(base, index, tpe, loc) => metaText("ArrayLoad")
       case Expression.ArrayStore(base, index, elm, tpe, loc) => metaText("ArrayStore")
@@ -162,7 +175,8 @@ object ErasedAstPrinter {
       case Expression.PutStaticField(field, exp, tpe, loc) => metaText("PutStaticField")
       case Expression.NewObject(name, clazz, tpe, methods, loc) => metaText("NewObject")
       case Expression.Spawn(exp1, exp2, _, _) =>
-        spawnf(doc(exp1, paren = false), doc(exp2))
+        val output = spawnf(doc(exp1, paren = false), doc(exp2))
+        par(output)
       case Expression.Lazy(exp, _, _) =>
         val output = text("lazy") <+> doc(exp)
         par(output)
