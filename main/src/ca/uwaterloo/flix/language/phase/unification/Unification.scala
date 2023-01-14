@@ -286,19 +286,18 @@ object Unification {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
-//      case Type.Apply(_, resultType, _) =>
-//        if (Unification.unifiesWith(resultType, argType, renv)) {
-//          arrowType.typeArguments.lift(2) match {
-//            case None => default
-//            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
-//          }
-//        } else {
-//          arrowType.typeArguments.lift(2) match {
-//            case None => default
-//            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
-//          }
-//        }
-      // TODO RESTR-VARS hack
+      case Type.Apply(_, resultType, _) =>
+        if (Unification.unifiesWith(resultType, argType, renv)) {
+          arrowType.typeArguments.lift(2) match {
+            case None => default
+            case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
+          }
+        } else {
+          arrowType.typeArguments.lift(2) match {
+            case None => default
+            case Some(missingArgument) => TypeError.UnderApplied(missingArgument, loc)
+          }
+        }
       case _ => default
     }
   }
