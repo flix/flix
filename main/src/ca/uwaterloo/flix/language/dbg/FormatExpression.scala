@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
   * Formatting of expressions.
@@ -32,8 +32,10 @@ object FormatExpression {
     case TypedAst.Expression.Discard(exp, _, _, _) => s"Discard($exp)"
     case TypedAst.Expression.Match(exp, rules, _, _, _, _) => s"Match($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.TypeMatch(exp, rules, _, _, _, _) => s"TypeMatch($exp, ${rules.mkString(", ")})"
-    case TypedAst.Expression.RelationalChoose(exps, rules, _, _, _, _) => s"Choose($exps, $rules)"
+    case TypedAst.Expression.RelationalChoose(exps, rules, _, _, _, _) => s"RelationalChoose($exps, $rules)"
+    case TypedAst.Expression.RestrictableChoose(star, exp, rules, _, _, _, _) => s"RestrictableChoose${if (star) "*" else ""}($exp, $rules)"
     case TypedAst.Expression.Tag(sym, exp, _, _, _, _) => s"Tag($sym, $exp)"
+    case TypedAst.Expression.RestrictableTag(sym, exp, _, _, _, _) => s"RestrictableTag($sym, $exp)"
     case TypedAst.Expression.Tuple(elms, _, _, _, _) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(_, _) => s"RecordEmpty"
     case TypedAst.Expression.RecordSelect(exp, field, _, _, _, _) => s"RecordSelect($exp, $field)"
@@ -83,6 +85,8 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, _, _, _, _) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointInject(exp, pred, _, _, _, _) => s"FixpointInject($exp, $pred)"
     case TypedAst.Expression.FixpointProject(pred, exp, _, _, _, _) => s"FixpointProject($pred, $exp)"
+    case TypedAst.Expression.Error(m, _, _, _) => s"Error(${m.kind})"
+
   }
 
 }

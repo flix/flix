@@ -235,9 +235,19 @@ object Indexer {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      visitExp(exp) ++ traverse(rules) {
+        case RestrictableChoiceRule(_, body) => visitExp(body)
+      }
+
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
+
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, loc), exp, _, _, _, _) =>
+      val parent = Entity.Exp(exp0)
+      // TODO RESTR-VARS use of sym
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Tuple(exps, _, _, _, _) =>
       visitExps(exps) ++ Index.occurrenceOf(exp0)
@@ -408,6 +418,9 @@ object Indexer {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.Error(_, _, _, _) =>
+      Index.occurrenceOf(exp0)
   }
 
   /**

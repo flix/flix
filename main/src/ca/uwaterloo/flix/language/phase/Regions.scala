@@ -150,7 +150,21 @@ object Regions {
         case (es, rs) => checkType(tpe, loc)
       }
 
+    case Expression.RestrictableChoose(_, exp, rules, tpe, _, _, loc) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case RestrictableChoiceRule(_, exp) => flatMapN(visitExp(exp))(_ => ().toSuccess)
+      }
+      flatMapN(expVal, rulesVal) {
+        case (e, rs) => checkType(tpe, loc)
+      }
+
     case Expression.Tag(_, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
+    case Expression.RestrictableTag(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -406,6 +420,10 @@ object Regions {
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      ().toSoftFailure
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

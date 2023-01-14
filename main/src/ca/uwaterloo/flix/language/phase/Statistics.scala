@@ -102,7 +102,9 @@ object Statistics {
       case Expression.Match(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
+      case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.RecordEmpty(tpe, loc) => Counter.empty
       case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) => visitExp(exp)
@@ -151,6 +153,7 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Error(_, _, _, _) => Counter.empty
     }
 
     base ++ subExprs
@@ -176,6 +179,14 @@ object Statistics {
   private def visitRelationalChoiceRule(rule: RelationalChoiceRule): Counter = rule match {
     case RelationalChoiceRule(pat, exp) => visitExp(exp)
   }
+
+  /**
+    * Counts AST nodes in the given rule.
+    */
+  private def visitRestrictableChoiceRule(rule: RestrictableChoiceRule): Counter = rule match {
+    case RestrictableChoiceRule(_, exp) => visitExp(exp)
+  }
+
 
   /**
     * Counts AST nodes in the given rule.

@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
@@ -74,6 +73,7 @@ object Redundancy {
     val usedRes =
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
+        checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
         checkUnusedEffects(usedAll)(root)
@@ -192,6 +192,32 @@ object Redundancy {
             // Check if there is any unused tag.
             decl.cases.foldLeft(acc) {
               case (innerAcc, (tag, caze)) if deadTag(tag, usedTags) => innerAcc + UnusedEnumTag(sym, caze.sym)
+              case (innerAcc, _) => innerAcc
+            }
+        }
+    }
+  }
+
+  /**
+    * Checks for unused enum symbols and tags.
+    */
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = {
+    root.restrictableEnums.foldLeft(used) {
+      case (acc, (sym, decl)) if decl.mod.isPublic =>
+        // Enum is public. No usage requirements.
+        acc
+      case (acc, (sym, decl)) =>
+        // Enum is non-public.
+        // Lookup usage information for this specific enum.
+        used.restrictableEnumSyms.get(sym) match {
+          case None =>
+            // Case 1: Enum is never used.
+            acc + UnusedRestrictableEnumSym(sym)
+          case Some(usedTags) =>
+            // Case 2: Enum is used and here are its used tags.
+            // Check if there is any unused tag.
+            decl.cases.foldLeft(acc) {
+              case (innerAcc, (tag, caze)) if deadRestrictableTag(tag, usedTags) => innerAcc + UnusedRestrictableEnumTag(sym, caze.sym)
               case (innerAcc, _) => innerAcc
             }
         }
@@ -486,7 +512,42 @@ object Redundancy {
       }
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      // Visit the match expression.
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules map {
+        case RestrictableChoiceRule(pat, body) =>
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the pattern, guard and body.
+          val usedPat = visitRestrictablePat(pat)
+          val usedBody = visitExp(body, extendedEnv, rc)
+          val usedPatAndBody = usedPat ++ usedBody
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedPatAndBody)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+          // Combine everything together.
+          (usedPatAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+
     case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
+      val us = visitExp(exp, env0, rc)
+      Used.of(sym.enumSym, sym) ++ us
+
+    case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
 
@@ -731,6 +792,10 @@ object Redundancy {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
+
+    case Expression.Error(_, _, _, _) =>
+      Used.empty
+
   }
 
   /**
@@ -805,6 +870,15 @@ object Redundancy {
     case Pattern.Array(elms, _, _) => visitPats(elms)
     case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
     case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
+  }
+
+  /**
+    * Returns the symbols used in the given pattern `pat`.
+    */
+  private def visitRestrictablePat(pat0: RestrictableChoicePattern): Used = pat0 match {
+    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
+      // Ignore the pattern since there is only variables, no nesting.
+      Used.of(sym.enumSym, sym)
   }
 
   /**
@@ -983,6 +1057,21 @@ object Redundancy {
   }.toSet
 
   /**
+    * Returns the free variables in the restrictable pattern `p`.
+    */
+  private def freeVars(p: RestrictableChoicePattern): Set[Symbol.VarSym] = p match {
+    case RestrictableChoicePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+  }
+
+  /**
+    * Returns the free variables in the VarOrWild.
+    */
+  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoicePattern.Wild(_, _) => None
+    case RestrictableChoicePattern.Var(sym, _, _) => Some(sym)
+  }
+
+  /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
   private def shadowing(sym: Symbol.VarSym, env: Env): Used =
@@ -1024,6 +1113,13 @@ object Redundancy {
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
   private def deadTag(tag: Symbol.CaseSym, usedTags: Set[Symbol.CaseSym]): Boolean =
+    !tag.name.startsWith("_") &&
+      !usedTags.contains(tag)
+
+  /**
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
+  private def deadRestrictableTag(tag: Symbol.RestrictableCaseSym, usedTags: Set[Symbol.RestrictableCaseSym]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 
@@ -1083,12 +1179,17 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = MultiMap.singleton(sym, caze))
+
+    /**
+      * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
+      */
+    def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -1130,6 +1231,7 @@ object Redundancy {
     * A representation of used symbols.
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
+                          restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
                           defSyms: Set[Symbol.DefnSym],
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
@@ -1151,6 +1253,7 @@ object Redundancy {
       } else {
         Used(
           this.enumSyms ++ that.enumSyms,
+          this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.defSyms ++ that.defSyms,
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,

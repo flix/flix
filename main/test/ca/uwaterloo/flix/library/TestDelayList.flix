@@ -428,22 +428,23 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def mapFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> { l := "a" :: deref l; x }) |>
         DelayList.map(x -> { l := "b" :: deref l; x });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def mapFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def mapFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> unsafe_cast { l := "a" :: deref l; x } as _ \ {}) |>
         DelayList.map(x -> unsafe_cast { l := "b" :: deref l; x } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // filter (pure)                                                           //
@@ -545,65 +546,69 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def filterFusion01(): Bool= region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList     |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
         DelayList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def filterFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def filterFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
         DelayList.filter(_x -> unsafe_cast { l := "a" :: deref l; true } as _ \ {}) |>
         DelayList.filter(_x -> unsafe_cast { l := "b" :: deref l; true } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // map filter fusion                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapFilterFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def mapFilterFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> { l := "a" :: deref l; x }) |>
         DelayList.filter(_ -> { l := "b" :: deref l; true });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def mapFilterFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def mapFilterFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> unsafe_cast { l := "a" :: deref l; x }    as _ \ {}) |>
         DelayList.filter(_ -> unsafe_cast { l := "b" :: deref l; true } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // filter map fusion                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterThenMapFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def filterThenMapFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { l := "a" :: deref l; true }) |>
         DelayList.map(   x -> { l := "b" :: deref l; x    });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def filterThenMapFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def filterThenMapFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> unsafe_cast { l := "a" :: deref l; true } as _ \ {}) |>
         DelayList.map(   x -> unsafe_cast { l := "b" :: deref l; x    } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
@@ -1522,21 +1527,23 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def zipWithFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def zipWithFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> { l := "a" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> { l := "b" :: deref l; (x, y) }, ECons(1, ECons(2, ECons(3, ENil))));
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def zipWithFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def zipWithFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> unsafe_cast { l := "a" :: deref l; (x, y) } as _ \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> unsafe_cast { l := "b" :: deref l; (x, y) } as _ \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithIndex                                                            //
@@ -1826,22 +1833,23 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def flatMapFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { l := "a" :: deref l; ECons(i, ENil) }) |>
         DelayList.flatMap(i -> { l := "b" :: deref l; ECons(i, ENil) });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def flatMapFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def flatMapFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> unsafe_cast { l := "a" :: deref l; ECons(i, ENil) } as _ \ {}) |>
         DelayList.flatMap(i -> unsafe_cast { l := "b" :: deref l; ECons(i, ENil) } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
@@ -2083,23 +2091,24 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def mapWithIndexFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> { l := "a" :: deref l; x }) |>
         DelayList.mapWithIndex((_, x) -> { l := "b" :: deref l; x }) |>
         DelayList.toList;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def mapWithIndexFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def mapWithIndexFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "a" :: deref l; x } as _ \ {}) |>
         DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "b" :: deref l; x } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // intercalate                                                             //
@@ -2315,40 +2324,43 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def takeWhileFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> { l := "a" :: deref l; i < 4 }) |>
         DelayList.takeWhile(i -> { l := "b" :: deref l; i < 4 });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def takeWhileFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def takeWhileFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 4 } as _ \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+    }
 
     @test
-    def takeWhileFusion03(): Bool \ IO =
-        let l = ref Nil;
+    def takeWhileFusion03(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 2 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
+    }
 
     @test
-    def takeWhileFusion04(): Bool \ IO =
-        let l = ref Nil;
+    def takeWhileFusion04(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile (pure)                                                        //
@@ -2466,40 +2478,43 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def dropWhileFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> { l := "a" :: deref l; i < 3 }) |>
         DelayList.dropWhile(i -> { l := "b" :: deref l; i < 4 });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+    }
 
     @test
-    def dropWhileFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def dropWhileFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
+    }
 
     @test
-    def dropWhileFusion03(): Bool \ IO =
-        let l = ref Nil;
+    def dropWhileFusion03(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 1 } as _ \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def dropWhileFusion04(): Bool \ IO =
-        let l = ref Nil;
+    def dropWhileFusion04(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 2 } as _ \ {}) |>
         DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // findMap                                                                 //
@@ -2672,22 +2687,23 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def filterMapFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> { l := "a" :: deref l; Some(x) }) |>
         DelayList.filterMap(x -> { l := "b" :: deref l; Some(x) });
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+    }
 
     @test
-    def filterMapFusion02(): Bool \ IO =
-        let l = ref Nil;
+    def filterMapFusion02(): Bool \ IO = region r {
+        let l = ref Nil @ r;
         discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> unsafe_cast { l := "a" :: deref l; Some(x) } as _ \ {}) |>
         DelayList.filterMap(x -> unsafe_cast { l := "b" :: deref l; Some(x) } as _ \ {}) |>
         DelayList.toList as _ \ IO;
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
-
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // partition                                                               //
@@ -2796,23 +2812,24 @@ namespace TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def spanSpanFusion01(): Bool \ IO =
-        let l = ref Nil;
+    def spanSpanFusion01(): Bool = region r {
+        let l = ref Nil @ r;
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.span(x -> { l := "a" :: deref l; x < 3 }) |> fst |>
         DelayList.span(x -> { l := "b" :: deref l; x < 3 }); // The working list is `1 :: 2 :: Nil`
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+    }
 
     //@test
-    //def spanSpanFusion02(): Bool \ IO =
-    //    let l = ref Nil;
+    //def spanSpanFusion02(): Bool = region r {
+    //    let l = ref Nil @ r;
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
     //    DelayList.span(x -> unsafe_cast { l := "a" :: deref l; x < 3 } as _ \ {}) |> fst |>
     //    DelayList.span(x -> unsafe_cast { l := "b" :: deref l; x < 3 } as _ \ {}) |> fst |>
     //    DelayList.toList;
     //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
-
+    //}
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //

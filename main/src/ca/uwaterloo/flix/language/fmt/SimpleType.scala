@@ -174,9 +174,14 @@ object SimpleType {
   case class Complement(tpe: SimpleType) extends SimpleType
 
   /**
-    * A chain of types connected by `+`.
+    * A chain of types in a set.
     */
   case class Union(tpes: List[SimpleType]) extends SimpleType
+
+  /**
+    * A chain of types connected by `&`.
+    */
+  case class Plus(tpes: List[SimpleType]) extends SimpleType
 
   /**
     * A chain of types connected by `&`.
@@ -529,6 +534,32 @@ object SimpleType {
             // Case 6: Too many args. Error.
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
+
+        case TypeConstructor.CaseConstant(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.CaseComplement(sym) =>
+          t.typeArguments.map(visit) match {
+            case Nil => Complement(Hole)
+            case arg :: Nil => Complement(arg)
+            case _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.CaseIntersection(sym) =>
+          t.typeArguments.map(visit) match {
+            case Nil => Intersection(Hole :: Hole :: Nil)
+            case arg :: Nil => Intersection(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => Intersection(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.CaseUnion(sym) =>
+          t.typeArguments.map(visit) match {
+            case Nil => Plus(Hole :: Hole :: Nil)
+            case arg :: Nil => Plus(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.CaseEmpty(sym) => SimpleType.Empty
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))

@@ -353,6 +353,11 @@ object UnkindedType {
   def mkEnum(sym: Symbol.EnumSym, loc: SourceLocation): UnkindedType = UnkindedType.Enum(sym, loc)
 
   /**
+    * Construct the restrictable enum type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkRestrictableEnum(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): UnkindedType = UnkindedType.RestrictableEnum(sym, loc)
+
+  /**
     * Construct the effect type for the given symbol.
     */
   def mkEffect(sym: Symbol.EffectSym, loc: SourceLocation): UnkindedType = UnkindedType.Cst(TypeConstructor.Effect(sym), loc)

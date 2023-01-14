@@ -338,6 +338,41 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the complement of a case set.
+    */
+  case class CaseComplement(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the union of two case sets.
+    */
+  case class CaseUnion(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the intersection of two case sets.
+    */
+  case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents a case constant.
+    */
+  case class CaseConstant(sym: Symbol.RestrictableCaseSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym.enumSym)
+  }
+
+  /**
+    * A type constructor that represents an empty case set.
+    */
+  case class CaseEmpty(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym)
+  }
+
+  /**
     * A type constructor that converts a region to a Star type.
     */
   case object RegionToStar extends TypeConstructor {

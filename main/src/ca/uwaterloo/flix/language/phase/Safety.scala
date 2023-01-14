@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
@@ -153,7 +153,14 @@ object Safety {
         exps.flatMap(visit) :::
           rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
+      case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+        visit(exp) :::
+          rules.flatMap{ case RestrictableChoiceRule(pat, exp) => visit(exp) }
+
       case Expression.Tag(_, exp, _, _, _, _) =>
+        visit(exp)
+
+      case Expression.RestrictableTag(_, exp, _, _, _, _) =>
         visit(exp)
 
       case Expression.Tuple(elms, _, _, _, _) =>
@@ -314,6 +321,10 @@ object Safety {
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
         visit(exp)
+
+      case Expression.Error(_, _, _, _) =>
+        Nil
+
     }
 
     visit(e0)

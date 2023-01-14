@@ -29,6 +29,7 @@ class TestFlixErrors extends FunSuite with TestUtils {
       case Validation.Success(t) => t.getMain match {
         case Some(main) => try {
           main.apply(Array.empty)
+          fail("No runtime error thrown")
         } catch {
           case e: java.lang.Throwable if e.getClass.getSimpleName == name =>
             ()
@@ -50,6 +51,61 @@ class TestFlixErrors extends FunSuite with TestUtils {
     val input = "def main(): Unit = ?namedHole"
     val result = compile(input, Options.TestWithLibMin)
     expectRuntimeError(result, "HoleError")
+  }
+
+  test("SpawnedThreadError.01") {
+     val input = 
+      """
+        |def main(): Unit \ IO = region r {
+        |    spawn { bug!("Something bad happened") } @ r;
+        |    Thread.sleep(Time/Duration.fromSeconds(1))
+        |}
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "HoleError")
+  }
+
+  test("SpawnedThreadError.02") {
+     val input = 
+      """
+        |def main(): Unit \ IO = region r {
+        |    spawn { 
+        |        spawn { bug!("Something bad happened")  } @ r
+        |    } @ r;
+        |    Thread.sleep(Time/Duration.fromSeconds(1))
+        |}
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "HoleError")
+  }
+
+  test("SpawnedThreadError.03") {
+     val input = 
+      """
+        |def main(): Unit \ IO = region r {
+        |    spawn { 
+        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+        |    } @ r;
+        |    Thread.sleep(Time/Duration.fromSeconds(1))
+        |}
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "NullPointerException")
+  }
+
+  test("SpawnedThreadError.04") {
+     val input = 
+      """
+        |def main(): Unit \ IO = region r {
+        |    let (_tx, rx) = Channel.unbuffered(r);
+        |    spawn { 
+        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+        |    } @ r;
+        |    discard Channel.recv(rx)
+        |}
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectRuntimeError(result, "NullPointerException")
   }
 
 }

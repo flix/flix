@@ -341,6 +341,7 @@ object Finalize {
   }
 
   // TODO: Should be private
+  // TODO: Remove
 
   /**
     * Finalizes the given type.
@@ -396,7 +397,9 @@ object Finalize {
 
             case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
-            case TypeConstructor.RestrictableEnum(sym, _) => ??? // TODO RESTR-VARS
+            case TypeConstructor.RestrictableEnum(sym, _) =>
+              val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+              MonoType.Enum(enumSym, args)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -435,6 +438,12 @@ object Finalize {
             case TypeConstructor.Empty => MonoType.Unit
 
             case TypeConstructor.All => MonoType.Unit
+
+            case TypeConstructor.CaseConstant(sym) => MonoType.Unit
+            case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
+            case TypeConstructor.CaseComplement(sym) => MonoType.Unit
+            case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
+            case TypeConstructor.CaseUnion(sym) => MonoType.Unit
 
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)

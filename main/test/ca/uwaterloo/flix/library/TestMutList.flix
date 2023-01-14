@@ -1696,7 +1696,7 @@ namespace TestMutList {
         // Pop 76 element such that the load factor is strictly lower than 1 / 4.
         let v = MutList.range(r, 0, 100);
         let c = capacity(v);
-        let i = ref 0;
+        let i = ref 0 @ r;
         let f = _ -> {
             if (deref i < 76) {
                 discard MutList.pop!(v);

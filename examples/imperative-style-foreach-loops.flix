@@ -54,7 +54,7 @@ def main(): Unit \ IO = region r {
     /// expression in the foreach loop must be
     /// of type unit.
     ///
-    let z = ref Nil;
+    let z = ref Nil @ r;
     foreach (x <- l)
         z := x :: deref z;
 
@@ -65,7 +65,7 @@ def main(): Unit \ IO = region r {
     /// However, foreach-loops can be much easier
     /// to read than `foreach` function calls.
     ///
-    let q = ref Nil;
+    let q = ref Nil @ r;
     List.iterator(r, l) |>
     Iterator.forEach(match x -> q := x :: deref q);
 
@@ -74,7 +74,7 @@ def main(): Unit \ IO = region r {
     /// foreach-loops.
     ///
     let k = 4 :: 5 :: 6 :: Nil;
-    let w = ref Nil;
+    let w = ref Nil @ r;
     foreach (a <- l) {
         w := a :: deref w;
         foreach (b <- k)
@@ -86,7 +86,7 @@ def main(): Unit \ IO = region r {
     /// to the functional style expression
     /// below.
     ///
-    let v = ref Nil;
+    let v = ref Nil @ r;
     List.iterator(r, l) |>
     Iterator.forEach(match a -> {
         v := a :: deref v;
@@ -104,7 +104,7 @@ def main(): Unit \ IO = region r {
     /// This may be familiar to you if you have
     /// some experience with Scala's for-loops.
     ///
-    let e = ref Nil;
+    let e = ref Nil @ r;
     foreach (a <- l;
              b <- k)
                 e := (a, b) :: deref e;
@@ -113,7 +113,7 @@ def main(): Unit \ IO = region r {
     /// The equivalent functional style expression
     /// has a bit more visual noise.
     ///
-    let e1 = ref Nil;
+    let e1 = ref Nil @ r;
     List.iterator(r, l) |>
     Iterator.forEach(match a -> {
         List.iterator(r, k) |>
@@ -134,7 +134,7 @@ def main(): Unit \ IO = region r {
     /// Again, this is similar to Scala's
     /// for-loops.
     ///
-    let c = ref Nil;
+    let c = ref Nil @ r;
     foreach (a <- l;
              if a > 1;
              b <- k;
@@ -145,7 +145,7 @@ def main(): Unit \ IO = region r {
     /// Alternatively, we can put a single guard
     /// at the end of the parenthesis.
     ///
-    let d = ref Nil;
+    let d = ref Nil @ r;
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
@@ -167,7 +167,7 @@ def main(): Unit \ IO = region r {
     /// the same parenthesis, match on the exact pattern
     /// and include guards.
     ///
-    let cf = ref Nil;
+    let cf = ref Nil @ r;
     List.iterator(r, l) |>
     Iterator.forEach(match a -> {
         List.iterator(r, k) |>
