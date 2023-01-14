@@ -13,13 +13,26 @@ import scala.annotation.tailrec
 
 object ErasedAstPrinter {
 
-  def doc(root: Root)(implicit i: Indent): Doc = {
+  /**
+    * More principled than `pretty` but causes stackoverflow somehow.
+    */
+  private def doc(root: Root)(implicit i: Indent): Doc = {
     val defs = root.
       defs.
       toList.
       sortBy{case (sym, _) => sym.toString}.
       map{case (_, defn) => doc(defn)}
     group(fold(_ <> breakWith("") <> breakWith("") <> _, defs))
+  }
+
+  def pretty(root: Root, width: Int)(implicit i: Indent): String = {
+    val defs = root.
+      defs.
+      toList.
+      sortBy{ case (sym, _) => sym.toString }.
+      map{ case (_, defn) => doc(defn) }.
+      map(Doc.pretty(width, _))
+    defs.mkString("\n\n")
   }
 
   def doc(defn: Def)(implicit i: Indent): Doc = {
@@ -64,7 +77,7 @@ object ErasedAstPrinter {
         val output = applyf(doc(sym) <> metaText("deftail"), args.map(a => doc(a, paren = false)))
         par(output)
       case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
-        val output = applyf(doc(sym) <> metaText("clotail"), actuals.map(a => doc(a, paren = false)))
+        val output = applyf(doc(sym) <> metaText("selftail"), actuals.map(a => doc(a, paren = false)))
         par(output)
       case Expression.Unary(_, op, exp, _, _) =>
         val output = OperatorPrinter.doc(op) <> doc(exp)
@@ -138,7 +151,7 @@ object ErasedAstPrinter {
       case Expression.Force(exp, _, _) =>
         val output = text("force") <+> doc(exp)
         par(output)
-      case Expression.HoleError(sym, _, _) => text("?") <> doc(sym)
+      case Expression.HoleError(sym, _, _) => doc(sym)
       case Expression.MatchError(_, _) => metaText("MatchError")
       case Expression.BoxBool(exp, _) => text("box") <+> doc(exp)
       case Expression.BoxInt8(exp, _) => text("box") <+> doc(exp)

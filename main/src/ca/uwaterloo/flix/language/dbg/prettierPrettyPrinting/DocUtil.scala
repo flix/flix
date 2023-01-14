@@ -98,8 +98,15 @@ object DocUtil {
     def schemaExtendf(fields: List[(Doc, Doc)], rest: Option[Doc])(implicit i: Indent): Doc =
       text("#") <> recordExtendf(fields, rest)
 
+    /**
+      * Just shows `tpe` for empty `args`.
+      */
     def typeAppf(tpe: Doc, args: List[Doc])(implicit i: Indent): Doc = {
-      tpe <> group(bracket("[", commaSep(args), "]"))
+      if (args.nonEmpty) {
+        tpe <> group(bracket("[", commaSep(args), "]"))
+      } else {
+        tpe
+      }
     }
 
     def parens(d: Doc)(implicit i: Indent): Doc = group(bracket("(", d, ")"))
@@ -188,6 +195,9 @@ object DocUtil {
       group(sep(text(";") <> breakWith(" "), l))
     }
 
+    /**
+      * TODO: arrow chains should be formatted together
+      */
     def arrowf(args: List[Doc], res: Doc)(implicit i: Indent): Doc = {
       selectiveTuplef(args) <+> text("->") <+\?>> res
     }

@@ -36,7 +36,7 @@ object Eraser {
       erasedRoot => {
         AstPrinter.printAst(
           this.getClass.getSimpleName.dropRight(1),
-          Doc.pretty(AstPrinter.WIDTH, ErasedAstPrinter.doc(erasedRoot)(AstPrinter.INDENT))
+          ErasedAstPrinter.pretty(erasedRoot, AstPrinter.WIDTH)(AstPrinter.INDENT)
         )
       }
     )
