@@ -1393,7 +1393,7 @@ object Typer {
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.Of(sym, exp, tpe, loc) => ??? // TODO RESTR-VARS
+      case of@KindedAst.Expression.Of(_, _, _, _) => RestrictableChooseInference.inferOf(of, root)
 
       case KindedAst.Expression.Cast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
