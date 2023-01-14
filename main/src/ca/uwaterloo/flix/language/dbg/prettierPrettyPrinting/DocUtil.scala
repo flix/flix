@@ -233,8 +233,25 @@ object DocUtil {
       asignee <+> text(":=") <+> value
     }
 
+    def emptyRecordf(): Doc = text("{}")
+
+    def recordSelectf(exp: Doc, field: Doc): Doc =
+      exp <> text(".") <> field
+
     def stringf(s: String)(implicit i: Indent): Doc =
       text("\"") <> text(s) <> text("\"")
+
+    def arrayListf(elms: List[Doc])(implicit i: Indent): Doc =
+      group(text("Array#") <> bracket("{", commaSep(elms), "}"))
+
+    def spawnf(exp: Doc, region: Doc)(implicit i: Indent): Doc =
+      text("spawn") <+> group(bracket("{", exp, "}")) <+> text("@") <+> region
+
+    def scopef(region: Doc, exp: Doc)(implicit i: Indent): Doc =
+      text("region") <+> region <+> group(bracket("{", exp, "}"))
+
+    def tupleIndexf(exp: Doc, index: Int): Doc =
+      exp <+> text(s"._$index")
 
     /**
       * `<txt>`
