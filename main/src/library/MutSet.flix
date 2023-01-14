@@ -412,14 +412,14 @@ namespace MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, ef, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutSet(ms) = s;
-        unsafe_cast Set.iterator(r1, deref ms) as Iterator[a, r1 and r2]
+        unsafe_cast Set.iterator(r1, deref ms) as Iterator[a, ef, r1 and r2]
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), ef, r1 and r2] \ { Write(r1), Read(r2) } =
         iterator(r1, s) |> Iterator.zipWithIndex
 
     ///

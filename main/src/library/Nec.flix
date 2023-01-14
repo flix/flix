@@ -86,7 +86,7 @@ instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, c)
+    override pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, ef, r] \ Write(r) = Nec.iterator(r, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -118,7 +118,7 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
-    override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, l)
+    override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, ef, r] \ Write(r) = Nec.iterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
@@ -800,13 +800,13 @@ namespace Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, ef, r] \ Write(r) =
         iteratorHelper(r, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
+    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, ef, r] \ Write(r) =
         let cursor = ref vl @ r;
         let done = () -> match (deref cursor) {
             case None    => true
@@ -828,7 +828,7 @@ namespace Nec {
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), ef, r] \ Write(r) =
         iterator(r, c) |> Iterator.zipWithIndex
 
     ///

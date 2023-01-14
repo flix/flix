@@ -1398,7 +1398,7 @@ namespace Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(r1: Region[r1], a: Array[a, r2]): Iterator[a, ef, r1 and r2] \ { Write(r1), Read(r2) } =
         let i = ref 0 @ r1;
         let done = () -> unsafe_cast deref i == length(a) as _ \ { Write(r1), Read(r2) };
         let next = () -> {
@@ -1413,7 +1413,7 @@ namespace Array {
     ///
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def enumerator(r1: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), ef, r1 and r2] \ { Write(r1), Read(r2) } =
         iterator(r1, a) |> Iterator.zipWithIndex
 
     ///

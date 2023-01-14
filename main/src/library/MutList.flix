@@ -807,7 +807,7 @@ namespace MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, ef, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutList(_, a, len) = l;
         let i = ref 0 @ r1;
         let done = () -> deref i == deref len;

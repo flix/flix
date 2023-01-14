@@ -425,7 +425,7 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, ef, r1 and r2] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
         let i = ref (deref f) @ r1;
         let done = () -> deref i == deref b;

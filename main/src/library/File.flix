@@ -414,7 +414,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], ef, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -452,7 +452,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], ef, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -561,7 +561,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], r] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], ef, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -924,7 +924,7 @@ namespace File {
     ///
     /// Does not recursively traverse the directory.
     ///
-    pub def listWithIter(r: Region[r], f: String): Result[String, Iterator[String, r]] \ IO =
+    pub def listWithIter(r: Region[r], f: String): Result[String, Iterator[String, ef, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -951,7 +951,7 @@ namespace File {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(r: Region[r], f: String): Result[String, Iterator[String, r]] \ IO =
+    pub def walk(r: Region[r], f: String): Result[String, Iterator[String, ef, r]] \ IO =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -975,7 +975,7 @@ namespace File {
     ///
     /// Converts a Java iterator to a Flix Iterator.
     ///
-    def fromJavaIter(_r: Region[r], iter: ##java.util.Iterator): Iterator[a, r] =
+    def fromJavaIter(_r: Region[r], iter: ##java.util.Iterator): Iterator[a, ef, r] =
         import java.util.Iterator.hasNext(): Bool \ Read(r);
         import java.util.Iterator.next(): a \ { Read(r), Write(r) } as getNext;
 

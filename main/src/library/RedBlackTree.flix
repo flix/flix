@@ -62,7 +62,7 @@ instance Foldable[RedBlackTree[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
-    override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
+    override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, ef, r] \ Write(r) =
         RedBlackTree.iterator(r, t) |> Iterator.map(match (_, v) -> v)
 }
 
@@ -1040,7 +1040,7 @@ namespace RedBlackTree {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), ef, r] \ Write(r) =
         let stack1 = leftmost(t, Nil);
         let state = ref stack1 @ r;
         let done = () -> match (deref state) {

@@ -88,7 +88,7 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
+    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, ef, r] \ Write(r) = List.iterator(r, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -120,11 +120,11 @@ instance Monoid[List[a]] {
 }
 
 instance Collectable[List] {
-    pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
 }
 
 instance Iterable[List] {
-    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(rh, l)
+    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, ef, r] \ Write(r) = List.iterator(rh, l)
 }
 
 namespace List {
@@ -1325,7 +1325,7 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(r: Region[r], l: List[a]): Iterator[a, ef, r] \ Write(r) =
         let cursor = ref l @ r;
         let done = () -> match (deref cursor) {
             case Nil => true
@@ -1342,7 +1342,7 @@ namespace List {
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), ef, r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

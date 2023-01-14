@@ -20,17 +20,17 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 
 /*
 instance Newable[Iterator[a]] {
-    pub def new(r: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
+    pub def new(r: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.new(r)
 }
 
 instance Scoped[Iterator[a]] {
-    pub def regionOf(_: Iterator[a, r]): Region[r] = unsafe_cast () as Region[r]
+    pub def regionOf(_: Iterator[a, ef, r]): Region[r] = unsafe_cast () as Region[r]
 }
 
 ///
 /// Alias for `Foldable.iterator`.
 ///
-pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
+pub def iterator(r: Region[r], t: t[a]): Iterator[a, ef, r] \ Write(r) with Foldable[t] =
     Foldable.iterator(r, t)
 */
 
@@ -63,7 +63,7 @@ namespace Iterator {
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(r: Region[r], x: a): Iterator[a, r] \ Write(r) =
+    pub def singleton(r: Region[r], x: a): Iterator[a, ef, r] \ Write(r) =
         let d = ref false @ r;
         let done = () -> deref d;
         let next = () -> {
@@ -453,7 +453,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
 // SPT TODO
-//    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
+//    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
 //        match iter {
 //            case Iterator(done, _) if done() => z
 //            case Iterator(_, next)           => f(next(), _ -> foldRightWithCont(f, z, iter))
@@ -717,7 +717,7 @@ namespace Iterator {
     /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
     /// If the iterator has no errors then the result is wrapped with `Ok`.
     ///
-    pub def toResultList(iter: Iterator[Result[e, a], r]): Result[e, List[a]] \ Read(r) =
+    pub def toResultList(iter: Iterator[Result[e, a], ef, r]): Result[e, List[a]] \ Read(r) =
         let Iterator(done, next) = iter;
         def loop(fk, sk) = match next() {
             case Ok(a)  => loop(fk, ks -> sk(a :: ks))

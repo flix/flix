@@ -40,7 +40,7 @@ instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
+    override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, ef, r] \ Write(r) =
         DelayMap.iterator(r, m) |> Iterator.map(match (_, v) -> v)
 }
 
@@ -787,7 +787,7 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
+    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), ef, r] \ Write(r) =
         let DMap(t) = m;
         RedBlackTree.iterator(r, t) |> Iterator.map(match (k, v) -> (k, force v))
 
