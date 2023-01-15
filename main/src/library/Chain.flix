@@ -797,10 +797,6 @@ namespace Chain {
     ///
     pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
         let cursor = ref viewLeft(c) @ r;
-        let done = () -> match (deref cursor) {
-            case ViewLeft.NoneLeft    => true
-            case ViewLeft.SomeLeft(_) => false
-        };
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) => {
