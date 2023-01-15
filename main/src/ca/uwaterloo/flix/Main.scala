@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.pkg.FlixPackageManager
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -174,7 +175,7 @@ object Main {
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          val result = Packager.install(project, cwd, o)
+          val result = FlixPackageManager.install(project, cwd, o)
           System.exit(getCode(result))
 
         case Command.Lsp(port) =>

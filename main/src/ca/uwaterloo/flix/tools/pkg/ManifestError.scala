@@ -15,17 +15,22 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.util.Result
-import org.tomlj.Toml
-
 import java.nio.file.Path
 
-object PackageParser {
+sealed trait ManifestError
 
-  def parse(path: Path): Result[Manifest, PackageError] = {
-    // TODO: File exists, is a regular file, is readable, etc.
-    val parser = Toml.parse(path)
-    ???
-  }
+object ManifestError {
+
+  case class ManifestNotFound(path: Path) extends ManifestError
+
+  case class ManifestNotReadable(path: Path) extends ManifestError
+
+  case class MissingRequiredProperty(path: Path, msg: String) extends ManifestError
+
+  case class ManifestParseError(path: Path, msg: String) extends ManifestError
+
+  case class UnableToDownload( msg: String) extends ManifestError
+
+  /// ...
 
 }

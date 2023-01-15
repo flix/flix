@@ -15,22 +15,14 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import java.nio.file.Path
+import ca.uwaterloo.flix.util.Result
 
-sealed trait PackageError
+import java.io.PrintStream
 
-object PackageError {
+object MavenPackageManager {
 
-  case class ManifestNotFound(path: Path) extends PackageError
+  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
 
-  case class ManifestNotReadable(path: Path) extends PackageError
-
-  case class MissingRequiredProperty(path: Path, msg: String) extends PackageError
-
-  case class ManifestParseError(path: Path, msg: String) extends PackageError
-
-  case class UnableToDownload( msg: String) extends PackageError
-
-  /// ...
+  private def installArtifact(groupId: String, artifactId: String, version: String)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
 
 }
