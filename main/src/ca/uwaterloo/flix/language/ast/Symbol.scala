@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.math.Ordered.orderingToOrdered
 
 sealed trait Symbol
 object Symbol {
@@ -463,7 +464,7 @@ object Symbol {
   /**
     * Restrictable Case Symbol.
     */
-  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -486,6 +487,12 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
+
+    /**
+      * Comparison.
+      */
+    override def compare(that: RestrictableCaseSym): Int = this.toString.compare(that.toString)
+
   }
 
   /**

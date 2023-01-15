@@ -65,6 +65,19 @@ sealed trait Type {
   }
 
   /**
+    * Gets all the cases in the given type.
+    */
+  def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
+    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => SortedSet(sym)
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
+    case Type.Alias(_, _, tpe, _) => tpe.cases
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
@@ -838,7 +851,8 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
-    // TODO RESTR-VARS maybe optimize
+    case Type.Cst(TypeConstructor.CaseEmpty(sym), _) => Type.Cst(TypeConstructor.CaseAll(sym), loc)
+    case Type.Cst(TypeConstructor.CaseAll(sym), _) => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
     case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
   }
 
@@ -884,7 +898,10 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (Type.Cst(TypeConstructor.CaseEmpty(_), _), t) => t
+    case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
+    case (all@Type.Cst(TypeConstructor.CaseAll(_), _), _) => all
+    case (_, all@Type.Cst(TypeConstructor.CaseAll(_), _)) => all
     case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -894,7 +911,11 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (empty@Type.Cst(TypeConstructor.CaseEmpty(_), _), _) => empty
+    case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
+    case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
+    case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 

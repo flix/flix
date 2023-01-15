@@ -95,6 +95,14 @@ object Unification {
         BoolUnification.unify(tpe1, tpe2, renv)
       }
 
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+      // TODO RESTR-VARS EVIL HACK HERE
+      if (sym1 != CaseSetUnification.Hack.EnumSym) {
+        Err(UnificationError.HackError("Restrictable enum must be Expr with cases Var, Not, And, Or, Xor"))
+      } else {
+        CaseSetUnification.unify(tpe1, tpe2, renv, CaseSetUnification.Hack.Cases, CaseSetUnification.Hack.EnumSym)
+      }
+
     //
     // Record Rows
     //
@@ -197,6 +205,9 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
+
+        case Result.Err(UnificationError.HackError(message)) =>
+          Err(TypeError.HackError(message, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)

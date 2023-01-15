@@ -110,4 +110,10 @@ object UnificationError {
     */
   case class MultipleMatchingInstances(tconstr: Ast.TypeConstraint) extends UnificationError
 
+  /**
+    * A unification error to indicate that some hack was not applicable
+    */
+    // TODO RESTR-VARS
+  case class HackError(message: String) extends UnificationError
+
 }

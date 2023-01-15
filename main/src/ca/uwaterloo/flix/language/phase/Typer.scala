@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
+import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -2065,7 +2066,24 @@ object Typer {
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.RestrictableChoose(_, exps, rules, tvar, loc) => ??? // TODO RESTR-VARS
+      case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val rs = rules.map {
+          case KindedAst.RestrictableChoiceRule(pat0, _, body0) =>
+            val pat = pat0 match {
+              case KindedAst.RestrictableChoicePattern.Tag(sym, pats, tvar, loc) =>
+                val ps = pats.map {
+                  case KindedAst.RestrictableChoicePattern.Wild(tvar, loc) => TypedAst.RestrictableChoicePattern.Wild(subst0(tvar), loc)
+                  case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoicePattern.Var(sym, subst0(tvar), loc)
+                }
+                TypedAst.RestrictableChoicePattern.Tag(sym, ps, subst0(tvar), loc)
+            }
+            val body = visitExp(body0, subst0)
+            TypedAst.RestrictableChoiceRule(pat, body)
+        }
+        val pur = Type.mkAnd(rs.map(_.exp.pur), loc)
+        val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
+        TypedAst.Expression.RestrictableChoose(star, e, rs, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
