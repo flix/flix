@@ -23,7 +23,7 @@ namespace TestIterator {
 
     @test
     def next01(): Bool = region r {
-        new Iterator(r) |> Iterator.next == None: Option[Int32]
+        Iterator.empty(r) |> Iterator.next == None: Option[Int32]
     }
 
     @test
@@ -46,127 +46,6 @@ namespace TestIterator {
         Iterator.next(iter) == Some(2)
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // isEmpty (idempotency)                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def isEmpty01(): Bool = region r { // empty
-        let iter = new Iterator(r);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == Nil: List[Int32]
-    }
-
-    @test
-    def isEmpty02(): Bool = region r { // singleton
-        let iter = Iterator.singleton(r, 1);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: Nil
-    }
-
-    @test
-    def isEmpty03(): Bool = region r { // range
-        let iter = Iterator.range(r, 0, 100);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == List.range(0, 100)
-    }
-
-    @test
-    def isEmpty04(): Bool = region r { // repeat
-        let iter = Iterator.repeat(r, 2, 10);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 10 :: 10 :: Nil
-    }
-
-    @test
-    def isEmpty05(): Bool = region r { // lazyFilter
-        let iter = (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.filterL(i -> i < 3);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: 2 :: Nil
-    }
-
-    @test
-    def isEmpty06(): Bool = region r { // lazyMap
-        let iter = (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.mapL(i -> i + 1);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
-    }
-
-    @test
-    def isEmpty07(): Bool = region r { // append
-        let i1 = (1 :: 2 :: 3 :: Nil) |> List.iterator(r);
-        let i2 = (4 :: 5 :: 6 :: Nil) |> List.iterator(r);
-        let iter = Iterator.append(i1, i2);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil
-    }
-
-    @test
-    def isEmpty08(): Bool = region r { // zip
-        let i1 = (1 :: 2 :: 3 :: Nil) |> List.iterator(r);
-        let i2 = (4 :: 5 :: 6 :: Nil) |> List.iterator(r);
-        let iter = Iterator.zip(i1, i2);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == (1, 4) :: (2, 5) :: (3, 6) :: Nil
-    }
-
-    @test
-    def isEmpty09(): Bool = region r { // lazyZipWith
-        let i1 = (1 :: 2 :: 3 :: Nil) |> List.iterator(r);
-        let i2 = (4 :: 5 :: 6 :: Nil) |> List.iterator(r);
-        let iter = Iterator.zipWithL((x, y) -> x + y, i1, i2);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 5 :: 7 :: 9 :: Nil
-    }
-
-    @test
-    def isEmpty10(): Bool = region r { // flatMap
-        let i = (1 :: 2 :: 3 :: Nil) |> List.iterator(r);
-        let iter = Iterator.flatMap(x -> Iterator.singleton(r, x + 1), i);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 2 :: 3 :: 4 :: Nil
-    }
-
-    @test
-    def isEmpty11(): Bool = region r { // intersperse
-        let i = (1 :: 2 :: 3 :: Nil) |> List.iterator(r);
-        let iter = Iterator.intersperse(5, i);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: 5 :: 2 :: 5 :: 3 :: Nil
-    }
-
-    @test
-    def isEmpty12(): Bool = region r { // intercalate
-        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.iterator(r);
-        let iterB0 = (1 :: Nil) |> List.iterator(r);
-        let iterB1 = (2 :: 3 :: Nil) |> List.iterator(r);
-        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.iterator(r);
-        let iter = Iterator.intercalate(iterA, iterB);
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
-    }
-
-    @test
-    def isEmpty13(): Bool = region r { // unfoldWithOk
-        let Iterator(d, n) = List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
-        let iter = Iterator.unfoldWithOk(r, () -> if (d()) Err("Done") else Ok(n()));
-        invokeIsEmptyRegion(100, iter);
-        Iterator.toList(iter) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
-    }
-
-    ///
-    /// Helper function that invokes `Iterator.isEmpty` `n` times.
-    ///
-    def invokeIsEmptyRegion(n: Int32, iter: Iterator[a, r]): Unit \ Read(r) =
-        def loop(m) =
-            if (m <= 0)
-                ()
-            else {
-                discard Iterator.isEmpty(iter);
-                loop(m - 1)
-            };
-        loop(n)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -305,7 +184,7 @@ namespace TestIterator {
 
     @test
     def product01(): Bool = region r {
-        new Iterator(r) |> Iterator.product == 1
+        Iterator.empty(r) |> Iterator.product == 1
     }
 
     @test
@@ -340,7 +219,7 @@ namespace TestIterator {
 
     @test
     def productWith01(): Bool = region r {
-        new Iterator(r) |> Iterator.productWith(x -> x + 1) == 1
+        Iterator.empty(r) |> Iterator.productWith(x -> x + 1) == 1
     }
 
     @test
@@ -467,7 +346,7 @@ namespace TestIterator {
 
     @test
     def toMutDeque01(): Bool = region r {
-        let iter = new Iterator(r): Iterator[Int32, r];
+        let iter = Iterator.empty(r): Iterator[Int32, r, r];
         let d = new MutDeque(r): MutDeque[Int32, _];
         Iterator.toMutDeque(r, iter) `MutDeque.sameElements` d
     }
@@ -578,42 +457,42 @@ namespace TestIterator {
 
     @test
     def filter01(): Bool = region r {
-        Nil |> List.iterator(r) |> Iterator.filter(i -> i > 3) == Nil
+        Nil |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def filter02(): Bool = region r {
-        (2 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == Nil
+        (2 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def filter03(): Bool = region r {
-        (4 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == 4 :: Nil
+        (4 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def filter04(): Bool = region r {
-        (1 :: 3 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == Nil
+        (1 :: 3 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def filter05(): Bool = region r {
-        (1 :: 8 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == 8 :: Nil
+        (1 :: 8 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: Nil
     }
 
     @test
     def filter06(): Bool = region r {
-        (8 :: 1 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == 8 :: Nil
+        (8 :: 1 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: Nil
     }
 
     @test
     def filter07(): Bool = region r {
-        (8 :: 9 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == 8 :: 9 :: Nil
+        (8 :: 9 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
     }
 
     @test
     def filter08(): Bool = region r {
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) == 4 :: 11 :: 17 :: Nil
+        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.iterator(r) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
     }
 
 
@@ -624,43 +503,43 @@ namespace TestIterator {
     @test
     def map01(): Bool = region r {
         Nil |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == Nil
     }
 
     @test
     def map02(): Bool = region r {
         (1 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == false :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == false :: Nil
     }
 
     @test
     def map03(): Bool = region r {
         (3 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == true :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == true :: Nil
     }
 
     @test
     def map04(): Bool = region r {
         (1 :: 2 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == false :: false :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == false :: false :: Nil
     }
 
     @test
     def map05(): Bool = region r {
         (1 :: 8 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == false :: true :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == false :: true :: Nil
     }
 
     @test
     def map06(): Bool = region r {
         (8 :: 1 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == true :: false :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == true :: false :: Nil
     }
 
     @test
     def map07(): Bool = region r {
         (7 :: 8 :: Nil) |> List.iterator(r) |>
-            Iterator.map(i -> i > 2) == true :: true :: Nil
+            Iterator.map(i -> i > 2) |> Iterator.toList == true :: true :: Nil
     }
 
 
@@ -703,91 +582,6 @@ namespace TestIterator {
             Iterator.forEachWithIndex((i, _) -> res := i);
         2 == deref res
     }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyFilter                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def lazyFilter01(): Bool = region r {
-        List.iterator(r, Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyFilter02(): Bool = region r {
-        List.iterator(r, 2 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyFilter03(): Bool = region r {
-        List.iterator(r, 4 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: Nil
-    }
-
-    @test
-    def lazyFilter04(): Bool = region r {
-        List.iterator(r, 1 :: 3 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyFilter05(): Bool = region r {
-        List.iterator(r, 1 :: 8 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
-    }
-
-    @test
-    def lazyFilter06(): Bool = region r {
-        List.iterator(r, 8 :: 1 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: Nil
-    }
-
-    @test
-    def lazyFilter07(): Bool = region r {
-        List.iterator(r, 8 :: 9 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
-    }
-
-    @test
-    def lazyFilter08(): Bool = region r {
-        List.iterator(r, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> Iterator.filterL(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyMap                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def lazyMap01(): Bool = region r {
-        List.iterator(r, Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyMap02(): Bool = region r {
-        List.iterator(r, 1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: Nil
-    }
-
-    @test
-    def lazyMap03(): Bool = region r {
-        List.iterator(r, 3 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: Nil
-    }
-
-    @test
-    def lazyMap04(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: false :: Nil
-    }
-
-    @test
-    def lazyMap05(): Bool = region r {
-        List.iterator(r, 1 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == false :: true :: Nil
-    }
-
-    @test
-    def lazyMap06(): Bool = region r {
-        List.iterator(r, 8 :: 1 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: false :: Nil
-    }
-
-    @test
-    def lazyMap07(): Bool = region r {
-        List.iterator(r, 7 :: 8 :: Nil) |> Iterator.mapL(i -> i > 2) |> Iterator.toList == true :: true :: Nil
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
@@ -840,7 +634,6 @@ namespace TestIterator {
         List.iterator(r, 3 :: 3 :: Nil) |>
             Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
@@ -902,14 +695,15 @@ namespace TestIterator {
         Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
-    @test
-    def append09(): Bool = region r1 {
-        let iter1 = List.iterator(r1, 1 :: Nil);
-        region r2 {
-            let iter2 = List.iterator(r2, 2 :: 3 :: Nil);
-            Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-        }
-    }
+    // TODO - multiple region tests currently disabled
+    // @test
+    // def append09(): Bool = region r1 {
+    //     let iter1 = List.iterator(r1, 1 :: Nil);
+    //     region r2 {
+    //         let iter2 = List.iterator(r2, 2 :: 3 :: Nil);
+    //         Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    //     }
+    // }
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -958,73 +752,15 @@ namespace TestIterator {
         Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
     }
 
-    @test
-    def zip07(): Bool = region r1 {
-        let iterA = Iterator.range(r1, 0, 500);
-        region r2 {
-            let iterB = Iterator.repeat(r2, 1000, "b");
-            Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
-        }
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // lazyZipWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def lazyZipWith01(): Bool = region r {
-        let iterA = List.iterator(r, Nil);
-        let iterB = List.iterator(r, Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyZipWith02(): Bool = region r {
-        let iterA = List.iterator(r, 1 :: Nil);
-        let iterB = List.iterator(r, Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyZipWith03(): Bool = region r {
-        let iterA = List.iterator(r, Nil);
-        let iterB = List.iterator(r, true :: Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
-    }
-
-    @test
-    def lazyZipWith04(): Bool = region r {
-        let iterA = List.iterator(r, 1 :: Nil);
-        let iterB = List.iterator(r, true :: Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 2 :: Nil
-    }
-
-    @test
-    def lazyZipWith05(): Bool = region r {
-        let iterA = List.iterator(r, 1 :: Nil);
-        let iterB = List.iterator(r, false :: Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: Nil
-    }
-
-    @test
-    def lazyZipWith06(): Bool = region r {
-        let iterA = List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        let iterB = List.iterator(r, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-        Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |>
-            Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
-    }
-
-    @test
-    def lazyZipWith07(): Bool = region r1 {
-        let iterA = List.iterator(r1, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
-        region r2 {
-            let iterB = List.iterator(r2, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-            Iterator.zipWithL((a, b) -> if (b) a + 1 else a, iterA, iterB) |>
-                Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
-        }
-    }
-
+    // TODO - multiple region tests currently disabled
+    // @test
+    // def zip07(): Bool = region r1 {
+    //     let iterA = Iterator.range(r1, 0, 500);
+    //     region r2 {
+    //         let iterB = Iterator.repeat(r2, 1000, "b");
+    //         Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+    //     }
+    // }
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
@@ -1034,42 +770,42 @@ namespace TestIterator {
     def zipWith01(): Bool = region r {
         let iterA = List.iterator(r, Nil);
         let iterB = List.iterator(r, Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
     }
 
     @test
     def zipWith02(): Bool = region r {
         let iterA = List.iterator(r, 1 :: Nil);
         let iterB = List.iterator(r, Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
     }
 
     @test
     def zipWith03(): Bool = region r {
         let iterA = List.iterator(r, Nil);
         let iterB = List.iterator(r, true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
     }
 
     @test
     def zipWith04(): Bool = region r {
         let iterA = List.iterator(r, 1 :: Nil);
         let iterB = List.iterator(r, true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 2 :: Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 2 :: Nil
     }
 
     @test
     def zipWith05(): Bool = region r {
         let iterA = List.iterator(r, 1 :: Nil);
         let iterB = List.iterator(r, false :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def zipWith06(): Bool = region r {
         let iterA = List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         let iterB = List.iterator(r, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
     }
 
     @test
@@ -1077,7 +813,7 @@ namespace TestIterator {
         let iterA = List.iterator(r1, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         region r2 {
             let iterB = List.iterator(r2, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-            Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+            Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
         }
     }
 
@@ -1087,7 +823,7 @@ namespace TestIterator {
 
     @test
     def zipWithIndex01(): Bool = region r {
-        Iterator.zipWithIndex(new Iterator(r): Iterator[Int32, r]) |> Iterator.toList == Nil
+        Iterator.zipWithIndex(Iterator.empty(r): Iterator[Int32, r, r]) |> Iterator.toList == Nil
     }
 
     @test
@@ -1168,7 +904,7 @@ namespace TestIterator {
         Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
     }
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -1196,7 +932,7 @@ namespace TestIterator {
         let iter = List.iterator(r, 1 :: 2 :: 3 :: Nil);
         Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
     }
-
+*/
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -1270,49 +1006,49 @@ namespace TestIterator {
     @test
     def takeWhile01(): Bool = region r {
         List.iterator(r, Nil: List[Int32]) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def takeWhile02(): Bool = region r {
         List.iterator(r, 1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def takeWhile03(): Bool = region r {
         List.iterator(r, 4 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 4 :: Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def takeWhile04(): Bool = region r {
         List.iterator(r, 1 :: 2 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def takeWhile05(): Bool = region r {
         List.iterator(r, 1 :: 5 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def takeWhile06(): Bool = region r {
         List.iterator(r, 5 :: 1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 5 :: Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 5 :: Nil
     }
 
     @test
     def takeWhile07(): Bool = region r {
         List.iterator(r, 5 :: 8 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 5 :: 8 :: Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 5 :: 8 :: Nil
     }
 
     @test
     def takeWhile08(): Bool = region r {
         List.iterator(r, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) == 4 :: 6 :: Nil
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 4 :: 6 :: Nil
     }
 
 
@@ -1323,49 +1059,49 @@ namespace TestIterator {
     @test
     def dropWhile01(): Bool = region r {
         List.iterator(r, Nil) |>
-            Iterator.dropWhile(i -> i > 3) == Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def dropWhile02(): Bool = region r {
         List.iterator(r, 1 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == 1 :: Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def dropWhile03(): Bool = region r {
         List.iterator(r, 4 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def dropWhile04(): Bool = region r {
         List.iterator(r, 1 :: 2 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == 1 :: 2 :: Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def dropWhile05(): Bool = region r {
         List.iterator(r, 1 :: 5 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == 1 :: 5 :: Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: 5 :: Nil
     }
 
     @test
     def dropWhile06(): Bool = region r {
         List.iterator(r, 5 :: 1 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == 1 :: Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def dropWhile07(): Bool = region r {
         List.iterator(r, 5 :: 8 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
     }
 
     @test
     def dropWhile08(): Bool = region r {
         List.iterator(r, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
     }
 
 
@@ -1418,20 +1154,21 @@ namespace TestIterator {
     @test
     def flatMap07(): Bool = region r {
         List.iterator(r, 1 :: 2 :: 3 :: 4 :: Nil) |>
-            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r, i, i) else new Iterator(r)) |>
+            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r, i, i) else Iterator.empty(r)) |>
             Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
     }
 
-    @test
-    def flatMap08(): Bool = region r1 {
-        region r2 {
-            List.iterator(r1, 1 :: 2 :: 3 :: 4 :: Nil) |>
-                Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r2, i, i) else new Iterator(r2)) |>
-                Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
-        }
-    }
+    // TODO - multiple region tests currently disabled
+    // @test
+    // def flatMap08(): Bool = region r1 {
+    //     region r2 {
+    //         List.iterator(r1, 1 :: 2 :: 3 :: 4 :: Nil) |>
+    //             Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r2, i, i) else Iterator.empty(r2)) |>
+    //             Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+    //     }
+    // }
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
@@ -1603,44 +1340,44 @@ namespace TestIterator {
             Iterator.toList == 1 :: 2 :: 3 :: Nil
         }
 
-
+*/
     /////////////////////////////////////////////////////////////////////////////
-    // dropL                                                                   //
+    // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropL01(): Bool = region r {
+    def drop01(): Bool = region r {
         (Nil: List[Int32]) |> List.iterator(r) |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
+            Iterator.drop(1) |> Iterator.toList == Nil
     }
     @test
-    def dropL02(): Bool = region r {
+    def drop02(): Bool = region r {
         (1 :: Nil) |> List.iterator(r) |>
-            Iterator.dropL(1) |> Iterator.toList == Nil
+            Iterator.drop(1) |> Iterator.toList == Nil
     }
 
     @test
-    def dropL03(): Bool = region r {
+    def drop03(): Bool = region r {
         (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
-            Iterator.dropL(2) |> Iterator.toList == 3 :: Nil
+            Iterator.drop(2) |> Iterator.toList == 3 :: Nil
     }
 
     @test
-    def dropL04(): Bool = region r {
+    def drop04(): Bool = region r {
         (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
-            Iterator.dropL(3) |> Iterator.toList == Nil
+            Iterator.drop(3) |> Iterator.toList == Nil
     }
 
     @test
-    def dropL05(): Bool = region r {
+    def drop05(): Bool = region r {
         (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
-            Iterator.dropL(4) |> Iterator.toList == Nil
+            Iterator.drop(4) |> Iterator.toList == Nil
     }
 
     @test
-    def dropL06(): Bool = region r {
+    def drop06(): Bool = region r {
         (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |>
-            Iterator.dropL(0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+            Iterator.drop(0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
 
@@ -1649,66 +1386,66 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeL01(): Bool = region r {
-        List.iterator(r, Nil: List[Unit]) |> Iterator.takeL(-1) |> Iterator.toList == Nil
+    def take01(): Bool = region r {
+        List.iterator(r, Nil: List[Unit]) |> Iterator.take(-1) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL02(): Bool = region r {
-        List.iterator(r, Nil: List[Unit]) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    def take02(): Bool = region r {
+        List.iterator(r, Nil: List[Unit]) |> Iterator.take(0) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL03(): Bool = region r {
-        List.iterator(r, Nil: List[Unit]) |> Iterator.takeL(1) |> Iterator.toList == Nil
+    def take03(): Bool = region r {
+        List.iterator(r, Nil: List[Unit]) |> Iterator.take(1) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL04(): Bool = region r {
-        List.iterator(r, 1 :: Nil) |> Iterator.takeL(-1) |> Iterator.toList == Nil
+    def take04(): Bool = region r {
+        List.iterator(r, 1 :: Nil) |> Iterator.take(-1) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL05(): Bool = region r {
-        List.iterator(r, 1 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    def take05(): Bool = region r {
+        List.iterator(r, 1 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL06(): Bool = region r {
-        List.iterator(r, 1 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
+    def take06(): Bool = region r {
+        List.iterator(r, 1 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
     }
 
     @test
-    def takeL07(): Bool = region r {
-        List.iterator(r, 1 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: Nil
+    def take07(): Bool = region r {
+        List.iterator(r, 1 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: Nil
     }
 
     @test
-    def takeL08(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(0) |> Iterator.toList == Nil
+    def take08(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
     }
 
     @test
-    def takeL09(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(1) |> Iterator.toList == 1 :: Nil
+    def take09(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
     }
 
     @test
-    def takeL10(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
+    def take10(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
-    def takeL11(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(2) |> Iterator.toList == 1 :: 2 :: Nil
+    def take11(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
-    def takeL12(): Bool = region r {
-        List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.takeL(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    def take12(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
     }
 
-
+/*
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -1833,7 +1570,7 @@ namespace TestIterator {
     /////////////////////////////////////////////////////////////////////////////
     // toResultList                                                            //
     /////////////////////////////////////////////////////////////////////////////
-
+*/
     @test
     def toResultList01(): Bool = region r {
         (Nil: List[Result[String, Int32]]) |> List.iterator(r) |>

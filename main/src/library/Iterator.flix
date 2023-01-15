@@ -329,7 +329,7 @@ namespace Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    pub def zip(iterA: Iterator[a, ef1, r], iterB: Iterator[b, ef, r]): Iterator[(a, b), ef and ef1, r] =
+    pub def zip(iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[(a, b), r2 and ef1 and ef2, r1] =
         zipWith((a, b) -> (a, b), iterA, iterB)
 
     ///
@@ -344,7 +344,7 @@ namespace Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    pub def zipWith(f: (a, b) -> c \ ef2, iterA: Iterator[a, ef1, r], iterB: Iterator[b, ef, r]): Iterator[c, ef and ef1 and ef2, r] =
+    pub def zipWith(f: (a, b) -> c \ ef3, iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[c, r2 and ef1 and ef2 and ef3, r1] =
         let Iterator(r1, iter1F) = iterA;
         let Iterator(_,  iter2F) = iterB;
         let step = (l, r) -> match (l, r) {
@@ -559,6 +559,7 @@ namespace Iterator {
     ///
     pub def dropWhile(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, ef and ef1, r] =
         let Iterator(r, iterF) = iter;
+        /// ERROR - this is just `filter`
         def loop() = match iterF() {
             case Ans(a)  => if (f(a)) loop() else Ans(a)
             case Skip    => loop()
@@ -572,6 +573,8 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
+    /// Currently `f` has to generate an iterator with region `r`.
+    /// 
     pub def flatMap(f: a -> Iterator[b, ef1, r] \ ef2, ma: Iterator[a, ef, r]): Iterator[b, ef and ef1 and ef2, r] \ Write(r) =
         let Iterator(r, iterF) = ma;
         let innerIter = ref empty(r) @ r;
@@ -650,15 +653,17 @@ namespace Iterator {
     ///
     /// Helper for append.
     ///
+    /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but 
+    /// then `intercalate` fails.
     def ofList(r: Region[r], xs: List[a]): Iterator[a, true, r] \ Write(r) =
         let ls = ref xs @ r;
-        let f = () -> {
+        let next = () -> {
             match (deref ls) {
-                case Nil => Done
+                case Nil     => Done
                 case x :: rs => ls := rs; Ans(x)
             }
         };
-        Iterator(r, f)
+        Iterator(r, next)
 
     ///
     /// Returns the concatenation of the string representation
@@ -743,5 +748,5 @@ namespace Iterator {
     pub def concat(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 and ef2, r] \ Write(r) =
         flatMap(identity, iter)
 
-    /// TODO add fromJavaIterator
+    
 }
