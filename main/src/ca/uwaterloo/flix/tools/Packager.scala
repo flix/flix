@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.github.GitHub
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
@@ -37,36 +37,6 @@ import scala.util.{Failure, Success, Using}
   * An interface to manage flix packages.
   */
 object Packager {
-
-  /**
-    * Installs a flix package from the Github `project`.
-    *
-    * `project` must be of the form `<owner>/<repo>`
-    *
-    * The package is installed at `lib/<owner>/<repo>`
-    */
-  def install(project: String, p: Path, o: Options): Result[Unit, Int] = {
-    val proj = GitHub.parseProject(project)
-    val release = GitHub.getLatestRelease(proj)
-    val assets = release.assets.filter(_.name.endsWith(".fpkg"))
-    val lib = getLibraryDirectory(p)
-    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo)
-
-    // create the asset directory if it doesn't exist
-    Files.createDirectories(assetFolder)
-
-    // clear the asset folder
-    assetFolder.toFile.listFiles.foreach(deletePackage)
-
-    // download each asset to the folder
-    for (asset <- assets) {
-      val path = assetFolder.resolve(asset.name)
-      Using(GitHub.downloadAsset(asset)) {
-        stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
-      }
-    }
-    ().toOk
-  }
 
   /**
     * Initializes a new flix project at the given path `p`.
@@ -507,17 +477,6 @@ object Packager {
   }
 
   /**
-    * Deletes the file if it is a Flix package.
-    */
-  private def deletePackage(file: File): Unit = {
-    if (isPkgFile(file.toPath)) {
-      file.delete()
-    } else {
-      throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
-    }
-  }
-
-  /**
     * Returns `true` if the given path `p` is a jar-file.
     */
   private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
@@ -525,7 +484,7 @@ object Packager {
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  private def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a zip-archive.

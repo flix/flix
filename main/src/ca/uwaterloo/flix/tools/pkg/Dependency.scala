@@ -19,6 +19,7 @@ sealed trait Dependency
 
 object Dependency {
 
+  // TODO: What identifies Flix packages?
   case class FlixDependency(url: String, version: SemVer, kind: DependencyKind) extends Dependency
 
   case class MavenDependency(groupId: String, artifactId: String, version: SemVer, kind: DependencyKind) extends Dependency
