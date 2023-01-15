@@ -124,8 +124,8 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromBoolType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+  def fromBoolType(tpe: Type, m: Bimap[VarOrEffOrCase, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(VarOrEffOrCase.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
@@ -142,12 +142,12 @@ object BoolFormula {
     *
     * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
     */
-  def fromEffType(tpe: Type, m: Bimap[VarOrEff, Int]): BoolFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(VarOrEff.Var(sym)) match {
+  def fromEffType(tpe: Type, m: Bimap[VarOrEffOrCase, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(VarOrEffOrCase.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEff.Eff(sym)) match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) => m.getForward(VarOrEffOrCase.Eff(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
@@ -160,13 +160,36 @@ object BoolFormula {
   }
 
   /**
+    * Converts the given type `tpe` to a Boolean formula under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free type variable in `tpe` to a Boolean variable.
+    */
+  def fromCaseType(tpe: Type, m: Bimap[VarOrEffOrCase, Int]): BoolFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(VarOrEffOrCase.Var(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
+    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => m.getForward(VarOrEffOrCase.Case(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
+    case Type.Cst(TypeConstructor.CaseAll(_), _) => True
+    case Type.Cst(TypeConstructor.CaseEmpty(_), _) => False
+    case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) => Not(fromCaseType(tpe1, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) => And(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) => Or(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+  }
+
+  /**
     * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toType(f: BoolFormula, m: Bimap[VarOrEff, Int], kind: Kind, loc: SourceLocation): Type = kind match {
+  def toType(f: BoolFormula, m: Bimap[VarOrEffOrCase, Int], kind: Kind, loc: SourceLocation): Type = kind match {
     case Kind.Bool => toBoolType(f, m, loc)
     case Kind.Effect => toEffType(f, m, loc)
+    case Kind.CaseSet(sym) => toCaseType(f, sym, m, loc)
     case _ => throw InternalCompilerException(s"Unexpected kind: '$kind'.", loc)
   }
 
@@ -175,13 +198,14 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+  private def toBoolType(f: BoolFormula, m: Bimap[VarOrEffOrCase, Int], loc: SourceLocation): Type = f match {
     case True => Type.True
     case False => Type.False
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
+      case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
+      case Some(VarOrEffOrCase.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
+      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", sym.loc)
     }
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
@@ -193,35 +217,60 @@ object BoolFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toEffType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
+  private def toEffType(f: BoolFormula, m: Bimap[VarOrEffOrCase, Int], loc: SourceLocation): Type = f match {
     case True => Type.All
     case False => Type.Empty
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
+      case Some(VarOrEffOrCase.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", sym.loc)
     }
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
   }
 
+  /**
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  private def toCaseType(f: BoolFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrEffOrCase, Int], loc: SourceLocation): Type = f match {
+    case True => Type.Cst(TypeConstructor.CaseAll(sym), loc)
+    case False => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
+      case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
+      case Some(VarOrEffOrCase.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
+      case Some(VarOrEffOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseConstant(sym), loc)
+    }
+    case Not(f1) => Type.mkCaseComplement(toCaseType(f1, sym, m, loc), sym, loc)
+    case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
+    case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
+  }
+
 
   /**
     * Union of variable and effect types.
     */
-  sealed trait VarOrEff
+  sealed trait VarOrEffOrCase
 
-  object VarOrEff {
+  object VarOrEffOrCase {
     /**
       * A type variable.
       */
-    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEff
+    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrEffOrCase
 
     /**
       * An effect constant.
       */
-    case class Eff(sym: Symbol.EffectSym) extends VarOrEff
+    case class Eff(sym: Symbol.EffectSym) extends VarOrEffOrCase
+
+    /**
+      * A Case constant.
+      */
+    case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrEffOrCase
   }
 
 }

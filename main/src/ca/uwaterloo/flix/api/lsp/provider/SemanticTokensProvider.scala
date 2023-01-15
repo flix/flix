@@ -658,6 +658,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseEmpty(_) => false
+    case TypeConstructor.CaseAll(_) => false
   }
 
   /**

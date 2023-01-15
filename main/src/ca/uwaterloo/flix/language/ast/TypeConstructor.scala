@@ -373,6 +373,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the universal case set.
+    */
+  case class CaseAll(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym)
+  }
+
+  /**
     * A type constructor that converts a region to a Star type.
     */
   case object RegionToStar extends TypeConstructor {
