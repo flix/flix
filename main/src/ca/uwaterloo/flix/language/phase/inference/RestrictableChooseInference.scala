@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.language.phase.Typer.inferExp
 import ca.uwaterloo.flix.language.phase.unification.InferMonad
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
-import ca.uwaterloo.flix.language.phase.unification.Unification.{liftM, unifyTypeM}
+import ca.uwaterloo.flix.language.phase.unification.Unification.{expectTypeM, liftM, unifyTypeM}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
@@ -241,10 +241,40 @@ object RestrictableChooseInference {
   }
 
   /**
+    * Performs type inference on the given `of` expression.
+    */
+  def inferOf(exp0: KindedAst.Expression.Of, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
+    case KindedAst.Expression.Of(symUse, exp, tvar, loc) =>
+      // Must check that the type of the expression cannot return anything but our symbol
+
+      val enumSym = symUse.sym.enumSym
+      val enum = root.restrictableEnums(enumSym)
+
+      val caseType = Type.Cst(TypeConstructor.CaseConstant(symUse.sym), symUse.loc)
+
+      val (enumType, indexVar) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+
+      for {
+        // infer the inner expression type
+        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+
+        // set the expected type to (...)[TheCase]
+        _ <- unifyTypeM(indexVar, caseType, loc)
+
+        // check that the expression type matches the expected type
+        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
+
+        // unify with the tvar
+        _ <- unifyTypeM(tvar, tpe, loc)
+      } yield (constrs, tpe, pur, eff)
+  }
+
+  /**
     * Returns the instantiated conceptual schema of the enum along with the type
     * variable that is the index type argument.
     */
   private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var) = {
+    // TODO RESTR-VARS can get rid of enumSym since it's in the decl
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
 
