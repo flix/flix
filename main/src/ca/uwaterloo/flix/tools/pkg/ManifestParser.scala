@@ -16,11 +16,22 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
+import org.tomlj.Toml
 
-object MavenManager {
+import java.io.{PrintStream, StringReader}
+import java.nio.file.Path
 
-  def installDeps(manifest: Manifest): Result[Unit, PackageError] = ???
+object ManifestParser {
 
-  private def installArtifact(groupId: String, artifactId: String, version: String): Result[Unit, PackageError] = ???
+  def parse(p: Path)(implicit out: PrintStream): Result[Manifest, ManifestError] = ???
+
+  def parse(s: String)(implicit out: PrintStream): Result[Manifest, ManifestError] = {
+    // TODO: File exists, is a regular file, is readable, etc.
+    val parser = Toml.parse(new StringReader(s))
+
+    out.println("Parsing...")
+
+    ???
+  }
 
 }

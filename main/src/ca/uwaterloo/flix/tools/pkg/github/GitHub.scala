@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.github
+package ca.uwaterloo.flix.tools.pkg.github
 
 import ca.uwaterloo.flix.tools.pkg.SemVer
 import ca.uwaterloo.flix.util.StreamOps
