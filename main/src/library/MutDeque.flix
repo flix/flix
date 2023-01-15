@@ -437,7 +437,7 @@ namespace MutDeque {
                 None
             }
         };
-        Iterator.new(r1, next)
+        Iterator.iterate(r1, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

@@ -819,7 +819,7 @@ namespace MutList {
                 None
             }
         };
-        unsafe_cast Iterator.new(r1, next) as _ \ { Write(r1), Read(r2) }
+        unsafe_cast Iterator.iterate(r1, next) as _ \ { Write(r1), Read(r2) }
 
     ///
     /// Applies `f` to all the elements in `v`.

@@ -442,7 +442,7 @@ namespace File {
                     None
                 }
             };
-            Iterator.new(r, next)
+            Iterator.iterate(r, next)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
@@ -483,7 +483,7 @@ namespace File {
                     None
                 }
             };
-            Iterator.new(r, next)
+            Iterator.iterate(r, next)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
@@ -595,7 +595,7 @@ namespace File {
                         None
                     }
                 };
-                Iterator.new(r, next)
+                Iterator.iterate(r, next)
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
@@ -991,7 +991,7 @@ namespace File {
                 None
             }
         };
-        Iterator.new(r, next)
+        Iterator.iterate(r, next)
 
     ///
     /// Moves a file or directory from path `src` to path `dst`.

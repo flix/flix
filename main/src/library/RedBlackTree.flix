@@ -1050,7 +1050,7 @@ namespace RedBlackTree {
                 Some((k, v))
             }
         };
-        Iterator.new(r, next)
+        Iterator.iterate(r, next)
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the

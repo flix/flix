@@ -233,7 +233,7 @@ pub class Foldable[t : Type -> Type] {
                 None
             }
         };
-        Iterator.new(r, next)
+        Iterator.iterate(r, next)
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.

@@ -50,7 +50,7 @@ namespace System {
                 nextLine := None;
                 l
             };
-            Iterator.new(r, next)
+            Iterator.iterate(r, next)
         
     }
 

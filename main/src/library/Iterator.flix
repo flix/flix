@@ -20,11 +20,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 
 /*
 instance Newable[Iterator[a]] {
-    pub def new(r: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.new(r)
-}
-
-instance Scoped[Iterator[a]] {
-    pub def regionOf(_: Iterator[a, ef, r]): Region[r] = unsafe_cast () as Region[r]
+    pub def new(r: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.iterate(r)
 }
 
 ///
@@ -45,7 +41,7 @@ namespace Iterator {
     ///
     /// Returns an iterator built with the stepper function `f`.
     ///
-    pub def new(r: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
+    pub def iterate(r: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
         let f1 = () -> match f() {
             case Some(a) => Ans(a)
             case None    => Done

@@ -1210,7 +1210,7 @@ namespace DelayList {
                 Some(x)
             }
         };
-        Iterator.new(r, next)
+        Iterator.iterate(r, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.

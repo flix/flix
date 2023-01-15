@@ -1409,7 +1409,7 @@ namespace Array {
                 None
             }
         };
-        unsafe_cast Iterator.new(r1, next) as _ \ { Write(r1), Read(r2) }
+        unsafe_cast Iterator.iterate(r1, next) as _ \ { Write(r1), Read(r2) }
 
     ///
     /// Returns an iterator over `a` zipped with the indices of the elements.

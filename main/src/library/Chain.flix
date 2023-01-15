@@ -804,7 +804,7 @@ namespace Chain {
                 Some(x)
             }
         };
-        Iterator.new(r, next)
+        Iterator.iterate(r, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.

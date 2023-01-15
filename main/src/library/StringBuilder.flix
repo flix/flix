@@ -122,7 +122,7 @@ namespace StringBuilder {
                 None
             }
         };
-        Iterator.new(r1, next)
+        Iterator.iterate(r1, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
