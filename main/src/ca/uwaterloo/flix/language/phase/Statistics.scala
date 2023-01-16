@@ -102,6 +102,7 @@ object Statistics {
       case Expression.Match(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
+      case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
@@ -119,6 +120,7 @@ object Statistics {
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp)
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Mask(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Upcast(exp, _, _) => visitExp(exp)
@@ -178,6 +180,14 @@ object Statistics {
   private def visitRelationalChoiceRule(rule: RelationalChoiceRule): Counter = rule match {
     case RelationalChoiceRule(pat, exp) => visitExp(exp)
   }
+
+  /**
+    * Counts AST nodes in the given rule.
+    */
+  private def visitRestrictableChoiceRule(rule: RestrictableChoiceRule): Counter = rule match {
+    case RestrictableChoiceRule(_, exp) => visitExp(exp)
+  }
+
 
   /**
     * Counts AST nodes in the given rule.

@@ -195,6 +195,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a type as must-use.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class MustUse(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@MustUse"
+    }
+
+    /**
       * An AST node that represents a `@Skip` annotation.
       *
       * A function marked with `Skip` is skipped by the test framework.
@@ -271,6 +280,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
       */
     def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
+      */
+    def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
 
     /**
       * Returns `true` if `this` sequence contains the `@Parallel` annotation.
@@ -703,6 +717,7 @@ object Ast {
     * A use of a Flix symbol or import of a Java class.
     */
   sealed trait UseOrImport
+
   object UseOrImport {
 
     /**

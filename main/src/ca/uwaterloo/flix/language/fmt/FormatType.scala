@@ -141,6 +141,7 @@ object FormatType {
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
       case SimpleType.Difference(_, _) => false
+      case SimpleType.Plus(_) => false
       case SimpleType.PureArrow(_, _) => false
       case SimpleType.PolyEffArrow(_, _, _) => false
       case SimpleType.PolyPurArrow(_, _, _) => false
@@ -280,6 +281,9 @@ object FormatType {
       case SimpleType.Union(tpes) =>
         val strings = tpes.map(visit(_, mode))
         strings.mkString("{", ", ", "}")
+      case SimpleType.Plus(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" + ")
       case SimpleType.Intersection(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" & ")

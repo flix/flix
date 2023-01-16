@@ -153,6 +153,10 @@ object Safety {
         exps.flatMap(visit) :::
           rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
 
+      case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+        visit(exp) :::
+          rules.flatMap{ case RestrictableChoiceRule(pat, exp) => visit(exp) }
+
       case Expression.Tag(_, exp, _, _, _, _) =>
         visit(exp)
 
@@ -201,6 +205,9 @@ object Safety {
         visit(exp1) ::: visit(exp2)
 
       case Expression.Ascribe(exp, _, _, _, _) =>
+        visit(exp)
+
+      case Expression.Of(_, exp, _, _, _, _) =>
         visit(exp)
 
       case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>

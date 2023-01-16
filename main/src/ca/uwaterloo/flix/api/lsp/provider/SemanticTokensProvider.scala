@@ -350,6 +350,9 @@ object SemanticTokensProvider {
     case Expression.RelationalChoose(exps, rules, tpe, eff, loc, _) =>
       Iterator.empty // TODO: Choose expression.
 
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
+      Iterator.empty // TODO RESTR-VARS
+
     case Expression.Tag(Ast.CaseSymUse(_, loc), exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t) ++ visitExp(exp)
@@ -404,6 +407,9 @@ object SemanticTokensProvider {
 
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
+
+    case Expression.Of(sym, exp, _, _, _, _) =>
+      visitExp(exp) // TODO RESTR-VARS visit sym
 
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
@@ -631,6 +637,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.All => true
+    case TypeConstructor.CaseConstant(_) => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -650,6 +657,11 @@ object SemanticTokensProvider {
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
     case TypeConstructor.Empty => false
+    case TypeConstructor.CaseComplement(_) => false
+    case TypeConstructor.CaseUnion(_) => false
+    case TypeConstructor.CaseIntersection(_) => false
+    case TypeConstructor.CaseEmpty(_) => false
+    case TypeConstructor.CaseAll(_) => false
   }
 
   /**

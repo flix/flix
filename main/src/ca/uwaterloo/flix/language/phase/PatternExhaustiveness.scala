@@ -167,6 +167,10 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         (exps ::: ruleExps).flatMap(visitExp(_, root))
 
+      case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        (exp :: ruleExps).flatMap(visitExp(_, root))
+
       case Expression.Tag(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.RestrictableTag(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(visitExp(_, root))
@@ -184,6 +188,7 @@ object PatternExhaustiveness {
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
       case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Upcast(exp, _, _) => visitExp(exp, root)

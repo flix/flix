@@ -81,6 +81,13 @@ object Kinder {
             visitEnum(enum, taenv, root).map(sym -> _)
         }))
 
+        // Extra type annotations are required due to limitations in Scala's type inference.
+        val restrictableEnumsVal = Validation.sequence(ParOps.parMap(root.restrictableEnums)({
+          pair: (Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum) =>
+            val (sym, enum) = pair
+            visitRestrictableEnum(enum, taenv, root).map(sym -> _)
+        }))
+
         val classesVal = visitClasses(root, taenv, oldRoot, changeSet)
 
         val defsVal = visitDefs(root, taenv, oldRoot, changeSet)
@@ -97,9 +104,9 @@ object Kinder {
             visitEffect(eff, taenv, root).map(sym -> _)
         }))
 
-        mapN(enumsVal, classesVal, defsVal, instancesVal, effectsVal) {
-          case (enums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
+        mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
+          case (enums, restrictableEnums, classes, defs, instances, effects) =>
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -127,6 +134,34 @@ object Kinder {
             case cases => KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases.toMap, tpe, loc)
           }
       }
+  }
+
+  /**
+    * Performs kinding on the given restrictable enum.
+    */
+  private def visitRestrictableEnum(enum0: ResolvedAst.Declaration.RestrictableEnum, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableEnum, KindError] = enum0 match {
+    case ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives, cases0, loc) =>
+      val kenvIndex = getKindEnvFromIndex(index0, sym)
+      val kenvTparams = getKindEnvFromTypeParamsDefaultStar(tparams0)
+      val kenv = KindEnv.disjointAppend(kenvIndex, kenvTparams)
+
+      val indexVal = visitIndex(index0, sym, kenv)
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
+
+      flatMapN(indexVal, tparamsVal) {
+        case (index, tparams) =>
+          val targs = (index :: tparams).map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+          val tpe = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+          val casesVal = traverse(cases0) {
+            case case0 => mapN(visitRestrictableCase(case0, index, tparams, tpe, kenv, taenv, root)) {
+              caze => caze.sym -> caze
+            }
+          }
+          mapN(casesVal) {
+            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases.toMap, tpe, loc)
+          }
+      }
+
   }
 
   /**
@@ -170,6 +205,20 @@ object Kinder {
           val quants = tparams.map(_.sym)
           val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
           KindedAst.Case(sym, tpe, sc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given enum case under the given kind environment.
+    */
+  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam,tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
+    case ResolvedAst.Declaration.RestrictableCase(sym, tpe0) =>
+      val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
+      mapN(tpeVal) {
+        case tpe =>
+          val quants = (index :: tparams).map(_.sym)
+          val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
+          KindedAst.RestrictableCase(sym, tpe, sc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
 
@@ -468,6 +517,13 @@ object Kinder {
         case (exps, rules) => KindedAst.Expression.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.RestrictableChoose(star, exp0, rules0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      val rulesVal = traverse(rules0)(visitRestrictableChoiceRule(_, kenv0, senv, taenv, henv0, root))
+      mapN(expVal, rulesVal) {
+        case (exp, rules) => KindedAst.Expression.RestrictableChoose(star, exp, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.Tag(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
@@ -592,6 +648,13 @@ object Kinder {
         case (exp, expectedType, (expectedPur, expectedEff)) =>
           KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
+
+    case ResolvedAst.Expression.Of(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
 
     case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
@@ -860,6 +923,18 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given relational choice rule under the given kind environment.
+    */
+  private def visitRestrictableChoiceRule(rule0: ResolvedAst.RestrictableChoiceRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChoiceRule, KindError] = rule0 match {
+    case ResolvedAst.RestrictableChoiceRule(pat0, sym, exp0) =>
+      val patVal = visitRestrictableChoicePattern(pat0)
+      val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
+      mapN(patVal, expVal) {
+        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, sym, exp)
+      }
+  }
+
+  /**
     * Performs kinding on the given catch rule under the given kind environment.
     */
   private def visitCatchRule(rule0: ResolvedAst.CatchRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.CatchRule, KindError] = rule0 match {
@@ -940,6 +1015,25 @@ object Kinder {
     case ResolvedAst.RelationalChoicePattern.Wild(loc) => KindedAst.RelationalChoicePattern.Wild(loc).toSuccess
     case ResolvedAst.RelationalChoicePattern.Absent(loc) => KindedAst.RelationalChoicePattern.Absent(loc).toSuccess
     case ResolvedAst.RelationalChoicePattern.Present(sym, loc) => KindedAst.RelationalChoicePattern.Present(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+  }
+
+  /**
+    * Performs kinding on the given restrictable choice pattern under the given kind environment.
+    */
+  private def visitRestrictableChoicePattern(pat00: ResolvedAst.RestrictableChoicePattern)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern, KindError] = pat00 match {
+    case ResolvedAst.RestrictableChoicePattern.Tag(sym, pat0, loc) =>
+      val patVal = traverse(pat0)(visitRestrictableChoicePatternVarOrWild)
+      mapN(patVal) {
+        case pat => KindedAst.RestrictableChoicePattern.Tag(sym, pat, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given restrictable choice pattern under the given kind environment.
+    */
+  private def visitRestrictableChoicePatternVarOrWild(pat0: ResolvedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): Validation[KindedAst.RestrictableChoicePattern.VarOrWild, KindError] = pat0 match {
+    case ResolvedAst.RestrictableChoicePattern.Wild(loc) => KindedAst.RestrictableChoicePattern.Wild(Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
+    case ResolvedAst.RestrictableChoicePattern.Var(sym, loc) => KindedAst.RestrictableChoicePattern.Var(sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc).toSuccess
   }
 
   /**
@@ -1089,7 +1183,12 @@ object Kinder {
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
 
-    case UnkindedType.RestrictableEnum(sym, loc) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, loc) =>
+      val kind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      unify(kind, expectedKind) match {
+        case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc).toSuccess
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+      }
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 
@@ -1119,6 +1218,21 @@ object Kinder {
     val syms = sym0 :: senv.get(sym0).toList
     traverse(syms) {
       sym => mapN(visitTypeVarSym(sym, Kind.Wild, kenv, loc))(KindedAst.TypeParam(name, _, loc))
+    }
+  }
+
+  /**
+    * Performs kinding on the given index parameter of the given enum sym under the given kind environment.
+    */
+  private def visitIndex(index: ResolvedAst.TypeParam, enum: Symbol.RestrictableEnumSym, kenv: KindEnv): Validation[KindedAst.TypeParam, KindError] = {
+    val (name, sym0, loc) = index match {
+      case ResolvedAst.TypeParam.Kinded(kName, kSym, _, kLoc) => (kName, kSym, kLoc)
+      case ResolvedAst.TypeParam.Unkinded(uName, uSym, uLoc) => (uName, uSym, uLoc)
+    }
+
+    val symVal = visitTypeVarSym(sym0, Kind.CaseSet(enum), kenv, loc)
+    mapN(symVal) {
+      case sym => KindedAst.TypeParam(name, sym, loc)
     }
   }
 
@@ -1342,7 +1456,15 @@ object Kinder {
         }
       }
 
-    case UnkindedType.RestrictableEnum(_, _) => ??? // TODO RESTR-VARS
+    case UnkindedType.RestrictableEnum(sym, _) =>
+      val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
+      val args = Kind.kindArgs(tyconKind)
+
+      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+        case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
@@ -1392,6 +1514,14 @@ object Kinder {
   }
 
   /**
+    * Gets a kind environment from the type param, defaulting the to kind of the given enum's tags if it is unkinded.
+    */
+  private def getKindEnvFromIndex(index0: ResolvedAst.TypeParam, sym: Symbol.RestrictableEnumSym)(implicit flix: Flix): KindEnv = index0 match {
+    case ResolvedAst.TypeParam.Kinded(_, tvar, kind, _) => KindEnv.singleton(tvar -> kind)
+    case ResolvedAst.TypeParam.Unkinded(_, tvar, _) => KindEnv.singleton(tvar -> Kind.CaseSet(sym))
+  }
+
+  /**
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
@@ -1435,6 +1565,21 @@ object Kinder {
     case ResolvedAst.Declaration.Enum(_, _, _, _, tparams, _, _, _) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams)
       tparams.tparams.foldRight(Kind.Star: Kind) {
+        case (tparam, acc) => kenv.map(tparam.sym) ->: acc
+      }
+  }
+
+  /**
+    * Gets the kind of the restrictable enum.
+    */
+  private def getRestrictableEnumKind(enum0: ResolvedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Kind = enum0 match {
+    case ResolvedAst.Declaration.RestrictableEnum(_, _, _, sym, index, tparams, _, _, _) =>
+      val kenvIndex = getKindEnvFromIndex(index, sym)
+      val kenvTparams = getKindEnvFromTypeParamsDefaultStar(tparams)
+
+      val kenv = KindEnv.disjointAppend(kenvIndex, kenvTparams)
+
+      (index :: tparams.tparams).foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }
   }
@@ -1538,6 +1683,15 @@ object Kinder {
       Validation.fold(kenvs, KindEnv.empty) {
         case (acc, kenv) => acc ++ kenv
       }
+    }
+
+    /**
+      * Merges the given kind environment into this kind environment.
+      *
+      * The environments must be disjoint.
+      */
+    def disjointAppend(kenv1: KindEnv, kenv2: KindEnv): KindEnv = {
+      KindEnv(kenv1.map ++ kenv2.map)
     }
   }
 

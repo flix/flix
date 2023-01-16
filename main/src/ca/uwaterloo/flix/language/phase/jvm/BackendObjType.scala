@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility.{IsPrivate, IsPublic}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility.{IsVolatile, NotVolatile}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{DevFlixRuntime, JavaLang, JavaUtil, JavaUtilConcurrent, MethodDescriptor, RootPackage}
@@ -53,6 +54,7 @@ sealed trait BackendObjType {
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
     case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
+    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, "UncaughtExceptionHandler")
     // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
@@ -61,6 +63,8 @@ sealed trait BackendObjType {
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
+    case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
+    case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   }
 
   /**
@@ -116,7 +120,7 @@ object BackendObjType {
         RETURN()
     ))
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       pushString("()") ~ ARETURN()
@@ -143,7 +147,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", tpe)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
 
   case class Tuple(elms: List[BackendType]) extends BackendObjType
@@ -388,7 +392,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(continuation.Constructor) ~ RETURN()
     ))
 
-    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, s"arg$index", args(index))
+    def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"arg$index", args(index))
 
     def ToStringMethod: InstanceMethod = {
       val argString = args match {
@@ -420,7 +424,7 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "result", result)
+    def ResultField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "result", result)
 
     def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(this.toTpe))
 
@@ -474,7 +478,7 @@ object BackendObjType {
 
     def interface: Record.type = Record
 
-    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, "INSTANCE", this.toTpe)
+    def InstanceField: StaticField = StaticField(this.jvmName, IsPublic, IsFinal, NotVolatile, "INSTANCE", this.toTpe)
 
     def LookupFieldMethod: InstanceMethod = interface.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       throwUnsupportedOperationException(
@@ -518,11 +522,11 @@ object BackendObjType {
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ RETURN()
     ))
 
-    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "label", String.toTpe)
+    def LabelField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "label", String.toTpe)
 
-    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "value", value)
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", value)
 
-    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, "rest", Record.toTpe)
+    def RestField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "rest", Record.toTpe)
 
     def LookupFieldMethod: InstanceMethod = Record.LookupFieldMethod.implementation(this.jvmName, IsFinal, Some(
       caseOnLabelEquality {
@@ -658,19 +662,19 @@ object BackendObjType {
       ))
 
     def SourceField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "source", String.toTpe)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "source", String.toTpe)
 
     def BeginLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "beginLine", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginLine", BackendType.Int32)
 
     def BeginColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "beginCol", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "beginCol", BackendType.Int32)
 
     def EndLineField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "endLine", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endLine", BackendType.Int32)
 
     def EndColField: InstanceField =
-      InstanceField(this.jvmName, IsPublic, IsFinal, "endCol", BackendType.Int32)
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "endCol", BackendType.Int32)
 
     private def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(
       // create string builder
@@ -804,10 +808,10 @@ object BackendObjType {
       ))
 
     def CounterField: StaticField =
-      StaticField(this.jvmName, IsPrivate, IsFinal, "counter", JvmName.AtomicLong.toTpe)
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "counter", JvmName.AtomicLong.toTpe)
 
     def ArgsField: StaticField =
-      StaticField(this.jvmName, IsPrivate, IsFinal, "args", BackendType.Array(String.toTpe))
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "args", BackendType.Array(String.toTpe))
 
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
@@ -870,10 +874,10 @@ object BackendObjType {
       ))
 
     private def HoleField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, "hole", String.toTpe)
+      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "hole", String.toTpe)
 
     private def LocationField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, "location", ReifiedSourceLocation.toTpe)
+      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
       withName(1, JavaObject.toTpe) { other =>
@@ -950,7 +954,7 @@ object BackendObjType {
         RETURN()
     ))
 
-    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, "location", ReifiedSourceLocation.toTpe)
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(
       withName(1, JavaObject.toTpe) { otherObj =>
@@ -992,40 +996,61 @@ object BackendObjType {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkField(ThreadsField)
+      cm.mkField(RegionThreadField)
+      cm.mkField(ChildExceptionField)
+
       cm.mkConstructor(Constructor)
+
       cm.mkMethod(SpawnMethod)
       cm.mkMethod(ExitMethod)
+      cm.mkMethod(ReportChildExceptionMethod)
+      cm.mkMethod(ReThrowChildExceptionMethod)
 
       cm.closeClassMaker()
     }
 
-    // private ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+    // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+    def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+
+    // private final Thread regionThread = Thread.currentThread();
+    def RegionThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "regionThread", JvmName.Thread.toTpe)
+
+    // private volatile Throwable childException = null;
+    def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
+      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      PUTFIELD(RegionThreadField) ~
+      thisLoad() ~ ACONST_NULL() ~
+      PUTFIELD(ChildExceptionField) ~
       RETURN()
     ))
 
     // final public void spawn(Runnable r) {
     //   Thread t = new Thread(r);
+    //   t.setUncaughtExceptionHandler(new UncaughtExceptionHandler(this));
     //   t.start();
     //   threads.add(t);
     // }
     def SpawnMethod(implicit flix: Flix): InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "spawn", mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void), Some(
       (
         if (flix.options.xvirtualthreads) {
-          ALOAD(1) ~ INVOKESTATIC(Thread.StartVirtualThreadMethod)
+          INVOKESTATIC(Thread.OfVirtualMethod) ~ ALOAD(1) ~ INVOKEINTERFACE(ThreadBuilderOfVirtual.UnstartedMethod)
         } else {
           NEW(BackendObjType.Thread.jvmName) ~ DUP() ~ ALOAD(1) ~
-          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void)) ~
-          DUP() ~ INVOKEVIRTUAL(Thread.StartMethod)
+          invokeConstructor(BackendObjType.Thread.jvmName, mkDescriptor(JvmName.Runnable.toTpe)(VoidableType.Void))
         }
       ) ~
       storeWithName(2, BackendObjType.Thread.toTpe) { thread =>
+        thread.load() ~ NEW(BackendObjType.UncaughtExceptionHandler.jvmName) ~
+        DUP() ~ thisLoad() ~
+        invokeConstructor(BackendObjType.UncaughtExceptionHandler.jvmName, mkDescriptor(BackendObjType.Region.toTpe)(VoidableType.Void)) ~
+        INVOKEVIRTUAL(Thread.SetUncaughtExceptionHandlerMethod) ~
+        thread.load() ~ INVOKEVIRTUAL(Thread.StartMethod) ~
         thisLoad() ~ GETFIELD(ThreadsField) ~ thread.load() ~
         INVOKEVIRTUAL(ConcurrentLinkedQueue.AddMethod) ~ POP() ~
         RETURN()
@@ -1048,6 +1073,61 @@ object BackendObjType {
         } ~
         RETURN()
       }
+    ))
+
+    // final public void reportChildException(Throwable e) {
+    //   childException = e;
+    //   regionThread.interrupt();
+    // }
+    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
+      thisLoad() ~ ALOAD(1) ~ 
+      PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ GETFIELD(RegionThreadField) ~ 
+      INVOKEVIRTUAL(Thread.InterruptMethod) ~
+      RETURN()
+    ))
+
+    // final public void reThrowChildException() throws Throwable {
+    //   if (childException != null)
+    //     throw childException;
+    // }
+    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
+      thisLoad() ~ GETFIELD(ChildExceptionField) ~
+      ifTrue(Condition.NONNULL) {
+        thisLoad() ~ GETFIELD(ChildExceptionField) ~
+        ATHROW()
+      } ~
+      RETURN()
+    ))
+  }
+
+  case object UncaughtExceptionHandler extends BackendObjType {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
+
+      cm.mkField(RegionField)
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(UncaughtExceptionMethod)
+
+      cm.closeClassMaker()
+    }
+
+    // private final Region r;
+    def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
+
+    // UncaughtExceptionHandler(Region r) { this.r = r; }
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
+      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      RETURN()
+    ))
+
+    // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
+      thisLoad() ~ GETFIELD(RegionField) ~ 
+      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      RETURN()
     ))
   }
 
@@ -1171,10 +1251,31 @@ object BackendObjType {
     def StartMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "start",
       MethodDescriptor.NothingToVoid, None)
 
-    def StartVirtualThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "startVirtualThread",
-      mkDescriptor(JvmName.Runnable.toTpe)(this.toTpe), None)
-
     def JoinMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "join",
        MethodDescriptor.NothingToVoid, None)
+
+    def CurrentThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "currentThread",
+      mkDescriptor()(this.toTpe), None)
+
+    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "interrupt", 
+      MethodDescriptor.NothingToVoid, None)
+
+    def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "setUncaughtExceptionHandler",
+      mkDescriptor(ThreadUncaughtExceptionHandler.toTpe)(VoidableType.Void), None)
+
+    def OfVirtualMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "ofVirtual",
+      mkDescriptor()(ThreadBuilderOfVirtual.toTpe), None)
+  }
+
+  case object ThreadBuilderOfVirtual extends BackendObjType {
+
+    def UnstartedMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "unstarted",
+      mkDescriptor(JvmName.Runnable.toTpe)(BackendObjType.Thread.toTpe))
+  }
+
+  case object ThreadUncaughtExceptionHandler extends BackendObjType {
+
+    def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "uncaughtException",
+      mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
   }
 }

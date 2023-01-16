@@ -235,6 +235,11 @@ object Indexer {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
       }
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      visitExp(exp) ++ traverse(rules) {
+        case RestrictableChoiceRule(_, body) => visitExp(body)
+      }
+
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
       visitExp(exp) ++ Index.useOf(sym, loc, parent) ++ Index.occurrenceOf(exp0)
@@ -288,6 +293,9 @@ object Indexer {
 
     case Expression.Ascribe(exp, tpe, pur, _, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
+
+    case Expression.Of(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0) // TODO RESTR-VARS index sym
 
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, _, _, _, loc) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)

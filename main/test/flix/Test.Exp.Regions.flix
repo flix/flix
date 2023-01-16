@@ -794,7 +794,7 @@ namespace Test/Exp/Regions {
     @test
     def testRegions1Region1NestedReferences02(): Bool =
         region r {
-            let l = ref new MutList(r) @ r; 
+            let l = ref new MutList(r) @ r;
             MutList.push!(ref (Array.repeat(r, 8, 1)) @ r, deref l);
             match MutList.pop!(deref l) {
                 case Some(a) => (deref a) `Array.sameElements` Array.repeat(r, 8, 1)
@@ -1384,10 +1384,11 @@ namespace Test/Exp/Regions {
         }
 
     @test
-     def testRegionExit01(): Bool \ IO =
-         let x  = ref false;
-         region r {
-             spawn { Thread.sleep(Time/Duration.fromSeconds(1)); x := true } @ r
+     def testRegionExit01(): Bool \ IO = region r1 {
+         let x  = ref false @ r1;
+         region r2 {
+             spawn { Thread.sleep(Time/Duration.fromSeconds(1)); x := true } @ r2
          };
          deref x
+     }
 }

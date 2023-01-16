@@ -73,6 +73,7 @@ object Redundancy {
     val usedRes =
       checkUnusedDefs(usedAll)(root) ++
         checkUnusedEnumsAndTags(usedAll)(root) ++
+        checkUnusedRestrictableEnumsAndTags(usedAll)(root) ++
         checkUnusedTypeParamsEnums()(root) ++
         checkRedundantTypeConstraints()(root, flix) ++
         checkUnusedEffects(usedAll)(root)
@@ -198,6 +199,32 @@ object Redundancy {
   }
 
   /**
+    * Checks for unused enum symbols and tags.
+    */
+  private def checkUnusedRestrictableEnumsAndTags(used: Used)(implicit root: Root): Used = {
+    root.restrictableEnums.foldLeft(used) {
+      case (acc, (sym, decl)) if decl.mod.isPublic =>
+        // Enum is public. No usage requirements.
+        acc
+      case (acc, (sym, decl)) =>
+        // Enum is non-public.
+        // Lookup usage information for this specific enum.
+        used.restrictableEnumSyms.get(sym) match {
+          case None =>
+            // Case 1: Enum is never used.
+            acc + UnusedRestrictableEnumSym(sym)
+          case Some(usedTags) =>
+            // Case 2: Enum is used and here are its used tags.
+            // Check if there is any unused tag.
+            decl.cases.foldLeft(acc) {
+              case (innerAcc, (tag, caze)) if deadRestrictableTag(tag, usedTags) => innerAcc + UnusedRestrictableEnumTag(sym, caze.sym)
+              case (innerAcc, _) => innerAcc
+            }
+        }
+    }
+  }
+
+  /**
     * Checks for unused type parameters in enums.
     */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
@@ -248,7 +275,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
+  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = e0 match {
     case Expression.Cst(_, _, _) => Used.empty
 
     case Expression.Wild(_, _) => Used.empty
@@ -386,8 +413,8 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isImpureDiscardedValue(exp1) && !isHole(exp1)) {
-        (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
+      } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
+        (us1 ++ us2) + MustUse(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -485,12 +512,44 @@ object Redundancy {
       }
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      // Visit the match expression.
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules map {
+        case RestrictableChoiceRule(pat, body) =>
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the pattern, guard and body.
+          val usedPat = visitRestrictablePat(pat)
+          val usedBody = visitExp(body, extendedEnv, rc)
+          val usedPatAndBody = usedPat ++ usedBody
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedPatAndBody)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+          // Combine everything together.
+          (usedPatAndBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+
+      usedMatch ++ usedRules.reduceLeft(_ ++ _)
+
+
     case Expression.Tag(Ast.CaseSymUse(sym, _), exp, _, _, _, _) =>
       val us = visitExp(exp, env0, rc)
       Used.of(sym.enumSym, sym) ++ us
 
     case Expression.RestrictableTag(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
-      ??? // TODO RESTR-VARS
+      val us = visitExp(exp, env0, rc)
+      Used.of(sym.enumSym, sym) ++ us
 
     case Expression.Tuple(elms, _, _, _, _) =>
       visitExps(elms, env0, rc)
@@ -553,6 +612,9 @@ object Redundancy {
       us1 ++ us2
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
@@ -750,7 +812,7 @@ object Redundancy {
     *
     * 3. All the free variables.
     */
-  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
       case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
         // Find free vars in pattern
@@ -794,7 +856,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit flix: Flix): Used =
+  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -814,6 +876,15 @@ object Redundancy {
   }
 
   /**
+    * Returns the symbols used in the given pattern `pat`.
+    */
+  private def visitRestrictablePat(pat0: RestrictableChoicePattern): Used = pat0 match {
+    case RestrictableChoicePattern.Tag(Ast.RestrictableCaseSymUse(sym, _), _, _, _) =>
+      // Ignore the pattern since there is only variables, no nesting.
+      Used.of(sym.enumSym, sym)
+  }
+
+  /**
     * Returns the symbols used in the given list of pattern `ps`.
     */
   private def visitPats(ps: List[Pattern]): Used = ps.foldLeft(Used.empty) {
@@ -823,7 +894,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = {
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -852,7 +923,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = h0 match {
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
@@ -860,7 +931,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = b0 match {
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -945,10 +1016,19 @@ object Redundancy {
     isPure(exp)
 
   /**
-    * Returns true if the expression is not pure and not unit type.
+    * Returns `true` if the expression must be used.
     */
-  private def isImpureDiscardedValue(exp: Expression): Boolean =
-    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
+  private def isMustUse(exp: Expression)(implicit root: Root): Boolean =
+    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.Mask]
+
+  /**
+    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
+    */
+  private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => true
+    case Some(TypeConstructor.Enum(sym, _)) => root.enums(sym).ann.isMustUse
+    case _ => false
+  }
 
   /**
     * Returns true if the expression is a hole.
@@ -987,6 +1067,21 @@ object Redundancy {
   private def freeVars(ps: List[RelationalChoicePattern]): Set[Symbol.VarSym] = ps.collect {
     case RelationalChoicePattern.Present(sym, _, _) => sym
   }.toSet
+
+  /**
+    * Returns the free variables in the restrictable pattern `p`.
+    */
+  private def freeVars(p: RestrictableChoicePattern): Set[Symbol.VarSym] = p match {
+    case RestrictableChoicePattern.Tag(_, pat, _, _) => pat.flatMap(freeVars).toSet
+  }
+
+  /**
+    * Returns the free variables in the VarOrWild.
+    */
+  private def freeVars(v: RestrictableChoicePattern.VarOrWild): Option[Symbol.VarSym] = v match {
+    case RestrictableChoicePattern.Wild(_, _) => None
+    case RestrictableChoicePattern.Var(sym, _, _) => Some(sym)
+  }
 
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
@@ -1030,6 +1125,13 @@ object Redundancy {
     * Returns `true` if the given `tag` is unused according to the `usedTags`.
     */
   private def deadTag(tag: Symbol.CaseSym, usedTags: Set[Symbol.CaseSym]): Boolean =
+    !tag.name.startsWith("_") &&
+      !usedTags.contains(tag)
+
+  /**
+    * Returns `true` if the given `tag` is unused according to the `usedTags`.
+    */
+  private def deadRestrictableTag(tag: Symbol.RestrictableCaseSym, usedTags: Set[Symbol.RestrictableCaseSym]): Boolean =
     !tag.name.startsWith("_") &&
       !usedTags.contains(tag)
 
@@ -1089,12 +1191,17 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.EnumSym, caze: Symbol.CaseSym): Used = empty.copy(enumSyms = MultiMap.singleton(sym, caze))
+
+    /**
+      * Returns an object where the given restrictable enum symbol `sym` and `tag` are marked as used.
+      */
+    def of(sym: Symbol.RestrictableEnumSym, caze: Symbol.RestrictableCaseSym): Used = empty.copy(restrictableEnumSyms = MultiMap.singleton(sym, caze))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -1136,6 +1243,7 @@ object Redundancy {
     * A representation of used symbols.
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, Symbol.CaseSym],
+                          restrictableEnumSyms: MultiMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym],
                           defSyms: Set[Symbol.DefnSym],
                           sigSyms: Set[Symbol.SigSym],
                           holeSyms: Set[Symbol.HoleSym],
@@ -1157,6 +1265,7 @@ object Redundancy {
       } else {
         Used(
           this.enumSyms ++ that.enumSyms,
+          this.restrictableEnumSyms ++ that.restrictableEnumSyms,
           this.defSyms ++ that.defSyms,
           this.sigSyms ++ that.sigSyms,
           this.holeSyms ++ that.holeSyms,

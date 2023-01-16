@@ -117,14 +117,14 @@ namespace Test/Exp/Discard {
 
 
     @test
-    def testBuilderDiscard01(): Bool \ IO =
-        let counter = ref 0;
+    def testBuilderDiscard01(): Bool = region rh {
+        let counter = ref 0 @ rh;
         def increaseBy(i, c) = {
             c := deref c + i;
             c
         };
         discard counter |> increaseBy(2) |> increaseBy(5);
         deref counter == 7
-
+    }
 
 }

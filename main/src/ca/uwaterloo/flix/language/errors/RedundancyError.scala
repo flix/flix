@@ -155,12 +155,75 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the restrictable enum with the symbol `sym` is not used.
+    */
+  case class UnusedRestrictableEnumSym(sym: Symbol.RestrictableEnumSym) extends RedundancyError {
+    def summary: String = "Unused enum."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+         |
+         |${code(sym.loc, "unused enum.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the enum.
+         |  (2)  Remove the enum.
+         |  (3)  Mark the enum as public.
+         |  (4)  Prefix the enum name with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
     * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
     *
     * @param sym the enum symbol.
     * @param tag the unused tag.
     */
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Symbol.CaseSym) extends RedundancyError {
+    def summary: String = s"Unused case '${tag.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused case '${red(tag.name)}' in enum '${cyan(sym.name)}'.
+         |
+         |${code(tag.loc, "unused tag.")}
+         |""".stripMargin
+
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the case.
+         |  (2)  Remove the case.
+         |  (3)  Prefix the case with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
+    * An error raised to indicate that in the restrictable enum with symbol `sym` the case `tag` is not used.
+    *
+    * @param sym the enum symbol.
+    * @param tag the unused tag.
+    */
+  case class UnusedRestrictableEnumTag(sym: Symbol.RestrictableEnumSym, tag: Symbol.RestrictableCaseSym) extends RedundancyError {
     def summary: String = s"Unused case '${tag.name}'."
 
     def message(formatter: Formatter): String = {
@@ -374,20 +437,20 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a non-unit impure expression is used as a statement.
+    * An error raised to indicate that the value of an expression must be used.
     *
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class DiscardedValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Non-unit expression value is implicitly discarded."
+  case class MustUse(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Unused value but its type is marked as @MustUse"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unused non-unit value: The impure expression value is not used.
+         |>> Unused value but its type is marked as @MustUse.
          |
-         |${code(loc, "discarded value.")}
+         |${code(loc, "unused value.")}
          |
          |The expression has type '${FormatType.formatType(tpe)}'
          |""".stripMargin
@@ -397,9 +460,8 @@ object RedundancyError {
       s"""
          |Possible fixes:
          |
-         |  (1)  Use the result value.
-         |  (2)  Bind the value using let.
-         |  (3)  Use the discard keyword.
+         |  (1)  Use the value.
+         |  (2)  Explicit mark the value as unused with `discard`.
          |
          |""".stripMargin
     })

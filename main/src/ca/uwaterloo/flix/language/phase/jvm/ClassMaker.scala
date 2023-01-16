@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.{IsInterface, NotInterface}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Static._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Visibility._
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Volatility._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -53,15 +54,15 @@ sealed trait ClassMaker {
 
   protected val visitor: ClassWriter
 
-  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, s: Static)(implicit flix: Flix): Unit = {
-    val m = v.toInt + f.toInt + s.toInt
+  protected def makeField(fieldName: String, fieldType: BackendType, v: Visibility, f: Final, vol: Volatility, s: Static)(implicit flix: Flix): Unit = {
+    val m = v.toInt + f.toInt + s.toInt + vol.toInt
     val field = visitor.visitField(m, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
   def mkField(f: Field)(implicit flix: Flix): Unit = f match {
-    case InstanceField(_, v, f, name, tpe) => makeField(name, tpe, v, f, NotStatic)
-    case StaticField(_, v, f, name, tpe) => makeField(name, tpe, v, f, IsStatic)
+    case InstanceField(_, v, f, vol, name, tpe) => makeField(name, tpe, v, f, vol, NotStatic)
+    case StaticField(_, v, f, vol, name, tpe) => makeField(name, tpe, v, f, vol, IsStatic)
   }
 
   protected def makeMethod(i: Option[InstructionSet], methodName: String, d: MethodDescriptor, v: Visibility, f: Final, s: Static, a: Abstract)(implicit flix: Flix): Unit = {
@@ -189,6 +190,19 @@ object ClassMaker {
     case object NotStatic extends Static
   }
 
+  sealed trait Volatility {
+    val toInt: Int = this match {
+      case IsVolatile => Opcodes.ACC_VOLATILE
+      case NotVolatile => 0
+    }
+  }
+
+  object Volatility {
+    case object IsVolatile extends Volatility
+
+    case object NotVolatile extends Volatility
+  }
+
   sealed trait Abstract {
     val toInt: Int = this match {
       case Abstract.IsAbstract => Opcodes.ACC_ABSTRACT
@@ -225,11 +239,13 @@ object ClassMaker {
     def v: Visibility
 
     def f: Final
+
+    def vol: Volatility
   }
 
-  sealed case class InstanceField(clazz: JvmName, v: Visibility, f: Final, name: String, tpe: BackendType) extends Field
+  sealed case class InstanceField(clazz: JvmName, v: Visibility, f: Final, vol: Volatility, name: String, tpe: BackendType) extends Field
 
-  sealed case class StaticField(clazz: JvmName, v: Visibility, f: Final, name: String, tpe: BackendType) extends Field
+  sealed case class StaticField(clazz: JvmName, v: Visibility, f: Final, vol: Volatility, name: String, tpe: BackendType) extends Field
 
   sealed trait Method {
     def clazz: JvmName
