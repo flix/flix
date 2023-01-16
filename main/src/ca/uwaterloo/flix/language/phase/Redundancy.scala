@@ -614,6 +614,9 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.Of(_, exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
         // Don't capture redundant purity casts if there's also a set effect

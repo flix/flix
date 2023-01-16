@@ -242,6 +242,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.Of(_, exp, _, _, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Cast(exp, _, _, _, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
