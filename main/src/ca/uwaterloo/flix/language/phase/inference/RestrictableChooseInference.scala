@@ -216,8 +216,8 @@ object RestrictableChooseInference {
           enumSym,
           loc
         )
-//        _ <- unifySubset(indexOutVar, set, enumSym, loc)
-        _ <- unifySubset(set, indexOutVar, enumSym, loc)
+        _ <- unifySubset(indexOutVar, set, enumSym, loc)
+//        _ <- unifySubset(set, indexOutVar, enumSym, loc)
 
         resultTconstrs = constrs ::: constrss.flatten
 
