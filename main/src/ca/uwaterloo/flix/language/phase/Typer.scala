@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
-import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -48,6 +47,7 @@ object Typer {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enums = visitEnums(root)
+    val restrictableEnums = visitRestrictableEnums(root)
     val effsVal = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
 
@@ -55,7 +55,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, Map.empty /* TODO RESTR-VARS */ , effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -423,6 +423,35 @@ object Typer {
       }
 
       enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
+  }
+
+  /**
+    * Performs type inference and reassembly on all restrictable enums in the given AST root.
+    */
+  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
+    flix.subphase("Restrictble Enums") {
+      // Visit every restrictable enum in the ast.
+      val result = root.restrictableEnums.toList.map {
+        case (_, re) => visitRestrictableEnum(re, root)
+      }
+
+      // Sequence the results and convert them back to a map.
+      result.toMap
+    }
+
+  /**
+    * Performs type resolution on the given restrictable enum and its cases.
+    */
+  private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum) = enum0 match {
+    case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, tpe, loc) =>
+      val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
+      val tparams = getTypeParams(tparams0)
+      val cases = cases0 map {
+        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc)) =>
+          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
+      }
+
+      enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -2204,7 +2233,11 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
 
-      case KindedAst.Expression.Of(_, _, _, _) => ??? // TODO RESTR-VARS
+      case KindedAst.Expression.Of(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.Of(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)

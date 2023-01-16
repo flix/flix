@@ -205,6 +205,8 @@ object TypedAst {
 
     case class Ascribe(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Of(sym: Ast.RestrictableCaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Cast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     @EliminatedBy(Lowering.getClass)

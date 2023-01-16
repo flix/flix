@@ -162,7 +162,7 @@ object Lowering {
     val newDefs = defs.map(kv => kv.sym -> kv).toMap
     val newSigs = sigs.map(kv => kv.sym -> kv).toMap
     val newInstances = instances.map(kv => kv.head.clazz.sym -> kv).toMap
-    val newEnums = enums.map(kv => kv.sym -> kv).toMap
+    val newEnums = (enums ++ restrictableEnums).map(kv => kv.sym -> kv).toMap
     val newEffects = effects.map(kv => kv.sym -> kv).toMap
     val newAliases = aliases.map(kv => kv.sym -> kv).toMap
 
@@ -556,6 +556,10 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
+
+    case TypedAst.Expression.Of(_, exp, _, _, _, _) =>
+      // remove the 'of' wrapper
+      visitExp(exp)
 
     case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = visitExp(exp)

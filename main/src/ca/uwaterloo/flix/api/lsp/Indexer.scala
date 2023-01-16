@@ -294,6 +294,9 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, pur, _, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
 
+    case Expression.Of(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0) // TODO RESTR-VARS index sym
+
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, _, _, _, loc) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)
       val dp = declaredPur.map(visitType).getOrElse(Index.empty)
