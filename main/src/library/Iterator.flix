@@ -602,7 +602,7 @@ namespace Iterator {
                 }
             } else {
                 match iterF() {
-                    case Ans(a) => {inside := true; innerIter := f(a); innerLoop()}
+                    case Ans(a) => {inside := true; innerIter := f(a); outerLoop()}
                     case Skip   => outerLoop()
                     case Done   => Done
                 }

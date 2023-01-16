@@ -1155,13 +1155,12 @@ namespace TestIterator {
             Iterator.toList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
     }
 
-    // TODO - `flatMap` looks like it doesn't handle an intermediate empty iterator...
-    // @test
-    // def flatMap07(): Bool = region r {
-    //     List.iterator(r, 1 :: 2 :: 3 :: 4 :: Nil) |>
-    //         Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r, i, i) else Iterator.empty(r)) |>
-    //         Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
-    // }
+    @test
+    def flatMap07(): Bool = region r {
+        List.iterator(r, 1 :: 2 :: 3 :: 4 :: Nil) |>
+            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r, i, i) else Iterator.empty(r)) |>
+            Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+    }
 
     // TODO - multiple region tests currently disabled
     // @test
