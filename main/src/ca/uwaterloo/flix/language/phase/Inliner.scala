@@ -56,6 +56,8 @@ object Inliner {
       case (sym, enum) => sym -> visitEnum(enum)
     }
 
+    // TODO RESTR-VARS add restrictable enums
+
     // Reassemble the ast root.
     val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
 
