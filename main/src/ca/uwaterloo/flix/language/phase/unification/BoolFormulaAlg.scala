@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{And, False, Not, Or, True, Var, Xor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -67,6 +67,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Not(f1) => !evaluate(f1, trueVars)
     case Or(f1, f2) => evaluate(f1, trueVars) || evaluate(f2, trueVars)
     case And(f1, f2) => evaluate(f1, trueVars) && evaluate(f2, trueVars)
+    case Xor(f1, f2) => evaluate(f1, trueVars) ^ evaluate(f2, trueVars)
   }
 
   override def mkTrue: BoolFormula = True
@@ -155,6 +156,8 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case _ => BoolFormula.Or(f1, f2)
   }
 
+  override def mkXor(f1: BoolFormula, f2: BoolFormula): BoolFormula = Xor(f1, f2) //TODO: optimizations
+
   override def map(f: BoolFormula)(fn: Int => BoolFormula): BoolFormula = f match {
     case True => True
     case False => False
@@ -162,6 +165,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
     case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
     case Not(f1) => mkNot(map(f1)(fn))
     case Var(sym) => fn(sym)
+    case Xor(f1, f2) => mkXor(map(f1)(fn), map(f2)(fn))
   }
 
   override def toType(f: BoolFormula, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = f match {
@@ -174,6 +178,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
       case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
+    case Xor(f1, f2) => toType(mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2)), env) //TODO: change
   }
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars

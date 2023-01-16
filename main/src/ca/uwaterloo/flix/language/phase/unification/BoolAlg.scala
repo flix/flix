@@ -74,7 +74,7 @@ trait BoolAlg[F] {
   /**
     * Returns a representation of the formula `f1 xor f2`.
     */
-  def mkXor(f1: F, f2: F): F = mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2))
+  def mkXor(f1: F, f2: F): F
 
   /**
     * Returns the set of free variables in `f`.
