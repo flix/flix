@@ -121,7 +121,6 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     } else {
       createTypeFromBDDAux(f, Type.True, env)
     }
-
   }
 
   /**
