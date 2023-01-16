@@ -557,11 +557,16 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def dropWhile(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, ef and ef1, r] =
+    pub def dropWhile(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, r and ef and ef1, r] \ Write(r) =
         let Iterator(r, iterF) = iter;
-        /// ERROR - this is just `filter`
+        let start = ref true @ r;
         def loop() = match iterF() {
-            case Ans(a)  => if (f(a)) loop() else Ans(a)
+            case Ans(a) => 
+                if (deref start) { 
+                    if (f(a)) loop() else { start:= false; Ans(a) }
+                } else {
+                    Ans(a)
+                }
             case Skip    => loop()
             case Done    => Done
         };
