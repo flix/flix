@@ -216,12 +216,13 @@ object RestrictableChooseInference {
           enumSym,
           loc
         )
-        _ <- unifySubset(indexOutVar, set, enumSym, loc)
+//        _ <- unifySubset(indexOutVar, set, enumSym, loc)
+        _ <- unifySubset(set, indexOutVar, enumSym, loc)
 
         resultTconstrs = constrs ::: constrss.flatten
 
         // τ_out
-        resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
+        resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
         resultPur = Type.mkAnd(pur :: purs, loc)
         resultEff = Type.mkUnion(eff:: effs, loc)
       } yield (resultTconstrs, enumTypeOut, resultPur, resultEff)
