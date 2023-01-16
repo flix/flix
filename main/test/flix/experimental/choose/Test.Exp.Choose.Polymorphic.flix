@@ -15,13 +15,13 @@ pub restrictable enum Expr[_][t] {
 mod Test.Exp.Choose.Polymorphic {
 
     pub def testChoose01(): Bool = {
-        choose Expr.Cst {
+        choose Expr.Cst(12312) {
             case Expr.Cst(_) => true
         }
     }
 
     pub def testChoose02(): Bool = {
-        choose Expr.Cst {
+        choose Expr.Cst('a') {
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
         }
