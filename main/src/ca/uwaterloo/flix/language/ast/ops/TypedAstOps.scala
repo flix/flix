@@ -82,6 +82,7 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Of(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.Mask(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Upcast(exp, _, _) => sigSymsOf(exp)
@@ -265,6 +266,9 @@ object TypedAstOps {
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
