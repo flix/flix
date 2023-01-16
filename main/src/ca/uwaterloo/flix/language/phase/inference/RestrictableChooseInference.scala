@@ -32,6 +32,19 @@ object RestrictableChooseInference {
   /**
     * Returns the domain of the list of rules,
     * i.e., the set of tags in the patterns.
+    *
+    * For example, if the rules are
+    *
+    * {{{
+    *     match x {
+    *         case Expr.Var(y) => Expr.Cst(22)
+    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
+    *         case Expr.Cst(y)    => Expr.Cst(y)
+    *         case Expr.And(y, z) => Expr.Or(x, y)
+    *     }
+    * }}}
+    *
+    * then it returns { Expr.Var, Expr.Xor, Expr.Cst, Expr.And }.
     */
   private def dom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.map {
@@ -42,6 +55,19 @@ object RestrictableChooseInference {
   /**
     * Returns the codomain of the list of rules,
     * i.e., the set of tags in the rule bodies.
+    *
+    * For example, if the rules are
+    *
+    * {{{
+    *     match x {
+    *         case Expr.Var(y)    => Expr.Cst(22)
+    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
+    *         case Expr.Cst(y)    => Expr.Cst(y)
+    *         case Expr.And(y, z) => Expr.Or(x, y)
+    *     }
+    * }}}
+    *
+    * then it returns { Expr.Cst, Expr.Xor, Expr.Or }.
     */
   private def codom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.map {
@@ -52,6 +78,21 @@ object RestrictableChooseInference {
   /**
     * Returns the stable set of the list of rules,
     * i.e., the set of tags that are only mapped from themselves.
+    *
+    * For example, if the rules are
+    *
+    * {{{
+    *     match x {
+    *         case Expr.Var(y)    => Expr.Cst(22)
+    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
+    *         case Expr.Cst(y)    => Expr.Cst(y)
+    *         case Expr.And(y, z) => Expr.Or(x, y)
+    *     }
+    * }}}
+    *
+    * then it returns { Expr.Xor }.
+    *
+    * (Expr.Cst maps to itself, but also maps from Expr.Var, so it is not included.)
     */
   private def stable(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
     val maybeStableSyms = mutable.Set.empty[Symbol.RestrictableCaseSym]
@@ -72,7 +113,7 @@ object RestrictableChooseInference {
   }
 
   /**
-    * Converts the list of restrictable case symbols to a set type.
+    * Converts the list of restrictable case symbols to a closed set type.
     */
   private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
     syms.map {
@@ -175,12 +216,13 @@ object RestrictableChooseInference {
           enumSym,
           loc
         )
-        _ <- unifySubset(indexOutVar, set, enumSym, loc)
+//        _ <- unifySubset(indexOutVar, set, enumSym, loc)
+        _ <- unifySubset(set, indexOutVar, enumSym, loc)
 
         resultTconstrs = constrs ::: constrss.flatten
 
         // τ_out
-        resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
+        resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
         resultPur = Type.mkAnd(pur :: purs, loc)
         resultEff = Type.mkUnion(eff:: effs, loc)
       } yield (resultTconstrs, enumTypeOut, resultPur, resultEff)
