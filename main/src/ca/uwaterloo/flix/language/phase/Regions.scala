@@ -107,6 +107,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.OnExit(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)

@@ -647,6 +647,11 @@ object Namer {
         case e => NamedAst.Expression.Scope(sym, regionVar, e, loc)
       }
 
+    case WeededAst.Expression.OnExit(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+        case (e1, e2) => NamedAst.Expression.OnExit(e1, e2, loc)
+      }
+
     case WeededAst.Expression.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {

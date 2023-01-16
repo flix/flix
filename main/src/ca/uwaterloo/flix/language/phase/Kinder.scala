@@ -496,6 +496,13 @@ object Kinder {
           }
       }
 
+    case ResolvedAst.Expression.OnExit(exp10, exp20, loc) =>
+      val exp1Val = visitExp(exp10, kenv0, senv, taenv, henv0, root)
+      val exp2Val = visitExp(exp20, kenv0, senv, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (exp1, exp2) => KindedAst.Expression.OnExit(exp1, exp2, loc)
+      }
+
     case ResolvedAst.Expression.Match(exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitMatchRule(_, kenv0, senv, taenv, henv0, root))

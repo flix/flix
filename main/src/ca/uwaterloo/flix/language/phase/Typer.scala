@@ -928,6 +928,21 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.OnExit(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
+        val p = Type.freshVar(Kind.Bool, loc)
+        val ef = Type.freshVar(Kind.Effect, loc)
+        for {
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+          _ <- expectTypeM(expected = Type.mkUncurriedArrowWithEffect(Nil, p, ef, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
+          resultTyp = Type.Unit
+          resultPur = Type.mkAnd(pur1, pur2, regionVar, loc)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
+      
       case KindedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)
@@ -2014,6 +2029,14 @@ object Typer {
         val pur = subst0(pvar)
         val eff = e.eff
         TypedAst.Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.OnExit(exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Unit
+        val pur = Type.Impure
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+        TypedAst.Expression.OnExit(e1, e2, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)

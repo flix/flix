@@ -125,6 +125,8 @@ object LoweredAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
+    case class OnExit(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
     case class IfThenElse(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Stm(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

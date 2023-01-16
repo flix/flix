@@ -125,6 +125,9 @@ object Safety {
       case Expression.Scope(_, _, exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.OnExit(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
+
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
         visit(exp1) ::: visit(exp2) ::: visit(exp3)
 
