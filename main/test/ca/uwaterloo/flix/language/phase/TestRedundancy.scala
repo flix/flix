@@ -1152,8 +1152,13 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("MustUse.01") {
     val input =
       """
+        |@MustUse
+        |enum A {
+        |    case A
+        |}
+        |
         |def f(): Int32 \ IO =
-        |    Ok(println("Hello World"));
+        |    unsafe_cast A as _ \ IO;
         |    123
         |
         |""".stripMargin
@@ -1166,7 +1171,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 \ IO =
-        |    Success(println("Hello World"));
+        |    unsafe_cast (x -> x + 123) as _ \ IO;
         |    123
         |
         |""".stripMargin
