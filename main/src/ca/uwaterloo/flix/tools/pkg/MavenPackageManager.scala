@@ -18,10 +18,21 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.util.Result
 
 import java.io.PrintStream
+import coursier._
 
 object MavenPackageManager {
 
-  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
+  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, ManifestError] = {
+
+
+    val resolution = Resolve()
+      .addDependencies(dep"org.tpolecat:doobie-core_2.12:0.6.0")
+      .run()
+    println(resolution)
+
+    ???
+
+  }
 
   private def installArtifact(groupId: String, artifactId: String, version: String)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
 
