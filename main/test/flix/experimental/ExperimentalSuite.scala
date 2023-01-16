@@ -4,5 +4,6 @@ import org.scalatest.Suites
 
 class ExperimentalSuite extends Suites(
   new ChooseSuite,
-  new TestChoose
+  new TestChoose,
+  new TestChooseStar
 )

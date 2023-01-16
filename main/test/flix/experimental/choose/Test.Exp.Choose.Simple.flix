@@ -62,4 +62,15 @@ mod Test.Exp.Choose.Simple {
         let cstOrNot = if (true) Expr.Cst else Expr.Not;
         h(cstOrNot)
     }
+
+    pub def testChoose07(): Bool = {
+        let id = x -> choose x {
+            case Expr.And(_)    => Expr.And
+            case Expr.Cst(_)    => Expr.Cst
+            case Expr.Not(_)    => Expr.Not
+            case Expr.Or(_)     => Expr.Or
+        };
+        let _ = id(Expr.Cst);
+        true
+    }
 }

@@ -29,10 +29,11 @@ object CaseSetUnification {
   object Hack {
     val EnumSym: Symbol.RestrictableEnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
     val Cases = List(
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
       Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "And", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Cst", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
       Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Or", SourcePosition.Unknown)),
+      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
       Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Xor", SourcePosition.Unknown)),
     )
     val Universe: Universe = CaseSetUnification.Universe(Cases, EnumSym)
@@ -49,25 +50,35 @@ object CaseSetUnification {
       return Ok(Substitution.empty)
     }
 
-//        tpe1 match {
-//          case x: Type.Var if renv.isFlexible(x.sym) =>
-//            if (tpe2 eq Type.All)
-//              return Ok(Substitution.singleton(x.sym, Type.All))
-//            if (tpe2 eq Type.Empty)
-//              return Ok(Substitution.singleton(x.sym, Type.Empty))
-//
-//          case _ => // nop
+    // TODO RESTR-VARS this doesn't help lol
+//    (tpe1, tpe2) match {
+//      case (Type.Var(x, _), Type.Var(y, _)) =>
+//        if (renv.isFlexible(x)) {
+//          return Ok(Substitution.singleton(x, tpe2)) // 135 hits
+//        }
+//        if (renv.isFlexible(y)) {
+//          return Ok(Substitution.singleton(y, tpe1)) // 0 hits
+//        }
+//        if (x == y) {
+//          return Ok(Substitution.empty) // 0 hits
 //        }
 //
-//        tpe2 match {
-//          case y: Type.Var if renv.isFlexible(y.sym) =>
-//            if (tpe1 eq Type.All)
-//              return Ok(Substitution.singleton(y.sym, Type.All))
-//            if (tpe1 eq Type.Empty)
-//              return Ok(Substitution.singleton(y.sym, Type.Empty))
+//      case (Type.Cst(TypeConstructor.CaseAll(_), _), Type.Cst(TypeConstructor.CaseAll(_), _)) =>
+//        return Ok(Substitution.empty) // 0 hits
 //
-//          case _ => // nop
-//        }
+//      case (Type.Var(x, _), t2@Type.Cst(tc, _)) if renv.isFlexible(x) => tc match {
+//        case TypeConstructor.CaseAll(_) =>
+//          return Ok(Substitution.singleton(x, t2)) // 0 hits
+//        case TypeConstructor.CaseEmpty(sym) =>
+//          return Ok(Substitution.singleton(x, t2)) // 0 hits
+//        case _ => // nop
+//      }
+//
+//      case (Type.Cst(TypeConstructor.CaseEmpty(_), _), Type.Cst(TypeConstructor.CaseEmpty(_), _)) =>
+//        return Ok(Substitution.empty) //  0 hits
+//
+//      case _ => // nop
+//    }
 
     ///
     /// Run the expensive boolean unification algorithm.
