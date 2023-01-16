@@ -207,6 +207,9 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.Of(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 

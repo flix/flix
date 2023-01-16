@@ -207,6 +207,9 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.Of(_, exp, _, _, _, _) =>
+        visit(exp)
+
       case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
         val errors = checkCastSafety(e)
         visit(exp) ::: errors
