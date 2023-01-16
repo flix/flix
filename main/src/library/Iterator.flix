@@ -437,12 +437,14 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-// SPT TODO
-//    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
-//        match iter {
-//            case Iterator(done, _) if done() => z
-//            case Iterator(_, next)           => f(next(), _ -> foldRightWithCont(f, z, iter))
-//        }
+    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop() = match iterF() {
+            case Skip   => loop()
+            case Ans(a) => f(a, _ -> loop())
+            case Done   => z
+        };
+        loop()
 
     ///
     /// Returns the result of mapping each element and combining the results.

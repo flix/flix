@@ -908,7 +908,7 @@ namespace TestIterator {
         Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
     }
 
-/*
+
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -936,7 +936,7 @@ namespace TestIterator {
         let iter = List.iterator(r, 1 :: 2 :: 3 :: Nil);
         Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
     }
-*/
+
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
