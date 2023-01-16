@@ -198,7 +198,14 @@ object Stratifier {
         case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
-    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => ??? // TODO RESTR-VARS
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case RestrictableChoiceRule(pat, body) => mapN(visitExp(body))(RestrictableChoiceRule(pat, _))
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, pur, eff, loc)
+      }
 
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -281,6 +288,11 @@ object Stratifier {
     case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
+      }
+
+    case Expression.Of(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Of(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
@@ -654,6 +666,9 @@ object Stratifier {
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>

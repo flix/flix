@@ -408,6 +408,9 @@ object SemanticTokensProvider {
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
+    case Expression.Of(sym, exp, _, _, _, _) =>
+      visitExp(exp) // TODO RESTR-VARS visit sym
+
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
@@ -658,6 +661,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseEmpty(_) => false
+    case TypeConstructor.CaseAll(_) => false
   }
 
   /**

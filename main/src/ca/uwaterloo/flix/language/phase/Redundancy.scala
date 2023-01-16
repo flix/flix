@@ -275,7 +275,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
+  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = e0 match {
     case Expression.Cst(_, _, _) => Used.empty
 
     case Expression.Wild(_, _) => Used.empty
@@ -413,8 +413,8 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isImpureDiscardedValue(exp1) && !isHole(exp1)) {
-        (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
+      } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
+        (us1 ++ us2) + MustUse(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -614,6 +614,9 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.Of(_, exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
         // Don't capture redundant purity casts if there's also a set effect
@@ -809,7 +812,7 @@ object Redundancy {
     *
     * 3. All the free variables.
     */
-  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
       case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
         // Find free vars in pattern
@@ -853,7 +856,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit flix: Flix): Used =
+  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -891,7 +894,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = {
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -920,7 +923,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = h0 match {
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
@@ -928,7 +931,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = b0 match {
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -1013,10 +1016,19 @@ object Redundancy {
     isPure(exp)
 
   /**
-    * Returns true if the expression is not pure and not unit type.
+    * Returns `true` if the expression must be used.
     */
-  private def isImpureDiscardedValue(exp: Expression): Boolean =
-    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
+  private def isMustUse(exp: Expression)(implicit root: Root): Boolean =
+    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.Mask]
+
+  /**
+    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
+    */
+  private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => true
+    case Some(TypeConstructor.Enum(sym, _)) => root.enums(sym).ann.isMustUse
+    case _ => false
+  }
 
   /**
     * Returns true if the expression is a hole.

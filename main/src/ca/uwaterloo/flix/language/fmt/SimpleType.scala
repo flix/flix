@@ -560,6 +560,7 @@ object SimpleType {
           }
 
         case TypeConstructor.CaseEmpty(sym) => SimpleType.Empty
+        case TypeConstructor.CaseAll(sym) => SimpleType.All
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))

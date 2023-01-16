@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.5'
-    implementation 'org.scala-lang:scala-reflect:2.13.5'
+    implementation 'org.scala-lang:scala-library:2.13.5!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.5!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.3.9')
     implementation('org.jline:jline:3.5.1')
@@ -24,9 +24,12 @@ dependencies {
     implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
     implementation('com.github.scopt:scopt_2.13:4.0.1')
     implementation('com.google.guava:guava:25.1-jre')
-    // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
 
+    // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
+
+    implementation('io.get-coursier:coursier_2.13:2.1.0-RC4')
+    implementation('org.tomlj:tomlj:1.1.0')
 
     testImplementation('org.scalatest:scalatest_2.13:3.0.8')
 }
