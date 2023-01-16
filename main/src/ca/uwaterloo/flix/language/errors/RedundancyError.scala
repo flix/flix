@@ -437,20 +437,20 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a non-unit impure expression is used as a statement.
+    * An error raised to indicate that the value of an expression must be used.
     *
     * @param tpe the type of the expression.
     * @param loc the location of the expression.
     */
-  case class DiscardedValue(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Non-unit expression value is implicitly discarded."
+  case class MustUse(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Unused value but its type is marked as @MustUse"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unused non-unit value: The impure expression value is not used.
+         |>> Unused value but its type is marked as @MustUse.
          |
-         |${code(loc, "discarded value.")}
+         |${code(loc, "unused value.")}
          |
          |The expression has type '${FormatType.formatType(tpe)}'
          |""".stripMargin
@@ -460,9 +460,8 @@ object RedundancyError {
       s"""
          |Possible fixes:
          |
-         |  (1)  Use the result value.
-         |  (2)  Bind the value using let.
-         |  (3)  Use the discard keyword.
+         |  (1)  Use the value.
+         |  (2)  Explicit mark the value as unused with `discard`.
          |
          |""".stripMargin
     })
