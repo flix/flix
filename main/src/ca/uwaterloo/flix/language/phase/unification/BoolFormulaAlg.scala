@@ -177,7 +177,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars
 
-  override def minimize(f: BoolFormula): BoolFormula = minimizeQMC(f) //BoolFormulaTable.minimizeFormula(f)
+  override def minimize(f: BoolFormula): BoolFormula = BoolFormulaTable.minimizeFormula(f)
 
   /**
     * Minimizes `f` via the Quine-McCluskey algorithm
