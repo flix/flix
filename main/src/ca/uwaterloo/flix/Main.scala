@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.tools.pkg.FlixPackageManager
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser}
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -37,6 +37,9 @@ object Main {
     * The main method.
     */
   def main(argv: Array[String]): Unit = {
+
+    println(ManifestParser.parse(Paths.get("examples/projects/project-with-deps/flix.toml"))(System.out))
+    scala.sys.exit(-1)
 
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {

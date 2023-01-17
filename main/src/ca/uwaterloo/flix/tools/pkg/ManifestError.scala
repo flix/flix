@@ -21,13 +21,21 @@ sealed trait ManifestError
 
 object ManifestError {
 
-  case class ManifestNotFound(path: Path) extends ManifestError
-
-  case class ManifestNotReadable(path: Path) extends ManifestError
+  case class ManifestNotFoundAt(pathString: String) extends ManifestError
 
   case class MissingRequiredProperty(path: Path, msg: String) extends ManifestError
 
+  case class RequiredPropertyIsNull(path: Path, msg: String) extends ManifestError
+
+  case class RequiredPropertyHasWrongType(path: Path, msg: String) extends ManifestError
+
+  case class VersionHasWrongLength(path: Path, msg: String) extends ManifestError
+
+  case class VersionNumberWrong(path: Path, msg: String) extends ManifestError
+
   case class ManifestParseError(path: Path, msg: String) extends ManifestError
+
+  case class IOError(path: Path) extends ManifestError
 
   case class UnableToDownload( msg: String) extends ManifestError
 
