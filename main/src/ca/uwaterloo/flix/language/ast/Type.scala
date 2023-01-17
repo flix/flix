@@ -68,7 +68,7 @@ sealed trait Type {
     * Gets all the cases in the given type.
     */
   def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
-    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => SortedSet(sym)
+    case Type.Cst(TypeConstructor.CaseConstant(sym, symTail), _) => SortedSet.from(symTail.incl(sym))
 
     case _: Type.Cst => SortedSet.empty
     case _: Type.Var => SortedSet.empty
@@ -902,6 +902,10 @@ object Type {
     case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
     case (all@Type.Cst(TypeConstructor.CaseAll(_), _), _) => all
     case (_, all@Type.Cst(TypeConstructor.CaseAll(_), _)) => all
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1, symTail1), _), Type.Cst(TypeConstructor.CaseConstant(sym2, symTail2), _)) =>
+      val union = symTail1.incl(sym1).union(symTail2.incl(sym2))
+      // We don't have the universe available to collapse full sets into the symbolic universe
+      Type.Cst(TypeConstructor.CaseConstant(sym1, union.excl(sym1)), loc)
     case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -915,7 +919,12 @@ object Type {
     case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
     case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
     case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
-    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1, symTail1), _), Type.Cst(TypeConstructor.CaseConstant(sym2, symTail2), _)) =>
+      val intersection = symTail1.incl(sym1).intersect(symTail2.incl(sym2))
+      intersection.headOption match {
+        case Some(value) => Type.Cst(TypeConstructor.CaseConstant(value, intersection.excl(value)), loc)
+        case None => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+      }
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -941,8 +950,15 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
-
+  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1, symTail1), _), Type.Cst(TypeConstructor.CaseConstant(sym2, symTail2), _)) =>
+      val diff = symTail1.incl(sym1).diff(symTail2.incl(sym2))
+      diff.headOption match {
+        case Some(value) => Type.Cst(TypeConstructor.CaseConstant(value, diff.excl(value)), loc)
+        case None => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+      }
+    case _ => mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
+  }
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.
     */

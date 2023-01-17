@@ -220,17 +220,9 @@ object CaseSetUnification {
     case (_, EMPTY()) =>
       mkEmpty()
 
-    // C ∧ D => F
-    case (CONSTANT(x1), CONSTANT(x2)) if x1 != x2 =>
-      mkEmpty()
-
-    // C ∧ ¬D => C
-    case (x1@CONSTANT(_), COMPLEMENT(x2@CONSTANT(_))) if x1 != x2 =>
-      x1
-
-    // ¬C ∧ D => D
-    case (COMPLEMENT(x1@CONSTANT(_)), x2@CONSTANT(_)) if x1 != x2 =>
-      x2
+    case (CONSTANT(x1, tail1), CONSTANT(x2, tail2)) =>
+      val intersection = tail1.incl(x1).intersect(tail2.incl(x2))
+      mkConstant(intersection)
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
@@ -377,6 +369,11 @@ object CaseSetUnification {
   // TODO RESTR-VARS caching
   private def mkEmpty()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseEmpty(universe.enumSym), SourceLocation.Unknown)
 
+  private def mkConstant(set: Set[Symbol.RestrictableCaseSym])(implicit universe: Universe): Type = set.headOption match {
+      case Some(value) => Type.Cst(TypeConstructor.CaseConstant(value, set.excl(value)), SourceLocation.Unknown)
+      case None => mkEmpty()
+    }
+
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
   private def mkAll()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseAll(universe.enumSym), SourceLocation.Unknown)
@@ -407,8 +404,8 @@ object CaseSetUnification {
 
   private object CONSTANT {
     @inline
-    def unapply(tpe: Type): Option[Symbol.RestrictableCaseSym] = tpe match {
-      case Type.Cst(TypeConstructor.CaseConstant(sym), _) => Some(sym)
+    def unapply(tpe: Type): Option[(Symbol.RestrictableCaseSym, Set[Symbol.RestrictableCaseSym])] = tpe match {
+      case Type.Cst(TypeConstructor.CaseConstant(sym, symTail), _) => Some((sym, symTail))
       case _ => None
     }
   }
@@ -511,7 +508,7 @@ object CaseSetUnification {
 
   private def fromAtom(a: Atom)(implicit universe: Universe): Type = a match {
     case Atom.Var(sym) => Type.Var(sym, SourceLocation.Unknown)
-    case Atom.Case(sym) => Type.Cst(TypeConstructor.CaseConstant(sym), SourceLocation.Unknown)
+    case Atom.Case(sym) => Type.Cst(TypeConstructor.CaseConstant(sym, Set.empty), SourceLocation.Unknown)
   }
 
   private def fromLiteral(l: Literal)(implicit universe: Universe): Type = l match {
@@ -536,7 +533,10 @@ object CaseSetUnification {
     * Converts the given type to NNF.
     */
   private def nnf(t: Type)(implicit universe: Universe): Nnf = t match {
-    case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Case(sym)))
+    case CONSTANT(sym, symTail) =>
+      symTail.foldLeft(Nnf.Singleton(Literal.Positive(Atom.Case(sym))): Nnf){
+        case (acc, s) => Nnf.Union(acc, Nnf.Singleton(Literal.Positive(Atom.Case(s))))
+      }
     case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case COMPLEMENT(tpe) => nnfNot(tpe)
     case UNION(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
@@ -550,7 +550,10 @@ object CaseSetUnification {
     * Converts the complement of the given type to NNF.
     */
   private def nnfNot(t: Type)(implicit universe: Universe): Nnf = t match {
-    case CONSTANT(sym) => Nnf.Singleton(Literal.Negative(Atom.Case(sym)))
+    case CONSTANT(sym, symTail) =>
+      symTail.foldLeft(Nnf.Singleton(Literal.Negative(Atom.Case(sym))): Nnf) {
+      case (acc, s) => Nnf.Union(acc, Nnf.Singleton(Literal.Negative(Atom.Case(s))))
+    }
     case VAR(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case COMPLEMENT(tpe) => nnf(tpe)
     case UNION(tpe1, tpe2) => Nnf.Intersection(

@@ -169,10 +169,13 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => m.getForward(VarOrEffOrCase.Case(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
+    case Type.Cst(TypeConstructor.CaseConstant(sym, symTail), _) =>
+      symTail.incl(sym).map { s =>
+        m.getForward(VarOrEffOrCase.Case(s)) match {
+          case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
+          case Some(x) => Var(x): BoolFormula
+        }
+      }.reduce(Or)
     case Type.Cst(TypeConstructor.CaseAll(_), _) => True
     case Type.Cst(TypeConstructor.CaseEmpty(_), _) => False
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) => Not(fromCaseType(tpe1, m))
@@ -205,7 +208,7 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEffOrCase.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
-      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", sym.loc)
+      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", loc)
     }
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
@@ -224,7 +227,7 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEffOrCase.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
-      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", sym.loc)
+      case Some(VarOrEffOrCase.Case(sym)) => throw InternalCompilerException(s"Unexpected case: '$sym'.", loc)
     }
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
@@ -243,7 +246,7 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEffOrCase.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect: '$sym'.", sym.loc)
-      case Some(VarOrEffOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseConstant(sym), loc)
+      case Some(VarOrEffOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseConstant(sym, Set.empty), loc)
     }
     case Not(f1) => Type.mkCaseComplement(toCaseType(f1, sym, m, loc), sym, loc)
     case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)

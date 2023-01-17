@@ -116,15 +116,10 @@ object RestrictableChooseInference {
     * Converts the list of restrictable case symbols to a closed set type.
     */
   private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
-    syms.map {
-        case sym => Type.Cst(TypeConstructor.CaseConstant(sym), loc.asSynthetic)
-      }.reduceLeftOption[Type] {
-        case (acc, tpe) => Type.mkApply(
-          Type.Cst(TypeConstructor.CaseUnion(enumSym), loc.asSynthetic),
-          List(acc, tpe),
-          loc.asSynthetic
-        )
-      }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc))
+    syms.headOption match {
+      case Some(value) => Type.Cst(TypeConstructor.CaseConstant(value, syms.excl(value)), loc)
+      case None => Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc)
+    }
   }
 
   /**
@@ -249,7 +244,7 @@ object RestrictableChooseInference {
       // φ ∪ {l_i}
       val index = Type.mkCaseUnion(
         Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-        Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic),
+        Type.Cst(TypeConstructor.CaseConstant(symUse.sym, Set.empty), loc.asSynthetic),
         enumSym,
         loc.asSynthetic
       )
@@ -280,7 +275,7 @@ object RestrictableChooseInference {
       val enumSym = symUse.sym.enumSym
       val enum = root.restrictableEnums(enumSym)
 
-      val caseType = Type.Cst(TypeConstructor.CaseConstant(symUse.sym), symUse.loc)
+      val caseType = Type.Cst(TypeConstructor.CaseConstant(symUse.sym, Set.empty), symUse.loc)
 
       val (enumType, indexVar, _, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
 

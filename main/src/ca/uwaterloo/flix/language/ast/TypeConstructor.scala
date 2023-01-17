@@ -361,7 +361,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents a case constant.
     */
-  case class CaseConstant(sym: Symbol.RestrictableCaseSym) extends TypeConstructor {
+  case class CaseConstant(sym: Symbol.RestrictableCaseSym, symTail: Set[Symbol.RestrictableCaseSym]) extends TypeConstructor {
     def kind: Kind = Kind.CaseSet(sym.enumSym)
   }
 

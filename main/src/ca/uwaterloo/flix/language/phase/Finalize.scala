@@ -439,7 +439,7 @@ object Finalize {
 
             case TypeConstructor.All => MonoType.Unit
 
-            case TypeConstructor.CaseConstant(sym) => MonoType.Unit
+            case TypeConstructor.CaseConstant(sym, symTail) => MonoType.Unit
             case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
             case TypeConstructor.CaseAll(sym) => MonoType.Unit
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
