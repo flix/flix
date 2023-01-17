@@ -224,6 +224,14 @@ object CaseSetUnification {
       val intersection = tail1.incl(x1).intersect(tail2.incl(x2))
       mkConstant(intersection)
 
+    case (CONSTANT(x1, tail1), COMPLEMENT(CONSTANT(x2, tail2))) =>
+      val diff = tail1.incl(x1).diff(tail2.incl(x2))
+      mkConstant(diff)
+
+    case (COMPLEMENT(CONSTANT(x1, tail1)), CONSTANT(x2, tail2)) =>
+      val diff = tail2.incl(x2).diff(tail1.incl(x1))
+      mkConstant(diff)
+
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
       mkIntersection(mkComplement(x1), y)
