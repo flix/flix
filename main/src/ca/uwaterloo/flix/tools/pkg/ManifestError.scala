@@ -33,11 +33,17 @@ object ManifestError {
 
   case class VersionNumberWrong(path: Path, msg: String) extends ManifestError
 
+  case class MavenDependencyFormatError(path: Path, msg: String) extends ManifestError
+
+  case class DependencyFormatError(path: Path, msg: String) extends ManifestError
+
+  case class AuthorNameError(path: Path, msg: String) extends ManifestError
+
   case class ManifestParseError(path: Path, msg: String) extends ManifestError
 
   case class IOError(path: Path) extends ManifestError
 
-  case class UnableToDownload( msg: String) extends ManifestError
+  case class UnableToDownload(msg: String) extends ManifestError
 
   /// ...
 
