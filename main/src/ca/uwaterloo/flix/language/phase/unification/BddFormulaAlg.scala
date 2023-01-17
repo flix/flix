@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Magnus Madsen
+ *  Copyright 2022 Anna Blume Jakobsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{IntMap, SortedSet}
 
 /**
   * Companion object of [[BddFormulaAlg]].
@@ -36,7 +36,7 @@ object BddFormulaAlg {
 /**
   * An implementation of the [[BoolAlg]] interface for [[BoolFormula]].
   */
-final class BddFormulaAlg extends BoolAlg[DD] {
+final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
 
   override def isTrue(f: DD): Boolean = f.isTrue
 
@@ -110,11 +110,18 @@ final class BddFormulaAlg extends BoolAlg[DD] {
     */
   override def minimize(f: DD): DD = f
 
-  override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    createTypeFromBDDAux(f, Type.True, env)
-  }
+  /**
+    * A BDD is satisfiable if it is not F, since BDDs are always minimal.
+    */
+  override def satisfiable(f: DD): Boolean = !f.isFalse
 
-  //TODO: Optimize (2-level minimization)
+  override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    if(flix.options.xqmc) {
+      toTypeQMC(f, env)
+    } else {
+      createTypeFromBDDAux(f, Type.True, env)
+    }
+  }
 
   /**
     * Collects true paths in the BDD and ORs them together:
@@ -148,8 +155,64 @@ final class BddFormulaAlg extends BoolAlg[DD] {
   }
 
   /**
-    * A BDD is satisfiable if it is not F, since BDDs are always minimal.
+    * Converting a BDD to a Type using the Quine-McCluskey algorithm
     */
-  override def satisfiable(f: DD): Boolean = !f.isFalse
+  private def toTypeQMC(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
+    //Easy shortcuts if formula is true, false or a variable
+    if (f.isLeaf) {
+      if (f.isTrue) {
+        return Type.True
+      } else {
+        return Type.False
+      }
+    }
+    if (isVar(f)) {
+      val id = f.getVariable
+      val typeVar = env.getBackward(id).getOrElse(throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown))
+      return Type.Var(typeVar, typeVar.loc)
+    }
 
+    //Otherwise find the cover and convert it to a Type
+    val minTerms = collectMinTerms(f, freeVars(f))
+    QuineMcCluskey.qmcToType(minTerms, env)
+  }
+
+  /**
+    * Collects the min terms and updates them to all
+    * have the same key set (the variables in the BDD).
+    * Any variables that were not already in a min term
+    * are mapped to 2 ("don't care"). Also gives the
+    * number of "don't care" variables in each min term.
+    */
+  private def collectMinTerms(f: DD, vars: SortedSet[Int]): Set[IntMap[BoolVal]] = {
+    val terms = collectTerms(f, vars, IntMap.empty)
+    val noEmptyTerms = terms.filter(t => t.nonEmpty)
+    noEmptyTerms.map { t =>
+      val keys = t.keySet
+      val dontCares = vars -- keys
+      val dontCareMap = dontCares.foldLeft(IntMap.empty[BoolVal])((acc, dc) => acc ++ IntMap(dc -> BoolVal.DontCare))
+      t ++ dontCareMap
+    }
+  }
+
+  /**
+    * Checks all paths in the BDD and returns an IntMap for each true path.
+    * In the map variables that were true on the path are mapped to 1,
+    * and variables that were false are mapped to 0.
+    */
+  private def collectTerms(f: DD, vars: SortedSet[Int], termSoFar: IntMap[BoolVal]): Set[IntMap[BoolVal]] = {
+    if (f.isLeaf) {
+      if (f.isTrue) {
+        Set(termSoFar)
+      } else {
+        Set(IntMap.empty)
+      }
+    } else {
+      val x = f.getVariable
+      val lowRes = collectTerms(f.getLow, vars, termSoFar.updated(x, BoolVal.False))
+      val highRes = collectTerms(f.getHigh, vars, termSoFar.updated(x, BoolVal.True))
+
+      lowRes ++ highRes
+    }
+  }
 }
