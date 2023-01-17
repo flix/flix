@@ -332,6 +332,30 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("FormatType.Boolean.External.02") {
+    val tvar1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkOr(List(tvar1, tvar2, tvar3), loc)
+
+    val expected = "a or b or c"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatType.Boolean.External.03") {
+    val tvar1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Bool, isRegion = false, loc), loc)
+    val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Bool, isRegion = false, loc), loc)
+    val tpe = Type.mkXor(List(tvar1, tvar2, tvar3), loc)
+
+    val expected = "a xor b xor c"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
   test("FormatPartialType.Tuple.External.01") {
     val tpe = Type.mkApply(Type.Cst(TypeConstructor.Tuple(2), loc), List(Type.Str), loc)
 
@@ -350,7 +374,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatPartialType.Boolean.External.03") {
+  test("FormatPartialType.Boolean.External.02") {
     val tpe = Type.And
 
     val expected = "? and ?"
@@ -359,7 +383,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatPartialType.Boolean.External.04") {
+  test("FormatPartialType.Boolean.External.03") {
     val tpe = Type.Apply(Type.And, Type.Pure, loc)
 
     val expected = "true and ?"
@@ -368,7 +392,7 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatPartialType.Boolean.External.06") {
+  test("FormatPartialType.Boolean.External.04") {
     val tpe = Type.Or
 
     val expected = "? or ?"
@@ -377,10 +401,28 @@ class TestFormatType extends FunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("FormatPartialType.Boolean.External.07") {
+  test("FormatPartialType.Boolean.External.05") {
     val tpe = Type.Apply(Type.Or, Type.Pure, loc)
 
     val expected = "true or ?"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatPartialType.Boolean.External.06") {
+    val tpe = Type.Xor
+
+    val expected = "? xor ?"
+    val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
+
+    assert(actual == expected)
+  }
+
+  test("FormatPartialType.Boolean.External.07") {
+    val tpe = Type.Apply(Type.Xor, Type.Pure, loc)
+
+    val expected = "true xor ?"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
 
     assert(actual == expected)
