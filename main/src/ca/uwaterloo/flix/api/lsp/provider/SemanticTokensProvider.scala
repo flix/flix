@@ -653,6 +653,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Not => false
     case TypeConstructor.And => false
     case TypeConstructor.Or => false
+    case TypeConstructor.Xor => false
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false

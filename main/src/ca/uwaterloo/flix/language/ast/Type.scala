@@ -358,6 +358,13 @@ object Type {
   val Or: Type = Type.Cst(TypeConstructor.Or, SourceLocation.Unknown)
 
   /**
+    * Represents the Xor type constructor.
+    *
+    * NB: This type has kind: * -> (* -> *).
+    */
+  val Xor: Type = Type.Cst(TypeConstructor.Xor, SourceLocation.Unknown)
+
+  /**
     * Represents the Empty effect type.
     */
   val Empty: Type = Type.Cst(TypeConstructor.Empty, SourceLocation.Unknown)

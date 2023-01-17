@@ -164,6 +164,11 @@ object SimpleType {
     */
   case class Or(tpes: List[SimpleType]) extends SimpleType
 
+  /**
+    * A chain of types connected by `xor`.
+    */
+  case class Xor(tpes: List[SimpleType]) extends SimpleType
+
   ////////////////
   // Set Operators
   ////////////////
@@ -498,6 +503,19 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.Xor =>
+          // collapse into a chain of ors
+          t.typeArguments.map(visit).map(splitXors) match {
+            // Case 1: No args. ? or ?
+            case Nil => Xor(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 or tpe2 or ?
+            case args :: Nil => Xor(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 or tpe2 or tpe3 or tpe4
+            case args1 :: args2 :: Nil => Xor(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.Complement =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
@@ -670,6 +688,15 @@ object SimpleType {
     */
   private def splitOrs(tpe: SimpleType): List[SimpleType] = tpe match {
     case Or(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 xor t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-or types as singletons.
+    */
+  private def splitXors(tpe: SimpleType): List[SimpleType] = tpe match {
+    case Xor(tpes) => tpes
     case t => List(t)
   }
 

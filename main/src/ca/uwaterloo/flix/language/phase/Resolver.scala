@@ -3115,6 +3115,7 @@ object Resolver {
         case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Null => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Or => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.Xor => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowEmpty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RecordRowExtend(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.RegionToStar => ResolutionError.IllegalType(tpe, loc).toFailure

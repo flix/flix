@@ -427,6 +427,8 @@ object Finalize {
 
             case TypeConstructor.Or => MonoType.Unit
 
+            case TypeConstructor.Xor => MonoType.Unit
+
             case TypeConstructor.Complement => MonoType.Unit
 
             case TypeConstructor.Union => MonoType.Unit

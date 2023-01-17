@@ -296,6 +296,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the exclusive disjunction of two effects.
+    */
+  case object Xor extends TypeConstructor {
+    def kind: Kind = Kind.Bool ->: Kind.Bool ->: Kind.Bool
+  }
+
+  /**
     * A type constructor that represents the complement of an effect set.
     */
   case object Complement extends TypeConstructor {

@@ -138,6 +138,7 @@ object FormatType {
       case SimpleType.Not(_) => false
       case SimpleType.And(_) => false
       case SimpleType.Or(_) => false
+      case SimpleType.Xor(_) => false
       case SimpleType.Complement(_) => false
       case SimpleType.Intersection(_) => false
       case SimpleType.Difference(_, _) => false
@@ -277,6 +278,9 @@ object FormatType {
       case SimpleType.Or(tpes) =>
         val strings = tpes.map(delimit(_, mode))
         strings.mkString(" or ")
+      case SimpleType.Xor(tpes) =>
+        val strings = tpes.map(delimit(_, mode))
+        strings.mkString(" xor ")
       case SimpleType.Complement(tpe) => s"~${delimit(tpe, mode)}"
       case SimpleType.Union(tpes) =>
         val strings = tpes.map(visit(_, mode))
