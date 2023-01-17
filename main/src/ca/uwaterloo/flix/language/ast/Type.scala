@@ -842,6 +842,30 @@ object Type {
   }
 
   /**
+    * Returns the type `Xor(tpe1, tpe2)`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkXor(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.True, _), _) => mkNot(tpe2, loc)
+    case (_, Type.Cst(TypeConstructor.True, _)) => mkNot(tpe1, loc)
+    case (Type.Cst(TypeConstructor.False, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.False, _)) => tpe1
+    case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => Type.False
+    case _ => Type.Apply(Type.Apply(Type.Xor, tpe1, loc), tpe2, loc)
+  }
+
+  /**
+    * Returns the type `Xor(tpe1, Or(tpe2, ...))`.
+    *
+    * Must not be used before kinding.
+    */
+  def mkXor(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.False
+    case x :: xs => mkXor(x, mkXor(xs, loc), loc)
+  }
+
+  /**
     * Returns the complement of the given type.
     *
     * Must not be used before kinding.
@@ -900,6 +924,39 @@ object Type {
   }
 
   /**
+    * Returns the intersection of all the given types.
+    *
+    * Must not be used before kinding.
+    */
+  def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.All
+    case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
+  }
+
+  /**
+    * Returns the type `tpe1 Δ tpe2`
+    *
+    * Must not be used before kinding.
+    */
+  def mkSymmetricDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Empty, _) => tpe2
+    case (_, Empty) => tpe1
+    case (All, t) => mkComplement(t, loc)
+    case (t, All) => mkComplement(t, loc)
+    case _ => mkApply(Type.Cst(TypeConstructor.SymmetricDifference, loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Returns the symmetric difference of all the given types.
+    *
+    * Must not be used before kinding.
+    */
+  def mkSymmetricDifference(tpes: List[Type], loc: SourceLocation): Type = tpes match {
+    case Nil => Type.Empty
+    case x :: xs => mkSymmetricDifference(x, mkSymmetricDifference(xs, loc), loc)
+  }
+
+  /**
     * Returns the type `tpe1 + tpe2`
     *
     * Must not be used before kinding.
@@ -927,13 +984,17 @@ object Type {
   }
 
   /**
-    * Returns the intersection of all the given types.
+    * Returns the type `tpe1 Δ tpe2`
     *
     * Must not be used before kinding.
     */
-  def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.All
-    case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
+  def mkCaseSymmetricDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseEmpty(_), _), t) => t
+    case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
+    case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => mkCaseComplement(t, sym, loc)
+    case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => mkCaseComplement(t, sym, loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.False, loc)
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseSymmetricDifference(sym), loc), List(tpe1, tpe2), loc)
   }
 
   /**

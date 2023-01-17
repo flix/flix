@@ -657,10 +657,12 @@ object SemanticTokensProvider {
     case TypeConstructor.Complement => false
     case TypeConstructor.Union => false
     case TypeConstructor.Intersection => false
+    case TypeConstructor.SymmetricDifference => false
     case TypeConstructor.Empty => false
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
+    case TypeConstructor.CaseSymmetricDifference(_) => false
     case TypeConstructor.CaseEmpty(_) => false
     case TypeConstructor.CaseAll(_) => false
   }

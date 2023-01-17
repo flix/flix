@@ -3110,6 +3110,7 @@ object Resolver {
         case TypeConstructor.Empty => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.False => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Intersection => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.SymmetricDifference => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lattice => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Lazy => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Not => ResolutionError.IllegalType(tpe, loc).toFailure
@@ -3130,6 +3131,7 @@ object Resolver {
         case TypeConstructor.CaseAll(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseUnion(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseSymmetricDifference(_) => ResolutionError.IllegalType(tpe, loc).toFailure
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)

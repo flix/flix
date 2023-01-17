@@ -215,7 +215,7 @@ class BoolFormulaAlg extends BoolAlg[BoolFormula] {
       case Some(sym) => Type.Var(sym, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
-    case Xor(f1, f2) => toType(mkOr(mkAnd(f1, mkNot(f2)), mkAnd(mkNot(f1), f2)), env) //TODO: change
+    case Xor(f1, f2) => Type.mkApply(Type.Xor, List(toType(f1, env), toType(f2, env)), SourceLocation.Unknown)
   }
 
   override def freeVars(f: BoolFormula): SortedSet[Int] = f.freeVars

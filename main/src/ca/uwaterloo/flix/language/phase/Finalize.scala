@@ -435,6 +435,8 @@ object Finalize {
 
             case TypeConstructor.Intersection => MonoType.Unit
 
+            case TypeConstructor.SymmetricDifference => MonoType.Unit
+
             case TypeConstructor.Effect(_) => MonoType.Unit
 
             case TypeConstructor.Empty => MonoType.Unit
@@ -447,6 +449,7 @@ object Finalize {
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
             case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
             case TypeConstructor.CaseUnion(sym) => MonoType.Unit
+            case TypeConstructor.CaseSymmetricDifference(sym) => MonoType.Unit
 
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)

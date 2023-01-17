@@ -194,6 +194,11 @@ object SimpleType {
   case class Intersection(tpes: List[SimpleType]) extends SimpleType
 
   /**
+    * A chain of types connected by `Δ`.
+    */
+  case class SymmetricDifference(tpes: List[SimpleType]) extends SimpleType
+
+  /**
     * Difference of two types.
     */
   case class Difference(tpe1: SimpleType, tpe2: SimpleType) extends SimpleType
@@ -553,6 +558,19 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.SymmetricDifference =>
+          // collapse into a chain of unions
+          t.typeArguments.map(visit).map(splitSymmetricDifferences) match {
+            // Case 1: No args. ? + ?
+            case Nil => SymmetricDifference(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 + tpe2 + ?
+            case args :: Nil => SymmetricDifference(args :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 + tpe2 + tpe3 + tpe4
+            case args1 :: args2 :: Nil => SymmetricDifference(args1 ++ args2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.CaseConstant(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.CaseComplement(sym) =>
           t.typeArguments.map(visit) match {
@@ -574,6 +592,14 @@ object SimpleType {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.CaseSymmetricDifference(sym) =>
+          t.typeArguments.map(visit) match {
+            case Nil => SymmetricDifference(Hole :: Hole :: Nil)
+            case arg :: Nil => SymmetricDifference(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => SymmetricDifference(arg1 :: arg2 :: Nil)
             case _ => throw new OverAppliedType(t.loc)
           }
 
@@ -715,6 +741,15 @@ object SimpleType {
     */
   private def splitIntersections(tpe: SimpleType): List[SimpleType] = tpe match {
     case Intersection(tpes) => tpes
+    case t => List(t)
+  }
+
+  /**
+    * Splits `t1 Δ t2` into `t1 :: t2 :: Nil`,
+    * and leaves non-symmetric difference types as singletons.
+    */
+  private def splitSymmetricDifferences(tpe: SimpleType): List[SimpleType] = tpe match {
+    case SymmetricDifference(tpes) => tpes
     case t => List(t)
   }
 

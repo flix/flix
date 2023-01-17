@@ -219,7 +219,7 @@ object BoolFormula {
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkOr(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
-    case Xor(t1, t2) => ??? //TODO
+    case Xor(t1, t2) => Type.mkXor(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
   }
 
   /**
@@ -239,7 +239,7 @@ object BoolFormula {
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
-    case Xor(t1, t2) => ??? //TODO
+    case Xor(t1, t2) => Type.mkSymmetricDifference(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
   }
 
   /**
@@ -259,7 +259,7 @@ object BoolFormula {
     case Not(f1) => Type.mkCaseComplement(toCaseType(f1, sym, m, loc), sym, loc)
     case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
     case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
-    case Xor(t1, t2) => ??? //TODO
+    case Xor(t1, t2) => Type.mkCaseSymmetricDifference(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
   }
 
 
