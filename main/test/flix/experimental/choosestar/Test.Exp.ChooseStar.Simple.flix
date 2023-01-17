@@ -82,17 +82,18 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
-//    pub def testChooseStar7(): Bool = {
-//        // P3: Check that Not is not present
-//        let f = c -> choose* c {
-//            case Expr.Not(_) => Expr.Not()
-//            case Expr.Cst(_) => Expr.Var()
-//        };
-//        let g = c -> choose* c {
-//            case Expr.Not(_) => Expr.Not()
-//            case Expr.Xor(_) => Expr.And()
-//        };
-//        if (true) f else g
-//    }
+    pub def testChooseStar7(): Bool = {
+        // P3: Check that Not is not present
+        let f = c -> choose* c {
+            case Expr.Not(_) => Expr.Not()
+            case Expr.Cst(_) => Expr.Var()
+        };
+        let g = c -> choose* c {
+            case Expr.Not(_) => Expr.Not()
+            case Expr.Xor(_) => Expr.And()
+        };
+        let _ = if (true) f else g;
+        true
+    }
 
 }

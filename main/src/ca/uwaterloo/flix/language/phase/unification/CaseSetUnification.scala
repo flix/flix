@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 import scala.annotation.tailrec
 
 object CaseSetUnification {
@@ -84,7 +85,14 @@ object CaseSetUnification {
     /// Run the expensive boolean unification algorithm.
     ///
     implicit val universe: Universe = Universe(cases, enumSym)
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+//    val path = Path.of("out.tsv")
+//    val record1 = List(tpe1, simplify(tpe1), TypeMinimization.minimizeType(tpe1), TypeMinimization.minimizeType(simplify(tpe1))).map(_.size).mkString("\t") + "\n"
+//    val record2 = List(tpe2, simplify(tpe2), TypeMinimization.minimizeType(tpe2), TypeMinimization.minimizeType(simplify(tpe2))).map(_.size).mkString("\t") + "\n"
+//    Files.writeString(path, record1, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
+//    Files.writeString(path, record2, StandardOpenOption.APPEND, StandardOpenOption.CREATE)
+    val input1 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe1)))
+    val input2 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe2)))
+    booleanUnification(input1, input2, renv)
   }
 
   /**
