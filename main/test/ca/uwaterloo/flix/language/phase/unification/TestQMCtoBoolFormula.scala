@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2023 Anna Blume Jakobsen
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
@@ -265,6 +281,26 @@ class TestQMCtoBoolFormula extends FunSuite {
 
   test("Minimize.Var1AndVar2AndVar3AndVar4.04") {
     assertResult(expected = Or(Or(Or(And(Not(Var(0)), Not(Var(2))), And(Not(Var(1)), Not(Var(2)))), And(Not(Var(0)), Not(Var(3)))), And(Not(Var(1)), Not(Var(3)))))(actual = alg.minimizeQMC(Not(Or(And(Not(Not(Var(0))), Not(Not(Var(1)))), And(Not(Not(Var(2))), Not(Not(Var(3))))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4AndVar5AndVar6.01") {
+    assertResult(expected = Or(Or(Or(Not(Var(1)), And(Not(Var(0)), Var(5))), And(Var(4), Var(5))), Not(Var(2))))(actual = alg.minimizeQMC(Or(And(Var(5), Not(And(Var(1), Var(0)))), Or(Not(And(Or(And(Not(And(Var(3), Var(5))), And(Var(4), Var(2))), And(Var(2), Var(2))), Var(1))), And(Var(4), Var(5))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4AndVar5AndVar6.02") {
+    assertResult(expected = Or(Or(Not(Var(0)), Var(3)), Not(Var(2))))(actual = alg.minimizeQMC(Or(Not(And(Not(And(Var(3), Var(3))), Var(2))), Not(And(Var(0), Or(And(Var(3), Var(2)), Not(And(And(Var(1), Or(Var(4), Not(And(And(Var(5), Var(0)), Var(1))))), Var(3)))))))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4AndVar5AndVar6.03") {
+    assertResult(expected = True)(actual = alg.minimizeQMC(Or(Or(Or(Not(And(Or(Not(And(Var(2), Var(1))), And(Var(1), Var(1))), Var(3))), And(Var(3), True)), Not(And(Or(Not(Var(4)), And(Var(5), Var(0))), Var(4)))), And(Var(0), Var(4)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4AndVar5AndVar6.04") {
+    assertResult(expected = False)(actual = alg.minimizeQMC(And(And(And(And(And(And(And(And(And(And(And(Var(0), Var(5)), Not(Var(1))), Not(Var(4))), Var(1)), Not(Var(3))), Not(Var(0))), Var(3)), Var(4)), Not(Var(2))), Var(2)), Not(Var(5)))))
+  }
+
+  test("Minimize.Var1AndVar2AndVar3AndVar4AndVar5AndVar6.05") {
+    assertResult(expected = Or(Or(Or(Or(And(Var(2), Var(3)), And(And(Not(Var(0)), Not(Var(1))), Var(3))), And(Not(Var(1)), Var(2))), And(Var(2), Not(Var(4)))), And(Not(Var(0)), Var(5))))(actual = alg.minimizeQMC(Or(And(Or(Not(And(And(Var(2), Var(4)), Var(1))), And(And(True, Var(4)), Var(3))), Var(2)), And(And(Not(Var(0)), True), Or(Var(5), And(Var(3), Not(Var(1))))))))
   }
 
 }
