@@ -629,13 +629,13 @@ namespace Iterator {
         flatMap(step, iter)
 
     ///
-    /// Returns the concatenation of the elements in `iterB` with the elements of `iterA` inserted between every two adjacent elements.
+    /// Returns the concatenation of the elements in `iter` with the elements of `sep` inserted between every two adjacent elements.
     ///
     /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `sep` and `iter` should not be reused.
     ///
     pub def intercalate(sep: Iterator[a, ef2, r], iter: Iterator[Iterator[a, ef1, r], ef1, r]): Iterator[a, ef1 and ef2 and r, r] \ Write(r) =
         let Iterator(r, _) = iter;
@@ -662,6 +662,7 @@ namespace Iterator {
     ///
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but 
     /// then `intercalate` fails.
+    ///
     def ofList(r: Region[r], xs: List[a]): Iterator[a, true, r] \ Write(r) =
         let ls = ref xs @ r;
         let next = () -> {
@@ -738,6 +739,14 @@ namespace Iterator {
         };
         loop(e -> Err(e), ks -> Ok(ks))
 
+    ///
+    /// Returns an iterator with the element `x` appended to the 
+    /// front of iterator `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ Write(r) =
         let Iterator(r, iterF) = iter;
         let first = ref true @ r;
@@ -752,8 +761,14 @@ namespace Iterator {
         let iter1F = () -> f();
         Iterator(r, iter1F)
 
-    pub def concat(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 and ef2, r] \ Write(r) =
+    ///
+    /// Returns the concatenation of the nested iterators in `iter`.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    /// The original iterator `iter` should *not* be reused.
+    ///    
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 and ef2, r] \ Write(r) =
         flatMap(identity, iter)
-
     
 }

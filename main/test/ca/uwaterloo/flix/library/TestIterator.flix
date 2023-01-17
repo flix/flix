@@ -1570,4 +1570,54 @@ namespace TestIterator {
             Iterator.toResultList == Err("four")
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // cons                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def cons01(): Bool = region r {
+        (Nil: List[Int32]) |> List.iterator(r) |>
+            Iterator.cons(1) |> Iterator.toList == 1 :: Nil
+    }
+
+    @test
+    def cons02(): Bool = region r {
+        (2 :: Nil: List[Int32]) |> List.iterator(r) |>
+            Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: Nil
+    }
+
+    @test
+    def cons03(): Bool = region r {
+        (3 :: Nil: List[Int32]) |> List.iterator(r) |>
+            Iterator.cons(2) |> Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool = region r {
+        (Nil: List[Int32]) |> List.iterator(r) |> Iterator.map(i -> Iterator.repeat(r, 2, i)) |>
+            Iterator.flatten |> Iterator.toList == Nil
+    }
+
+    @test
+    def flatten02(): Bool = region r {
+        (1 :: Nil) |> List.iterator(r) |> Iterator.map(i -> Iterator.repeat(r, 2, i)) |>
+            Iterator.flatten |> Iterator.toList == 1 :: 1 :: Nil
+    }
+
+    @test
+    def flatten03(): Bool = region r {
+        (1 :: 2 :: Nil) |> List.iterator(r) |> Iterator.map(i -> Iterator.repeat(r, 2, i)) |>
+            Iterator.flatten |> Iterator.toList == 1 :: 1 :: 2 :: 2 :: Nil
+    }
+
+    @test
+    def flatten04(): Bool = region r {
+        (1 :: 2 :: 3 :: Nil) |> List.iterator(r) |> Iterator.map(i -> Iterator.repeat(r, 2, i)) |>
+            Iterator.flatten |> Iterator.toList == 1 :: 1 :: 2 :: 2 :: 3 :: 3 :: Nil
+    }
+
 }
