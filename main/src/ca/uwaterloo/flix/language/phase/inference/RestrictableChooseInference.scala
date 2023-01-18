@@ -248,13 +248,8 @@ object RestrictableChooseInference {
       // Instantiate the type scheme of the case.
       val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-      // φ ∪ {l_i}
-      val index = Type.mkCaseUnion(
-        Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-        Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic),
-        enumSym,
-        loc.asSynthetic
-      )
+      // {l_i}
+      val index = Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic)
 
       //
       // The tag type is a function from the type of variant to the type of the enum.
