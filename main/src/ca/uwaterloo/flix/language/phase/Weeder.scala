@@ -535,6 +535,8 @@ object Weeder {
           }.toSuccess
       }
 
+    case ParsedAst.Expression.Open(sp1, name, sp2) =>
+
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.Hole(name, loc).toSuccess
