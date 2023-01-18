@@ -25,8 +25,6 @@ object ManifestError {
 
   case class MissingRequiredProperty(path: Path, msg: String) extends ManifestError
 
-  case class RequiredPropertyIsNull(path: Path, msg: String) extends ManifestError
-
   case class RequiredPropertyHasWrongType(path: Path, msg: String) extends ManifestError
 
   case class VersionHasWrongLength(path: Path, msg: String) extends ManifestError

@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlTable}
+import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{InvalidPathException, Path, Paths}
@@ -35,153 +35,101 @@ object ManifestParser {
 
     val errors = parser.errors
     if(errors.size() > 0) {
-      var error_string = ""
-      errors.forEach(error => error_string = error_string + error.toString + ", ")
-      return Err(ManifestError.ManifestParseError(p, error_string))
+      var errorString = ""
+      errors.forEach(error => errorString = errorString + error.toString + ", ")
+      return Err(ManifestError.ManifestParseError(p, errorString))
     }
 
-    val name = try {
-      val name = parser.getString("package.name")
-      if(name == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'package.name' is null"))
-      }
-      name
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'package.name' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.name' should have type String"))
+    val name = getRequiredStringProperty("package.name", parser, p) match {
+      case Ok(s) => s
+      case Err(e) => return Err(e)
     }
 
-    val description = try {
-      val description = parser.getString("package.description")
-      if (description == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'package.description' is null"))
-      }
-      description
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'package.description' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.description' should have type String"))
+    val description = getRequiredStringProperty("package.description", parser, p) match {
+      case Ok(s) => s
+      case Err(e) => return Err(e)
     }
 
-    val version = try {
-      val version = parser.getString("package.version")
-      if (version == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'package.version' is null"))
-      }
-      version
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'package.version' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.version' should have type String"))
+    val version = getRequiredStringProperty("package.version", parser, p) match {
+      case Ok(s) => s
+      case Err(e) => return Err(e)
     }
     val semanticVersion = toSemVer(version, p) match {
       case Ok(v) => v
       case Err(e) => return Err(e)
     }
 
-    val flix = try {
-      val flix = parser.getString("package.flix")
-      if (flix == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'package.flix' is null"))
-      }
-      flix
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'package.flix' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.flix' should have type String"))
+    val flix = getRequiredStringProperty("package.flix", parser, p) match {
+      case Ok(s) => s
+      case Err(e) => return Err(e)
     }
     val semanticFlixVersion = toSemVer(flix, p) match {
       case Ok(v) => v
       case Err(e) => return Err(e)
     }
 
-    val license_opt: Option[String] = try {
+    val licenseOpt: Option[String] = try {
       val license = parser.getString("package.license")
-      if (license == null) {
-        None
-      } else {
-        Option(license)
-      }
+      Option(license)
     } catch {
       case _: IllegalArgumentException => None
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.license' should have type String"))
+      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, "'package.license' should have type String"))
     }
 
     val authors = try {
       val authors = parser.getArray("package.authors")
       if (authors == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'package.authors' is null"))
+        return Err(ManifestError.MissingRequiredProperty(p, "'package.authors' is missing"))
       }
       authors
     } catch {
       case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'package.authors' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'package.authors' should have type Array"))
+      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, "'package.authors' should have type Array"))
     }
-    val authors_list = convertTomlArrayToStringList(authors, p) match {
+    val authorsList = convertTomlArrayToStringList(authors, p) match {
       case Ok(l) => l
       case Err(e) => return Err(e)
     }
 
-    val flix_dependencies = try {
-      val flix_dependencies = parser.getTable("dependencies")
-      if (flix_dependencies == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'dependencies' is null"))
-      }
-      flix_dependencies
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'dependencies' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'dependencies' should have type Table"))
+    val flixDependencies = getRequiredTableProperty("dependencies", parser, p) match {
+      case Ok(t) => t
+      case Err(e) => return Err(e)
     }
-    val flix_deps_list = collectDependencies(flix_dependencies, true, true, p) match {
+    val flixDepsList = collectDependencies(flixDependencies, flixDep = true, prodDep = true, p) match {
       case Ok(l) => l
       case Err(e) => return Err(e)
     }
 
-    val dev_flix_dependencies = try {
-      val dev_flix_dependencies = parser.getTable("dev-dependencies")
-      if (dev_flix_dependencies == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'dev-dependencies' is null"))
-      }
-      dev_flix_dependencies
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'dev-dependencies' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'dev-dependencies' should have type Table"))
+    val devFlixDependencies = getRequiredTableProperty("dev-dependencies", parser, p) match {
+      case Ok(t) => t
+      case Err(e) => return Err(e)
     }
-    val dev_flix_deps_list = collectDependencies(dev_flix_dependencies, true, false, p) match {
+    val devFlixDepsList = collectDependencies(devFlixDependencies, flixDep = true, prodDep = false, p) match {
       case Ok(l) => l
       case Err(e) => return Err(e)
     }
 
-    val mvn_dependencies = try {
-      val mvn_dependencies = parser.getTable("mvn-dependencies")
-      if (mvn_dependencies == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'mvn-dependencies' is null"))
-      }
-      mvn_dependencies
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'mvn-dependencies' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'mvn-dependencies' should have type Table"))
+    val mvnDependencies = getRequiredTableProperty("mvn-dependencies", parser, p) match {
+      case Ok(t) => t
+      case Err(e) => return Err(e)
     }
-    val mvn_deps_list = collectDependencies(mvn_dependencies, false, true, p) match {
+    val mvnDepsList = collectDependencies(mvnDependencies, flixDep = false, prodDep = true, p) match {
       case Ok(l) => l
       case Err(e) => return Err(e)
     }
 
-    val dev_mvn_dependencies = try {
-      val dev_mvn_dependencies = parser.getTable("dev-mvn-dependencies")
-      if (dev_mvn_dependencies == null) {
-        return Err(ManifestError.RequiredPropertyIsNull(p, "'dev-mvn-dependencies' is null"))
-      }
-      dev_mvn_dependencies
-    } catch {
-      case _: IllegalArgumentException => return Err(ManifestError.MissingRequiredProperty(p, "'dev-mvn-dependencies' is missing"))
-      case _: TomlInvalidTypeException => return Err(ManifestError.RequiredPropertyHasWrongType(p, s"'dev-mvn-dependencies' should have type Table"))
+    val devMvnDependencies = getRequiredTableProperty("dev-mvn-dependencies", parser, p) match {
+      case Ok(t) => t
+      case Err(e) => return Err(e)
     }
-    val dev_mvn_deps_list = collectDependencies(dev_mvn_dependencies, false, false, p) match {
+    val devMvnDepsList = collectDependencies(devMvnDependencies, flixDep = false, prodDep = false, p) match {
       case Ok(l) => l
       case Err(e) => return Err(e)
     }
 
-    val dependency_list = flix_deps_list ++ dev_flix_deps_list ++ mvn_deps_list ++ dev_mvn_deps_list
+    val dependencyList = flixDepsList ++ devFlixDepsList ++ mvnDepsList ++ devMvnDepsList
 
-    Ok(Manifest(name, description, semanticVersion, semanticFlixVersion, license_opt, authors_list, dependency_list))
+    Ok(Manifest(name, description, semanticVersion, semanticFlixVersion, licenseOpt, authorsList, dependencyList))
   }
 
   def parse(s: String)(implicit out: PrintStream): Result[Manifest, ManifestError] = {
@@ -189,6 +137,32 @@ object ManifestParser {
       parse(Paths.get(s))
     } catch {
       case _: InvalidPathException => Err(ManifestError.ManifestNotFoundAt(s))
+    }
+  }
+
+  private def getRequiredStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
+    try {
+      val prop = parser.getString(propString)
+      if (prop == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      }
+      Ok(prop)
+    } catch {
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type String"))
+    }
+  }
+
+  private def getRequiredTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlTable, ManifestError] = {
+    try {
+      val flixDependencies = parser.getTable(propString)
+      if (flixDependencies == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      }
+      Ok(flixDependencies)
+    } catch {
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Table"))
     }
   }
 
@@ -209,26 +183,30 @@ object ManifestParser {
   }
 
   private def collectDependencies(deps: TomlTable, flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
-    val deps_entries = deps.entrySet()
-    val deps_set = mutable.Set.empty[Dependency]
-    deps_entries.forEach(entry => {
+    val depsEntries = deps.entrySet()
+    val depsSet = mutable.Set.empty[Dependency]
+    depsEntries.forEach(entry => {
+      val depName = entry.getKey
+      val depVer = entry.getValue
       try {
-        toSemVer(entry.getValue.asInstanceOf[String], p) match {
-          case Ok(version) => flixDep match {
-            case true => prodDep match {
-              case true => deps_set.add(Dependency.FlixDependency(entry.getKey, version, DependencyKind.Production))
-              case false => deps_set.add(Dependency.FlixDependency(entry.getKey, version, DependencyKind.Development))
+        toSemVer(depVer.asInstanceOf[String], p) match {
+          case Ok(version) => if (flixDep) {
+            if (prodDep) {
+              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Production))
+            } else {
+              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Development))
             }
-            case false =>
-              val key_split = entry.getKey.split(':')
-              if (key_split.length == 2) {
-                prodDep match {
-                  case true => deps_set.add(Dependency.MavenDependency(key_split.apply(0), key_split.apply(1), version, DependencyKind.Production))
-                  case false => deps_set.add(Dependency.MavenDependency(key_split.apply(0), key_split.apply(1), version, DependencyKind.Development))
-                }
+          } else {
+            val depNameSplit = depName.split(':')
+            if (depNameSplit.length == 2) {
+              if (prodDep) {
+                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Production))
               } else {
-                return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Development))
               }
+            } else {
+              return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+            }
           }
           case Err(e) => return Err(e)
         }
@@ -236,20 +214,21 @@ object ManifestParser {
         case _: ClassCastException => return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
       }
     })
-    Ok(deps_set.toList)
+    Ok(depsSet.toList)
   }
 
   private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
-    val string_set = mutable.Set.empty[String]
-    for(i <- 0 to array.size()-1) {
+    val stringSet = mutable.Set.empty[String]
+    for(i <- 0 until array.size()) {
       try {
-        val s = array.get(i).asInstanceOf[String]
-        string_set.add(s)
+        val s = array.getString(i)
+        stringSet.add(s)
       } catch {
-        case _: ClassCastException => Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
+        //TODO: Fix error handling
+        case _: TomlInvalidTypeException => Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
       }
     }
-    Ok(string_set.toList)
+    Ok(stringSet.toList)
   }
 
 }
