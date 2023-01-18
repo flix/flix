@@ -224,8 +224,7 @@ object ManifestParser {
         val s = array.getString(i)
         stringSet.add(s)
       } catch {
-        //TODO: Fix error handling
-        case _: TomlInvalidTypeException => Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
+        case _: TomlInvalidTypeException => return Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
       }
     }
     Ok(stringSet.toList)
