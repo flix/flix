@@ -1721,7 +1721,7 @@ class TestTyper extends FunSuite with TestUtils {
         |     };
         |     let h = if (true) f else g;
         |
-        |     let cstOrNotOrVar = if (true) Expr.Cst else if (true) Expr.Not else Expr.Var;
+        |     let cstOrNotOrVar = if (true) open Expr.Cst else if (true) open Expr.Not else open Expr.Var;
         |
         |     h(cstOrNotOrVar)
         | }
