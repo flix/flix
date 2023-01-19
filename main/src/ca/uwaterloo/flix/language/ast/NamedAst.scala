@@ -88,6 +88,8 @@ object NamedAst {
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
     case class HoleWithExp(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
