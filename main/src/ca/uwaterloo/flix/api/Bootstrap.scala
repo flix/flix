@@ -17,10 +17,23 @@ package ca.uwaterloo.flix.api
 
 object Bootstrap {
 
+  // What's the input?
+
   // Given a working dir p.
   // 1. Does `p/flix.toml` exist?
   // 1.1 If yes, the enter project mode.
   // 1.2 Otherwise enter folder mode.
+  // TODO: What about filemode?
+
+  // Project Mode:
+  // Read, parse, and validate flix.toml.
+  // Check each dependency is available or download it.
+  // Compute the set of JAR paths and Flix fpkg paths.
+  // Add src/* and test/*.
+
+
+  // Directory Mode:
+
 
 
   sealed trait Mode
