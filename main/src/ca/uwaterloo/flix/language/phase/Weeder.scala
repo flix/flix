@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
 import ca.uwaterloo.flix.language.ast.ParsedAst.{Effect, EffectSet, TypeParams}
-import ca.uwaterloo.flix.language.ast.WeededAst.{Expression, Pattern}
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -534,6 +534,31 @@ object Weeder {
             case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
           }.toSuccess
       }
+
+    case ParsedAst.Expression.Open(sp1, qname, sp2) =>
+      val parts = qname.namespace.idents :+ qname.ident
+      val prefix = parts.takeWhile(_.isUpper)
+      val suffix = parts.dropWhile(_.isUpper)
+      suffix match {
+        // Case 1: upper qualified name
+        case Nil =>
+          // NB: We only use the source location of the identifier itself.
+          WeededAst.Expression.Open(qname, qname.ident.loc).toSuccess
+
+        // Case 1: basic qualified name
+        case ident :: Nil =>
+          // NB: We only use the source location of the identifier itself.
+          WeededAst.Expression.Open(qname, ident.loc).toSuccess
+
+        // Case 2: actually a record access
+        case ident :: fields =>
+          // NB: We only use the source location of the identifier itself.
+          val base = WeededAst.Expression.Open(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
+          fields.foldLeft(base: WeededAst.Expression) {
+            case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
+          }.toSuccess
+      }
+
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1516,7 +1541,7 @@ object Weeder {
 
     case ParsedAst.Expression.Of(name, exp, sp2) =>
       val sp1 = name.sp1
-      mapN(visitExp(exp, senv))  {
+      mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Of(name, e, mkSL(sp1, sp2))
       }
 
@@ -3021,6 +3046,7 @@ object Weeder {
   @tailrec
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
+    case ParsedAst.Expression.Open(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
