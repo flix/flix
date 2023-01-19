@@ -117,7 +117,6 @@ object SetFormula {
     case _ => mkIntersection(f1, mkComplement(f2))
   }
 
-
   /**
     * Substitutes all variables in `f` using the substitution map `m`.
     *
@@ -201,4 +200,5 @@ object SetFormula {
       */
     case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrCase
   }
+
 }
