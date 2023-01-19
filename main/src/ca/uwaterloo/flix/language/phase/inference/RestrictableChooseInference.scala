@@ -150,8 +150,10 @@ object RestrictableChooseInference {
       }
 
       val enum = root.restrictableEnums(enumSym)
+      val universe = enum.cases.keys.toSet
       val (enumType, indexVar, _, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-      val domM = toType(dom(rules0), enumSym, loc.asSynthetic)
+      val domSet = dom(rules0)
+      val domM = toType(domSet, enumSym, loc.asSynthetic)
 
       for {
         // Γ ⊢ e: τ_in
@@ -163,7 +165,7 @@ object RestrictableChooseInference {
         _ <- unifyTypeM(enumType, tpe, loc)
 
         // φ_in <: dom(M)
-        _ <- unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
+        _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, loc.asSynthetic) else InferMonad.point(())
 
         // Γ, x_i: τ_i ⊢ e_i: τ_out
         (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
