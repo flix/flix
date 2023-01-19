@@ -22,7 +22,7 @@ mod Test.Exp.Choose.SimpleTerms {
     }
 
     pub def testChoose03(): Bool = {
-        let cstOrVar = if (true) Expr.Cst('a') else Expr.Var("lol");
+        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
         choose cstOrVar {
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
@@ -30,7 +30,7 @@ mod Test.Exp.Choose.SimpleTerms {
     }
 
     pub def testChoose04(): Bool = {
-        let cstOrVar = if (true) Expr.Cst('a') else Expr.Var("lol");
+        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
         choose cstOrVar {
             case Expr.Xor(_) => false
             case Expr.Cst(_) => true
@@ -64,7 +64,7 @@ mod Test.Exp.Choose.SimpleTerms {
         };
         let h = if (true) f else g;
 
-        let cstOrNot = if (true) Expr.Cst('a') else Expr.Not((123, 123ii, 1e23ff));
+        let cstOrNot = if (true) open Expr.Cst('a') else open Expr.Not((123, 123ii, 1e23ff));
         h(cstOrNot)
     }
 }
