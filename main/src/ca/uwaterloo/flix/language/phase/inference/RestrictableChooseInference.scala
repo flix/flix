@@ -130,7 +130,7 @@ object RestrictableChooseInference {
   /**
     * Unifies t1 and t2 where t1 is a subset of t2.
     */
-  private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+  private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Unit] = {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
     for {
@@ -141,7 +141,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def infer(exp: KindedAst.Expression.RestrictableChoose, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
+  def infer(exp: KindedAst.Expression.RestrictableChoose, root: KindedAst.Root)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
     case KindedAst.Expression.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
       // Get the enum symbols for the matched type
@@ -234,7 +234,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
+  def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
     case KindedAst.Expression.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
       // Lookup the enum declaration.
       val enumSym = symUse.sym.enumSym
@@ -281,7 +281,7 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given `of` expression.
     */
-  def inferOf(exp0: KindedAst.Expression.Of, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
+  def inferOf(exp0: KindedAst.Expression.Of, root: KindedAst.Root)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
     case KindedAst.Expression.Of(symUse, exp, tvar, loc) =>
       // Must check that the type of the expression cannot return anything but our symbol
 
@@ -341,7 +341,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferRestrictableChoicePattern(pat0: KindedAst.RestrictableChoicePattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferRestrictableChoicePattern(pat0: KindedAst.RestrictableChoicePattern, root: KindedAst.Root)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     /**
       * Local pattern visitor.
       */
@@ -373,7 +373,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferVarOrWild(pat: KindedAst.RestrictableChoicePattern.VarOrWild)(implicit flix: Flix): InferMonad[Type] = pat match {
+  private def inferVarOrWild(pat: KindedAst.RestrictableChoicePattern.VarOrWild)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = pat match {
     case KindedAst.RestrictableChoicePattern.Wild(tvar, _) => liftM(tvar)
     case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
   }
@@ -381,7 +381,7 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit flix: Flix): InferMonad[List[Type]] = {
+  private def inferRestrictableChoicePatterns(pats0: List[KindedAst.RestrictableChoicePattern], root: KindedAst.Root)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[List[Type]] = {
     traverseM(pats0)(inferRestrictableChoicePattern(_, root))
   }
 

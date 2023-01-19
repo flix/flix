@@ -127,7 +127,7 @@ object Instances {
     /**
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
-    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
+    def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit univ: Ast.Multiverse, flix: Flix): List[InstanceError] = {
       Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
         case Ok(_) =>
           List(
@@ -171,7 +171,7 @@ object Instances {
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)(root.univ, implicitly)) {
                 // Case 5.1: the schemes match. Success!
                 Nil
               } else {
@@ -195,7 +195,7 @@ object Instances {
     /**
       * Finds an instance of the class for a given type.
       */
-    def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym): Option[(Ast.Instance, Substitution)] = {
+    def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym)(implicit univ: Ast.Multiverse): Option[(Ast.Instance, Substitution)] = {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
@@ -207,13 +207,13 @@ object Instances {
       * Checks that there is an instance for each super class of the class of `inst`,
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
-    def checkSuperInstances(inst: TypedAst.Instance): List[InstanceError] = inst match {
+    def checkSuperInstances(inst: TypedAst.Instance)(implicit univ: Ast.Multiverse): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _) =>
         val superClasses = root.classEnv(clazz.sym).superClasses
         superClasses flatMap {
           superClass =>
             // Find the instance of the superclass matching the type of this instance.
-            findInstanceForType(tpe, superClass) match {
+            findInstanceForType(tpe, superClass)(root.univ) match {
               case Some((superInst, subst)) =>
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
                 superInst.tconstrs flatMap {
@@ -233,7 +233,7 @@ object Instances {
         }
     }
 
-    def checkInstance(inst: TypedAst.Instance): List[InstanceError] = {
+    def checkInstance(inst: TypedAst.Instance)(implicit univ: Ast.Multiverse): List[InstanceError] = {
       val isClassStable = inst.clazz.loc.source.stable
       val isInstanceStable = inst.loc.source.stable
       val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
@@ -247,7 +247,7 @@ object Instances {
     /**
       * Reassembles a set of instances of the same class.
       */
-    def checkInstancesOfClass(insts0: List[TypedAst.Instance]): List[InstanceError] = {
+    def checkInstancesOfClass(insts0: List[TypedAst.Instance])(implicit univ: Ast.Multiverse): List[InstanceError] = {
       val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toList
@@ -263,7 +263,7 @@ object Instances {
     }
 
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass(_)(root.univ))
     results.flatten.toList
   }
 }

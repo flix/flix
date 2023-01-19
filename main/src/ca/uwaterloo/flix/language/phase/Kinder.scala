@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -106,7 +107,12 @@ object Kinder {
 
         mapN(enumsVal, restrictableEnumsVal, classesVal, defsVal, instancesVal, effectsVal) {
           case (enums, restrictableEnums, classes, defs, instances, effects) =>
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
+            // construct the restrictable enum universes
+            val univMap = restrictableEnums.map {
+              case (sym, enum) => sym -> enum.cases.keys.toList
+            }.toMap
+            val univ = Ast.Multiverse(ListMap(univMap))
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, univ, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 

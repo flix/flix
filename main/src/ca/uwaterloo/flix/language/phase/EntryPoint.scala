@@ -65,7 +65,7 @@ object EntryPoint {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)) {
+        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)(root.univ, implicitly)) {
           entryPoint =>
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
@@ -112,8 +112,8 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
-    val argsVal = checkEntryPointArgs(defn, classEnv)
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
+    val argsVal = checkEntryPointArgs(defn, classEnv, root)
     val resultVal = checkEntryPointResult(defn, root, classEnv)
 
     mapN(argsVal, resultVal) {
@@ -126,7 +126,7 @@ object EntryPoint {
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Type.Unit)
 
@@ -144,7 +144,7 @@ object EntryPoint {
         arg =>
           val argSc = Scheme.generalize(Nil, arg)
 
-          if (Scheme.equal(unitSc, argSc, classEnv)) {
+          if (Scheme.equal(unitSc, argSc, classEnv)(root.univ, implicitly)) {
             // Case 1: Unit -> XYZ. We can ignore the args.
             ().toSuccess
           } else {
@@ -158,14 +158,14 @@ object EntryPoint {
     * Checks the entry point function result type.
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Type.Unit)
       val resultSc = Scheme.generalize(Nil, resultTpe)
 
 
-      if (Scheme.equal(unitSc, resultSc, classEnv)) {
+      if (Scheme.equal(unitSc, resultSc, classEnv)(root.univ, implicitly)) {
         // Case 1: XYZ -> Unit.
         ().toSuccess
       } else {
