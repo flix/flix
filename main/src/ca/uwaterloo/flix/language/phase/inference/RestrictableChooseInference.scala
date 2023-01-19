@@ -227,8 +227,7 @@ object RestrictableChooseInference {
         potentiallyStable = mkUnion(indicesAndTags.map{case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic)})
         intros = mkUnion(indicesAndTags.map{case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic)})
 
-        // TODO more generally out could be a super type of righthand
-        // φ_out === (φ_in ∩ potentiallyStable) ∪ intros
+        // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
         set = Type.mkCaseUnion(
           Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
           intros,
@@ -236,7 +235,7 @@ object RestrictableChooseInference {
           loc
         )
 
-        _ <- unifyTypeM(indexOutVar, set, loc)
+        _ <- unifySubset(set, indexOutVar, enumSym, loc)
 
         resultTconstrs = constrs ::: constrss.flatten
 
@@ -244,7 +243,7 @@ object RestrictableChooseInference {
         resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
         resultPur = Type.mkAnd(pur :: purs, loc)
         resultEff = Type.mkUnion(eff:: effs, loc)
-      } yield (resultTconstrs, enumTypeOut, resultPur, resultEff)
+      } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
   }
 
