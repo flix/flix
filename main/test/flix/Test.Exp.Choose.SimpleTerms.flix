@@ -1,8 +1,3 @@
-enum Option[t] {
-    case Some(t)
-    case None
-}
-
 restrictable enum Expr[s] {
     case Cst(Char)
     case Var(String)
