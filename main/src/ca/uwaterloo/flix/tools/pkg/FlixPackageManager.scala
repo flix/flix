@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.tools.Packager
 import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.ToOk
 import ca.uwaterloo.flix.util.{Options, Result}
@@ -29,7 +30,15 @@ object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
 
-  /*def installAll(manifest: Manifest, path: Path): Result[Unit, PackageError]*/
+  //TODO: download the correct version, not just the latest
+  //TODO: report errors
+  //TODO: tests
+  def installAll(manifest: Manifest, path: Path): Result[Unit, PackageError] = {
+    val flixDeps = findFlixDependencies(manifest)
+    println(flixDeps)
+    flixDeps.foreach(dep => install(s"${dep.username}/${dep.projectName}", path, null))
+    ().toOk
+  }
 
   /**
     * Installs a flix package from the Github `project`.
@@ -71,6 +80,10 @@ object FlixPackageManager {
     } else {
       throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
     }
+  }
+
+  private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
+    manifest.dependencies.filter(dep => dep.isInstanceOf[FlixDependency]).map(dep => dep.asInstanceOf[FlixDependency])
   }
 
 }
