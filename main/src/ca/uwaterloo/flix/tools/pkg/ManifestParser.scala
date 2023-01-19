@@ -17,11 +17,10 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.DefaultReaders.StringReader
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
-import java.io.{IOException, PrintStream, StringReader}
-import java.nio.file.{InvalidPathException, Path, Paths}
+import java.io.{IOException, StringReader}
+import java.nio.file.Path
 import scala.collection.mutable
 
 object ManifestParser {
@@ -218,18 +217,33 @@ object ManifestParser {
       try {
         toSemVer(depVer.asInstanceOf[String], p) match {
           case Ok(version) => if (flixDep) {
-            if (prodDep) {
-              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Production))
+            val depNameSplit1 = depName.split(':')
+            if(depNameSplit1.length == 2) {
+              val host = depNameSplit1.apply(0)
+              val depNameSplit2 = depNameSplit1.apply(1).split('/')
+              if(depNameSplit2.length == 2) {
+                val username = depNameSplit2.apply(0)
+                val projectName = depNameSplit2.apply(1)
+                if (prodDep) {
+                  depsSet.add(Dependency.FlixDependency(host, username, projectName, version, DependencyKind.Production))
+                } else {
+                  depsSet.add(Dependency.FlixDependency(host, username, projectName, version, DependencyKind.Development))
+                }
+              } else {
+                return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+              }
             } else {
-              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Development))
+              return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
             }
           } else {
             val depNameSplit = depName.split(':')
             if (depNameSplit.length == 2) {
+              val groupId = depNameSplit.apply(0)
+              val artifactId = depNameSplit.apply(1)
               if (prodDep) {
-                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Production))
+                depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
               } else {
-                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Development))
+                depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
               }
             } else {
               return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))

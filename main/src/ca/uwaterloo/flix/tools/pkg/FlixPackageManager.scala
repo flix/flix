@@ -29,6 +29,8 @@ object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
 
+  /*def installAll(manifest: Manifest, path: Path): Result[Unit, PackageError]*/
+
   /**
     * Installs a flix package from the Github `project`.
     *
@@ -47,6 +49,7 @@ object FlixPackageManager {
     Files.createDirectories(assetFolder)
 
     // clear the asset folder
+    //TODO: delete?
     assetFolder.toFile.listFiles.foreach(deletePackage)
 
     // download each asset to the folder
