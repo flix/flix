@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.inference
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoicePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.language.phase.Typer.inferExp
@@ -124,7 +125,7 @@ object RestrictableChooseInference {
           List(acc, tpe),
           loc.asSynthetic
         )
-      }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc))
+      }.getOrElse(Type.mkCaseEmpty(enumSym, loc))
   }
 
   /**
@@ -134,7 +135,7 @@ object RestrictableChooseInference {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
     for {
-      _ <- unifyTypeM(diff, Type.Cst(TypeConstructor.CaseEmpty(sym), loc), loc)
+      _ <- unifyTypeM(diff, Type.mkCaseEmpty(sym, loc), loc)
     } yield ()
   }
 
@@ -151,7 +152,7 @@ object RestrictableChooseInference {
 
       val enum = root.restrictableEnums(enumSym)
       val universe = enum.cases.keys.toSet
-      val (enumType, indexVar, _, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+      val (enumType, indexVar, _) = instantiatedEnumType(enum, loc.asSynthetic)
       val domSet = dom(rules0)
       val domM = toType(domSet, enumSym, loc.asSynthetic)
 
@@ -188,40 +189,54 @@ object RestrictableChooseInference {
       val universe = enum.cases.keys.toSet
 
       // The expected enum types and the index variables.
-      val (enumTypeIn, indexInVar, _, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-      val (enumTypeOut, indexOutVar, expectedBody, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+      val (enumTypeIn, indexInVar, _) = instantiatedEnumType(enum, loc.asSynthetic)
+      val (enumTypeOut, indexOutVar, outTargs) = instantiatedEnumType(enum, loc.asSynthetic)
+      val (bodyTypes, bodyIndices, bodyTargs) = rules0.map(_ => instantiatedEnumType(enum, loc.asSynthetic)).unzip3
+      val patternTagTypes = rules0.map(_.pat match {
+        case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseConstant(sym.sym), loc.asSynthetic)
+      })
 
       val domSet = dom(rules0)
       val domM = toType(domSet, enumSym, loc.asSynthetic)
-      val stableM = toType(stable(rules0), enumSym, loc.asSynthetic)
+
+      def mkUnion(l: List[Type]): Type =
+        l.reduceOption(Type.mkCaseUnion(_, _, enumSym, loc.asSynthetic)).
+          getOrElse(throw InternalCompilerException("unexpected empty choose", loc))
 
       for {
         // Γ ⊢ e: τ_in
         (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
-        patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
-        _ <- unifyTypeM(tpe :: patTpes, loc)
 
         // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
         _ <- unifyTypeM(enumTypeIn, tpe, loc)
+
+        patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
+        _ <- unifyTypeM(tpe :: patTpes, loc)
 
         // φ_in <: dom(M)
         _ <- if (domSet != universe) unifySubset(indexInVar, domM, enumSym, loc.asSynthetic) else InferMonad.point(())
 
         // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
         (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
+        _ <- traverseM(tpes.zip(bodyTypes)){case (t1, t2) => unifyTypeM(t1, t2, loc)}
 
         // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
-        _ <- unifyTypeM(expectedBody :: tpes, loc)
+        _ <- traverseM((outTargs :: bodyTargs).transpose)(unifyTypeM(_, loc))
 
-        // φ_out <: (φ_in ∩ stable(M)) ∪ (codom(M) - stable(M))
+        indicesAndTags = bodyIndices.zip(patternTagTypes)
+        potentiallyStable = mkUnion(indicesAndTags.map{case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic)})
+        intros = mkUnion(indicesAndTags.map{case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic)})
+
+        // TODO more generally out could be a super type of righthand
+        // φ_out === (φ_in ∩ potentiallyStable) ∪ intros
         set = Type.mkCaseUnion(
-          Type.mkCaseIntersection(indexInVar, stableM, enumSym, loc),
-          toType(codom(rules0) -- stable(rules0), enumSym, loc),
+          Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
+          intros,
           enumSym,
           loc
         )
-//        _ <- unifySubset(indexOutVar, set, enumSym, loc)
-        _ <- unifySubset(set, indexOutVar, enumSym, loc)
+
+        _ <- unifyTypeM(indexOutVar, set, loc)
 
         resultTconstrs = constrs ::: constrss.flatten
 
@@ -245,7 +260,7 @@ object RestrictableChooseInference {
       // Lookup the case declaration.
       val caze = decl.cases(symUse.sym)
 
-      val (enumType, indexVar, _, _) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+      val (enumType, indexVar, _) = instantiatedEnumType(decl, loc.asSynthetic)
 
       // Instantiate the type scheme of the case.
       val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
@@ -281,7 +296,7 @@ object RestrictableChooseInference {
 
       val caseType = Type.Cst(TypeConstructor.CaseConstant(symUse.sym), symUse.loc)
 
-      val (enumType, indexVar, _, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
+      val (enumType, indexVar, _) = instantiatedEnumType(enum, loc.asSynthetic)
 
       for {
         // infer the inner expression type
@@ -299,13 +314,11 @@ object RestrictableChooseInference {
   }
 
   /**
-    * Returns the instantiated conceptual schema of the enum along with the type
-    * variable that is the index type argument.
-    *
-    * The first and the second instantiation share all variables except the index.
+    * Returns the instantiated conceptual schema of the enum, the type
+    * variable that is the index type argument, and the list of normal type
+    * parameter variables.
     */
-  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var, Type, Type.Var) = {
-    // TODO RESTR-VARS can get rid of enumSym since it's in the decl
+  private def instantiatedEnumType(decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var, List[Type.Var]) = {
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
 
@@ -313,20 +326,17 @@ object RestrictableChooseInference {
       case KindedAst.TypeParam(_, sym, loc) => Type.freshVar(sym.kind, loc, sym.isRegion)
     }
 
-    val indexVar1 = instantiate(decl.index)
-    val indexVar2 = instantiate(decl.index)
+    val indexVar = instantiate(decl.index)
     val tparamArgs = decl.tparams.map(instantiate)
-    val targs1 = indexVar1 :: tparamArgs
-    val targs2 = indexVar2 :: tparamArgs
+    val targs = indexVar :: tparamArgs
 
-    val enumConstructorKind = Kind.mkArrow(targs1.map(_.kind))
-    val enumConstructor = Type.Cst(TypeConstructor.RestrictableEnum(enumSym, enumConstructorKind), loc)
+    val enumConstructorKind = Kind.mkArrow(targs.map(_.kind))
+    val enumConstructor = Type.Cst(TypeConstructor.RestrictableEnum(decl.sym, enumConstructorKind), loc)
 
     // The expected enum type.
-    val enumType1 = Type.mkApply(enumConstructor, targs1, loc)
-    val enumType2 = Type.mkApply(enumConstructor, targs2, loc)
+    val enumType = Type.mkApply(enumConstructor, targs, loc)
 
-    (enumType1, indexVar1, enumType2, indexVar2)
+    (enumType, indexVar, tparamArgs)
   }
 
   /**

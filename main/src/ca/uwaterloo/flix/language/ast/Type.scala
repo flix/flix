@@ -852,7 +852,7 @@ object Type {
     */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
     case Type.Cst(TypeConstructor.CaseEmpty(sym), _) => Type.Cst(TypeConstructor.CaseAll(sym), loc)
-    case Type.Cst(TypeConstructor.CaseAll(sym), _) => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case Type.Cst(TypeConstructor.CaseAll(sym), _) => Type.mkCaseEmpty(sym, loc)
     case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
   }
 
@@ -916,7 +916,7 @@ object Type {
     case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
     case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
     case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
-    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 != sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 != sym2 => Type.mkCaseEmpty(sym, loc)
     case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => tpe1
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
@@ -944,10 +944,16 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.mkCaseEmpty(sym, loc)
     case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 != sym2 => tpe1
     case _ => mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
   }
+
+  /**
+    * Returns the empty case set type.
+    */
+  def mkCaseEmpty(sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type =
+    Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.

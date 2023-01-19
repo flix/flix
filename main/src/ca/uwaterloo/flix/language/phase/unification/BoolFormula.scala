@@ -238,7 +238,7 @@ object BoolFormula {
     */
   private def toCaseType(f: BoolFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrEffOrCase, Int], loc: SourceLocation): Type = f match {
     case True => Type.Cst(TypeConstructor.CaseAll(sym), loc)
-    case False => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case False => Type.mkCaseEmpty(sym, loc)
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEffOrCase.Var(sym)) => Type.Var(sym, loc)

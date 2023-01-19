@@ -375,7 +375,7 @@ object CaseSetUnification {
 
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
-  private def mkEmpty()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseEmpty(universe.enumSym), SourceLocation.Unknown)
+  private def mkEmpty()(implicit universe: Universe): Type = Type.mkCaseEmpty(universe.enumSym, SourceLocation.Unknown)
 
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
