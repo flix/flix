@@ -17,9 +17,10 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.json4s.DefaultReaders.StringReader
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
-import java.io.{IOException, PrintStream}
+import java.io.{IOException, PrintStream, StringReader}
 import java.nio.file.{InvalidPathException, Path, Paths}
 import scala.collection.mutable
 
@@ -30,22 +31,48 @@ object ManifestParser {
     * at path `p` and returns an error if
     * there are parsing errors
     */
-  def parse(p: Path)(implicit out: PrintStream): Result[Manifest, ManifestError] = {
+  def parse(p: Path): Result[Manifest, ManifestError] = {
     val parser = try {
       val parser = Toml.parse(p)
       parser
     } catch {
       case _: IOException => return Err(ManifestError.IOError(p))
     }
+    createManifest(parser, p)
+  }
 
+  /**
+    * Creates a Manifest from the String `s`
+    * which should have the .toml format and
+    * returns an error if there are parsing
+    * errors. The path `p` should be where `s`
+    * comes from
+    */
+  def parse(s: String, p: Path): Result[Manifest, ManifestError] = {
+    val stringReader = new StringReader(s)
+    val parser = try {
+      val parser = Toml.parse(stringReader)
+      parser
+    } catch {
+      case _: IOException => return Err(ManifestError.IOError(p))
+    }
+    createManifest(parser, p)
+  }
+
+  /**
+    * Creates a Manifest from the TomlParseResult
+    * which should be at path `p` and returns an
+    * error if there are parsing errors
+    */
+  private def createManifest(parser: TomlParseResult, p: Path): Result[Manifest, ManifestError] = {
     val errors = parser.errors
-    if(errors.size() > 0) {
+    if (errors.size() > 0) {
       var errorString = ""
       errors.forEach(error => errorString = errorString + error.toString + ", ")
       return Err(ManifestError.ManifestParseError(p, errorString))
     }
 
-    for(
+    for (
       name <- getRequiredStringProperty("package.name", parser, p);
 
       description <- getRequiredStringProperty("package.description", parser, p);
@@ -74,21 +101,6 @@ object ManifestParser {
       devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
 
     ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
-
-  }
-
-  /**
-    * Creates a Manifest from the .toml file
-    * at the path represented by the String `s`
-    * and returns an error if there are parsing
-    * errors
-    */
-  def parse(s: String)(implicit out: PrintStream): Result[Manifest, ManifestError] = {
-    try {
-      parse(Paths.get(s))
-    } catch {
-      case _: InvalidPathException => Err(ManifestError.ManifestNotFoundAt(s))
-    }
   }
 
   /**
