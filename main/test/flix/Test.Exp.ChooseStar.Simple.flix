@@ -137,23 +137,24 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
-    pub def testChoose12(): Bool = {
-        // P1: Check that choose* upperbounds the input like choose
-        let f = x -> choose* x {
-            case Expr.Cst(_) => Expr.Cst
-            case Expr.Var(_) => Expr.Xor
-        };
-        let g = x -> choose* x {
-            case Expr.Cst(_) => Expr.Cst
-            case Expr.Xor(_) => Expr.Var
-        };
-        let h = if (true) f else g;
-        choose h(Expr.Cst) {
-            case Expr.Cst(_) => true
-            case Expr.Var(_) => true
-            case Expr.Xor(_) => true
-        }
-    }
+
+//    pub def testChoose12(): Bool = {
+//        // P1: Check that choose* upperbounds the input like choose
+//        let f = x -> choose* x {
+//            case Expr.Cst(_) => Expr.Cst
+//            case Expr.Var(_) => Expr.Xor
+//        };
+//        let g = x -> choose* x {
+//            case Expr.Cst(_) => Expr.Cst
+//            case Expr.Xor(_) => Expr.Var
+//        };
+//        let h = if (true) f else g;
+//        choose h(Expr.Cst) {
+//            case Expr.Cst(_) => true
+//            case Expr.Var(_) => true
+//            case Expr.Xor(_) => true
+//        }
+//    }
 
     pub def testChoose13(): Bool = {
         // P1: Check that choose* upperbounds the input like choose

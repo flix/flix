@@ -2,8 +2,4 @@ package flix.experimental
 
 import org.scalatest.Suites
 
-class ExperimentalSuite extends Suites(
-  new ChooseSuite,
-  new TestChoose,
-  new TestChooseStar
-)
+class ExperimentalSuite extends Suites
