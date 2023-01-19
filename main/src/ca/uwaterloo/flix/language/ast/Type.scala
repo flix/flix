@@ -68,7 +68,7 @@ sealed trait Type {
     * Gets all the cases in the given type.
     */
   def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
-    case Type.Cst(TypeConstructor.CaseConstant(sym, symTail), _) => SortedSet.from(symTail.incl(sym))
+    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => SortedSet(sym)
 
     case _: Type.Cst => SortedSet.empty
     case _: Type.Var => SortedSet.empty

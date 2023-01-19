@@ -84,7 +84,9 @@ object CaseSetUnification {
     /// Run the expensive boolean unification algorithm.
     ///
     implicit val universe: Universe = Universe(cases, enumSym)
-    booleanUnification(eraseAliases(tpe1), eraseAliases(tpe2), renv)
+    val input1 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe1)))
+    val input2 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe2)))
+    booleanUnification(input1, input2, renv)
   }
 
   /**
