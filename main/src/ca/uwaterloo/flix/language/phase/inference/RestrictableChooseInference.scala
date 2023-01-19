@@ -230,7 +230,7 @@ object RestrictableChooseInference {
     * Performs type inference on the given restrictable tag expression.
     */
   def inferRestrictableTag(exp: KindedAst.Expression.RestrictableTag, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp match {
-    case KindedAst.Expression.RestrictableTag(symUse, exp, tvar, loc) =>
+    case KindedAst.Expression.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
       // Lookup the enum declaration.
       val enumSym = symUse.sym.enumSym
       val decl = root.restrictableEnums(enumSym)
@@ -243,13 +243,20 @@ object RestrictableChooseInference {
       // Instantiate the type scheme of the case.
       val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-      // φ ∪ {l_i}
-      val index = Type.mkCaseUnion(
-        Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-        Type.Cst(TypeConstructor.CaseConstant(symUse.sym, Set.empty), loc.asSynthetic),
-        enumSym,
-        loc.asSynthetic
-      )
+
+      // Add a free variable only if the tag is open
+      val index = if (isOpen) {
+        // φ ∪ {l_i}
+        Type.mkCaseUnion(
+          Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
+          Type.Cst(TypeConstructor.CaseConstant(symUse.sym, Set.empty), loc.asSynthetic),
+          enumSym,
+          loc.asSynthetic
+        )
+      } else {
+        // {l_i}
+        Type.Cst(TypeConstructor.CaseConstant(symUse.sym, Set.empty), loc.asSynthetic)
+      }
 
       //
       // The tag type is a function from the type of variant to the type of the enum.

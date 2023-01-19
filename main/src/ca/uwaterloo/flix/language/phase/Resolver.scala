@@ -683,12 +683,12 @@ object Resolver {
       /**
         * Curry the tag, wrapping it in a lambda expression if it is not nullary.
         */
-      def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, loc: SourceLocation): ResolvedAst.Expression = {
+      def visitRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, isOpen: Boolean, loc: SourceLocation): ResolvedAst.Expression = {
         // Check if the tag value has Unit type.
         if (isUnitType(caze.tpe)) {
           // Case 1: The tag value has Unit type. Construct the Unit expression.
           val e = ResolvedAst.Expression.Cst(Ast.Constant.Unit, loc)
-          ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, loc)
+          ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), e, isOpen, loc)
         } else {
           // Case 2: The tag has a non-Unit type. Hence the tag is used as a function.
           // If the tag is `Some` we construct the lambda: x -> Some(x).
@@ -703,7 +703,7 @@ object Resolver {
           val varExp = ResolvedAst.Expression.Var(freshVar, loc)
 
           // Construct the tag expression on the fresh symbol expression.
-          val tagExp = ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), varExp, loc)
+          val tagExp = ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, loc), varExp, isOpen, loc)
 
           // Assemble the lambda expressions.
           ResolvedAst.Expression.Lambda(freshParam, tagExp, loc)
@@ -780,16 +780,16 @@ object Resolver {
       /**
         * Resolves the tag application.
         */
-      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], isOpen: Boolean, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         val esVal = traverse(exps)(visitExp(_, env0, region))
         mapN(esVal) {
           // Case 1: one expression. No tuple.
           case e :: Nil =>
-            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, outerLoc)
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), e, isOpen, outerLoc)
           // Case 2: multiple expressions. Make them a tuple
           case es =>
             val exp = ResolvedAst.Expression.Tuple(es, outerLoc)
-            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, outerLoc)
+            ResolvedAst.Expression.RestrictableTag(Ast.RestrictableCaseSymUse(caze.sym, innerLoc), exp, isOpen, outerLoc)
         }
       }
 
@@ -808,7 +808,16 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
             case ResolvedTerm.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
             case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
-            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, loc)
+            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
+          }
+
+        case NamedAst.Expression.Open(name, loc) =>
+          mapN(lookupTerm(name, env0, ns0, root)) {
+            case ResolvedTerm.Def(defn) => visitDef(defn, loc)
+            case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
+            case ResolvedTerm.Var(sym) => ResolvedAst.Expression.Var(sym, loc)
+            case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
+            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
@@ -851,7 +860,16 @@ object Resolver {
             case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
             case ResolvedTerm.Var(_) => visitApply(app, env0, region)
             case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, region, innerLoc, outerLoc)
+          }
+
+        case app@NamedAst.Expression.Apply(NamedAst.Expression.Open(qname, innerLoc), exps, outerLoc) =>
+          flatMapN(lookupTerm(qname, env0, ns0, root)) {
+            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Var(_) => visitApply(app, env0, region)
+            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, region, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
@@ -1015,7 +1033,7 @@ object Resolver {
                 case (p, e) =>
                   val symVal = if (star) {
                     e match {
-                      case ResolvedAst.Expression.RestrictableTag(sym, exp, loc) => Some(sym.sym).toSuccess
+                      case ResolvedAst.Expression.RestrictableTag(sym, exp, _, loc) => Some(sym.sym).toSuccess
                       case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
                       case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
                     }
