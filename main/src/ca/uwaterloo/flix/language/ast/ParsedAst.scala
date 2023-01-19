@@ -514,6 +514,15 @@ object ParsedAst {
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * An Open Qualified Name Expression (This opens the type of restrictable tags) (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Open(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Hole Expression.
       *
       * @param sp1   the position of the first character in the expression

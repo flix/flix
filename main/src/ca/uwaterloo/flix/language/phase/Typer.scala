@@ -1226,7 +1226,7 @@ object Typer {
           } yield (constrs, resultTyp, resultPur, resultEff)
         }
 
-      case exp@KindedAst.Expression.RestrictableTag(_, _, _, _) =>
+      case exp@KindedAst.Expression.RestrictableTag(_, _, _, _, _) =>
         RestrictableChooseInference.inferRestrictableTag(exp, root)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
@@ -2120,7 +2120,7 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, eff, loc)
 
-      case KindedAst.Expression.RestrictableTag(sym, exp, tvar, loc) =>
+      case KindedAst.Expression.RestrictableTag(sym, exp, _, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
         val eff = e.eff

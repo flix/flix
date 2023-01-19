@@ -561,6 +561,9 @@ object Namer {
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
+    case WeededAst.Expression.Open(name, loc) =>
+      NamedAst.Expression.Open(name, loc).toSuccess
+
     case WeededAst.Expression.Hole(name, loc) =>
       NamedAst.Expression.Hole(name, loc).toSuccess
 
