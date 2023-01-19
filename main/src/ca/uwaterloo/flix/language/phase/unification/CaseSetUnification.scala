@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
-import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 import scala.annotation.tailrec
 
 object CaseSetUnification {
