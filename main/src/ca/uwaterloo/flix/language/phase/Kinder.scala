@@ -530,10 +530,10 @@ object Kinder {
         exp => KindedAst.Expression.Tag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
-    case ResolvedAst.Expression.RestrictableTag(sym, exp0, loc) =>
+    case ResolvedAst.Expression.RestrictableTag(sym, exp0, isOpen, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        exp => KindedAst.Expression.RestrictableTag(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        exp => KindedAst.Expression.RestrictableTag(sym, exp, isOpen, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.Tuple(elms0, loc) =>

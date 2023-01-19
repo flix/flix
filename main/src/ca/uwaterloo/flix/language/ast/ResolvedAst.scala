@@ -125,7 +125,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, isOpen: Boolean, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 

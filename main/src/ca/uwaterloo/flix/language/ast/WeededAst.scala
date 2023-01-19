@@ -73,7 +73,9 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ambiguous(qname: Name.QName, isOpen: Boolean, loc: SourceLocation) extends WeededAst.Expression
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Open(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
