@@ -13,7 +13,7 @@ sealed trait SetFormula {
     */
   final def freeVars: SortedSet[Int] = this match {
     case SetFormula.All => SortedSet.empty
-    case SetFormula.Constant(_) => SortedSet.empty
+    case SetFormula.Cst(_) => SortedSet.empty
     case SetFormula.Var(x) => SortedSet(x)
     case SetFormula.Not(f) => f.freeVars
     case SetFormula.And(f1, f2) => f1.freeVars ++ f2.freeVars
@@ -27,7 +27,7 @@ sealed trait SetFormula {
     */
   final def size: Int = this match {
     case SetFormula.All => 0
-    case SetFormula.Constant(_) => 0
+    case SetFormula.Cst(_) => 0
     case SetFormula.Var(_) => 0
     case SetFormula.Not(t) => t.size
     case SetFormula.And(t1, t2) => t1.size + t2.size + 1
@@ -39,7 +39,7 @@ sealed trait SetFormula {
     */
   override def toString: String = this match {
     case SetFormula.All => "T"
-    case SetFormula.Constant(s) => s.map(_.toString).mkString("{", ", ", "}")
+    case SetFormula.Cst(s) => s.map(_.toString).mkString("{", ", ", "}")
     case SetFormula.Var(x) => s"x$x"
     case SetFormula.Not(f) => f match {
       case SetFormula.Var(x) => s"~x$x"
@@ -55,7 +55,7 @@ object SetFormula {
 
   case object All extends SetFormula
 
-  case class Constant(s: Set[Int]) extends SetFormula
+  case class Cst(s: Set[Int]) extends SetFormula
 
   case class Var(x: Int) extends SetFormula
 
@@ -65,7 +65,7 @@ object SetFormula {
 
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
 
-  val Empty: SetFormula = Constant(Set.empty)
+  val Empty: SetFormula = Cst(Set.empty)
 
 
   /**
@@ -75,7 +75,7 @@ object SetFormula {
     */
   def substitute(f: SetFormula, m: Bimap[Int, Int]): SetFormula = f match {
     case All => All
-    case Constant(s) => Constant(s)
+    case Cst(s) => Cst(s)
     case Var(x) => m.getForward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
       case Some(y) => Var(y)
@@ -97,7 +97,7 @@ object SetFormula {
     }
     case Type.Cst(TypeConstructor.CaseConstant(sym), _) => m.getForward(VarOrCase.Case(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
-      case Some(x) => Constant(Set(x))
+      case Some(x) => Cst(Set(x))
     }
     case Type.Cst(TypeConstructor.CaseAll(_), _) => All
     case Type.Cst(TypeConstructor.CaseEmpty(_), _) => Empty
@@ -117,7 +117,7 @@ object SetFormula {
     */
   private def toCaseType(f: SetFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
     case All => Type.Cst(TypeConstructor.CaseAll(sym), loc)
-    case Constant(s) => s.
+    case Cst(s) => s.
       map(i => m.getBackward(i) match {
         case Some(VarOrCase.Case(caseSym)) => caseSym
         case Some(VarOrCase.Var(_)) => throw InternalCompilerException(s"Unexpected type var in case set: '$i'.", loc)
