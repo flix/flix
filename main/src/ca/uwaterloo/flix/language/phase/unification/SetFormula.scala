@@ -65,7 +65,57 @@ object SetFormula {
 
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
 
+  // Smart Constructors
+
   val Empty: SetFormula = Cst(Set.empty)
+
+  def mkCst(s: Set[Int])(implicit universe: Set[Int]): SetFormula = {
+    if (s == universe) All else Cst(s)
+  }
+
+  def mkNot(f: SetFormula)(implicit universe: Set[Int]): SetFormula = f match {
+    case All => Empty
+    case Empty => All
+    case Cst(s) => mkCst(universe diff s)
+    case Not(f) => f
+    case _ => Not(f)
+  }
+
+  def mkComplement(f: SetFormula)(implicit universe: Set[Int]): SetFormula =
+    mkNot(f)
+
+  def mkAnd(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (All, other) => other
+    case (other, All) => other
+    case (Empty, _) => Empty
+    case (_, Empty) => Empty
+    case (Cst(c1), Cst(c2)) => mkCst(c1 intersect c2)
+    case _ => And(f1, f2)
+  }
+
+  def mkIntersection(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
+    mkAnd(f1, f2)
+
+  def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (All, _) => All
+    case (_, All) => All
+    case (Empty, other) => other
+    case (other, Empty) => other
+    case (Cst(c1), Cst(c2)) => mkCst(c1 union c2)
+    case _ => Or(f1, f2)
+  }
+
+  def mkUnion(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
+    mkOr(f1, f2)
+
+  def mkDifference(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (All, other) => mkComplement(other)
+    case (_, All) => Empty
+    case (Empty, _) => Empty
+    case (other, Empty) => other
+    case (Cst(c1), Cst(c2)) => mkCst(c1 diff c2)
+    case _ => mkIntersection(f1, mkComplement(f2))
+  }
 
 
   /**
@@ -90,23 +140,23 @@ object SetFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int]): SetFormula = tpe match {
+  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int])(implicit universe: Set[Int]): SetFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrCase.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
     case Type.Cst(TypeConstructor.CaseConstant(sym), _) => m.getForward(VarOrCase.Case(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
-      case Some(x) => Cst(Set(x))
+      case Some(x) => mkCst(Set(x))
     }
     case Type.Cst(TypeConstructor.CaseAll(_), _) => All
     case Type.Cst(TypeConstructor.CaseEmpty(_), _) => Empty
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) =>
-      Not(fromCaseType(tpe1, m))
+      mkNot(fromCaseType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) =>
-      And(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+      mkAnd(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) =>
-      Or(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+      mkOr(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
