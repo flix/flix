@@ -138,7 +138,8 @@ object CaseSetUnification2 {
       val se = successiveVariableElimination(mkIntersection(t0, t1, univ), xs, univ)
 
       val f1 = mkUnion(se(t0, univ), mkIntersection(SetFormula.Var(x), mkComplement(se(t1, univ), univ), univ), univ)
-      val f2 = SetFormulaAlg.simplifyByExhaustiveEvaluation(f1)(univ)
+//      val f2 = SetFormulaAlg.simplifyByExhaustiveEvaluation(f1)(univ)
+      val f2 = minViaTable(f1, univ)
       val st = BoolSubstitution2.singleton(x, f2)
       st ++ se
   }
@@ -333,4 +334,26 @@ object CaseSetUnification2 {
     case SetFormula.Or(f1, f2) => eval(f1, univ) ++ eval(f2, univ)
     case SetFormula.Var(x) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
   }
+
+  private def minViaTable(f: SetFormula, univ: Set[Int]): SetFormula = {
+    val bot = SetFormula.Cst(Set.empty): SetFormula
+    val top = SetFormula.Cst(univ): SetFormula
+
+    def visit(fvs: List[Int]): List[(SetFormula, Map[Int, SetFormula])] = fvs match {
+    case Nil => List((top, Map.empty))
+      case v :: vs =>
+        visit(vs) flatMap {
+          case (p, partialSubst) =>
+            val p1 = mkIntersection(SetFormula.Not(SetFormula.Var(v)), p, univ)
+            val p2 = mkIntersection(SetFormula.Var(v), p, univ)
+            List((p1, partialSubst + (v -> bot)), (p2, partialSubst + (v -> top)))
+        }
+    }
+
+    visit(f.freeVars.toList).foldLeft(bot) {
+      case (acc, (p, subst)) => mkUnion(acc, mkIntersection(p, eval(f, subst, univ), univ), univ)
+    }
+  }
+
+  private def eval(f: SetFormula, m: Map[Int, SetFormula], univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
 }

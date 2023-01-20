@@ -22,50 +22,50 @@ mod Test.Exp.Choose.SimpleTerms {
     }
 
 // TODO RESTR-VARS
-//    pub def testChoose03(): Bool = {
-//        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
-//        choose cstOrVar {
-//            case Expr.Cst(_) => true
-//            case Expr.Var(_) => false
-//        }
-//    }
-//
-//    pub def testChoose04(): Bool = {
-//        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
-//        choose cstOrVar {
-//            case Expr.Xor(_) => false
-//            case Expr.Cst(_) => true
-//            case Expr.Var(_) => false
-//        }
-//    }
-//
-//    pub def testChoose05(): Bool = {
-//        let f = x -> choose x {
-//            case Expr.Cst(_) => false
-//            case Expr.Var(_) => true
-//        };
-//        let g = x -> choose x {
-//            case Expr.Cst(_) => false
-//            case Expr.Xor(_) => true
-//        };
-//        let h = if (true) f else g;
-//        h(Expr.Cst('a'))
-//    }
-//
-//    pub def testChoose06(): Bool = {
-//        let f = x -> choose x {
-//            case Expr.Cst(_) => false
-//            case Expr.Var(_) => true
-//            case Expr.Not(_) => false
-//        };
-//        let g = x -> choose x {
-//            case Expr.Cst(_) => false
-//            case Expr.Xor(_) => true
-//            case Expr.Not(_) => false
-//        };
-//        let h = if (true) f else g;
-//
-//        let cstOrNot = if (true) open Expr.Cst('a') else open Expr.Not((123, 123ii, 1e23ff));
-//        h(cstOrNot)
-//    }
+    pub def testChoose03(): Bool = {
+        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
+        choose cstOrVar {
+            case Expr.Cst(_) => true
+            case Expr.Var(_) => false
+        }
+    }
+
+    pub def testChoose04(): Bool = {
+        let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
+        choose cstOrVar {
+            case Expr.Xor(_) => false
+            case Expr.Cst(_) => true
+            case Expr.Var(_) => false
+        }
+    }
+
+    pub def testChoose05(): Bool = {
+        let f = x -> choose x {
+            case Expr.Cst(_) => false
+            case Expr.Var(_) => true
+        };
+        let g = x -> choose x {
+            case Expr.Cst(_) => false
+            case Expr.Xor(_) => true
+        };
+        let h = if (true) f else g;
+        h(Expr.Cst('a'))
+    }
+
+    pub def testChoose06(): Bool = {
+        let f = x -> choose x {
+            case Expr.Cst(_) => false
+            case Expr.Var(_) => true
+            case Expr.Not(_) => false
+        };
+        let g = x -> choose x {
+            case Expr.Cst(_) => false
+            case Expr.Xor(_) => true
+            case Expr.Not(_) => false
+        };
+        let h = if (true) f else g;
+
+        let cstOrNot = if (true) open Expr.Cst('a') else open Expr.Not((123, 123ii, 1e23ff));
+        h(cstOrNot)
+    }
 }
