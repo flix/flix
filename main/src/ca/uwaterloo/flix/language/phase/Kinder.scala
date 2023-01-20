@@ -204,13 +204,13 @@ object Kinder {
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitCase(caze0: ResolvedAst.Declaration.Case, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Case, KindError] = caze0 match {
-    case ResolvedAst.Declaration.Case(sym, tpe0) =>
+    case ResolvedAst.Declaration.Case(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
         case tpe =>
           val quants = tparams.map(_.sym)
           val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
-          KindedAst.Case(sym, tpe, sc)
+          KindedAst.Case(sym, tpe, sc, loc)
       }
   }
 
@@ -218,13 +218,13 @@ object Kinder {
     * Performs kinding on the given enum case under the given kind environment.
     */
   private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam,tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
-    case ResolvedAst.Declaration.RestrictableCase(sym, tpe0) =>
+    case ResolvedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
         case tpe =>
           val quants = (index :: tparams).map(_.sym)
           val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
-          KindedAst.RestrictableCase(sym, tpe, sc) // TODO RESTR-VARS the scheme is different for these. REVISIT
+          KindedAst.RestrictableCase(sym, tpe, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
 

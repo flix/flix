@@ -58,9 +58,9 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)

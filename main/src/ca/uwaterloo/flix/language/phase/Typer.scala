@@ -419,8 +419,8 @@ object Typer {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpe, loc) =>
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(caseSym, tagType, sc)) =>
-          name -> TypedAst.Case(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
+        case (name, KindedAst.Case(caseSym, tagType, sc, caseLoc)) =>
+          name -> TypedAst.Case(caseSym, tagType, sc, caseLoc)
       }
 
       enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
@@ -448,8 +448,8 @@ object Typer {
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc)) =>
-          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
+        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)) =>
+          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
       }
 
       enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
@@ -2560,6 +2560,7 @@ object Typer {
     */
   private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
     implicit val univ: Ast.Multiverse = root.univ
+
     /**
       * Local pattern visitor.
       */

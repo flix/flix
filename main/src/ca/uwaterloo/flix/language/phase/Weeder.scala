@@ -400,18 +400,18 @@ object Weeder {
     * Performs weeding on the given enum case `c0`.
     */
   private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): WeededAst.Case = c0 match {
-    case ParsedAst.Case(_, ident, tpe0, _) =>
+    case ParsedAst.Case(sp1, ident, tpe0, sp2) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
-      WeededAst.Case(ident, tpe)
+      WeededAst.Case(ident, tpe, mkSL(sp1, sp2))
   }
 
   /**
     * Performs weeding on the given enum case `c0`.
     */
   private def visitRestrictableCase(c0: ParsedAst.RestrictableCase)(implicit flix: Flix): WeededAst.RestrictableCase = c0 match {
-    case ParsedAst.RestrictableCase(_, ident, tpe0, _) =>
+    case ParsedAst.RestrictableCase(sp1, ident, tpe0, sp2) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
-      WeededAst.RestrictableCase(ident, tpe)
+      WeededAst.RestrictableCase(ident, tpe, mkSL(sp1, sp2))
   }
 
   /**
