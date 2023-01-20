@@ -68,6 +68,7 @@ mod Test.Exp.Choose.Recursive {
         h(cstOrNot)
     }
 
+// TODO RESTR-VARS
 //    pub def testChoose07(): Bool = {
 //        let id = x -> choose x {
 //            case Expr.Cst(y)    => open Expr.Cst(y)
