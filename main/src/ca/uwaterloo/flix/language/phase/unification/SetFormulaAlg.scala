@@ -36,14 +36,7 @@ object SetFormulaAlg {
   def mkIntersection(terms: List[SetFormula])(implicit universe: Set[Int]): SetFormula =
     mkAnd(terms)
 
-  def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
-    case (Cst(s1), _) if s1 == universe => Cst(s1)
-    case (_, Cst(s2)) if s2 == universe => Cst(s2)
-    case (Empty, other) => other
-    case (other, Empty) => other
-    case (Cst(c1), Cst(c2)) => mkCst(c1 union c2)
-    case _ => Or(f1, f2)
-  }
+  def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = CaseSetUnification.mkUnion(f1, f2, universe)
 
   def mkUnion(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
     mkOr(f1, f2)
