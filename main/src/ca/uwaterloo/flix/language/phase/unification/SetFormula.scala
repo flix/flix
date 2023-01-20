@@ -51,8 +51,6 @@ sealed trait SetFormula {
 
 object SetFormula {
 
-  val Empty: SetFormula = Cst(Set.empty)
-
   case class Cst(s: Set[Int]) extends SetFormula
 
   case class Var(x: Int) extends SetFormula
@@ -64,9 +62,24 @@ object SetFormula {
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
 
   /**
+    * Represents the empty set.
+    */
+  val Empty: SetFormula = Cst(Set.empty)
+
+  /**
+    * Constructs the universe set.
+    */
+  def mkTop(implicit univ: Set[Int]): SetFormula = Cst(univ)
+
+  /**
+    * Returns the constant set for the given `s`.
+    */
+  def mkCst(s: Set[Int]): SetFormula = Cst(s)
+
+  /**
     * Returns the negation of the set formula `tpe0`.
     */
-  def mkComplement(tpe0: SetFormula)(implicit univ: Set[Int]): SetFormula = tpe0 match {
+  def mkNot(tpe0: SetFormula)(implicit univ: Set[Int]): SetFormula = tpe0 match {
     case SetFormula.Cst(s) =>
       SetFormula.Cst(univ -- s)
 
@@ -75,11 +88,11 @@ object SetFormula {
 
     // ¬(¬x ∨ y) => x ∧ ¬y
     case SetFormula.Or(SetFormula.Not(x), y) =>
-      mkIntersection(x, mkComplement(y))
+      mkAnd(x, mkNot(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
     case SetFormula.Or(x, SetFormula.Not(y)) =>
-      mkIntersection(mkComplement(x), y)
+      mkAnd(mkNot(x), y)
 
     case _ => SetFormula.Not(tpe0)
   }
@@ -89,7 +102,7 @@ object SetFormula {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkIntersection(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+  def mkAnd(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
     case (SetFormula.Cst(x1), x2) if x1 == univ =>
       x2
 
@@ -101,7 +114,7 @@ object SetFormula {
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (SetFormula.Not(x1), SetFormula.Or(x2, y)) if x1 == x2 =>
-      mkIntersection(mkComplement(x1), y)
+      mkAnd(mkNot(x1), y)
 
     // x ∧ ¬x => F
     case (x1, SetFormula.Not(x2)) if x1 == x2 =>
@@ -113,19 +126,19 @@ object SetFormula {
 
     // x ∧ (x ∧ y) => (x ∧ y)
     case (x1, SetFormula.And(x2, y)) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkAnd(x1, y)
 
     // x ∧ (y ∧ x) => (x ∧ y)
     case (x1, SetFormula.And(y, x2)) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkAnd(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
     case (SetFormula.And(x1, y), x2) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkAnd(x1, y)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
     case (SetFormula.And(x, y1), y2) if y1 == y2 =>
-      mkIntersection(x, y1)
+      mkAnd(x, y1)
 
     // x ∧ (x ∨ y) => x
     case (x1, SetFormula.Or(x2, _)) if x1 == x2 =>
@@ -177,7 +190,7 @@ object SetFormula {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkUnion(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+  def mkOr(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
     case (SetFormula.Cst(x1), x2) if x1 == univ =>
       SetFormula.Cst(x1)
 
@@ -189,11 +202,11 @@ object SetFormula {
 
     // x ∨ (y ∨ x) => x ∨ y
     case (x1, SetFormula.Or(y, x2)) if x1 == x2 =>
-      mkUnion(x1, y)
+      mkOr(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
     case (SetFormula.Or(x1, y), x2) if x1 == x2 =>
-      mkUnion(x1, y)
+      mkOr(x1, y)
 
     // ¬x ∨ x => T
     case (SetFormula.Not(x), y) if x == y =>
@@ -225,6 +238,41 @@ object SetFormula {
       SetFormula.Or(tpe1, tpe2)
   }
 
+
+  /**
+    * Evaluates the set formula. Assumes there are no variables in the formula.
+    */
+  def eval(f: SetFormula)(implicit univ: Set[Int]): Set[Int] = f match {
+    case SetFormula.Cst(s) => s
+    case SetFormula.Not(f) => univ -- eval(f)
+    case SetFormula.And(f1, f2) => eval(f1) & eval(f2)
+    case SetFormula.Or(f1, f2) => eval(f1) ++ eval(f2)
+    case SetFormula.Var(x) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
+  }
+
+  // TODO: DOC
+  def minimize(f: SetFormula)(implicit univ: Set[Int]): SetFormula = {
+    val bot = SetFormula.Cst(Set.empty): SetFormula
+    val top = SetFormula.Cst(univ): SetFormula
+
+    def visit(fvs: List[Int]): List[(SetFormula, Map[Int, SetFormula])] = fvs match {
+      case Nil => List((top, Map.empty))
+      case v :: vs =>
+        visit(vs) flatMap {
+          case (p, partialSubst) =>
+            val p1 = mkAnd(SetFormula.Not(SetFormula.Var(v)), p)
+            val p2 = mkAnd(SetFormula.Var(v), p)
+            List((p1, partialSubst + (v -> bot)), (p2, partialSubst + (v -> top)))
+        }
+    }
+
+    visit(f.freeVars.toList).foldLeft(bot) {
+      case (acc, (p, subst)) => mkOr(acc, mkAnd(p, applySubst(f, subst)))
+    }
+  }
+
+  private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
+
   /**
     * Substitutes all variables in `f` using the substitution map `m`.
     *
@@ -247,9 +295,9 @@ object SetFormula {
   def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
     case Cst(s) => Cst(s)
     case Var(x) => fn(x)
-    case Not(f1) => mkComplement(map(f1)(fn))
-    case And(f1, f2) => mkIntersection(map(f1)(fn), map(f2)(fn))
-    case Or(f1, f2) => mkUnion(map(f1)(fn), map(f2)(fn))
+    case Not(f1) => mkNot(map(f1)(fn))
+    case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
+    case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
   }
 
   /**
