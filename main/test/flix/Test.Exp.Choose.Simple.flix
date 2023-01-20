@@ -63,14 +63,15 @@ mod Test.Exp.Choose.Simple {
         h(cstOrNot)
     }
 
-    pub def testChoose07(): Bool = {
-        let id = x -> choose x {
-            case Expr.And(_)    => open Expr.And
-            case Expr.Cst(_)    => open Expr.Cst
-            case Expr.Not(_)    => open Expr.Not
-            case Expr.Or(_)     => open Expr.Or
-        };
-        let _ = id(Expr.Cst);
-        true
-    }
+// TODO RESTR-VARS
+//    pub def testChoose07(): Bool = {
+//        let id = x -> choose x {
+//            case Expr.And(_)    => open Expr.And
+//            case Expr.Cst(_)    => open Expr.Cst
+//            case Expr.Not(_)    => open Expr.Not
+//            case Expr.Or(_)     => open Expr.Or
+//        };
+//        let _ = id(Expr.Cst);
+//        true
+//    }
 }

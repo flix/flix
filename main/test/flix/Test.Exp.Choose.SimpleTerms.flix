@@ -21,6 +21,7 @@ mod Test.Exp.Choose.SimpleTerms {
         }
     }
 
+// TODO RESTR-VARS
     pub def testChoose03(): Bool = {
         let cstOrVar = if (true) open Expr.Cst('a') else open Expr.Var("lol");
         choose cstOrVar {

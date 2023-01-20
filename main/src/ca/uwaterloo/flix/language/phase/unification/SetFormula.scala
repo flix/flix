@@ -12,7 +12,6 @@ sealed trait SetFormula {
     * Returns the free variables in `this` expression.
     */
   final def freeVars: SortedSet[Int] = this match {
-    case SetFormula.All => SortedSet.empty
     case SetFormula.Cst(_) => SortedSet.empty
     case SetFormula.Var(x) => SortedSet(x)
     case SetFormula.Not(f) => f.freeVars
@@ -26,7 +25,6 @@ sealed trait SetFormula {
     * The size is the number of joins and meets
     */
   final def size: Int = this match {
-    case SetFormula.All => 0
     case SetFormula.Cst(_) => 0
     case SetFormula.Var(_) => 0
     case SetFormula.Not(t) => t.size
@@ -38,7 +36,6 @@ sealed trait SetFormula {
     * Returns a human-readable string representation of `this` expression.
     */
   override def toString: String = this match {
-    case SetFormula.All => "T"
     case SetFormula.Cst(s) => s.map(_.toString).mkString("{", ", ", "}")
     case SetFormula.Var(x) => s"x$x"
     case SetFormula.Not(f) => f match {
@@ -52,8 +49,6 @@ sealed trait SetFormula {
 }
 
 object SetFormula {
-
-  case object All extends SetFormula
 
   val Empty: SetFormula = Cst(Set.empty)
 
@@ -72,10 +67,9 @@ object SetFormula {
     *
     * The map `m` must bind each free variable in `f` to a (new) variable.
     */
-  def substitute(f: SetFormula, m: Bimap[Int, Int]): SetFormula = f match {
-    case All => All
+  def substitute(f: SetFormula, m: Map[Int, Int]): SetFormula = f match {
     case Cst(s) => Cst(s)
-    case Var(x) => m.getForward(x) match {
+    case Var(x) => m.get(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
       case Some(y) => Var(y)
     }
@@ -85,11 +79,39 @@ object SetFormula {
   }
 
   /**
+    * Runs the function `fn` on all the variables in the formula.
+    */
+  def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
+    case Cst(s) => Cst(s)
+    case Var(x) => fn(x)
+    case Not(f1) => SetFormulaAlg.mkNot(map(f1)(fn))
+    case And(f1, f2) => SetFormulaAlg.mkAnd(map(f1)(fn), map(f2)(fn))
+    case Or(f1, f2) => SetFormulaAlg.mkOr(map(f1)(fn), map(f2)(fn))
+  }
+
+  /**
+    * Creates an environment for mapping between proper types and formulas.
+    */
+  def mkEnv(ts: List[Type], univ: List[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
+    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
+    val cases = (univ ++ ts.flatMap(_.cases)).distinct.map(VarOrCase.Case)
+
+    val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
+    val backward = forward.map {case (a, b) => (b, a)}
+
+    val newUniv = univ.map {
+      case sym => forward(VarOrCase.Case(sym))
+    }
+
+    (Bimap(forward, backward), newUniv.toSet)
+  }
+
+  /**
     * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int]): SetFormula = tpe match {
+  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int], univ: Set[Int]): SetFormula = tpe match {
     case Type.Var(sym, _) => m.getForward(VarOrCase.Var(sym)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
@@ -98,14 +120,14 @@ object SetFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
       case Some(x) => Cst(Set(x))
     }
-    case Type.Cst(TypeConstructor.CaseAll(_), _) => All
+    case Type.Cst(TypeConstructor.CaseAll(_), _) => SetFormula.Cst(univ)
     case Type.Cst(TypeConstructor.CaseEmpty(_), _) => Empty
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) =>
-      Not(fromCaseType(tpe1, m))
+      Not(fromCaseType(tpe1, m, univ))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) =>
-      And(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+      And(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) =>
-      Or(fromCaseType(tpe1, m), fromCaseType(tpe2, m))
+      Or(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
@@ -114,8 +136,7 @@ object SetFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  private def toCaseType(f: SetFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
-    case All => Type.Cst(TypeConstructor.CaseAll(sym), loc)
+  def toCaseType(f: SetFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
     case Cst(s) => s.
       map(i => m.getBackward(i) match {
         case Some(VarOrCase.Case(caseSym)) => caseSym
