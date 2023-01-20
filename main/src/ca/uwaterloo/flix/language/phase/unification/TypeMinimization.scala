@@ -36,7 +36,7 @@ object TypeMinimization {
   def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
     case Kind.Effect => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
-    case Kind.CaseSet(_) => minimizeBoolAlg(t)
+//    case Kind.CaseSet(_) => minimizeBoolAlg(t) // TODO RESTR-VARS not minimizing atm
     case _ => t match {
       case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
