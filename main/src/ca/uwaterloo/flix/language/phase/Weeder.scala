@@ -315,7 +315,7 @@ object Weeder {
         // Case 1: empty enum
         case (None, None) => Map.empty.toSuccess
         // Case 2: singleton enum
-        case (Some(t0), None) => Map(ident -> WeededAst.Case(ident, visitType(t0))).toSuccess
+        case (Some(t0), None) => Map(ident -> WeededAst.Case(ident, visitType(t0), mkSL(sp1, sp2))).toSuccess
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
           /*
@@ -363,7 +363,7 @@ object Weeder {
         // Case 1: empty enum
         case (None, None) => Map.empty.toSuccess
         // Case 2: singleton enum
-        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0))).toSuccess
+        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0), mkSL(sp1, sp2))).toSuccess
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
           /*
