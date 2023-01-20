@@ -36,35 +36,18 @@ object CaseSetUnification2 {
       return Ok(Substitution.empty)
     }
 
-    // TODO RESTR-VARS this doesn't help lol
-    //    (tpe1, tpe2) match {
-    //      case (Type.Var(x, _), Type.Var(y, _)) =>
-    //        if (renv.isFlexible(x)) {
-    //          return Ok(Substitution.singleton(x, tpe2)) // 135 hits
-    //        }
-    //        if (renv.isFlexible(y)) {
-    //          return Ok(Substitution.singleton(y, tpe1)) // 0 hits
-    //        }
-    //        if (x == y) {
-    //          return Ok(Substitution.empty) // 0 hits
-    //        }
-    //
-    //      case (Type.Cst(TypeConstructor.CaseAll(_), _), Type.Cst(TypeConstructor.CaseAll(_), _)) =>
-    //        return Ok(Substitution.empty) // 0 hits
-    //
-    //      case (Type.Var(x, _), t2@Type.Cst(tc, _)) if renv.isFlexible(x) => tc match {
-    //        case TypeConstructor.CaseAll(_) =>
-    //          return Ok(Substitution.singleton(x, t2)) // 0 hits
-    //        case TypeConstructor.CaseEmpty(sym) =>
-    //          return Ok(Substitution.singleton(x, t2)) // 0 hits
-    //        case _ => // nop
-    //      }
-    //
-    //      case (Type.Cst(TypeConstructor.CaseEmpty(_), _), Type.Cst(TypeConstructor.CaseEmpty(_), _)) =>
-    //        return Ok(Substitution.empty) //  0 hits
-    //
-    //      case _ => // nop
-    //    }
+    ///
+    /// Get rid of of trivial variable cases.
+    ///
+    (tpe1, tpe2) match {
+      case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
+        Substitution.singleton(x, t2)
+
+      case (t1, t2@Type.Var(x, _))  if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
+        Substitution.singleton(x, t1)
+
+      case _ => // nop
+    }
 
     ///
     /// Run the expensive boolean unification algorithm.
