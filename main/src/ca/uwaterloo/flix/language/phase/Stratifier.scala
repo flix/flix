@@ -58,13 +58,13 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = flix.subphase("Stratify Defs") {
-      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
+      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(root, g, flix).map(d => kv._1 -> d))
       Validation.sequence(result)
     }
     val newInstances = flix.subphase("Stratify Instance Defs") {
       val result = ParOps.parMap(root.instances) {
         case (sym, is) =>
-          val x = traverse(is)(i => visitInstance(i)(g, flix))
+          val x = traverse(is)(i => visitInstance(i)(root, g, flix))
           x.map(d => sym -> d)
       }
       Validation.sequence(result)
@@ -78,13 +78,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -94,7 +94,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Cst(_, _, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
@@ -494,7 +494,7 @@ object Stratifier {
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
@@ -801,12 +801,12 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
     // Compute the restricted labelled graph.
-    val rg = g.restrict(key, labelEq)
+    val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
@@ -884,12 +884,12 @@ object Stratifier {
   /**
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
-  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+  private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)(root.univ, flix)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

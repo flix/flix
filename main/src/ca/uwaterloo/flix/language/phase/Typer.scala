@@ -55,7 +55,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.univ, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -63,7 +63,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, _, loc) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -274,6 +274,7 @@ object Typer {
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _, _) =>
+      implicit val univ: Ast.Multiverse = root.univ
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -472,6 +473,7 @@ object Typer {
     * Infers the type of the given expression `exp0`.
     */
   def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+    implicit val univ: Ast.Multiverse = root.univ
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -2557,6 +2559,7 @@ object Typer {
     * Infers the type of the given pattern `pat0`.
     */
   private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+    implicit val univ: Ast.Multiverse = root.univ
     /**
       * Local pattern visitor.
       */
@@ -2682,6 +2685,7 @@ object Typer {
     */
   private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
+      implicit val univ: Ast.Multiverse = root.univ
       // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
@@ -2705,33 +2709,37 @@ object Typer {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
-    case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
-      val restRow = Type.freshVar(Kind.SchemaRow, loc)
-      for {
-        termTypes <- traverseM(terms)(inferPattern(_, root))
-        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
-        tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-      } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
+  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+    implicit val univ = root.univ
 
-    case KindedAst.Predicate.Body.Guard(exp, loc) =>
-      for {
-        (constrs, tpe, pur, eff) <- inferExp(exp, root)
-        expPur <- unifyBoolM(Type.Pure, pur, loc)
-        expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, eff, loc)
-      } yield (constrs, mkAnySchemaRowType(loc))
+    body0 match {
+      case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
+        val restRow = Type.freshVar(Kind.SchemaRow, loc)
+        for {
+          termTypes <- traverseM(terms)(inferPattern(_, root))
+          predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+          tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
+        } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-      // TODO: Use type classes instead of array?
-      val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
-      val expectedType = Type.mkArray(tupleType, Type.False, loc)
-      for {
-        (constrs, tpe, pur, eff) <- inferExp(exp, root)
-        expPur <- unifyBoolM(Type.Pure, pur, loc)
-        expTyp <- unifyTypeM(expectedType, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, eff, loc)
-      } yield (constrs, mkAnySchemaRowType(loc))
+      case KindedAst.Predicate.Body.Guard(exp, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expTyp <- unifyTypeM(Type.Bool, tpe, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+
+      case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+        // TODO: Use type classes instead of array?
+        val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
+        val expectedType = Type.mkArray(tupleType, Type.False, loc)
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expTyp <- unifyTypeM(expectedType, tpe, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+    }
   }
 
   /**

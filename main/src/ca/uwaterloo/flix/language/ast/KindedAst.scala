@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.{CompilationMessage, ast}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -31,6 +31,7 @@ object KindedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, KindedAst.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
+                  univ: Ast.Multiverse,
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
