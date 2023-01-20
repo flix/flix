@@ -370,8 +370,16 @@ object NamedAst {
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
+    case class Ascribe(tpe: NamedAst.Type, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Type
 
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Kind
+
+    case class Arrow(k1: NamedAst.Kind, k2: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Kind
   }
 
   sealed trait TypeParams {

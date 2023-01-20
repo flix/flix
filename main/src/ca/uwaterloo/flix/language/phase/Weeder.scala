@@ -2830,15 +2830,11 @@ object Weeder {
   /**
     * Weeds the given kind `kind`.
     */
-  private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
-    case ParsedAst.Kind.Star(_, _) => Kind.Star
-    case ParsedAst.Kind.Bool(_, _) => Kind.Bool
-    case ParsedAst.Kind.Region(_, _) => Kind.Bool
-    case ParsedAst.Kind.Effect(_, _) => Kind.Effect
-    case ParsedAst.Kind.RecordRow(_, _) => Kind.RecordRow
-    case ParsedAst.Kind.SchemaRow(_, _) => Kind.SchemaRow
-    case ParsedAst.Kind.Predicate(_, _) => Kind.Predicate
-    case ParsedAst.Kind.Arrow(k1, k2, _) => Kind.Arrow(visitKind(k1), visitKind(k2))
+  private def visitKind(kind: ParsedAst.Kind): WeededAst.Kind = kind match {
+    case ParsedAst.Kind.QName(sp1, qname, sp2) => WeededAst.Kind.Ambiguous(qname, mkSL(sp1, sp2))
+    case ParsedAst.Kind.Arrow(k1, k2, sp2) =>
+      val sp1 = leftMostSourcePosition(k1)
+      WeededAst.Kind.Arrow(visitKind(k1), visitKind(k2), mkSL(sp1, sp2))
   }
 
   /**
@@ -3175,13 +3171,7 @@ object Weeder {
     */
   @tailrec
   private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
-    case ParsedAst.Kind.Star(sp1, _) => sp1
-    case ParsedAst.Kind.Bool(sp1, _) => sp1
-    case ParsedAst.Kind.Region(sp1, _) => sp1
-    case ParsedAst.Kind.Effect(sp1, _) => sp1
-    case ParsedAst.Kind.RecordRow(sp1, _) => sp1
-    case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
-    case ParsedAst.Kind.Predicate(sp1, _) => sp1
+    case ParsedAst.Kind.QName(sp1, _, _) => sp1
     case ParsedAst.Kind.Arrow(k1, _, _) => leftMostSourcePosition(k1)
   }
 
