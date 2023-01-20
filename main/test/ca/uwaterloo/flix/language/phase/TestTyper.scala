@@ -1678,8 +1678,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 
-  // MATT
-  ignore("TestChoose.02") {
+  test("TestChoose.02") {
     val input =
       """
         |restrictable enum Expr[s] {
@@ -1702,8 +1701,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedArrowBools](compile(input, Options.TestWithLibNix))
   }
 
-  // MATT
-  ignore("TestChoose.03") {
+  test("TestChoose.03") {
     val input =
       """
         |restrictable enum Expr[s] {
