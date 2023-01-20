@@ -2,12 +2,10 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.SetFormula._
 
-class SetFormulaAlg {
-
-  def mkAll(): SetFormula = All
+object SetFormulaAlg {
 
   def mkCst(s: Set[Int])(implicit universe: Set[Int]): SetFormula = {
-    if (s == universe) All else Cst(s)
+    Cst(s)
   }
 
   def mkEmpty(): SetFormula = Empty
@@ -15,8 +13,6 @@ class SetFormulaAlg {
   def mkVar(id: Int): SetFormula = Var(id)
 
   def mkNot(f: SetFormula)(implicit universe: Set[Int]): SetFormula = f match {
-    case All => Empty
-    case Empty => All
     case Cst(s) => mkCst(universe diff s)
     case Not(f) => f
     case _ => Not(f)
@@ -26,8 +22,6 @@ class SetFormulaAlg {
     mkNot(f)
 
   def mkAnd(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
-    case (All, other) => other
-    case (other, All) => other
     case (Empty, _) => Empty
     case (_, Empty) => Empty
     case (Cst(c1), Cst(c2)) => mkCst(c1 intersect c2)
@@ -52,8 +46,6 @@ class SetFormulaAlg {
     mkAnd(terms)
 
   def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
-    case (All, _) => All
-    case (_, All) => All
     case (Empty, other) => other
     case (other, Empty) => other
     case (Cst(c1), Cst(c2)) => mkCst(c1 union c2)
@@ -78,8 +70,6 @@ class SetFormulaAlg {
     mkOr(terms)
 
   def mkDifference(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
-    case (All, other) => mkComplement(other)
-    case (_, All) => Empty
     case (Empty, _) => Empty
     case (other, Empty) => other
     case (Cst(c1), Cst(c2)) => mkCst(c1 diff c2)
@@ -91,7 +81,6 @@ class SetFormulaAlg {
     * are true and the rest are false.
     */
   private def evaluate(f: SetFormula, trueVars: List[Int])(implicit universe: Set[Int]): Set[Int] = f match {
-    case All => universe
     case Cst(s) => s
     case Var(x) => if (trueVars.contains(x)) universe else Set.empty
     case Not(f1) => universe diff evaluate(f1, trueVars)

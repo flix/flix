@@ -74,7 +74,6 @@ object CaseSetUnification2 {
     val input1 = SetFormula.fromCaseType(tpe1, env, univ)
     val input2 = SetFormula.fromCaseType(tpe2, env, univ)
 
-    // MATT assuming nothing rigid for now
     booleanUnification(input1, input2, Set.empty, univ, enumSym, env).map {
       case subst => subst.toTypeSubstitution(enumSym, env)
     }
@@ -157,7 +156,8 @@ object CaseSetUnification2 {
 
       //      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(SetFormula.Var(x), mkComplement(se(t1), univ), univ), univ))
       val f1 = mkUnion(se(t0), mkIntersection(SetFormula.Var(x), mkComplement(se(t1), univ), univ), univ)
-      val st = BoolSubstitution2.singleton(x, f1)
+      val f2 = SetFormulaAlg.simplifyByExhaustiveEvaluation(f1)(univ)
+      val st = BoolSubstitution2.singleton(x, f2)
       st ++ se
   }
 

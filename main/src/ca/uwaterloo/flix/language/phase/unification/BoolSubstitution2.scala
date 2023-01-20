@@ -60,7 +60,7 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
     if (isEmpty) {
       f
     } else {
-      SetFormula.map(f)(m)
+      SetFormula.map(f)(m.withDefault(i => SetFormula.Var(i)))
     }
   }
 
