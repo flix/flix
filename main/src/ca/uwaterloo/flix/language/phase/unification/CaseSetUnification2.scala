@@ -150,12 +150,11 @@ object CaseSetUnification2 {
         throw SetUnificationException
 
     case x :: xs =>
-      val t0 = BoolSubstitution2.singleton(x, SetFormula.Empty)(f)
-      val t1 = BoolSubstitution2.singleton(x, SetFormula.Cst(univ))(f)
+      val t0 = BoolSubstitution2.singleton(x, SetFormula.Empty)(f, univ)
+      val t1 = BoolSubstitution2.singleton(x, SetFormula.Cst(univ))(f, univ)
       val se = successiveVariableElimination(mkIntersection(t0, t1, univ), xs, univ)
 
-      //      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(SetFormula.Var(x), mkComplement(se(t1), univ), univ), univ))
-      val f1 = mkUnion(se(t0), mkIntersection(SetFormula.Var(x), mkComplement(se(t1), univ), univ), univ)
+      val f1 = mkUnion(se(t0, univ), mkIntersection(SetFormula.Var(x), mkComplement(se(t1, univ), univ), univ), univ)
       val f2 = SetFormulaAlg.simplifyByExhaustiveEvaluation(f1)(univ)
       val st = BoolSubstitution2.singleton(x, f2)
       st ++ se
@@ -341,7 +340,9 @@ object CaseSetUnification2 {
       SetFormula.Or(tpe1, tpe2)
   }
 
-  // MATT docs
+  /**
+    * Evaluates the set formula. Assumes there are no variables in the formula.
+    */
   def eval(f: SetFormula, univ: Set[Int]): Set[Int] = f match {
     case SetFormula.Cst(s) => s
     case SetFormula.Not(f) => univ -- eval(f, univ)
@@ -349,211 +350,4 @@ object CaseSetUnification2 {
     case SetFormula.Or(f1, f2) => eval(f1, univ) ++ eval(f2, univ)
     case SetFormula.Var(x) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
   }
-
-  //  /**
-  //    * An atom is a constant or a variable.
-  //    */
-  //  private sealed trait Atom
-  //
-  //  private object Atom {
-  //    case class Var(sym: Symbol.KindedTypeVarSym) extends Atom
-  //
-  //    case class Case(sym: Symbol.RestrictableCaseSym) extends Atom
-  //  }
-  //
-  //  /**
-  //    * A literal is a negated or un-negated atom.
-  //    */
-  //  private sealed trait Literal
-  //
-  //  private object Literal {
-  //    case class Positive(atom: Atom) extends Literal
-  //
-  //    case class Negative(atom: Atom) extends Literal
-  //  }
-  //
-  //  /**
-  //    * A DNF intersection is a set of literals.
-  //    */
-  //  private type Intersection = Set[Literal]
-  //
-  //  /**
-  //    * A DNF formula is either:
-  //    * - a union of intersections of literals.
-  //    * - the universal set
-  //    */
-  //  private sealed trait Dnf
-  //
-  //  private object Dnf {
-  //    case class Union(inters: Set[Intersection]) extends Dnf // TODO should be a list to avoid extra comparisons?
-  //
-  //    /**
-  //      * The bottom value is an empty union.
-  //      */
-  //    val Empty = Union(Set())
-  //
-  //    /**
-  //      * The top value is an empty intersection.
-  //      */
-  //    val All = Union(Set(Set()))
-  //  }
-  //
-  //  /**
-  //    * An NNF formula is a formula where all negations are on atoms.
-  //    */
-  //  private sealed trait Nnf
-  //
-  //  private object Nnf {
-  //    case class Union(tpe1: Nnf, tpe2: Nnf) extends Nnf
-  //
-  //    case class Intersection(tpe1: Nnf, tpe2: Nnf) extends Nnf
-  //
-  //    case class Singleton(tpe: Literal) extends Nnf
-  //
-  //    case object Empty extends Nnf
-  //
-  //    case object All extends Nnf
-  //  }
-  //
-  //  private def simplify(t: Type)(implicit univ: Universe): Type = {
-  //    fromDnf(dnf(t))
-  //  }
-  //
-  //  private def fromDnf(t: Dnf)(implicit univ: Universe): SetFormula = t match {
-  //    case Dnf.Union(inters) => inters.filterNot(isEmptyIntersection).map(fromIntersection).reduceOption(mkUnion(_, _, univ.enumSym)).getOrElse(mkEmpty(univ.enumSym))
-  //  }
-  //
-  //  private def fromAtom(a: Atom)(implicit univ: Universe): SetFormula = a match {
-  //    case Atom.Var(sym) => Type.Var(sym, SourceLocation.Unknown)
-  //    case Atom.Case(sym) => Type.Cst(TypeConstructor.CaseConstant(sym), SourceLocation.Unknown)
-  //  }
-  //
-  //  private def fromLiteral(l: Literal)(implicit univ: Universe): SetFormula = l match {
-  //    case Literal.Positive(atom) => fromAtom(atom)
-  //    case Literal.Negative(atom) => mkComplement(fromAtom(atom), univ.enumSym)
-  //  }
-  //
-  //  private def fromIntersection(i: Intersection)(implicit univ: Universe): SetFormula = {
-  //    i.map(fromLiteral).reduceOption(mkIntersection(_, _, univ.enumSym)).getOrElse(mkAll(univ.enumSym))
-  //  }
-  //
-  //  /**
-  //    * Converts the given type to DNF
-  //    */
-  //  private def dnf(t: SetFormula, univ: Set[Int]): Dnf = {
-  //    val n = nnf(t, univ)
-  //    val d = nnfToDnf(n)
-  //    d
-  //  }
-  //
-  //  /**
-  //    * Converts the given type to NNF.
-  //    */
-  //  private def nnf(t: SetFormula)(implicit univ: Universe): Nnf = t match {
-  //    case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Case(sym)))
-  //    case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
-  //    case COMPLEMENT(tpe) => nnfNot(tpe)
-  //    case UNION(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
-  //    case INTERSECTION(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
-  //    case EMPTY() => Nnf.Empty
-  //    case ALL() => Nnf.All
-  //    case _ => throw InternalCompilerException(s"unexpected type: $t", t.loc)
-  //  }
-  //
-  //  /**
-  //    * Converts the complement of the given type to NNF.
-  //    */
-  //  private def nnfNot(t: Type)(implicit univ: Universe): Nnf = t match {
-  //    case CONSTANT(sym) => Nnf.Singleton(Literal.Negative(Atom.Case(sym)))
-  //    case VAR(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
-  //    case COMPLEMENT(tpe) => nnf(tpe)
-  //    case UNION(tpe1, tpe2) => Nnf.Intersection(
-  //      nnf(mkComplement(tpe1, univ.enumSym)),
-  //      nnf(mkComplement(tpe2, univ.enumSym))
-  //    )
-  //    case INTERSECTION(tpe1, tpe2) => Nnf.Union(
-  //      nnf(mkComplement(tpe1, univ.enumSym)),
-  //      nnf(mkComplement(tpe2, univ.enumSym))
-  //    )
-  //    case EMPTY() => Nnf.All // MATT ???
-  //    case ALL() => Nnf.Empty // MATT ???
-  //    case _ => throw InternalCompilerException(s"unexpected type: $t", t.loc)
-  //  }
-  //
-  //  /**
-  //    * Converts the given type from NNF to DNF.
-  //    */
-  //  private def nnfToDnf(t: Nnf): Dnf = t match {
-  //    case Nnf.Union(tpe1, tpe2) => union(nnfToDnf(tpe1), nnfToDnf(tpe2))
-  //    case Nnf.Intersection(tpe1, tpe2) => intersect(nnfToDnf(tpe1), nnfToDnf(tpe2))
-  //    case Nnf.Singleton(tpe) => Dnf.Union(Set(Set(tpe)))
-  //    case Nnf.Empty => Dnf.Empty
-  //    case Nnf.All => Dnf.All
-  //  }
-  //
-  //  /**
-  //    * Calculates the intersection of two DNF sets.
-  //    */
-  //  private def intersect(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
-  //    case (Dnf.Union(inters1), Dnf.Union(inters2)) =>
-  //      val inters = for {
-  //        inter1 <- inters1
-  //        inter2 <- inters2
-  //      } yield inter1 ++ inter2
-  //      Dnf.Union(inters)
-  //  }
-  //
-  //  /**
-  //    * Calculates the union of two DNF sets.
-  //    */
-  //  private def union(t1: Dnf, t2: Dnf): Dnf = (t1, t2) match {
-  //    case (Dnf.Union(inters1), Dnf.Union(inters2)) => Dnf.Union(inters1 ++ inters2)
-  //  }
-  //
-  //  /**
-  //    * Returns true if the given DNF set represents an empty set.
-  //    */
-  //  private def isEmpty(t1: Dnf)(implicit univ: Universe): Boolean = t1 match {
-  //    case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
-  //  }
-  //
-  //  /**
-  //    * Returns true if `t1` represents an empty intersection of effects.
-  //    */
-  //  private def isEmptyIntersection(t1: Intersection)(implicit univ: Universe): Boolean = {
-  //    val pos = t1.collect {
-  //      case Literal.Positive(atom) => atom
-  //    }
-  //    val neg = t1.collect {
-  //      case Literal.Negative(atom) => atom
-  //    }
-  //
-  //    // an intersection is empty if any of the following is true:
-  //
-  //    // 1. It contains two different positive constants
-  //    val diffConst = pos.collect {
-  //      case Atom.Case(sym) => sym
-  //    }.size > 1
-  //
-  //    // 2. It contains an atom in both the positive and negative sets
-  //    val negation = (pos & neg).nonEmpty
-  //
-  //    // 3. It contains all the negative constants
-  //    val allNegConsts = univ.cases.forall {
-  //      case c => neg.exists {
-  //        case Atom.Case(sym) => c == sym
-  //        case Atom.Var(_) => false
-  //      }
-  //    }
-  //
-  //    //    if (diffConst || negation || allNegConsts) {
-  //    //      println(s" IS EMPTY: $t1")
-  //    //    } else {
-  //    //      println(s"NOT EMPTY: $t1")
-  //    //    }
-  //
-  //    diffConst || negation || allNegConsts
-  //  }
-  //
-  //  case class Universe(cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym)
 }

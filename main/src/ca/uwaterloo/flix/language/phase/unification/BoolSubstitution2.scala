@@ -55,19 +55,19 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
   /**
     * Applies `this` substitution to the given type `tpe0`.
     */
-  def apply(f: SetFormula): SetFormula = {
+  def apply(f: SetFormula, univ: Set[Int]): SetFormula = {
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) {
       f
     } else {
-      SetFormula.map(f)(m.withDefault(i => SetFormula.Var(i)))
+      SetFormula.map(f)(m.withDefault(i => SetFormula.Var(i)))(univ)
     }
   }
 
   /**
     * Applies `this` substitution to the given types `ts`.
     */
-  def apply(ts: List[SetFormula]): List[SetFormula] = if (isEmpty) ts else ts map apply
+  def apply(ts: List[SetFormula], univ: Set[Int]): List[SetFormula] = if (isEmpty) ts else ts.map(apply(_, univ))
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -87,7 +87,7 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
   /**
     * Returns the composition of `this` substitution with `that` substitution.
     */
-  def @@(that: BoolSubstitution2): BoolSubstitution2 = {
+  def @@(that: BoolSubstitution2, univ: Set[Int]): BoolSubstitution2 = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that
@@ -106,7 +106,7 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
-      newBoolAlgebraMap.update(x, this.apply(t))
+      newBoolAlgebraMap.update(x, this.apply(t, univ))
     }
 
     // Add all bindings in `this` that are not in `that`.

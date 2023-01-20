@@ -78,16 +78,20 @@ object SetFormula {
     case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
   }
 
-  // MATT docs
-  def map(f: SetFormula)(fn: Int => SetFormula): SetFormula = f match {
+  /**
+    * Runs the function `fn` on all the variables in the formula.
+    */
+  def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
     case Cst(s) => Cst(s)
     case Var(x) => fn(x)
-    case Not(f1) => Not(map(f1)(fn)) // MATT smart constrs
-    case And(f1, f2) => And(map(f1)(fn), map(f2)(fn))
-    case Or(f1, f2) => Or(map(f1)(fn), map(f2)(fn))
+    case Not(f1) => SetFormulaAlg.mkNot(map(f1)(fn))
+    case And(f1, f2) => SetFormulaAlg.mkAnd(map(f1)(fn), map(f2)(fn))
+    case Or(f1, f2) => SetFormulaAlg.mkOr(map(f1)(fn), map(f2)(fn))
   }
 
-  // MATT docs
+  /**
+    * Creates an environment for mapping between proper types and formulas.
+    */
   def mkEnv(ts: List[Type], univ: List[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
     val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
     val cases = (univ ++ ts.flatMap(_.cases)).distinct.map(VarOrCase.Case)
