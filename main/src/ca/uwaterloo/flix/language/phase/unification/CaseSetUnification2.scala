@@ -199,6 +199,12 @@ object CaseSetUnification2 {
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   def mkIntersection(tpe1: SetFormula, tpe2: SetFormula, univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+    case (SetFormula.Cst(x1), x2) if x1 == univ =>
+      x2
+
+    case (x1, SetFormula.Cst(x2)) if x2 == univ =>
+      x1
+
     case (SetFormula.Cst(x1), SetFormula.Cst(x2)) =>
       SetFormula.Cst(x1 & x2)
 
@@ -281,6 +287,12 @@ object CaseSetUnification2 {
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   def mkUnion(tpe1: SetFormula, tpe2: SetFormula, univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+    case (SetFormula.Cst(x1), x2) if x1 == univ =>
+      SetFormula.Cst(x1)
+
+    case (x1, SetFormula.Cst(x2)) if x2 == univ =>
+      SetFormula.Cst(x2)
+
     case (SetFormula.Cst(s1), SetFormula.Cst(s2)) =>
       SetFormula.Cst(s1 ++ s2)
 

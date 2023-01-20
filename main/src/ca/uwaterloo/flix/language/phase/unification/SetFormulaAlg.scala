@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.phase.unification.SetFormula._
 
 object SetFormulaAlg {
 
-  def mkCst(s: Set[Int])(implicit universe: Set[Int]): SetFormula = {
+  def mkCst(s: Set[Int]): SetFormula = {
     Cst(s)
   }
 
@@ -13,7 +13,7 @@ object SetFormulaAlg {
   def mkVar(id: Int): SetFormula = Var(id)
 
   def mkNot(f: SetFormula)(implicit universe: Set[Int]): SetFormula = f match {
-    case Cst(s) => mkCst(universe diff s)
+    case Cst(s) => Cst(universe diff s)
     case Not(f) => f
     case _ => Not(f)
   }
@@ -22,6 +22,8 @@ object SetFormulaAlg {
     mkNot(f)
 
   def mkAnd(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (Cst(s1), _) if s1 == universe => f2
+    case (_, Cst(s2)) if s2 == universe => f1
     case (Empty, _) => Empty
     case (_, Empty) => Empty
     case (Cst(c1), Cst(c2)) => mkCst(c1 intersect c2)
@@ -46,6 +48,8 @@ object SetFormulaAlg {
     mkAnd(terms)
 
   def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (Cst(s1), _) if s1 == universe => Cst(s1)
+    case (_, Cst(s2)) if s2 == universe => Cst(s2)
     case (Empty, other) => other
     case (other, Empty) => other
     case (Cst(c1), Cst(c2)) => mkCst(c1 union c2)
@@ -70,6 +74,7 @@ object SetFormulaAlg {
     mkOr(terms)
 
   def mkDifference(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
+    case (_, Cst(s2)) if s2 == universe => Empty
     case (Empty, _) => Empty
     case (other, Empty) => other
     case (Cst(c1), Cst(c2)) => mkCst(c1 diff c2)
