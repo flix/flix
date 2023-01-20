@@ -3249,8 +3249,8 @@ object Resolver {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
-    case NamedAst.Declaration.Case(sym, tpe) => sym
-    case NamedAst.Declaration.RestrictableCase(sym, tpe) => sym
+    case NamedAst.Declaration.Case(sym, tpe, _) => sym
+    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 

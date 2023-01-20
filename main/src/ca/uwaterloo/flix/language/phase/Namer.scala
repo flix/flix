@@ -177,7 +177,7 @@ object Namer {
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
       addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
 
-    case caze@NamedAst.Declaration.RestrictableCase(sym, _) =>
+    case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
   }
@@ -380,11 +380,11 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
-    case WeededAst.RestrictableCase(ident, tpe0) =>
+    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
           val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-          NamedAst.Declaration.RestrictableCase(caseSym, tpe)
+          NamedAst.Declaration.RestrictableCase(caseSym, tpe, loc)
       }
   }
 
