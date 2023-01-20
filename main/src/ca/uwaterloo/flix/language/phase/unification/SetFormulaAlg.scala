@@ -12,12 +12,12 @@ object SetFormulaAlg {
 
   def mkVar(id: Int): SetFormula = Var(id)
 
-  def mkNot(f: SetFormula)(implicit universe: Set[Int]): SetFormula = CaseSetUnification2.mkComplement(f, universe)
+  def mkNot(f: SetFormula)(implicit universe: Set[Int]): SetFormula = CaseSetUnification.mkComplement(f, universe)
 
   def mkComplement(f: SetFormula)(implicit universe: Set[Int]): SetFormula =
     mkNot(f)
 
-  def mkAnd(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = CaseSetUnification2.mkIntersection(f1, f2, universe)
+  def mkAnd(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = CaseSetUnification.mkIntersection(f1, f2, universe)
 
   def mkIntersection(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
     mkAnd(f1, f2)

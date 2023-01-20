@@ -97,7 +97,7 @@ object Unification {
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       val cases = univ.univ(sym1)
-      CaseSetUnification2.unify(tpe1, tpe2, renv, cases, sym1)
+      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1)
 
     //
     // Record Rows

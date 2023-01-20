@@ -399,11 +399,11 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
   }
 
   private def assertUnifies(tpe1: Type, tpe2: Type, renv: RigidityEnv, cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym): Unit = {
-    assert(isOk(CaseSetUnification2.unify(tpe1, tpe2, renv, cases, enumSym)))
+    assert(isOk(CaseSetUnification.unify(tpe1, tpe2, renv, cases, enumSym)))
   }
 
   private def assertDoesNotUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv, cases: List[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym): Unit = {
-    assert(!isOk(CaseSetUnification2.unify(tpe1, tpe2, renv, cases, enumSym)))
+    assert(!isOk(CaseSetUnification.unify(tpe1, tpe2, renv, cases, enumSym)))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

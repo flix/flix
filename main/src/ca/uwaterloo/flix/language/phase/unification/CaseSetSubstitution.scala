@@ -21,22 +21,22 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
 /**
-  * Companion object for the [[BoolSubstitution2]] class.
+  * Companion object for the [[CaseSetSubstitution]] class.
   */
-object BoolSubstitution2 {
+object CaseSetSubstitution {
   /**
     * Returns the empty substitution.
     */
-  def empty: BoolSubstitution2 = BoolSubstitution2(Map.empty)
+  def empty: CaseSetSubstitution = CaseSetSubstitution(Map.empty)
 
   /**
     * Returns the singleton substitution mapping the type variable `x` to `tpe`.
     */
-  def singleton(x: Int, f: SetFormula): BoolSubstitution2 = {
+  def singleton(x: Int, f: SetFormula): CaseSetSubstitution = {
     // Ensure that we do not add any x -> x mappings.
     f match {
       case y: SetFormula.Var if x == y.x => empty
-      case _ => BoolSubstitution2(Map(x -> f))
+      case _ => CaseSetSubstitution(Map(x -> f))
     }
   }
 
@@ -45,7 +45,7 @@ object BoolSubstitution2 {
 /**
   * A substitution is a map from type variables to types.
   */
-case class BoolSubstitution2(m: Map[Int, SetFormula]) {
+case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
 
   /**
     * Returns `true` if `this` is the empty substitution.
@@ -72,13 +72,13 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
     */
-  def ++(that: BoolSubstitution2): BoolSubstitution2 = {
+  def ++(that: CaseSetSubstitution): CaseSetSubstitution = {
     if (this.isEmpty) {
       that
     } else if (that.isEmpty) {
       this
     } else {
-      BoolSubstitution2(
+      CaseSetSubstitution(
         this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
       )
     }
@@ -87,7 +87,7 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
   /**
     * Returns the composition of `this` substitution with `that` substitution.
     */
-  def @@(that: BoolSubstitution2, univ: Set[Int]): BoolSubstitution2 = {
+  def @@(that: CaseSetSubstitution, univ: Set[Int]): CaseSetSubstitution = {
     // Case 1: Return `that` if `this` is empty.
     if (this.isEmpty) {
       return that
@@ -116,7 +116,7 @@ case class BoolSubstitution2(m: Map[Int, SetFormula]) {
       }
     }
 
-    BoolSubstitution2(newBoolAlgebraMap.toMap) ++ this
+    CaseSetSubstitution(newBoolAlgebraMap.toMap) ++ this
   }
 
   /**
