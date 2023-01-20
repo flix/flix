@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
+import ca.uwaterloo.flix.language.phase.Monomorph
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -90,6 +91,7 @@ object LoweredAst {
       def eff: Type = Type.Empty
     }
 
+    @EliminatedBy(Monomorph.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
 
