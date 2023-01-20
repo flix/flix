@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite with TestUtils {
@@ -28,6 +29,8 @@ class TestUnification extends FunSuite with TestUtils {
   implicit val flix: Flix = new Flix()
 
   val loc: SourceLocation = SourceLocation.Unknown
+
+  implicit val univ: Ast.Multiverse = Ast.Multiverse(ListMap.empty)
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //
@@ -425,7 +428,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnoseteffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnoseteffects = true)))))
   }
 
   test("TestNoBoolEffects") {
@@ -436,7 +439,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnobooleffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnobooleffects = true)))))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

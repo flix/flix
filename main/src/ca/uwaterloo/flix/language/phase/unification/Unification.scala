@@ -71,7 +71,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Result[Substitution, UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     //
     // Effects
@@ -96,12 +96,8 @@ object Unification {
       }
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
-      // TODO RESTR-VARS EVIL HACK HERE
-      if (sym1 != CaseSetUnification.Hack.EnumSym) {
-        Err(UnificationError.HackError("Restrictable enum must be Expr with cases Var, Not, And, Or, Xor"))
-      } else {
-        CaseSetUnification.unify(tpe1, tpe2, renv, CaseSetUnification.Hack.Cases, CaseSetUnification.Hack.EnumSym)
-      }
+      val cases = univ.univ(sym1)
+      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1)
 
     //
     // Record Rows
@@ -123,7 +119,7 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
@@ -162,7 +158,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution, renv: RigidityEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
@@ -221,7 +217,7 @@ object Unification {
   /**
     * Unifies the `expected` type with the `actual` type.
     */
-  def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
       case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
@@ -240,7 +236,7 @@ object Unification {
   /**
     * Unifies the `expected` type with the `actual` type (and unifies `bind` with the result).
     */
-  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     for {
       r <- expectTypeM(expected, actual, loc)
       _ <- unifyTypeM(bind, r, loc)
@@ -250,7 +246,7 @@ object Unification {
   /**
     * Unifies the `expectedTypes` types with the `actualTypes`.
     */
-  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Unit] = {
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
@@ -282,7 +278,7 @@ object Unification {
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
-  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): TypeError = {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
@@ -305,17 +301,17 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3), loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3, tpe4), loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyTypeM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(ts: List[Type], loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
@@ -329,7 +325,7 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
       liftM(Type.freshVar(kind, loc))
     else
@@ -455,7 +451,7 @@ object Unification {
   /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok(_) => true
       case Result.Err(_) => false

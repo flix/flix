@@ -29,6 +29,7 @@ object LoweredAst {
                   enums: Map[Symbol.EnumSym, LoweredAst.Enum],
                   effects: Map[Symbol.EffectSym, LoweredAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, LoweredAst.TypeAlias],
+                  univ: Ast.Multiverse,
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
