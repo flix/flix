@@ -41,10 +41,10 @@ object CaseSetUnification2 {
     ///
     (tpe1, tpe2) match {
       case (t1@Type.Var(x, _), t2) if renv.isFlexible(x) && !t2.typeVars.contains(t1) =>
-        Substitution.singleton(x, t2)
+        return Ok(Substitution.singleton(x, t2))
 
       case (t1, t2@Type.Var(x, _))  if renv.isFlexible(x) && !t1.typeVars.contains(t2) =>
-        Substitution.singleton(x, t1)
+        return Ok(Substitution.singleton(x, t1))
 
       case _ => // nop
     }
