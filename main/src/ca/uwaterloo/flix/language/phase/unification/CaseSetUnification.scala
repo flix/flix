@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.language.phase.unification.SetFormula._
 
 object CaseSetUnification {
@@ -51,10 +51,9 @@ object CaseSetUnification {
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-
-    val (env, univ) = SetFormula.mkEnv(List(tpe1, tpe2), cases)
-    val input1 = SetFormula.fromCaseType(tpe1, env, univ)
-    val input2 = SetFormula.fromCaseType(tpe2, env, univ)
+    val (env, univ) = mkEnv(List(tpe1, tpe2), cases)
+    val input1 = fromCaseType(tpe1, env, univ)
+    val input2 = fromCaseType(tpe2, env, univ)
 
     booleanUnification(input1, input2, Set.empty, univ, enumSym, env).map {
       case subst => subst.toTypeSubstitution(enumSym, env)
@@ -64,7 +63,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[SetFormula.VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
+  private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)(univ)
 
@@ -94,8 +93,8 @@ object CaseSetUnification {
       Ok(subst)
     } catch {
       case SetUnificationException =>
-        val t1 = SetFormula.toCaseType(tpe1, sym, env, SourceLocation.Unknown)
-        val t2 = SetFormula.toCaseType(tpe2, sym, env, SourceLocation.Unknown)
+        val t1 = toCaseType(tpe1, sym, env, SourceLocation.Unknown)
+        val t2 = toCaseType(tpe2, sym, env, SourceLocation.Unknown)
         Err(UnificationError.MismatchedBools(t1, t2)) // TODO make setty
     }
   }
@@ -133,11 +132,11 @@ object CaseSetUnification {
 
     case x :: xs =>
       val t0 = CaseSetSubstitution.singleton(x, Empty)(f)
-      val t1 = CaseSetSubstitution.singleton(x, Cst(univ))(f)
-      val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
+      val t1 = CaseSetSubstitution.singleton(x, mkUni())(f)
+      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
-      val f1 = mkUnion(se(t0), mkIntersection(Var(x), mkComplement(se(t1))))
-      val f2 = minViaTable(f1)
+      val f1 = mkOr(se(t0), mkAnd(Var(x), mkNot(se(t1))))
+      val f2 = minimize(f1)
       val st = CaseSetSubstitution.singleton(x, f2)
       st ++ se
   }
@@ -151,38 +150,6 @@ object CaseSetUnification {
     * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
   private def mkEq(p: SetFormula, q: SetFormula)(implicit univ: Set[Int]): SetFormula =
-    mkUnion(mkIntersection(p, mkComplement(q)), mkIntersection(mkComplement(p), q))
+    mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
-  /**
-    * Evaluates the set formula. Assumes there are no variables in the formula.
-    */
-  private def eval(f: SetFormula)(implicit univ: Set[Int]): Set[Int] = f match {
-    case SetFormula.Cst(s) => s
-    case SetFormula.Not(f) => univ -- eval(f)
-    case SetFormula.And(f1, f2) => eval(f1) & eval(f2)
-    case SetFormula.Or(f1, f2) => eval(f1) ++ eval(f2)
-    case SetFormula.Var(x) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
-  }
-
-  private def minViaTable(f: SetFormula)(implicit univ: Set[Int]): SetFormula = {
-    val bot = SetFormula.Cst(Set.empty): SetFormula
-    val top = SetFormula.Cst(univ): SetFormula
-
-    def visit(fvs: List[Int]): List[(SetFormula, Map[Int, SetFormula])] = fvs match {
-      case Nil => List((top, Map.empty))
-      case v :: vs =>
-        visit(vs) flatMap {
-          case (p, partialSubst) =>
-            val p1 = mkIntersection(SetFormula.Not(SetFormula.Var(v)), p)
-            val p2 = mkIntersection(SetFormula.Var(v), p)
-            List((p1, partialSubst + (v -> bot)), (p2, partialSubst + (v -> top)))
-        }
-    }
-
-    visit(f.freeVars.toList).foldLeft(bot) {
-      case (acc, (p, subst)) => mkUnion(acc, mkIntersection(p, applySubst(f, subst)))
-    }
-  }
-
-  private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
 }
