@@ -101,20 +101,20 @@ class SetFormulaAlg {
 
   /**
     * Returns `f` rewritten by exhaustive evaluation. This is exponential in the
-    * number of variables. The output is in conceptual cnf
-    * (conjunction of disjunctions or union of intersections).
+    * number of variables. The output is in conceptual dnf
+    * (disjunction of conjunctions or union of intersections).
     *
     * The lists `trueVars`, `falseVars`, and `unassignedVars` are assumed to be
     * disjoint and cover all variables in the formula
     */
-  private def exhaustiveEvaluation(f: SetFormula, trueVars: List[Int], falseVars: List[Int], unassignedVars: List[Int])(implicit universe: Set[Int]): List[SetFormula] = unassignedVars match {
+  private def exhaustiveEvaluation(f: SetFormula, trueVars: List[Int], falseVars: List[Int], unassignedVars: List[Int])(implicit universe: Set[Int]): List[(SetFormula, Set[Int])] = unassignedVars match {
     case Nil => // we can evaluate the formula with all variables assigned
       val res = evaluate(f, trueVars)
-      if (res.isEmpty) List(mkEmpty())
+      if (res.isEmpty) List((mkEmpty(), Set.empty))
       else {
         // res ∩ pos1 ∩ ... ∩ posn ∩ !neg1 ∩ ... ∩ !negn
-        val terms = mkCst(res) :: trueVars.map(mkVar) ++ falseVars.map(i => mkNot(mkVar(i)))
-        List(mkIntersection(terms))
+        val terms = trueVars.map(mkVar) ++ falseVars.map(i => mkNot(mkVar(i)))
+        List((mkIntersection(terms), res))
       }
     case x :: xs => // compute `f` recursively with `x` being true or false
       val xt = exhaustiveEvaluation(f, x :: trueVars, falseVars, xs)
@@ -124,7 +124,16 @@ class SetFormulaAlg {
 
   def simplifyByExhaustiveEvaluation(f: SetFormula)(implicit universe: Set[Int]): SetFormula = {
     val terms = exhaustiveEvaluation(f, Nil, Nil, f.freeVars.toList)
-    mkUnion(terms)
+    terms match {
+      case Nil => mkEmpty()
+      case head :: _ =>
+        if (terms.forall(_._2 == head._2)) {
+          // constant function
+          mkCst(head._2)
+        } else {
+          mkUnion(terms.map { case (f, s) => mkIntersection(mkCst(s), f) })
+        }
+    }
   }
 
 }

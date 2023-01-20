@@ -45,8 +45,8 @@ sealed trait SetFormula {
       case SetFormula.Var(x) => s"~x$x"
       case _ => s"~($f)"
     }
-    case SetFormula.And(f1, f2) => s"($f1 ∪ $f2)"
-    case SetFormula.Or(f1, f2) => s"($f1 ∩ $f2)"
+    case SetFormula.And(f1, f2) => s"($f1 ∩ $f2)"
+    case SetFormula.Or(f1, f2) => s"($f1 ∪ $f2)"
   }
 
 }
