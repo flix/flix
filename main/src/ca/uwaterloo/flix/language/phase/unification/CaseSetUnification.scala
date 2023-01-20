@@ -25,20 +25,6 @@ import scala.annotation.tailrec
 
 object CaseSetUnification {
 
-  // TODO RESTR-VARS hack
-  object Hack {
-    val EnumSym: Symbol.RestrictableEnumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
-    val Cases = List(
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "And", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Cst", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Not", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Or", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Var", SourcePosition.Unknown)),
-      Symbol.mkRestrictableCaseSym(EnumSym, Name.Ident(SourcePosition.Unknown, "Xor", SourcePosition.Unknown)),
-    )
-    val Universe: Universe = CaseSetUnification.Universe(Cases, EnumSym)
-  }
-
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
@@ -51,39 +37,39 @@ object CaseSetUnification {
     }
 
     // TODO RESTR-VARS this doesn't help lol
-//    (tpe1, tpe2) match {
-//      case (Type.Var(x, _), Type.Var(y, _)) =>
-//        if (renv.isFlexible(x)) {
-//          return Ok(Substitution.singleton(x, tpe2)) // 135 hits
-//        }
-//        if (renv.isFlexible(y)) {
-//          return Ok(Substitution.singleton(y, tpe1)) // 0 hits
-//        }
-//        if (x == y) {
-//          return Ok(Substitution.empty) // 0 hits
-//        }
-//
-//      case (Type.Cst(TypeConstructor.CaseAll(_), _), Type.Cst(TypeConstructor.CaseAll(_), _)) =>
-//        return Ok(Substitution.empty) // 0 hits
-//
-//      case (Type.Var(x, _), t2@Type.Cst(tc, _)) if renv.isFlexible(x) => tc match {
-//        case TypeConstructor.CaseAll(_) =>
-//          return Ok(Substitution.singleton(x, t2)) // 0 hits
-//        case TypeConstructor.CaseEmpty(sym) =>
-//          return Ok(Substitution.singleton(x, t2)) // 0 hits
-//        case _ => // nop
-//      }
-//
-//      case (Type.Cst(TypeConstructor.CaseEmpty(_), _), Type.Cst(TypeConstructor.CaseEmpty(_), _)) =>
-//        return Ok(Substitution.empty) //  0 hits
-//
-//      case _ => // nop
-//    }
+    //    (tpe1, tpe2) match {
+    //      case (Type.Var(x, _), Type.Var(y, _)) =>
+    //        if (renv.isFlexible(x)) {
+    //          return Ok(Substitution.singleton(x, tpe2)) // 135 hits
+    //        }
+    //        if (renv.isFlexible(y)) {
+    //          return Ok(Substitution.singleton(y, tpe1)) // 0 hits
+    //        }
+    //        if (x == y) {
+    //          return Ok(Substitution.empty) // 0 hits
+    //        }
+    //
+    //      case (Type.Cst(TypeConstructor.CaseAll(_), _), Type.Cst(TypeConstructor.CaseAll(_), _)) =>
+    //        return Ok(Substitution.empty) // 0 hits
+    //
+    //      case (Type.Var(x, _), t2@Type.Cst(tc, _)) if renv.isFlexible(x) => tc match {
+    //        case TypeConstructor.CaseAll(_) =>
+    //          return Ok(Substitution.singleton(x, t2)) // 0 hits
+    //        case TypeConstructor.CaseEmpty(sym) =>
+    //          return Ok(Substitution.singleton(x, t2)) // 0 hits
+    //        case _ => // nop
+    //      }
+    //
+    //      case (Type.Cst(TypeConstructor.CaseEmpty(_), _), Type.Cst(TypeConstructor.CaseEmpty(_), _)) =>
+    //        return Ok(Substitution.empty) //  0 hits
+    //
+    //      case _ => // nop
+    //    }
 
     ///
     /// Run the expensive boolean unification algorithm.
     ///
-    implicit val universe: Universe = Universe(cases, enumSym)
+    implicit val univ: Universe = Universe(cases, enumSym)
     val input1 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe1)))
     val input2 = TypeMinimization.minimizeType(simplify(eraseAliases(tpe2)))
     booleanUnification(input1, input2, renv)
@@ -92,7 +78,7 @@ object CaseSetUnification {
   /**
     * Returns the most general unifier of the two given set formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit universe: Universe, flix: Flix): Result[Substitution, UnificationError] = {
+  private def booleanUnification(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Universe, flix: Flix): Result[Substitution, UnificationError] = {
     // The boolean expression we want to show is 0.
     val query = mkEq(tpe1, tpe2)
 
@@ -147,7 +133,7 @@ object CaseSetUnification {
   /**
     * Performs successive variable elimination on the given set expression `f`.
     */
-  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit universe: Universe, flix: Flix): Substitution = fvs match {
+  private def successiveVariableElimination(f: Type, fvs: List[Type.Var])(implicit univ: Universe, flix: Flix): Substitution = fvs match {
     case Nil =>
       // Determine if f is necessarily empty when all (rigid) variables and constants are made flexible.
       if (isEmpty(dnf(f)))
@@ -156,11 +142,11 @@ object CaseSetUnification {
         throw SetUnificationException
 
     case x :: xs =>
-      val t0 = Substitution.singleton(x.sym, mkEmpty())(f)
-      val t1 = Substitution.singleton(x.sym, mkAll())(f)
-      val se = successiveVariableElimination(mkIntersection(t0, t1), xs)
+      val t0 = Substitution.singleton(x.sym, mkEmpty(univ.enumSym))(f)
+      val t1 = Substitution.singleton(x.sym, mkAll(univ.enumSym))(f)
+      val se = successiveVariableElimination(mkIntersection(t0, t1, univ.enumSym), xs)
 
-      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1)))))
+      val f1 = TypeMinimization.minimizeType(mkUnion(se(t0), mkIntersection(x, mkComplement(se(t1), univ.enumSym), univ.enumSym), univ.enumSym))
       val st = Substitution.singleton(x.sym, f1)
       st ++ se
   }
@@ -173,31 +159,31 @@ object CaseSetUnification {
   /**
     * To unify two set formulas p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
     */
-  private def mkEq(p: Type, q: Type)(implicit universe: Universe): Type = mkUnion(mkIntersection(p, mkComplement(q)), mkIntersection(mkComplement(p), q))
+  private def mkEq(p: Type, q: Type)(implicit univ: Universe): Type = mkUnion(mkIntersection(p, mkComplement(q, univ.enumSym), univ.enumSym), mkIntersection(mkComplement(p, univ.enumSym), q, univ.enumSym), univ.enumSym)
 
   /**
     * Returns the negation of the set formula `tpe0`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def mkComplement(tpe0: Type)(implicit universe: Universe): Type = tpe0 match {
+  def mkComplement(tpe0: Type, sym: Symbol.RestrictableEnumSym): Type = tpe0 match {
     case ALL() =>
-      mkEmpty()
+      mkEmpty(sym)
 
     case EMPTY() =>
-      mkAll()
+      mkAll(sym)
 
     case COMPLEMENT(x) =>
       x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
     case UNION(COMPLEMENT(x), y) =>
-      mkIntersection(x, mkComplement(y))
+      mkIntersection(x, mkComplement(y, sym), sym)
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
     case UNION(x, COMPLEMENT(y)) =>
-      mkIntersection(mkComplement(x), y)
+      mkIntersection(mkComplement(x, sym), y, sym)
 
-    case _ => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(universe.enumSym), tpe0.loc), tpe0, tpe0.loc)
+    case _ => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), tpe0.loc), tpe0, tpe0.loc)
   }
 
   /**
@@ -205,7 +191,7 @@ object CaseSetUnification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkIntersection(tpe1: Type, tpe2: Type)(implicit universe: Universe): Type = (tpe1, tpe2) match {
+  def mkIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym): Type = (tpe1, tpe2) match {
     // T ∧ x => x
     case (ALL(), _) =>
       tpe2
@@ -216,15 +202,15 @@ object CaseSetUnification {
 
     // F ∧ x => F
     case (EMPTY(), _) =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // x ∧ F => F
     case (_, EMPTY()) =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // C ∧ D => F
     case (CONSTANT(x1), CONSTANT(x2)) if x1 != x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // C ∧ ¬D => C
     case (x1@CONSTANT(_), COMPLEMENT(x2@CONSTANT(_))) if x1 != x2 =>
@@ -236,31 +222,31 @@ object CaseSetUnification {
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (COMPLEMENT(x1), UNION(x2, y)) if x1 == x2 =>
-      mkIntersection(mkComplement(x1), y)
+      mkIntersection(mkComplement(x1, sym), y, sym)
 
     // x ∧ ¬x => F
     case (x1, COMPLEMENT(x2)) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // ¬x ∧ x => F
     case (COMPLEMENT(x1), x2) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // x ∧ (x ∧ y) => (x ∧ y)
     case (x1, INTERSECTION(x2, y)) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkIntersection(x1, y, sym)
 
     // x ∧ (y ∧ x) => (x ∧ y)
     case (x1, INTERSECTION(y, x2)) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkIntersection(x1, y, sym)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
     case (INTERSECTION(x1, y), x2) if x1 == x2 =>
-      mkIntersection(x1, y)
+      mkIntersection(x1, y, sym)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
     case (INTERSECTION(x, y1), y2) if y1 == y2 =>
-      mkIntersection(x, y1)
+      mkIntersection(x, y1, sym)
 
     // x ∧ (x ∨ y) => x
     case (x1, UNION(x2, _)) if x1 == x2 =>
@@ -272,27 +258,27 @@ object CaseSetUnification {
 
     // x ∧ (y ∧ ¬x) => F
     case (x1, INTERSECTION(_, COMPLEMENT(x2))) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // (¬x ∧ y) ∧ x => F
     case (INTERSECTION(COMPLEMENT(x1), _), x2) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // x ∧ ¬(x ∨ y) => F
     case (x1, COMPLEMENT(UNION(x2, _))) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // ¬(x ∨ y) ∧ x => F
     case (COMPLEMENT(UNION(x1, _)), x2) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // x ∧ (¬x ∧ y) => F
     case (x1, INTERSECTION(COMPLEMENT(x2), _)) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // (¬x ∧ y) ∧ x => F
     case (INTERSECTION(COMPLEMENT(x1), _), x2) if x1 == x2 =>
-      mkEmpty()
+      mkEmpty(sym)
 
     // x ∧ x => x
     case _ if tpe1 == tpe2 => tpe1
@@ -304,7 +290,7 @@ object CaseSetUnification {
       //        println(s.substring(0, Math.min(len, 300)))
       //      }
 
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(universe.enumSym), tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
   /**
@@ -312,10 +298,10 @@ object CaseSetUnification {
     */
   // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
-  def mkUnion(tpe1: Type, tpe2: Type)(implicit universe: Universe): Type = (tpe1, tpe2) match {
+  def mkUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym): Type = (tpe1, tpe2) match {
     // T ∨ x => T
     case (ALL(), _) =>
-      mkAll()
+      mkAll(sym)
 
     // F ∨ y => y
     case (EMPTY(), _) =>
@@ -327,27 +313,27 @@ object CaseSetUnification {
 
     // x ∨ (y ∨ x) => x ∨ y
     case (x1, UNION(y, x2)) if x1 == x2 =>
-      mkUnion(x1, y)
+      mkUnion(x1, y, sym)
 
     // (x ∨ y) ∨ x => x ∨ y
     case (UNION(x1, y), x2) if x1 == x2 =>
-      mkUnion(x1, y)
+      mkUnion(x1, y, sym)
 
     // ¬x ∨ x => T
     case (COMPLEMENT(x), y) if x == y =>
-      mkAll()
+      mkAll(sym)
 
     // x ∨ ¬x => T
     case (x, COMPLEMENT(y)) if x == y =>
-      mkAll()
+      mkAll(sym)
 
     // (¬x ∨ y) ∨ x) => T
     case (UNION(COMPLEMENT(x), _), y) if x == y =>
-      mkAll()
+      mkAll(sym)
 
     // x ∨ (¬x ∨ y) => T
     case (x, UNION(COMPLEMENT(y), _)) if x == y =>
-      mkAll()
+      mkAll(sym)
 
     // x ∨ (y ∧ x) => x
     case (x1, INTERSECTION(_, x2)) if x1 == x2 => x1
@@ -367,21 +353,21 @@ object CaseSetUnification {
       //                println(s.substring(0, Math.min(len, 300)))
       //              }
 
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(universe.enumSym), tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), tpe1.loc), tpe1, tpe1.loc), tpe2, tpe1.loc)
   }
 
   /**
     * Returns the difference of the given types.
     */
-  private def mkDifference(tpe1: Type, tpe2: Type)(implicit universe: Universe): Type = mkIntersection(tpe1, mkComplement(tpe2))
+  private def mkDifference(tpe1: Type, tpe2: Type)(implicit univ: Universe): Type = mkIntersection(tpe1, mkComplement(tpe2, univ.enumSym), univ.enumSym)
 
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
-  private def mkEmpty()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseEmpty(universe.enumSym), SourceLocation.Unknown)
+  private def mkEmpty(sym: Symbol.RestrictableEnumSym): Type = Type.Cst(TypeConstructor.CaseEmpty(sym), SourceLocation.Unknown)
 
   // TODO RESTR-VARS docs
   // TODO RESTR-VARS caching
-  private def mkAll()(implicit universe: Universe): Type = Type.Cst(TypeConstructor.CaseAll(universe.enumSym), SourceLocation.Unknown)
+  private def mkAll(sym: Symbol.RestrictableEnumSym): Type = Type.Cst(TypeConstructor.CaseAll(sym), SourceLocation.Unknown)
 
   private object COMPLEMENT {
     @inline
@@ -425,7 +411,7 @@ object CaseSetUnification {
 
   private object ALL {
     @inline
-    def unapply(tpe: Type)(implicit universe: Universe): Boolean = tpe match {
+    def unapply(tpe: Type): Boolean = tpe match {
       case Type.Cst(TypeConstructor.CaseAll(_), _) => true
       case _ => false
     }
@@ -504,31 +490,32 @@ object CaseSetUnification {
     case object All extends Nnf
   }
 
-  private def simplify(t: Type)(implicit universe: Universe): Type = {
+  private def simplify(t: Type)(implicit univ: Universe): Type = {
     fromDnf(dnf(t))
   }
-  private def fromDnf(t: Dnf)(implicit universe: Universe): Type = t match {
-    case Dnf.Union(inters) => inters.filterNot(isEmptyIntersection).map(fromIntersection).reduceOption(mkUnion).getOrElse(mkEmpty())
+
+  private def fromDnf(t: Dnf)(implicit univ: Universe): Type = t match {
+    case Dnf.Union(inters) => inters.filterNot(isEmptyIntersection).map(fromIntersection).reduceOption(mkUnion(_, _, univ.enumSym)).getOrElse(mkEmpty(univ.enumSym))
   }
 
-  private def fromAtom(a: Atom)(implicit universe: Universe): Type = a match {
+  private def fromAtom(a: Atom)(implicit univ: Universe): Type = a match {
     case Atom.Var(sym) => Type.Var(sym, SourceLocation.Unknown)
     case Atom.Case(sym) => Type.Cst(TypeConstructor.CaseConstant(sym), SourceLocation.Unknown)
   }
 
-  private def fromLiteral(l: Literal)(implicit universe: Universe): Type = l match {
+  private def fromLiteral(l: Literal)(implicit univ: Universe): Type = l match {
     case Literal.Positive(atom) => fromAtom(atom)
-    case Literal.Negative(atom) => mkComplement(fromAtom(atom))
+    case Literal.Negative(atom) => mkComplement(fromAtom(atom), univ.enumSym)
   }
 
-  private def fromIntersection(i: Intersection)(implicit universe: Universe): Type = {
-    i.map(fromLiteral).reduceOption(mkIntersection).getOrElse(mkAll())
+  private def fromIntersection(i: Intersection)(implicit univ: Universe): Type = {
+    i.map(fromLiteral).reduceOption(mkIntersection(_, _, univ.enumSym)).getOrElse(mkAll(univ.enumSym))
   }
 
   /**
     * Converts the given type to DNF
     */
-  private def dnf(t: Type)(implicit universe: Universe): Dnf = {
+  private def dnf(t: Type)(implicit univ: Universe): Dnf = {
     val n = nnf(t)
     val d = nnfToDnf(n)
     d
@@ -537,7 +524,7 @@ object CaseSetUnification {
   /**
     * Converts the given type to NNF.
     */
-  private def nnf(t: Type)(implicit universe: Universe): Nnf = t match {
+  private def nnf(t: Type)(implicit univ: Universe): Nnf = t match {
     case CONSTANT(sym) => Nnf.Singleton(Literal.Positive(Atom.Case(sym)))
     case VAR(sym) => Nnf.Singleton(Literal.Positive(Atom.Var(sym)))
     case COMPLEMENT(tpe) => nnfNot(tpe)
@@ -551,17 +538,17 @@ object CaseSetUnification {
   /**
     * Converts the complement of the given type to NNF.
     */
-  private def nnfNot(t: Type)(implicit universe: Universe): Nnf = t match {
+  private def nnfNot(t: Type)(implicit univ: Universe): Nnf = t match {
     case CONSTANT(sym) => Nnf.Singleton(Literal.Negative(Atom.Case(sym)))
     case VAR(sym) => Nnf.Singleton(Literal.Negative(Atom.Var(sym)))
     case COMPLEMENT(tpe) => nnf(tpe)
     case UNION(tpe1, tpe2) => Nnf.Intersection(
-      nnf(mkComplement(tpe1)),
-      nnf(mkComplement(tpe2))
+      nnf(mkComplement(tpe1, univ.enumSym)),
+      nnf(mkComplement(tpe2, univ.enumSym))
     )
     case INTERSECTION(tpe1, tpe2) => Nnf.Union(
-      nnf(mkComplement(tpe1)),
-      nnf(mkComplement(tpe2))
+      nnf(mkComplement(tpe1, univ.enumSym)),
+      nnf(mkComplement(tpe2, univ.enumSym))
     )
     case EMPTY() => Nnf.All // MATT ???
     case ALL() => Nnf.Empty // MATT ???
@@ -601,14 +588,14 @@ object CaseSetUnification {
   /**
     * Returns true if the given DNF set represents an empty set.
     */
-  private def isEmpty(t1: Dnf)(implicit universe: Universe): Boolean = t1 match {
+  private def isEmpty(t1: Dnf)(implicit univ: Universe): Boolean = t1 match {
     case Dnf.Union(inters) => inters.forall(isEmptyIntersection)
   }
 
   /**
     * Returns true if `t1` represents an empty intersection of effects.
     */
-  private def isEmptyIntersection(t1: Intersection)(implicit universe: Universe): Boolean = {
+  private def isEmptyIntersection(t1: Intersection)(implicit univ: Universe): Boolean = {
     val pos = t1.collect {
       case Literal.Positive(atom) => atom
     }
@@ -627,18 +614,18 @@ object CaseSetUnification {
     val negation = (pos & neg).nonEmpty
 
     // 3. It contains all the negative constants
-    val allNegConsts = universe.cases.forall {
+    val allNegConsts = univ.cases.forall {
       case c => neg.exists {
         case Atom.Case(sym) => c == sym
         case Atom.Var(_) => false
       }
     }
 
-//    if (diffConst || negation || allNegConsts) {
-//      println(s" IS EMPTY: $t1")
-//    } else {
-//      println(s"NOT EMPTY: $t1")
-//    }
+    //    if (diffConst || negation || allNegConsts) {
+    //      println(s" IS EMPTY: $t1")
+    //    } else {
+    //      println(s"NOT EMPTY: $t1")
+    //    }
 
     diffConst || negation || allNegConsts
   }
