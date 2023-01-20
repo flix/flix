@@ -78,161 +78,58 @@ object SetFormula {
   /**
     * Returns the negation of the set formula `tpe0`.
     */
-  def mkNot(tpe0: SetFormula)(implicit univ: Set[Int]): SetFormula = tpe0 match {
+  def mkNot(f0: SetFormula)(implicit univ: Set[Int]): SetFormula = f0 match {
     case SetFormula.Cst(s) =>
       SetFormula.Cst(univ -- s)
 
     case SetFormula.Not(x) =>
       x
 
-    //    // ¬(¬x ∨ y) => x ∧ ¬y
-    //    case SetFormula.Or(SetFormula.Not(x), y) =>
-    //      mkAnd(x, mkNot(y))
-    //
-    //    // ¬(x ∨ ¬y) => ¬x ∧ y
-    //    case SetFormula.Or(x, SetFormula.Not(y)) =>
-    //      mkAnd(mkNot(x), y)
-
-    case _ => SetFormula.Not(tpe0)
+    case _ => SetFormula.Not(f0)
   }
 
   /**
     * Returns the conjunction of the two set formulas `tpe1` and `tpe2`.
     */
-  // NB: The order of cases has been determined by code coverage analysis.
-  def mkAnd(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+  def mkAnd(f1: SetFormula, f2: SetFormula)(implicit univ: Set[Int]): SetFormula = (f1, f2) match {
     case (SetFormula.Cst(x1), x2) if x1 == univ =>
       x2
 
     case (x1, SetFormula.Cst(x2)) if x2 == univ =>
       x1
 
+    case (SetFormula.Cst(s1), _) if s1.isEmpty =>
+      Empty
+
+    case (_, SetFormula.Cst(s2)) if s2.isEmpty =>
+      Empty
+
     case (SetFormula.Cst(x1), SetFormula.Cst(x2)) =>
       SetFormula.Cst(x1 & x2)
 
-    //    // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    //    case (SetFormula.Not(x1), SetFormula.Or(x2, y)) if x1 == x2 =>
-    //      mkAnd(mkNot(x1), y)
-    //
-    //    // x ∧ ¬x => F
-    //    case (x1, SetFormula.Not(x2)) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // ¬x ∧ x => F
-    //    case (SetFormula.Not(x1), x2) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // x ∧ (x ∧ y) => (x ∧ y)
-    //    case (x1, SetFormula.And(x2, y)) if x1 == x2 =>
-    //      mkAnd(x1, y)
-    //
-    //    // x ∧ (y ∧ x) => (x ∧ y)
-    //    case (x1, SetFormula.And(y, x2)) if x1 == x2 =>
-    //      mkAnd(x1, y)
-    //
-    //    // (x ∧ y) ∧ x) => (x ∧ y)
-    //    case (SetFormula.And(x1, y), x2) if x1 == x2 =>
-    //      mkAnd(x1, y)
-    //
-    //    // (x ∧ y) ∧ y) => (x ∧ y)
-    //    case (SetFormula.And(x, y1), y2) if y1 == y2 =>
-    //      mkAnd(x, y1)
-    //
-    //    // x ∧ (x ∨ y) => x
-    //    case (x1, SetFormula.Or(x2, _)) if x1 == x2 =>
-    //      x1
-    //
-    //    // (x ∨ y) ∧ x => x
-    //    case (SetFormula.Or(x1, _), x2) if x1 == x2 =>
-    //      x1
-    //
-    //    // x ∧ (y ∧ ¬x) => F
-    //    case (x1, SetFormula.And(_, SetFormula.Not(x2))) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // (¬x ∧ y) ∧ x => F
-    //    case (SetFormula.And(SetFormula.Not(x1), _), x2) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // x ∧ ¬(x ∨ y) => F
-    //    case (x1, SetFormula.Not(SetFormula.Or(x2, _))) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // ¬(x ∨ y) ∧ x => F
-    //    case (SetFormula.Not(SetFormula.Or(x1, _)), x2) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // x ∧ (¬x ∧ y) => F
-    //    case (x1, SetFormula.And(SetFormula.Not(x2), _)) if x1 == x2 =>
-    //      SetFormula.Empty
-    //
-    //    // (¬x ∧ y) ∧ x => F
-    //    case (SetFormula.And(SetFormula.Not(x1), _), x2) if x1 == x2 =>
-    //      SetFormula.Empty
-
-    // x ∧ x => x
-    case _ if tpe1 == tpe2 => tpe1
-
-    case _ =>
-      //      val s = s"And($eff1, $eff2)"
-      //      val len = s.length
-      //      if (true) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //      }
-
-      SetFormula.And(tpe1, tpe2)
+    case _ => SetFormula.And(f1, f2)
   }
 
   /**
     * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
     */
-  // NB: The order of cases has been determined by code coverage analysis.
-  def mkOr(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+  def mkOr(f1: SetFormula, f2: SetFormula)(implicit univ: Set[Int]): SetFormula = (f1, f2) match {
     case (SetFormula.Cst(x1), x2) if x1 == univ =>
       mkUni()
 
     case (x1, SetFormula.Cst(x2)) if x2 == univ =>
       mkUni()
 
+    case (SetFormula.Cst(s1), x2) if s1.isEmpty =>
+      x2
+
+    case (x1, SetFormula.Cst(s2)) if s2.isEmpty =>
+      x1
+
     case (SetFormula.Cst(s1), SetFormula.Cst(s2)) =>
       SetFormula.Cst(s1 ++ s2)
-    //
-    //    // x ∨ (y ∨ x) => x ∨ y
-    //    case (x1, SetFormula.Or(y, x2)) if x1 == x2 =>
-    //      mkOr(x1, y)
-    //
-    //    // (x ∨ y) ∨ x => x ∨ y
-    //    case (SetFormula.Or(x1, y), x2) if x1 == x2 =>
-    //      mkOr(x1, y)
-    //
-    //    // ¬x ∨ x => T
-    //    case (SetFormula.Not(x), y) if x == y =>
-    //      SetFormula.Cst(univ)
-    //
-    //    // x ∨ ¬x => T
-    //    case (x, SetFormula.Not(y)) if x == y =>
-    //      SetFormula.Cst(univ)
-    //
-    //    // (¬x ∨ y) ∨ x) => T
-    //    case (SetFormula.Or(SetFormula.Not(x), _), y) if x == y =>
-    //      SetFormula.Cst(univ)
-    //
-    //    // x ∨ (¬x ∨ y) => T
-    //    case (x, SetFormula.Or(SetFormula.Not(y), _)) if x == y =>
-    //      SetFormula.Cst(univ)
-    //
-    //    // x ∨ (y ∧ x) => x
-    //    case (x1, SetFormula.And(_, x2)) if x1 == x2 => x1
-    //
-    //    // (y ∧ x) ∨ x => x
-    //    case (SetFormula.And(_, x1), x2) if x1 == x2 => x1
-    //
-    //    // x ∨ x => x
-    //    case _ if tpe1 == tpe2 =>
-    //      tpe1
 
-    case _ =>
-      SetFormula.Or(tpe1, tpe2)
+    case _ => SetFormula.Or(f1, f2)
   }
 
 
