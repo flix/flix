@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
-import ca.uwaterloo.flix.tools.pkg.SemVer
-import ca.uwaterloo.flix.util.StreamOps
+import ca.uwaterloo.flix.tools.pkg.{PackageError, SemVer}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{Result, StreamOps}
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.parse
 
-import java.io.InputStream
+import java.io.{IOException, InputStream}
 import java.net.URL
 
 /**
@@ -50,12 +51,16 @@ object GitHub {
   /**
     * Lists the project's releases.
     */
-  def getReleases(project: Project): List[Release] = {
+  def getReleases(project: Project): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val stream = url.openStream()
+    val stream = try {
+      url.openStream()
+    } catch {
+      case _: IOException => ???
+    }
     val json = StreamOps.readAll(stream)
     val releaseJsons = parse(json).asInstanceOf[JArray]
-    releaseJsons.arr.map(parseRelease)
+    Ok(releaseJsons.arr.map(parseRelease))
   }
 
   /**
@@ -69,10 +74,28 @@ object GitHub {
   /**
     * Gets the project release with the highest semantic version.
     */
-  def getLatestRelease(project: Project): Release = {
-    getReleases(project)
-      .maxByOption(_.version)
-      .getOrElse(throw new RuntimeException(s"No releases available for project ${project}"))
+  def getLatestRelease(project: Project): Result[Release, PackageError] = {
+    getReleases(project) match {
+      case Ok(releases) => releases.maxByOption(_.version) match {
+        case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
+        case Some(latest) => Ok(latest)
+      }
+      case Err(e) => Err(e)
+    }
+  }
+
+  /**
+    * Gets the project release with the relevant semantic version.
+    */
+  def getSpecificRelease(project: Project, version: SemVer): Result[Release, PackageError] = {
+    try {
+      Ok(getReleases(project) match {
+        case Ok(releases) => releases.filter(release => release.version == version).head
+        case Err(e) => return Err(e)
+      })
+    } catch {
+      case _: NoSuchElementException => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+    }
   }
 
   /**
