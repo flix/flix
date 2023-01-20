@@ -56,7 +56,9 @@ object CaseSetUnification {
     val input2 = fromCaseType(tpe2, env, univ)
 
     booleanUnification(input1, input2, Set.empty, univ, enumSym, env).map {
-      case subst => subst.toTypeSubstitution(enumSym, env)
+      case subst =>
+        println(subst)
+        subst.toTypeSubstitution(enumSym, env)
     }
   }
 
