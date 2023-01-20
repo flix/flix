@@ -132,7 +132,7 @@ object CaseSetUnification {
 
     case x :: xs =>
       val t0 = CaseSetSubstitution.singleton(x, Empty)(f)
-      val t1 = CaseSetSubstitution.singleton(x, mkTop)(f)
+      val t1 = CaseSetSubstitution.singleton(x, mkUni())(f)
       val se = successiveVariableElimination(mkAnd(t0, t1), xs)
 
       val f1 = mkOr(se(t0), mkAnd(Var(x), mkNot(se(t1))))
