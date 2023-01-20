@@ -74,9 +74,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
             case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
 
-            case Type.Cst(TypeConstructor.CaseComplement(_), _) => CaseSetUnification.mkComplement(y)(CaseSetUnification.Hack.Universe)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), x, _) => CaseSetUnification.mkIntersection(x, y)(CaseSetUnification.Hack.Universe)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), x, _) => CaseSetUnification.mkUnion(x, y)(CaseSetUnification.Hack.Universe)
+            case Type.Cst(TypeConstructor.CaseComplement(sym), _) => CaseSetUnification.mkComplement(y, sym)
+            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => CaseSetUnification.mkIntersection(x, y, sym)
+            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => CaseSetUnification.mkUnion(x, y, sym)
 
             // Else just apply
             case x => Type.Apply(x, y, loc)
