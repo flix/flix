@@ -65,7 +65,7 @@ object EntryPoint {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)(root.univ, implicitly)) {
+        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)(root.univ, flix)) {
           entryPoint =>
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
@@ -144,7 +144,7 @@ object EntryPoint {
         arg =>
           val argSc = Scheme.generalize(Nil, arg)
 
-          if (Scheme.equal(unitSc, argSc, classEnv)(root.univ, implicitly)) {
+          if (Scheme.equal(unitSc, argSc, classEnv)(root.univ, flix)) {
             // Case 1: Unit -> XYZ. We can ignore the args.
             ().toSuccess
           } else {
@@ -165,13 +165,13 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, resultTpe)
 
 
-      if (Scheme.equal(unitSc, resultSc, classEnv)(root.univ, implicitly)) {
+      if (Scheme.equal(unitSc, resultSc, classEnv)(root.univ, flix)) {
         // Case 1: XYZ -> Unit.
         ().toSuccess
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.classes(new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)(root.univ, implicitly)) {
+        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)(root.univ, flix)) {
           // Case 2: XYZ -> a with ToString[a]
           ().toSuccess
         } else {

@@ -428,7 +428,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(implicitly, flix.setOptions(flix.options.copy(xnoseteffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnoseteffects = true)))))
   }
 
   test("TestNoBoolEffects") {
@@ -439,7 +439,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(implicitly, flix.setOptions(flix.options.copy(xnobooleffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnobooleffects = true)))))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

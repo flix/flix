@@ -806,7 +806,7 @@ object Stratifier {
     val key = predicateSymbolsOf(tpe)
 
     // Compute the restricted labelled graph.
-    val rg = g.restrict(key, labelEq(_, _)(root.univ, implicitly))
+    val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
