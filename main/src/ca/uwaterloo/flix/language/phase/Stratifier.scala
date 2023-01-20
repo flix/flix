@@ -884,12 +884,12 @@ object Stratifier {
   /**
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
-  private def labelEq(l1: Label, l2: Label)(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
+  private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)(root.univ, flix)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

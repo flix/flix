@@ -187,7 +187,7 @@ object Monomorph {
       for ((sym, defn) <- nonParametricDefns) {
         // Get a substitution from the inferred scheme to the declared scheme.
         // This is necessary because the inferred scheme may be more generic than the declared scheme.
-        val subst = infallibleUnify(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)(root.univ, implicitly)
+        val subst = infallibleUnify(defn.spec.declaredScheme.base, defn.impl.inferredScheme.base)
 
         // Specialize the formal parameters to obtain fresh local variable symbols for them.
         val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
@@ -357,7 +357,7 @@ object Monomorph {
         rules.iterator.flatMap {
           case MatchTypeRule(sym, t, body0) =>
             // try to unify
-            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv)(root.univ, implicitly) match {
+            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv)(root.univ, flix) match {
               // Case 1: types don't unify; just continue
               case Result.Err(_) => None
               // Case 2: types unify; use the substitution in the body
@@ -635,7 +635,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)(root.univ, implicitly)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)(root.univ, flix)
         }
     }
 
@@ -671,7 +671,7 @@ object Monomorph {
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)(root.univ, implicitly)
+    val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
     // Check whether the function definition has already been specialized.
     def2def.get((defn.sym, tpe)) match {
@@ -754,8 +754,8 @@ object Monomorph {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit univ: Ast.Multiverse, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
+    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty)(root.univ, flix) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>

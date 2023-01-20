@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -155,7 +155,7 @@ object Safety {
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
         visit(exp) :::
-          rules.flatMap{ case RestrictableChoiceRule(pat, exp) => visit(exp) }
+          rules.flatMap { case RestrictableChoiceRule(pat, exp) => visit(exp) }
 
       case Expression.Tag(_, exp, _, _, _, _) =>
         visit(exp)
@@ -218,7 +218,7 @@ object Safety {
         visit(exp)
 
       case Expression.Upcast(exp, tpe, loc) =>
-        val errors = checkUpcastSafety(exp, tpe, renv, loc)(root.univ, implicitly)
+        val errors = checkUpcastSafety(exp, tpe, renv, root, loc)
         visit(exp) ::: errors
 
       case Expression.Supercast(exp, tpe, loc) =>
@@ -403,7 +403,7 @@ object Safety {
     * the effect set of the expression is a subset of the effect set being cast to.
     *
     */
-  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
+  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv, root: Root)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
     case (Type.Empty, _) => true
     case (Type.True, _) => true
     case (Type.Var(_, _), Type.False) => true
@@ -424,7 +424,7 @@ object Safety {
       // purities
       val pur1 = tpe1.arrowPurityType
       val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubtypeOf(pur1, pur2, renv)
+      val subTypePurity = isSubtypeOf(pur1, pur2, renv, root)
 
       // set effects
       // The rule for effect sets is:
@@ -434,20 +434,20 @@ object Safety {
       val s2 = tpe2.arrowEffectType
       val s3 = Type.freshVar(Kind.Effect, loc)
       val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)(root.univ, flix)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
       val args2 = tpe2.arrowArgTypes
       val superTypeArgs = args1.zip(args2).forall {
         case (t1, t2) =>
-          isSubtypeOf(t2, t1, renv)
+          isSubtypeOf(t2, t1, renv, root)
       }
 
       // check that result is a subtype
       val expectedResTpe = tpe1.arrowResultType
       val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv)
+      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv, root)
 
       subTypePurity && isEffSubset && superTypeArgs && subTypeResult
 
@@ -488,10 +488,10 @@ object Safety {
   /**
     * Returns a list of errors if the the upcast is invalid.
     */
-  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit univ: Ast.Multiverse, flix: Flix): List[SafetyError] = {
+  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    if (isSubtypeOf(tpe1, tpe2, renv))
+    if (isSubtypeOf(tpe1, tpe2, renv, root))
       Nil
     else
       UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
@@ -598,7 +598,7 @@ object Safety {
     * Performs safety check on the pattern of an atom body.
     */
   private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
-    case Predicate.Body.Atom(_,_,_,_,terms,_,loc) =>
+    case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
         case Pattern.Var(_, _, _) => acc
         case Pattern.Wild(_, _) => acc
