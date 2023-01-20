@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstru
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 sealed trait SetFormula {
@@ -63,6 +64,168 @@ object SetFormula {
   case class Or(f1: SetFormula, f2: SetFormula) extends SetFormula
 
   /**
+    * Returns the negation of the set formula `tpe0`.
+    */
+  def mkComplement(tpe0: SetFormula)(implicit univ: Set[Int]): SetFormula = tpe0 match {
+    case SetFormula.Cst(s) =>
+      SetFormula.Cst(univ -- s)
+
+    case SetFormula.Not(x) =>
+      x
+
+    // ¬(¬x ∨ y) => x ∧ ¬y
+    case SetFormula.Or(SetFormula.Not(x), y) =>
+      mkIntersection(x, mkComplement(y))
+
+    // ¬(x ∨ ¬y) => ¬x ∧ y
+    case SetFormula.Or(x, SetFormula.Not(y)) =>
+      mkIntersection(mkComplement(x), y)
+
+    case _ => SetFormula.Not(tpe0)
+  }
+
+  /**
+    * Returns the conjunction of the two set formulas `tpe1` and `tpe2`.
+    */
+  // NB: The order of cases has been determined by code coverage analysis.
+  @tailrec
+  def mkIntersection(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+    case (SetFormula.Cst(x1), x2) if x1 == univ =>
+      x2
+
+    case (x1, SetFormula.Cst(x2)) if x2 == univ =>
+      x1
+
+    case (SetFormula.Cst(x1), SetFormula.Cst(x2)) =>
+      SetFormula.Cst(x1 & x2)
+
+    // ¬x ∧ (x ∨ y) => ¬x ∧ y
+    case (SetFormula.Not(x1), SetFormula.Or(x2, y)) if x1 == x2 =>
+      mkIntersection(mkComplement(x1), y)
+
+    // x ∧ ¬x => F
+    case (x1, SetFormula.Not(x2)) if x1 == x2 =>
+      SetFormula.Empty
+
+    // ¬x ∧ x => F
+    case (SetFormula.Not(x1), x2) if x1 == x2 =>
+      SetFormula.Empty
+
+    // x ∧ (x ∧ y) => (x ∧ y)
+    case (x1, SetFormula.And(x2, y)) if x1 == x2 =>
+      mkIntersection(x1, y)
+
+    // x ∧ (y ∧ x) => (x ∧ y)
+    case (x1, SetFormula.And(y, x2)) if x1 == x2 =>
+      mkIntersection(x1, y)
+
+    // (x ∧ y) ∧ x) => (x ∧ y)
+    case (SetFormula.And(x1, y), x2) if x1 == x2 =>
+      mkIntersection(x1, y)
+
+    // (x ∧ y) ∧ y) => (x ∧ y)
+    case (SetFormula.And(x, y1), y2) if y1 == y2 =>
+      mkIntersection(x, y1)
+
+    // x ∧ (x ∨ y) => x
+    case (x1, SetFormula.Or(x2, _)) if x1 == x2 =>
+      x1
+
+    // (x ∨ y) ∧ x => x
+    case (SetFormula.Or(x1, _), x2) if x1 == x2 =>
+      x1
+
+    // x ∧ (y ∧ ¬x) => F
+    case (x1, SetFormula.And(_, SetFormula.Not(x2))) if x1 == x2 =>
+      SetFormula.Empty
+
+    // (¬x ∧ y) ∧ x => F
+    case (SetFormula.And(SetFormula.Not(x1), _), x2) if x1 == x2 =>
+      SetFormula.Empty
+
+    // x ∧ ¬(x ∨ y) => F
+    case (x1, SetFormula.Not(SetFormula.Or(x2, _))) if x1 == x2 =>
+      SetFormula.Empty
+
+    // ¬(x ∨ y) ∧ x => F
+    case (SetFormula.Not(SetFormula.Or(x1, _)), x2) if x1 == x2 =>
+      SetFormula.Empty
+
+    // x ∧ (¬x ∧ y) => F
+    case (x1, SetFormula.And(SetFormula.Not(x2), _)) if x1 == x2 =>
+      SetFormula.Empty
+
+    // (¬x ∧ y) ∧ x => F
+    case (SetFormula.And(SetFormula.Not(x1), _), x2) if x1 == x2 =>
+      SetFormula.Empty
+
+    // x ∧ x => x
+    case _ if tpe1 == tpe2 => tpe1
+
+    case _ =>
+      //      val s = s"And($eff1, $eff2)"
+      //      val len = s.length
+      //      if (true) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //      }
+
+      SetFormula.And(tpe1, tpe2)
+  }
+
+  /**
+    * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
+    */
+  // NB: The order of cases has been determined by code coverage analysis.
+  @tailrec
+  def mkUnion(tpe1: SetFormula, tpe2: SetFormula)(implicit univ: Set[Int]): SetFormula = (tpe1, tpe2) match {
+    case (SetFormula.Cst(x1), x2) if x1 == univ =>
+      SetFormula.Cst(x1)
+
+    case (x1, SetFormula.Cst(x2)) if x2 == univ =>
+      SetFormula.Cst(x2)
+
+    case (SetFormula.Cst(s1), SetFormula.Cst(s2)) =>
+      SetFormula.Cst(s1 ++ s2)
+
+    // x ∨ (y ∨ x) => x ∨ y
+    case (x1, SetFormula.Or(y, x2)) if x1 == x2 =>
+      mkUnion(x1, y)
+
+    // (x ∨ y) ∨ x => x ∨ y
+    case (SetFormula.Or(x1, y), x2) if x1 == x2 =>
+      mkUnion(x1, y)
+
+    // ¬x ∨ x => T
+    case (SetFormula.Not(x), y) if x == y =>
+      SetFormula.Cst(univ)
+
+    // x ∨ ¬x => T
+    case (x, SetFormula.Not(y)) if x == y =>
+      SetFormula.Cst(univ)
+
+    // (¬x ∨ y) ∨ x) => T
+    case (SetFormula.Or(SetFormula.Not(x), _), y) if x == y =>
+      SetFormula.Cst(univ)
+
+    // x ∨ (¬x ∨ y) => T
+    case (x, SetFormula.Or(SetFormula.Not(y), _)) if x == y =>
+      SetFormula.Cst(univ)
+
+    // x ∨ (y ∧ x) => x
+    case (x1, SetFormula.And(_, x2)) if x1 == x2 => x1
+
+    // (y ∧ x) ∨ x => x
+    case (SetFormula.And(_, x1), x2) if x1 == x2 => x1
+
+    // x ∨ x => x
+    case _ if tpe1 == tpe2 =>
+      tpe1
+
+    case _ =>
+      SetFormula.Or(tpe1, tpe2)
+  }
+
+  /**
     * Substitutes all variables in `f` using the substitution map `m`.
     *
     * The map `m` must bind each free variable in `f` to a (new) variable.
@@ -84,9 +247,9 @@ object SetFormula {
   def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
     case Cst(s) => Cst(s)
     case Var(x) => fn(x)
-    case Not(f1) => SetFormulaAlg.mkNot(map(f1)(fn))
-    case And(f1, f2) => SetFormulaAlg.mkAnd(map(f1)(fn), map(f2)(fn))
-    case Or(f1, f2) => SetFormulaAlg.mkOr(map(f1)(fn), map(f2)(fn))
+    case Not(f1) => mkComplement(map(f1)(fn))
+    case And(f1, f2) => mkIntersection(map(f1)(fn), map(f2)(fn))
+    case Or(f1, f2) => mkUnion(map(f1)(fn), map(f2)(fn))
   }
 
   /**
@@ -97,7 +260,7 @@ object SetFormula {
     val cases = (univ ++ ts.flatMap(_.cases)).distinct.map(VarOrCase.Case)
 
     val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
-    val backward = forward.map {case (a, b) => (b, a)}
+    val backward = forward.map { case (a, b) => (b, a) }
 
     val newUniv = univ.map {
       case sym => forward(VarOrCase.Case(sym))
