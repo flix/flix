@@ -37,6 +37,20 @@ class SetFormulaAlg {
   def mkIntersection(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
     mkAnd(f1, f2)
 
+  /**
+    * Returns the non-balanced conjuntion of `terms`.
+    * If `terms` is empty, Empty is returned.
+    */
+  def mkAnd(terms: List[SetFormula])(implicit universe: Set[Int]): SetFormula =
+    terms.reduceOption(mkAnd).getOrElse(mkEmpty())
+
+  /**
+    * Returns the non-balanced intersection of `terms`.
+    * If `terms` is empty, Empty is returned.
+    */
+  def mkIntersection(terms: List[SetFormula])(implicit universe: Set[Int]): SetFormula =
+    mkAnd(terms)
+
   def mkOr(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
     case (All, _) => All
     case (_, All) => All
@@ -49,6 +63,20 @@ class SetFormulaAlg {
   def mkUnion(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula =
     mkOr(f1, f2)
 
+  /**
+    * Returns the non-balanced disjunction of `terms`.
+    * If `terms` is empty, Empty is returned.
+    */
+  def mkOr(terms: List[SetFormula])(implicit universe: Set[Int]): SetFormula =
+    terms.reduceOption(mkOr).getOrElse(mkEmpty())
+
+  /**
+    * Returns the non-balanced union of `terms`.
+    * If `terms` is empty, Empty is returned.
+    */
+  def mkUnion(terms: List[SetFormula])(implicit universe: Set[Int]): SetFormula =
+    mkOr(terms)
+
   def mkDifference(f1: SetFormula, f2: SetFormula)(implicit universe: Set[Int]): SetFormula = (f1, f2) match {
     case (All, other) => mkComplement(other)
     case (_, All) => Empty
@@ -56,6 +84,47 @@ class SetFormulaAlg {
     case (other, Empty) => other
     case (Cst(c1), Cst(c2)) => mkCst(c1 diff c2)
     case _ => mkIntersection(f1, mkComplement(f2))
+  }
+
+  /**
+    * Computes the truth value of the formula `f` assuming the variables in `trueVars`
+    * are true and the rest are false.
+    */
+  private def evaluate(f: SetFormula, trueVars: List[Int])(implicit universe: Set[Int]): Set[Int] = f match {
+    case All => universe
+    case Cst(s) => s
+    case Var(x) => if (trueVars.contains(x)) universe else Set.empty
+    case Not(f1) => universe diff evaluate(f1, trueVars)
+    case Or(f1, f2) => evaluate(f1, trueVars) union evaluate(f2, trueVars)
+    case And(f1, f2) => evaluate(f1, trueVars) intersect evaluate(f2, trueVars)
+  }
+
+  /**
+    * Returns `f` rewritten by exhaustive evaluation. This is exponential in the
+    * number of variables. The output is in conceptual cnf
+    * (conjunction of disjunctions or union of intersections).
+    *
+    * The lists `trueVars`, `falseVars`, and `unassignedVars` are assumed to be
+    * disjoint and cover all variables in the formula
+    */
+  private def exhaustiveEvaluation(f: SetFormula, trueVars: List[Int], falseVars: List[Int], unassignedVars: List[Int])(implicit universe: Set[Int]): List[SetFormula] = unassignedVars match {
+    case Nil => // we can evaluate the formula with all variables assigned
+      val res = evaluate(f, trueVars)
+      if (res.isEmpty) List(mkEmpty())
+      else {
+        // res ∩ pos1 ∩ ... ∩ posn ∩ !neg1 ∩ ... ∩ !negn
+        val terms = mkCst(res) :: trueVars.map(mkVar) ++ falseVars.map(i => mkNot(mkVar(i)))
+        List(mkIntersection(terms))
+      }
+    case x :: xs => // compute `f` recursively with `x` being true or false
+      val xt = exhaustiveEvaluation(f, x :: trueVars, falseVars, xs)
+      val xf = exhaustiveEvaluation(f, trueVars, x :: falseVars, xs)
+      xt ++ xf
+  }
+
+  def simplifyByExhaustiveEvaluation(f: SetFormula)(implicit universe: Set[Int]): SetFormula = {
+    val terms = exhaustiveEvaluation(f, Nil, Nil, f.freeVars.toList)
+    mkUnion(terms)
   }
 
 }
