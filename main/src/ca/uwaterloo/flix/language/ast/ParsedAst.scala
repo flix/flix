@@ -1718,39 +1718,9 @@ object ParsedAst {
   object Kind {
 
     /**
-      * The Star kind.
+      * A non-builtin kind.
       */
-    case class Star(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Bool kind.
-      */
-    case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Region kind.
-      */
-    case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Effect kind.
-      */
-    case class Effect(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Record Row kind.
-      */
-    case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Schema Row kind.
-      */
-    case class SchemaRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Predicate kind.
-      */
-    case class Predicate(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class QName(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Arrow kind.

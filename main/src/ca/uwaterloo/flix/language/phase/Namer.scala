@@ -1254,13 +1254,25 @@ object Namer {
 
       case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
 
-      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+      case WeededAst.Type.Ascribe(tpe, kind0, loc) =>
+        val kind = visitKind(kind0)
         mapN(visit(tpe)) {
           t => NamedAst.Type.Ascribe(t, kind, loc)
         }
     }
 
     visit(t0)
+  }
+
+  /**
+    * Performs naming on the given kind.
+    */
+  private def visitKind(k0: WeededAst.Kind): NamedAst.Kind = k0 match {
+    case WeededAst.Kind.Ambiguous(qname, loc) => NamedAst.Kind.Ambiguous(qname, loc)
+    case WeededAst.Kind.Arrow(k10, k20, loc) =>
+      val k1 = visitKind(k10)
+      val k2 = visitKind(k20)
+      NamedAst.Kind.Arrow(k1, k2, loc)
   }
 
   /**
@@ -1441,7 +1453,7 @@ object Namer {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
       NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
   }
@@ -1476,7 +1488,7 @@ object Namer {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
+        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
   }

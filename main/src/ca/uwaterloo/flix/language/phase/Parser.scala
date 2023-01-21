@@ -1643,39 +1643,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Effect | Kinds.Record | Kinds.Schema | Kinds.Parens
+      Kinds.QName | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
       SimpleKind ~ optional(optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow)
     }
 
-    def Star: Rule1[ParsedAst.Kind.Star] = rule {
-      SP ~ keyword("Type") ~ SP ~> ParsedAst.Kind.Star
-    }
-
-    def Bool: Rule1[ParsedAst.Kind.Bool] = rule {
-      SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
-    }
-
-    def Region: Rule1[ParsedAst.Kind.Region] = rule {
-      SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
-    }
-
-    def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
-      SP ~ keyword("Eff") ~ SP ~> ParsedAst.Kind.Effect
-    }
-
-    def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
-      SP ~ keyword("RecordRow") ~ SP ~> ParsedAst.Kind.RecordRow
-    }
-
-    def Schema: Rule1[ParsedAst.Kind.SchemaRow] = rule {
-      SP ~ keyword("SchemaRow") ~ SP ~> ParsedAst.Kind.SchemaRow
-    }
-
-    def Predicate: Rule1[ParsedAst.Kind.Predicate] = rule {
-      SP ~ keyword("Predicate") ~ SP ~> ParsedAst.Kind.Predicate
+    def QName: Rule1[ParsedAst.Kind.QName] = rule {
+      SP ~ Names.QName ~ SP ~> ParsedAst.Kind.QName
     }
 
     def Parens: Rule1[ParsedAst.Kind] = rule {
