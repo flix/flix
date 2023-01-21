@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
+import ca.uwaterloo.flix.language.phase.Monomorph
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -29,6 +30,7 @@ object LoweredAst {
                   enums: Map[Symbol.EnumSym, LoweredAst.Enum],
                   effects: Map[Symbol.EffectSym, LoweredAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, LoweredAst.TypeAlias],
+                  univ: Ast.Multiverse,
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
@@ -89,6 +91,7 @@ object LoweredAst {
       def eff: Type = Type.Empty
     }
 
+    @EliminatedBy(Monomorph.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
 

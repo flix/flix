@@ -357,7 +357,7 @@ object Monomorph {
         rules.iterator.flatMap {
           case MatchTypeRule(sym, t, body0) =>
             // try to unify
-            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
+            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv)(root.univ, flix) match {
               // Case 1: types don't unify; just continue
               case Result.Err(_) => None
               // Case 2: types unify; use the substitution in the body
@@ -635,7 +635,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)(root.univ, flix)
         }
     }
 
@@ -669,7 +669,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
@@ -754,8 +754,8 @@ object Monomorph {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
+    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty)(root.univ, flix) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>

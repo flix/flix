@@ -170,7 +170,7 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv).toSuccess
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.univ, root.entryPoint, root.sources, root.classEnv).toSuccess
   }
 
   /**
@@ -1834,9 +1834,6 @@ object Lowering {
     */
   private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
     cparams0.exists(p => p.sym == sym)
-
-
-  // TODO: Move into TypedAstOps
 
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.
