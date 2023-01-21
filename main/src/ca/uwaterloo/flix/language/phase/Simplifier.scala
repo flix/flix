@@ -56,8 +56,6 @@ object Simplifier {
 
       case LoweredAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
-      case LoweredAst.Expression.Sig(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, loc) // TODO replace with implementation
-
       case LoweredAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case LoweredAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
@@ -254,6 +252,9 @@ object Simplifier {
       case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
+
+      case LoweredAst.Expression.Sig(_, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
       case LoweredAst.Expression.Wild(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
