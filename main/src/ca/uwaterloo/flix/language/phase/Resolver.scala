@@ -603,10 +603,11 @@ object Resolver {
         qname.ident.name match {
           case "Type" => Kind.Star.toSuccess
           case "Bool" => Kind.Bool.toSuccess
-          case "Effect" => Kind.Effect.toSuccess
+          case "Eff" => Kind.Effect.toSuccess
           case "RecordRow" => Kind.RecordRow.toSuccess
           case "SchemaRow" => Kind.SchemaRow.toSuccess
           case "Predicate" => Kind.Predicate.toSuccess
+          case "Region" => Kind.Bool.toSuccess
           case _ =>
             mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
               case enum => Kind.CaseSet(enum.sym)
