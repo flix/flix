@@ -378,9 +378,9 @@ object WeededAst {
 
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tpe: WeededAst.Type)
+  case class Case(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type)
+  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 

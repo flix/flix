@@ -174,10 +174,10 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case caze@NamedAst.Declaration.Case(sym, _) =>
+    case caze@NamedAst.Declaration.Case(sym, _, _) =>
       addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
 
-    case caze@NamedAst.Declaration.RestrictableCase(sym, _) =>
+    case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
   }
@@ -368,11 +368,11 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
-    case WeededAst.Case(ident, tpe0) =>
+    case WeededAst.Case(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
           val caseSym = Symbol.mkCaseSym(enumSym, ident)
-          NamedAst.Declaration.Case(caseSym, tpe)
+          NamedAst.Declaration.Case(caseSym, tpe, loc)
       }
   }
 
@@ -380,11 +380,11 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
-    case WeededAst.RestrictableCase(ident, tpe0) =>
+    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
           val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-          NamedAst.Declaration.RestrictableCase(caseSym, tpe)
+          NamedAst.Declaration.RestrictableCase(caseSym, tpe, loc)
       }
   }
 
@@ -1538,8 +1538,8 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
-    case NamedAst.Declaration.Case(sym, tpe) => sym.loc
-    case NamedAst.Declaration.RestrictableCase(sym, tpe) => sym.loc
+    case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc
+    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym.loc
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
