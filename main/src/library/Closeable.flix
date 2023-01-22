@@ -18,5 +18,5 @@
 /// A type class for types that can be closed.
 ///
 pub class Closeable[a] {
-  pub def close(x: a): Unit \ IO
+    pub def close(x: a): Unit \ IO
 }
