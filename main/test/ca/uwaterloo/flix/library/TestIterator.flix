@@ -546,6 +546,53 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndex01(): Bool = region rc {
+        Nil |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == Nil
+    }
+
+    @test
+    def mapWithIndex02(): Bool = region rc {
+        (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+    }
+
+    @test
+    def mapWithIndex03(): Bool = region rc {
+        (3 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+    }
+
+    @test
+    def mapWithIndex04(): Bool = region rc {
+        (1 :: 2 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 2 :: Nil
+    }
+
+    @test
+    def mapWithIndex05(): Bool = region rc {
+        (1 :: 8 :: 10 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+    }
+
+    @test
+    def mapWithIndex06(): Bool = region rc {
+        (10 :: 8 :: 1 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+    }
+
+    @test
+    def mapWithIndex07(): Bool = region rc {
+        (1 :: 8 :: 10 :: 14 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: 14 :: Nil
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

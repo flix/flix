@@ -18,20 +18,19 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
     case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
 
-/*
-instance Newable[Iterator[a]] {
-    pub def new(rc: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.iterate(rc)
-}
-
-///
-/// Alias for `Foldable.iterator`.
-///
-pub def iterator(rc: Region[r], t: t[a]): Iterator[a, ef, r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(rc, t)
-*/
-
 namespace Iterator {
 
+
+    ///
+    /// Represent the "steps" of an iterator.
+    ///
+    /// This is an expanded version of the `Option` type.
+    /// `Ans` is the answer at an intermediate stage of iteration.
+    /// `Done` signals that iteration is complete.
+    /// `Skip` is essentially an implementation detail. It allows us
+    /// to define `filter` and similar functions that "wither" Iterators
+    /// without recursively running through the Iterator.
+    ///
     pub enum Step[a] {
         case Ans(a)
         case Skip
