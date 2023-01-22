@@ -959,7 +959,7 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case KindedAst.Expression.OnExit(exp1, exp2, loc) =>
+      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val p = Type.freshVar(Kind.Bool, loc)
@@ -2061,13 +2061,13 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.OnExit(exp1, exp2, loc) =>
+      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         val tpe = Type.Unit
         val pur = Type.Impure
         val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-        TypedAst.Expression.OnExit(e1, e2, tpe, pur, eff, loc)
+        TypedAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)

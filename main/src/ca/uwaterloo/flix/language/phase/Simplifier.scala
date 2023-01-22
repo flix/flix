@@ -104,8 +104,8 @@ object Simplifier {
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
 
-      case LoweredAst.Expression.OnExit(exp1, exp2, tpe, pur, eff, loc) =>
-        SimplifiedAst.Expression.OnExit(visitExp(exp1), visitExp(exp2), tpe, simplifyPurity(pur), loc)
+      case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -838,8 +838,8 @@ object Simplifier {
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
 
-      case SimplifiedAst.Expression.OnExit(exp1, exp2, tpe, purity, loc) =>
-        SimplifiedAst.Expression.OnExit(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)

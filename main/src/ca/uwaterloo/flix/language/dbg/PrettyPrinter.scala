@@ -217,8 +217,8 @@ object PrettyPrinter {
             .append(visitExp(exp).replace(System.lineSeparator(), System.lineSeparator() + (" " * 2)))
             .toString
 
-        case Expression.OnExit(exp1, exp2, _, _, _) =>
-          "$ON_EXIT$(" + visitExp(exp1) + ", " + visitExp(exp2) + ")"
+        case Expression.ScopeExit(exp1, exp2, _, _, _) =>
+          "$SCOPE_EXIT$(" + visitExp(exp1) + ", " + visitExp(exp2) + ")"
 
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 

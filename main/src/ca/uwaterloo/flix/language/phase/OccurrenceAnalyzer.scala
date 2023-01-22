@@ -258,11 +258,11 @@ object OccurrenceAnalyzer {
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
-    case Expression.OnExit(exp1, exp2, tpe, purity, loc) =>
+    case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.OnExit(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

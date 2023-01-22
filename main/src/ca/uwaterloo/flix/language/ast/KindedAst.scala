@@ -101,7 +101,7 @@ object KindedAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class OnExit(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class ScopeExit(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
 

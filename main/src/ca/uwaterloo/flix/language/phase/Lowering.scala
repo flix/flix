@@ -418,11 +418,11 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
 
-    case TypedAst.Expression.OnExit(exp1, exp2, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      LoweredAst.Expression.OnExit(e1, e2, t, pur, eff, loc)
+      LoweredAst.Expression.ScopeExit(e1, e2, t, pur, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1898,10 +1898,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, eff, loc)
 
-    case LoweredAst.Expression.OnExit(exp1, exp2, tpe, pur, eff, loc) =>
+    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)
       val e2 = substExp(exp2, subst)
-      LoweredAst.Expression.OnExit(e1, e2, tpe, pur, eff, loc)
+      LoweredAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

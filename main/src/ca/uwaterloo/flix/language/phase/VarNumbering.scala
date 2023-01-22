@@ -120,7 +120,7 @@ object VarNumbering {
         val i1 = visitSymbolAssignment(sym, Type.Unit, i0)
         visitExp(exp, i1)
 
-      case Expression.OnExit(exp1, exp2, _, _, _) =>
+      case Expression.ScopeExit(exp1, exp2, _, _, _) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 

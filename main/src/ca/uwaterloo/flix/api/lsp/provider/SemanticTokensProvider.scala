@@ -323,7 +323,7 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expression.OnExit(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)

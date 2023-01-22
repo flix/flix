@@ -335,7 +335,7 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
-    case Expression.OnExit(exp1, exp2, tpe, loc) =>
+    case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
       //!TODO: For now, just emit unit
       compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 

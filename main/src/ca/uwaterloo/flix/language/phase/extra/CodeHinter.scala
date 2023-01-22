@@ -128,7 +128,7 @@ object CodeHinter {
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.OnExit(exp1, exp2, _, _, _, _) =>
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
