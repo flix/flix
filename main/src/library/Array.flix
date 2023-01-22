@@ -1399,7 +1399,7 @@ namespace Array {
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
     pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1) } =
-        Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> a[i])
+        Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
     /// Returns an iterator over `a` zipped with the indices of the elements.

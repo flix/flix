@@ -532,8 +532,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    /// SPT TODO - check effect of `iter`
-    pub def take(n: Int32, iter: Iterator[a, ef and r, r]): Iterator[a, ef, r] \ Write(r) =
+    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let ix = ref n @ rc;
         def loop() = {
@@ -543,7 +542,7 @@ namespace Iterator {
             else
                 match iterF() {
                     case Ans(a) => {ix := i-1; Ans(a)}
-                    case Skip   => loop()
+                    case Skip   => Skip
                     case Done   => Done
                 }
         };
@@ -580,11 +579,11 @@ namespace Iterator {
         def loop() = match iterF() {
             case Ans(a) =>
                 if (deref start) {
-                    if (f(a)) loop() else { start:= false; Ans(a) }
+                    if (f(a)) Skip else { start:= false; Ans(a) }
                 } else {
                     Ans(a)
                 }
-            case Skip    => loop()
+            case Skip    => Skip
             case Done    => Done
         };
         let iter1F = () -> loop();
