@@ -107,22 +107,10 @@ namespace StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
         import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
         let StringBuilder(msb) = sb;
-        let len = length(sb);
-        let i = ref 0 @ r1;
-        let next = () -> {
-            let pos = deref i;
-            if (pos < len) {
-                let x = charAt(msb, pos);
-                i := deref i + 1;
-                Some(x)
-            } else {
-                None
-            }
-        };
-        Iterator.iterate(r1, next)
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.

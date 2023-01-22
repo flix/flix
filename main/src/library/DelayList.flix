@@ -71,7 +71,7 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(r, l)
+    override pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
     override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
@@ -1201,8 +1201,8 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) =
-        let cursor = ref l @ r;
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
             case None    => None
             case Some(x) => {
@@ -1210,7 +1210,7 @@ namespace DelayList {
                 Some(x)
             }
         };
-        Iterator.iterate(r, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.

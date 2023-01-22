@@ -20,14 +20,14 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 
 /*
 instance Newable[Iterator[a]] {
-    pub def new(r: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.iterate(r)
+    pub def new(rc: Region[r]): Iterator[a, ef, r] \ { Read(r), Write(r) } = Iterator.iterate(rc)
 }
 
 ///
 /// Alias for `Foldable.iterator`.
 ///
-pub def iterator(r: Region[r], t: t[a]): Iterator[a, ef, r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t)
+pub def iterator(rc: Region[r], t: t[a]): Iterator[a, ef, r] \ Write(r) with Foldable[t] =
+    Foldable.iterator(rc, t)
 */
 
 namespace Iterator {
@@ -81,16 +81,15 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
-    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, ef, r] \ Write(r) =
+    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ Write(r) =
         let pos = ref b @ rc;
         if (e <= b)
             empty(rc)
         else {
-            let f = () -> match (deref pos) {
+            let iterF = () -> match (deref pos) {
                 case i if i < e => pos := i+1; Ans(i)
                 case _          => Done
             };
-            let iterF = () -> unsafe_cast f() as _ \ { ef, r };
             Iterator(rc, iterF)
         }
 
@@ -280,6 +279,23 @@ namespace Iterator {
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => Ans(f(a))
+            case Skip   => Skip
+            case Done   => Done
+        };
+        let iterF1 = () -> {let x = iterF(); step(x)};
+        Iterator(rc, iterF1)
+
+    ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`
+    /// together with its index.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef1, iter: Iterator[a, ef, r]): Iterator[b, ef and ef1, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let ix = ref 0 @ rc;
+        let step = x -> match x {
+            case Ans(a) => { let i = deref ix; ix := i + 1; Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };

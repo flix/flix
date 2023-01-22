@@ -800,14 +800,14 @@ namespace Nec {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r, r] \ Write(r) =
-        iteratorHelper(r, Some(viewLeft(c)))
+    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, r, r] \ Write(r) =
+        iteratorHelper(rc, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ Write(r) =
-        let cursor = ref vl @ r;
+    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref vl @ rc;
         let next = () -> match (deref cursor) {
             case None             => None
             case Some(OneLeft(x)) => {
@@ -819,13 +819,13 @@ namespace Nec {
                 Some(x)
             }
         };
-        Iterator.iterate(r, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        iterator(r, c) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.

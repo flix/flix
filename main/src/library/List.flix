@@ -88,7 +88,7 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(r, l)
+    override pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -124,7 +124,7 @@ instance Collectable[List] {
 }
 
 instance Iterable[List] {
-    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rh, l)
+    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
 namespace List {
@@ -1313,15 +1313,15 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(r1: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
-        let ls = ref xs @ r1;
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
+        let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {
                 case Nil     => None
                 case x :: rs => ls := rs; Some(x)
             }
         };
-        Iterator.iterate(r1, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.

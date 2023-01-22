@@ -65,7 +65,7 @@ instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
-    override pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(r, s)
+    override pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
 instance UnorderedFoldable[Set] {
@@ -95,7 +95,7 @@ instance Collectable[Set] {
 }
 
 instance Iterable[Set] {
-    pub def iterator(rh: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rh, s)
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
 namespace Set {
@@ -616,9 +616,9 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) =
         let Set(t) = s;
-        RedBlackTree.iterator(r, t) |> Iterator.map(fst)
+        RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.

@@ -69,7 +69,7 @@ instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(r, c)
+    override pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -112,7 +112,7 @@ instance Collectable[Chain] {
 }
 
 instance Iterable[Chain] {
-    pub def iterator(rh: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rh, c)
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
 }
 
 namespace Chain {
@@ -795,8 +795,8 @@ namespace Chain {
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
-        let cursor = ref viewLeft(c) @ r;
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) => {
@@ -804,13 +804,13 @@ namespace Chain {
                 Some(x)
             }
         };
-        Iterator.iterate(r, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        iterator(r, c) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.
