@@ -123,7 +123,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sumWith(f: a -> Int32 \ ef1, iter: Iterator[a, ef, r]): Int32 \ { ef, ef1, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
@@ -141,7 +141,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def productWith(f: a -> Int32 \ ef1, iter: Iterator[a, ef, r]): Int32 \ { ef, ef1, Read(r) } = match next(iter) {
+    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } = match next(iter) {
         case Some(a) => foldLeft((acc, x) -> acc * f(x), f(a), iter)
         case None    => 1
     }
@@ -180,7 +180,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMap(iter: Iterator[(k, v), ef, r]): Map[k, v] \ { ef, Read(r) } with Order[k] =
-        foldLeft((acc, a) -> {let (k, v) = a; Map.insert(k, v, acc)}, Map.empty(), iter)
+        foldLeft((acc, a) -> (match (k, v) -> Map.insert(k, v, acc))(a), Map.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
@@ -188,16 +188,10 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toNel(iter: Iterator[a, ef, r]): Option[Nel[a]] \ { ef, Read(r) } =
-        let swapCons = (a, acc) -> match acc {
-            case Nel(x, xs) => Nel(x, a :: xs)
-        };
-        match next(iter) {
-            case Some(a) => foldRight((x, acc) -> swapCons(x, acc), Nel.singleton(a), iter) |> Some
-            case None    => None
-        }
+        toList(iter) |> List.toNel
 
     ///
-    /// Returns the contents of `iter` as a nec.
+    /// Returns the contents of `iter` as a Nec.
     ///
     /// Consumes the entire iterator.
     ///
@@ -227,7 +221,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEach(f: a -> Unit \ ef1, iter: Iterator[a, ef, r]): Unit \ { ef, ef1, Read(r) } =
+    pub def forEach(f: a -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
             case Skip   => loop()
@@ -241,7 +235,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef1, iter: Iterator[a, ef, r]): Unit \ { ef, ef1, Read(r) } =
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(i) = match iterF() {
             case Skip   => loop(i)
@@ -258,7 +252,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def filter(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, ef and ef1, r] =
+    pub def filter(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => if (f(a)) Ans(a) else Skip
@@ -273,7 +267,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def map(f: a -> b \ ef1, iter: Iterator[a, ef, r]): Iterator[b, ef and ef1, r] =
+    pub def map(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => Ans(f(a))
@@ -289,7 +283,7 @@ namespace Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef1, iter: Iterator[a, ef, r]): Iterator[b, ef and ef1, r] \ Write(r) =
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
@@ -416,13 +410,12 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef1, s: b, iter: Iterator[a, ef, r]): b \ { ef, ef1, Read(r) } =
+    pub def foldLeft(f: (b, a) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(acc) = match iterF() {
             case Skip   => loop(acc)
             case Ans(a) => loop(f(acc, a))
             case Done   => acc
-
         };
         loop(s)
 
@@ -433,7 +426,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef1, s: b, iter: Iterator[a, ef, r]): b \ { ef, ef1, Read(r) } =
+    pub def foldRight(f: (a, b) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(k) = match iterF() {
             case Skip   => loop(k)
@@ -463,7 +456,7 @@ namespace Iterator {
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef1, iter: Iterator[a, ef, r]): b \ { ef, ef1, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
@@ -475,7 +468,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef1, iter: Iterator[a, ef, r]): Option[a] \ { ef, ef1, Read(r) } =
+    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, Read(r) } =
         match next(iter) {
             case Some(x) => foldLeft(f, x, iter) |> Some
             case None    => None
@@ -555,7 +548,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def takeWhile(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, ef and ef1, r]=
+    pub def takeWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r]=
         let Iterator(rc, iterF) = iter;
         def loop(x) = match x {
             case Ans(a) => if (f(a)) Ans(a) else Done
@@ -572,7 +565,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def dropWhile(f: a -> Bool \ ef1, iter: Iterator[a, ef, r]): Iterator[a, r and ef and ef1, r] \ Write(r) =
+    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
         let Iterator(rc, iterF) = iter;
         let start = ref true @ rc;
         def loop() = match iterF() {
@@ -595,7 +588,7 @@ namespace Iterator {
     ///
     /// Currently `f` has to generate an iterator with region `r`.
     ///
-    pub def flatMap(f: a -> Iterator[b, ef1, r] \ ef2, ma: Iterator[a, ef, r]): Iterator[b, r and ef and ef1 and ef2, r] \ Write(r) =
+    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r and ef1 and ef2 and ef3, r] \ Write(r) =
         let Iterator(rc, iterF) = ma;
         let innerIter = ref polymorphicEmpty(rc) @ rc;
         let inside = ref false @ rc;
@@ -717,7 +710,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String \ ef1, sep: String, iter: Iterator[a, ef, r]): String \ { ef, ef1, Read(r) } = region rc {
+    pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, Read(r) } = region rc {
         let sb = new StringBuilder(rc);
         match next(iter) {
             case Some(a) => {
@@ -737,7 +730,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def filterMap(f: a -> Option[b] \ ef1, iter: Iterator[a, ef, r]): Iterator[b, ef and ef1, r] =
+    pub def filterMap(f: a -> Option[b] \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
             case Ans(a) => match (f(a)) {
