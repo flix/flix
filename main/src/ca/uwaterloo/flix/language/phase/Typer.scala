@@ -965,12 +965,12 @@ object Typer {
         val p = Type.freshVar(Kind.Bool, loc)
         val ef = Type.freshVar(Kind.Effect, loc)
         for {
-          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
           _ <- expectTypeM(expected = Type.mkUncurriedArrowWithEffect(Type.Unit :: Nil, p, ef, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultPur = Type.mkAnd(pur1, pur2, regionVar, loc)
+          resultPur = Type.mkAnd(Type.Impure, regionVar, loc)
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
       

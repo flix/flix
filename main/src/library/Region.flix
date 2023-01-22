@@ -23,5 +23,5 @@ namespace Region {
   /// * `Closeable`s are not guaranteed to be closed in any particular order.
   ///
   pub def closeScopeExit(x: a, r: Region[r]): Unit \ {r, IO} with Closeable[a] = 
-      unsafe_cast $SCOPE_EXIT$(() -> Closeable.close(x), r) as _ \ {r, IO}
+      $SCOPE_EXIT$(() -> Closeable.close(x), r)
 }
