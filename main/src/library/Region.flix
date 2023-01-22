@@ -22,6 +22,6 @@ namespace Region {
   /// * `Closeable`s are guaranteed to be closed after any threads within the region have been joined.
   /// * `Closeable`s are not guaranteed to be closed in any particular order.
   ///
-  pub def closeOnExit(x: a, r: Region[r]): Unit \ r with Closeable[a] = 
-    $ON_EXIT$(() -> Closeable.close(x), r)
+  pub def closeOnExit(x: a, r: Region[r]): Unit \ {r, IO} with Closeable[a] = 
+    unsafe_cast $ON_EXIT$(() -> Closeable.close(x), r) as _ \ {r, IO}
 }
