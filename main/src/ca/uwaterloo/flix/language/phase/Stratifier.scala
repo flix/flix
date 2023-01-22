@@ -154,7 +154,7 @@ object Stratifier {
 
     case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (r, e) => Expression.ScopeExit(r, e, tpe, pur, eff, loc)
+        case (e1, e2) => Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
