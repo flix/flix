@@ -218,7 +218,7 @@ object PrettyPrinter {
             .toString
 
         case Expression.OnExit(exp1, exp2, _, _, _) =>
-          "$ONEXIT$(" + visitExp(exp1) + ", " + visitExp(exp2) + ")"
+          "$ON_EXIT$(" + visitExp(exp1) + ", " + visitExp(exp2) + ")"
 
         case Expression.Is(sym, exp, _, loc) => visitExp(exp) + " is " + sym.name
 

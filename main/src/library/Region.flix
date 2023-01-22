@@ -23,5 +23,5 @@ namespace Region {
   /// * `Closeable`s are not guaranteed to be closed in any particular order.
   ///
   pub def closeOnExit(x: a, r: Region[r]): Unit \ r with Closeable[a] = 
-    $ONEXIT$(() -> Closeable.close(x), r)
+    $ON_EXIT$(() -> Closeable.close(x), r)
 }
