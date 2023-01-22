@@ -152,6 +152,11 @@ object Stratifier {
         case e => Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
       }
 
+    case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, pur, eff, loc)
@@ -575,6 +580,9 @@ object Stratifier {
 
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)

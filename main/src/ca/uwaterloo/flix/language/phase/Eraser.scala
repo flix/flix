@@ -126,6 +126,11 @@ object Eraser {
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
 
+    case FinalAst.Expression.ScopeExit(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ErasedAst.Expression.ScopeExit(e1, e2, tpe, loc)
+
     case FinalAst.Expression.Is(sym, exp, loc) =>
       ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 

@@ -335,6 +335,10 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
+    case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
+      //!TODO: For now, just emit unit
+      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+
     case Expression.Is(sym, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
