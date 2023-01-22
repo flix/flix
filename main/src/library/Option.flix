@@ -569,7 +569,7 @@ namespace Option {
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.
     ///
-    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, ef, r] \ Write(r) = match o {
+    pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ Write(r) = match o {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }

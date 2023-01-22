@@ -51,14 +51,14 @@ namespace Iterator {
     ///
     /// Returns an empty iterator.
     ///
-    pub def empty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = () -> unsafe_cast Done as _ \ ef;
+    pub def empty(rc: Region[r]): Iterator[a, r, r] =
+        let f = () -> unsafe_cast Done as _ \ r;
         Iterator(rc, f)
 
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(rc: Region[r], x: a): Iterator[a, ef, r] \ Write(r) =
+    pub def singleton(rc: Region[r], x: a): Iterator[a, r, r] \ Write(r) =
         repeat(rc, 1, x)
 
     ///
@@ -97,9 +97,9 @@ namespace Iterator {
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, ef, r] \ Write(r) =
+    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ Write(r) =
         let ix = ref n @ rc;
-        let f = () -> {
+        let iterF = () -> {
             let i = deref ix;
             if (i < 1)
                 Done
@@ -108,7 +108,6 @@ namespace Iterator {
                 Ans(x)
             }
         };
-        let iterF = () -> unsafe_cast f() as _ \ { ef, r };
         Iterator(rc, iterF)
 
     ///
@@ -596,9 +595,9 @@ namespace Iterator {
     ///
     /// Currently `f` has to generate an iterator with region `r`.
     ///
-    pub def flatMap(f: a -> Iterator[b, ef1, r] \ ef2, ma: Iterator[a, ef, r]): Iterator[b, ef and ef1 and ef2, r] \ Write(r) =
+    pub def flatMap(f: a -> Iterator[b, ef1, r] \ ef2, ma: Iterator[a, ef, r]): Iterator[b, r and ef and ef1 and ef2, r] \ Write(r) =
         let Iterator(rc, iterF) = ma;
-        let innerIter = ref empty(rc) @ rc;
+        let innerIter = ref polymorphicEmpty(rc) @ rc;
         let inside = ref false @ rc;
         def innerLoop() = {
             let Iterator(_, innerF) = deref innerIter;
@@ -616,7 +615,11 @@ namespace Iterator {
                 }
             } else {
                 match iterF() {
-                    case Ans(a) => {inside := true; innerIter := f(a); outerLoop()}
+                    case Ans(a) => {
+                        inside := true;
+                        innerIter := f(a);
+                        outerLoop()
+                    }
                     case Skip   => outerLoop()
                     case Done   => Done
                 }
@@ -624,6 +627,18 @@ namespace Iterator {
         };
         let iter1F = () -> outerLoop();
         Iterator(rc, iter1F)
+
+    ///
+    /// Helper for `flatMap`.
+    ///
+    /// This is a cheat to get the initial inner iterator (inside the `innerIter` reference) to
+    /// typecheck and compile. Ideally we would use the public API function `empty` but its type
+    /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
+    ///
+    def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
+        let f = () -> unsafe_cast Done as _ \ ef;
+        Iterator(rc, f)
+
 
     ///
     /// Returns an iterator with `a` inserted between every of `iter`.
@@ -782,7 +797,7 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, ef1 and ef2, r] \ Write(r) =
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
         flatMap(identity, iter)
 
 }

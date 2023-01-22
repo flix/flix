@@ -1162,7 +1162,7 @@ namespace TestIterator {
 
     @test
     def flatMap01(): Bool = region rc {
-        List.iterator(rc, Nil) |>
+        List.iterator(rc, Nil): Iterator[Int32, _, _] |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
             Iterator.toList == Nil
     }
