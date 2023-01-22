@@ -96,6 +96,7 @@ object Statistics {
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Region(tpe, loc) => Counter.empty
       case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Discard(exp, pur, eff, loc) => visitExp(exp)

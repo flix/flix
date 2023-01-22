@@ -992,6 +992,13 @@ object Resolver {
             e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
           }
 
+        case NamedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+          val e1Val = visitExp(exp1, env0, region)
+          val e2Val = visitExp(exp2, env0, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.ScopeExit(e1, e2, loc)
+          }
+
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
