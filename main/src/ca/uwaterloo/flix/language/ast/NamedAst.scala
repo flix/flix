@@ -58,9 +58,9 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
@@ -87,6 +87,8 @@ object NamedAst {
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -370,8 +372,16 @@ object NamedAst {
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
+    case class Ascribe(tpe: NamedAst.Type, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Type
 
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Kind
+
+    case class Arrow(k1: NamedAst.Kind, k2: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Kind
   }
 
   sealed trait TypeParams {

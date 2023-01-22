@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromCaseType, fromEffType, toType}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Type}
+import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
-
-import scala.collection.immutable.SortedSet
 
 /**
   * Performs minimization on types,
@@ -36,7 +34,6 @@ object TypeMinimization {
   def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
     case Kind.Effect => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
-    case Kind.CaseSet(_) => minimizeBoolAlg(t)
     case _ => t match {
       case tpe: Type.Var => tpe
       case tpe: Type.Cst => tpe
@@ -79,7 +76,6 @@ object TypeMinimization {
     tpe0.kind match {
       case Kind.Bool => // OK
       case Kind.Effect => // OK
-      case Kind.CaseSet(_) => // OK
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
@@ -95,13 +91,12 @@ object TypeMinimization {
     }
 
     // Compute the variables in `tpe`.
-    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEffOrCase.Var(tvar.sym))
-    val effs = tpe.effects.toList.map(BoolFormula.VarOrEffOrCase.Eff)
-    val cases = tpe.cases.toList.map(BoolFormula.VarOrEffOrCase.Case)
+    val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
+    val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs ++ cases).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEffOrCase, BoolFormulaTable.Variable]) {
+    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolFormulaTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 
@@ -109,7 +104,6 @@ object TypeMinimization {
     val input = tpe.kind match {
       case Kind.Bool => fromBoolType(tpe, m)
       case Kind.Effect => fromEffType(tpe, m)
-      case Kind.CaseSet(sym) => fromCaseType(tpe,m)
       case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect/non-Case kind: '${tpe.kind}'.", tpe.loc)
     }
 

@@ -173,7 +173,7 @@ object Deriver {
     * Creates an Eq match rule for the given enum case.
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _, _) =>
       val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
 
       // get a pattern corresponding to this case, e.g.
@@ -371,7 +371,7 @@ object Deriver {
     * `case C2(_) => 2`
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, _, _) =>
+    case KindedAst.Case(sym, _, _, _) =>
       val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
       val exp = KindedAst.Expression.Cst(Ast.Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
@@ -382,7 +382,7 @@ object Deriver {
     * ```case (C2(x0, x1), C2(y0, y1)) => compare(x0, y0) `thenCompare` lazy(x1, y1)```
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _, _) =>
       val equalToSym = PredefinedClasses.lookupCaseSym("Comparison", "EqualTo", root)
       val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
       val thenCompareDefSym = PredefinedClasses.lookupDefSym(List("Order"), "thenCompare", root)
@@ -534,7 +534,7 @@ object Deriver {
     * Creates a ToString match rule for the given enum case.
     */
   private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _, _) =>
       val toStringSym = PredefinedClasses.lookupSigSym("ToString", "toString", root)
 
       // get a pattern corresponding to this case, e.g.
@@ -671,7 +671,7 @@ object Deriver {
     * Creates a Hash match rule for the given enum case.
     */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
-    case KindedAst.Case(sym, tpe, _) =>
+    case KindedAst.Case(sym, tpe, _, _) =>
       val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
       val combineDefSym = PredefinedClasses.lookupDefSym(List("Hash"), "combine", root)
 

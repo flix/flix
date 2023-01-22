@@ -435,15 +435,7 @@ object Type {
       */
     lazy val kind: Kind = {
       tpe1.kind match {
-        case Kind.Arrow(k1, k2) =>
-          // TODO: Kind check (but only for boolean formulas for now).
-          //          if (k1 == Kind.Bool) {
-          //            val k3 = tpe2.kind
-          //            if (k3 != Kind.Bool && !k3.isInstanceOf[Kind.Var]) {
-          //               throw InternalCompilerException(s"Unexpected non-bool kind: '$k3'.")
-          //            }
-          //          }
-          k2
+        case Kind.Arrow(_, k2) => k2
         case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.", loc)
       }
     }
@@ -902,6 +894,7 @@ object Type {
     case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
     case (all@Type.Cst(TypeConstructor.CaseAll(_), _), _) => all
     case (_, all@Type.Cst(TypeConstructor.CaseAll(_), _)) => all
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => tpe1
     case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -915,7 +908,8 @@ object Type {
     case (_, empty@Type.Cst(TypeConstructor.CaseEmpty(_), _)) => empty
     case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => t
     case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => t
-    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 != sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => tpe1
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -941,7 +935,11 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
+  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.CaseEmpty(sym), loc)
+    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 != sym2 => tpe1
+    case _ => mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
+  }
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.

@@ -128,7 +128,7 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty) match {
+      Unification.unifyTypes(generifyBools(inst1.tpe), inst2.tpe, RigidityEnv.empty)(root.univ, flix) match {
         case Ok(_) =>
           List(
             InstanceError.OverlappingInstances(inst1.clazz.loc, inst2.clazz.loc),
@@ -171,7 +171,7 @@ object Instances {
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)(root.univ, flix)) {
                 // Case 5.1: the schemes match. Success!
                 Nil
               } else {
@@ -199,7 +199,7 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map((superInst, _))
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty)(root.univ, flix).toOption.map((superInst, _))
       }.nextOption()
     }
 
@@ -218,7 +218,7 @@ object Instances {
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
                 superInst.tconstrs flatMap {
                   tconstr =>
-                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
+                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv)(root.univ, flix) match {
                       case Validation.Success(_) => Nil
                       case failure => failure.errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingConstraint(missingTconstr, superClass, clazz.loc)

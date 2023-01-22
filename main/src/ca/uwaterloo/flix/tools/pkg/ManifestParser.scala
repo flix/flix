@@ -16,22 +16,251 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
-import org.tomlj.Toml
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import org.json4s.DefaultReaders.StringReader
+import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
-import java.io.{PrintStream, StringReader}
-import java.nio.file.Path
+import java.io.{IOException, PrintStream, StringReader}
+import java.nio.file.{InvalidPathException, Path, Paths}
+import scala.collection.mutable
 
 object ManifestParser {
 
-  def parse(p: Path)(implicit out: PrintStream): Result[Manifest, ManifestError] = ???
+  /**
+    * Creates a Manifest from the .toml file
+    * at path `p` and returns an error if
+    * there are parsing errors
+    */
+  def parse(p: Path): Result[Manifest, ManifestError] = {
+    val parser = try {
+      val parser = Toml.parse(p)
+      parser
+    } catch {
+      case _: IOException => return Err(ManifestError.IOError(p))
+    }
+    createManifest(parser, p)
+  }
 
-  def parse(s: String)(implicit out: PrintStream): Result[Manifest, ManifestError] = {
-    // TODO: File exists, is a regular file, is readable, etc.
-    val parser = Toml.parse(new StringReader(s))
+  /**
+    * Creates a Manifest from the String `s`
+    * which should have the .toml format and
+    * returns an error if there are parsing
+    * errors. The path `p` should be where `s`
+    * comes from
+    */
+  def parse(s: String, p: Path): Result[Manifest, ManifestError] = {
+    val stringReader = new StringReader(s)
+    val parser = try {
+      val parser = Toml.parse(stringReader)
+      parser
+    } catch {
+      case _: IOException => return Err(ManifestError.IOError(p))
+    }
+    createManifest(parser, p)
+  }
 
-    out.println("Parsing...")
+  /**
+    * Creates a Manifest from the TomlParseResult
+    * which should be at path `p` and returns an
+    * error if there are parsing errors
+    */
+  private def createManifest(parser: TomlParseResult, p: Path): Result[Manifest, ManifestError] = {
+    val errors = parser.errors
+    if (errors.size() > 0) {
+      var errorString = ""
+      errors.forEach(error => errorString = errorString + error.toString + ", ")
+      return Err(ManifestError.ManifestParseError(p, errorString))
+    }
 
-    ???
+    for (
+      name <- getRequiredStringProperty("package.name", parser, p);
+
+      description <- getRequiredStringProperty("package.description", parser, p);
+
+      version <- getRequiredStringProperty("package.version", parser, p);
+      versionSemVer <- toSemVer(version, p);
+
+      flix <- getRequiredStringProperty("package.flix", parser, p);
+      flixSemVer <- toSemVer(flix, p);
+
+      license <- getOptionalStringProperty("package.license", parser, p);
+
+      authors <- getRequiredArrayProperty("package.authors", parser, p);
+      authorsList <- convertTomlArrayToStringList(authors, p);
+
+      deps <- getRequiredTableProperty("dependencies", parser, p);
+      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, p);
+
+      devDeps <- getRequiredTableProperty("dev-dependencies", parser, p);
+      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, p);
+
+      mvnDeps <- getRequiredTableProperty("mvn-dependencies", parser, p);
+      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, p);
+
+      devMvnDeps <- getRequiredTableProperty("dev-mvn-dependencies", parser, p);
+      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
+
+    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
+  }
+
+  /**
+    * Parses a String which should be at
+    * `propString` and returns the String
+    * or an error if the result cannot be
+    * found
+    */
+  private def getRequiredStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
+    try {
+      val prop = parser.getString(propString)
+      if (prop == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      }
+      Ok(prop)
+    } catch {
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type String"))
+    }
+  }
+
+  /**
+    * Parses a String which might be at
+    * `propString` and returns the String
+    * as an Option
+    */
+  private def getOptionalStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
+    try {
+      val prop = parser.getString(propString)
+      Ok(Option(prop))
+    } catch {
+      case _: IllegalArgumentException => Ok(None)
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type String"))
+    }
+  }
+
+  /**
+    * Parses an Array which should be at
+    * `propString` and returns the Array
+    * or an error if the result cannot be
+    * found
+    */
+  private def getRequiredArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
+    try {
+      val array = parser.getArray(propString)
+      if (array == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      }
+      Ok(array)
+    } catch {
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Array"))
+    }
+  }
+
+  /**
+    * Parses a Table which should be at
+    * `propString` and returns the Table
+    * or an error if the result cannot be
+    * found
+    */
+  private def getRequiredTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlTable, ManifestError] = {
+    try {
+      val table = parser.getTable(propString)
+      if (table == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      }
+      Ok(table)
+    } catch {
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Table"))
+    }
+  }
+
+  /**
+    * Converts a String `s` to a
+    * semantic version and returns
+    * an error if the String is not
+    * of the correct format
+    */
+  private def toSemVer(s: String, p: Path): Result[SemVer, ManifestError] = {
+    val splitVersion = s.split('.')
+    if (splitVersion.length == 3) {
+      try {
+        val major = splitVersion.apply(0).toInt
+        val minor = splitVersion.apply(1).toInt
+        val patch = splitVersion.apply(2).toInt
+        Ok(SemVer(major, minor, patch))
+      } catch {
+        case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse version as three numbers"))
+      }
+    } else {
+      Err(ManifestError.VersionHasWrongLength(p, "A version should be formatted like so: 'x.x.x'"))
+    }
+  }
+
+  /**
+    * Converts a TomlTable to a list
+    * of Dependencies. This requires
+    * the value of each entry is a String
+    * which can be converted to a
+    * semantic version. `flixDep` decides
+    * whether the Dependency is a Flix
+    * or MavenDependency and `prodDep`
+    * decides whether it is for production
+    * or development. Returns an error
+    * if anything is not as expected
+    */
+  private def collectDependencies(deps: TomlTable, flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+    val depsEntries = deps.entrySet()
+    val depsSet = mutable.Set.empty[Dependency]
+    depsEntries.forEach(entry => {
+      val depName = entry.getKey
+      val depVer = entry.getValue
+      try {
+        toSemVer(depVer.asInstanceOf[String], p) match {
+          case Ok(version) => if (flixDep) {
+            if (prodDep) {
+              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Production))
+            } else {
+              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Development))
+            }
+          } else {
+            val depNameSplit = depName.split(':')
+            if (depNameSplit.length == 2) {
+              if (prodDep) {
+                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Production))
+              } else {
+                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Development))
+              }
+            } else {
+              return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+            }
+          }
+          case Err(e) => return Err(e)
+        }
+      } catch {
+        case _: ClassCastException => return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+      }
+    })
+    Ok(depsSet.toList)
+  }
+
+  /**
+    * Converts a TomlArray to a
+    * list of Strings. Returns an
+    * error if anything in the
+    * array is not a String
+    */
+  private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
+    val stringSet = mutable.Set.empty[String]
+    for(i <- 0 until array.size()) {
+      try {
+        val s = array.getString(i)
+        stringSet.add(s)
+      } catch {
+        case _: TomlInvalidTypeException => return Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
+      }
+    }
+    Ok(stringSet.toList)
   }
 
 }
