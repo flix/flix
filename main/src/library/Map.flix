@@ -919,13 +919,13 @@ namespace Map {
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ Write(r) =
-        iterator(r, m) |> Iterator.map(match (k, _) -> k)
+        iterator(r, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) =
-        iterator(r, m) |> Iterator.map(match (_, v) -> v)
+        iterator(r, m) |> Iterator.map(snd)
 
     ///
     /// Returns `m` as a `DelayMap`.
