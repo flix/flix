@@ -893,7 +893,38 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => throw InternalCompilerException("ForEachYield WIP", mkSL(sp1, sp2))
+    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
+      //
+      // Rewrites a foreach-yield loop into Collectable.collect
+      //
+
+      // Declare functions
+      val fqnNew = "Iterator.new"
+      val fqnSingleton = "Iterator.singleton"
+      val fqnFlatMap = "Iterator.flatMap"
+      val fqnIterator = "Iterable.iterator"
+      val fqnCollect = "Collectable.collect"
+
+      // Generate region symbol for loop iterators
+      val regionSym = "iterReg" + flix.genSym.freshId()
+
+      // Desguar loop
+      val yieldExp = visitExp(exp, senv)
+      val loop = foldRight(frags)(yieldExp) {
+        case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) => ???
+        // 1. Create iterator from exp1
+        // 2. Create match-lambda with pat1 as params and acc as body
+        // 3. Wrap in flatmap call
+
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) => ???
+        // Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
+      }
+
+      // Wrap in Collectable.collect function
+
+      // Wrap in region
+      ???
+    }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
