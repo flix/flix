@@ -528,8 +528,8 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Return the result.
-    result
+    // Convert any soft failures to hard failures.
+    result.toHardFailure
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
