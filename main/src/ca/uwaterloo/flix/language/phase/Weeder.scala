@@ -893,7 +893,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => ???
+    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => throw InternalCompilerException("ForEachYield WIP", mkSL(sp1, sp2))
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
