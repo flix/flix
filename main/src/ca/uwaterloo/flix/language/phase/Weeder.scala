@@ -923,7 +923,7 @@ object Weeder {
       // Wrap in Collectable.collect function
 
       // Wrap in region
-      ???
+      throw InternalCompilerException("WIP ForEachYield", mkSL(sp1, sp2).asSynthetic)
     }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
