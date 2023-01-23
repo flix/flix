@@ -76,6 +76,7 @@ object JvmName {
   val JavaUtil: List[String] = List("java", "util")
   val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
+  val JavaUtilConcurrentLocks: List[String] = JavaUtilConcurrent ::: List("locks")
 
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
@@ -100,14 +101,16 @@ object JvmName {
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
   val LongPredicate: JvmName = JvmName(JavaUtilFunction, "LongPredicate")
   val LongUnaryOperator: JvmName = JvmName(JavaUtilFunction, "LongUnaryOperator")
+  val Math: JvmName = JvmName(JavaLang, "Math")
   val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjConsumer: JvmName = JvmName(JavaUtilFunction, "Consumer")
   val ObjPredicate: JvmName = JvmName(JavaUtilFunction, "Predicate")
-  val Math: JvmName = JvmName(JavaLang, "Math")
+  val ReentrantLock: JvmName = JvmName(JavaUtilConcurrentLocks, "ReentrantLock")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
   val System: JvmName = JvmName(JavaLang, "System")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
+  val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
 
   //

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.math.Ordered.orderingToOrdered
 
 sealed trait Symbol
 object Symbol {
@@ -114,6 +115,13 @@ object Symbol {
   }
 
   /**
+    * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkRestrictableEnumSym(ns: NName, ident: Ident): RestrictableEnumSym = {
+    new RestrictableEnumSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
@@ -126,6 +134,13 @@ object Symbol {
     */
   def mkCaseSym(sym: Symbol.EnumSym, ident: Ident): CaseSym = {
     new CaseSym(sym, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the restrictable case symbol for the given name `ident` in the given `enum`.
+    */
+  def mkRestrictableCaseSym(sym: Symbol.RestrictableEnumSym, ident: Ident): RestrictableCaseSym = {
+    new RestrictableCaseSym(sym, ident.name, ident.loc)
   }
 
   /**
@@ -449,7 +464,7 @@ object Symbol {
   /**
     * Restrictable Case Symbol.
     */
-  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -472,6 +487,12 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
+
+    /**
+      * Comparison.
+      */
+    override def compare(that: RestrictableCaseSym): Int = this.toString.compare(that.toString)
+
   }
 
   /**

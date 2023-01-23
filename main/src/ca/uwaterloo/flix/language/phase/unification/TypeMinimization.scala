@@ -16,13 +16,11 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, Type}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula.{fromBoolType, fromEffType, toType}
 import ca.uwaterloo.flix.language.phase.unification.BoolFormulaTable.minimizeFormula
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
-
-import scala.collection.immutable.SortedSet
 
 /**
   * Performs minimization on types,
@@ -75,8 +73,10 @@ object TypeMinimization {
     }
 
     // Check that the `tpe` argument is a Boolean formula.
-    if (tpe0.kind != Kind.Bool && tpe0.kind != Kind.Effect) {
-      throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
+    tpe0.kind match {
+      case Kind.Bool => // OK
+      case Kind.Effect => // OK
+      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe0.kind}'.", tpe0.loc)
     }
 
     // Erase aliases to get a processable type
@@ -104,7 +104,7 @@ object TypeMinimization {
     val input = tpe.kind match {
       case Kind.Bool => fromBoolType(tpe, m)
       case Kind.Effect => fromEffType(tpe, m)
-      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect kind: '${tpe.kind}'.", tpe.loc)
+      case _ => throw InternalCompilerException(s"Unexpected non-Bool/non-Effect/non-Case kind: '${tpe.kind}'.", tpe.loc)
     }
 
     // Minimize the Boolean formula.

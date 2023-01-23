@@ -2297,8 +2297,8 @@ def unfold06(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIter01(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter01(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true)
             None
@@ -2308,10 +2308,11 @@ def unfoldWithIter01(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == Nil
+}
 
 @test
-def unfoldWithIter02(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter02(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 0)
             None
@@ -2321,10 +2322,11 @@ def unfoldWithIter02(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == '0' :: Nil
+}
 
 @test
-def unfoldWithIter03(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter03(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x > 1)
             None
@@ -2334,10 +2336,11 @@ def unfoldWithIter03(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == '0' :: '1' :: Nil
+}
 
 @test
-def unfoldWithIter04(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter04(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -2347,10 +2350,11 @@ def unfoldWithIter04(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+}
 
 @test
-def unfoldWithIter05(): Bool \ IO =
-    let x = ref 5;
+def unfoldWithIter05(): Bool = region r {
+    let x = ref 5 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -2360,10 +2364,11 @@ def unfoldWithIter05(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+}
 
 @test
-def unfoldWithIter06(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithIter06(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (deref x >= 10)
             None
@@ -2373,15 +2378,15 @@ def unfoldWithIter06(): Bool \ IO =
             Some(c)
         };
     List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
-
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithOkIter                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithOkIter01(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithOkIter01(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true) {
             Ok(None)
@@ -2389,10 +2394,11 @@ def unfoldWithOkIter01(): Bool \ IO =
             Ok(Some(deref x))
         };
     List.unfoldWithOkIter(step): Result[Unit, _] == Ok(Nil)
+}
 
 @test
-def unfoldWithOkIter02(): Bool \ IO =
-    let x = ref 0;
+def unfoldWithOkIter02(): Bool = region r {
+    let x = ref 0 @ r;
     let step = () ->
         if (true) {
             Err(deref x)
@@ -2400,10 +2406,11 @@ def unfoldWithOkIter02(): Bool \ IO =
             Ok(Some(deref x))
         };
     List.unfoldWithOkIter(step) == Err(0)
+}
 
 @test
-def unfoldWithOkIter03(): Bool \ IO =
-    let x = ref 1;
+def unfoldWithOkIter03(): Bool = region r {
+    let x = ref 1 @ r;
     let step = () ->
         if (deref x rem 5 > 0) {
             let c = deref x;
@@ -2413,6 +2420,7 @@ def unfoldWithOkIter03(): Bool \ IO =
             Ok(None)
         };
     List.unfoldWithOkIter(step): Result[Unit, _] == Ok(1 :: 2 :: 3 :: 4 :: Nil)
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // distinct                                                                //

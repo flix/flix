@@ -107,6 +107,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.ScopeExit(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
@@ -150,7 +155,21 @@ object Regions {
         case (es, rs) => checkType(tpe, loc)
       }
 
+    case Expression.RestrictableChoose(_, exp, rules, tpe, _, _, loc) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case RestrictableChoiceRule(_, exp) => flatMapN(visitExp(exp))(_ => ().toSuccess)
+      }
+      flatMapN(expVal, rulesVal) {
+        case (e, rs) => checkType(tpe, loc)
+      }
+
     case Expression.Tag(_, exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
+    case Expression.RestrictableTag(_, exp, tpe, _, _, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -224,6 +243,11 @@ object Regions {
       }
 
     case Expression.Ascribe(exp, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
+    case Expression.Of(_, exp, _, _, tpe, loc) =>
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
@@ -406,6 +430,10 @@ object Regions {
       flatMapN(visitExp(exp)) {
         case e => checkType(tpe, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      ().toSoftFailure
+
   }
 
   def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = method match {

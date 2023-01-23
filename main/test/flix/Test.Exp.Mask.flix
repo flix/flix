@@ -7,8 +7,8 @@ namespace Test/Exp/Mask {
     def testMask02(): Bool = $MASK$(deref (ref true))
 
     @test
-    def testMask03(): Bool \ IO = {
-        let r = ref false;
+    def testMask03(): Bool = region rh {
+        let r = ref false @ rh;
         $MASK$(r := true);
         deref r
     }

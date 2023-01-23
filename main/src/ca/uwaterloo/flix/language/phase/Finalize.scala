@@ -155,6 +155,12 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Scope(sym, e, t, loc)
 
+      case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, _, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.ScopeExit(e1, e2, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
@@ -341,6 +347,7 @@ object Finalize {
   }
 
   // TODO: Should be private
+  // TODO: Remove
 
   /**
     * Finalizes the given type.
@@ -396,7 +403,9 @@ object Finalize {
 
             case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym, args)
 
-            case TypeConstructor.RestrictableEnum(sym, _) => ??? // TODO RESTR-VARS
+            case TypeConstructor.RestrictableEnum(sym, _) =>
+              val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+              MonoType.Enum(enumSym, args)
 
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
@@ -435,6 +444,13 @@ object Finalize {
             case TypeConstructor.Empty => MonoType.Unit
 
             case TypeConstructor.All => MonoType.Unit
+
+            case TypeConstructor.CaseConstant(sym) => MonoType.Unit
+            case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
+            case TypeConstructor.CaseAll(sym) => MonoType.Unit
+            case TypeConstructor.CaseComplement(sym) => MonoType.Unit
+            case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
+            case TypeConstructor.CaseUnion(sym) => MonoType.Unit
 
             case TypeConstructor.Relation =>
               throw InternalCompilerException(s"Unexpected type: '$t0'.", t0.loc)

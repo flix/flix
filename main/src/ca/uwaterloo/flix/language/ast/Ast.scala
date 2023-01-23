@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.collection.ListMap
+
 import java.nio.file.Path
 import java.util.Objects
 
@@ -195,6 +197,15 @@ object Ast {
     }
 
     /**
+      * An annotation that marks a type as must-use.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class MustUse(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@MustUse"
+    }
+
+    /**
       * An AST node that represents a `@Skip` annotation.
       *
       * A function marked with `Skip` is skipped by the test framework.
@@ -271,6 +282,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@LazyWhenPure` annotation.
       */
     def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@MustUse` annotation.
+      */
+    def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
 
     /**
       * Returns `true` if `this` sequence contains the `@Parallel` annotation.
@@ -580,6 +596,11 @@ object Ast {
   case class CaseSymUse(sym: Symbol.CaseSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an enum case sym.
+    */
+  case class RestrictableCaseSymUse(sym: Symbol.RestrictableCaseSym, loc: SourceLocation)
+
+  /**
     * Represents a use of a class sym.
     */
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
@@ -698,6 +719,7 @@ object Ast {
     * A use of a Flix symbol or import of a Java class.
     */
   sealed trait UseOrImport
+
   object UseOrImport {
 
     /**
@@ -710,5 +732,10 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
+
+  /**
+    * The collection of all the restrictable enum universes.
+    */
+  case class Multiverse(univ: ListMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym])
 
 }

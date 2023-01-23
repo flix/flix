@@ -58,13 +58,13 @@ object Stratifier {
 
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = flix.subphase("Stratify Defs") {
-      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(g, flix).map(d => kv._1 -> d))
+      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(root, g, flix).map(d => kv._1 -> d))
       Validation.sequence(result)
     }
     val newInstances = flix.subphase("Stratify Instance Defs") {
       val result = ParOps.parMap(root.instances) {
         case (sym, is) =>
-          val x = traverse(is)(i => visitInstance(i)(g, flix))
+          val x = traverse(is)(i => visitInstance(i)(root, g, flix))
           x.map(d => sym -> d)
       }
       Validation.sequence(result)
@@ -78,13 +78,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
     visitExp(def0.impl.exp) map {
       case e => def0.copy(impl = def0.impl.copy(exp = e))
     }
@@ -94,7 +94,7 @@ object Stratifier {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Cst(_, _, _) => exp0.toSuccess
 
     case Expression.Wild(_, _) => exp0.toSuccess
@@ -152,6 +152,11 @@ object Stratifier {
         case e => Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
       }
 
+    case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, pur, eff, loc)
@@ -198,9 +203,23 @@ object Stratifier {
         case (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
       }
 
+    case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case RestrictableChoiceRule(pat, body) => mapN(visitExp(body))(RestrictableChoiceRule(pat, _))
+      }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, pur, eff, loc)
+      }
+
     case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, e, tpe, pur, eff, loc)
+      }
+
+    case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.RestrictableTag(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Tuple(elms, tpe, pur, eff, loc) =>
@@ -274,6 +293,11 @@ object Stratifier {
     case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
+      }
+
+    case Expression.Of(sym, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Of(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
@@ -469,9 +493,13 @@ object Stratifier {
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
+
+    case Expression.Error(_, _, _, _) =>
+      exp0.toSoftFailure
+
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, pur, eff, loc)
@@ -553,6 +581,9 @@ object Stratifier {
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
 
@@ -583,7 +614,17 @@ object Stratifier {
       }
       dg1 + dg2
 
+    case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+      val dg1 = labelledGraphOfExp(exp)
+      val dg2 = rules.foldLeft(LabelledGraph.empty) {
+        case (acc, RestrictableChoiceRule(_, body)) => acc + labelledGraphOfExp(body)
+      }
+      dg1 + dg2
+
     case Expression.Tag(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.RestrictableTag(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _, _) =>
@@ -633,6 +674,9 @@ object Stratifier {
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
@@ -756,17 +800,21 @@ object Stratifier {
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.Error(_, _, _, _) =>
+      LabelledGraph.empty
+
   }
 
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Stratification, StratificationError] = {
+  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Stratification, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
     // Compute the restricted labelled graph.
-    val rg = g.restrict(key, labelEq)
+    val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
@@ -844,12 +892,12 @@ object Stratifier {
   /**
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
-  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
+  private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)(root.univ, flix)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

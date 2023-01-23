@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -27,6 +28,7 @@ object ResolvedAst {
                   instances: Map[Symbol.ClassSym, List[ResolvedAst.Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, ResolvedAst.Declaration.Def],
                   enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                  restrictableEnums: Map[Symbol.RestrictableEnumSym, ResolvedAst.Declaration.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, ResolvedAst.Declaration.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias],
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
@@ -39,6 +41,7 @@ object ResolvedAst {
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
   sealed trait Declaration
+
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
@@ -52,7 +55,11 @@ object ResolvedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.Case], loc: SourceLocation) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType) extends Declaration
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: ResolvedAst.TypeParam, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
+
+    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -108,13 +115,19 @@ object ResolvedAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ScopeExit(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TypeMatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchTypeRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class RelationalChoose(star: Boolean, exps: List[ResolvedAst.Expression], rules: List[ResolvedAst.RelationalChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class RestrictableChoose(star: Boolean, exp: ResolvedAst.Expression, rules: List[ResolvedAst.RestrictableChoiceRule], loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, isOpen: Boolean, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -145,6 +158,8 @@ object ResolvedAst {
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Of(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -212,6 +227,10 @@ object ResolvedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Error(m: CompilationMessage) extends ResolvedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
+
   }
 
   sealed trait Pattern {
@@ -249,6 +268,20 @@ object ResolvedAst {
     case class Absent(loc: SourceLocation) extends RelationalChoicePattern
 
     case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoicePattern
+
+  }
+
+  sealed trait RestrictableChoicePattern
+
+  object RestrictableChoicePattern {
+
+    sealed trait VarOrWild
+
+    case class Wild(loc: SourceLocation) extends VarOrWild
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
+
+    case class Tag(sym: Ast.RestrictableCaseSymUse, pat: List[VarOrWild], loc: SourceLocation) extends RestrictableChoicePattern
 
   }
 
@@ -315,6 +348,8 @@ object ResolvedAst {
   case class HandlerRule(op: Ast.OpSymUse, fparams: Seq[ResolvedAst.FormalParam], exp: ResolvedAst.Expression)
 
   case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
+
+  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

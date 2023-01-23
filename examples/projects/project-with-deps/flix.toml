@@ -8,14 +8,14 @@ authors     = ["John Doe <john@example.com"]    # The authors of this project.
 
 [dependencies]                                  # Dependencies on Flix packages.
 "github:jls/tic-tac-toe" = "1.2.3"
-"github:mlutze/flixball" = "1.2.3"
+"github:mlutze/flixball" = "3.2.1"
 
 [dev-dependencies]                              # Development dependencies on Flix packages.
 "github:fuzzer/fuzzer" = "1.2.3"
 
 [mvn-dependencies]                              # Dependencies on Maven packages.
 "org.postgresql:postgresql"      = "1.2.3"
-"org.eclipse.jetty:jetty-server" = "1.2.3"
+"org.eclipse.jetty:jetty-server" = "4.7.0"
 
 [dev-mvn-dependencies]                          # Development dependencies on Maven packages.
 "org.junit:junit"                = "1.2.3"

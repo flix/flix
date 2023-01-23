@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -74,6 +75,8 @@ object WeededAst {
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Open(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class HoleWithExp(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -103,6 +106,8 @@ object WeededAst {
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ScopeExit(exp1 : WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -143,6 +148,8 @@ object WeededAst {
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Of(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
@@ -209,6 +216,10 @@ object WeededAst {
     case class FixpointInject(exp: WeededAst.Expression, pred: Name.Pred, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Error(m: CompilationMessage) extends WeededAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 
@@ -349,8 +360,16 @@ object WeededAst {
 
     case class Empty(loc: SourceLocation) extends WeededAst.Type
 
-    case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
+    case class Ascribe(tpe: WeededAst.Type, kind: WeededAst.Kind, loc: SourceLocation) extends WeededAst.Type
 
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Kind
+
+    case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends WeededAst.Kind
   }
 
   sealed trait TypeParams
@@ -369,9 +388,9 @@ object WeededAst {
 
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tpe: WeededAst.Type)
+  case class Case(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type)
+  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
@@ -411,7 +430,7 @@ object WeededAst {
 
     case class Unkinded(ident: Name.Ident) extends TypeParam
 
-    case class Kinded(ident: Name.Ident, kind: Kind) extends TypeParam
+    case class Kinded(ident: Name.Ident, kind: WeededAst.Kind) extends TypeParam
 
   }
 

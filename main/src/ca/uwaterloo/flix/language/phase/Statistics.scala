@@ -96,13 +96,16 @@ object Statistics {
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Region(tpe, loc) => Counter.empty
       case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Discard(exp, pur, eff, loc) => visitExp(exp)
       case Expression.Match(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchRule))
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitMatchTypeRule))
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) => Counter.merge(exps.map(visitExp)) ++ Counter.merge(rules.map(visitRelationalChoiceRule))
+      case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitRestrictableChoiceRule))
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Tuple(elms, tpe, pur, eff, loc) => Counter.merge(elms.map(visitExp))
       case Expression.RecordEmpty(tpe, loc) => Counter.empty
       case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) => visitExp(exp)
@@ -118,6 +121,7 @@ object Statistics {
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp)
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Mask(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Upcast(exp, _, _) => visitExp(exp)
@@ -151,6 +155,7 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Error(_, _, _, _) => Counter.empty
     }
 
     base ++ subExprs
@@ -176,6 +181,14 @@ object Statistics {
   private def visitRelationalChoiceRule(rule: RelationalChoiceRule): Counter = rule match {
     case RelationalChoiceRule(pat, exp) => visitExp(exp)
   }
+
+  /**
+    * Counts AST nodes in the given rule.
+    */
+  private def visitRestrictableChoiceRule(rule: RestrictableChoiceRule): Counter = rule match {
+    case RestrictableChoiceRule(_, exp) => visitExp(exp)
+  }
+
 
   /**
     * Counts AST nodes in the given rule.

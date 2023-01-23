@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg
 
-import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
   * Formatting of expressions.
@@ -27,13 +27,16 @@ object FormatExpression {
     case TypedAst.Expression.LetRec(sym, mod, exp1, exp2, _, _, _, _) => s"LetRec($sym, $mod, $exp1, $exp2)"
     case TypedAst.Expression.Region(tpe, _) => s"Region($tpe)"
     case TypedAst.Expression.Scope(sym, _, exp, _, _, _, _) => s"Scope($sym, $exp)"
+    case TypedAst.Expression.ScopeExit(exp1, exp2, _, _, _, _) => s"ScopeExit($exp1, $exp2)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => s"IfThenElse($exp1, $exp2, $exp3)"
     case TypedAst.Expression.Stm(exp1, exp2, _, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Discard(exp, _, _, _) => s"Discard($exp)"
     case TypedAst.Expression.Match(exp, rules, _, _, _, _) => s"Match($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.TypeMatch(exp, rules, _, _, _, _) => s"TypeMatch($exp, ${rules.mkString(", ")})"
-    case TypedAst.Expression.RelationalChoose(exps, rules, _, _, _, _) => s"Choose($exps, $rules)"
+    case TypedAst.Expression.RelationalChoose(exps, rules, _, _, _, _) => s"RelationalChoose($exps, $rules)"
+    case TypedAst.Expression.RestrictableChoose(star, exp, rules, _, _, _, _) => s"RestrictableChoose${if (star) "*" else ""}($exp, $rules)"
     case TypedAst.Expression.Tag(sym, exp, _, _, _, _) => s"Tag($sym, $exp)"
+    case TypedAst.Expression.RestrictableTag(sym, exp, _, _, _, _) => s"RestrictableTag($sym, $exp)"
     case TypedAst.Expression.Tuple(elms, _, _, _, _) => s"Tuple(${elms.mkString(", ")})"
     case TypedAst.Expression.RecordEmpty(_, _) => s"RecordEmpty"
     case TypedAst.Expression.RecordSelect(exp, field, _, _, _, _) => s"RecordSelect($exp, $field)"
@@ -49,6 +52,7 @@ object FormatExpression {
     case TypedAst.Expression.Deref(exp, _, _, _, _) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, _, _, _, _) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, _, _, _) => s"Ascribe($exp, $tpe)"
+    case TypedAst.Expression.Of(sym, exp, _, _, _, _) => s"Ascribe(${sym.sym}, $exp)"
     case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, eff, _, _) => s"Cast($exp, $declaredType, $declaredPur, $declaredEff, $tpe, $eff)"
     case TypedAst.Expression.Mask(exp, _, _, _, _) => s"Mask($exp)"
     case TypedAst.Expression.Upcast(exp, tpe, loc) => s"Upcast($exp, $tpe, $loc)"
@@ -83,6 +87,8 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, _, _, _, _) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointInject(exp, pred, _, _, _, _) => s"FixpointInject($exp, $pred)"
     case TypedAst.Expression.FixpointProject(pred, exp, _, _, _, _) => s"FixpointProject($pred, $exp)"
+    case TypedAst.Expression.Error(m, _, _, _) => s"Error(${m.kind})"
+
   }
 
 }

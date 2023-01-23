@@ -178,9 +178,10 @@ namespace Test/Exp/LetRec {
     /// Nested definitions with type ascription
     ///
     @test
-    def testLetRecAscribed03(): Bool \ Impure =
-        def incr(x): Int \ Impure = x := deref x + 1;
-        let r = ref 1;
+    def testLetRecAscribed03(): Bool = region rh {
+        def incr(x): Int \ { Read(rh), Write(rh) } = x := deref x + 1;
+        let r = ref 1 @ rh;
         incr(r);
         deref r == 2
+    }
 }

@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -147,6 +147,7 @@ object PatternExhaustiveness {
       case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Region(_, _) => Nil
       case Expression.Scope(_, _, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.ScopeExit(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
       case Expression.Stm(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Discard(exp, _, _, _) => visitExp(exp, root)
@@ -167,7 +168,12 @@ object PatternExhaustiveness {
         val ruleExps = rules.map(_.exp)
         (exps ::: ruleExps).flatMap(visitExp(_, root))
 
+      case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
+        val ruleExps = rules.map(_.exp)
+        (exp :: ruleExps).flatMap(visitExp(_, root))
+
       case Expression.Tag(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.RestrictableTag(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Tuple(elms, _, _, _, _) => elms.flatMap(visitExp(_, root))
       case Expression.RecordEmpty(_, _) => Nil
       case Expression.RecordSelect(base, _, _, _, _, _) => visitExp(base, root)
@@ -183,6 +189,7 @@ object PatternExhaustiveness {
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
       case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Upcast(exp, _, _) => visitExp(exp, root)
@@ -234,6 +241,7 @@ object PatternExhaustiveness {
       case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.Error(_, _, _, _) => Nil
     }
   }
 

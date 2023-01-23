@@ -6,12 +6,11 @@ Flix can be built and run from within the IntelliJ IDEA IDE which is useful for 
 
 ### Setup an IDEA project
 
-1. Clone the Flix GitHub repository.
-2. Create a fresh project on top of the cloned directory. Choose Scala project and then "IDEA-based".
-   (Do NOT accept "import as Gradle project")
-3. Ensure that `main/src` is marked as a *source* directory (right-click -> Mark Dircetory as -> Sources Root).
-4. Ensure that `main/test` is marked as a *test* directory (right-click -> Mark Dircetory as -> Test Sources Root).
-5. Ensure that every jar in `lib` is added as a library (right-click, "Add as library ...")
+1. Open IDEA and choose "Get from VCS"
+2. IDEA should automatically detect that this is a Gradle project
+3. In "Settings |Build, Execution, Deployment | Build Tools | Gradle":
+    1. Set "Build and run using:" to "IntelliJ IDEA"
+    2. Set "Run tests using:" to "IntelliJ IDEA"
 
 ### Running the Flix compiler
 Open `Main.scala`, right-click on `def main` and select `Run 'Main'`. This runs the Flix REPL.

@@ -148,16 +148,16 @@ object ParsedAst {
     /**
       * Restrictable Enum Declaration.
       *
-      * @param doc      the optional comment associated with the declaration.
-      * @param ann      the associated annotations.
-      * @param mod      the associated modifiers.
-      * @param sp1      the position of the first character in the declaration.
-      * @param ident    the name of the enum.
-      * @param index    the type parameter the describes the restriction of tags.
-      * @param tparams  the type parameters.
-      * @param derives  the derivations of the enum.
-      * @param cases    the cases of the enum.
-      * @param sp2      the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param ann     the associated annotations.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the enum.
+      * @param index   the type parameter the describes the restriction of tags.
+      * @param tparams the type parameters.
+      * @param derives the derivations of the enum.
+      * @param cases   the cases of the enum.
+      * @param sp2     the position of the last character in the declaration.
       */
     case class RestrictableEnum(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, index: ParsedAst.TypeParam, tparams: ParsedAst.TypeParams, tpe: Option[ParsedAst.Type], derives: Seq[Name.QName], cases: Option[Seq[ParsedAst.RestrictableCase]], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -512,6 +512,15 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * An Open Qualified Name Expression (This opens the type of restrictable tags) (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Open(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Hole Expression.
@@ -964,6 +973,15 @@ object ParsedAst {
       * @param sp2       the position of the last character in the expression.
       */
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Of Expression.
+      *
+      * @param name the tag of the expression.
+      * @param exp  the expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
@@ -1690,39 +1708,9 @@ object ParsedAst {
   object Kind {
 
     /**
-      * The Star kind.
+      * A non-builtin kind.
       */
-    case class Star(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Bool kind.
-      */
-    case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Region kind.
-      */
-    case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Effect kind.
-      */
-    case class Effect(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Record Row kind.
-      */
-    case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Schema Row kind.
-      */
-    case class SchemaRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Predicate kind.
-      */
-    case class Predicate(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class QName(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Arrow kind.

@@ -283,6 +283,33 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Restrictable Enum Error.
+    *
+    * @param sym the enum symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleRestrictableEnum(sym: Symbol.RestrictableEnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Inaccessible."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Enum '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+         |
+         |${code(loc, "inaccessible enum.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Mark the definition as public."
+    })
+
+  }
+
+  /**
     * Opaque Enum Error.
     *
     * @param sym the enum symbol.
@@ -998,6 +1025,37 @@ object ResolutionError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       "Wildcard types (types starting with an underscore) are not allowed in this position."
+    })
+  }
+
+  /**
+    * An error raised to indicate that a choose* expression is missing a tag.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class MissingRestrictableTag(loc: SourceLocation) extends ResolutionError {
+    def summary: String = "Missing tag for choose* expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing tag.
+         |
+         |${code(loc, "missing tag.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      """The expression in a choose* rule must either be a tag or an 'of' expression.
+        |
+        |For example:
+        |
+        |choose* e {
+        |    case E1    => E1         // OK
+        |    case E2(x) => E2 of f(x) // OK
+        |    case E3(y) => y          // Not OK. Should be (e.g.) 'E3 of y'
+        |}
+        |""".stripMargin
     })
   }
 

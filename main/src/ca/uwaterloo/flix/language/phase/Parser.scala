@@ -522,7 +522,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Assign
+    Expressions.Of
   }
 
   def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
@@ -570,6 +570,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
       }
+    }
+
+    def Of: Rule1[ParsedAst.Expression] = rule {
+      (Names.QName ~ WS ~ keyword("of") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Of) | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -748,7 +752,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | FArray | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | HolyName | QName | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | HolyName | QName | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
@@ -1162,6 +1166,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QName ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def Open: Rule1[ParsedAst.Expression.Open] = rule {
+      SP ~ keyword("open") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
     }
 
     def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
@@ -1631,39 +1639,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Kinds {
 
     def SimpleKind: Rule1[ParsedAst.Kind] = rule {
-      Kinds.Star | Kinds.Bool | Kinds.Region | Kinds.Effect | Kinds.Record | Kinds.Schema | Kinds.Parens
+      Kinds.QName | Kinds.Parens
     }
 
     def Arrow: Rule1[ParsedAst.Kind] = rule {
       SimpleKind ~ optional(optWS ~ atomic("->") ~ optWS ~ Kind ~ SP ~> ParsedAst.Kind.Arrow)
     }
 
-    def Star: Rule1[ParsedAst.Kind.Star] = rule {
-      SP ~ keyword("Type") ~ SP ~> ParsedAst.Kind.Star
-    }
-
-    def Bool: Rule1[ParsedAst.Kind.Bool] = rule {
-      SP ~ keyword("Bool") ~ SP ~> ParsedAst.Kind.Bool
-    }
-
-    def Region: Rule1[ParsedAst.Kind.Region] = rule {
-      SP ~ keyword("Region") ~ SP ~> ParsedAst.Kind.Region
-    }
-
-    def Effect: Rule1[ParsedAst.Kind.Effect] = rule {
-      SP ~ keyword("Eff") ~ SP ~> ParsedAst.Kind.Effect
-    }
-
-    def Record: Rule1[ParsedAst.Kind.RecordRow] = rule {
-      SP ~ keyword("RecordRow") ~ SP ~> ParsedAst.Kind.RecordRow
-    }
-
-    def Schema: Rule1[ParsedAst.Kind.SchemaRow] = rule {
-      SP ~ keyword("SchemaRow") ~ SP ~> ParsedAst.Kind.SchemaRow
-    }
-
-    def Predicate: Rule1[ParsedAst.Kind.Predicate] = rule {
-      SP ~ keyword("Predicate") ~ SP ~> ParsedAst.Kind.Predicate
+    def QName: Rule1[ParsedAst.Kind.QName] = rule {
+      SP ~ Names.QName ~ SP ~> ParsedAst.Kind.QName
     }
 
     def Parens: Rule1[ParsedAst.Kind] = rule {

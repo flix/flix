@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -49,13 +50,17 @@ object NamedAst {
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 
+    case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: NamedAst.TypeParam, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.RestrictableCase], loc: SourceLocation) extends NamedAst.Declaration
+
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
@@ -82,6 +87,8 @@ object NamedAst {
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -112,6 +119,8 @@ object NamedAst {
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class ScopeExit(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
@@ -152,6 +161,8 @@ object NamedAst {
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Of(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
@@ -218,6 +229,10 @@ object NamedAst {
     case class FixpointInject(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Error(m: CompilationMessage) extends NamedAst.Expression {
+      override def loc: SourceLocation = m.loc
+    }
 
   }
 
@@ -357,8 +372,16 @@ object NamedAst {
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
+    case class Ascribe(tpe: NamedAst.Type, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Type
 
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Kind
+
+    case class Arrow(k1: NamedAst.Kind, k2: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Kind
   }
 
   sealed trait TypeParams {

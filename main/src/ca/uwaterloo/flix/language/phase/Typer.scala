@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
 import ca.uwaterloo.flix.language.phase.unification.Unification._
@@ -46,6 +47,7 @@ object Typer {
     val instancesVal = visitInstances(root, classEnv)
     val defsVal = visitDefs(root, classEnv, oldRoot, changeSet)
     val enums = visitEnums(root)
+    val restrictableEnums = visitRestrictableEnums(root)
     val effsVal = visitEffs(root)
     val typeAliases = visitTypeAliases(root)
 
@@ -53,7 +55,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.univ, root.uses, root.entryPoint, root.sources, classEnv, root.names)
     }
   }
 
@@ -61,7 +63,7 @@ object Typer {
     * Collects the symbols in the given root into a map.
     */
   private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, effects, typeAliases, _, _, _, loc) =>
+    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, _, loc) =>
       val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
       val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
 
@@ -272,6 +274,7 @@ object Typer {
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
     case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _, _) =>
+      implicit val univ: Ast.Multiverse = root.univ
 
       ///
       /// Infer the type of the expression `exp0`.
@@ -416,11 +419,40 @@ object Typer {
     case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpe, loc) =>
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.Case(caseSym, tagType, sc)) =>
-          name -> TypedAst.Case(caseSym, tagType, sc, caseSym.loc) // TODO this should be full case location
+        case (name, KindedAst.Case(caseSym, tagType, sc, caseLoc)) =>
+          name -> TypedAst.Case(caseSym, tagType, sc, caseLoc)
       }
 
       enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
+  }
+
+  /**
+    * Performs type inference and reassembly on all restrictable enums in the given AST root.
+    */
+  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
+    flix.subphase("Restrictble Enums") {
+      // Visit every restrictable enum in the ast.
+      val result = root.restrictableEnums.toList.map {
+        case (_, re) => visitRestrictableEnum(re, root)
+      }
+
+      // Sequence the results and convert them back to a map.
+      result.toMap
+    }
+
+  /**
+    * Performs type resolution on the given restrictable enum and its cases.
+    */
+  private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum) = enum0 match {
+    case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, tpe, loc) =>
+      val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
+      val tparams = getTypeParams(tparams0)
+      val cases = cases0 map {
+        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)) =>
+          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
+      }
+
+      enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -440,7 +472,8 @@ object Typer {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+  def inferExp(exp0: KindedAst.Expression, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+    implicit val univ: Ast.Multiverse = root.univ
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -926,6 +959,21 @@ object Typer {
           resultEff = eff
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val regionType = Type.mkRegion(regionVar, loc)
+        val p = Type.freshVar(Kind.Bool, loc)
+        val ef = Type.freshVar(Kind.Effect, loc)
+        for {
+          (constrs1, tpe1, _, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, _, eff2) <- visitExp(exp2)
+          _ <- expectTypeM(expected = Type.mkUncurriedArrowWithEffect(Type.Unit :: Nil, p, ef, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
+          _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
+          resultTyp = Type.Unit
+          resultPur = Type.mkAnd(Type.Impure, regionVar, loc)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
+      
       case KindedAst.Expression.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)
@@ -1137,6 +1185,8 @@ object Typer {
           resultEff = Type.mkUnion(matchEff ::: ruleBodyEff, loc)
         } yield (matchConstrs.flatten ++ ruleBodyConstrs.flatten, resultTyp, resultPur, resultEff)
 
+      case exp@KindedAst.Expression.RestrictableChoose(_, _, _, _, _) => RestrictableChooseInference.infer(exp, root)
+
       case KindedAst.Expression.Tag(symUse, exp, tvar, loc) =>
         if (symUse.sym.enumSym == Symbol.mkEnumSym("Choice")) {
           //
@@ -1192,6 +1242,9 @@ object Typer {
             resultEff = eff
           } yield (constrs, resultTyp, resultPur, resultEff)
         }
+
+      case exp@KindedAst.Expression.RestrictableTag(_, _, _, _, _) =>
+        RestrictableChooseInference.inferRestrictableTag(exp, root)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         for {
@@ -1386,6 +1439,8 @@ object Typer {
           resultPur <- expectTypeM(expected = expectedPur.getOrElse(Type.freshVar(Kind.Bool, loc)), actual = actualPur, loc)
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
+
+      case of@KindedAst.Expression.Of(_, _, _, _) => RestrictableChooseInference.inferOf(of, root)
 
       case KindedAst.Expression.Cast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) =>
         // A cast expression is unsound; the type system assumes the declared type is correct.
@@ -1869,6 +1924,9 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        InferMonad.point((Nil, tvar, pvar, evar))
+
     }
 
     /**
@@ -2003,6 +2061,14 @@ object Typer {
         val eff = e.eff
         TypedAst.Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = Type.Unit
+        val pur = Type.Impure
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+        TypedAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
+
       case KindedAst.Expression.Match(matchExp, rules, loc) =>
         val e1 = visitExp(matchExp, subst0)
         val rs = rules map {
@@ -2054,11 +2120,36 @@ object Typer {
         val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
         TypedAst.Expression.RelationalChoose(es, rs, tpe, pur, eff, loc)
 
+      case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val rs = rules.map {
+          case KindedAst.RestrictableChoiceRule(pat0, _, body0) =>
+            val pat = pat0 match {
+              case KindedAst.RestrictableChoicePattern.Tag(sym, pats, tvar, loc) =>
+                val ps = pats.map {
+                  case KindedAst.RestrictableChoicePattern.Wild(tvar, loc) => TypedAst.RestrictableChoicePattern.Wild(subst0(tvar), loc)
+                  case KindedAst.RestrictableChoicePattern.Var(sym, tvar, loc) => TypedAst.RestrictableChoicePattern.Var(sym, subst0(tvar), loc)
+                }
+                TypedAst.RestrictableChoicePattern.Tag(sym, ps, subst0(tvar), loc)
+            }
+            val body = visitExp(body0, subst0)
+            TypedAst.RestrictableChoiceRule(pat, body)
+        }
+        val pur = Type.mkAnd(rs.map(_.exp.pur), loc)
+        val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
+        TypedAst.Expression.RestrictableChoose(star, e, rs, subst0(tvar), pur, eff, loc)
+
       case KindedAst.Expression.Tag(sym, exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Tag(sym, e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.RestrictableTag(sym, exp, _, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.RestrictableTag(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Tuple(elms, loc) =>
         val es = elms.map(visitExp(_, subst0))
@@ -2166,6 +2257,12 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.Of(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.Of(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Cast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
@@ -2424,6 +2521,13 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.Error(m, tpe, pur, eff)
+
     }
 
     /**
@@ -2478,6 +2582,8 @@ object Typer {
     * Infers the type of the given pattern `pat0`.
     */
   private def inferPattern(pat0: KindedAst.Pattern, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = {
+    implicit val univ: Ast.Multiverse = root.univ
+
     /**
       * Local pattern visitor.
       */
@@ -2603,6 +2709,7 @@ object Typer {
     */
   private def inferHeadPredicate(head: KindedAst.Predicate.Head, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = head match {
     case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
+      implicit val univ: Ast.Multiverse = root.univ
       // Adds additional type constraints if the denotation is a lattice.
       val restRow = Type.freshVar(Kind.SchemaRow, loc)
       for {
@@ -2626,33 +2733,37 @@ object Typer {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = body0 match {
-    case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
-      val restRow = Type.freshVar(Kind.SchemaRow, loc)
-      for {
-        termTypes <- traverseM(terms)(inferPattern(_, root))
-        predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
-        tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-      } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
+  private def inferBodyPredicate(body0: KindedAst.Predicate.Body, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type)] = {
+    implicit val univ = root.univ
 
-    case KindedAst.Predicate.Body.Guard(exp, loc) =>
-      for {
-        (constrs, tpe, pur, eff) <- inferExp(exp, root)
-        expPur <- unifyBoolM(Type.Pure, pur, loc)
-        expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, eff, loc)
-      } yield (constrs, mkAnySchemaRowType(loc))
+    body0 match {
+      case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
+        val restRow = Type.freshVar(Kind.SchemaRow, loc)
+        for {
+          termTypes <- traverseM(terms)(inferPattern(_, root))
+          predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+          tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
+        } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-      // TODO: Use type classes instead of array?
-      val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
-      val expectedType = Type.mkArray(tupleType, Type.False, loc)
-      for {
-        (constrs, tpe, pur, eff) <- inferExp(exp, root)
-        expPur <- unifyBoolM(Type.Pure, pur, loc)
-        expTyp <- unifyTypeM(expectedType, tpe, loc)
-        expEff <- unifyTypeM(Type.Empty, eff, loc)
-      } yield (constrs, mkAnySchemaRowType(loc))
+      case KindedAst.Predicate.Body.Guard(exp, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expTyp <- unifyTypeM(Type.Bool, tpe, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+
+      case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+        // TODO: Use type classes instead of array?
+        val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
+        val expectedType = Type.mkArray(tupleType, Type.False, loc)
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expTyp <- unifyTypeM(expectedType, tpe, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+    }
   }
 
   /**

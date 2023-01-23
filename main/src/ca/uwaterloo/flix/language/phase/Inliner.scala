@@ -56,6 +56,8 @@ object Inliner {
       case (sym, enum) => sym -> visitEnum(enum)
     }
 
+    // TODO RESTR-VARS add restrictable enums
+
     // Reassemble the ast root.
     val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
 
@@ -254,6 +256,11 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) => 
+      val e1 = visitExp(exp1, subst0)
+      val e2 = visitExp(exp2, subst0)
+      LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -598,6 +605,11 @@ object Inliner {
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Is(sym, exp, purity, loc) =>
       val e = substituteExp(exp, env0)

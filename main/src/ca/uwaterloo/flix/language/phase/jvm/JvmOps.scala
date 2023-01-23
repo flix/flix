@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, S
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -549,6 +550,8 @@ object JvmOps {
 
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
+      case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
       case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tag(_, exp, _, _) => visitExp(exp)
@@ -708,7 +711,8 @@ object JvmOps {
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(caseSym, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
+          // TODO RESTR-VARS not bothering with universe here
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty)(Ast.Multiverse(ListMap.empty), flix).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(caseSym.enumSym, caseSym.name, args, tpe, hackType2MonoType(tagType))
@@ -899,6 +903,8 @@ object JvmOps {
       case Expression.Region(_, _) => Set.empty
 
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
+
+      case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
@@ -1145,6 +1151,8 @@ object JvmOps {
       case Expression.Region(_, _) => Set.empty
 
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
+      
+      case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 

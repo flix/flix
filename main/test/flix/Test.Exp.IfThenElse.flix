@@ -113,22 +113,25 @@ namespace Test/Exp/IfThenElse {
             (if (true) true else false)
 
     @test
-    def testIfThenElseBooleanFolding01(): Bool \ IO =
-        let y = ref 1;
+    def testIfThenElseBooleanFolding01(): Bool = region rh {
+        let y = ref 1 @ rh;
         let r =
             if ({y := 2; true} or true)
                 deref y
             else
                 3;
         r == 2
+    }
 
     @test
-    def testIfThenElseBooleanFolding02(): Bool \ IO =
-        let y = ref 1;
+    def testIfThenElseBooleanFolding02(): Bool = region rh {
+        let y = ref 1 @ rh;
         let r =
             if ({y := 2; true} and false)
                 3
             else
                 deref y;
         r == 2
+    }
+
 }
