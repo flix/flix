@@ -897,6 +897,7 @@ object Weeder {
       //
       // Rewrites a foreach-yield loop into Collectable.collect
       //
+      val baseLoc = mkSL(sp1, sp2).asSynthetic
 
       // Declare functions
       val fqnNew = "Iterator.new"
@@ -906,14 +907,13 @@ object Weeder {
       val fqnCollect = "Collectable.collect"
 
       // Make region variable
-      val baseLoc = mkSL(sp1, sp2).asSynthetic
-      val regionType = Type.mkRegion(Type.True, baseLoc)
-      val regionExp = WeededAst.Expression.Region(regionType, baseLoc)
+      val regionSym = Name.Ident(sp1, "ForEachYieldIterRegion" + flix.genSym.freshId(), sp2)
+      val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionSym), baseLoc)
 
       // Desugar yield-exp
       val yieldExp = mapN(visitExp(exp, senv)) {
         case e =>
-          mkApplyFqn(fqnSingleton, List(regionExp, e), baseLoc)
+          mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
       }
 
       // Desugar loop
@@ -924,7 +924,7 @@ object Weeder {
               val loc = mkSL(sp11, sp12).asSynthetic
 
               // 1. Create iterator from exp1
-              val iter = mkApplyFqn(fqnIterator, List(regionExp, e1), loc)
+              val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc)
 
               // 2. Create match-lambda with pat1 as params and acc as body
               val lambda = mkLambdaMatch(sp11, p, acc, sp12)
@@ -940,7 +940,7 @@ object Weeder {
               val loc = mkSL(sp11, sp12).asSynthetic
 
               // 1. Create empty iterator
-              val empty = mkApplyFqn(fqnNew, List(regionExp), loc)
+              val empty = mkApplyFqn(fqnNew, List(regionVar), loc)
 
               // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
               WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
@@ -953,7 +953,6 @@ object Weeder {
       }
 
       // Wrap in region
-      val regionSym = Name.Ident(sp1, "ForEachYieldIterRegion" + flix.genSym.freshId(), sp2)
       mapN(resultExp) {
         case e => WeededAst.Expression.Scope(regionSym, e, baseLoc)
       }
