@@ -2302,8 +2302,8 @@ namespace TestMutList {
 
     @test
     def sortBy10(): Bool = region r {
-        MutList.sortBy(r, rr -> let R.R(x) = rr; x.i, Array.toMutList(r, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})] @ } @ r))
-        `sameElements` Array.toMutList(r, Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})] @} @ rr)
+        MutList.sortBy(r, rr -> let R.R(x) = rr; x.i, Array.toMutList(r, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ r))
+        `sameElements` Array.toMutList(r, Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})} @ r)
     }
 
 
