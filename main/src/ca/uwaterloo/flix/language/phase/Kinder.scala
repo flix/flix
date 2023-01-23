@@ -894,8 +894,9 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val pvar = Type.freshVar(Kind.Bool, m.loc)
       val evar = Type.freshVar(Kind.Effect, m.loc)
-      KindedAst.Expression.Error(m, tvar, pvar, evar).toSoftFailure
-
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(KindedAst.Expression.Error(m, tvar, pvar, evar), LazyList.empty)
   }
 
   /**

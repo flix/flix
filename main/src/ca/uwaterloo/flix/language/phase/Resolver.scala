@@ -1552,7 +1552,9 @@ object Resolver {
           }
 
         case NamedAst.Expression.Error(m) =>
-          ResolvedAst.Expression.Error(m).toSoftFailure
+          // Note: We must NOT use [[Validation.toSoftFailure]] because
+          // that would duplicate the error inside the Validation.
+          Validation.SoftFailure(ResolvedAst.Expression.Error(m), LazyList.empty)
       }
 
       /**
