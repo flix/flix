@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -62,8 +62,10 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
         case x: Type.Var => m.getOrElse(x.sym, x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
-          val y = visit(t2)
-          visit(t1) match {
+          // only trigger minimization once for each formula
+          val y = if (!isCaseSet(t) && isCaseSet(t2)) minimizeSetType(visit(t2)) else visit(t2)
+          val z = if (!isCaseSet(t) && isCaseSet(t1)) minimizeSetType(visit(t1)) else visit(t1)
+          z match {
             // Simplify boolean equations.
             case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
             case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
@@ -88,7 +90,33 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-    if (isEmpty) tpe0 else visit(tpe0)
+    if (isEmpty) tpe0
+    else minimizeSetType(visit(tpe0))
+  }
+
+  /**
+    * Returns a minimized type if the type is of kind `CaseSet`, otherwise
+    * do nothing.
+    */
+  private def minimizeSetType(tpe: Type): Type = tpe.kind match {
+    case Kind.CaseSet(enumSym) =>
+      val univ = List(
+        new Symbol.RestrictableCaseSym(enumSym, "Cst", SourceLocation.Unknown),
+        new Symbol.RestrictableCaseSym(enumSym, "Var", SourceLocation.Unknown),
+        new Symbol.RestrictableCaseSym(enumSym, "Not", SourceLocation.Unknown),
+        new Symbol.RestrictableCaseSym(enumSym, "And", SourceLocation.Unknown),
+        new Symbol.RestrictableCaseSym(enumSym, "Or", SourceLocation.Unknown),
+        new Symbol.RestrictableCaseSym(enumSym, "Xor", SourceLocation.Unknown)
+      )
+      val (env, univ2) = SetFormula.mkEnv(List(tpe), univ)
+      val something = SetFormula.fromCaseType(tpe, env, univ2)
+      SetFormula.toCaseType(SetFormula.minimize(something)(univ2), enumSym, env, SourceLocation.Unknown)
+    case _ => tpe
+  }
+
+  private def isCaseSet(tpe: Type): Boolean = tpe.kind match {
+    case Kind.CaseSet(_) => true
+    case _ => false
   }
 
   /**
