@@ -1,4 +1,4 @@
-namespace Test/Exp/Foreach {
+namespace Test/Exp/ForEachYield {
 
     @test
     def testForEachYield01(): List[Int32] =
