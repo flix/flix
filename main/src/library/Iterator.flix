@@ -670,7 +670,7 @@ namespace Iterator {
         flatMap(step, iter)
 
     ///
-    /// Helper for append.
+    /// Helper for `intercalate`.
     ///
     /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
     /// then `intercalate` fails.
