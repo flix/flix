@@ -1023,7 +1023,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(1, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
@@ -1033,7 +1033,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
@@ -1045,7 +1045,7 @@ namespace TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [4, 3, 1, 2] @ r)
+        Array.sameElements(a, Array#{4, 3, 1, 2} @ r)
     }
 
 

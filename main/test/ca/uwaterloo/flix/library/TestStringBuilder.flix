@@ -470,7 +470,7 @@ def appendLinesWith01!(): Bool = region r {
 @test
 def appendLinesWith02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1} @ r, sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -486,7 +486,7 @@ def appendLinesWith03!(): Bool = region r {
 @test
 def appendLinesWith04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1, 2, 3] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2, 3} @ r, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }

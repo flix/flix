@@ -427,12 +427,12 @@ namespace TestIterator {
 
     @test
     def toArray02(): Bool = region r {
-        Iterator.range(r, -10, -5) |> Iterator.toArray(r) `Array.sameElements` [-10, -9, -8, -7, -6] @ r
+        Iterator.range(r, -10, -5) |> Iterator.toArray(r) `Array.sameElements` Array#{-10, -9, -8, -7, -6} @ r
     }
 
     @test
     def toArray03(): Bool = region r {
-        Iterator.repeat(r, 3, 1) |> Iterator.toArray(r) `Array.sameElements` [1, 1, 1] @ r
+        Iterator.repeat(r, 3, 1) |> Iterator.toArray(r) `Array.sameElements` Array#{1, 1, 1} @ r
     }
 
     @test

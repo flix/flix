@@ -865,7 +865,7 @@ namespace TestReducible {
 
     @test
     def toArray02(): Bool = region r {
-        Array.sameElements(Reducible.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+        Array.sameElements(Reducible.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
     }
 
     @test

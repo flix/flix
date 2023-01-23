@@ -18,7 +18,7 @@ def testChoose02(): Option[String] \ NonDet =
 def testChoose03(): Option[Result[Int32, Int32]] \ NonDet =
     region r {
         let rnd = Random.new();
-        let arr = [Ok(123), Ok(456), Err(789)] @ r;
+        let arr = Array#{Ok(123), Ok(456), Err(789)} @ r;
         Random.choose(rnd, arr)
     }
 

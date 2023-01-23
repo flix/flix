@@ -255,7 +255,7 @@ namespace TestFile {
     @test
     def testReadBytesWith03(): Bool \ IO = region r {
         match readBytesWith(r, {offset = 10i64, count = 4}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
+            case Ok(v) => v `Array.sameElements` Array#{101i8, 110i8, 115i8, 101i8} @ r
             case _     => false
         }
     }
@@ -263,7 +263,7 @@ namespace TestFile {
     @test
     def testReadBytesWith04(): Bool \ IO = region r {
         match readBytesWith(r, {offset = 0i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` []
+            case Ok(v) => v `Array.sameElements` Array#{} @ r
             case _     => false
         }
     }
@@ -271,7 +271,7 @@ namespace TestFile {
     @test
     def testReadBytesWith05(): Bool \ IO = region r {
         match readBytesWith(r, {offset = -10i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` []
+            case Ok(v) => v `Array.sameElements` Array#{} @ r
             case _     => false
         }
     }

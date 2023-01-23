@@ -843,12 +843,12 @@ namespace TestDelayList {
 
     @test
     def toArray04(): Bool = region r {
-    	DelayList.toArray(r, LCons(1, lazy ENil))`Array.sameElements` [1] @ r
+    	DelayList.toArray(r, LCons(1, lazy ENil))`Array.sameElements` Array#{1} @ r
     }
 
     @test
     def toArray05(): Bool = region r {
-    	DelayList.toArray(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` [1, 2, 3] @ r
+    	DelayList.toArray(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ r
     }
 
 

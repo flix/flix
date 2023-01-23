@@ -1577,19 +1577,19 @@ namespace TestChain {
     @test
     def toArray02(): Bool = region r {
         let a = Chain.toArray(r, Chain.singleton(1));
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
         let a = Chain.toArray(r, List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
         let a = Chain.toArray(r, List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, [1, 2, 3] @ r)
+        Array.sameElements(a, Array#{1, 2, 3} @ r)
     }
 
 

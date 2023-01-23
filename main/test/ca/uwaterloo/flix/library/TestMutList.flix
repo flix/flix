@@ -666,7 +666,7 @@ namespace TestMutList {
     @test
     def map01(): Bool = region r {
         let v = MutList.map(r, x -> x * 2, MutList.range(r, 0, 6));
-        MutList.sameElements(v, Array.toMutList(r, [0, 2, 4, 6, 8, 10]))
+        MutList.sameElements(v, Array.toMutList(r, Array#{0, 2, 4, 6, 8, 10} @ r))
     }
 
     @test
@@ -728,13 +728,13 @@ namespace TestMutList {
     @test
     def mapWithIndex01(): Bool = region r {
         let v = MutList.mapWithIndex(r, (i, _) -> if (i < 3) 0 else 1, MutList.range(r, 0, 6));
-        MutList.sameElements(v, Array.toMutList(r, [0, 0, 0, 1, 1, 1]))
+        MutList.sameElements(v, Array.toMutList(r, Array#{0, 0, 0, 1, 1, 1} @ r))
     }
 
     @test
     def mapWithIndex02(): Bool = region r {
         let v = MutList.mapWithIndex(r, (i, x) -> if (x == 8 and i == 1) 42 else 0, MutList.range(r, 7, 10));
-        MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
+        MutList.sameElements(v, Array.toMutList(r, Array#{0, 42, 0} @ r))
     }
 
     @test
@@ -752,14 +752,14 @@ namespace TestMutList {
     def transformWithIndex!01(): Bool = region r {
         let v = MutList.range(r, 0, 6);
         MutList.transformWithIndex!((i, _) -> if (i < 3) 0 else 1, v);
-        MutList.sameElements(v, Array.toMutList(r, [0, 0, 0, 1, 1, 1]))
+        MutList.sameElements(v, Array.toMutList(r, Array#{0, 0, 0, 1, 1, 1} @ r))
     }
 
     @test
     def transformWithIndex!02(): Bool = region r {
         let v = MutList.range(r, 7, 10);
         MutList.transformWithIndex!((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
-        MutList.sameElements(v, Array.toMutList(r, [0, 42, 0]))
+        MutList.sameElements(v, Array.toMutList(r, Array#{0, 42, 0} @ r))
     }
 
     @test
@@ -1807,12 +1807,12 @@ namespace TestMutList {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(MutList.toArray(r, Array.toMutList(r, [1, 2, 3])), [1, 2, 3] @ r)
+        Array.sameElements(MutList.toArray(r, Array.toMutList(r, Array#{1, 2, 3} @ r)), Array#{1, 2, 3} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        let v = Array.toMutList(r, [1, 2, 3]);
+        let v = Array.toMutList(r, Array#{1, 2, 3} @ r);
         let a = MutList.toArray(r, v);
         a[1] = 42;
         MutList.nth(1, v) == Some(2)
@@ -1820,7 +1820,7 @@ namespace TestMutList {
 
     @test
     def toArray03(): Bool = region r {
-        let v = Array.toMutList(r, [1, 2, 3] @ r);
+        let v = Array.toMutList(r, Array#{1, 2, 3} @ r);
         discard MutList.pop!(v);
         discard MutList.pop!(v);
         Array.length(MutList.toArray(r, v)) == 1
