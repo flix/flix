@@ -852,6 +852,16 @@ object ParsedAst {
     case class New(sp1: SourcePosition, qname: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Array Literal expression.
+      *
+      * @param sp1  the position of the first character in the `Array` keyword.
+      * @param exps the elements of the array.
+      * @param exp  the region of the array.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * ArrayLoad Expression
       *
       * @param base  the array.
@@ -889,16 +899,6 @@ object ParsedAst {
       * @param exp2 the second list.
       */
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
-
-    /**
-      * Array expression.
-      *
-      * @param sp1  the position of the first character in the `Array` keyword.
-      * @param sp2  the position of the last character in the `Array` keyword.
-      * @param exps the elements of the array.
-      * @param exp  the region of the array.
-      */
-    case class FArray(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * List expression.

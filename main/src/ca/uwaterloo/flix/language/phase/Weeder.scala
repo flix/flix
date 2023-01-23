@@ -1332,6 +1332,11 @@ object Weeder {
           WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
       }
 
+    case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
+      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
+        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       val loc = mkSL(sp1, sp2)
@@ -1373,16 +1378,6 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
-      }
-
-    case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
-      /*
-       * Rewrites an `FArray` expression into an array literal.
-       */
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
-        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), loc)
       }
 
     case ParsedAst.Expression.FList(sp1, sp2, exps) =>
@@ -3075,7 +3070,7 @@ object Weeder {
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
-    case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
