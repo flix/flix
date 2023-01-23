@@ -223,7 +223,7 @@ namespace TestDebug {
 
     @test
     def testNullStringify06(): Bool = region r {
-        let s = stringify(Array#{unsafe_cast null as String, "42"] @ r);
+        let s = stringify(Array#{unsafe_cast null as String, "42"} @ r);
         s == "[null, 42]"
     }
 
