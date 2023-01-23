@@ -1266,107 +1266,58 @@ namespace TestIterator {
 
     @test
     def intercalate01(): Bool = region rc {
-        let iterA = Nil |> List.iterator(rc);
-        let iterB = Nil |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |> Iterator.toList == Nil: List[Int32]
+        let sep: List[Int32] = Nil;
+        let iter = Nil |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |> Iterator.toList == Nil: List[Int32]
     }
 
     @test
     def intercalate02(): Bool = region rc {
-        let iterA  = Nil |> List.iterator(rc);
-        let iterB0 = (1 :: Nil) |> List.iterator(rc);
-        let iterB  = (iterB0 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |>
+        let sep: List[Int32] = Nil;
+        let iterA1 = (1 :: Nil) |> List.iterator(rc);
+        let iter  = (iterA1 :: Nil) |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |>
             Iterator.toList == 1 :: Nil
     }
 
     @test
     def intercalate03(): Bool = region rc {
-        let iterA = (11 :: 12 :: 13 :: Nil) |> List.iterator(rc);
-        let iterB = Nil |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |>
+        let sep = 11 :: 12 :: 13 :: Nil;
+        let iter = Nil |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |>
             Iterator.toList ==  Nil
     }
 
     @test
     def intercalate04(): Bool = region rc {
-        let iterA  = Nil |> List.iterator(rc);
-        let iterB0 = (1 :: Nil) |> List.iterator(rc);
-        let iterB1 = (2 :: 3 :: Nil) |> List.iterator(rc);
-        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |>
+        let sep: List[Int32] = Nil;
+        let iterA1 = (1 :: Nil) |> List.iterator(rc);
+        let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
+        let iter = (iterA1 :: iterA2 :: Nil) |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |>
             Iterator.toList == 1 :: 2 :: 3 :: Nil
     }
 
     @test
     def intercalate05(): Bool = region rc {
-        let iterA  = (11 :: 12 :: 13 :: Nil) |> List.iterator(rc);
-        let iterB0 = (1 :: Nil) |> List.iterator(rc);
-        let iterB1 = (2 :: 3 :: Nil) |> List.iterator(rc);
-        let iterB  = (iterB0 :: iterB1 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |>
+        let sep  = 11 :: 12 :: 13 :: Nil;
+        let iterA1 = (1 :: Nil) |> List.iterator(rc);
+        let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
+        let iter = (iterA1 :: iterA2 :: Nil) |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |>
             Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
     }
 
     @test
     def intercalate06(): Bool = region rc {
-        let iterA  = Nil |> List.iterator(rc);
-        let iterB0 = (1 :: Nil) |> List.iterator(rc);
-        let iterB1 = (2 :: 3 :: Nil) |> List.iterator(rc);
-        let iterB2 = (4 :: Nil) |> List.iterator(rc);
-        let iterB  = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(iterA, iterB) |>
+        let sep = Nil;
+        let iterA1 = (1 :: Nil) |> List.iterator(rc);
+        let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
+        let iterA3 = (4 :: Nil) |> List.iterator(rc);
+        let iter = (iterA1 :: iterA2 :: iterA3 :: Nil) |> List.iterator(rc);
+        Iterator.intercalate(sep, iter) |>
             Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
     }
-
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def intercalate07(): Bool = region r1 {
-    //     let iterA  = (11 :: 12 :: 13 :: Nil) |> List.iterator(r1);
-    //     region r2 {
-    //         let iterB0 = (1 :: Nil) |> List.iterator(r2);
-    //         let iterB1 = (2 :: 3 :: Nil) |> List.iterator(r2);
-    //         let iterB2 = (4 :: Nil) |> List.iterator(r2);
-    //         region r3 {
-    //             let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.iterator(r3);
-    //             Iterator.intercalate(iterA, iterB) |>
-    //                 Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
-    //         }
-    //     }
-    // }
-
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def intercalate08(): Bool = region r1 {
-    //     let iterB0 = (1 :: Nil) |> List.iterator(r1);
-    //     let iterB1 = (2 :: 3 :: Nil) |> List.iterator(r1);
-    //     let iterB2 = (4 :: Nil) |> List.iterator(r1);
-    //     region r2 {
-    //         let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.iterator(r2);
-    //         region r3 {
-    //             let iterA = (11 :: 12 :: 13 :: Nil) |> List.iterator(r3);
-    //             Iterator.intercalate(iterA, iterB) |>
-    //                 Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
-    //         }
-    //     }
-    // }
-
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def intercalate09(): Bool = region r1 {
-    //     let iterB0 = (1 :: Nil) |> List.iterator(r1);
-    //     let iterB1 = (2 :: 3 :: Nil) |> List.iterator(r1);
-    //     let iterB2 = (4 :: Nil) |> List.iterator(r1);
-    //     region r2 {
-    //         let iterB = (iterB0 :: iterB1 :: iterB2 :: Nil) |> List.iterator(r2);
-    //         region _ {
-    //             let iterA = (11 :: 12 :: 13 :: Nil) |> List.iterator(r1);
-    //             Iterator.intercalate(iterA, iterB) |>
-    //                 Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: 11 :: 12 :: 13 :: 4 :: Nil
-    //         }
-    //     }
-    // }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithOk                                                            //
@@ -1582,39 +1533,6 @@ namespace TestIterator {
     def filterMap04(): Bool = region rc {
         (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.iterator(rc) |>
             Iterator.filterMap(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toResultList                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toResultList01(): Bool = region rc {
-        (Nil: List[Result[String, Int32]]) |> List.iterator(rc) |>
-            Iterator.toResultList == Ok(Nil)
-    }
-    @test
-    def toResultList02(): Bool = region rc {
-        ((Ok(1) :: Nil): List[Result[String, Int32]]) |> List.iterator(rc) |>
-            Iterator.toResultList == Ok(1 :: Nil)
-    }
-
-    @test
-    def toResultList03(): Bool = region rc {
-        ((Ok(1) :: Ok(2) :: Ok(3) :: Nil): List[Result[String, Int32]]) |> List.iterator(rc) |>
-            Iterator.toResultList == Ok(1 :: 2 :: 3 :: Nil)
-    }
-
-    @test
-    def toResultList04(): Bool = region rc {
-        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Nil) |> List.iterator(rc) |>
-            Iterator.toResultList == Err("four")
-    }
-
-    @test
-    def toResultList05(): Bool = region rc {
-        (Ok(1) :: Ok(2) :: Ok(3) :: Err("four") :: Err("zero") :: Nil) |> List.iterator(rc) |>
-            Iterator.toResultList == Err("four")
     }
 
     /////////////////////////////////////////////////////////////////////////////

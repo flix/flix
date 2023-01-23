@@ -131,20 +131,16 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def product(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } = match next(iter) {
-        case Some(i) => foldLeft((acc, x) -> acc * x, i, iter)
-        case None    => 1
-    }
+    pub def product(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
+        foldLeft((acc, x) -> acc * x, 1, iter)
 
     ///
     /// Returns the product of all elements in the iterator `iter` according to the function `f`.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } = match next(iter) {
-        case Some(a) => foldLeft((acc, x) -> acc * f(x), f(a), iter)
-        case None    => 1
-    }
+    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
+        foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
     /// Returns the contents of `iter` as an array.
@@ -659,22 +655,16 @@ namespace Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: Iterator[a, ef2, r], iter: Iterator[Iterator[a, ef1, r], ef1, r]): Iterator[a, ef1 and ef2 and r, r] \ Write(r) =
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef and r, r] \ Write(r) with Foldable[t] =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
-        let sepList = ref Nil @ rc;
+        let sepL = Foldable.toList(sep);
         let step = innerIter -> {
-            // Cache `sepList` first time in the loop. Unfortunately we must test for Nil inside the loop [test each time]
-            // to prevent the effect `ef2` leaking to the top level of the function.
-            match (deref sepList) {
-                case Nil => sepList := toList(sep)
-                case _   => ()
-            };
             if (deref start) {
                 start := false;
                 innerIter
             } else {
-                append(ofList(rc, deref sepList), innerIter)
+                append(ofList(rc, sepL), innerIter)
             }
         };
         flatMap(step, iter)
@@ -742,24 +732,6 @@ namespace Iterator {
         };
         let iterF1 = () -> step(iterF());
         Iterator(rc, iterF1)
-
-    ///
-    /// Returns the contents of `iter` as a list.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
-    /// If the iterator has no errors then the result is wrapped with `Ok`.
-    ///
-    pub def toResultList(iter: Iterator[Result[e, a], ef, r]): Result[e, List[a]] \ { ef, Read(r) } =
-        let Iterator(_, next) = iter;
-        def loop(fk, sk) = match next() {
-            case Ans(Ok(a))  => loop(fk, ks -> sk(a :: ks))
-            case Ans(Err(e)) => fk(e)
-            case Skip        => loop(fk, sk)
-            case Done        => sk(Nil)
-        };
-        loop(e -> Err(e), ks -> Ok(ks))
 
     ///
     /// Returns an iterator with the element `x` appended to the
