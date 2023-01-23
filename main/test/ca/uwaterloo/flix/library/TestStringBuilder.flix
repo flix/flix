@@ -512,28 +512,28 @@ def intercalate02!(): Bool = region r {
 @test
 def intercalate03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("", ["abc", "def"] @ r, sb);
+    StringBuilder.intercalate!("", Array#{"abc", "def"} @ r, sb);
     StringBuilder.toString(sb) == "abcdef"
 }
 
 @test
 def intercalate04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc"} @ r, sb);
     StringBuilder.toString(sb) == "abc"
 }
 
 @test
 def intercalate05!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc", "def"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc", "def"} @ r, sb);
     StringBuilder.toString(sb) == "abc::def"
 }
 
 @test
 def intercalate06!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc", "def", "ghi"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc", "def", "ghi"} @ r, sb);
     StringBuilder.toString(sb) == "abc::def::ghi"
 }
 
