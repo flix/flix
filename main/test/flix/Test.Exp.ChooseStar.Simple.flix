@@ -36,9 +36,9 @@ mod Test.Exp.ChooseStar.Simple {
     pub def testChooseStar03(): Bool = {
         // P2: check the lower bound by using result in a choose
         let star = choose* Expr.Cst {
-            case Expr.Cst(_) => open Expr.Var()
-            case Expr.Not(_) => open Expr.Var()
-            case Expr.Xor(_) => open Expr.Not()
+            case Expr.Cst(_) => Expr.Var()
+            case Expr.Not(_) => Expr.Var()
+            case Expr.Xor(_) => Expr.Not()
         };
         choose star {
             case Expr.Var(_) => true
@@ -49,9 +49,9 @@ mod Test.Exp.ChooseStar.Simple {
    pub def testChooseStar04(): Bool = {
        // P2: check the lower bound by using result in a choose
        let star = choose* Expr.Cst {
-           case Expr.Cst(_) => open Expr.Var()
-           case Expr.Not(_) => open Expr.Var()
-           case Expr.Xor(_) => open Expr.Not()
+           case Expr.Cst(_) => Expr.Var()
+           case Expr.Not(_) => Expr.Var()
+           case Expr.Xor(_) => Expr.Not()
        };
        choose star {
            case Expr.Var(_) => true
@@ -63,8 +63,8 @@ mod Test.Exp.ChooseStar.Simple {
    pub def testChooseStar05(): Bool = {
        // P3: Check that not is not present
        let star = choose* Expr.Cst {
-           case Expr.Not(_) => open Expr.Not()
-           case Expr.Cst(_) => open Expr.Var()
+           case Expr.Not(_) => Expr.Not()
+           case Expr.Cst(_) => Expr.Var()
        };
        choose star {
            case Expr.Var(_) => false
@@ -74,8 +74,8 @@ mod Test.Exp.ChooseStar.Simple {
    pub def testChooseStar06(): Bool = {
        // P3: Check that not is not present
        let star = choose* Expr.Cst {
-           case Expr.Not(_) => open Expr.Not()
-           case Expr.Cst(_) => open Expr.Cst()
+           case Expr.Not(_) => Expr.Not()
+           case Expr.Cst(_) => Expr.Cst()
        };
        choose star {
            case Expr.Cst(_) => true
