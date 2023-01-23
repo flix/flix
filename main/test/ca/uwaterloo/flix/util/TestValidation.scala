@@ -396,16 +396,18 @@ class TestValidation extends FunSuite {
   }
 
   test("toSoftFailure01") {
-    val result: Validation[String, Exception] = "abc".toSoftFailure(new RuntimeException())
-    assertResult(SoftFailure("abc", LazyList.empty[Exception]))(result)
+    val ex = new RuntimeException()
+    val result: Validation[String, Exception] = "abc".toSoftFailure(ex)
+    assertResult(SoftFailure("abc", LazyList(ex)))(result)
   }
 
   test("toSoftFailure02") {
-    val v: Validation[String, Exception] = "abc".toSoftFailure(new RuntimeException())
+    val ex = new RuntimeException()
+    val v: Validation[String, Exception] = "abc".toSoftFailure(ex)
     val result = mapN(v) {
       case s => s.reverse
     }
-    assertResult(SoftFailure("cba", LazyList.empty[Exception]))(result)
+    assertResult(SoftFailure("cba", LazyList(ex)))(result)
   }
 
   test("toSoftFailure03") {
