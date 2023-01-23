@@ -368,15 +368,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     // Compute Code Quality hints.
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-    if (codeHints.isEmpty) {
-      // Case 1: No code hints.
-      val results = PublishDiagnosticsParams.fromMessages(errors)
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    } else {
-      // Case 2: Code hints are available.
-      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    }
+
+    // Determine the status based on whether there are errors.
+    val status = if (errors.isEmpty) "success" else "failure"
+    val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    ("id" -> requestId) ~ ("status" -> status) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**
