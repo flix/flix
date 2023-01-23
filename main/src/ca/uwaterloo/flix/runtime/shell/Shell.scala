@@ -348,7 +348,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
-    val checkResult = flix.check()
+    val checkResult = flix.check().toHardFailure
     checkResult match {
       case Validation.Success(root) => this.root = Some(root)
       case _failure => // no-op
