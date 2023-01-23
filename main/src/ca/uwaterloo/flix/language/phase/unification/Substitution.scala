@@ -57,14 +57,19 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(tpe0: Type): Type = {
     // NB: The order of cases has been determined by code coverage analysis.
-    def visit(t: Type): Type =
+    // insideCaseSet means that we are inside a case set formula and should not minimize yet
+    def visit(insideCaseSet: Boolean, t: Type): Type =
       t match {
         case x: Type.Var => m.getOrElse(x.sym, x)
         case Type.Cst(tc, _) => t
         case Type.Apply(t1, t2, loc) =>
           // only trigger minimization once for each formula
-          val y = if (!isCaseSet(t) && isCaseSet(t2)) minimizeSetType(visit(t2)) else visit(t2)
-          val z = if (!isCaseSet(t) && isCaseSet(t1)) minimizeSetType(visit(t1)) else visit(t1)
+          val y =
+            if (!insideCaseSet && isCaseSet(t2)) minimizeSetType(visit(insideCaseSet = true, t2))
+            else visit(insideCaseSet, t2)
+          val z =
+            if (!insideCaseSet && isCaseSet(t1)) minimizeSetType(visit(insideCaseSet = true, t1))
+            else visit(insideCaseSet, t1)
           z match {
             // Simplify boolean equations.
             case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
@@ -84,14 +89,14 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case x => Type.Apply(x, y, loc)
           }
         case Type.Alias(sym, args0, tpe0, loc) =>
-          val args = args0.map(visit)
-          val tpe = visit(tpe0)
+          val args = args0.map(visit(insideCaseSet, _))
+          val tpe = visit(insideCaseSet, tpe0)
           Type.Alias(sym, args, tpe, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) tpe0
-    else minimizeSetType(visit(tpe0))
+    else minimizeSetType(visit(isCaseSet(tpe0), tpe0))
   }
 
   /**
@@ -100,6 +105,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   private def minimizeSetType(tpe: Type): Type = tpe.kind match {
     case Kind.CaseSet(enumSym) =>
+      // TODO RESTR-VARS: undo this universe hack
       val univ = List(
         new Symbol.RestrictableCaseSym(enumSym, "Cst", SourceLocation.Unknown),
         new Symbol.RestrictableCaseSym(enumSym, "Var", SourceLocation.Unknown),
