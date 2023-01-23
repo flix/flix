@@ -1970,7 +1970,7 @@ namespace TestMutList {
 
     @test
     def sortWith04(): Bool = region r {
-        let a = MutList.sortWith(r, cmp, Array.toMutList(r, Array#{1} @ r));
+        let a = MutList.sortWith(r, cmp, Array.toMutList(r, Array#{1,0} @ r));
         a `sameElements` Array.toMutList(r, Array#{0,1} @ r)
     }
 
