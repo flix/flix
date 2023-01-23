@@ -216,7 +216,7 @@ object Kinder {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam,tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
+  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], resTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
@@ -1143,6 +1143,7 @@ object Kinder {
         case Some(_) => Type.Cst(cst, loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
+
     case UnkindedType.Apply(t10, t20, loc) =>
       val t2Val = visitType(t20, Kind.Wild, kenv, senv, taenv, root)
       flatMapN(t2Val) {
@@ -1202,6 +1203,48 @@ object Kinder {
         case Some(k) => Type.Cst(TypeConstructor.RestrictableEnum(sym, k), loc).toSuccess
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
       }
+
+    case UnkindedType.CaseSet(cases, loc) =>
+      var kindAcc = Kind.GenericCaseSet
+
+      val elemsVal = traverse(cases) {
+        case sym =>
+          val kind = Kind.CaseSet(sym.enumSym)
+          unify(kindAcc, kind) match {
+            case Some(_) =>
+          }
+      }
+
+      // MATT
+      unify(kind, expectedKind) match {
+        // Case 1: Kinds unify!
+        // Get the enum from the kind
+        case Some(Kind.CaseSet(enumSym)) =>
+          // Build a union of the cases
+          cases.map(c => Type.Cst(TypeConstructor.CaseConstant(c), loc)).reduceLeftOption {
+            case (acc, t) => Type.mkCaseUnion(acc, t, enumSym, loc)
+          }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc)).toSuccess
+
+        // Case 2: Kinds don't unify!
+        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
+        case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
+      }
+
+    case UnkindedType.CaseComplement(t0, loc) =>
+      val tVal = visitType(t0, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      flatMapN(tVal) {
+        t =>
+          unify(t.kind, expectedKind) match {
+            case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc)
+            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
+            case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
+          }
+      }
+
+    case UnkindedType.CaseUnion(t1, t2, loc) =>
+      val t1Val = visitType(t1, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      val t2Val = visitType(t2, Kind.GenericCaseSet, kenv, senv, taenv, root)
+
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
 
@@ -1478,6 +1521,12 @@ object Kinder {
           kenv => acc ++ kenv
         }
       }
+
+    case UnkindedType.CaseSet(_, _) => KindEnv.empty
+
+    // MATT other cases
+
+
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)

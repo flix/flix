@@ -372,6 +372,15 @@ object NamedAst {
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
+    case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends NamedAst.Type
+
+    case class CaseUnion(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class CaseIntersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class CaseComplement(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+
     case class Ascribe(tpe: NamedAst.Type, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Type
 
   }
