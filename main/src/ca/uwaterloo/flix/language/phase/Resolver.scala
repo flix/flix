@@ -1150,12 +1150,11 @@ object Resolver {
           }
 
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0, region))
-          val erVal = traverseOpt(exp)(visitExp(_, env0, region))
-          mapN(esVal, erVal) {
-            case (es, er) =>
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.ArrayLit(es, reg, loc)
+          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expVal = visitExp(exp, env0, region)
+          mapN(expsVal, expVal) {
+            case (es, e) =>
+              ResolvedAst.Expression.ArrayLit(es, e, loc)
           }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>

@@ -1334,7 +1334,7 @@ object Weeder {
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
-        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), mkSL(sp1, sp2))
+        case (es, e) => WeededAst.Expression.ArrayLit(es, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
