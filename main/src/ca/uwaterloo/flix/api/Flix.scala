@@ -528,8 +528,8 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Convert any soft failures to hard failures.
-    result.toHardFailure
+    // Return the result (which could contain soft failures).
+    result
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
@@ -581,8 +581,10 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] =
-    Validation.flatMapN(check())(codeGen)
+  def compile(): Validation[CompilationResult, CompilationMessage] = {
+    val result = check().toHardFailure
+    Validation.flatMapN(result)(codeGen)
+  }
 
   /**
     * Enters the phase with the given name.
