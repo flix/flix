@@ -2257,7 +2257,7 @@ object ParsedAst {
   object ForFragment {
 
     /**
-      * A foreach generator fragment, i.e. `pattern <- xs`.
+      * A generator fragment, i.e. `pattern <- xs`.
       *
       * @param sp1 the position of the first character in the fragment.
       * @param pat the pattern on the left hand side.
@@ -2267,7 +2267,7 @@ object ParsedAst {
     case class Generator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
     /**
-      * A foreach guard fragment, i.e. `if x > 1`.
+      * A guard fragment, i.e. `if x > 1`.
       *
       * @param sp1   the position of the first character in the fragment.
       * @param guard the guard expression.
