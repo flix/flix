@@ -841,7 +841,7 @@ object Weeder {
       val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
       val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -851,7 +851,7 @@ object Weeder {
               mkApplyFqn(fqnForEach, fparams, loc)
           }
 
-        case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
           mapN(visitExp(exp1, senv)) { e1 =>
             val loc = mkSL(sp11, sp12).asSynthetic
             WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
@@ -875,7 +875,7 @@ object Weeder {
       }
 
       foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -884,7 +884,7 @@ object Weeder {
               mkApplyFqn(fqnFlatMap, fparams, loc)
           }
 
-        case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
           mapN(visitExp(exp1, senv)) {
             case e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -892,6 +892,8 @@ object Weeder {
               WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
           }
       }
+
+    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => ???
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -3061,6 +3063,7 @@ object Weeder {
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
