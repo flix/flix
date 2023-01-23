@@ -905,25 +905,58 @@ object Weeder {
       val fqnIterator = "Iterable.iterator"
       val fqnCollect = "Collectable.collect"
 
-      // Generate region symbol for loop iterators
-      val regionSym = "iterReg" + flix.genSym.freshId()
+      // Make region variable
+      val baseLoc = mkSL(sp1, sp2).asSynthetic
+      val regionType = Type.mkRegion(Type.True, baseLoc)
+      val regionExp = WeededAst.Expression.Region(regionType, baseLoc)
 
-      // Desguar loop
-      val yieldExp = visitExp(exp, senv)
+      // Desugar yield-exp
+      val yieldExp = mapN(visitExp(exp, senv)) {
+        case e =>
+          mkApplyFqn(fqnSingleton, List(regionExp, e), baseLoc)
+      }
+
+      // Desugar loop
       val loop = foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) => ???
-        // 1. Create iterator from exp1
-        // 2. Create match-lambda with pat1 as params and acc as body
-        // 3. Wrap in flatmap call
+        case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) =>
+          mapN(visitPattern(pat1), visitExp(exp1, senv)) {
+            case (p, e1) =>
+              val loc = mkSL(sp11, sp12).asSynthetic
 
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) => ???
-        // Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
+              // 1. Create iterator from exp1
+              val iter = mkApplyFqn(fqnIterator, List(regionExp, e1), loc)
+
+              // 2. Create match-lambda with pat1 as params and acc as body
+              val lambda = mkLambdaMatch(sp11, p, acc, sp12)
+
+              // 3. Wrap in flatmap call
+              val fparams = List(lambda, iter)
+              mkApplyFqn(fqnFlatMap, fparams, loc)
+          }
+
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) =>
+          mapN(visitExp(exp1, senv)) {
+            case e1 =>
+              val loc = mkSL(sp11, sp12).asSynthetic
+
+              // 1. Create empty iterator
+              val empty = mkApplyFqn(fqnNew, List(regionExp), loc)
+
+              // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
+              WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
+          }
       }
 
       // Wrap in Collectable.collect function
+      val resultExp = mapN(loop) {
+        case l => mkApplyFqn(fqnCollect, List(l), baseLoc)
+      }
 
       // Wrap in region
-      throw InternalCompilerException("WIP ForEachYield", mkSL(sp1, sp2).asSynthetic)
+      val regionSym = Name.Ident(sp1, "ForEachYieldIterRegion" + flix.genSym.freshId(), sp2)
+      mapN(resultExp) {
+        case e => WeededAst.Expression.Scope(regionSym, e, baseLoc)
+      }
     }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
