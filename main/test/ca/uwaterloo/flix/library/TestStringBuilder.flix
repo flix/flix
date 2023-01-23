@@ -400,7 +400,7 @@ def appendLines01!(): Bool = region r {
 @test
 def appendLines02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A"} @ r, sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -408,7 +408,7 @@ def appendLines02!(): Bool = region r {
 @test
 def appendLines03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A", "B"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A", "B"} @ r, sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -416,7 +416,7 @@ def appendLines03!(): Bool = region r {
 @test
 def appendLines04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A", "B", "C"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A", "B", "C"} @ r, sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -478,7 +478,7 @@ def appendLinesWith02!(): Bool = region r {
 @test
 def appendLinesWith03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1, 2] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2} @ r, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }

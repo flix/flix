@@ -1231,7 +1231,7 @@ namespace TestNec {
     @test
     def toArray02(): Bool = region r {
         let a = Nec.toArray(r, necOf2(1, 2));
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
