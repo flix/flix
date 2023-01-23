@@ -217,18 +217,6 @@ pub class Foldable[t : Type -> Type] {
     }
 
     ///
-    /// Returns an iterator over `t`.
-    ///
-    pub def iterator(rc: Region[r], t: t[a]): Iterator[a, r, r] \ Write(r) =
-        Foldable.foldRight((x, iter) -> Iterator.cons(x, iter), Iterator.empty(rc), t)
-
-    ///
-    /// Returns an iterator over `t` zipped with the indices of the elements.
-    ///
-    pub def enumerator(r: Region[r], t: t[a]): Iterator[(Int32, a), r, r] \ Write(r) =
-        Foldable.iterator(r, t) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `t` as a `MutDeque`.
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =

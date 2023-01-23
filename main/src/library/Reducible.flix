@@ -264,12 +264,6 @@ pub class Reducible[t: Type -> Type] {
         MutList.toArray(rc, v)
 
     ///
-    /// Returns an iterator over `t`.
-    ///
-    pub def iterator(rc: Region[r], t: t[a]): Iterator[a, r, r] \ Write(r) =
-        Reducible.toArray(rc, t) |> Array.iterator(rc)
-
-    ///
     /// Returns `t` as a list.
     ///
     pub def toList(t: t[a]): List[a] =

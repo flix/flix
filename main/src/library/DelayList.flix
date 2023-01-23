@@ -71,7 +71,6 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
     override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
@@ -118,6 +117,10 @@ instance SemiGroup[DelayList[a]] {
 
 instance Monoid[DelayList[a]] {
     pub def empty(): DelayList[a] = DelayList.ENil
+}
+
+instance Iterable[DelayList] {
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
 }
 
 namespace DelayList {

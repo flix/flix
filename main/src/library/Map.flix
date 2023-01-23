@@ -52,7 +52,6 @@ instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
-    override pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -102,6 +101,10 @@ instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
 instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
     pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+}
+
+instance Iterable[Map[k]] {
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
 namespace Map {

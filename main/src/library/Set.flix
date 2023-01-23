@@ -65,7 +65,6 @@ instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
-    override pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
 instance UnorderedFoldable[Set] {

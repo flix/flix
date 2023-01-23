@@ -74,7 +74,6 @@ instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
-    override pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
 }
 
 instance UnorderedFoldable[Nel] {
@@ -106,12 +105,15 @@ instance Reducible[Nel] {
     override pub def dropWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.dropWhile(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nel[a]): List[a] \ ef = Nel.takeWhile(f, l)
     override pub def toArray(rc: Region[r], l: Nel[a]): Array[a, r] \ Write(r) = Nel.toArray(rc, l)
-    override pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
     override pub def toList(l: Nel[a]): List[a] = Nel.toList(l)
 }
 
 instance SemiGroup[Nel[a]] {
     pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
+}
+
+instance Iterable[Nel] {
+    pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
 }
 
 namespace Nel {

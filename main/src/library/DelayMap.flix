@@ -40,8 +40,12 @@ instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
-    override pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ Write(r) =
-        DelayMap.iterator(rc, m) |> Iterator.map(match (_, v) -> v)
+
+}
+
+instance Iterable[DelayMap[k]] {
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ Write(r) =
+        DelayMap.iterator(rc, m) |> Iterator.map(snd)
 }
 
 namespace DelayMap {

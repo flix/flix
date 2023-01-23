@@ -88,7 +88,6 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
 instance UnorderedFoldable[List] {
