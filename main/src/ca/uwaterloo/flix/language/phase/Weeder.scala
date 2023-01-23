@@ -748,7 +748,7 @@ object Weeder {
 
           case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expression.ScopeExit(e1, e2, loc).toSuccess
 
-          case _ => Validation.SoftFailure(WeededAst.Expression.Wild(loc), LazyList(IllegalIntrinsic(loc)))
+          case _ => WeededAst.Expression.Error(IllegalIntrinsic(loc)).toSoftFailure
         }
       }
 
