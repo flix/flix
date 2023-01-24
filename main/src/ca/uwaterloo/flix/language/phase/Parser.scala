@@ -749,7 +749,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FArray | FList |
+        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | HolyName | QName | Hole
@@ -1135,7 +1135,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "[" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.ArrayLit
+      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
     }
 
     def FAppend: Rule1[ParsedAst.Expression] = rule {
@@ -1144,10 +1144,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FCons: Rule1[ParsedAst.Expression] = rule {
       RecordSelect ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
-    }
-
-    def FArray: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("Array") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ "@" ~ WS ~ Expression ~> ParsedAst.Expression.FArray
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {

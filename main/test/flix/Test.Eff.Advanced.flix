@@ -49,7 +49,7 @@ namespace Test/Eff/Advanced {
     def pure(): Unit = ()
 
     /// An impure function from Unit -> Unit.
-    def impure(): Unit \ IO = discard [1, 2, 3]; ()
+    def impure(): Unit \ IO = discard Array#{1, 2, 3} @ Static; ()
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()

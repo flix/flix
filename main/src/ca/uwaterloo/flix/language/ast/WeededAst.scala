@@ -129,7 +129,7 @@ object WeededAst {
 
     case class New(qname: Name.QName, exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLit(exps: List[WeededAst.Expression], exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayLit(exps: List[WeededAst.Expression], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayNew(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

@@ -784,7 +784,7 @@ namespace Chain {
     /// Returns the chain `c` as an array.
     ///
     pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
-        case None    => [] @ r
+        case None    => Array#{} @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
             forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
