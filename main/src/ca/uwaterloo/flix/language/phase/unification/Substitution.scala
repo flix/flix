@@ -112,6 +112,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   private def minimizeSetType(tpe: Type): Type = tpe.kind match {
     case Kind.CaseSet(enumSym) =>
+      // transform the type into a set formula, minimize, and then transform back
       // TODO RESTR-VARS: undo this universe hack
       val univ = List(
         new Symbol.RestrictableCaseSym(enumSym, "Cst", SourceLocation.Unknown),
@@ -122,9 +123,12 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
         new Symbol.RestrictableCaseSym(enumSym, "Xor", SourceLocation.Unknown)
       )
       val (env, univ2) = SetFormula.mkEnv(List(tpe), univ)
-      val something = SetFormula.fromCaseType(tpe, env, univ2)
-      SetFormula.toCaseType(SetFormula.minimize(something)(univ2), enumSym, env, SourceLocation.Unknown)
-    case _ => tpe
+      val setFormula = SetFormula.fromCaseType(tpe, env, univ2)
+      val minimizedSetFormula = SetFormula.minimize(setFormula)(univ2)
+      SetFormula.toCaseType(minimizedSetFormula, enumSym, env, SourceLocation.Unknown)
+    case _ =>
+      // ignore non-case-set kinds
+      tpe
   }
 
   private def isCaseSet(tpe: Type): Boolean = tpe.kind match {
