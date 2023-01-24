@@ -23,10 +23,6 @@ instance Newable[StringBuilder] {
     pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)
 }
 
-instance Scoped[StringBuilder] {
-    pub def regionOf(_: StringBuilder[r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace StringBuilder {
 
     ///
