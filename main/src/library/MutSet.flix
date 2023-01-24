@@ -23,10 +23,6 @@ instance Newable[MutSet[t]] {
     pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
 }
 
-instance Scoped[MutSet[t]] {
-    pub def regionOf(_: MutSet[t, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutSet {
 
     ///

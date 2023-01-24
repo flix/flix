@@ -35,10 +35,6 @@ instance Newable[MutDeque[a]] {
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
-instance Scoped[MutDeque[a]] {
-    pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutDeque {
 
     ///
