@@ -875,26 +875,6 @@ namespace TestReducible {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // iterator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def iterator01(): Bool = region r {
-        Reducible.iterator(r, Nel.Nel(1, Nil)) |> Iterator.toList == 1 :: Nil
-    }
-
-    @test
-    def iterator02(): Bool = region r {
-        Reducible.iterator(r, Nel.Nel(1, 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-    }
-
-    @test
-    def iterator03(): Bool = region r {
-        Reducible.iterator(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) |> Iterator.toList == 1 :: 1 :: 2 :: 3 :: Nil
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

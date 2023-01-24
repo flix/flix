@@ -71,7 +71,6 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) = DelayList.iterator(r, l)
     override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
@@ -118,6 +117,10 @@ instance SemiGroup[DelayList[a]] {
 
 instance Monoid[DelayList[a]] {
     pub def empty(): DelayList[a] = DelayList.ENil
+}
+
+instance Iterable[DelayList] {
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
 }
 
 namespace DelayList {
@@ -1201,24 +1204,21 @@ namespace DelayList {
     /// Does not force any elements of the list.
     ///
     @Experimental @Lazy
-    pub def iterator(r: Region[r], l: DelayList[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref l @ r;
-        let done = () -> match head(deref cursor) {
-            case None    => true
-            case Some(_) => false
-        };
+    pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
-            case None    => bug!("Empty iterator")
-            case Some(x) =>
+            case None    => None
+            case Some(x) => {
                 cursor := tail(deref cursor);
-                x
+                Some(x)
+            }
         };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

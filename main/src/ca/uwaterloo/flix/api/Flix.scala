@@ -163,7 +163,6 @@ class Flix {
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
-    "Scoped.flix" -> LocalResource.get("/src/library/Scoped.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
@@ -528,7 +527,7 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Return the result.
+    // Return the result (which could contain soft failures).
     result
   } catch {
     case ex: InternalCompilerException =>
@@ -581,8 +580,10 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] =
-    Validation.flatMapN(check())(codeGen)
+  def compile(): Validation[CompilationResult, CompilationMessage] = {
+    val result = check().toHardFailure
+    Validation.flatMapN(result)(codeGen)
+  }
 
   /**
     * Enters the phase with the given name.
