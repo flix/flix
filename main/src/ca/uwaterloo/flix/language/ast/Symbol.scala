@@ -420,7 +420,7 @@ object Symbol {
     /**
       * The universe of cases associated with this restrictable enum.
       */
-    lazy val universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
+    def universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
