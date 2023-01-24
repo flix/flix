@@ -53,7 +53,7 @@ object Weeder {
 
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
-  // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
+  // as, and, choose, choose*, forall, from, get, new, not, or, project, query, select, solve, try
 
 
   /**
@@ -1965,8 +1965,6 @@ object Weeder {
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
         case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
         case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
-        case "rem" => OperatorResult.BuiltIn(Name.mkQName("Rem.rem", sp1, sp2))
-        case "mod" => OperatorResult.BuiltIn(Name.mkQName("Mod.mod", sp1, sp2))
         case "**" => OperatorResult.BuiltIn(Name.mkQName("Exp.exp", sp1, sp2))
         case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
         case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))

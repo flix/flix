@@ -25,41 +25,21 @@ pub class Mod[a] {
 }
 
 instance Mod[Int8] {
-    pub def mod(x: Int8, n: Int8): Int8 =
-        if (n == 0i8)
-            0i8
-        else
-            $INT8_REM$($INT8_REM$(x, n) + n, n)
+    pub def mod(x: Int8, n: Int8): Int8 = Int8.mod(x, n)
 }
 
 instance Mod[Int16] {
-    pub def mod(x: Int16, n: Int16): Int16 =
-        if (n == 0i16)
-            0i16
-        else
-            $INT16_REM$($INT16_REM$(x, n) + n, n)
+    pub def mod(x: Int16, n: Int16): Int16 = Int16.mod(x, n)
 }
 
 instance Mod[Int32] {
-    pub def mod(x: Int32, n: Int32): Int32 =
-        if (n == 0i32)
-            0i32
-        else
-            $INT32_REM$($INT32_REM$(x, n) + n, n)
+    pub def mod(x: Int32, n: Int32): Int32 = Int32.mod(x, n)
 }
 
 instance Mod[Int64] {
-    pub def mod(x: Int64, n: Int64): Int64 =
-        if (n == 0i64)
-            0i64
-        else
-            $INT64_REM$($INT64_REM$(x, n) + n, n)
+    pub def mod(x: Int64, n: Int64): Int64 = Int64.mod(x, n)
 }
 
 instance Mod[BigInt] {
-    pub def mod(x: BigInt, n: BigInt): BigInt =
-        if (n == 0ii)
-            0ii
-        else
-            $BIGINT_REM$($BIGINT_REM$(x, n) + n, n)
+    pub def mod(x: BigInt, n: BigInt): BigInt = BigInt.mod(x, n)
 }

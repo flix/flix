@@ -26,7 +26,7 @@ namespace Thread {
         import java.lang.Long.intValue(): Int32 \ {};
         let Duration(nsTotal) = d;
         let ms = nsTotal / 1_000_000i64;
-        let ns: Int32 = intValue(valueOf(nsTotal mod 1_000_000i64));
+        let ns: Int32 = intValue(valueOf(nsTotal `Int64.mod` 1_000_000i64));
         jsleep(ms, ns)
 
 }

@@ -18,7 +18,7 @@ namespace TestMultiMap {
 
     use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 
-    def isEven(i: Int32): Bool = i rem 2 == 0
+    def isEven(i: Int32): Bool = i `Int32.rem` 2 == 0
 
     def isOdd(i: Int32): Bool = not isEven(i)
 

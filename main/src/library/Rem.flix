@@ -25,41 +25,21 @@ pub class Rem[a] {
 }
 
 instance Rem[Int8] {
-    pub def rem(x: Int8, n: Int8): Int8 =
-        if (n == 0i8)
-            0i8
-        else
-            $INT8_REM$(x, n)
+    pub def rem(x: Int8, n: Int8): Int8 = Int8.rem(x, n)
 }
 
 instance Rem[Int16] {
-    pub def rem(x: Int16, n: Int16): Int16 =
-        if (n == 0i16)
-            0i16
-        else
-            $INT16_REM$(x, n)
+    pub def rem(x: Int16, n: Int16): Int16 = Int16.rem(x, n)
 }
 
 instance Rem[Int32] {
-    pub def rem(x: Int32, n: Int32): Int32 =
-        if (n == 0i32)
-            0i32
-        else
-            $INT32_REM$(x, n)
+    pub def rem(x: Int32, n: Int32): Int32 = Int32.rem(x, n)
 }
 
 instance Rem[Int64] {
-    pub def rem(x: Int64, n: Int64): Int64 =
-        if (n == 0i64)
-            0i64
-        else
-            $INT64_REM$(x, n)
+    pub def rem(x: Int64, n: Int64): Int64 = Int64.rem(x, n)
 }
 
 instance Rem[BigInt] {
-    pub def rem(x: BigInt, n: BigInt): BigInt =
-        if (n == 0ii)
-            0ii
-        else
-            $BIGINT_REM$(x, n)
+    pub def rem(x: BigInt, n: BigInt): BigInt = BigInt.rem(x, n)
 }
