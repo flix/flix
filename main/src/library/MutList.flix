@@ -29,10 +29,6 @@ instance Newable[MutList[a]] {
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
 }
 
-instance Scoped[MutList[a]] {
-    pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutList {
 
     ///
