@@ -393,14 +393,14 @@ def appendLineWith04!(): Bool = region r {
 @test
 def appendLines01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!([] @ r, sb);
+    StringBuilder.appendLines!(Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 
 @test
 def appendLines02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A"} @ r, sb);
     let s1 = "A" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -408,7 +408,7 @@ def appendLines02!(): Bool = region r {
 @test
 def appendLines03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A", "B"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A", "B"} @ r, sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -416,7 +416,7 @@ def appendLines03!(): Bool = region r {
 @test
 def appendLines04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLines!(["A", "B", "C"] @ r, sb);
+    StringBuilder.appendLines!(Array#{"A", "B", "C"} @ r, sb);
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -463,14 +463,14 @@ def appendLinesWith04(): Bool = region r {
 @test
 def appendLinesWith01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, ([] @ r): Array[Int32, _], sb);
+    StringBuilder.appendLinesWith!(Int32.toString, (Array#{} @ r): Array[Int32, _], sb);
     StringBuilder.toString(sb) == ""
 }
 
 @test
 def appendLinesWith02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1} @ r, sb);
     let s1 = "1" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -478,7 +478,7 @@ def appendLinesWith02!(): Bool = region r {
 @test
 def appendLinesWith03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1, 2] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2} @ r, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -486,7 +486,7 @@ def appendLinesWith03!(): Bool = region r {
 @test
 def appendLinesWith04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.appendLinesWith!(Int32.toString, [1, 2, 3] @ r, sb);
+    StringBuilder.appendLinesWith!(Int32.toString, Array#{1, 2, 3} @ r, sb);
     let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
     StringBuilder.toString(sb) == s1
 }
@@ -498,42 +498,42 @@ def appendLinesWith04!(): Bool = region r {
 @test
 def intercalate01!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("", [] @ r, sb);
+    StringBuilder.intercalate!("", Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 
 @test
 def intercalate02!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", [] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{} @ r, sb);
     StringBuilder.toString(sb) == ""
 }
 
 @test
 def intercalate03!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("", ["abc", "def"] @ r, sb);
+    StringBuilder.intercalate!("", Array#{"abc", "def"} @ r, sb);
     StringBuilder.toString(sb) == "abcdef"
 }
 
 @test
 def intercalate04!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc"} @ r, sb);
     StringBuilder.toString(sb) == "abc"
 }
 
 @test
 def intercalate05!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc", "def"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc", "def"} @ r, sb);
     StringBuilder.toString(sb) == "abc::def"
 }
 
 @test
 def intercalate06!(): Bool = region r {
     let sb = new StringBuilder(r);
-    StringBuilder.intercalate!("::", ["abc", "def", "ghi"] @ r, sb);
+    StringBuilder.intercalate!("::", Array#{"abc", "def", "ghi"} @ r, sb);
     StringBuilder.toString(sb) == "abc::def::ghi"
 }
 

@@ -17,7 +17,7 @@ namespace Test/Eff/Polymorphism {
 
     @test
     def testEffPoly04(): Bool \ IO =
-        let f = flip(flip((x, y) -> {discard [1, 2, 3]; x and y}));
+        let f = flip(flip((x, y) -> {discard Array#{1, 2, 3} @ Static; x and y}));
         f(true, true)
 
     @test
@@ -115,7 +115,7 @@ namespace Test/Eff/Polymorphism {
     def testEffPoly22(): Bool -> (Bool -> Bool \ IO) \ IO =
         x -> {impure(); y -> {impure(); x and y}}
 
-    def impure(): Unit \ IO = discard [42]; ()
+    def impure(): Unit \ IO = discard Array#{42} @ Static; ()
 
     def flip(f: (a, b) -> c \ ef): (b, a) -> c \ ef = (x, y) -> f(y, x)
 

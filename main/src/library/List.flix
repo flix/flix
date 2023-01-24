@@ -1155,7 +1155,7 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
-        case None    => [] @ r
+        case None    => Array#{} @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
             forEach(match (i, b) -> a[i] = b, zipWithIndex(l));

@@ -250,17 +250,17 @@ namespace TestFoldable {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), [1])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), Array#{1} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
     }
 
 

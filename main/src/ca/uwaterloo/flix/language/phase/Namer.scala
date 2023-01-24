@@ -745,7 +745,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, ns0)), traverseOpt(exp)(visitExp(_, ns0))) {
+      mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
