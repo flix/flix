@@ -193,7 +193,7 @@ namespace Test/Exp/ForEachYield {
                     yield (x, q, z, y)
 
     @test
-    def testForEachYieldMix23(): Chain[List[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix22(): Chain[List[(Int32, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
@@ -203,7 +203,7 @@ namespace Test/Exp/ForEachYield {
                     yield (x, q, z, y)
 
     @test
-    def testForEachYieldMix24(): Chain[Set[(Int32, String, Bool, Int32)]] =
+    def testForEachYieldMix23(): Chain[Set[(Int32, String, Bool, Int32)]] =
         let a = List.toSet((1, 2) :: (3, 4) :: Nil);
         let b = Map#{"1" => true, "2" => true, "3" => true};
         let c = Set#{"5", "6", "7"};
