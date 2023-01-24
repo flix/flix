@@ -30,7 +30,7 @@ namespace System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        pub def readLines(r: Region[r]): Iterator[String, r] \ { Read(r), Write(r), IO } =
+        pub def readLines(r: Region[r]): Iterator[String, r, r] \ { Read(r), Write(r), IO } =
             import static get java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
             import new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
             import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
@@ -39,25 +39,19 @@ namespace System {
 
             let br = newBufferedReader(upcast newInputStream(getSystemIn())); // up-cast to superclass
             let nextLine = ref None @ r;
-            let done = () -> match deref nextLine {
-                case Some(line) =>
-                    Object.isNull(line)
-                case None =>
-                    let n = unsafe_cast brReadLine(br) as _ \ Read(r);
-                    nextLine := Some(n);
-                    Object.isNull(n)
-            };
             let next = () -> {
                 let l = match deref nextLine {
-                    case Some(line) => line
+                    case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
-                        unsafe_cast brReadLine(br) as _ \ Read(r)
+                        let n = unsafe_cast brReadLine(br) as _ \ Read(r);
+                        nextLine := Some(n);
+                        if (Object.isNull(n)) None else Some(n)
                 };
                 nextLine := None;
-                if (Object.isNull(l)) bug!("No more lines on StdIn")
-                else l
+                l
             };
-            Iterator.Iterator(done, next)
+            Iterator.iterate(r, next)
+        
     }
 
     ///
