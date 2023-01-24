@@ -6,9 +6,19 @@ namespace Test/Exp/ForEachYield {
             yield x
 
     @test
+    def testForEachYieldResult01(): Bool =
+        (foreach (x <- 1 :: 2 :: Nil)
+            yield x) == 1 :: 2 :: Nil
+
+    @test
     def testForEachYield02(): List[(Int32, Int32)] =
         foreach (x <- 1 :: 2 :: Nil; y <- 1 :: 2 :: 3 :: Nil)
             yield (x, y)
+
+    @test
+    def testForEachYieldResult02(): Bool =
+        (foreach (x <- 1 :: 2 :: Nil; y <- 1 :: 2 :: 3 :: Nil)
+            yield (x, y)) == (1, 1) :: (1, 2) :: (1, 3) :: (2, 1) :: (2, 2) :: (2, 3) :: Nil
 
     @test
     def testForEachYield03(): List[(Int32, Int32, String)] =
@@ -16,9 +26,19 @@ namespace Test/Exp/ForEachYield {
             yield (x, y, z)
 
     @test
+    def testForEachYieldResult03(): Bool =
+        (foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil)
+            yield (x, y, z)) == (1, 2, "1") :: (1, 2, "2") :: (1, 2, "3") :: (3, 4, "1") :: (3, 4, "2") :: (3, 4, "3") :: Nil
+
+    @test
     def testForEachYield04(): List[(Int32, String)] =
         foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil)
             yield (x, y)
+
+    @test
+    def testForEachYieldResult04(): Bool =
+        (foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil)
+            yield (x, y)) == (1, "1") :: (1, "2") :: (1, "3") :: (3, "1") :: (3, "2") :: (3, "3") :: Nil
 
     @test
     def testForEachYield05(): List[(Int32, String)] =
@@ -26,14 +46,79 @@ namespace Test/Exp/ForEachYield {
             yield (x, y)
 
     @test
+    def testForEachYieldResult05(): Bool =
+        (foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; if x > 2; y <- "1" :: "2" :: "3" :: Nil)
+            yield (x, y)) == (3, "1") :: (3, "2") :: (3, "3") :: Nil
+
+    @test
     def testForEachYield06(): List[(Int32, String)] =
         foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil; if x > 2)
             yield (x, y)
 
     @test
+    def testForEachYieldResult06(): Bool =
+        (foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil; if x > 2)
+            yield (x, y)) == (3, "1") :: (3, "2") :: (3, "3") :: Nil
+
+    @test
     def testForEachYield07(): List[(Int32, String)] =
         foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil; if y != "1")
             yield (x, y)
+
+    @test
+    def testForEachYieldResult07(): Bool =
+        (foreach ((x, _) <- (1, 2) :: (3, 4) :: Nil; y <- "1" :: "2" :: "3" :: Nil; if y != "1")
+            yield (x, y)) == (1, "2") :: (1, "3") :: (3, "2") :: (3, "3") :: Nil
+
+    @test
+    def testForEachYield08(): List[(Int32, String, Int32)] =
+        foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (3, 4))
+            yield (x, z, y)
+
+    @test
+    def testForEachYieldResult08(): Bool =
+        (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (3, 4))
+            yield (x, z, y)) == (-1, "1", 0) :: (-1, "2", 0) :: (-1, "3", 0) :: (1, "1", 2) :: (1, "2", 2) :: (1, "3", 2) :: Nil
+
+    @test
+    def testForEachYield09(): List[(Int32, String, Int32)] =
+        foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (3, 3))
+            yield (x, z, y)
+
+    @test
+    def testForEachYieldResult09(): Bool =
+        (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (3, 3))
+            yield (x, z, y)) == (-1, "1", 0) :: (-1, "2", 0) :: (-1, "3", 0) :: (1, "1", 2) :: (1, "2", 2) :: (1, "3", 2) :: (3, "1", 4) :: (3, "2", 4) :: (3, "3", 4) :: Nil
+
+    @test
+    def testForEachYield10(): List[(Int32, String, Int32)] =
+        foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; if y < 2; z <- "1" :: "2" :: "3" :: Nil)
+            yield (x, z, y)
+
+    @test
+    def testForEachYieldResult10(): Bool =
+        (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; if y < 2; z <- "1" :: "2" :: "3" :: Nil)
+            yield (x, z, y)) == (-1, "1", 0) :: (-1, "2", 0) :: (-1, "3", 0) :: Nil
+
+    @test
+    def testForEachYield11(): List[(Int32, String, Int32)] =
+        foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; if y < 0; z <- "1" :: "2" :: "3" :: Nil)
+            yield (x, z, y)
+
+    @test
+    def testForEachYieldResult11(): Bool =
+        (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; if y < 0; z <- "1" :: "2" :: "3" :: Nil)
+            yield (x, z, y)) == Nil: List[(Int32, String, Int32)]
+
+    @test
+    def testForEachYield12(): List[(Int32, String, Int32)] =
+        foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (1, 2))
+            yield (x, z, y)
+
+    @test
+    def testForEachYieldResult12(): Bool =
+        (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; z <- "1" :: "2" :: "3" :: Nil; if (x, y) != (1, 2))
+            yield (x, z, y)) == (-1, "1", 0) :: (-1, "2", 0) :: (-1, "3", 0) :: (3, "1", 4) :: (3, "2", 4) :: (3, "3", 4) :: Nil
 
     @test
     def testForEachYieldMix01(): Set[(Int32, Int32, String)] =
