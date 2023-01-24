@@ -83,8 +83,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
-    "Mod.flix" -> LocalResource.get("/src/library/Mod.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
@@ -104,6 +102,12 @@ class Flix {
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
     "Sendable.flix" -> LocalResource.get("/src/library/Sendable.flix"),
     "Order.flix" -> LocalResource.get("/src/library/Order.flix"),
+
+    // Numeric types
+    "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
+    "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
+    "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
+    "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
 
     // Lattices
     "PartialOrder.flix" -> LocalResource.get("/src/library/PartialOrder.flix"),
@@ -147,10 +151,6 @@ class Flix {
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
-    "Int8.flix" -> LocalResource.get("/src/library/Int8.flix"),
-    "Int16.flix" -> LocalResource.get("/src/library/Int16.flix"),
-    "Int32.flix" -> LocalResource.get("/src/library/Int32.flix"),
-    "Int64.flix" -> LocalResource.get("/src/library/Int64.flix"),
     "Iterable.flix" -> LocalResource.get("/src/library/Iterable.flix"),
     "Iterator.flix" -> LocalResource.get("/src/library/Iterator.flix"),
     "List.flix" -> LocalResource.get("/src/library/List.flix"),

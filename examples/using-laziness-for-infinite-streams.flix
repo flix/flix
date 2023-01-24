@@ -15,7 +15,7 @@ def sieve(ps: DelayList[Int32]): DelayList[Int32] = match DelayList.head(ps) {
     case Some(p) =>
         DelayList.LCons(p,
             lazy sieve(
-                DelayList.filter(x -> x rem p != 0, DelayList.tail(ps))
+                DelayList.filter(x -> x `Int32.rem` p != 0, DelayList.tail(ps))
                 )
             )
     case None => DelayList.empty()
