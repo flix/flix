@@ -24,7 +24,7 @@ namespace TestList {
 /////////////////////////////////////////////////////////////////////////////
 @test
 def collect01(): Bool = region r {
-    Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Nil
+    Collectable.collect(Iterator.empty(r): Iterator[Int32, r, r]) == Nil
 }
 
 @test

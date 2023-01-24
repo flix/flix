@@ -432,7 +432,9 @@ object Regions {
       }
 
     case Expression.Error(_, _, _, _) =>
-      ().toSoftFailure
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure((), LazyList.empty)
 
   }
 
