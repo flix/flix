@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification.{expectTypeM, li
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 object RestrictableChooseInference {
@@ -117,15 +118,7 @@ object RestrictableChooseInference {
     * Converts the list of restrictable case symbols to a closed set type.
     */
   private def toType(syms: Set[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
-    syms.map {
-      case sym => Type.Cst(TypeConstructor.CaseConstant(sym), loc.asSynthetic)
-    }.reduceLeftOption[Type] {
-      case (acc, tpe) => Type.mkApply(
-        Type.Cst(TypeConstructor.CaseUnion(enumSym), loc.asSynthetic),
-        List(acc, tpe),
-        loc.asSynthetic
-      )
-    }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc))
+    Type.Cst(TypeConstructor.CaseSet(syms.to(SortedSet), enumSym), loc)
   }
 
   /**
@@ -135,7 +128,7 @@ object RestrictableChooseInference {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
     for {
-      _ <- unifyTypeM(diff, Type.Cst(TypeConstructor.CaseEmpty(sym), loc), loc)(root.univ, flix)
+      _ <- unifyTypeM(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)(root.univ, flix)
     } yield ()
   }
 
@@ -195,7 +188,7 @@ object RestrictableChooseInference {
         val (enumTypeOut, indexOutVar, targsOut) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
         val (bodyTypes, bodyIndexVars, bodyTargs) = rules0.map(_ => instantiatedEnumType(enumSym, enum, loc.asSynthetic)).unzip3
         val patternTagTypes = rules0.map(_.pat match {
-          case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseConstant(sym.sym), loc.asSynthetic)
+          case RestrictableChoicePattern.Tag(sym, _, _, loc) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym.sym), enumSym), loc.asSynthetic)
         })
 
         val domSet = dom(rules0)
@@ -272,13 +265,13 @@ object RestrictableChooseInference {
         // φ ∪ {l_i}
         Type.mkCaseUnion(
           Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-          Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic),
+          Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic),
           enumSym,
           loc.asSynthetic
         )
       } else {
         // {l_i}
-        Type.Cst(TypeConstructor.CaseConstant(symUse.sym), loc.asSynthetic)
+        Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
       }
 
       //
@@ -309,7 +302,7 @@ object RestrictableChooseInference {
       val enumSym = symUse.sym.enumSym
       val enum = root.restrictableEnums(enumSym)
 
-      val caseType = Type.Cst(TypeConstructor.CaseConstant(symUse.sym), symUse.loc)
+      val caseType = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), symUse.loc)
 
       val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
 

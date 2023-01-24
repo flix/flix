@@ -1264,6 +1264,22 @@ namespace TestNec {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        match Nec.range(-100, 100) {
+            case Some(nec) => nec |> Nec.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+            case None      => unreachable!()
+        }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // The following tests for sort functions correspond to those in TestList  //

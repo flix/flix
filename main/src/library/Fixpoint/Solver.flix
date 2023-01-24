@@ -736,7 +736,7 @@ namespace Fixpoint {
                                 Fixpoint/Tuple.valueAt(tuple, i)
                             else
                                 lat
-                        });
+                        }) |> Iterator.toList;
                         MutList.push!(f(vs), pFacts)
                     }, rel)
             }, db);
