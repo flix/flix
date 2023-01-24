@@ -902,7 +902,7 @@ object Weeder {
       val baseLoc = mkSL(sp1, sp2).asSynthetic
 
       // Declare functions
-      val fqnNew = "Iterator.new"
+      val fqnEmpty = "Iterator.empty"
       val fqnSingleton = "Iterator.singleton"
       val fqnFlatMap = "Iterator.flatMap"
       val fqnIterator = "Iterable.iterator"
@@ -942,7 +942,7 @@ object Weeder {
               val loc = mkSL(sp11, sp12).asSynthetic
 
               // 1. Create empty iterator
-              val empty = mkApplyFqn(fqnNew, List(regionVar), loc)
+              val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc)
 
               // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
               WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
