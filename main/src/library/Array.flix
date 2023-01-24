@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-instance Scoped[Array[a]] {
-    pub def regionOf(_: Array[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace Array {
 
     ///
