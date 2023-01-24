@@ -416,7 +416,11 @@ object Symbol {
     */
   final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
 
-    val universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
+    // NB: it is critical that this be either a lazy val or a def, since otherwise `this` is not fully instantiated
+    /**
+      * The universe of cases associated with this restrictable enum.
+      */
+    lazy val universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.

@@ -168,7 +168,7 @@ object SetFormula {
   /**
     * Returns a minimized type based on SetFormula minimization.
     */
-  def minimizeType(tpe: Type, sym: Symbol.RestrictableEnumSym, univ: List[Symbol.RestrictableCaseSym], loc: SourceLocation): Type = {
+  def minimizeType(tpe: Type, sym: Symbol.RestrictableEnumSym, univ: SortedSet[Symbol.RestrictableCaseSym], loc: SourceLocation): Type = {
     val (m, setFormulaUniv) = mkEnv(List(tpe), univ)
     val setFormula = fromCaseType(tpe, m, setFormulaUniv)
     val minimizedSetFormula = minimize(setFormula)(setFormulaUniv)
