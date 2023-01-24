@@ -450,11 +450,11 @@ object Regions {
     */
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
-    val minned = TypeMinimization.minimizeType(tpe)
-    val regs = regionVarsOf(minned)
+    // We should minimize `tpe`, but we do not because of the performance cost.
+    val regs = regionVarsOf(tpe)
     for (reg <- regs -- scope) {
-      if (essentialTo(reg, minned)) {
-        return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
+      if (essentialTo(reg, tpe)) {
+        return TypeError.RegionVarEscapes(reg, tpe, loc).toFailure
       }
     }
     ().toSuccess
