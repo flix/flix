@@ -22,9 +22,10 @@ import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
-import scala.math.Ordered.orderingToOrdered
+import scala.collection.immutable.SortedSet
 
 sealed trait Symbol
+
 object Symbol {
 
   /**
@@ -117,8 +118,8 @@ object Symbol {
   /**
     * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkRestrictableEnumSym(ns: NName, ident: Ident): RestrictableEnumSym = {
-    new RestrictableEnumSym(ns.parts, ident.name, ident.loc)
+  def mkRestrictableEnumSym(ns: NName, ident: Ident, cases: List[Ident]): RestrictableEnumSym = {
+    new RestrictableEnumSym(ns.parts, ident.name, cases, ident.loc)
   }
 
   /**
@@ -413,7 +414,10 @@ object Symbol {
   /**
     * Restrictable Enum Symbol.
     */
-  final class RestrictableEnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
+
+    val universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
