@@ -168,7 +168,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
       // minimize case set formulas if present
-      val tpe = t.kind match {
+      val tpe = x.kind match {
         case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, univ, SourceLocation.Unknown)
         case _ => this.apply(t)
       }
