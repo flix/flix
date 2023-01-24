@@ -104,7 +104,7 @@ namespace File {
         }
 
     ///
-    /// Returns the BacisFileAttributes of the file `f`.
+    /// Returns the BasicFileAttributes of the file `f`.
     ///
     def getAttributes(f: String): Result[String, ##java.nio.file.attribute.BasicFileAttributes] \ IO = region r {
         try {
@@ -117,7 +117,7 @@ namespace File {
             let javaPath = toPath(javaFile);
             let classOfAttributes = forName("java.nio.file.attribute.BasicFileAttributes");
 
-            Ok(readAttributes(javaPath, classOfAttributes, [] @ r))
+            Ok(readAttributes(javaPath, classOfAttributes, Array#{} @ r))
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -209,7 +209,7 @@ namespace File {
             import static java.nio.file.Files.isRegularFile(##java.nio.file.Path, Array[##java.nio.file.LinkOption, r]): Bool \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let isRegular = isRegularFile(javaPath, [] @ r);
+            let isRegular = isRegularFile(javaPath, Array#{} @ r);
             Ok(isRegular)
         } catch {
             case ex: ##java.io.IOException =>
@@ -540,7 +540,7 @@ namespace File {
                     Err(getMessage(ex))
             }
         } else if (opts.count == 0) {
-            Ok([] @ r)
+            Ok(Array#{} @ r)
         } else {
             Err("The argument `count` has to be a non negative number when calling `File.readBytesWith`.")
         }
@@ -552,7 +552,7 @@ namespace File {
     def readBytesWithHelper(r: Region[r], bytes: Array[Int8, r], numberRead: Int32, count: Int32): Array[Int8, r] \ { Read(r), Write(r) } =
         let nothingRead = (numberRead == -1);
         if (nothingRead) {
-            [] @ r
+            Array#{} @ r
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
@@ -967,7 +967,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
-            let javaStream = walk(javaPath, [] @ r);
+            let javaStream = walk(javaPath, Array#{} @ r);
             let javaIter = iterator(upcast javaStream);
 
             let iter = fromJavaIter(r, javaIter);
@@ -1012,7 +1012,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard move(srcPath, dstPath, [] @ r);
+            discard move(srcPath, dstPath, Array#{} @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
@@ -1074,7 +1074,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, [upcast getOverwrite()] @ r);
+            discard move(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
 
             Ok()
         } catch {
@@ -1103,7 +1103,7 @@ namespace File {
             let srcPath = toPath(srcFile);
             let dstFile = newFile(dst);
             let dstPath = toPath(dstFile);
-            discard copy(srcPath, dstPath, [] @ r);
+            discard copy(srcPath, dstPath, Array#{} @ r);
             Ok()
         } catch {
             case ex: ##java.io.IOException =>
@@ -1165,7 +1165,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, [upcast getOverwrite()] @ r);
+            discard copy(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
 
             Ok()
         } catch {

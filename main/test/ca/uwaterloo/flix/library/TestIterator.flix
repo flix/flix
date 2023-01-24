@@ -303,17 +303,17 @@ namespace TestIterator {
 
     @test
     def toArray01(): Bool = region rc {
-        Nil: List[Int32] |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` [] @ rc
+        Nil: List[Int32] |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` Array#{} @ rc
     }
 
     @test
     def toArray02(): Bool = region rc {
-        Iterator.range(rc, -10, -5) |> Iterator.toArray(rc) `Array.sameElements` [-10, -9, -8, -7, -6] @ rc
+        Iterator.range(rc, -10, -5) |> Iterator.toArray(rc) `Array.sameElements` Array#{-10, -9, -8, -7, -6} @ rc
     }
 
     @test
     def toArray03(): Bool = region rc {
-        Iterator.repeat(rc, 3, 1) |> Iterator.toArray(rc) `Array.sameElements` [1, 1, 1] @ rc
+        Iterator.repeat(rc, 3, 1) |> Iterator.toArray(rc) `Array.sameElements` Array#{1, 1, 1} @ rc
     }
 
     @test

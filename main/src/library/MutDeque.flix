@@ -391,7 +391,7 @@ namespace MutDeque {
         let i = deref f;
         let j = deref b;
         if (i == j)
-            [] @ r1
+            Array#{} @ r1
         else if (i  < j)
             Array.copyOfRange(r1, i, j, deref a)
         else
