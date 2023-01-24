@@ -57,46 +57,53 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(tpe0: Type): Type = {
     // NB: The order of cases has been determined by code coverage analysis.
-    // insideCaseSet means that we are inside a case set formula and should not minimize yet
-    def visit(insideCaseSet: Boolean, t: Type): Type =
-      t match {
-        case x: Type.Var => m.getOrElse(x.sym, x)
-        case Type.Cst(tc, _) => t
-        case Type.Apply(t1, t2, loc) =>
-          // only trigger minimization once for each formula
-          val y =
-            if (!insideCaseSet && isCaseSet(t2)) minimizeSetType(visit(insideCaseSet = true, t2))
-            else visit(insideCaseSet, t2)
-          val z =
-            if (!insideCaseSet && isCaseSet(t1)) minimizeSetType(visit(insideCaseSet = true, t1))
-            else visit(insideCaseSet, t1)
-          z match {
-            // Simplify boolean equations.
-            case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
-
-            // Simplify set expressions
-            case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
-            case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
-            case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
-
-            case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
-
-            // Else just apply
-            case x => Type.Apply(x, y, loc)
-          }
-        case Type.Alias(sym, args0, tpe0, loc) =>
-          val args = args0.map(visit(insideCaseSet, _))
-          val tpe = visit(insideCaseSet, tpe0)
-          Type.Alias(sym, args, tpe, loc)
-      }
-
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
     if (isEmpty) tpe0
-    else minimizeSetType(visit(isCaseSet(tpe0), tpe0))
+    else minimizeSetType(applySubstAndMinimize(isCaseSet(tpe0), tpe0))
+  }
+
+  /**
+    * Helper function for `apply`.
+    * `t` is not minimized directly, only recursively, this must be done by the
+    * caller (e.g. `minimizeSetType(applySubstAndMinimize(isCaseSet(tpe0), tpe0))`).
+    * `insideCaseSet`` means that we are inside a case set formula and should not minimize.
+    */
+  private def applySubstAndMinimize(insideCaseSet: Boolean, t: Type): Type = {
+    t match {
+      case x: Type.Var => m.getOrElse(x.sym, x)
+      case Type.Cst(tc, _) => t
+      case Type.Apply(t1, t2, loc) =>
+        // only trigger minimization once for each formula
+        val y =
+          if (!insideCaseSet && isCaseSet(t2)) minimizeSetType(applySubstAndMinimize(insideCaseSet = true, t2))
+          else applySubstAndMinimize(insideCaseSet, t2)
+        val z =
+          if (!insideCaseSet && isCaseSet(t1)) minimizeSetType(applySubstAndMinimize(insideCaseSet = true, t1))
+          else applySubstAndMinimize(insideCaseSet, t1)
+        z match {
+          // Simplify boolean equations.
+          case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
+
+          // Simplify set expressions
+          case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
+          case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
+          case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
+
+          case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
+
+          // Else just apply
+          case x => Type.Apply(x, y, loc)
+        }
+      case Type.Alias(sym, args0, tpe0, loc) =>
+        val args = args0.map(applySubstAndMinimize(insideCaseSet, _))
+        val tpe = applySubstAndMinimize(insideCaseSet, tpe0)
+        Type.Alias(sym, args, tpe, loc)
+    }
+
   }
 
   /**
