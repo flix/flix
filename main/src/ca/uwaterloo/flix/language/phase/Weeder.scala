@@ -748,7 +748,9 @@ object Weeder {
 
           case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expression.ScopeExit(e1, e2, loc).toSuccess
 
-          case _ => WeededAst.Expression.Error(IllegalIntrinsic(loc)).toSoftFailure
+          case _ =>
+            val err = WeederError.IllegalIntrinsic(loc)
+            WeededAst.Expression.Error(err).toSoftFailure(err)
         }
       }
 

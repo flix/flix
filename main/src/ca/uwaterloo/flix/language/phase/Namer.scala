@@ -1037,7 +1037,9 @@ object Namer {
       }
 
     case WeededAst.Expression.Error(m) =>
-      NamedAst.Expression.Error(m).toSoftFailure
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(NamedAst.Expression.Error(m), LazyList.empty)
 
   }
 

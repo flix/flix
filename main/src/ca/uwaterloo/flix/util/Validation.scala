@@ -522,7 +522,7 @@ object Validation {
     /**
       * Returns a [[Validation.SoftFailure]] containing [[t]] with no errors.
       */
-    def toSoftFailure[U >: T, E]: Validation[U, E] = Validation.SoftFailure(t, LazyList.empty[E])
+    def toSoftFailure[U >: T, E](e: E): Validation[U, E] = Validation.SoftFailure(t, LazyList(e))
   }
 
   /**

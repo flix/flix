@@ -1566,13 +1566,21 @@ namespace TestMutList {
     @test
     def iterator01(): Bool = region r {
         let l = new MutList(r): MutList[Int32, r];
-        MutList.iterator(r, l) |> invokeIsEmpty(100)
+        let iter = MutList.iterator(r, l);
+        match Iterator.next(iter) { 
+            case None => true
+            case _    => false
+        }
     }
 
     @test
     def iterator02(): Bool = region r {
         let l = List.toMutList(r, 1 :: 2 :: 3 :: Nil);
-        not (MutList.iterator(r, l) |> invokeIsEmpty(100))
+        let iter = MutList.iterator(r, l);
+        match Iterator.next(iter) { 
+            case Some(_) => true
+            case _       => false
+        }
     }
 
     @test
@@ -1581,7 +1589,11 @@ namespace TestMutList {
         discard MutList.pop!(l);
         discard MutList.pop!(l);
         discard MutList.pop!(l);
-        MutList.iterator(r, l) |> invokeIsEmpty(100)
+        let iter = MutList.iterator(r, l);
+        match Iterator.next(iter) { 
+            case None => true
+            case _    => false
+        }
     }
 
     @test
@@ -1596,21 +1608,6 @@ namespace TestMutList {
         MutList.iterator(r, l) |> Iterator.toList == List.range(0, 100) and
         MutList.toList(l) == List.range(0, 100)
     }
-
-    ///
-    /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
-    ///
-    /// Assumes `n > 0`.
-    ///
-    def invokeIsEmpty(n: Int32, iter: Iterator[a, r]): Bool \ Read(r) =
-        def loop(i, acc) = {
-            if (i >= n)
-                acc
-            else
-                loop(i + 1, Iterator.isEmpty(iter) and acc)
-        };
-        loop(1, Iterator.isEmpty(iter))
-
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

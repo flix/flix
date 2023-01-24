@@ -423,16 +423,16 @@ namespace Result {
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
     ///
-    pub def iterator(reg: Region[reg], r: Result[e, t]): Iterator[t, reg] \ Write(reg) = match r {
-        case Err(_) => new Iterator(reg)
-        case Ok(x)  => Iterator.singleton(reg, x)
+    pub def iterator(rc: Region[r], r: Result[e, t]): Iterator[t, r, r] \ Write(r) = match r {
+        case Err(_) => Iterator.empty(rc)
+        case Ok(x)  => Iterator.singleton(rc, x)
     }
 
     ///
     /// Returns an iterator over `r` zipped with the indices of the elements.
     ///
-    pub def enumerator(reg: Region[reg], r: Result[e, t]): Iterator[(Int32, t), reg] \ Write(reg) =
-        iterator(reg, r) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], r: Result[e, t]): Iterator[(Int32, t), r, r] \ Write(r) =
+        iterator(rc, r) |> Iterator.zipWithIndex
 
     ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.

@@ -494,8 +494,10 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Error(_, _, _, _) =>
-      exp0.toSoftFailure
+    case Expression.Error(m, tpe, pur, eff) =>
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(Expression.Error(m, tpe, pur, eff), LazyList.empty)
 
   }
 
