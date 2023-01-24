@@ -30,10 +30,20 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   private val loc: SourceLocation = SourceLocation.Unknown
 
-  private val E = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "E", SourcePosition.Unknown))
-  private val C1 = Symbol.mkRestrictableCaseSym(E, Name.Ident(SourcePosition.Unknown, "C1", SourcePosition.Unknown))
-  private val C2 = Symbol.mkRestrictableCaseSym(E, Name.Ident(SourcePosition.Unknown, "C2", SourcePosition.Unknown))
-  private val C3 = Symbol.mkRestrictableCaseSym(E, Name.Ident(SourcePosition.Unknown, "C3", SourcePosition.Unknown))
+  private def mkUniverse(enum: String, cases: List[String]): (Symbol.RestrictableEnumSym, List[Symbol.RestrictableCaseSym]) = {
+    val caseIdents = cases.map(Name.Ident(SourcePosition.Unknown, _, SourcePosition.Unknown))
+    val enumSym = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "E", SourcePosition.Unknown), caseIdents)
+    val caseSyms = caseIdents.map(Symbol.mkRestrictableCaseSym(enumSym, _))
+    (enumSym, caseSyms)
+  }
+
+  val univE = mkUniverse("E", List("C1", "C2", "C3"))
+
+  val E = univE._1
+  val C1 = univE._2(0)
+  val C2 = univE.
+
+  private val (E, CaseSyms) = mkUniverse("E", List("C1", "C2", "C3"))
 
   private val Expr = Symbol.mkRestrictableEnumSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "Expr", SourcePosition.Unknown))
   private val And = Symbol.mkRestrictableCaseSym(Expr, Name.Ident(SourcePosition.Unknown, "And", SourcePosition.Unknown))

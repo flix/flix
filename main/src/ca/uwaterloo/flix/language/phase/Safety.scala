@@ -437,7 +437,7 @@ object Safety {
       val s2 = tpe2.arrowEffectType
       val s3 = Type.freshVar(Kind.Effect, loc)
       val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)(root.univ, flix)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes
