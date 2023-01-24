@@ -231,12 +231,13 @@ object SetFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
       case Some(x) => Var(x)
     }
-    case Type.Cst(TypeConstructor.CaseConstant(sym), _) => m.getForward(VarOrCase.Case(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound case: '$sym'.", sym.loc)
-      case Some(x) => Cst(Set(x))
-    }
-    case Type.Cst(TypeConstructor.CaseAll(_), _) => SetFormula.Cst(univ)
-    case Type.Cst(TypeConstructor.CaseEmpty(_), _) => Empty
+    case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
+      val cases = syms.toSet
+        .map(VarOrCase.Case) // convert to case
+        .map(m.getForward) // lookup in the map
+        .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
+
+      Cst(cases)
     case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) =>
       Not(fromCaseType(tpe1, m, univ))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) =>
@@ -251,23 +252,21 @@ object SetFormula {
     *
     * The map `m` must bind each free variable in `f` to a type variable.
     */
-  def toCaseType(f: SetFormula, sym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
-    case Cst(s) => s.
-      map(i => m.getBackward(i) match {
-        case Some(VarOrCase.Case(caseSym)) => caseSym
-        case Some(VarOrCase.Var(_)) => throw InternalCompilerException(s"Unexpected type var in case set: '$i'.", loc)
-        case None => throw InternalCompilerException(s"Unexpected unbound case set constant: '$i'.", loc)
-      }).
-      map(caseSym => Type.Cst(TypeConstructor.CaseConstant(caseSym), loc): Type).
-      reduceOption(Type.mkCaseUnion(_, _, sym, loc)).getOrElse(Type.Cst(TypeConstructor.CaseEmpty(sym), loc))
+  def toCaseType(f: SetFormula, enumSym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
+    case Cst(s) =>
+      val syms = s
+        .map(m.getBackward) // lookup in the map
+        .map(_.getOrElse(throw InternalCompilerException("Unexpected unbound case set constant", loc)))
+        .map(VarOrCase.getCase)
+      Type.Cst(TypeConstructor.CaseSet(syms.to(SortedSet), enumSym), loc)
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrCase.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseConstant(sym), loc)
+      case Some(VarOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym), enumSym), loc)
     }
-    case Not(f1) => Type.mkCaseComplement(toCaseType(f1, sym, m, loc), sym, loc)
-    case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
-    case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, sym, m, loc), toCaseType(t2, sym, m, loc), sym, loc)
+    case Not(f1) => Type.mkCaseComplement(toCaseType(f1, enumSym, m, loc), enumSym, loc)
+    case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
+    case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
   }
 
   /**
@@ -285,6 +284,14 @@ object SetFormula {
       * A Case constant.
       */
     case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrCase
+
+    /**
+      * Extracts the sym from the case.
+      */
+    def getCase(x: VarOrCase): Symbol.RestrictableCaseSym = x match {
+      case Var(sym) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
+      case Case(sym) => sym
+    }
   }
 
 }

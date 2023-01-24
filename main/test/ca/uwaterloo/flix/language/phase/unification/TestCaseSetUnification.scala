@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocat
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
 
+import scala.collection.immutable.SortedSet
+
 class TestCaseSetUnification extends FunSuite with TestUtils {
 
   private implicit val flix: Flix = new Flix()
@@ -45,16 +47,16 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.01") {
     // ∅ ≐ ∅
-    val tpe1 = Type.Cst(TypeConstructor.CaseEmpty(E), loc)
-    val tpe2 = Type.Cst(TypeConstructor.CaseEmpty(E), loc)
+    val tpe1 = Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc)
+    val tpe2 = Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc)
     assertUnifies(tpe1, tpe2, RigidityEnv.empty, List(C1, C2, C3), E)
   }
 
   test("Test.CaseSetUnification.02") {
     // C1 ∪ C2 ∪ C3 ≐ ∅ᶜ
-    val caseC1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val caseC2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
-    val caseC3 = Type.Cst(TypeConstructor.CaseConstant(C3), loc)
+    val caseC1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val caseC2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
+    val caseC3 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C3), E), loc)
 
     val tpe1 = Type.mkCaseUnion(
       Type.mkCaseUnion(
@@ -68,7 +70,7 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
       loc
     )
 
-    val tpe2 = Type.mkCaseComplement(Type.Cst(TypeConstructor.CaseEmpty(E), loc), E, loc)
+    val tpe2 = Type.mkCaseComplement(Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc), E, loc)
 
     val renv = RigidityEnv.empty
     assertUnifies(tpe1, tpe2, renv, List(C1, C2, C3), E)
@@ -76,8 +78,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.03") {
     // ∅ ≐ ∅ ∪ ∅
-    val tpe1 = Type.Cst(TypeConstructor.CaseEmpty(E), loc)
-    val tpe2 = Type.mkCaseUnion(Type.Cst(TypeConstructor.CaseEmpty(E), loc), Type.Cst(TypeConstructor.CaseEmpty(E), loc), E, loc)
+    val tpe1 = Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc)
+    val tpe2 = Type.mkCaseUnion(Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc), Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc), E, loc)
     assertUnifies(tpe1, tpe2, RigidityEnv.empty, List(C1, C2, C3), E)
   }
 
@@ -106,8 +108,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.07") {
     // ((C1 ∪ (e ∩ C2)) ∩ C2ᶜ) ∪ ((C2 ∪ (f ∩ C1)) ∩ C1ᶜ) ≐ C1 ∪ C2
-    val caseC1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val caseC2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
+    val caseC1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val caseC2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
     val varE = Type.Var(mkTypeVarSym("e", E), loc)
     val varF = Type.Var(mkTypeVarSym("f", E), loc)
 
@@ -155,8 +157,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.08") {
     // ((C1 ∪ (e ∩ C2)) ∩ C2ᶜ) ≐ C1
-    val caseC1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val caseC2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
+    val caseC1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val caseC2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
     val varE = Type.Var(mkTypeVarSym("e", E), loc)
 
     val tpe1 = Type.mkCaseIntersection(
@@ -183,8 +185,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.09") {
     // C1 ∩ C2ᶜ ≐ C1
-    val caseC1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val caseC2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
+    val caseC1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val caseC2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
 
     val tpe1 = Type.mkCaseIntersection(
       caseC1,
@@ -284,9 +286,9 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.15") {
     // e - (C1 ∪ C2) ≐ C3
-    val caseC1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val caseC2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
-    val caseC3 = Type.Cst(TypeConstructor.CaseConstant(C3), loc)
+    val caseC1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val caseC2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
+    val caseC3 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C3), E), loc)
 
     val tpe1 = Type.mkCaseDifference(
       Type.Var(mkTypeVarSym("e", E), loc),
@@ -303,7 +305,7 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
     val sym = mkTypeVarSym("e", E)
     // build the union rather than going through smart constructors
     val varE = Type.Var(sym, loc)
-    val tpe1 = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(E), loc), varE, loc), Type.Cst(TypeConstructor.CaseEmpty(E), loc), loc)
+    val tpe1 = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(E), loc), varE, loc), Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, E), loc), loc)
     val tpe2 = varE
     val renv = RigidityEnv.empty.markRigid(sym)
     assertUnifies(tpe1, tpe2, renv, List(C1, C2, C3), E)
@@ -313,9 +315,9 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
     val varS1 = mkTypeVarSym("s1", Expr)
     val varS2 = mkTypeVarSym("s2", Expr)
 
-    val caseAnd = Type.Cst(TypeConstructor.CaseConstant(And), loc)
-    val caseXor = Type.Cst(TypeConstructor.CaseConstant(Xor), loc)
-    val caseOr = Type.Cst(TypeConstructor.CaseConstant(Or), loc)
+    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Expr), loc)
+    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Expr), loc)
+    val caseOr = Type.Cst(TypeConstructor.CaseSet(SortedSet(Or), Expr), loc)
 
     val tpe1 = Type.mkCaseIntersection(
       Type.Var(varS1, loc),
@@ -349,8 +351,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
     val varS1 = mkTypeVarSym("s1", Expr)
     val varS2 = mkTypeVarSym("s2", Expr)
 
-    val caseAnd = Type.Cst(TypeConstructor.CaseConstant(And), loc)
-    val caseXor = Type.Cst(TypeConstructor.CaseConstant(Xor), loc)
+    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Expr), loc)
+    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Expr), loc)
 
     val tpe1 = Type.mkCaseUnion(
       Type.Var(varS1, loc),
@@ -388,8 +390,8 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
 
   test("Test.CaseSetUnification.Fail.02") {
     // C1 ≐ C2
-    val tpe1 = Type.Cst(TypeConstructor.CaseConstant(C1), loc)
-    val tpe2 = Type.Cst(TypeConstructor.CaseConstant(C2), loc)
+    val tpe1 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C1), E), loc)
+    val tpe2 = Type.Cst(TypeConstructor.CaseSet(SortedSet(C2), E), loc)
     assertDoesNotUnify(tpe1, tpe2, RigidityEnv.empty, List(C1, C2, C3), E)
   }
 
