@@ -249,6 +249,7 @@ class Flix {
     "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
+    "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
   )
 
   /**
