@@ -909,8 +909,9 @@ object Weeder {
       val fqnCollect = "Collectable.collect"
 
       // Make region variable
-      val regionSym = Name.Ident(sp1, "ForEachYieldIterRegion" + flix.genSym.freshId(), sp2)
-      val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionSym), baseLoc)
+      val regionSym = "forEachYieldIteratorRegion" + Flix.Delimiter + flix.genSym.freshId()
+      val regionIdent = Name.Ident(sp1, regionSym, sp2).asSynthetic
+      val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionIdent), baseLoc)
 
       // Desugar yield-exp
       val yieldExp = mapN(visitExp(exp, senv)) {
@@ -956,7 +957,7 @@ object Weeder {
 
       // Wrap in region
       mapN(resultExp) {
-        case e => WeededAst.Expression.Scope(regionSym, e, baseLoc)
+        case e => WeededAst.Expression.Scope(regionIdent, e, baseLoc)
       }
     }
 
