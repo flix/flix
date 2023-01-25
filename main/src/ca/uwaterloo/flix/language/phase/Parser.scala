@@ -1448,7 +1448,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1534,7 +1534,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+      SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {

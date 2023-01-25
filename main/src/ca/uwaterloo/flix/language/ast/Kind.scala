@@ -64,7 +64,7 @@ object Kind {
     * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
     * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
     */
-  case object GenericCaseSet extends Kind
+  case object WildCaseSet extends Kind
 
   /**
     * Represents the kind of types.

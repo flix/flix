@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
-import ca.uwaterloo.flix.language.ast.Kind.GenericCaseSet
+import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
@@ -1208,7 +1208,7 @@ object Kinder {
 
     case UnkindedType.CaseSet(cases, loc) =>
       // Infer the kind from the cases.
-      val actualKindVal: Validation[Kind, KindError] = fold(cases, Kind.GenericCaseSet: Kind) {
+      val actualKindVal: Validation[Kind, KindError] = fold(cases, Kind.WildCaseSet: Kind) {
         case (kindAcc, sym) =>
           val symKind = Kind.CaseSet(sym.enumSym)
           unify(kindAcc, symKind) match {
@@ -1226,7 +1226,7 @@ object Kinder {
             // Case 1:  We have an explicit case kind.
             case Some(Kind.CaseSet(sym)) => Type.Cst(TypeConstructor.CaseSet(cases.to(SortedSet), sym), loc).toSuccess
             // Case 2: We have a generic case kind. Error.
-            case Some(Kind.GenericCaseSet) => KindError.UninferrableKind(loc).toFailure
+            case Some(Kind.WildCaseSet) => KindError.UninferrableKind(loc).toFailure
             // Case 3: Unexpected kind. Error.
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
 
@@ -1236,7 +1236,7 @@ object Kinder {
 
 
     case UnkindedType.CaseComplement(t0, loc) =>
-      val tVal = visitType(t0, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      val tVal = visitType(t0, Kind.WildCaseSet, kenv, senv, taenv, root)
       flatMapN(tVal) {
         t =>
           unify(t.kind, expectedKind) match {
@@ -1248,8 +1248,8 @@ object Kinder {
 
     case UnkindedType.CaseUnion(t1, t2, loc) =>
       // Get the component types.
-      val t1Val = visitType(t1, Kind.GenericCaseSet, kenv, senv, taenv, root)
-      val t2Val = visitType(t2, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      val t1Val = visitType(t1, Kind.WildCaseSet, kenv, senv, taenv, root)
+      val t2Val = visitType(t2, Kind.WildCaseSet, kenv, senv, taenv, root)
 
       flatMapN(t1Val, t2Val) {
         case (t1, t2) =>
@@ -1272,8 +1272,8 @@ object Kinder {
 
     case UnkindedType.CaseIntersection(t1, t2, loc) =>
       // Get the component types.
-      val t1Val = visitType(t1, Kind.GenericCaseSet, kenv, senv, taenv, root)
-      val t2Val = visitType(t2, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      val t1Val = visitType(t1, Kind.WildCaseSet, kenv, senv, taenv, root)
+      val t2Val = visitType(t2, Kind.WildCaseSet, kenv, senv, taenv, root)
 
       flatMapN(t1Val, t2Val) {
         case (t1, t2) =>
@@ -1575,20 +1575,20 @@ object Kinder {
 
     case UnkindedType.CaseComplement(t, _) =>
       // Expected kind for t is GenericCaseSet, but if we have a more specific kind we use that.
-      val expected = unify(expectedKind, GenericCaseSet) match {
+      val expected = unify(expectedKind, WildCaseSet) match {
         case Some(k) => k
         // This case will be an error in visitType
-        case None => GenericCaseSet
+        case None => WildCaseSet
       }
 
       inferType(t, expected, kenv0, taenv, root)
 
     case UnkindedType.CaseUnion(t1, t2, _) =>
       // Expected kind for t1 and t2 is GenericCaseSet, but if we have a more specific kind we use that.
-      val expected = unify(expectedKind, GenericCaseSet) match {
+      val expected = unify(expectedKind, WildCaseSet) match {
         case Some(k) => k
         // This case will be an error in visitType
-        case None => GenericCaseSet
+        case None => WildCaseSet
       }
 
       val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
@@ -1599,10 +1599,10 @@ object Kinder {
 
     case UnkindedType.CaseIntersection(t1, t2, _) =>
       // Expected kind for t1 and t2 is GenericCaseSet, but if we have a more specific kind we use that.
-      val expected = unify(expectedKind, GenericCaseSet) match {
+      val expected = unify(expectedKind, WildCaseSet) match {
         case Some(k) => k
         // This case will be an error in visitType
-        case None => GenericCaseSet
+        case None => WildCaseSet
       }
 
       val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
