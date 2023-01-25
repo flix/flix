@@ -18,12 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Kind.GenericCaseSet
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess, flatMapN, mapN, traverse, traverseOpt}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, fold, mapN, traverse, traverseOpt}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+
+import scala.collection.immutable.SortedSet
 
 /**
   * Attributes kinds to the types in the AST.
@@ -190,7 +192,7 @@ object Kinder {
     * The aliases must be sorted topologically.
     */
   private def visitTypeAliases(aliases: List[Symbol.TypeAliasSym], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], KindError] = {
-    Validation.fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
+    fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
       case (taenv, sym) =>
         val alias = root.typeAliases(sym)
         visitTypeAlias(alias, taenv, root) map {
@@ -1205,7 +1207,8 @@ object Kinder {
       }
 
     case UnkindedType.CaseSet(cases, loc) =>
-      val kindVal = Validation.fold(cases, Kind.GenericCaseSet: Kind) {
+      // Infer the kind from the cases.
+      val actualKindVal: Validation[Kind, KindError] = fold(cases, Kind.GenericCaseSet: Kind) {
         case (kindAcc, sym) =>
           val symKind = Kind.CaseSet(sym.enumSym)
           unify(kindAcc, symKind) match {
@@ -1215,22 +1218,81 @@ object Kinder {
             case None => KindError.MismatchedKinds(kindAcc, symKind, loc).toFailure
           }
       }
-      Type.Cst(TypeConstructor.Case)
+
+      // Check against the expected kind.
+      flatMapN(actualKindVal) {
+        case actualKind =>
+          unify(actualKind, expectedKind) match {
+            // Case 1:  We have an explicit case kind.
+            case Some(Kind.CaseSet(sym)) => Type.Cst(TypeConstructor.CaseSet(cases.to(SortedSet), sym), loc).toSuccess
+            // Case 2: We have a generic case kind. Error.
+            case Some(Kind.GenericCaseSet) => KindError.UninferrableKind(loc).toFailure
+            // Case 3: Unexpected kind. Error.
+            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+
+            case Some(_) => throw InternalCompilerException("unexpected non-case set kind", loc)
+          }
+      }
+
 
     case UnkindedType.CaseComplement(t0, loc) =>
       val tVal = visitType(t0, Kind.GenericCaseSet, kenv, senv, taenv, root)
       flatMapN(tVal) {
         t =>
           unify(t.kind, expectedKind) match {
-            case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc)
+            case Some(Kind.CaseSet(enumSym)) => Type.mkCaseComplement(t, enumSym, loc).toSuccess
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
             case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
           }
       }
 
     case UnkindedType.CaseUnion(t1, t2, loc) =>
+      // Get the component types.
       val t1Val = visitType(t1, Kind.GenericCaseSet, kenv, senv, taenv, root)
       val t2Val = visitType(t2, Kind.GenericCaseSet, kenv, senv, taenv, root)
+
+      flatMapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          val actualKindVal: Validation[Kind, KindError] = unify(t1.kind, t2.kind) match {
+            // Case 1: The kinds unify.
+            case Some(k) => k.toSuccess
+            // Case 2: The kinds do not unify. Error.
+            case None => KindError.MismatchedKinds(t1.kind, t2.kind, loc).toFailure
+          }
+
+          flatMapN(actualKindVal) {
+            case actualKind =>
+              unify(actualKind, expectedKind) match {
+                case Some(Kind.CaseSet(enumSym)) => Type.mkCaseUnion(t1, t2, enumSym, loc).toSuccess
+                case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+                case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
+              }
+          }
+      }
+
+    case UnkindedType.CaseIntersection(t1, t2, loc) =>
+      // Get the component types.
+      val t1Val = visitType(t1, Kind.GenericCaseSet, kenv, senv, taenv, root)
+      val t2Val = visitType(t2, Kind.GenericCaseSet, kenv, senv, taenv, root)
+
+      flatMapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          val actualKindVal: Validation[Kind, KindError] = unify(t1.kind, t2.kind) match {
+            // Case 1: The kinds unify.
+            case Some(k) => k.toSuccess
+            // Case 2: The kinds do not unify. Error.
+            case None => KindError.MismatchedKinds(t1.kind, t2.kind, loc).toFailure
+          }
+
+          flatMapN(actualKindVal) {
+            case actualKind =>
+              unify(actualKind, expectedKind) match {
+                case Some(Kind.CaseSet(enumSym)) => Type.mkCaseIntersection(t1, t2, enumSym, loc).toSuccess
+                case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = actualKind, loc).toFailure
+                case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
+              }
+          }
+      }
 
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
@@ -1449,7 +1511,7 @@ object Kinder {
       }
 
       val args = Kind.kindArgs(tyconKind)
-      Validation.fold(tpe.typeArguments.zip(args), KindEnv.singleton(tvar.sym -> tyconKind)) {
+      fold(tpe.typeArguments.zip(args), KindEnv.singleton(tvar.sym -> tyconKind)) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
@@ -1458,7 +1520,7 @@ object Kinder {
     case UnkindedType.Cst(cst, loc) =>
       val args = Kind.kindArgs(cst.kind)
 
-      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
@@ -1470,7 +1532,7 @@ object Kinder {
       val alias = taenv(cst.sym)
       val tparamKinds = alias.tparams.map(_.sym.kind)
 
-      Validation.fold(args.zip(tparamKinds), KindEnv.empty) {
+      fold(args.zip(tparamKinds), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
@@ -1478,7 +1540,7 @@ object Kinder {
 
     case UnkindedType.Arrow(purAndEff, _, _) =>
       val purAndEffKenvVal = inferPurityAndEffect(purAndEff, kenv0, taenv, root)
-      val argKenvVal = Validation.fold(tpe.typeArguments, KindEnv.empty) {
+      val argKenvVal = fold(tpe.typeArguments, KindEnv.empty) {
         case (acc, targ) => flatMapN(inferType(targ, Kind.Star, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
@@ -1493,7 +1555,7 @@ object Kinder {
       val tyconKind = getEnumKind(root.enums(sym))
       val args = Kind.kindArgs(tyconKind)
 
-      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
@@ -1503,16 +1565,51 @@ object Kinder {
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
 
-      Validation.fold(tpe.typeArguments.zip(args), KindEnv.empty) {
+      fold(tpe.typeArguments.zip(args), KindEnv.empty) {
         case (acc, (targ, kind)) => flatMapN(inferType(targ, kind, kenv0, taenv, root)) {
           kenv => acc ++ kenv
         }
       }
 
-    case UnkindedType.CaseSet(_, _) => KindEnv.empty
+    case UnkindedType.CaseSet(_, _) => KindEnv.empty.toSuccess
 
-    // MATT other cases
+    case UnkindedType.CaseComplement(t, _) =>
+      // Expected kind for t is GenericCaseSet, but if we have a more specific kind we use that.
+      val expected = unify(expectedKind, GenericCaseSet) match {
+        case Some(k) => k
+        // This case will be an error in visitType
+        case None => GenericCaseSet
+      }
 
+      inferType(t, expected, kenv0, taenv, root)
+
+    case UnkindedType.CaseUnion(t1, t2, _) =>
+      // Expected kind for t1 and t2 is GenericCaseSet, but if we have a more specific kind we use that.
+      val expected = unify(expectedKind, GenericCaseSet) match {
+        case Some(k) => k
+        // This case will be an error in visitType
+        case None => GenericCaseSet
+      }
+
+      val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
+      val kenv2Val = inferType(t2, expected, kenv0, taenv, root)
+      flatMapN(kenv1Val, kenv2Val) {
+        case (kenv1, kenv2) => kenv1 ++ kenv2
+      }
+
+    case UnkindedType.CaseIntersection(t1, t2, _) =>
+      // Expected kind for t1 and t2 is GenericCaseSet, but if we have a more specific kind we use that.
+      val expected = unify(expectedKind, GenericCaseSet) match {
+        case Some(k) => k
+        // This case will be an error in visitType
+        case None => GenericCaseSet
+      }
+
+      val kenv1Val = inferType(t1, expected, kenv0, taenv, root)
+      val kenv2Val = inferType(t2, expected, kenv0, taenv, root)
+      flatMapN(kenv1Val, kenv2Val) {
+        case (kenv1, kenv2) => kenv1 ++ kenv2
+      }
 
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
@@ -1729,7 +1826,7 @@ object Kinder {
       * Merges all the given kind environments.
       */
     def merge(kenvs: List[KindEnv]): Validation[KindEnv, KindError] = {
-      Validation.fold(kenvs, KindEnv.empty) {
+      fold(kenvs, KindEnv.empty) {
         case (acc, kenv) => acc ++ kenv
       }
     }
@@ -1762,7 +1859,7 @@ object Kinder {
       * Merges the given kind environment into this kind environment.
       */
     def ++(other: KindEnv): Validation[KindEnv, KindError] = {
-      Validation.fold(other.map, this) {
+      fold(other.map, this) {
         case (acc, pair) => acc + pair
       }
     }
