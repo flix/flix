@@ -203,15 +203,21 @@ namespace TestFile {
 
     @test
     def testReadLinesIter01(): Bool \ IO = region r {
-        match readLinesIter(r, "./LICENSE.md") {
-            case Iterator.Iterator(_, next) => Result.isOk(next())
+        let iter = readLinesIter(r, "./LICENSE.md");
+        match Iterator.next(iter) {
+            case Some(Ok(_)) => true
+            case _           => false
         }
     }
 
+
     @test
     def testReadLinesIter02(): Bool \ IO = region r {
-        match readLinesIter(r, "./LICENSE.md") {
-            case Iterator.Iterator(done, _) => done() == false
+        let iter = readLinesIter(r, "./LICENSE.md");
+        discard Iterator.next(iter);
+        match Iterator.next(iter) {
+            case Some(Ok(_)) => true
+            case _           => false
         }
     }
 
@@ -221,8 +227,10 @@ namespace TestFile {
 
     @test
     def testReadLinesIterWithWith01(): Bool \ IO = region r {
-        match readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md") {
-            case Iterator.Iterator(_, next) => Result.isOk(next())
+        let iter = readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md");
+        match Iterator.next(iter) { 
+            case Some(Ok(_)) => true
+            case _           => false
         }
     }
 
@@ -255,7 +263,7 @@ namespace TestFile {
     @test
     def testReadBytesWith03(): Bool \ IO = region r {
         match readBytesWith(r, {offset = 10i64, count = 4}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` [101i8, 110i8, 115i8, 101i8]
+            case Ok(v) => v `Array.sameElements` Array#{101i8, 110i8, 115i8, 101i8} @ r
             case _     => false
         }
     }
@@ -263,7 +271,7 @@ namespace TestFile {
     @test
     def testReadBytesWith04(): Bool \ IO = region r {
         match readBytesWith(r, {offset = 0i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` []
+            case Ok(v) => v `Array.sameElements` Array#{} @ r
             case _     => false
         }
     }
@@ -271,7 +279,7 @@ namespace TestFile {
     @test
     def testReadBytesWith05(): Bool \ IO = region r {
         match readBytesWith(r, {offset = -10i64, count = 0}, "./LICENSE.md") {
-            case Ok(v) => v `Array.sameElements` []
+            case Ok(v) => v `Array.sameElements` Array#{} @ r
             case _     => false
         }
     }
@@ -292,29 +300,38 @@ namespace TestFile {
 
     @test
     def testReadChunks01(): Bool \ IO = region r {
-        match readChunks(r, 2, "./LICENSE.md") {
-            case Iterator.Iterator(_, next) => Result.isOk(next())
+        let iter = readChunks(r, 2, "./LICENSE.md");
+        match Iterator.next(iter) {
+            case Some(Ok(_)) => true
+            case _           => false
         }
     }
 
     @test
     def testReadChunks02(): Bool \ IO = region r {
-        match readChunks(r, 2, "./LICENSE.md") {
-            case Iterator.Iterator(done, _) => done() == false
+        let iter = readChunks(r, 2, "./LICENSE.md");
+        discard  Iterator.next(iter);
+        match Iterator.next(iter) {
+            case Some(Ok(_)) => true
+            case _           => false
         }
     }
 
     @test
     def testReadChunks03(): Bool \ IO = region r {
-        match readChunks(r, 0, "./LICENSE.md") {
-            case Iterator.Iterator(done, _) => done()
+        let iter = readChunks(r, 0, "./LICENSE.md");
+        match Iterator.next(iter) { 
+            case None => true
+            case _    => false
         }
     }
 
     @test
     def testReadChunks04(): Bool \ IO = region r {
-        match readChunks(r, -10, "./LICENSE.md") {
-            case Iterator.Iterator(_, next) => Result.isErr(next())
+        let iter = readChunks(r, -10, "./LICENSE.md");
+        match Iterator.next(iter) { 
+            case Some(Err(_)) => true
+            case _            => false
         }
     }
 

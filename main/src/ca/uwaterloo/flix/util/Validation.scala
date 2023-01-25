@@ -69,6 +69,15 @@ sealed trait Validation[+T, +E] {
     */
   def errors: LazyList[E]
 
+  /**
+    * Converts a soft failure to a hard failure.
+    */
+  def toHardFailure: Validation[T, E] = this match {
+    case Validation.Success(t) => Validation.Success(t)
+    case Validation.SoftFailure(t, errors) => Validation.Failure(errors)
+    case Validation.Failure(errors) => Validation.Failure(errors)
+  }
+
 }
 
 object Validation {
@@ -513,7 +522,7 @@ object Validation {
     /**
       * Returns a [[Validation.SoftFailure]] containing [[t]] with no errors.
       */
-    def toSoftFailure[U >: T, E]: Validation[U, E] = Validation.SoftFailure(t, LazyList.empty[E])
+    def toSoftFailure[U >: T, E](e: E): Validation[U, E] = Validation.SoftFailure(t, LazyList(e))
   }
 
   /**

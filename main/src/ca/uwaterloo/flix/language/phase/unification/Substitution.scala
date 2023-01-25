@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -156,7 +156,12 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
-      newTypeMap.update(x, this.apply(t))
+      // minimize case set formulas if present
+      val tpe = x.kind match {
+        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
+        case _ => this.apply(t)
+      }
+      newTypeMap.update(x, tpe)
     }
 
     // Add all bindings in `this` that are not in `that`.

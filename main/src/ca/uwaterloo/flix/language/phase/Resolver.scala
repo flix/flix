@@ -1150,12 +1150,11 @@ object Resolver {
           }
 
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0, region))
-          val erVal = traverseOpt(exp)(visitExp(_, env0, region))
-          mapN(esVal, erVal) {
-            case (es, er) =>
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.ArrayLit(es, reg, loc)
+          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expVal = visitExp(exp, env0, region)
+          mapN(expsVal, expVal) {
+            case (es, e) =>
+              ResolvedAst.Expression.ArrayLit(es, e, loc)
           }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -1552,7 +1551,9 @@ object Resolver {
           }
 
         case NamedAst.Expression.Error(m) =>
-          ResolvedAst.Expression.Error(m).toSoftFailure
+          // Note: We must NOT use [[Validation.toSoftFailure]] because
+          // that would duplicate the error inside the Validation.
+          Validation.SoftFailure(ResolvedAst.Expression.Error(m), LazyList.empty)
       }
 
       /**
@@ -3218,9 +3219,7 @@ object Resolver {
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseConstant(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseEmpty(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseAll(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseUnion(_) => ResolutionError.IllegalType(tpe, loc).toFailure
 

@@ -62,7 +62,7 @@ namespace TestObject {
     def isNullString02(): Bool = Object.isNull(unsafe_cast null as String)
 
     @test
-    def isNullArray01(): Bool \ IO = not Object.isNull([])
+    def isNullArray01(): Bool \ IO = not Object.isNull(Array#{} @ Static)
 
     @test
     def isNullArray02(): Bool = region r {

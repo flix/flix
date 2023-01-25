@@ -111,8 +111,7 @@ object Kinder {
             val univMap = restrictableEnums.map {
               case (sym, enum) => sym -> enum.cases.keys.toList
             }.toMap
-            val univ = Ast.Multiverse(ListMap(univMap))
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, univ, root.uses, root.entryPoint, root.sources, root.names)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 
@@ -894,8 +893,9 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val pvar = Type.freshVar(Kind.Bool, m.loc)
       val evar = Type.freshVar(Kind.Effect, m.loc)
-      KindedAst.Expression.Error(m, tvar, pvar, evar).toSoftFailure
-
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(KindedAst.Expression.Error(m, tvar, pvar, evar), LazyList.empty)
   }
 
   /**

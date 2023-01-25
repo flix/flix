@@ -494,8 +494,10 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Error(_, _, _, _) =>
-      exp0.toSoftFailure
+    case Expression.Error(m, tpe, pur, eff) =>
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(Expression.Error(m, tpe, pur, eff), LazyList.empty)
 
   }
 
@@ -897,7 +899,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)(root.univ, flix)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

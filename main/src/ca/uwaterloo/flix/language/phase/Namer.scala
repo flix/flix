@@ -349,7 +349,8 @@ object Namer {
     */
   private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives, cases0, loc) =>
-      val sym = Symbol.mkRestrictableEnumSym(ns0, ident)
+      val caseIdents = cases0.map(_.ident)
+      val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
       // Compute the type parameters.
       val index = getTypeParam(index0)
@@ -745,7 +746,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, ns0)), traverseOpt(exp)(visitExp(_, ns0))) {
+      mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
@@ -1037,7 +1038,9 @@ object Namer {
       }
 
     case WeededAst.Expression.Error(m) =>
-      NamedAst.Expression.Error(m).toSoftFailure
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(NamedAst.Expression.Error(m), LazyList.empty)
 
   }
 

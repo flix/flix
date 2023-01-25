@@ -61,9 +61,9 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Ast.Multiverse(ListMap.empty), Map.empty, None, Map.empty, MultiMap.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Ast.Multiverse(ListMap.empty), Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -163,7 +163,6 @@ class Flix {
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
     "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
-    "Scoped.flix" -> LocalResource.get("/src/library/Scoped.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
@@ -528,7 +527,7 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Return the result.
+    // Return the result (which could contain soft failures).
     result
   } catch {
     case ex: InternalCompilerException =>
@@ -581,8 +580,10 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] =
-    Validation.flatMapN(check())(codeGen)
+  def compile(): Validation[CompilationResult, CompilationMessage] = {
+    val result = check().toHardFailure
+    Validation.flatMapN(result)(codeGen)
+  }
 
   /**
     * Enters the phase with the given name.

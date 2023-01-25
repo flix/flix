@@ -24,7 +24,7 @@ namespace TestList {
 /////////////////////////////////////////////////////////////////////////////
 @test
 def collect01(): Bool = region r {
-    Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Nil
+    Collectable.collect(Iterator.empty(r): Iterator[Int32, r, r]) == Nil
 }
 
 @test
@@ -2072,25 +2072,25 @@ def forEachWithIndex02(): Bool = region r {
 @test
 def toArray01(): Bool = region r {
     let a = List.toArray(r, Nil): Array[Int32, r];
-    Array.sameElements(a, [] @ r)
+    Array.sameElements(a, Array#{} @ r)
 }
 
 @test
 def toArray02(): Bool = region r {
     let a = List.toArray(r, 1 :: Nil);
-    Array.sameElements(a, [1] @ r)
+    Array.sameElements(a, Array#{1} @ r)
 }
 
 @test
 def toArray03(): Bool = region r {
     let a = List.toArray(r, 1 :: 2 :: Nil);
-    Array.sameElements(a, [1, 2] @ r)
+    Array.sameElements(a, Array#{1, 2} @ r)
 }
 
 @test
 def toArray04(): Bool = region r {
     let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
-    Array.sameElements(a, [1, 2, 3] @ r)
+    Array.sameElements(a, Array#{1, 2, 3} @ r)
 }
 
 
