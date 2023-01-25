@@ -1205,30 +1205,17 @@ object Kinder {
       }
 
     case UnkindedType.CaseSet(cases, loc) =>
-      var kindAcc = Kind.GenericCaseSet
-
-      val elemsVal = traverse(cases) {
-        case sym =>
-          val kind = Kind.CaseSet(sym.enumSym)
-          unify(kindAcc, kind) match {
-            case Some(_) =>
+      val kindVal = Validation.fold(cases, Kind.GenericCaseSet: Kind) {
+        case (kindAcc, sym) =>
+          val symKind = Kind.CaseSet(sym.enumSym)
+          unify(kindAcc, symKind) match {
+            // Case 1: The kinds unify. Update the kind.
+            case Some(k) => k.toSuccess
+            // Case 2: The kinds do not unify. Error.
+            case None => KindError.MismatchedKinds(kindAcc, symKind, loc).toFailure
           }
       }
-
-      // MATT
-      unify(kind, expectedKind) match {
-        // Case 1: Kinds unify!
-        // Get the enum from the kind
-        case Some(Kind.CaseSet(enumSym)) =>
-          // Build a union of the cases
-          cases.map(c => Type.Cst(TypeConstructor.CaseConstant(c), loc)).reduceLeftOption {
-            case (acc, t) => Type.mkCaseUnion(acc, t, enumSym, loc)
-          }.getOrElse(Type.Cst(TypeConstructor.CaseEmpty(enumSym), loc)).toSuccess
-
-        // Case 2: Kinds don't unify!
-        case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = kind, loc).toFailure
-        case Some(_) => throw InternalCompilerException("unexpected failed kind unification", loc)
-      }
+      Type.Cst(TypeConstructor.Case)
 
     case UnkindedType.CaseComplement(t0, loc) =>
       val tVal = visitType(t0, Kind.GenericCaseSet, kenv, senv, taenv, root)
