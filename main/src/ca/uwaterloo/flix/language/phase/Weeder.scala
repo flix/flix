@@ -1593,7 +1593,9 @@ object Weeder {
         // Case 1: In a handler. All is well.
         case SyntacticEnv.Handler => ().toSuccess
         // Case 2: Not in a handler. Error.
-        case SyntacticEnv.Top => WeederError.IllegalResume(loc).toFailure
+        case SyntacticEnv.Top =>
+          val err = WeederError.IllegalResume(loc)
+          ().toSoftFailure(err)
       }
 
       val argVal = visitArgument(arg0, senv)

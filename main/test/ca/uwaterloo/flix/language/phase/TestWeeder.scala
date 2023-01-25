@@ -95,6 +95,43 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  test("IllegalResume.01") {
+    val input =
+      """
+        |def f(): Bool = resume("Hello!")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalResume.02") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       true
+        |   } catch {
+        |       case _: ##java.lang.Exception => resume(true)
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
+  test("IllegalResume.03") {
+    val input =
+      """
+        |def f(): Bool =
+        |   try {
+        |       resume(true)
+        |   } with Fail {
+        |       def fail() = false
+        |   }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalResume](result)
+  }
+
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
@@ -673,43 +710,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEffectTypeParams](result)
-  }
-
-  test("IllegalResume.01") {
-    val input =
-      """
-        |def f(): Bool = resume("Hello!")
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
-  }
-
-  test("IllegalResume.02") {
-    val input =
-      """
-        |def f(): Bool =
-        |   try {
-        |       true
-        |   } catch {
-        |       case _: ##java.lang.Exception => resume(true)
-        |   }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
-  }
-
-  test("IllegalResume.03") {
-    val input =
-      """
-        |def f(): Bool =
-        |   try {
-        |       resume(true)
-        |   } with Fail {
-        |       def fail() = false
-        |   }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
   }
 
   test("IllegalFormalParamAscription.01") {
