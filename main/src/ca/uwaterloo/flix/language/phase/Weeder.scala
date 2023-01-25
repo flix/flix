@@ -1717,7 +1717,8 @@ object Weeder {
       /// Check for [[MismatchedArity]].
       ///
       if (exps.length != idents.length) {
-        return WeederError.MismatchedArity(exps.length, idents.length, loc).toFailure
+        val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
+        return WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
       mapN(traverse(exps)(visitExp(_, senv))) {
@@ -1859,7 +1860,9 @@ object Weeder {
   private def createRestrictableChoiceRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expression], b0: WeededAst.Expression): Validation[WeededAst.RestrictableChoiceRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
-      case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
+      case Some(g) =>
+        val err = WeederError.RestrictableChoiceGuard(star, g.loc)
+        ().toSoftFailure(err)
       case None => ().toSuccess
     }
     // Check that patterns are only tags of variables (or wildcards as variables)
