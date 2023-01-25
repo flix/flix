@@ -2547,7 +2547,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      WeededAst.Type.CaseIntersection(t1, WeededAst.Type.Complement(t2, loc), loc)
+      WeededAst.Type.CaseIntersection(t1, WeededAst.Type.CaseComplement(t2, loc), loc)
 
     case ParsedAst.Type.CaseComplement(sp1, tpe, sp2) =>
       val loc = mkSL(sp1, sp2)
