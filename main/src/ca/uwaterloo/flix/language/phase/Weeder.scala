@@ -1230,7 +1230,8 @@ object Weeder {
       for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
-          return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
+          val err = WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2))
+          return WeededAst.Expression.Error(err).toSoftFailure(err)
         }
       }
 
