@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Unification.unifyTypes
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -28,7 +28,7 @@ object SchemaUnification {
     *
     * The given types must have kind [[Kind.SchemaRow]]
     */
-  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
     case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv)
 
@@ -54,7 +54,7 @@ object SchemaUnification {
     * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
     */
   // NOTE: This is a copy of the [[RecordUnification.rewriteRecordRow]] function. It would be nice if it could be the same function, but the shape of labels is different.
-  private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit univ: Ast.Multiverse, flix: Flix): Result[(Substitution, Type), UnificationError] = {
+  private def rewriteSchemaRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = {
 
     def visit(row: Type): Result[(Substitution, Type), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label2), _), fieldType2, _), restRow2, loc),

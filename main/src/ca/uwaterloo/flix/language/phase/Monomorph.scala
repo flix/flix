@@ -362,7 +362,7 @@ object Monomorph {
         rules.iterator.flatMap {
           case MatchTypeRule(sym, t, body0) =>
             // try to unify
-            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv)(root.univ, flix) match {
+            Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
               // Case 1: types don't unify; just continue
               case Result.Err(_) => None
               // Case 2: types unify; use the substitution in the body
@@ -640,7 +640,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)(root.univ, flix)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
         }
     }
 
@@ -760,7 +760,7 @@ object Monomorph {
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
-    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty)(root.univ, flix) match {
+    Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
       case Result.Err(_) =>

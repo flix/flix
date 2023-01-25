@@ -747,4 +747,13 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalJavaClass](result)
   }
+
+  test("IllegalIntrinsic.01") {
+    val input =
+      """
+        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalIntrinsic](result)
+  }
 }

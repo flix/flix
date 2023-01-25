@@ -229,6 +229,10 @@ object Resolver {
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
     case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
+    case _: UnkindedType.CaseSet => Nil
+    case UnkindedType.CaseComplement(tpe, loc) => getAliasUses(tpe)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
@@ -2303,6 +2307,27 @@ object Resolver {
 
       case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
+      case NamedAst.Type.CaseSet(cases0, loc) =>
+        val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
+        mapN(casesVal) {
+          case cases => UnkindedType.CaseSet(cases.map(_.sym), loc)
+        }
+
+      case NamedAst.Type.CaseComplement(tpe, loc) =>
+        mapN(visit(tpe)) {
+          t => UnkindedType.CaseComplement(t, loc)
+        }
+
+      case NamedAst.Type.CaseUnion(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => UnkindedType.CaseUnion(t1, t2, loc)
+        }
+
+      case NamedAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => UnkindedType.CaseIntersection(t1, t2, loc)
+        }
+
       case NamedAst.Type.Ascribe(t0, kind0, loc) =>
         val tVal = visit(t0)
         val kindVal = resolveKind(kind0, env, ns0, root)
@@ -2374,6 +2399,11 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.CaseSet =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
@@ -2386,6 +2416,29 @@ object Resolver {
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpeVal, targsVal) {
           case (t, ts) => UnkindedType.mkApply(UnkindedType.ReadWrite(t, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseComplement(tpe, loc) =>
+        val tpeVal = finishResolveType(tpe, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpeVal, targsVal) {
+          case (t, ts) => UnkindedType.mkApply(UnkindedType.CaseComplement(t, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseUnion(tpe1, tpe2, loc) =>
+        val tpe1Val = finishResolveType(tpe1, taenv)
+        val tpe2Val = finishResolveType(tpe2, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpe1Val, tpe2Val, targsVal) {
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2 ,loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseIntersection(tpe1, tpe2, loc) =>
+        val tpe1Val = finishResolveType(tpe1, taenv)
+        val tpe2Val = finishResolveType(tpe2, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpe1Val, tpe2Val, targsVal) {
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2 ,loc), ts, tpe0.loc)
         }
 
       case UnkindedType.Ascribe(tpe, kind, loc) =>
@@ -3265,6 +3318,10 @@ object Resolver {
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseSet => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseIntersection => ResolutionError.IllegalType(tpe, loc).toFailure
 
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)

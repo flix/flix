@@ -1554,6 +1554,50 @@ object ParsedAst {
     case class Effect(sp1: SourcePosition, eff: ParsedAst.EffectSet, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * A type representing a case set.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param cases the case constants.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class CaseSet(sp1: SourcePosition, cases: Seq[Name.QName], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a union of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseUnion(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing an intersection of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseIntersection(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a difference of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseDifference(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing the complement of a case set formula.
+      *
+      * @param tpe  the complemented type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseComplement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
