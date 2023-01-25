@@ -1398,7 +1398,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalWildType](result)
   }
 
-  test("IllegalForEachYield.01") {
+  test("UndefinedName.ForEachYield.01") {
     val input =
       """
         |def foo(): List[String] =
@@ -1409,7 +1409,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("IllegalForEachYield.02") {
+  test("UndefinedName.ForEachYield.02") {
     val input =
       """
         |def foo(): List[String] =
@@ -1420,7 +1420,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("IllegalForEachYield.03") {
+  test("UndefinedName.ForEachYield.03") {
     val input =
       """
         |def foo(): List[(String, Int32)] =
