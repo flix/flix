@@ -60,6 +60,13 @@ object Kind {
   case object Beef extends Kind
 
   /**
+    * Represents the wildcard kind only matching Case Sets.
+    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
+    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
+    */
+  case object WildCaseSet extends Kind
+
+  /**
     * Represents the kind of types.
     */
   case object Star extends Kind

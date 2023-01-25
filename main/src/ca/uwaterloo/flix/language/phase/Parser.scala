@@ -1410,7 +1410,25 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      CaseUnionOrDifference ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+    }
+
+    def CaseUnionOrDifference: Rule1[ParsedAst.Type] = {
+      def CaseUnionTail = rule {
+        WS ~ atomic("++") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
+      }
+
+      def CaseDifferenceTail = rule {
+        WS ~ atomic("--") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
+      }
+
+      rule {
+        CaseIntersection ~ zeroOrMore(CaseUnionTail | CaseDifferenceTail)
+      }
+    }
+
+    def CaseIntersection: Rule1[ParsedAst.Type] = rule {
+      Or ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1430,7 +1448,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1514,6 +1532,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
+    def CaseComplement: Rule1[ParsedAst.Type] = rule {
+      // NB: We must not use Type here because it gives the wrong precedence.
+      SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
@@ -1524,6 +1547,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Effect: Rule1[ParsedAst.Type] = rule {
       SP ~ Effects.NonSingletonEffectSet ~ SP ~> ParsedAst.Type.Effect
+    }
+
+    def CaseSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "<" ~ optWS ~ zeroOrMore(Names.QName).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ">" ~ SP ~> ParsedAst.Type.CaseSet
     }
 
     private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
