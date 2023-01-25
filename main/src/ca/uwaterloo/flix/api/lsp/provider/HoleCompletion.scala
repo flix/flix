@@ -47,7 +47,7 @@ object HoleCompletion {
           SourceLocation.Unknown
         )
         // TODO modify to take renv as a parameter
-        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty)(root.univ, flix) match {
+        Unification.unifyTypes(matchType, lastArrow, RigidityEnv.empty) match {
           case Result.Ok(subst) =>
             // Track the size of all the types in the substitution.
             // A smaller substitution means a more precise unification match.

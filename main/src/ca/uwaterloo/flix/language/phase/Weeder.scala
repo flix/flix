@@ -2522,6 +2522,36 @@ object Weeder {
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
 
+    case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Type.CaseSet(cases.toList, loc)
+
+    case ParsedAst.Type.CaseUnion(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseUnion(t1, t2, loc)
+
+    case ParsedAst.Type.CaseIntersection(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseIntersection(t1, t2, loc)
+
+    case ParsedAst.Type.CaseDifference(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseIntersection(t1, WeededAst.Type.CaseComplement(t2, loc), loc)
+
+    case ParsedAst.Type.CaseComplement(sp1, tpe, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val t = visitType(tpe)
+      WeededAst.Type.CaseComplement(t, loc)
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
@@ -3126,6 +3156,11 @@ object Weeder {
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Effect(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.CaseIntersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.CaseSet(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseUnion(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 

@@ -360,6 +360,14 @@ object WeededAst {
 
     case class Empty(loc: SourceLocation) extends WeededAst.Type
 
+    case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends WeededAst.Type
+
+    case class CaseUnion(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class CaseIntersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class CaseComplement(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
     case class Ascribe(tpe: WeededAst.Type, kind: WeededAst.Kind, loc: SourceLocation) extends WeededAst.Type
 
   }

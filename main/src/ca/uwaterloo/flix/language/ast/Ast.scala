@@ -732,10 +732,4 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
-
-  /**
-    * The collection of all the restrictable enum universes.
-    */
-  case class Multiverse(univ: ListMap[Symbol.RestrictableEnumSym, Symbol.RestrictableCaseSym])
-
 }

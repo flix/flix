@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.seqM
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite with TestUtils {
@@ -29,8 +28,6 @@ class TestUnification extends FunSuite with TestUtils {
   implicit val flix: Flix = new Flix()
 
   val loc: SourceLocation = SourceLocation.Unknown
-
-  implicit val univ: Ast.Multiverse = Ast.Multiverse(ListMap.empty)
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //
@@ -83,7 +80,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
+    assertResult(Type.Bool)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.02") {
@@ -91,7 +88,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Char)((subst1 ++ subst2) (tpe))
+    assertResult(Type.Char)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.03") {
@@ -99,7 +96,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
+    assertResult(Type.Bool)((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.++.04") {
@@ -107,7 +104,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), loc)
-    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst1 ++ subst2) (tpe))
+    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst1 ++ subst2)(tpe))
   }
 
   test("Substitution.@@.01") {
@@ -115,7 +112,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.mkPureArrow(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), loc)
-    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst2 @@ subst1) (tpe))
+    assertResult(Type.mkPureArrow(Type.Bool, Type.Char, loc))((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.02") {
@@ -123,7 +120,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Char)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
+    assertResult(Type.Bool)((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.03") {
@@ -131,7 +128,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst2 = Substitution.singleton(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
+    assertResult(Type.Bool)((subst2 @@ subst1)(tpe))
   }
 
   test("Substitution.@@.04") {
@@ -140,7 +137,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst3 = Substitution.singleton(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), Type.Bool)
 
     val tpe = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
-    assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1)) (tpe))
+    assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1))(tpe))
   }
 
   test("Unify.Var.01") {
@@ -428,7 +425,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnoseteffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnoseteffects = true)))))
   }
 
   test("TestNoBoolEffects") {
@@ -439,7 +436,7 @@ class TestUnification extends FunSuite with TestUtils {
     assert(!isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)))
 
     // Make sure the types do unify when ignoring effects
-    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(univ, flix.setOptions(flix.options.copy(xnobooleffects = true)))))
+    assert(isOk(Unification.unifyTypes(t1, t2, RigidityEnv.empty)(flix.setOptions(flix.options.copy(xnobooleffects = true)))))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

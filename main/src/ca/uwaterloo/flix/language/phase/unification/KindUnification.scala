@@ -54,6 +54,12 @@ object KindUnification {
     case (Kind.Effect, Kind.Beef) =>
       Some(Kind.Effect)
 
+    // WildCaseSet ~ CaseSet(s) = CaseSet(s)
+    case (Kind.WildCaseSet , Kind.CaseSet(sym)) =>
+      Some(Kind.CaseSet(sym))
+    case (Kind.CaseSet(sym), Kind.WildCaseSet) =>
+      Some(Kind.CaseSet(sym))
+
     // else fail
     case _ => None
   }

@@ -24,6 +24,7 @@ object FormatKind {
     */
   def formatKind(kind: Kind): String = kind match {
     case Kind.Wild => "???"
+    case Kind.WildCaseSet => s"CaseSet[???]"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"
     case Kind.Effect => "Effect"
