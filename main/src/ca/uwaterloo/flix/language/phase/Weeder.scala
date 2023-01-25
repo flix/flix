@@ -897,7 +897,9 @@ object Weeder {
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
       //
-      // Rewrites a foreach-yield loop into Collectable.collect
+      // Rewrites a foreach-yield loop into a series of iterators
+      // wrapped in a Collectable.collect call:
+      //     foreach (x <- xs) yield x
       //
       val baseLoc = mkSL(sp1, sp2).asSynthetic
 
@@ -914,6 +916,9 @@ object Weeder {
       val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionIdent), baseLoc)
 
       // Desugar yield-exp
+      //    ... yield x
+      // Becomes
+      //     Iterator.singleton(rh, x)
       val yieldExp = mapN(visitExp(exp, senv)) {
         case e =>
           mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
@@ -922,6 +927,9 @@ object Weeder {
       // Desugar loop
       val loop = foldRight(frags)(yieldExp) {
         case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) =>
+          // Case 1: a generator fragment i.e. `pat <- exp`
+          // This should be desugared into
+          //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
           mapN(visitPattern(pat1), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -938,6 +946,9 @@ object Weeder {
           }
 
         case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) =>
+          // Case 2: a guard fragment i.e. `if exp`
+          // This should be desugared into
+          //     if (exp) accExp else Iterator.empty(rh)
           mapN(visitExp(exp1, senv)) {
             case e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -945,12 +956,14 @@ object Weeder {
               // 1. Create empty iterator
               val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc)
 
-              // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.new
+              // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
               WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
           }
       }
 
-      // Wrap in Collectable.collect function
+      // Wrap in Collectable.collect function.
+      // The nested calls to Iterator.flatMap are wrapped in
+      // this function.
       val resultExp = mapN(loop) {
         case l => mkApplyFqn(fqnCollect, List(l), baseLoc)
       }
