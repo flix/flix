@@ -540,12 +540,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
       }
 
-      private def ForEachFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+      private def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
         SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
       }
 
       private def Fragment: Rule1[ParsedAst.ForFragment] = rule {
-        ForEachFragment | GuardFragment
+        GeneratorFragment | GuardFragment
       }
 
       private def Fragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
