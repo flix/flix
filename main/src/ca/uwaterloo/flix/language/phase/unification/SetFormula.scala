@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -173,6 +173,54 @@ object SetFormula {
     val setFormula = fromCaseType(tpe, m, setFormulaUniv)
     val minimizedSetFormula = minimize(setFormula)(setFormulaUniv)
     toCaseType(minimizedSetFormula, sym, m, loc)
+  }
+
+  /**
+    * Returns (lowerBound,upperBound) if `tpe` is a case set, otherwise returns None
+    */
+  def boundsAnalysisType(tpe: Type, enm: TypedAst.RestrictableEnum): Option[(Set[Symbol.RestrictableCaseSym], Set[Symbol.RestrictableCaseSym])] = {
+    tpe.kind match {
+      case Kind.CaseSet(_) =>
+        val (m, setFormulaUniv) = mkEnv(List(tpe), SortedSet.from(enm.cases.keys))
+        val setFormula = fromCaseType(tpe, m, setFormulaUniv)
+        val (lower, upper) = boundsAnalysis(setFormula)(setFormulaUniv)
+        Some(cstToType(lower, m), cstToType(upper, m))
+      case _ => None
+    }
+  }
+
+  private def cstToType(cst: Set[Int], m: Bimap[VarOrCase, Int]): Set[Symbol.RestrictableCaseSym] = {
+    cst.map(c => m.getBackward(c) match {
+      case Some(VarOrCase.Var(_)) => throw InternalCompilerException("Unexpected case set var in constant", SourceLocation.Unknown)
+      case Some(VarOrCase.Case(sym)) => sym
+      case None => throw InternalCompilerException("Unexpected empty case set constant mapping", SourceLocation.Unknown)
+    })
+  }
+
+  private def boundsAnalysis(f: SetFormula)(implicit univ: Set[Int]): (Set[Int], Set[Int]) = {
+    val bot = SetFormula.Cst(Set.empty): SetFormula
+    val top = SetFormula.Cst(univ): SetFormula
+
+    // create all assignments possible of the free variables
+    def visit(fvs: List[Int]): List[Map[Int, SetFormula]] = fvs match {
+      case Nil => List(Map.empty)
+      case v :: vs =>
+        visit(vs) flatMap {
+          case partialSubst => List(partialSubst + (v -> bot), partialSubst + (v -> top))
+        }
+    }
+
+    def extractCst(form: SetFormula): Set[Int] = form match {
+      case Cst(s) => s
+      case _ => throw InternalCompilerException("Unexpected non-evalued formula", SourceLocation.Unknown)
+    }
+
+    val cases = visit(f.freeVars.toList).map{
+      case assignment => extractCst(applySubst(f, assignment))
+    }
+    val minimum = cases.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
+    val maximum = cases.reduceOption(_.union(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
+    (minimum, maximum)
   }
 
   private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
