@@ -43,6 +43,49 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalIntrinsic.01") {
+    val input =
+      """
+        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalIntrinsic](result)
+  }
+
+  test("MismatchedArity.01") {
+    val input =
+      """def f(): Bool =
+        |    relational_choose 123 {
+        |        case (Present(x), Present(y)) => x == y
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MismatchedArity](result)
+  }
+
+  test("MismatchedArity.02") {
+    val input =
+      """def f(): Bool =
+        |    relational_choose (123, 456) {
+        |        case Present(x) => x == x
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MismatchedArity](result)
+  }
+
+  test("EmptyInterpolatedExpression.01") {
+    val input = "def f(): String = \"${}\""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
+  test("HalfInterpolationEscape.01") {
+    val input = "def f(): String = \"${}\""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
+  }
+
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
@@ -186,28 +229,6 @@ class TestWeeder extends FunSuite with TestUtils {
            |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
-  }
-
-  test("MismatchedArity.01") {
-    val input =
-      """def f(): Bool =
-        |    relational_choose 123 {
-        |        case (Present(x), Present(y)) => x == y
-        |    }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedArity](result)
-  }
-
-  test("MismatchedArity.02") {
-    val input =
-      """def f(): Bool =
-        |    relational_choose (123, 456) {
-        |        case Present(x) => x == x
-        |    }
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MismatchedArity](result)
   }
 
   test("NonLinearPattern.01") {
@@ -524,18 +545,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
-  test("EmptyInterpolatedExpression.01") {
-    val input = "def f(): String = \"${}\""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.EmptyInterpolatedExpression](result)
-  }
-
-  test("HalfInterpolationEscape.01") {
-    val input = "def f(): String = \"${}\""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.EmptyInterpolatedExpression](result)
-  }
-
   test("HalfInterpolationEscape.02") {
     val input = s"""pub def foo(): String = "\\$$ {""""
     val result = compile(input, Options.TestWithLibNix)
@@ -749,12 +758,4 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalJavaClass](result)
   }
 
-  test("IllegalIntrinsic.01") {
-    val input =
-      """
-        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalIntrinsic](result)
-  }
 }
