@@ -90,14 +90,14 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     checkLessThanEqual(sc1, sc2, classEnv) match {
       case Validation.Success(_) => true
       case _failure => false
@@ -107,7 +107,7 @@ object Scheme {
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Validation[Substitution, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.

@@ -349,7 +349,8 @@ object Namer {
     */
   private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives, cases0, loc) =>
-      val sym = Symbol.mkRestrictableEnumSym(ns0, ident)
+      val caseIdents = cases0.map(_.ident)
+      val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
       // Compute the type parameters.
       val index = getTypeParam(index0)

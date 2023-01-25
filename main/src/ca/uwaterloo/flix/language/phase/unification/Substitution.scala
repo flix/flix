@@ -154,22 +154,11 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     import scala.collection.mutable
     val newTypeMap = mutable.Map.empty[Symbol.KindedTypeVarSym, Type]
 
-    // TODO RESTR-VARS hack the enum space
-    val enumSym = new Symbol.RestrictableEnumSym(Nil, "Expr", SourceLocation.Unknown)
-    val univ = List(
-      new Symbol.RestrictableCaseSym(enumSym, "Cst", SourceLocation.Unknown),
-      new Symbol.RestrictableCaseSym(enumSym, "Var", SourceLocation.Unknown),
-      new Symbol.RestrictableCaseSym(enumSym, "Not", SourceLocation.Unknown),
-      new Symbol.RestrictableCaseSym(enumSym, "And", SourceLocation.Unknown),
-      new Symbol.RestrictableCaseSym(enumSym, "Or", SourceLocation.Unknown),
-      new Symbol.RestrictableCaseSym(enumSym, "Xor", SourceLocation.Unknown),
-    )
-
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
       // minimize case set formulas if present
       val tpe = x.kind match {
-        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, univ, SourceLocation.Unknown)
+        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
         case _ => this.apply(t)
       }
       newTypeMap.update(x, tpe)

@@ -111,8 +111,7 @@ object Kinder {
             val univMap = restrictableEnums.map {
               case (sym, enum) => sym -> enum.cases.keys.toList
             }.toMap
-            val univ = Ast.Multiverse(ListMap(univMap))
-            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, univ, root.uses, root.entryPoint, root.sources, root.names)
+            KindedAst.Root(classes, instances.toMap, defs, enums.toMap, restrictableEnums.toMap, effects.toMap, taenv, root.uses, root.entryPoint, root.sources, root.names)
         }
     }
 

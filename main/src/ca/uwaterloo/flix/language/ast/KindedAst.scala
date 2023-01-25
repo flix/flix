@@ -31,7 +31,6 @@ object KindedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, KindedAst.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, KindedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias],
-                  univ: Ast.Multiverse,
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
