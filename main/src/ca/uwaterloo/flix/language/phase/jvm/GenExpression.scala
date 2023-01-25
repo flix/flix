@@ -336,15 +336,16 @@ object GenExpression {
       visitor.visitLabel(afterFinally)
 
     case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
+      // Compile the expression, putting a function implementing the Runnable interface on the stack
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+      
       // Compile the expression representing the region
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
-      // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
       // Call the Region's `runOnExit` method
+      visitor.visitInsn(SWAP)
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
 
       // Put a Unit value on the stack
