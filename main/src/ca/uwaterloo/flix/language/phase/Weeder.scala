@@ -497,7 +497,8 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        WeederError.IllegalJavaClass(alias, loc).toFailure
+        val err = WeederError.IllegalJavaClass(alias, loc)
+        List.empty.toSoftFailure(err)
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>

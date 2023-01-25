@@ -43,6 +43,15 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalJavaClass.01") {
+    val input =
+      """
+        |import java.util.Locale$Builder
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalJavaClass](result)
+  }
+
   test("IllegalIntrinsic.01") {
     val input =
       """
@@ -747,15 +756,4 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonUnitOperationType](result)
   }
-
-
-  test("IllegalJavaClass.01") {
-    val input =
-      """
-        |import java.util.Locale$Builder
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalJavaClass](result)
-  }
-
 }
