@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -33,303 +33,518 @@ object Safety {
     //
     // Collect all errors.
     //
-    val defErrors = root.defs.flatMap {
-      case (_, defn) => visitDef(defn, root)
-    }
 
-    val instanceErrors = visitSendable(root)
+    for {
+      _ <- Validation.foldRight(root.defs.toList)(root.toSuccess) {
+        case ((_, defn), _) => visitDef(defn, root)
+      }
 
-    val errors = defErrors ++ instanceErrors
+      errors <- visitSendable(root)
+    } yield errors
 
     //
     // Check if any errors were detected.
     //
-    if (errors.isEmpty)
-      root.toSuccess
-    else
-      Validation.Failure(errors.to(LazyList))
   }
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
-  private def visitSendable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitSendable(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = {
 
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-    root.instances.getOrElse(sendableClass, Nil) flatMap {
-      case Instance(_, _, _, _, tpe, _, _, _, loc) =>
-        if (tpe.typeArguments.exists(_.kind == Kind.Bool))
-          List(SafetyError.SendableError(tpe, loc))
-        else
-          Nil
+    Validation.foldRight(root.instances.getOrElse(sendableClass, Nil))(root.toSuccess[Root, CompilationMessage]) {
+      case (Instance(_, _, _, _, tpe, _, _, _, loc), _) =>
+        if (tpe.typeArguments.exists(_.kind == Kind.Bool)) {
+          SoftFailure[Root, CompilationMessage](root, LazyList(SafetyError.SendableError(tpe, loc)))
+        } else {
+          root.toSuccess[Root, CompilationMessage]
+        }
     }
   }
 
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitExp(def0.impl.exp, renv, root)
+    mapN(visitExp(def0.impl.exp, renv, root))(_ => root)
   }
 
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expression, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expression, renv: RigidityEnv, root: Root)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
 
-    def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
-      case Expression.Cst(_, _, _) => Nil
+    def visit(exp0: Expression): Validation[Expression, CompilationMessage] = exp0 match {
+      case Expression.Cst(_, _, _) => Success(exp0)
 
-      case Expression.Wild(_, _) => Nil
+      case Expression.Wild(_, _) => Success(exp0)
 
-      case Expression.Var(_, _, _) => Nil
+      case Expression.Var(_, _, _) => Success(exp0)
 
-      case Expression.Def(_, _, _) => Nil
+      case Expression.Def(_, _, _) => Success(exp0)
 
-      case Expression.Sig(_, _, _) => Nil
+      case Expression.Sig(_, _, _) => Success(exp0)
 
-      case Expression.Hole(_, _, _) => Nil
+      case Expression.Hole(_, _, _) => Success(exp0)
 
       case Expression.HoleWithExp(exp, _, _, _, _) =>
-        visit(exp)
+        for {_ <- visit(exp)
+             x <- Success(exp0)} yield x
 
       case Expression.Use(_, exp, _) =>
-        visit(exp)
+        for {_ <- visit(exp)
+             x <- Success(exp0)} yield x
 
       case Expression.Lambda(_, exp, _, _) =>
-        visit(exp)
+        for {_ <- visit(exp)
+             x <- Success(exp0)} yield x
 
       case Expression.Apply(exp, exps, _, _, _, _) =>
-        visit(exp) ::: exps.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(exps)(visit(exp))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Unary(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Region(_, _) =>
-        Nil
+        Success(exp0)
 
       case Expression.Scope(_, _, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2) ::: visit(exp3)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- visit(exp3)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Stm(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Discard(exp, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Match(exp, rules, _, _, _, _) =>
-        visit(exp) :::
-          rules.flatMap { case MatchRule(_, g, e) => g.toList.flatMap(visit) ::: visit(e) }
+        for {
+          _ <- Validation.foldRight(rules)(visit(exp)) {
+            case (MatchRule(_, g, e), _) => g match {
+              case Some(gexp) => for {
+                _ <- visit(gexp)
+                y <- visit(e)
+              } yield y
+              case None => visit(e)
+            }
+          }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.TypeMatch(exp, rules, _, _, _, _) =>
         // check whether the last case in the type match looks like `...: _`
-        val missingDefault = rules.last match {
+        val missingDefault: Validation[Expression, CompilationMessage] = rules.last match {
           case MatchTypeRule(_, tpe, _) => tpe match {
-            case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
-            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+            case Type.Var(sym, _) if renv.isFlexible(sym) => Success(exp)
+            case _ => SoftFailure(exp, LazyList(SafetyError.MissingDefaultMatchTypeCase(exp.loc)))
           }
         }
-        visit(exp) ::: missingDefault :::
-          rules.flatMap { case MatchTypeRule(_, _, e) => visit(e) }
+        for {
+          _ <- visit(exp)
+          _ <- Validation.foldRight(rules)(missingDefault) { case (MatchTypeRule(_, _, e), _) => visit(e) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
-        exps.flatMap(visit) :::
-          rules.flatMap { case RelationalChoiceRule(_, exp) => visit(exp) }
+        for {
+          _ <- Validation.foldRight(exps)(Success(exp0))((e, _) => visit(e))
+          _ <- Validation.foldRight(rules)(Success(exp0)) { case (RelationalChoiceRule(_, exp), _) => visit(exp) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
-        visit(exp) :::
-          rules.flatMap { case RestrictableChoiceRule(pat, exp) => visit(exp) }
+        for {
+          _ <- Validation.foldRight(rules)(visit(exp)) { case (RestrictableChoiceRule(_, exp), _) => visit(exp) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Tag(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.RestrictableTag(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Tuple(elms, _, _, _, _) =>
-        elms.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(elms)(Success(exp0))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
-      case Expression.RecordEmpty(_, _) => Nil
+      case Expression.RecordEmpty(_, _) => Success(exp0)
 
       case Expression.RecordSelect(exp, _, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.RecordExtend(_, value, rest, _, _, _, _) =>
-        visit(value) ::: visit(rest)
+        for {
+          _ <- visit(value)
+          _ <- visit(rest)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.RecordRestrict(_, rest, _, _, _, _) =>
-        visit(rest)
+        for {
+          _ <- visit(rest)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArrayLit(elms, exp, _, _, _, _) =>
-        elms.flatMap(visit) ::: visit(exp)
+        for {
+          _ <- Validation.foldRight(elms)(visit(exp))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArrayNew(exp1, exp2, exp3, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2) ::: visit(exp3)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          _ <- visit(exp3)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArrayLoad(base, index, _, _, _, _) =>
-        visit(base) ::: visit(index)
+        for {
+          _ <- visit(base)
+          _ <- visit(index)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArrayLength(base, _, _, _) =>
-        visit(base)
+        for {
+          _ <- visit(base)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArrayStore(base, index, elm, _, _, _) =>
-        visit(base) ::: visit(index) ::: visit(elm)
+        for {
+          _ <- visit(base)
+          _ <- visit(index)
+          _ <- visit(elm)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
-        visit(reg) ::: visit(base) ::: visit(beginIndex) ::: visit(endIndex)
+        for {
+          _ <- visit(reg)
+          _ <- visit(base)
+          _ <- visit(beginIndex)
+          _ <- visit(endIndex)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Deref(exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Assign(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Ascribe(exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Of(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        val errors = checkCastSafety(e)
-        visit(exp) ::: errors
+        for {
+          _ <- checkCastSafety(e)
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Mask(exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Upcast(exp, tpe, loc) =>
-        val errors = checkUpcastSafety(exp, tpe, renv, root, loc)
-        visit(exp) ::: errors
+        for {
+          _ <- checkUpcastSafety(exp, tpe, renv, root, loc)
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Supercast(exp, tpe, loc) =>
-        val errors = checkSupercastSafety(exp, tpe, loc)
-        visit(exp) ::: errors
+        for {
+          _ <- checkSupercastSafety(exp, tpe, loc)
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Without(exp, _, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>
-        visit(exp) :::
-          rules.flatMap { case CatchRule(_, _, e) => visit(e) }
+        for {
+          _ <- Validation.foldRight(rules)(visit(exp)) { case (CatchRule(_, _, e), _) => visit(e) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.TryWith(exp, _, rules, _, _, _, _) =>
-        visit(exp) :::
-          rules.flatMap { case HandlerRule(_, _, e) => visit(e) }
+        for {
+          _ <- Validation.foldRight(rules)(visit(exp)) { case (HandlerRule(_, _, e), _) => visit(e) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Do(_, exps, _, _, _) =>
-        exps.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(exps)(Success(exp0))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Resume(exp, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.InvokeConstructor(_, args, _, _, _, _) =>
-        args.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(args)(Success(exp0))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.InvokeMethod(_, exp, args, _, _, _, _) =>
-        visit(exp) ::: args.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(args)(visit(exp))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.InvokeStaticMethod(_, args, _, _, _, _) =>
-        args.flatMap(visit)
+        for {
+          _ <- Validation.foldRight(args)(Success(exp0))((e, _) => visit(e))
+          x <- Success(exp0)
+        } yield x
 
       case Expression.GetField(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.PutField(_, exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
-      case Expression.GetStaticField(_, _, _, _, _) =>
-        Nil
+      case Expression.GetStaticField(_, _, _, _, _) => Success(exp0)
 
       case Expression.PutStaticField(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.NewObject(_, clazz, tpe, _, _, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
-        checkObjectImplementation(clazz, erasedType, methods, loc) ++
-          methods.flatMap {
-            case JvmMethod(_, _, exp, _, _, _, _) => visit(exp)
+        val objImpl = checkObjectImplementation(clazz, erasedType, methods, loc) match {
+          case Nil => Success(exp0)
+          case errs => SoftFailure(exp0, LazyList.from(errs))
+        }
+        for {
+          _ <- Validation.foldRight(methods)(objImpl) {
+            case (JvmMethod(_, _, exp, _, _, _, _), _) => visit(exp)
           }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.NewChannel(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.GetChannel(exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.PutChannel(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.SelectChannel(rules, default, _, _, _, _) =>
-        rules.flatMap { case SelectChannelRule(_, chan, body) => visit(chan) :::
-          visit(body)
-        } :::
-          default.map(visit).getOrElse(Nil)
+        for {
+          _ <- Validation.foldRight(rules)(default.map(visit).getOrElse(Success(exp0))) {
+            case (SelectChannelRule(_, chan, body), _) => for {
+              _ <- visit(chan)
+              y <- visit(body)
+            } yield y
+          }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Spawn(exp1, exp2, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Par(exp, _) =>
         // Only tuple expressions are allowed to be parallelized with `par`.
         exp match {
           case e: Expression.Tuple => visit(e)
-          case _ => IllegalParExpression(exp, exp.loc) :: Nil
+          case _ => SoftFailure(exp, LazyList(IllegalParExpression(exp, exp.loc)))
         }
 
       case Expression.ParYield(frags, exp, _, _, _, _) =>
-        frags.flatMap { case ParYieldFragment(_, e, _) => visit(e) } ::: visit(exp)
+        for {
+          _ <- Validation.foldRight(frags)(Success(exp0)) { case (ParYieldFragment(_, e, _), _) => visit(e) }
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Lazy(exp, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.Force(exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointConstraintSet(cs, _, _, _) =>
-        cs.flatMap(checkConstraint(_, renv, root))
+        Validation.foldRight(cs)(Success(exp0))((c, _) => mapN(checkConstraint(c, renv, root))(_ => exp0))
 
       case Expression.FixpointLambda(_, exp, _, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointMerge(exp1, exp2, _, _, _, _, _) =>
-        visit(exp1) ::: visit(exp2)
+        for {
+          _ <- visit(exp1)
+          _ <- visit(exp2)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointSolve(exp, _, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointFilter(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointInject(exp, _, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
-        visit(exp)
+        for {
+          _ <- visit(exp)
+          x <- Success(exp0)
+        } yield x
 
-      case Expression.Error(_, _, _, _) =>
-        Nil
+
+      case Expression.Error(_, _, _, _) => Success(exp0)
 
     }
 
@@ -345,7 +560,7 @@ object Safety {
     *
     * No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -359,30 +574,30 @@ object Safety {
     (tpe1, tpe2) match {
 
       // Allow anything with type variables
-      case (Type.Var(_, _), _) => Nil
-      case (_, Some(Type.Var(_, _))) => Nil
+      case (Type.Var(_, _), _) => cast.toSuccess
+      case (_, Some(Type.Var(_, _))) => cast.toSuccess
 
       // Allow anything with Java interop
-      case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
-      case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
+      case (Type.Cst(TypeConstructor.Native(_), _), _) => cast.toSuccess
+      case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => cast.toSuccess
 
       // Boolean primitive to other primitives
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        SoftFailure(cast, LazyList(ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc)))
 
       // Symmetric case
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        SoftFailure(cast, LazyList(ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc)))
 
       // JVM Reference types and primitives
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        SoftFailure(cast, LazyList(ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc)))
 
       // Symmetric case
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        SoftFailure(cast, LazyList(ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc)))
 
-      case _ => Nil
+      case _ => cast.toSuccess
     }
   }
 
@@ -491,25 +706,25 @@ object Safety {
   /**
     * Returns a list of errors if the the upcast is invalid.
     */
-  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
     if (isSubtypeOf(tpe1, tpe2, renv, root))
-      Nil
+      exp.toSuccess
     else
-      UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
+      SoftFailure(exp, LazyList(UnsafeUpcast(exp.tpe, tpe, loc)))
   }
 
   /**
     * Returns a list of errors if the the supercast is invalid.
     */
-  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
     if (isJavaSubtypeOf(tpe1, tpe2))
-      Nil
+      exp.toSuccess
     else
-      collectSupercastErrors(exp, tpe, loc)
+      SoftFailure(exp, LazyList.from(collectSupercastErrors(exp, tpe, loc)))
   }
 
   /**
@@ -553,7 +768,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): Validation[Constraint, CompilationMessage] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -578,23 +793,38 @@ object Safety {
     //
     val quantVars = c0.cparams.map(_.sym).toSet
 
-    //
-    // Check that all negative atoms only use positively defined variable symbols
-    // and that lattice variables are not used in relational position.
-    //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv, root))
+    for {
+      //
+      // Check that all negative atoms only use positively defined variable symbols
+      // and that lattice variables are not used in relational position.
+      //
+      _ <- Validation.foldRight(c0.body)(c0.toSuccess) {
+        (e, _) =>
+          checkBodyPredicate(e, posVars, quantVars, latVars, renv, root) match {
+            case Nil => c0.toSuccess
+            case errs => SoftFailure(c0, LazyList.from(errs))
+          }
+      }
 
-    //
-    // Check that the free relational variables in the head atom are not lattice variables.
-    //
-    val err2 = checkHeadPredicate(c0.head, unsafeLatVars)
+      //
+      // Check that the free relational variables in the head atom are not lattice variables.
+      //
+      _ <- checkHeadPredicate(c0.head, unsafeLatVars) match {
+        case Nil => c0.toSuccess
+        case errs => SoftFailure(c0, LazyList.from(errs))
+      }
 
-    //
-    // Check that patterns in atom body are legal
-    //
-    val err3 = c0.body.flatMap(s => checkBodyPattern(s))
-
-    err1 ++ err2 ++ err3
+      //
+      // Check that patterns in atom body are legal
+      //
+      err <- Validation.foldRight(c0.body)(c0.toSuccess) {
+        (s, _) =>
+          checkBodyPattern(s) match {
+            case Nil => c0.toSuccess
+            case errs => SoftFailure(c0, LazyList.from(errs))
+          }
+      }
+    } yield err
   }
 
   /**
@@ -643,9 +873,9 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Guard(exp, _) => List.from(visitExp(exp, renv, root).errors)
 
-    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Loop(_, exp, _) => List.from(visitExp(exp, renv, root).errors)
   }
 
   /**
