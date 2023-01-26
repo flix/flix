@@ -501,7 +501,7 @@ namespace Array {
     ///
     def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; arr[i1 rem len] };
+        let f = i -> { let i1 = n + i; arr[i1 `Int32.rem` len] };
         init(r2, f, len)
 
     ///
@@ -525,9 +525,9 @@ namespace Array {
     ///
     def rotateRightHelper(r2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(a);
-        let n1 = n rem len;
+        let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; a[i1 rem len]};
+        let f = i -> { let i1 = start + i; a[i1 `Int32.rem` len]};
         init(r2, f, len)
 
     ///

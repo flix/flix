@@ -60,6 +60,24 @@ namespace Int32 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    ///
+    pub def mod(x: Int32, n: Int32): Int32 =
+        if (n == 0i32)
+            0i32
+        else
+            $INT32_REM$($INT32_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    ///
+    pub def rem(x: Int32, n: Int32): Int32 =
+        if (n == 0i32)
+            0i32
+        else
+            $INT32_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
@@ -93,7 +111,7 @@ namespace Int32 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int32): Int32 =
-        if (x < 0 and dist.dist rem size() != 0)
+        if (x < 0 and rem(dist.dist, size()) != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
             x >>> dist.dist
@@ -103,9 +121,9 @@ namespace Int32 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int32): Int32 = {
-        if      (x == 0)       0
-        else if (x rem 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                   bitCount(logicalRightShift(dist = 1, x))
+        if      (x == 0)         0
+        else if (x `rem` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                     bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -220,7 +238,7 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
-        if ((x >>> pos.pos) rem 2 == 0) 0 else 1
+        if ((x >>> pos.pos) `rem` 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
