@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -220,6 +220,17 @@ object SetFormula {
     }
 
     (Bimap(forward, backward), newUniv.toSet)
+  }
+
+  /**
+    * Converts a rigidity environment to an equivalent environment for use with set formulas.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[VarOrCase, Int]): Set[Int] = {
+    // We use flatmap because if a var is not in the env,
+    // then it is not relevant to the types.
+    renv.s.flatMap {
+      case sym => env.getForward(VarOrCase.Var(sym))
+    }
   }
 
   /**

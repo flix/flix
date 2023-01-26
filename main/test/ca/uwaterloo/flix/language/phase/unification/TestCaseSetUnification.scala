@@ -385,8 +385,7 @@ class TestCaseSetUnification extends FunSuite with TestUtils {
     assertUnifies(tpe1, tpe2, renv, Expr)
   }
 
-  // TODO RESTR-VARS ignoring rigid vars for now
-  ignore("Test.CaseSetUnification.Fail.01") {
+  test("Test.CaseSetUnification.Fail.01") {
     // e! ≐ f!
     val sym1 = mkTypeVarSym("e", E)
     val sym2 = mkTypeVarSym("f", E)
