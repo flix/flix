@@ -188,7 +188,7 @@ namespace Vector {
     ///
     /// Returns `Some(x)` if `x` is the first element of `v`.
     ///
-    /// Returns `None` if `a` is empty.
+    /// Returns `None` if `v` is empty.
     ///
     pub def head(v: Vector[a]): Option[a] =
         nth(0, v)
@@ -196,10 +196,339 @@ namespace Vector {
     ///
     /// Returns `Some(x)` if `x` is the last element of `v`.
     ///
-    /// Returns `None` if `a` is empty.
+    /// Returns `None` if `v` is empty.
     ///
     pub def last(v: Vector[a]): Option[a] =
         nth(length(v) - 1, v)
+
+    ///
+    /// Returns `true` if and only if `v` contains the element `x`.
+    ///
+    pub def memberOf(x: a, v: Vector[a]): Bool with Eq[a] =
+        exists(y -> y == x, v)
+
+    ///
+    /// Optionally finds the smallest element of `v` according to the `Order` on `v`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def minimum(v: Vector[a]): Option[a] with Order[a] =
+        reduceLeft(Order.min, v)
+
+    ///
+    /// Optionally finds the smallest element of `v` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def minimumBy(cmp: (a, a) -> Comparison, v: Vector[a]): Option[a] =
+        reduceLeft(Order.minBy(cmp), v)
+
+    ///
+    /// Optionally finds the largest element of `v` according to the `Order` on `v`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def maximum(v: Vector[a]): Option[a] with Order[a] =
+        reduceLeft(Order.max, v)
+
+    ///
+    /// Optionally finds the largest element of `v` according to the given comparator `cmp`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def maximumBy(cmp: (a, a) -> Comparison, v: Vector[a]): Option[a] =
+        reduceLeft(Order.maxBy(cmp), v)
+
+    ///
+    /// Alias for `IndexOfLeft`
+    ///
+    pub def indexOf(x: a, v: Vector[a]): Option[Int32] with Eq[a] =
+        indexOfLeft(x, v)
+
+    ///
+    /// Optionally returns the position of the first occurrence of `a` in `v`
+    /// searching from left to right.
+    ///
+    pub def indexOfLeft(a: a, v: Vector[a]): Option[Int32] with Eq[a] =
+        def loop(i) = {
+            if (i >= length(v))
+                -1
+            else if (get(i, v) == a)
+                i
+            else
+                loop(i + 1)
+        };
+        let i = loop(0);
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Optionally returns the position of the first occurrence of `a` in `v`
+    /// searching from right to left.
+    ///
+    pub def indexOfRight(a: a, v: Vector[a]): Option[Int32] with Eq[a] =
+        def loop(i) = {
+            if (i < 0)
+                -1
+            else if (get(i, v) == a)
+                i
+            else
+                loop(i - 1)
+        };
+        let i = loop(length(v) - 1);
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Return the positions of the all the occurrences of `a` in `v`.
+    ///
+    pub def indices(a: a, v: Vector[a]): Vector[Int32] with Eq[a] =
+        findIndices(b -> a == b, v)
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    pub def find(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
+        findLeft(f, v)
+
+    ///
+    /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from left to right.
+    ///
+    pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
+        match findIndexOfLeft(f, v) {
+            case None    => None
+            case Some(i) => Some(get(i, v))
+        }
+
+    ///
+    /// Optionally returns the first element of `v` that satisfies the predicate `f` when searching from right to left.
+    ///
+    pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
+        match findIndexOfRight(x -> f(x), v) {
+            case None    => None
+            case Some(i) => Some(get(i, v))
+        }
+
+    ///
+    /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
+    ///
+    pub def fold(v: Vector[a]): a with Monoid[a] = foldLeft(Monoid.combine, Monoid.empty(), v)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `v` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef =
+        let len = length(v);
+        def loop(i, acc) = {
+            if (i >= len)
+                acc
+            else
+                loop(i + 1, f(acc, get(i, v)))
+        };
+        loop(0, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `v` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef =
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, f(get(i, v), acc))
+        };
+        loop(length(v) - 1, s)
+
+    ///
+    /// Applies `f` to a start value `z` and all elements in `v` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, v: Vector[a]): b \ ef =
+        def loop(i) = {
+            if (i == length(v))
+                z
+            else
+                f(get(i, v), _ -> loop(i + 1))
+        };
+        loop(0)
+
+    ///
+    /// Returns the result of mapping each element and combining the results.
+    ///
+    pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), v)
+
+    ///
+    /// Applies `f` to all elements in `v` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def reduceLeft(f: (a, a) ->  a \ ef, v: Vector[a]): Option[a] \ ef =
+        let len = length(v);
+        def loop(i, acc) = {
+            if (i >= len)
+                acc
+            else
+                loop(i + 1, f(acc, get(i, v)))
+        };
+        if (len == 0)
+            None
+        else
+            Some(loop(1, get(0, v)))
+
+    ///
+    /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
+    /// Returns `None` if `v` is empty.
+    ///
+    pub def reduceRight(f: (a, a) -> a \ ef, v: Vector[a]): Option[a] \ ef =
+        let len = length(v);
+        def loop(i, acc) = {
+            if (i < 0)
+                acc
+            else
+                loop(i - 1, f(get(i, v), acc))
+        };
+        if (len == 0)
+            None
+        else
+            Some(loop(len - 2, get(len - 1, v)))
+
+    ///
+    /// Returns the number of elements in `v` that satisfy the predicate `f`.
+    ///
+    pub def count(f: a -> Bool \ ef, v: Vector[a]): Int32 \ ef =
+        foldLeft((b, x) -> if (f(x)) b + 1 else b, 0, v)
+
+    ///
+    /// Returns the sum of all elements in the vector `v`.
+    ///
+    pub def sum(v: Vector[Int32]): Int32 =
+        foldLeft((acc, x) -> acc + x, 0, v)
+
+    ///
+    /// Returns the sum of all elements in the vector `v` according to the function `f`.
+    ///
+    pub def sumWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
+        foldLeft((acc, x) -> acc + f(x), 0, v)
+
+    ///
+    /// Returns the product of all elements in the vector `v`.
+    ///
+    pub def product(v: Vector[Int32]): Int32 =
+        if (isEmpty(v))
+            1
+        else
+            foldLeft((acc, x) -> acc * x, 1, v)
+
+    ///
+    /// Returns the product of all elements in the vector `v` according to the function `f`.
+    ///
+    pub def productWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
+        if (isEmpty(v))
+            1
+        else
+            foldLeft((acc, x) -> acc * f(x), 1, v)
+
+    ///
+    /// Returns `true` if and only if at least one element in `v` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `v` is empty.
+    ///
+    pub def exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i >= len)
+                false
+            else if (f(get(i, v)))
+                true
+            else
+                loop(i + 1)
+        };
+        loop(0)
+
+    ///
+    /// Returns `true` if and only if all elements in `v` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `v` is empty.
+    ///
+    pub def forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i >= len)
+                true
+            else if (f(get(i, v)))
+                loop(i + 1)
+            else
+                false
+        };
+        loop(0)
+
+    ///
+    /// Alias for `findIndexOfLeft`.
+    ///
+    pub def findIndexOf(f: a -> Bool \ ef, v: Vector[a]): Option[Int32] \ ef =
+        findIndexOfLeft(f, v)
+
+    ///
+    /// Optionally returns the position of the first element in `v` satisfying `f`.
+    ///
+    pub def findIndexOfLeft(f: a -> Bool \ ef, v: Vector[a]): Option[Int32] \ ef =
+        let len = length(v);
+        if (len < 1)
+            None
+        else {
+            def loop(i) = {
+                if (i >= len)
+                    -1
+                else if (f(get(i, v)))
+                    i
+                else
+                    loop(i + 1)
+            };
+            let i = loop(0);
+            if (i < 0) None else Some(i)
+        }
+
+    ///
+    /// Optionally returns the position of the first element in `v` satisfying `f`
+    /// searching from right to left.
+    ///
+    pub def findIndexOfRight(f: a -> Bool \ ef, v: Vector[a]): Option[Int32] \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i < 0)
+                -1
+            else if (f(get(i, v)))
+                i
+            else
+                loop(i - 1)
+        };
+        let i = loop(len - 1);
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Returns the positions of the all the elements in `v` satisfying `f`.
+    ///
+    pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef =
+        let len = length(v);
+        let l = unsafe_cast MutList.new(Static) as MutList[Int32, true] \ ef;
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                if (f(get(i, v))) {
+                    unsafe_cast MutList.push!(i, l) as Unit \ ef
+                } else ();
+                loop(i + 1)
+            }
+        };
+        loop(0);
+        unsafe_cast MutList.toArray(Static, l) as Array[Int32, true] \ ef
 
     ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
