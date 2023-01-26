@@ -467,7 +467,7 @@ class Flix {
     * Decides whether or not to print the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
-    if (options.explain || errors.length == 1)
+    if (options.explain)
       errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
       errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
