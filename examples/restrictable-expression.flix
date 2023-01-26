@@ -46,7 +46,8 @@ def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>][t]): Bool =
         case Expr.And(x, y) => fasteval(x) and fasteval(y)
     }
 
-def openExpr(e: Expr[s][t]): Expr[s ++ any][t] = ???
+def openExpr(e: Expr[s][t]): Expr[s ++ any][t] =
+    unsafe_cast e as Expr[s ++ any][t]
 
 def eval(e: Expr[s][t]): Bool = {
     let f = simplify >> subst >> fasteval;
@@ -54,7 +55,8 @@ def eval(e: Expr[s][t]): Bool = {
 }
 
 def main(): Unit \ IO = {
-    let input = open Expr.And(open Expr.Cst(true), open Expr.Var('a'));
+    let input = open Expr.Not(open Expr.Var('a'));
+    println("input is Not(a)");
     println("input size ${size(input)}");
     println("input evaluates to ${eval(input)}")
 }
