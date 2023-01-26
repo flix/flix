@@ -416,6 +416,14 @@ object Kinder {
           KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc)
       }
 
+    case ResolvedAst.Expression.OpenAs(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          KindedAst.Expression.OpenAs(sym, exp, tvar, loc)
+      }
+
     case ResolvedAst.Expression.Use(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {

@@ -562,6 +562,11 @@ object Namer {
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
+    case WeededAst.Expression.OpenAs(name, exp, loc) =>
+      mapN(visitExp(exp, ns0)) {
+        case e => NamedAst.Expression.OpenAs(name, e, loc)
+      }
+
     case WeededAst.Expression.Open(name, loc) =>
       NamedAst.Expression.Open(name, loc).toSuccess
 

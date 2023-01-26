@@ -319,6 +319,41 @@ object RestrictableChooseInference {
   }
 
   /**
+    * Performs type inference on the given OpenAs expression
+    */
+  def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
+    case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+      val enum = root.restrictableEnums(sym)
+
+      val (enumType, indexVar, targs) = instantiatedEnumType(sym, enum, loc.asSynthetic)
+      val kargs = enum.index.sym.kind :: enum.tparams.map(_.sym.kind)
+      val kind = Kind.mkArrow(kargs)
+
+      for {
+        // infer the inner expression type τ
+        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+
+        // make sure the expression has type EnumType[s][α1 ... αn]
+        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
+
+        // the new index is s ∪ φ for some free φ
+        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(enum.sym), loc.asSynthetic), sym, loc)
+
+        // the result type is EnumType[s ∪ φ][α1 ... αn]
+        resultType = Type.mkApply(
+          Type.Cst(TypeConstructor.RestrictableEnum(sym, kind), loc.asSynthetic),
+          openIndex :: targs,
+          loc
+        )
+
+        // unify the tvar
+        _ <- unifyTypeM(tvar, resultType, loc)
+
+      } yield (constrs, resultType, pur, eff)
+
+  }
+
+  /**
     * Returns the instantiated conceptual schema of the enum along with the type
     * variable that is the index type argument.
     *

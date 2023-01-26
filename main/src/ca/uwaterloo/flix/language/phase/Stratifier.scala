@@ -112,6 +112,11 @@ object Stratifier {
         case e => Expression.HoleWithExp(e, tpe, pur, eff, loc)
       }
 
+    case Expression.OpenAs(sym, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.OpenAs(sym, e, tpe, loc)
+      }
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -551,6 +556,9 @@ object Stratifier {
     case Expression.Hole(_, _, _) => LabelledGraph.empty
 
     case Expression.HoleWithExp(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.OpenAs(_, exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Use(_, exp, _) =>

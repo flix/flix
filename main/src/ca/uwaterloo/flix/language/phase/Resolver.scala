@@ -871,6 +871,13 @@ object Resolver {
             case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
           }
 
+        case NamedAst.Expression.OpenAs(name, exp, loc) =>
+          val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
+          val eVal = visitExp(exp, env0, region)
+          mapN(enumVal, eVal) {
+            case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
+          }
+
         case NamedAst.Expression.Hole(nameOpt, loc) =>
           val sym = nameOpt match {
             case None => Symbol.freshHoleSym(loc)
@@ -2430,7 +2437,7 @@ object Resolver {
         val tpe2Val = finishResolveType(tpe2, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpe1Val, tpe2Val, targsVal) {
-          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2 ,loc), ts, tpe0.loc)
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.CaseIntersection(tpe1, tpe2, loc) =>
@@ -2438,7 +2445,7 @@ object Resolver {
         val tpe2Val = finishResolveType(tpe2, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpe1Val, tpe2Val, targsVal) {
-          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2 ,loc), ts, tpe0.loc)
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.Ascribe(tpe, kind, loc) =>

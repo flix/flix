@@ -536,29 +536,15 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Open(sp1, qname, sp2) =>
-      val parts = qname.namespace.idents :+ qname.ident
-      val prefix = parts.takeWhile(_.isUpper)
-      val suffix = parts.dropWhile(_.isUpper)
-      suffix match {
-        // Case 1: upper qualified name
-        case Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, qname.ident.loc).toSuccess
+      // TODO RESTR-VARS make sure it's capital
+      WeededAst.Expression.Open(qname, mkSL(sp1, sp2)).toSuccess
 
-        // Case 1: basic qualified name
-        case ident :: Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, ident.loc).toSuccess
-
-        // Case 2: actually a record access
-        case ident :: fields =>
-          // NB: We only use the source location of the identifier itself.
-          val base = WeededAst.Expression.Open(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-          fields.foldLeft(base: WeededAst.Expression) {
-            case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
-          }.toSuccess
+    case ParsedAst.Expression.OpenAs(sp1, qname, exp, sp2) =>
+      // TODO RESTR-VARS make sure it's capital
+      val eVal = visitExp(exp, senv)
+      mapN(eVal) {
+        case e => WeededAst.Expression.OpenAs(qname, e, mkSL(sp1, sp2))
       }
-
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -3063,6 +3049,7 @@ object Weeder {
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Open(sp1, _, _) => sp1
+    case ParsedAst.Expression.OpenAs(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
