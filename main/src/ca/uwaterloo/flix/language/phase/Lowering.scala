@@ -970,7 +970,7 @@ object Lowering {
           val pat1 = termPatterns match {
             case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
             case singular :: Nil => singular
-            case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuplish(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+            case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuple(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
           }
           val tagSym = visitRestrictableCaseSymUse(sym)
           val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
