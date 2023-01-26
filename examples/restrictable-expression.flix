@@ -1,13 +1,13 @@
-restrictable enum Expr[s][t] {
+restrictable enum Expr[s] {
     case Cst(Bool)
-    case Var(t)
-    case Not(Expr[s][t])
-    case And(Expr[s][t], Expr[s][t])
-    case Or(Expr[s][t], Expr[s][t])
-    case Xor(Expr[s][t], Expr[s][t])
+    case Var(Int32)
+    case Not(Expr[s])
+    case And(Expr[s], Expr[s])
+    case Or(Expr[s], Expr[s])
+    case Xor(Expr[s], Expr[s])
 }
 
-def size(e: Expr[s][t]): Int32 = choose e {
+def size(e: Expr[s]): Int32 = choose e {
     case Expr.Cst(_) => 1
     case Expr.Var(_) => 1
     case Expr.Not(x) => size(x) + 1
@@ -16,9 +16,9 @@ def size(e: Expr[s][t]): Int32 = choose e {
     case Expr.Xor(x, y) => size(x) + size(y) + 1
 }
 
-def eq(e1: Expr[s1][t], e2: Expr[s2][t]): Bool = ??? // nested choose
+def eq(e1: Expr[s1], e2: Expr[s2]): Bool = ??? // nested choose
 
-def simplify(e: Expr[s][t]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>][t] =
+def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>] =
     choose* e {
         case Expr.Var(x) => Expr.Var(x)
         case Expr.Cst(b) => Expr.Cst(b)
@@ -28,7 +28,7 @@ def simplify(e: Expr[s][t]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>][t] =
         case Expr.Xor(x, y) => Expr.Not(???)
     }
 
-def subst(e: Expr[s][t]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>][t] =
+def subst(e: Expr[s]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>] =
     choose* e {
         case Expr.Var(x) => Expr.Cst(true)
         case Expr.Cst(b) => Expr.Cst(b)
@@ -38,7 +38,7 @@ def subst(e: Expr[s][t]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>][t] =
         case Expr.Xor(x, y) => Expr.Xor(???, ???)
     }
 
-def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>][t]): Bool =
+def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>]): Bool =
     choose e {
         case Expr.Cst(b) => b
         case Expr.Not(x) => fasteval(x)
@@ -46,17 +46,17 @@ def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>][t]): Bool =
         case Expr.And(x, y) => fasteval(x) and fasteval(y)
     }
 
-def openExpr(e: Expr[s][t]): Expr[s ++ any][t] =
-    unsafe_cast e as Expr[s ++ any][t]
+def openExpr(e: Expr[s]): Expr[s ++ any] =
+    unsafe_cast e as Expr[s ++ any]
 
-def eval(e: Expr[s][t]): Bool = {
+def eval(e: Expr[s]): Bool = {
     let f = simplify >> subst >> fasteval;
     f(e)
 }
 
 def main(): Unit \ IO = {
-    let input = open Expr.Not(open Expr.Var('a'));
-    println("input is Not(a)");
+    let input = open Expr.Not(open Expr.Var(42));
+    println("input is Not(v42)");
     println("input size ${size(input)}");
     println("input evaluates to ${eval(input)}")
 }
