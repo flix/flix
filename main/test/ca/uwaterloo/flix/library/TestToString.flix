@@ -393,7 +393,7 @@ namespace TestToString {
 
     @test
     def arrayToString05(): Bool = region r {
-        toString(Array.repeat(r, 3, [1, 2, 3])) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
+        toString(Array.repeat(r, 3, Array#{1, 2, 3} @ r)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
     }
 
     @test

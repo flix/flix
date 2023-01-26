@@ -167,6 +167,9 @@ object EarlyTreeShaker {
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 

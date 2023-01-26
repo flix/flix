@@ -54,14 +54,8 @@ namespace Test/Exp/Concurrency/Spawn {
     @test
     def testSpawn18(): Unit \ IO = region r { spawn spawn spawn 123 @ r @ r @ r }
 
-//    @test
-//    def testSpawnAndRegionOf01(): Unit \ IO = region r {
-//        let a = [1, 2, 3] @ r;
-//        spawn () @ Scoped.regionOf(a)
-//    }
-
     @test
-    def testExceptionsInChildThread01(): Bool \ IO = 
+    def testExceptionsInChildThread01(): Bool \ IO =
         try {
             region r {
                 spawn {
@@ -78,7 +72,7 @@ namespace Test/Exp/Concurrency/Spawn {
     @test
     def testExceptionsInChildThread02(): Bool \ IO = region r {
         spawn {
-            spawn { 
+            spawn {
                 try {
                     String.concat(unsafe_cast null as String, "foo")
                 } catch {

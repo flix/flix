@@ -52,7 +52,6 @@ instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) = Map.iteratorValues(r, m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -102,6 +101,10 @@ instance JoinLattice[Map[k, v]] with Order[k], Eq[v], JoinLattice[v] {
 instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
     pub def greatestLowerBound(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
+}
+
+instance Iterable[Map[k]] {
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
 namespace Map {
@@ -911,21 +914,21 @@ namespace Map {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(r: Region[r], m: Map[k, v]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ Write(r) =
         let Map(t) = m;
-        RedBlackTree.iterator(r, t)
+        RedBlackTree.iterator(rc, t)
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
-    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r] \ Write(r) =
-        iterator(r, m) |> Iterator.mapL(match (k, _) -> k)
+    pub def iteratorKeys(r: Region[r], m: Map[k, v]): Iterator[k, r, r] \ Write(r) =
+        iterator(r, m) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over values in `m`.
     ///
-    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r] \ Write(r) =
-        iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+    pub def iteratorValues(r: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) =
+        iterator(r, m) |> Iterator.map(snd)
 
     ///
     /// Returns `m` as a `DelayMap`.

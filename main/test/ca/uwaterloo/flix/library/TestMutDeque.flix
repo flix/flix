@@ -1014,7 +1014,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r): MutDeque[Int32, _];
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [] @ r)
+        Array.sameElements(a, Array#{} @ r)
     }
 
     @test
@@ -1023,7 +1023,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(1, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
@@ -1033,7 +1033,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
@@ -1045,7 +1045,7 @@ namespace TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [4, 3, 1, 2] @ r)
+        Array.sameElements(a, Array#{4, 3, 1, 2} @ r)
     }
 
 
@@ -1127,13 +1127,21 @@ namespace TestMutDeque {
     @test
     def iterator01(): Bool = region r {
         let d = new MutDeque(r): MutDeque[Int32, r];
-        MutDeque.iterator(r, d) |> invokeIsEmpty(100)
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) { 
+            case None => true
+            case _    => false
+        }
     }
 
     @test
     def iterator02(): Bool = region r {
         let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        not (MutDeque.iterator(r, d) |> invokeIsEmpty(100))
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) { 
+            case Some(_) => true
+            case _       => false
+        }
     }
 
     @test
@@ -1142,7 +1150,11 @@ namespace TestMutDeque {
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        MutDeque.iterator(r, d) |> invokeIsEmpty(100)
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) { 
+            case None => true
+            case _    => false
+        }
     }
 
     @test
@@ -1166,21 +1178,6 @@ namespace TestMutDeque {
         iter |> Iterator.toList == List.range(50, 100) and
         MutDeque.toList(d) == List.range(0, 100)
     }
-
-    ///
-    /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
-    ///
-    /// Assumes `n > 0`.
-    ///
-    def invokeIsEmpty(n: Int32, iter: Iterator[a, r]): Bool \ Read(r) =
-        def loop(i, acc) = {
-            if (i >= n)
-                acc
-            else
-                loop(i + 1, Iterator.isEmpty(iter) and acc)
-        };
-        loop(1, Iterator.isEmpty(iter))
-
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

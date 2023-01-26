@@ -1225,25 +1225,25 @@ namespace TestNec {
     @test
     def toArray01(): Bool = region r {
         let a = Nec.toArray(r, singleton(1));
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
         let a = Nec.toArray(r, necOf2(1, 2));
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
         let a = Nec.toArray(r, necOf3(1, 2, 3));
-        Array.sameElements(a, [1, 2, 3] @ r)
+        Array.sameElements(a, Array#{1, 2, 3} @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
         let a = Nec.toArray(r, necOf3(3, 2, 3));
-        Array.sameElements(a, [3, 2, 3] @ r)
+        Array.sameElements(a, Array#{3, 2, 3} @ r)
     }
 
 
@@ -1264,6 +1264,22 @@ namespace TestNec {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        match Nec.range(-100, 100) {
+            case Some(nec) => nec |> Nec.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+            case None      => unreachable!()
+        }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // The following tests for sort functions correspond to those in TestList  //

@@ -107,6 +107,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.ScopeExit(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => checkType(tpe, loc)
+      }
+
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => checkType(tpe, loc)
@@ -427,7 +432,9 @@ object Regions {
       }
 
     case Expression.Error(_, _, _, _) =>
-      ().toSoftFailure
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure((), LazyList.empty)
 
   }
 
@@ -443,11 +450,11 @@ object Regions {
     */
   private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
     // Compute the region variables that escape.
-    val minned = TypeMinimization.minimizeType(tpe)
-    val regs = regionVarsOf(minned)
+    // We should minimize `tpe`, but we do not because of the performance cost.
+    val regs = regionVarsOf(tpe)
     for (reg <- regs -- scope) {
-      if (essentialTo(reg, minned)) {
-        return TypeError.RegionVarEscapes(reg, minned, loc).toFailure
+      if (essentialTo(reg, tpe)) {
+        return TypeError.RegionVarEscapes(reg, tpe, loc).toFailure
       }
     }
     ().toSuccess

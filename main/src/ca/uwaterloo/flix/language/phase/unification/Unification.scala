@@ -96,12 +96,8 @@ object Unification {
       }
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
-      // TODO RESTR-VARS EVIL HACK HERE
-      if (sym1 != CaseSetUnification.Hack.EnumSym) {
-        Err(UnificationError.HackError("Restrictable enum must be Expr with cases Var, Not, And, Or, Xor"))
-      } else {
-        CaseSetUnification.unify(tpe1, tpe2, renv, CaseSetUnification.Hack.Cases, CaseSetUnification.Hack.EnumSym)
-      }
+      val cases = sym1.universe
+      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1)
 
     //
     // Record Rows

@@ -63,6 +63,6 @@ namespace Test/Exp/Jvm/InvokeConstructor {
     @test
     def testInvokeConstructorWithArrayParam(): ##java.net.URLClassLoader \ IO = region r {
         import new java.net.URLClassLoader(Array[##java.net.URL, r]): ##java.net.URLClassLoader \ IO as newClassLoader;
-        newClassLoader([])
+        newClassLoader(Array#{} @ r)
     }
 }

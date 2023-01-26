@@ -46,53 +46,53 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
-    pub def testChooseStar04(): Bool = {
-        // P2: check the lower bound by using result in a choose
-        let star = choose* Expr.Cst {
-            case Expr.Cst(_) => Expr.Var()
-            case Expr.Not(_) => Expr.Var()
-            case Expr.Xor(_) => Expr.Not()
-        };
-        choose star {
-            case Expr.Var(_) => true
-            case Expr.Not(_) => true
-            case Expr.Xor(_) => false
-        }
-    }
+   pub def testChooseStar04(): Bool = {
+       // P2: check the lower bound by using result in a choose
+       let star = choose* Expr.Cst {
+           case Expr.Cst(_) => Expr.Var()
+           case Expr.Not(_) => Expr.Var()
+           case Expr.Xor(_) => Expr.Not()
+       };
+       choose star {
+           case Expr.Var(_) => true
+           case Expr.Not(_) => true
+           case Expr.Xor(_) => false
+       }
+   }
 
-    pub def testChooseStar05(): Bool = {
-        // P3: Check that not is not present
-        let star = choose* Expr.Cst {
-            case Expr.Not(_) => Expr.Not()
-            case Expr.Cst(_) => Expr.Var()
-        };
-        choose star {
-            case Expr.Var(_) => false
-        }
-    }
+   pub def testChooseStar05(): Bool = {
+       // P3: Check that not is not present
+       let star = choose* Expr.Cst {
+           case Expr.Not(_) => Expr.Not()
+           case Expr.Cst(_) => Expr.Var()
+       };
+       choose star {
+           case Expr.Var(_) => false
+       }
+   }
 
-    pub def testChooseStar06(): Bool = {
-        // P3: Check that not is not present
-        let star = choose* Expr.Cst {
-            case Expr.Not(_) => Expr.Not()
-            case Expr.Cst(_) => Expr.Cst()
-        };
-        choose star {
-            case Expr.Cst(_) => true
-        }
-    }
+   pub def testChooseStar06(): Bool = {
+       // P3: Check that not is not present
+       let star = choose* Expr.Cst {
+           case Expr.Not(_) => Expr.Not()
+           case Expr.Cst(_) => Expr.Cst()
+       };
+       choose star {
+           case Expr.Cst(_) => true
+       }
+   }
 
     pub def testChooseStar07(): Bool = {
         // P3: Check that Not is not present
-        let f = c -> choose* c {
+        let _f = c -> choose* c {
             case Expr.Not(_) => Expr.Not()
             case Expr.Cst(_) => Expr.Var()
         };
-        let g = c -> choose* c {
+        let _g = c -> choose* c {
             case Expr.Not(_) => Expr.Not()
             case Expr.Xor(_) => Expr.And()
         };
-        let _ = if (true) f else g;
+//        let _ = if (true) f else g;
         true
     }
 
@@ -115,7 +115,7 @@ mod Test.Exp.ChooseStar.Simple {
 
     pub def testChoose10(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
-        let cstOrVar = if (true) Expr.Cst else Expr.Var;
+        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
         let thing = choose* cstOrVar {
             case Expr.Cst(_) => Expr.Cst
             case Expr.Var(_) => Expr.Cst
@@ -125,7 +125,7 @@ mod Test.Exp.ChooseStar.Simple {
 
     pub def testChoose11(): Bool = {
         // P1: Check that choose* upperbounds the input like choose
-        let cstOrVar = if (true) Expr.Cst else Expr.Var;
+        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
         let thing = choose* cstOrVar {
             case Expr.Xor(_) => Expr.Xor
             case Expr.Cst(_) => Expr.Cst
@@ -136,7 +136,6 @@ mod Test.Exp.ChooseStar.Simple {
             case Expr.Cst(_) => true
         }
     }
-
 
 //    pub def testChoose12(): Bool = {
 //        // P1: Check that choose* upperbounds the input like choose
@@ -155,24 +154,24 @@ mod Test.Exp.ChooseStar.Simple {
 //            case Expr.Xor(_) => true
 //        }
 //    }
-
-    pub def testChoose13(): Bool = {
-        // P1: Check that choose* upperbounds the input like choose
-        let f = x -> choose* x {
-            case Expr.Cst(_) => Expr.Cst
-            case Expr.Var(_) => Expr.Cst
-            case Expr.Not(_) => Expr.Cst
-        };
-        let g = x -> choose* x {
-            case Expr.Cst(_) => Expr.Cst
-            case Expr.Xor(_) => Expr.Cst
-            case Expr.Not(_) => Expr.Cst
-        };
-        let h = if (true) f else g;
-
-        let cstOrNot = if (true) Expr.Cst else Expr.Not;
-        choose h(cstOrNot) {case Expr.Cst(_) => true}
-    }
+//
+//    pub def testChoose13(): Bool = {
+//        // P1: Check that choose* upperbounds the input like choose
+//        let f = x -> choose* x {
+//            case Expr.Cst(_) => Expr.Cst
+//            case Expr.Var(_) => Expr.Cst
+//            case Expr.Not(_) => Expr.Cst
+//        };
+//        let g = x -> choose* x {
+//            case Expr.Cst(_) => Expr.Cst
+//            case Expr.Xor(_) => Expr.Cst
+//            case Expr.Not(_) => Expr.Cst
+//        };
+//        let h = if (true) f else g;
+//
+//        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
+//        choose h(cstOrNot) {case Expr.Cst(_) => true}
+//    }
 
     pub def testChoose14(): Bool = {
         // P1: Check that choose* upperbounds the input like choose

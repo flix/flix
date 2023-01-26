@@ -319,6 +319,11 @@ object Monomorph {
         val subst1 = subst + (regionVar.sym -> Type.Impure)
         Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), pur, eff, loc)
 
+      case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+        val e1 = visitExp(exp1, env0, subst)
+        val e2 = visitExp(exp2, env0, subst)
+        Expression.ScopeExit(e1, e2, subst(tpe), pur, eff, loc)
+
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0, subst)
         val e2 = visitExp(exp2, env0, subst)
@@ -669,7 +674,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
@@ -754,7 +759,7 @@ object Monomorph {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
