@@ -2127,7 +2127,7 @@ object Typer {
       case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules.map {
-          case KindedAst.RestrictableChoiceRule(pat0, _, body0) =>
+          case KindedAst.RestrictableChoiceRule(pat0, body0) =>
             val pat = pat0 match {
               case KindedAst.RestrictableChoicePattern.Tag(sym, pats, tvar, loc) =>
                 val ps = pats.map {

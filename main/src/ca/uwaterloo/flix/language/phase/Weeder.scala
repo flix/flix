@@ -1838,7 +1838,7 @@ object Weeder {
       case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
       case None => ().toSuccess
     }
-    // Check that patterns are only tags of variables (or wildcards as variables)
+    // Check that patterns are only tags of variables (or wildcards as variables, or unit)
     val pVal = p0 match {
       case Pattern.Tag(qname, pat, loc) =>
         val innerVal = pat match {
@@ -1846,16 +1846,18 @@ object Weeder {
             traverse(elms) {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
+              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
+          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
         }
-      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+      case other => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
