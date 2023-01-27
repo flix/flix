@@ -39,7 +39,7 @@ def subst(e: Expr[s]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>] =
 def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>]): Bool =
     choose e {
         case Expr.Cst(b) => b
-        case Expr.Not(x) => fasteval(x)
+        case Expr.Not(x) => not fasteval(x)
         case Expr.Or(x, y) => fasteval(x) or fasteval(y)
         case Expr.And(x, y) => fasteval(x) and fasteval(y)
     }
@@ -53,10 +53,12 @@ def eval(e: Expr[s]): Bool = {
 }
 
 def main(): Unit \ IO = {
-    let input = open Expr.Not(open Expr.Var(42));
-    println("input is Not(v42)");
+    let input: Expr[<Expr.Not, Expr.Var>] = open Expr.Not(open Expr.Var(42));
+    println("input is '${toString(input)}'");
     println("input size ${size(input)}");
-    println("input evaluates to ${eval(input)}")
+    println("input evaluates to ${eval(input)}");
+    let fls = Expr.Cst(false);
+    println("input ${if (eq(input, fls)) "is" else "is not"} equal to '${toString(fls)}'")
 }
 
 
@@ -110,4 +112,13 @@ def eq(e1: Expr[s1], e2: Expr[s2]): Bool = choose e1 {
         case Expr.And(_, _) => false
         case Expr.Or(_, _) => false
     }
+}
+
+def toString(e: Expr[s]): String = choose e {
+    case Expr.Var(x) => "v${x}"
+    case Expr.Cst(b) => "${b}"
+    case Expr.Not(x) => "~(${toString(x)})"
+    case Expr.And(x, y) => "(${toString(x)} and ${toString(y)})"
+    case Expr.Or(x, y) => "(${toString(x)} or ${toString(y)})"
+    case Expr.Xor(x, y) => "(${toString(x)} xor ${toString(y)})"
 }
