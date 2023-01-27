@@ -1089,19 +1089,7 @@ object Resolver {
               val eVal = visitExp(exp0, env, region)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
-                  val symVal = if (star) {
-                    e match {
-                      case ResolvedAst.Expression.RestrictableTag(sym, exp, _, loc) => Some(sym.sym).toSuccess
-                      case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
-                      case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
-                    }
-                  } else {
-                    None.toSuccess
-                  }
-
-                  mapN(symVal) {
-                    case sym => ResolvedAst.RestrictableChoiceRule(p, sym, e)
-                  }
+                  ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
               }
           }
           mapN(expVal, rulesVal) {
