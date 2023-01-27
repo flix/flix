@@ -165,7 +165,19 @@ object SetFormula {
   }
 
   /**
-    * Returns (lowerBound,upperBound) if `tpe` is a case set, otherwise returns None
+    * Returns `(lowerBound,upperBound)` if `tpe` is a case set, otherwise
+    * returns `None`. The bounds are only in terms of constants, cases that must
+    * always be present (lowerBound) and which cases that can maximally be
+    * present (upperBound).
+    * {{{
+    * boundsAnalysisType(s ++ <Expr.Cst>) =
+    *     Some(({Cst}, {Cst, Var, Not, And, Or, Xor}))
+    *
+    * boundsAnalysisType(s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>) =
+    *     Some(({Cst, Not}, {Cst, Var, Not, Or}))
+    *
+    * boundsAnalysisType(Int32) = None
+    * }}}
     */
   def boundsAnalysisType(tpe: Type, enm: TypedAst.RestrictableEnum): Option[(Set[Symbol.RestrictableCaseSym], Set[Symbol.RestrictableCaseSym])] = {
     tpe.kind match {
@@ -178,6 +190,10 @@ object SetFormula {
     }
   }
 
+  /**
+    * Converts a [[SetFormula]] set into a [[Symbol.RestrictableCaseSym]] set by
+    * the mappings in `m`.
+    */
   private def cstToType(cst: Set[Int], m: Bimap[VarOrCase, Int]): Set[Symbol.RestrictableCaseSym] = {
     cst.map(c => m.getBackward(c) match {
       case Some(VarOrCase.Var(_)) => throw InternalCompilerException("Unexpected case set var in constant", SourceLocation.Unknown)
@@ -186,11 +202,23 @@ object SetFormula {
     })
   }
 
+  /**
+    * Returns `(lowerBound,upperBound)`. The bounds are only in terms of
+    * constants, cases that must always be present (lowerBound) and which cases
+    * that can maximally be present (upperBound).
+    * {{{
+    * boundsAnalysisType(s or Cst{1}) =
+    *     ({1}, {1, 2, ..., n})
+    *
+    * boundsAnalysisType((s1 and  s2 and Cst{4, 6}) or Cst{1, 3}) =
+    *     ({1, 3}, {1, 2, 3, 5, 7, 8, ..., n})
+    * }}}
+    */
   private def boundsAnalysis(f: SetFormula)(implicit univ: Set[Int]): (Set[Int], Set[Int]) = {
     val bot = SetFormula.Cst(Set.empty): SetFormula
     val top = SetFormula.Cst(univ): SetFormula
 
-    // create all assignments possible of the free variables
+    // create all possible assignments of the free variables (exponentially many)
     def visit(fvs: List[Int]): List[Map[Int, SetFormula]] = fvs match {
       case Nil => List(Map.empty)
       case v :: vs =>
@@ -199,16 +227,17 @@ object SetFormula {
         }
     }
 
+    // forcefully extracts a set formula of constant form
     def extractCst(form: SetFormula): Set[Int] = form match {
       case Cst(s) => s
       case _ => throw InternalCompilerException("Unexpected non-evalued formula", SourceLocation.Unknown)
     }
 
-    val cases = visit(f.freeVars.toList).map {
-      case assignment => extractCst(applySubst(f, assignment))
-    }
-    val minimum = cases.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
-    val maximum = cases.reduceOption(_.union(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
+    val assignmentResults = visit(f.freeVars.toList).map(assignment => extractCst(applySubst(f, assignment)))
+    // intersect all possible results to get a lower bound
+    val minimum = assignmentResults.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
+    // union all possible results to get an upper bound
+    val maximum = assignmentResults.reduceOption(_.union(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
     (minimum, maximum)
   }
 
