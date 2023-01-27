@@ -53,7 +53,7 @@ object Weeder {
 
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
-  // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
+  // as, and, choose, choose*, forall, from, get, new, not, or, project, query, select, solve, try
 
 
   /**
@@ -536,29 +536,15 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Open(sp1, qname, sp2) =>
-      val parts = qname.namespace.idents :+ qname.ident
-      val prefix = parts.takeWhile(_.isUpper)
-      val suffix = parts.dropWhile(_.isUpper)
-      suffix match {
-        // Case 1: upper qualified name
-        case Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, qname.ident.loc).toSuccess
+      // TODO RESTR-VARS make sure it's capital
+      WeededAst.Expression.Open(qname, mkSL(sp1, sp2)).toSuccess
 
-        // Case 1: basic qualified name
-        case ident :: Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, ident.loc).toSuccess
-
-        // Case 2: actually a record access
-        case ident :: fields =>
-          // NB: We only use the source location of the identifier itself.
-          val base = WeededAst.Expression.Open(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-          fields.foldLeft(base: WeededAst.Expression) {
-            case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
-          }.toSuccess
+    case ParsedAst.Expression.OpenAs(sp1, qname, exp, sp2) =>
+      // TODO RESTR-VARS make sure it's capital
+      val eVal = visitExp(exp, senv)
+      mapN(eVal) {
+        case e => WeededAst.Expression.OpenAs(qname, e, mkSL(sp1, sp2))
       }
-
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1852,7 +1838,7 @@ object Weeder {
       case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
       case None => ().toSuccess
     }
-    // Check that patterns are only tags of variables (or wildcards as variables)
+    // Check that patterns are only tags of variables (or wildcards as variables, or unit)
     val pVal = p0 match {
       case Pattern.Tag(qname, pat, loc) =>
         val innerVal = pat match {
@@ -1860,16 +1846,18 @@ object Weeder {
             traverse(elms) {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
+              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
+          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
         }
-      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+      case other => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
@@ -1965,8 +1953,6 @@ object Weeder {
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
         case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
         case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
-        case "rem" => OperatorResult.BuiltIn(Name.mkQName("Rem.rem", sp1, sp2))
-        case "mod" => OperatorResult.BuiltIn(Name.mkQName("Mod.mod", sp1, sp2))
         case "**" => OperatorResult.BuiltIn(Name.mkQName("Exp.exp", sp1, sp2))
         case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
         case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))
@@ -3065,6 +3051,7 @@ object Weeder {
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Open(sp1, _, _) => sp1
+    case ParsedAst.Expression.OpenAs(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1

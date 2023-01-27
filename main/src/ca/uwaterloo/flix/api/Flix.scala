@@ -83,8 +83,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
-    "Mod.flix" -> LocalResource.get("/src/library/Mod.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
@@ -469,7 +467,7 @@ class Flix {
     * Decides whether or not to print the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
-    if (options.explain || errors.length == 1)
+    if (options.explain)
       errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
       errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList

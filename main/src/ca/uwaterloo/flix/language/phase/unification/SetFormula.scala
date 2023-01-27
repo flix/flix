@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -114,10 +114,10 @@ object SetFormula {
     * Returns the disjunction of the two set formulas `tpe1` and `tpe2`.
     */
   def mkOr(f1: SetFormula, f2: SetFormula)(implicit univ: Set[Int]): SetFormula = (f1, f2) match {
-    case (SetFormula.Cst(x1), x2) if x1 == univ =>
+    case (SetFormula.Cst(x1), _) if x1 == univ =>
       mkUni()
 
-    case (x1, SetFormula.Cst(x2)) if x2 == univ =>
+    case (_, SetFormula.Cst(x2)) if x2 == univ =>
       mkUni()
 
     case (SetFormula.Cst(s1), x2) if s1.isEmpty =>
@@ -130,18 +130,6 @@ object SetFormula {
       SetFormula.Cst(s1 ++ s2)
 
     case _ => SetFormula.Or(f1, f2)
-  }
-
-
-  /**
-    * Evaluates the set formula. Assumes there are no variables in the formula.
-    */
-  def eval(f: SetFormula)(implicit univ: Set[Int]): Set[Int] = f match {
-    case SetFormula.Cst(s) => s
-    case SetFormula.Not(f) => univ -- eval(f)
-    case SetFormula.And(f1, f2) => eval(f1) & eval(f2)
-    case SetFormula.Or(f1, f2) => eval(f1) ++ eval(f2)
-    case SetFormula.Var(x) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
   }
 
   // TODO: DOC
@@ -215,7 +203,7 @@ object SetFormula {
       case _ => throw InternalCompilerException("Unexpected non-evalued formula", SourceLocation.Unknown)
     }
 
-    val cases = visit(f.freeVars.toList).map{
+    val cases = visit(f.freeVars.toList).map {
       case assignment => extractCst(applySubst(f, assignment))
     }
     val minimum = cases.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
@@ -268,6 +256,17 @@ object SetFormula {
     }
 
     (Bimap(forward, backward), newUniv.toSet)
+  }
+
+  /**
+    * Converts a rigidity environment to an equivalent environment for use with set formulas.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[VarOrCase, Int]): Set[Int] = {
+    // We use flatmap because if a var is not in the env,
+    // then it is not relevant to the types.
+    renv.s.flatMap {
+      case sym => env.getForward(VarOrCase.Var(sym))
+    }
   }
 
   /**
@@ -338,7 +337,7 @@ object SetFormula {
       * Extracts the sym from the case.
       */
     def getCase(x: VarOrCase): Symbol.RestrictableCaseSym = x match {
-      case Var(sym) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
+      case Var(_) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
       case Case(sym) => sym
     }
   }

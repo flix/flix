@@ -60,6 +60,24 @@ namespace Int64 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    ///
+    pub def mod(x: Int64, n: Int64): Int64 =
+        if (n == 0i64)
+            0i64
+        else
+            $INT64_REM$($INT64_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    ///
+    pub def rem(x: Int64, n: Int64): Int64 =
+        if (n == 0i64)
+            0i64
+        else
+            $INT64_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
@@ -93,7 +111,7 @@ namespace Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
-        if (x < 0i64 and dist.dist rem size() != 0)
+        if (x < 0i64 and Int32.rem(dist.dist, size()) != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
             x >>> dist.dist
@@ -103,9 +121,9 @@ namespace Int64 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int64): Int32 = {
-        if      (x == 0i64)          0
-        else if (x rem 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                         bitCount(logicalRightShift(dist = 1, x))
+        if      (x == 0i64)            0
+        else if (x `rem` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -220,7 +238,7 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
-        if ((x >>> pos.pos) rem 2i64 == 0i64) 0 else 1
+        if ((x >>> pos.pos) `rem` 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
