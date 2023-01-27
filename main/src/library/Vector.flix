@@ -89,6 +89,20 @@ namespace Vector {
     ///
     pub def length(v: Vector[a]): Int32 = Array.length(v)
 
+
+    ///
+    /// Returns a fresh vector ....
+    ///
+    pub def buildVector(l: Int32, f: Array[a, true] -> Unit \ ef): Vector[a] \ ef =
+        let arr = unsafe_cast Array.new(Static, l) as Array[a, true] \ ef;
+        let _ = f(arr);
+        arr
+
+    /// TODO might be better to use an array explicitly then Array.toVector
+    pub def liftArrayProducer(f: Array[a, false] -> Array[b, false] \ { Impure, ef } , v : Vector[a]): Vector[b] \ ef =
+        let v1 = unsafe_cast v as Array[a, false];
+        unsafe_cast f(v1) as Array[b, true] \ ef
+
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
@@ -306,6 +320,64 @@ namespace Vector {
             case None    => None
             case Some(i) => Some(get(i, v))
         }
+
+    ///
+    /// Returns a vector of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns an empty vector if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): Vector[Int32] =
+        unsafe_cast (
+            if (b >= e)
+                Array#{} @ Static
+            else {
+                let f = x -> x + b;
+                Array.init(Static, f, e - b)
+            }) as Array[Int32, true] \ { }
+
+    ///
+    /// Returns a vector with the element `x` repeated `n` times.
+    ///
+    /// Returns an empty vector if `n <= 0`.
+    ///
+    pub def repeat(n: Int32, x: a): Vector[a] =
+        unsafe_cast (
+            if (n <= 0)
+                (Array#{} @ Static)
+            else
+                $ARRAY_NEW$(Static, x, n)
+           ) as Array[a, true] \ { }
+
+    ///
+    /// Alias for `scanLeft`.
+    ///
+    pub def scan(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
+        scanLeft(f, s, v)
+
+    ///
+    /// Accumulates the result of applying `f` to `v` going left to right.
+    ///
+    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
+    ///
+    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
+        liftArrayProducer(Array.scanLeft(Static, f, s), v)
+
+    ///
+    /// Accumulates the result of applying `f` to `xs` going right to left.
+    ///
+    /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
+    ///
+    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
+        liftArrayProducer(Array.scanRight(Static, f, s), v)
+
+    ///
+    /// Returns the result of applying `f` to every element in `v`.
+    ///
+    /// The result is a new vector.
+    ///
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
+        let len = length(v);
+        buildVector(len, arr -> forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v))
 
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
@@ -531,6 +603,12 @@ namespace Vector {
         unsafe_cast MutList.toArray(Static, l) as Array[Int32, true] \ ef
 
     ///
+    /// Build an array of length `len` by applying `f` to the successive indices.
+    ///
+    pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef =
+        unsafe_cast Array.init(Static, f, len) as Array[a, true] \ef
+
+    ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
     ///
     pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef =
@@ -544,5 +622,39 @@ namespace Vector {
             }
         };
         loop(0)
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the vector `v`.
+    ///
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, v: Vector[a]): Unit \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i >= len)
+                ()
+            else {
+                f(i, get(i, v));
+                loop(i + 1)
+            }
+        };
+        loop(0)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` with `sep` inserted between each element.
+    ///
+    pub def join(sep: String, v: Vector[a]): String with ToString[a] =
+        joinWith(ToString.toString, sep, v)
+
+    ///
+    /// Returns the concatenation of the string representation
+    /// of each element in `v` according to `f` with `sep` inserted between each element.
+    ///
+    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region r1 {
+        use StringBuilder.append!;
+        let lastSep = String.length(sep);
+        let sb = new StringBuilder(r1);
+        forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
+        StringBuilder.toString(sb) |> String.dropRight(lastSep)
+    }
 
 }
