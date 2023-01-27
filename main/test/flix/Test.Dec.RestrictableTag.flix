@@ -61,4 +61,11 @@ pub restrictable enum MutualB[s][t: MutualA] {
     case BCase(MutualA[t][s])
 }
 
+/// Non-direct use of index
+pub restrictable enum ExprFancy[s][t: ExprFancy] {
+    case A(ExprFancy[t][s])
+    case B(ExprFancy[t -- <ExprFancy.A>][t])
+    case C(ExprFancy[s ++ t][<ExprFancy.A>])
+}
+
 }
