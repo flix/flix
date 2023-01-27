@@ -1,12 +1,17 @@
 mod Test.Dec.RestrictableTag {
 
 /// Simple nullary cases
-restrictable enum ExprNullary[_] {
+pub restrictable enum ExprNullary[_] {
     case Cst, Var, Not, And, Or, Xor
 }
 
+/// Normal enum containing index variable
+pub enum ExprWrapper[s: ExprNullary] {
+    case Wrap(ExprNullary[s])
+}
+
 /// Terms of ground types
-restrictable enum ExprSimple[_] {
+pub restrictable enum ExprSimple[_] {
     case Cst(Char)
     case Var(String)
     case Not((Int32, BigInt, BigDecimal))
@@ -26,7 +31,7 @@ pub restrictable enum ExprPoly[_][t] {
 }
 
 /// Terms include the index argument
-restrictable enum ExprRecursive[s] {
+pub restrictable enum ExprRecursive[s] {
     case Cst(Bool)
     case Var(Int32)
     case Not(ExprRecursive[s])
@@ -46,12 +51,12 @@ pub restrictable enum ExprPolyRecursive[s][t] {
 }
 
 /// Mutually recrusive restrictable enums
-restrictable enum MutualA[s][t: MutualB] {
+pub restrictable enum MutualA[s][t: MutualB] {
     case ALeaf
     case ACase(MutualB[t][s])
 }
 
-restrictable enum MutualB[s][t: MutualA] {
+pub restrictable enum MutualB[s][t: MutualA] {
     case BLeaf
     case BCase(MutualA[t][s])
 }
