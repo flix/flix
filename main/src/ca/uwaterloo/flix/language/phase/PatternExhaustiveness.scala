@@ -137,6 +137,7 @@ object PatternExhaustiveness {
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
       case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.OpenAs(_, exp, _, _) => visitExp(exp, root)
       case Expression.Use(_, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)

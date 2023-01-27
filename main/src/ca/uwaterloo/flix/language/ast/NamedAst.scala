@@ -90,6 +90,8 @@ object NamedAst {
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
+    case class OpenAs(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
     case class HoleWithExp(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

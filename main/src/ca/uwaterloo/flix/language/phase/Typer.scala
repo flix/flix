@@ -516,6 +516,8 @@ object Typer {
           resultEff <- unifyTypeM(atLeastEff, evar, loc)
         } yield (tconstrs, resultTpe, resultPur, resultEff)
 
+      case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
+
       case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
@@ -1978,6 +1980,10 @@ object Typer {
       case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), subst0(evar), loc)
+
+      case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.OpenAs(sym, e, subst0(tvar), loc)
 
       case KindedAst.Expression.Use(sym, exp, loc) =>
         val e = visitExp(exp, subst0)

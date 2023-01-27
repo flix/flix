@@ -372,6 +372,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
+      visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 
