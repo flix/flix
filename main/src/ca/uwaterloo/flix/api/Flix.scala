@@ -20,13 +20,12 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.net.URI
 import java.nio.charset.Charset
@@ -477,6 +476,8 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -537,6 +538,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
