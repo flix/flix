@@ -1089,7 +1089,7 @@ object Resolver {
               val eVal = visitExp(exp0, env, region)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
-                  ResolvedAst.RestrictableChoiceRule(p, None, e).toSuccess
+                  ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
               }
           }
           mapN(expVal, rulesVal) {
