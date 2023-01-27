@@ -16,8 +16,6 @@ def size(e: Expr[s]): Int32 = choose e {
     case Expr.Xor(x, y) => size(x) + size(y) + 1
 }
 
-def eq(e1: Expr[s1], e2: Expr[s2]): Bool = ??? // nested choose
-
 def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>] =
     choose* e {
         case Expr.Var(x) => Expr.Var(x)
@@ -59,4 +57,57 @@ def main(): Unit \ IO = {
     println("input is Not(v42)");
     println("input size ${size(input)}");
     println("input evaluates to ${eval(input)}")
+}
+
+
+/// Structural Equality
+def eq(e1: Expr[s1], e2: Expr[s2]): Bool = choose e1 {
+    case Expr.Var(x1) => choose e2 {
+        case Expr.Var(x2) => x1 == x2
+        case Expr.Cst(_) => false
+        case Expr.Not(_) => false
+        case Expr.And(_, _) => false
+        case Expr.Or(_, _) => false
+        case Expr.Xor(_, _) => false
+    }
+    case Expr.Cst(b1) => choose e2 {
+        case Expr.Cst(b2) => b1 == b2
+        case Expr.Var(_) => false
+        case Expr.Not(_) => false
+        case Expr.And(_, _) => false
+        case Expr.Or(_, _) => false
+        case Expr.Xor(_, _) => false
+    }
+    case Expr.Not(x1) => choose e2 {
+        case Expr.Not(x2) => eq(x1, x2)
+        case Expr.Var(_) => false
+        case Expr.Cst(_) => false
+        case Expr.And(_, _) => false
+        case Expr.Or(_, _) => false
+        case Expr.Xor(_, _) => false
+    }
+    case Expr.And(x1, y1) => choose e2 {
+        case Expr.And(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Expr.Var(_) => false
+        case Expr.Cst(_) => false
+        case Expr.Not(_) => false
+        case Expr.Or(_, _) => false
+        case Expr.Xor(_, _) => false
+    }
+    case Expr.Or(x1, y1) => choose e2 {
+        case Expr.Or(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Expr.Var(_) => false
+        case Expr.Cst(_) => false
+        case Expr.Not(_) => false
+        case Expr.And(_, _) => false
+        case Expr.Xor(_, _) => false
+    }
+    case Expr.Xor(x1, y1) => choose e2 {
+        case Expr.Xor(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Expr.Var(_) => false
+        case Expr.Cst(_) => false
+        case Expr.Not(_) => false
+        case Expr.And(_, _) => false
+        case Expr.Or(_, _) => false
+    }
 }
