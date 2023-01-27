@@ -319,7 +319,14 @@ object RestrictableChooseInference {
   }
 
   /**
-    * Performs type inference on the given OpenAs expression
+    * Performs type inference on the given OpenAs expression.
+    *
+    * `OpenAs X e` requires that `e` have the type X[s] for some s
+    * The result type of the expression is X[s + φ] for some free φ
+    *
+    *         Γ ⊢ e : X[s][α1 ... αn]
+    * -------------------------------------
+    * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
   def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
     case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
