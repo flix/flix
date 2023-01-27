@@ -79,7 +79,7 @@ object HoverProvider {
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minTpe = minimizeType(tpe)
-    val boundsRep = getBoundsFromType(minTpe).getOrElse("") + "\n"
+    val boundsRep = SetFormula.restrictableEnumBounds(minTpe).getOrElse("")
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix
@@ -92,36 +92,11 @@ object HoverProvider {
     ("status" -> "success") ~ ("result" -> result)
   }
 
-  /**
-    * Returns the case set bounds of a case set, if `tpe` is of the form
-    * `Apply(..Apply(RE(...), index), ..)`, i.e. where the base application
-    * is a
-    */
-  @tailrec
-  private def getBoundsFromType(tpe: Type)(implicit root: Root): Option[String] = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.RestrictableEnum(_, _), _), index, _) =>
-      index.kind match {
-        case Kind.CaseSet(sym) =>
-          val enumDecl = root.restrictableEnums(sym)
-          SetFormula.boundsAnalysisType(index, enumDecl).map {
-            case (minimum, maximum) =>
-              val univ = enumDecl.cases.keys.toSet
-              val minStr = minimum.map(_.name).mkString("{", ", ","}")
-              val maxStr = maximum.map(_.name).mkString("{", ", ","}")
-              val absentStr = univ.diff(maximum).map(_.name).mkString("{", ", ","}")
-              s"\nMust have  : $minStr\nHas at most: $maxStr\nCannot have: $absentStr"
-          }
-        case _ => None
-      }
-    case Type.Apply(base, _, _) => getBoundsFromType(base)
-    case _ => None
-  }
-
   private def hoverTypeAndEff(tpe: Type, pur: Type, eff: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minPur = minimizeType(pur)
     val minEff = minimizeType(eff)
     val minTpe = minimizeType(tpe)
-    val boundsRep = getBoundsFromType(minTpe).getOrElse("") + "\n"
+    val boundsRep = SetFormula.restrictableEnumBounds(minTpe).getOrElse("")
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix

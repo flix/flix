@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 sealed trait SetFormula {
@@ -267,6 +268,63 @@ object SetFormula {
     renv.s.flatMap {
       case sym => env.getForward(VarOrCase.Var(sym))
     }
+  }
+
+  /**
+    * Extracts the index (kind CaseSet) type of of a restrictable enum along
+    * with its enumSym.
+    * {{{
+    * findIndexOfEnum(E[index: CaseSet(Color), Int32, String]) = Some((index, Color))
+    * findIndexOfEnum(Int32) = None
+    * findIndexOfEnum(Int32 -> E[index]) = None
+    * }}}
+    */
+  @tailrec
+  private def findIndexOfEnum(tpe: Type): Option[(Type, Symbol.RestrictableEnumSym)] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.RestrictableEnum(_, _), _), index, _) =>
+      index.kind match {
+        case Kind.CaseSet(sym) => Some((index, sym))
+        case _ => None
+      }
+    case Type.Apply(base, _, _) => findIndexOfEnum(base)
+    case _ => None
+  }
+
+  /**
+    * Returns the case set bounds of a restrictable enum. The case set bounds
+    * include what cases the set will always have, what cases the set can
+    * maximally have, and what cases the set can never have. The two last sets
+    * mentioned are complements of each other.
+    * {{{
+    * restrictableEnumBounds(Expr[s ++ <Expr.Cst>][Int32]) =
+    *     Must have  : {Cst}
+    *     Has at most: {Cst, Var, Not, And, Or, Xor}
+    *
+    * restrictableEnumBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
+    *     Must have  : {Cst, Not}
+    *     Has at most: {Cst, Var, Not, Or}
+    * }}}
+    */
+  def restrictableEnumBounds(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
+    for {
+      (index, sym) <- findIndexOfEnum(tpe)
+      emumDecl = root.restrictableEnums(sym)
+      (lower, upper) <- boundsAnalysisType(index, emumDecl)
+    } yield formatBounds(lower, upper)
+  }
+
+  /**
+    * Returns a string like:
+    * {{{
+    * Must have  : 'nice print of lowerBounds'
+    * Has at most: 'nice print of upperBound'
+    * }}}
+    * Only the simple names of symbols are used, no namespace info.
+    */
+  private def formatBounds(lowerBound: Set[Symbol.RestrictableCaseSym], upperBound: Set[Symbol.RestrictableCaseSym]): String = {
+    val minStr = lowerBound.map(_.name).mkString("{", ", ", "}")
+    val maxStr = upperBound.map(_.name).mkString("{", ", ", "}")
+    s"Must have  : $minStr\nHas at most: $maxStr\n"
   }
 
   /**
