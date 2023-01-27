@@ -300,7 +300,7 @@ object SetFormula {
   }
 
   /**
-    * Extracts the index (kind CaseSet) type of of a restrictable enum along
+    * Extracts the index type (kind CaseSet) of a restrictable enum along
     * with its enumSym.
     * {{{
     * findIndexOfEnum(E[index: CaseSet(Color), Int32, String]) = Some((index, Color))
