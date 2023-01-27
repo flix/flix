@@ -179,7 +179,7 @@ object SetFormula {
     * boundsAnalysisType(Int32) = None
     * }}}
     */
-  def boundsAnalysisType(tpe: Type, enm: TypedAst.RestrictableEnum): Option[(Set[Symbol.RestrictableCaseSym], Set[Symbol.RestrictableCaseSym])] = {
+  private def boundsAnalysisType(tpe: Type, enm: TypedAst.RestrictableEnum): Option[(Set[Symbol.RestrictableCaseSym], Set[Symbol.RestrictableCaseSym])] = {
     tpe.kind match {
       case Kind.CaseSet(_) =>
         val (m, setFormulaUniv) = mkEnv(List(tpe), SortedSet.from(enm.cases.keys))
