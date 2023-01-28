@@ -93,10 +93,12 @@ namespace Vector {
     ///
     /// Returns a fresh vector ....
     ///
-    pub def buildVector(l: Int32, f: Array[a, true] -> Unit \ ef): Vector[a] \ ef =
-        let arr = unsafe_cast Array.new(Static, l) as Array[a, true] \ ef;
-        let _ = f(arr);
-        arr
+    pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
+        unsafe_cast (
+            let arr = Array.new(rc, len);
+            let _ = f(arr);
+            arr
+            ) as Array[a, true] \ ef
 
     pub def castArrayOp(f: Array[a, false] -> Array[b, false] \ { Impure, ef } , v : Vector[a]): Vector[b] \ ef =
         let v1 = unsafe_cast v as Array[a, false];
@@ -385,34 +387,28 @@ namespace Vector {
     ///
     /// The result is a new vector.
     ///
-    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        unsafe_cast (
-            let len = length(v);
-            let arr = unsafe_cast Array.new(Static, len) as Array[b, true] \ ef;
-            forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v);
-            Array.toVector(arr)
-        ) as Vector[b] \ ef
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v))
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        unsafe_cast (
-            let len = length(v);
-            let arr = unsafe_cast Array.new(Static, len) as Array[b, true] \ ef;
-            forEachWithIndex((i, x) -> Array.put(f(i, x), i, arr), v);
-            Array.toVector(arr)
-        ) as Vector[b] \ ef
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(f(i, x), i, arr), v))
+    }
 
     ///
-    /// Returns the reverse of `a`.
+    /// Returns the reverse of `v`.
     ///
-    pub def reverse(v: Vector[a]): Vector[a] =
-        toArray(v)
-            |> castArrayOp(Array.reverse(Static))
-            |> Array.toVector
+    pub def reverse(v: Vector[a]): Vector[a] = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(x, len - (i + 1), arr), v))
+    }
 
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
