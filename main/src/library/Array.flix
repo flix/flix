@@ -190,6 +190,13 @@ namespace Array {
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
+
+    ///
+    /// Returns `a` as a Vector.
+    ///
+    pub def toVector(a: Array[a, true]): Vector[a] = a
+
+
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
     ///

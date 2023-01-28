@@ -98,8 +98,7 @@ namespace Vector {
         let _ = f(arr);
         arr
 
-    /// TODO might be better to use an array explicitly then Array.toVector
-    pub def liftArrayProducer(f: Array[a, false] -> Array[b, false] \ { Impure, ef } , v : Vector[a]): Vector[b] \ ef =
+    pub def castArrayOp(f: Array[a, false] -> Array[b, false] \ { Impure, ef } , v : Vector[a]): Vector[b] \ ef =
         let v1 = unsafe_cast v as Array[a, false];
         unsafe_cast f(v1) as Array[b, true] \ ef
 
@@ -108,6 +107,12 @@ namespace Vector {
     ///
     pub def slice(b: Int32, e: Int32, v: Vector[a]): Vector[a] =
         unsafe_cast Array.slice(Static, b, e, v) as Array[a, true] \ { }
+
+    ///
+    /// Returns the vector `v` as an array.
+    ///
+    pub def toArray(v: Vector[a]): Array[a, true] = v
+
 
     ///
     /// Returns the vector `v` as a list.
@@ -360,7 +365,9 @@ namespace Vector {
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
-        liftArrayProducer(Array.scanLeft(Static, f, s), v)
+        toArray(v)
+            |> castArrayOp(Array.scanLeft(Static, f, s))
+            |> Array.toVector
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
@@ -368,7 +375,10 @@ namespace Vector {
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
-        liftArrayProducer(Array.scanRight(Static, f, s), v)
+        toArray(v)
+            |> castArrayOp(Array.scanRight(Static, f, s))
+            |> Array.toVector
+
 
     ///
     /// Returns the result of applying `f` to every element in `v`.
@@ -376,8 +386,33 @@ namespace Vector {
     /// The result is a new vector.
     ///
     pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        let len = length(v);
-        buildVector(len, arr -> forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v))
+        unsafe_cast (
+            let len = length(v);
+            let arr = unsafe_cast Array.new(Static, len) as Array[b, true] \ ef;
+            forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v);
+            Array.toVector(arr)
+        ) as Vector[b] \ ef
+
+    ///
+    /// Returns the result of applying `f` to every element in `v` along with that element's index.
+    ///
+    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    ///
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
+        unsafe_cast (
+            let len = length(v);
+            let arr = unsafe_cast Array.new(Static, len) as Array[b, true] \ ef;
+            forEachWithIndex((i, x) -> Array.put(f(i, x), i, arr), v);
+            Array.toVector(arr)
+        ) as Vector[b] \ ef
+
+    ///
+    /// Returns the reverse of `a`.
+    ///
+    pub def reverse(v: Vector[a]): Vector[a] =
+        toArray(v)
+            |> castArrayOp(Array.reverse(Static))
+            |> Array.toVector
 
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
@@ -607,6 +642,40 @@ namespace Vector {
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef =
         unsafe_cast Array.init(Static, f, len) as Array[a, true] \ef
+
+    ///
+    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
+        let alen = length(a);
+        let blen = length(b);
+        def loop(i) = {
+            if (i >= alen)
+                true
+            else if (get(i, a) != get(i, b))
+                false
+            else
+                loop(i + 1)
+        };
+        if (alen == blen)
+            loop(0)
+        else
+            false
+
+    ///
+    /// Returns an iterator over `v`
+    ///
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ { Write(r) } =
+        Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
+
+    ///
+    /// Returns an iterator over `v` zipped with the indices of the elements.
+    ///
+    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
+    ///
+    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ { Write(r) } =
+        iterator(rc, v) |> Iterator.zipWithIndex
+
 
     ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
