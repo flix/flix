@@ -752,7 +752,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | HolyName | QName | Hole
+        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
@@ -1170,6 +1170,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Open: Rule1[ParsedAst.Expression.Open] = rule {
       SP ~ keyword("open") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
+    }
+
+    def OpenAs: Rule1[ParsedAst.Expression.OpenAs] = rule {
+      SP ~ keyword("open_as") ~ optWS ~ Names.QName ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.OpenAs
     }
 
     def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {

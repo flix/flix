@@ -88,6 +88,9 @@ object ResolvedAst {
 
     case class HoleWithExp(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    // TODO RESTR-VARS should be Ast.RestrictableEnumSymUse for LSP
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
@@ -349,7 +352,7 @@ object ResolvedAst {
 
   case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: ResolvedAst.Expression)
+  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

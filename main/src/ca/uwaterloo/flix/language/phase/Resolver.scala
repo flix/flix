@@ -209,13 +209,16 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    for {
-      semiResolved <- semiResolveTypeAliases(root)
-      orderedSyms <- findResolutionOrder(semiResolved.values)
-      orderedSemiResolved = orderedSyms.map(semiResolved)
-      aliases <- finishResolveTypeAliases(orderedSemiResolved)
-    } yield (aliases, orderedSyms)
-
+    flatMapN(semiResolveTypeAliases(root)) {
+      case semiResolved =>
+        flatMapN(findResolutionOrder(semiResolved.values)) {
+          case orderedSyms =>
+            val orderedSemiResolved = orderedSyms.map(semiResolved)
+            mapN(finishResolveTypeAliases(orderedSemiResolved)) {
+              case aliases => (aliases, orderedSyms)
+            }
+        }
+    }
   }
 
   /**
@@ -871,6 +874,13 @@ object Resolver {
             case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
           }
 
+        case NamedAst.Expression.OpenAs(name, exp, loc) =>
+          val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
+          val eVal = visitExp(exp, env0, region)
+          mapN(enumVal, eVal) {
+            case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
+          }
+
         case NamedAst.Expression.Hole(nameOpt, loc) =>
           val sym = nameOpt match {
             case None => Symbol.freshHoleSym(loc)
@@ -1089,19 +1099,7 @@ object Resolver {
               val eVal = visitExp(exp0, env, region)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
-                  val symVal = if (star) {
-                    e match {
-                      case ResolvedAst.Expression.RestrictableTag(sym, exp, _, loc) => Some(sym.sym).toSuccess
-                      case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
-                      case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
-                    }
-                  } else {
-                    None.toSuccess
-                  }
-
-                  mapN(symVal) {
-                    case sym => ResolvedAst.RestrictableChoiceRule(p, sym, e)
-                  }
+                  ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
               }
           }
           mapN(expVal, rulesVal) {
@@ -2430,7 +2428,7 @@ object Resolver {
         val tpe2Val = finishResolveType(tpe2, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpe1Val, tpe2Val, targsVal) {
-          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2 ,loc), ts, tpe0.loc)
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.CaseIntersection(tpe1, tpe2, loc) =>
@@ -2438,7 +2436,7 @@ object Resolver {
         val tpe2Val = finishResolveType(tpe2, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpe1Val, tpe2Val, targsVal) {
-          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2 ,loc), ts, tpe0.loc)
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.Ascribe(tpe, kind, loc) =>

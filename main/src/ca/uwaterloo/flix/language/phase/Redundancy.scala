@@ -310,6 +310,9 @@ object Redundancy {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Use(_, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
