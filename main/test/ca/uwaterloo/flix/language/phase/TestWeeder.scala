@@ -351,6 +351,18 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
+  test("IllegalFixedAtom.01") {
+    val input =
+      """def f(): Unit =
+        |    let _p = #{
+        |        R(x) :- A(x), not fix B(x).
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFixedAtom](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -413,18 +425,6 @@ class TestWeeder extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("IllegalFixedAtom.01") {
-    val input =
-      """def f(): Unit =
-        |    let _p = #{
-        |        R(x) :- A(x), not fix B(x).
-        |    };
-        |    ()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFixedAtom](result)
   }
 
   test("IllegalInt8.01") {
