@@ -505,6 +505,26 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.InconsistentTypeParameters](result)
   }
 
+  test("UnkindedTypeParameters.01") {
+    val input =
+      """
+        |def f[a](x: a): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
+
+  test("UnkindedTypeParameters.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f[b](x: b): a = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -644,26 +664,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
-  }
-
-  test("UnkindedTypeParameters.01") {
-    val input =
-      """
-        |def f[a](x: a): a = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
-  }
-
-  test("UnkindedTypeParameters.02") {
-    val input =
-      """
-        |class C[a] {
-        |    def f[b](x: b): a = ???
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
   }
 
   test("HalfInterpolationEscape.02") {
