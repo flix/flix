@@ -340,7 +340,7 @@ object Weeder {
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
           val err = WeederError.IllegalEnum(ident.loc)
-          Map.empty.toSoftFailure(err)
+          WeededAst.Expression.Error(err).toSoftFailure(err)
 
       }
 
@@ -390,7 +390,7 @@ object Weeder {
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
           val err = WeederError.IllegalEnum(ident.loc)
-          Map.empty.toSoftFailure(err)
+          WeededAst.Expression.Error(err).toSoftFailure(err)
 
       }
 
