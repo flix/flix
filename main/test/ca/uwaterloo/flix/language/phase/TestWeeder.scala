@@ -476,6 +476,35 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFormalParamAscription](result)
   }
 
+  test("InconsistentTypeParameters.01") {
+    val input =
+      """
+        |enum E[a, b: Bool] {
+        |    case E1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.02") {
+    val input =
+      """
+        |type alias T[a, b: Bool] = Int32
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.03") {
+    val input =
+      """
+        |enum T[a, b: Bool](Int32)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -615,35 +644,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
-  }
-
-  test("InconsistentTypeParameters.01") {
-    val input =
-      """
-        |enum E[a, b: Bool] {
-        |    case E1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
-  }
-
-  test("InconsistentTypeParameters.02") {
-    val input =
-      """
-        |type alias T[a, b: Bool] = Int32
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
-  }
-
-  test("InconsistentTypeParameters.03") {
-    val input =
-      """
-        |enum T[a, b: Bool](Int32)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
   }
 
   test("UnkindedTypeParameters.01") {
