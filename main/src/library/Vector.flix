@@ -100,12 +100,15 @@ namespace Vector {
             arr
             ) as Array[a, true] \ ef
 
+    pub def liftArrayProducer(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
+        unsafe_cast f(rc) as Vector[a]
+
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
     pub def slice(b: Int32, e: Int32, v: Vector[a]): Vector[a] = region rc {
-        unsafe_cast Array.slice(rc, b, e, v) as Array[a, true] \ { }
+        liftArrayProducer(rc, r1 -> Array.slice(r1, b, e, v))
     }
 
     ///
@@ -222,6 +225,17 @@ namespace Vector {
     ///
     pub def last(v: Vector[a]): Option[a] =
         nth(length(v) - 1, v)
+
+    ///
+    /// Return a new vector, appending the elements `b` to elements of `a`.
+    ///
+    pub def append(a: Vector[a], b: Vector[a]): Vector[a] = region rc {
+        buildVector(rc, length(a) + length(b), arr -> {
+            Array.updateSequence!(0, a, arr);
+            Array.updateSequence!(length(a), b, arr)
+        })
+    }
+
 
     ///
     /// Returns `true` if and only if `v` contains the element `x`.
@@ -418,12 +432,28 @@ namespace Vector {
     }
 
     ///
+    /// Returns the result of applying `f` to every element in `v` and concatenating the results.
+    ///
+    pub def flatMap(f: a -> Vector[b] \ ef, v: Vector[a]): Vector[b] \ ef =
+        let len = length(v);
+        init(i -> f(get(i, v)), len) |> flatten
+
+    ///
     /// Returns the reverse of `v`.
     ///
     pub def reverse(v: Vector[a]): Vector[a] = region rc {
         let len = length(v);
         buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(x, len - (i + 1), arr), v))
     }
+
+    ///
+    /// Sum the lengths of a vector of vectors.
+    ///
+    /// Helper function for `intercalate` and `flatten`.
+    ///
+    def sumLengths(vs: Vector[Vector[a]]): Int32 =
+        foldLeft((acc, a) -> acc + length(a), 0, vs)
+
 
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
@@ -553,6 +583,21 @@ namespace Vector {
             foldLeft((acc, x) -> acc * f(x), 1, v)
 
     ///
+    /// Returns the concatenation of the vectorss of in the vector `vs`.
+    ///
+    pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
+        let len = sumLengths(vs);
+        let pos = ref 0 @ rc;
+        buildVector(rc, len, arr ->
+            forEach(v -> {
+                let i = deref pos;
+                pos := i + length(v);
+                Array.updateSequence!(i, v, arr)
+                }, vs)
+        )
+    }
+
+    ///
     /// Returns `true` if and only if at least one element in `v` satisfies the predicate `f`.
     ///
     /// Returns `false` if `v` is empty.
@@ -585,6 +630,27 @@ namespace Vector {
                 false
         };
         loop(0)
+
+    ///
+    /// Returns the vector `v` as a set.
+    ///
+    pub def toSet(v: Vector[a]): Set[a] with Order[a] =
+        foldRight(Set.insert, Set.empty(), v)
+
+    ///
+    /// Returns the association vector `v` as a map.
+    ///
+    /// If `v` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMap(v: Vector[(a, b)]): Map[a, b] with Order[a] =
+        foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), v)
+
+    ///
+    /// Returns the array `a` as a MutList.
+    ///
+    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ Write(r) =
+        toArray(rc, v) |> Array.toMutList(rc)
 
     ///
     /// Alias for `findIndexOfLeft`.
