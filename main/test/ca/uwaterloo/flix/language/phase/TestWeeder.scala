@@ -500,7 +500,14 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonUnitOperationType](result)
   }
 
-  // TODO: MissingFormalParamAscription
+  test("MissingFormalParamAscription.01") {
+    val input =
+      """
+        |def f(x): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingFormalParamAscription](result)
+  }
 
   test("IllegalFormalParamAscription.01") {
     val input =
