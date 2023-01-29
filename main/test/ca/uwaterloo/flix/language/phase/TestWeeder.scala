@@ -288,6 +288,27 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
+  test("NonSingleCharacter.Char.01") {
+    val input =
+      """
+        |def f(): Char = 'ab'
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
+  test("NonSingleCharacter.Patten.Char.01") {
+    val input =
+      """
+        |def f(x: Char): Bool = match x {
+        |  case 'ab' => true
+        |  case _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonSingleCharacter](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -570,27 +591,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UnkindedTypeParameters](result)
-  }
-
-  test("NonSingleCharacter.Char.01") {
-    val input =
-      """
-        |def f(): Char = 'ab'
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonSingleCharacter](result)
-  }
-
-  test("NonSingleCharacter.Patten.Char.01") {
-    val input =
-      """
-        |def f(x: Char): Bool = match x {
-        |  case 'ab' => true
-        |  case _ => false
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonSingleCharacter](result)
   }
 
   test("HalfInterpolationEscape.02") {
