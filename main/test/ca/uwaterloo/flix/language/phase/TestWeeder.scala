@@ -409,6 +409,26 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -692,26 +712,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.ReservedName](result)
-  }
-
-  test("IllegalEffectTypeParams.01") {
-    val input =
-      """
-        |eff MyEffect[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
-  }
-
-  test("IllegalEffectTypeParams.02") {
-    val input =
-      """
-        |eff MyEffect {
-        |    def op[a](x: a): Unit
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
   test("IllegalFormalParamAscription.01") {
