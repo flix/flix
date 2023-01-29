@@ -429,6 +429,28 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalOperationEffect.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ IO
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("IllegalOperationEffect.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -724,28 +746,6 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFormalParamAscription](result)
-  }
-
-  test("IllegalOperationEffect.01") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Unit \ IO
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalOperationEffect](result)
-  }
-
-  test("IllegalOperationEffect.02") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Unit \ E
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationEffect](result)
   }
 
   test("NonUnitOperationType.01") {
