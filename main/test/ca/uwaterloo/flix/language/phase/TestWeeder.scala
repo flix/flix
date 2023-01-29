@@ -451,6 +451,17 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalOperationEffect](result)
   }
 
+  test("NonUnitOperationType.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnitOperationType](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -746,16 +757,5 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFormalParamAscription](result)
-  }
-
-  test("NonUnitOperationType.01") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonUnitOperationType](result)
   }
 }
