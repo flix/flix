@@ -982,7 +982,7 @@ object Weeder {
             case _ => false
           }
 
-          val err = if (hasGenerator) WeederError.LoopOverNoCollection(baseLoc) else WeederError.LoopGuardsBeforeCollection(baseLoc)
+          val err = if (hasGenerator) WeederError.LoopGuardsBeforeCollection(baseLoc) else WeederError.LoopOverNoCollection(baseLoc)
           WeededAst.Expression.Error(err).toSoftFailure(err)
         }
         case None => // Unreachable case since parser rejects foreach () yield exp
