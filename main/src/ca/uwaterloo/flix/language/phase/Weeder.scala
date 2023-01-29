@@ -913,62 +913,73 @@ object Weeder {
       val regionIdent = Name.Ident(sp1, regionSym, sp2).asSynthetic
       val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionIdent), baseLoc)
 
-      // Desugar yield-exp
-      //    ... yield x
-      // Becomes
-      //     Iterator.singleton(rh, x)
-      val yieldExp = mapN(visitExp(exp, senv)) {
-        case e =>
-          mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
+      // Check that loop contains at least 1 iterable collection
+      val isValidLoop = frags.exists {
+        case ParsedAst.ForFragment.Generator(_, _, _, _) => true
+        case _ => false
       }
 
-      // Desugar loop
-      val loop = foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) =>
-          // Case 1: a generator fragment i.e. `pat <- exp`
-          // This should be desugared into
-          //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
-          mapN(visitPattern(pat1), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
+      if (!isValidLoop) {
+        val err = WeederError.LoopOverNoCollection(baseLoc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
+      } else {
+        // Desugar yield-exp
+        //    ... yield x
+        // Becomes
+        //     Iterator.singleton(rh, x)
+        val yieldExp = mapN(visitExp(exp, senv)) {
+          case e =>
+            mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
+        }
 
-              // 1. Create iterator from exp1
-              val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc)
+        // Desugar loop
+        val loop = foldRight(frags)(yieldExp) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) =>
+            // Case 1: a generator fragment i.e. `pat <- exp`
+            // This should be desugared into
+            //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
+            mapN(visitPattern(pat1), visitExp(exp1, senv)) {
+              case (p, e1) =>
+                val loc = mkSL(sp11, sp12).asSynthetic
 
-              // 2. Create match-lambda with pat1 as params and acc as body
-              val lambda = mkLambdaMatch(sp11, p, acc, sp12)
+                // 1. Create iterator from exp1
+                val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc)
 
-              // 3. Wrap in flatmap call
-              val fparams = List(lambda, iter)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
-          }
+                // 2. Create match-lambda with pat1 as params and acc as body
+                val lambda = mkLambdaMatch(sp11, p, acc, sp12)
 
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) =>
-          // Case 2: a guard fragment i.e. `if exp`
-          // This should be desugared into
-          //     if (exp) accExp else Iterator.empty(rh)
-          mapN(visitExp(exp1, senv)) {
-            case e1 =>
-              val loc = mkSL(sp11, sp12).asSynthetic
+                // 3. Wrap in flatmap call
+                val fparams = List(lambda, iter)
+                mkApplyFqn(fqnFlatMap, fparams, loc)
+            }
 
-              // 1. Create empty iterator
-              val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc)
+          case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc) =>
+            // Case 2: a guard fragment i.e. `if exp`
+            // This should be desugared into
+            //     if (exp) accExp else Iterator.empty(rh)
+            mapN(visitExp(exp1, senv)) {
+              case e1 =>
+                val loc = mkSL(sp11, sp12).asSynthetic
 
-              // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
-              WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
-          }
-      }
+                // 1. Create empty iterator
+                val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc)
 
-      // Wrap in Collectable.collect function.
-      // The nested calls to Iterator.flatMap are wrapped in
-      // this function.
-      val resultExp = mapN(loop) {
-        case l => mkApplyFqn(fqnCollect, List(l), baseLoc)
-      }
+                // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
+                WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
+            }
+        }
 
-      // Wrap in region
-      mapN(resultExp) {
-        case e => WeededAst.Expression.Scope(regionIdent, e, baseLoc)
+        // Wrap in Collectable.collect function.
+        // The nested calls to Iterator.flatMap are wrapped in
+        // this function.
+        val resultExp = mapN(loop) {
+          case l => mkApplyFqn(fqnCollect, List(l), baseLoc)
+        }
+
+        // Wrap in region
+        mapN(resultExp) {
+          case e => WeededAst.Expression.Scope(regionIdent, e, baseLoc)
+        }
       }
     }
 
