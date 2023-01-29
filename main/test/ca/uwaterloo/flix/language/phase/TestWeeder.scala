@@ -381,6 +381,34 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  test("IllegalModifier.01") {
+    val input = "pub instance I[a]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalPrivateDeclaration.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalPrivateDeclaration.02") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    def f(): Int32 = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -504,28 +532,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
-  test("IllegalPrivateDeclaration.01") {
-    val input =
-      """
-        |class C[a] {
-        |    def f(): a
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
-  }
-
-  test("IllegalPrivateDeclaration.02") {
-    val input =
-      """
-        |instance C[Int32] {
-        |    def f(): Int32 = 1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
-  }
-
   test("IllegalTypeConstraintParameter.01") {
     val input =
       """
@@ -597,12 +603,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = s"""pub def foo(): String = "\\$$ {""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidEscapeSequence](result)
-  }
-
-  test("IllegalModifier.01") {
-    val input = "pub instance I[a]"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalModifier](result)
   }
 
   test("ReservedName.Def.01") {
