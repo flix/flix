@@ -50,68 +50,8 @@ object RestrictableChooseInference {
     */
   private def dom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.map {
-      case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _), _, _) => sym.sym
+      case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(sym, _, _, _), _) => sym.sym
     }.toSet
-  }
-
-  /**
-    * Returns the codomain of the list of rules,
-    * i.e., the set of tags in the rule bodies.
-    *
-    * For example, if the rules are
-    *
-    * {{{
-    *     match x {
-    *         case Expr.Var(y)    => Expr.Cst(22)
-    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
-    *         case Expr.Cst(y)    => Expr.Cst(y)
-    *         case Expr.And(y, z) => Expr.Or(x, y)
-    *     }
-    * }}}
-    *
-    * then it returns { Expr.Cst, Expr.Xor, Expr.Or }.
-    */
-  private def codom(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
-    rules.map {
-      case KindedAst.RestrictableChoiceRule(_, sym, exp) => sym.getOrElse(throw InternalCompilerException("unexpected missing case sym", exp.loc))
-    }.toSet
-  }
-
-  /**
-    * Returns the stable set of the list of rules,
-    * i.e., the set of tags that are only mapped from themselves.
-    *
-    * For example, if the rules are
-    *
-    * {{{
-    *     match x {
-    *         case Expr.Var(y)    => Expr.Cst(22)
-    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
-    *         case Expr.Cst(y)    => Expr.Cst(y)
-    *         case Expr.And(y, z) => Expr.Or(x, y)
-    *     }
-    * }}}
-    *
-    * then it returns { Expr.Xor }.
-    *
-    * (Expr.Cst maps to itself, but also maps from Expr.Var, so it is not included.)
-    */
-  private def stable(rules: List[KindedAst.RestrictableChoiceRule]): Set[Symbol.RestrictableCaseSym] = {
-    val maybeStableSyms = mutable.Set.empty[Symbol.RestrictableCaseSym]
-    val unstableSyms = mutable.Set.empty[Symbol.RestrictableCaseSym]
-    rules.foreach {
-      case KindedAst.RestrictableChoiceRule(KindedAst.RestrictableChoicePattern.Tag(symInUse, _, _, _), symOutOpt, exp) =>
-        val symIn = symInUse.sym
-        val symOut = symOutOpt.getOrElse(throw InternalCompilerException("unexpected missing case sym", exp.loc))
-        if (symIn == symOut) {
-          // Case 1: Maps from itself. Might be stable.
-          maybeStableSyms.add(symOut)
-        } else {
-          // Case 2: Maps from something else. Definitely not stable.
-          unstableSyms.add(symOut)
-        }
-    }
-    maybeStableSyms.toSet -- unstableSyms.toSet
   }
 
   /**
@@ -316,6 +256,48 @@ object RestrictableChooseInference {
         // unify with the tvar
         _ <- unifyTypeM(tvar, tpe, loc)
       } yield (constrs, tpe, pur, eff)
+  }
+
+  /**
+    * Performs type inference on the given OpenAs expression.
+    *
+    * `OpenAs X e` requires that `e` have the type X[s] for some s
+    * The result type of the expression is X[s + φ] for some free φ
+    *
+    *         Γ ⊢ e : X[s][α1 ... αn]
+    * -------------------------------------
+    * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
+    */
+  def inferOpenAs(exp0: KindedAst.Expression.OpenAs, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
+    case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+      val enum = root.restrictableEnums(sym)
+
+      val (enumType, indexVar, targs) = instantiatedEnumType(sym, enum, loc.asSynthetic)
+      val kargs = enum.index.sym.kind :: enum.tparams.map(_.sym.kind)
+      val kind = Kind.mkArrow(kargs)
+
+      for {
+        // infer the inner expression type τ
+        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
+
+        // make sure the expression has type EnumType[s][α1 ... αn]
+        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
+
+        // the new index is s ∪ φ for some free φ
+        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(enum.sym), loc.asSynthetic), sym, loc)
+
+        // the result type is EnumType[s ∪ φ][α1 ... αn]
+        resultType = Type.mkApply(
+          Type.Cst(TypeConstructor.RestrictableEnum(sym, kind), loc.asSynthetic),
+          openIndex :: targs,
+          loc
+        )
+
+        // unify the tvar
+        _ <- unifyTypeM(tvar, resultType, loc)
+
+      } yield (constrs, resultType, pur, eff)
+
   }
 
   /**

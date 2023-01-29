@@ -25,7 +25,7 @@ import org.json4s._
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(compilationMessage: CompilationMessage, formatter: Formatter): Diagnostic = {
+  def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
     val range = Range.from(compilationMessage.loc)
     val severity = Some(DiagnosticSeverity.Error)
     val code = compilationMessage.kind
@@ -35,8 +35,8 @@ object Diagnostic {
          |${formatter.underline("Explanation:")}
          |""".stripMargin
     val explanation = compilationMessage.explain(formatter) match {
-      case None => ""
-      case Some(expl) => explanationHeading + expl
+      case Some(expl) if explain => explanationHeading + expl
+      case _ => ""
     }
     val fullMessage = compilationMessage.message(formatter) + explanation
     Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)

@@ -20,13 +20,12 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.net.URI
 import java.nio.charset.Charset
@@ -83,8 +82,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
-    "Mod.flix" -> LocalResource.get("/src/library/Mod.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
@@ -469,7 +466,7 @@ class Flix {
     * Decides whether or not to print the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
-    if (options.explain || errors.length == 1)
+    if (options.explain)
       errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
       errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
@@ -479,6 +476,8 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -539,6 +538,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
     // Mark this object as implicit.
     implicit val flix: Flix = this
 

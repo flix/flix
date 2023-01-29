@@ -523,6 +523,16 @@ object ParsedAst {
     case class Open(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * An Open Qualified Name Expression (This opens the type of restrictable tags) (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param exp  the body expression
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class OpenAs(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Hole Expression.
       *
       * @param sp1   the position of the first character in the expression
@@ -1592,8 +1602,8 @@ object ParsedAst {
     /**
       * A type representing the complement of a case set formula.
       *
-      * @param tpe  the complemented type.
-      * @param sp2  the position of the last character in the type.
+      * @param tpe the complemented type.
+      * @param sp2 the position of the last character in the type.
       */
     case class CaseComplement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 

@@ -95,6 +95,8 @@ object CodeHinter {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil

@@ -179,6 +179,9 @@ object Indexer {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => // TODO RESTR-VARS sym
+      Index.occurrenceOf(exp0) ++ visitExp(exp)
+
     case Expression.Use(_, _, _) =>
       Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
 

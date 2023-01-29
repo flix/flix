@@ -25,7 +25,7 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: LazyList[CompilationMessage]): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: LazyList[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
@@ -34,7 +34,7 @@ object PublishDiagnosticsParams {
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
       case (acc, (source, compilationMessages)) =>
-        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, formatter))
+        val diagnostics = compilationMessages.map(msg => Diagnostic.from(msg, explain, formatter))
         PublishDiagnosticsParams(source.name, diagnostics) :: acc
     }
   }

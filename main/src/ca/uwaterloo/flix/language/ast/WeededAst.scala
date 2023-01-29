@@ -77,6 +77,8 @@ object WeededAst {
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
+    case class OpenAs(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class HoleWithExp(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

@@ -516,6 +516,8 @@ object Typer {
           resultEff <- unifyTypeM(atLeastEff, evar, loc)
         } yield (tconstrs, resultTpe, resultPur, resultEff)
 
+      case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
+
       case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
@@ -1979,6 +1981,10 @@ object Typer {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
+      case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.OpenAs(sym, e, subst0(tvar), loc)
+
       case KindedAst.Expression.Use(sym, exp, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Use(sym, e, loc)
@@ -2121,7 +2127,7 @@ object Typer {
       case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules.map {
-          case KindedAst.RestrictableChoiceRule(pat0, _, body0) =>
+          case KindedAst.RestrictableChoiceRule(pat0, body0) =>
             val pat = pat0 match {
               case KindedAst.RestrictableChoicePattern.Tag(sym, pats, tvar, loc) =>
                 val ps = pats.map {
