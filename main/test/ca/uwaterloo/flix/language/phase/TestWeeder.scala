@@ -363,6 +363,15 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFixedAtom](result)
   }
 
+  test("DuplicateAnnotation.01") {
+    val input =
+      """@test @test
+        |def foo(x: Int32): Int32 = 42
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateAnnotation](result)
+  }
+
   test("UndefinedAnnotation.01") {
     val input =
       """@abc
@@ -694,15 +703,6 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   // unordered below
-
-  test("DuplicateAnnotation.01") {
-    val input =
-      """@test @test
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
 
   test("DuplicateFormal.01") {
     val input = "def f(x: Int32, x: Int32): Int32 = 42"
