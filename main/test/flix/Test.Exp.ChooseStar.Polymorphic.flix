@@ -38,20 +38,20 @@ mod Test.Exp.ChooseStar.Simple {
         }
     }
 
+    pub def testChooseStar3(): Bool = region r {
+        // P2: check the lower bound by using result in a choose
+        let star = choose* Expr.Cst(ref 2 @ r) {
+            case Expr.Cst(_) => Expr.Var("tmp")
+            case Expr.Not(_) => Expr.Var("tmp")
+            case Expr.Xor(x, _) => Expr.Not(Some(x))
+        };
+        choose star {
+            case Expr.Var(_) => true
+            case Expr.Not(_) => true
+        }
+    }
+
 // TODO RESTR-VARS
-//    pub def testChooseStar3(): Bool = region r {
-//        // P2: check the lower bound by using result in a choose
-//        let star = choose* Expr.Cst(ref 2 @ r) {
-//            case Expr.Cst(_) => Expr.Var("tmp")
-//            case Expr.Not(_) => Expr.Var("tmp")
-//            case Expr.Xor(x, _) => Expr.Not(Some(x))
-//        };
-//        choose star {
-//            case Expr.Var(_) => true
-//            case Expr.Not(_) => true
-//        }
-//    }
-//
 //    pub def testChooseStar4(): Bool = {
 //        // P2: check the lower bound by using result in a choose
 //        let star = choose* open Expr.Cst(32.1f32) {

@@ -421,8 +421,8 @@ namespace List {
         if (len == 0)
             l
         else {
-            let rem = n rem len;
-            let rotate = if (rem < 0) rem + len else rem;
+            let rem1 = n `Int32.rem` len;
+            let rotate = if (rem1 < 0) rem1 + len else rem1;
             drop(rotate, l) ::: take(rotate, l)
         }
 

@@ -205,7 +205,7 @@ namespace String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 rem len, s) };
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.rem` len, s) };
         init(f, len)
 
     ///
@@ -224,9 +224,9 @@ namespace String {
     ///
     def rotateRightHelper(n: Int32, s: String): String =
         let len = length(s);
-        let n1 = n rem len;
+        let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 rem len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.rem` len, s)};
         init(f, len)
 
     ///

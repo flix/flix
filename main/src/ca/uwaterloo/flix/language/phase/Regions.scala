@@ -67,6 +67,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.OpenAs(_, exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Use(_, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>

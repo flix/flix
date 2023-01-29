@@ -60,6 +60,24 @@ namespace Int8 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    ///
+    pub def mod(x: Int8, n: Int8): Int8 =
+        if (n == 0i8)
+            0i8
+        else
+            $INT8_REM$($INT8_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    ///
+    pub def rem(x: Int8, n: Int8): Int8 =
+        if (n == 0i8)
+            0i8
+        else
+            $INT8_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
@@ -93,7 +111,7 @@ namespace Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
-        if (x < 0i8 and dist.dist rem 32 != 0)
+        if (x < 0i8 and Int32.rem(dist.dist, 32) != 0)
             ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
         else
             x >>> dist.dist
@@ -103,9 +121,9 @@ namespace Int8 {
     /// representation of `x`.
     ///
     pub def bitCount(x: Int8): Int32 = {
-        if      (x == 0i8)         0
-        else if (x rem 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                       bitCount(logicalRightShift(dist = 1, x))
+        if      (x == 0i8)           0
+        else if (x `rem` 2i8 != 0i8) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                         bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -113,8 +131,8 @@ namespace Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem = dist.dist rem size();
-        let rot = if (rem >= 0) rem else rem + size();
+        let rem1 = dist.dist `Int32.rem` size();
+        let rot = if (rem1 >= 0) rem1 else rem1 + size();
         (logicalRightShift(dist = rot, x)) ||| (x <<< (size() - rot))
 
     ///
@@ -122,8 +140,8 @@ namespace Int8 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem = dist.dist rem size();
-        let rot = if (rem >= 0) rem else rem + size();
+        let rem1 = dist.dist `Int32.rem` size();
+        let rot = if (rem1 >= 0) rem1 else rem1 + size();
         (logicalRightShift(dist = size() - rot, x)) ||| (x <<< rot)
 
     ///
@@ -224,7 +242,7 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int8): Int32 =
-        if ((x >>> pos.pos) rem 2i8 == 0i8) 0 else 1
+        if ((x >>> pos.pos) `rem` 2i8 == 0i8) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).

@@ -41,10 +41,9 @@ object ClassEnvironment {
       ().toSuccess
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
-      for {
-        tconstrs <- byInst(tconstr, classEnv)
-        _ <- Validation.sequence(tconstrs.map(entail(tconstrs0, _, classEnv)))
-      } yield ()
+      Validation.flatMapN(byInst(tconstr, classEnv)) {
+        case tconstrs => Validation.sequenceX(tconstrs.map(entail(tconstrs0, _, classEnv)))
+      }
     }
   }
 
