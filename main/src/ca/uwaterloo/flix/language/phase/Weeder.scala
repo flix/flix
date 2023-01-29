@@ -1870,24 +1870,16 @@ object Weeder {
             traverse(elms) {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
-              case other =>
-                val err = WeederError.UnsupportedRestrictedChoicePattern(star, other.loc)
-                WeededAst.RestrictableChoicePattern.Wild(other.loc).toSoftFailure(err)
+              case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
-          case other =>
-            val err = WeederError.UnsupportedRestrictedChoicePattern(star, other.loc)
-            List(WeededAst.RestrictableChoicePattern.Wild(other.loc)).toSoftFailure(err)
+          case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
         }
-      case _ =>
-        val err = WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc)
-        val pats = List(WeededAst.RestrictableChoicePattern.Wild(p0.loc))
-        val qname = Name.mkQName(new Name.SyntheticIdent(SourcePosition.Unknown, "Error" + Flix.Delimiter, SourcePosition.Unknown))
-        WeededAst.RestrictableChoicePattern.Tag(qname, pats, p0.loc).toSoftFailure(err)
+      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
