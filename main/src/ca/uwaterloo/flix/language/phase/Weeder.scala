@@ -894,7 +894,7 @@ object Weeder {
       //         Collectable.collect(
       //             Iterator.flatMap(
       //                 match x -> Iterator.singleton(rh, x),
-      //                 Iterator.iterator(rh, xs)
+      //                 Iterable.iterator(rh, xs)
       //             )
       //         )
       //     }
