@@ -1569,13 +1569,13 @@ object Weeder {
     case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val argVal = visitArgument(arg0, senv)
-      mapN(argVal) {
+      flatMapN(argVal) {
         case arg =>
           // ensure we are in a handler
           senv match {
             // Case 1: In a handler. All is well.
             case SyntacticEnv.Handler =>
-              WeededAst.Expression.Resume(arg, loc)
+              WeededAst.Expression.Resume(arg, loc).toSuccess
             // Case 2: Not in a handler. Error.
             case SyntacticEnv.Top =>
               val err = WeederError.IllegalResume(loc)
