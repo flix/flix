@@ -309,6 +309,36 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
+  test("NonLinearPattern.01") {
+    val input =
+      """def f(): Bool = match (21, 42) {
+        |  case (x, x) => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("NonLinearPattern.02") {
+    val input =
+      """def f(): Bool = match (21, 42, 84) {
+        |  case (x, x, x) => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("NonLinearPattern.03") {
+    val input =
+      """def f(): Bool = match (1, (2, (3, 4))) {
+        |  case (x, (y, (z, x))) => true
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -454,36 +484,6 @@ class TestWeeder extends FunSuite with TestUtils {
            |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
-  }
-
-  test("NonLinearPattern.01") {
-    val input =
-      """def f(): Bool = match (21, 42) {
-        |  case (x, x) => true
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
-  }
-
-  test("NonLinearPattern.02") {
-    val input =
-      """def f(): Bool = match (21, 42, 84) {
-        |  case (x, x, x) => true
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
-  }
-
-  test("NonLinearPattern.03") {
-    val input =
-      """def f(): Bool = match (1, (2, (3, 4))) {
-        |  case (x, (y, (z, x))) => true
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
   }
 
   test("UndefinedAnnotation.01") {
