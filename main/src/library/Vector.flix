@@ -89,9 +89,15 @@ namespace Vector {
     ///
     pub def length(v: Vector[a]): Int32 = Array.length(v)
 
+    ///
+    /// Returns an empty (length zero) vector.
+    ///
+    pub def empty(): Vector[a] = region rc {
+        buildVector(rc, 0, _ -> ())
+    }
 
     ///
-    /// Returns a fresh vector ....
+    /// Returns a fresh vector ...
     ///
     pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
         unsafe_cast (
@@ -447,6 +453,59 @@ namespace Vector {
     }
 
     ///
+    /// Rotate the contents of vector `v` by `n` steps to the left.
+    ///
+    pub def rotateLeft(n: Int32, v: Vector[a]): Vector[a] =
+        let len = length(v);
+        if (len < 1)
+            empty()
+        else
+            if (n < 0)
+                rotateRightHelper(Int32.abs(n), v)
+            else
+                rotateLeftHelper(n, v)
+
+    ///
+    /// Helper function for `rotateLeft` and `rotateRight`.
+    ///
+    /// Precondition: `n` must be positive.
+    ///
+    /// This is an explicit helper to avoid code duplication.
+    ///
+    def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr ->
+            forEachWithIndex((i, x) -> {let ix = Int32.mod(i - n, len); Array.put(x, ix, arr)}, v)
+        )
+    }
+
+    ///
+    /// Rotate the contents of vector `v` by `n` steps to the right.
+    ///
+    pub def rotateRight(n: Int32, v: Vector[a]): Vector[a] =
+        if (length(v) < 1)
+            empty()
+        else
+            if (n < 0)
+                rotateLeftHelper(Int32.abs(n), v)
+            else
+                rotateRightHelper(n, v)
+
+    ///
+    /// Helper function for `rotateRight` and `rotateLeft`.
+    ///
+    /// Precondition: `n` must be positive.
+    ///
+    /// This is an explicit helper to avoid code duplication.
+    ///
+    def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr ->
+            forEachWithIndex((i, x) -> {let ix = Int32.mod(i + n, len); Array.put(x, ix, arr)}, v)
+        )
+     }
+
+    ///
     /// Sum the lengths of a vector of vectors.
     ///
     /// Helper function for `intercalate` and `flatten`.
@@ -454,6 +513,83 @@ namespace Vector {
     def sumLengths(vs: Vector[Vector[a]]): Int32 =
         foldLeft((acc, a) -> acc + length(a), 0, vs)
 
+    ///
+    /// Returns `true` if and only if `a` is a prefix of `b`.
+    ///
+    pub def isPrefixOf(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
+        let len1 = length(a);
+        if (len1 > length(b))
+            false
+        else
+            def loop(i) = {
+                if (i >= len1)
+                    true
+                else if (get(i, a) != get(i, b))
+                    false
+                else
+                    loop(i + 1)
+            };
+            loop(0)
+
+    ///
+    /// Returns `true` if and only if `a` is a infix of `b`.
+    ///
+    pub def isInfixOf(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
+        let len1 = length(a);
+        let len2 = length(b);
+        if (len1 > len2)
+            false
+        else if (len1 == 0)
+            true
+        else
+            isInfixOfSearch(a, b, len1, len2, 0)
+
+    ///
+    /// Helper function for `isInfixOf` - scan `b` to find a match with first element of `b`.
+    ///
+    /// Precondition: len1 (length of `a`) > 0
+    ///
+    def isInfixOfSearch(a: Vector[a], b: Vector[a], len1: Int32, len2: Int32, j: Int32): Bool with Eq[a] =
+        if (j >= len2)
+            false
+        else if (get(0, a) == get(j, b))
+            isInfixOfCheck(a, b, len1, len2, 1, j+1)
+        else
+            isInfixOfSearch(a, b, len1, len2, j+1)
+
+    ///
+    /// Helper function for `isInfixOf` - `a` has started matching, scan to see if it all matches.
+    ///
+    def isInfixOfCheck(a: Vector[a], b: Vector[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool with Eq[a] =
+        if (i >= len1)
+            // `a` exhausted, so success
+            true
+        else if (j >= len2)
+            // `b` exhausted, `a` still trying to match, so failure
+            false
+        else if(get(i, a) == get(j, b))
+            isInfixOfCheck(a, b, len1, len2, i+1, j+1)
+        else
+            isInfixOfSearch(a, b, len1, len2, j+1)
+
+    ///
+    /// Returns `true` if and only if `a` is a suffix of `b`.
+    ///
+    pub def isSuffixOf(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
+        let len1 = length(a);
+        let len2 = length(b);
+        if (len1 > len2)
+            false
+        else
+            def loop(i, j) = {
+                if (i < 0)
+                    true
+                else if (get(i, a) != get(j, b))
+                    false
+                else
+                    loop(i - 1, j - 1)
+            };
+            loop(len1 - 1, len2 - 1)
 
     ///
     /// Returns the result of applying `combine` to all the elements in `v`, using `empty` as the initial value.
@@ -630,6 +766,25 @@ namespace Vector {
                 false
         };
         loop(0)
+
+    ///
+    /// Returns an array of every element in `arr` that satisfies the predicate `f`.
+    ///
+    pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
+        let len = length(v);
+        let ix = ref 0 @ rc;
+        if (len < 1)
+            empty()
+        else
+            buildVector(rc, len, arr ->
+                forEach(x ->
+                    if (f(x)) {
+                        let i = deref ix;
+                        ix := i + 1;
+                        Array.put(x, i, arr)
+                    } else (), v)
+                ) |> slice(0, deref ix)
+    }
 
     ///
     /// Returns the vector `v` as a set.
