@@ -311,6 +311,12 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
+  test("HalfInterpolationEscape.02") {
+    val input = s"""pub def foo(): String = "\\$$ {""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
   test("NonSingleCharacter.Char.01") {
     val input =
       """
@@ -753,13 +759,5 @@ class TestWeeder extends FunSuite with TestUtils {
            |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
-  }
-
-  // unordered below
-
-  test("HalfInterpolationEscape.02") {
-    val input = s"""pub def foo(): String = "\\$$ {""""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
   }
 }
