@@ -339,9 +339,7 @@ object Weeder {
           }
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
-          val err = WeederError.IllegalEnum(ident.loc)
-          WeededAst.Expression.Error(err).toSoftFailure(err)
-
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -389,9 +387,7 @@ object Weeder {
           }
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
-          val err = WeederError.IllegalEnum(ident.loc)
-          WeededAst.Expression.Error(err).toSoftFailure(err)
-
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -497,8 +493,7 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        val err = WeederError.IllegalJavaClass(alias, loc)
-        List.empty.toSoftFailure(err)
+        WeederError.IllegalJavaClass(alias, loc).toFailure
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
