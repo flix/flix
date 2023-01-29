@@ -1402,7 +1402,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |def foo(): List[String] =
-        |    foreach (if x != "0"; x <- "1" :: "2" :: Nil)
+        |    foreach (x <- "1" :: "2" :: Nil; if y != "0")
         |        yield x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
