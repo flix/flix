@@ -885,7 +885,19 @@ object Weeder {
       //
       // Rewrites a foreach-yield loop into a series of iterators
       // wrapped in a Collectable.collect call:
+      //
       //     foreach (x <- xs) yield x
+      //
+      // desugars to
+      //
+      //     region rh {
+      //         Collectable.collect(
+      //             Iterator.flatMap(
+      //                 match x -> Iterator.singleton(rh, x),
+      //                 Iterator.iterator(rh, xs)
+      //             )
+      //         )
+      //     }
       //
       val baseLoc = mkSL(sp1, sp2).asSynthetic
 
