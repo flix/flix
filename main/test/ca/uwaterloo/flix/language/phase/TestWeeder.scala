@@ -462,6 +462,20 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonUnitOperationType](result)
   }
 
+  // TODO: MissingFormalParamAscription
+
+  test("IllegalFormalParamAscription.01") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(x: String) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -745,17 +759,5 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.ReservedName](result)
-  }
-
-  test("IllegalFormalParamAscription.01") {
-    val input =
-      """
-        |def f(): String =
-        |    try ??? with Fail {
-        |        def fail(x: String) = "hello"
-        |    }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFormalParamAscription](result)
   }
 }
