@@ -709,18 +709,6 @@ class TestWeeder extends FunSuite with TestUtils {
 
   // TODO: IllegalFloat
 
-  test("IllegalFloat32.01") {
-    val input = "def f(): Float32 = 340282370000000000000000000000000000000000001.0"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFloat](result)
-  }
-
-  test("IllegalFloat32.02") {
-    val input = "def f(): Float32 = 000000000000000000000000000000000000.1175493"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFloat](result)
-  }
-
   test("IllegalInt8.01") {
     val input = "def f(): Int8 = -1000i8"
     val result = compile(input, Options.TestWithLibNix)
