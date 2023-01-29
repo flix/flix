@@ -925,4 +925,32 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that a loop has guards before
+    * first iterable collection.
+    */
+  case class LoopGuardsBeforeCollection(loc: SourceLocation) extends WeederError {
+    def summary: String = "Loop contains guard(s) before any iterable collection."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop guard appears before first iterable collection.
+         |
+         |${code(loc, "Guard appears before first iterable collection")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""The first loop guard must come after a iterable collection.
+         |
+         |A minimal loop with a guard is written as follows:
+         |
+         |foreach (x <- xs; if x > 0) yield x
+         |
+         |""".stripMargin
+    })
+  }
 }
