@@ -132,9 +132,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalResume](result)
   }
 
-  // TODO: RestrictableChoiceGuard
-  // TODO: UnsupportedRestrictedChoicePattern
-
   test("DuplicateAnnotation.01") {
     val input =
       """@test @test
