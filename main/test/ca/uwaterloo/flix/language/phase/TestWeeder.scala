@@ -23,6 +23,29 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite with TestUtils {
 
+  test("DuplicateTag.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Red
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTag](result)
+  }
+
+  test("DuplicateTag.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Red
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTag](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
@@ -733,29 +756,6 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   // unordered below
-
-  test("DuplicateTag.01") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Red
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
-
-  test("DuplicateTag.02") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu,
-        |  case Red
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateTag](result)
-  }
 
   test("HalfInterpolationEscape.02") {
     val input = s"""pub def foo(): String = "\\$$ {""""
