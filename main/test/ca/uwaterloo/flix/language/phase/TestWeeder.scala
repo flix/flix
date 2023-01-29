@@ -485,6 +485,36 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFormalParamAscription](result)
   }
 
+  test("DuplicateFormal.01") {
+    val input = "def f(x: Int32, x: Int32): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.02") {
+    val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.03") {
+    val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.04") {
+    val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.05") {
+    val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
   test("InconsistentTypeParameters.01") {
     val input =
       """
@@ -703,36 +733,6 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   // unordered below
-
-  test("DuplicateFormal.01") {
-    val input = "def f(x: Int32, x: Int32): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.02") {
-    val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.03") {
-    val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.04") {
-    val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.05") {
-    val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
 
   test("DuplicateTag.01") {
     val input =
