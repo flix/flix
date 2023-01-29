@@ -363,6 +363,24 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalFixedAtom](result)
   }
 
+  test("UndefinedAnnotation.01") {
+    val input =
+      """@abc
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
+  test("UndefinedAnnotation.02") {
+    val input =
+      """@foobarbaz
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -484,24 +502,6 @@ class TestWeeder extends FunSuite with TestUtils {
            |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
-  }
-
-  test("UndefinedAnnotation.01") {
-    val input =
-      """@abc
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UndefinedAnnotation](result)
-  }
-
-  test("UndefinedAnnotation.02") {
-    val input =
-      """@foobarbaz
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UndefinedAnnotation](result)
   }
 
   test("IllegalPrivateDeclaration.01") {
