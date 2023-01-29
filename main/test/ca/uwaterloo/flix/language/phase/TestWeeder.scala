@@ -756,4 +756,13 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalIntrinsic](result)
   }
+
+  test("ForEachYieldWithGuardFragmentOnly.01") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[WeederError.LoopOverNoCollection](result)
+  }
 }

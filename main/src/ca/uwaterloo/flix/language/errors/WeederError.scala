@@ -896,4 +896,33 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+
+  /**
+    * An error raised to indicate that a loop does not iterate over any collection.
+    */
+  case class LoopOverNoCollection(loc: SourceLocation) extends WeederError {
+    def summary: String = "Loop does not contain a collection to loop over."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No iterable collection in loop.
+         |
+         |${code(loc, "Loop does not iterate over collection")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop requires at least one collection with an instance of
+         |the Iterable type class on it.
+         |
+         |A minimal loop is written as follows:
+         |
+         |foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
 }
