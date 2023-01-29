@@ -339,6 +339,18 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonLinearPattern](result)
   }
 
+  test("IllegalNullPattern.01") {
+    val input =
+      s"""
+         |def f(): Int32 = match null {
+         |    case null => 123
+         |    case _    => 456
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
   // unordered below
 
   test("DuplicateAnnotation.01") {
@@ -461,18 +473,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): Int64 = 100000000000000000000i64"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalNullPattern.01") {
-    val input =
-      s"""
-         |def f(): Int32 = match null {
-         |    case null => 123
-         |    case _    => 456
-         |}
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalNullPattern](result)
   }
 
   test("IllegalJvmFieldOrMethodName.01") {
