@@ -194,8 +194,9 @@ namespace Array {
     ///
     /// Returns `a` as a Vector.
     ///
-    pub def toVector(a: Array[a, true]): Vector[a] = a
-
+    pub def toVector(a: Array[a, true]): Vector[a] = region rc {
+        Vector.buildVector(rc, length(a), arr1 -> forEachWithIndex((i, x) -> put(x, i, arr1), a))
+    }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.

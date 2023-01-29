@@ -100,20 +100,21 @@ namespace Vector {
             arr
             ) as Array[a, true] \ ef
 
-    pub def castArrayOp(f: Array[a, false] -> Array[b, false] \ { Impure, ef } , v : Vector[a]): Vector[b] \ ef =
-        let v1 = unsafe_cast v as Array[a, false];
-        unsafe_cast f(v1) as Array[b, true] \ ef
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
-    pub def slice(b: Int32, e: Int32, v: Vector[a]): Vector[a] =
-        unsafe_cast Array.slice(Static, b, e, v) as Array[a, true] \ { }
+    pub def slice(b: Int32, e: Int32, v: Vector[a]): Vector[a] = region rc {
+        unsafe_cast Array.slice(rc, b, e, v) as Array[a, true] \ { }
+    }
 
     ///
     /// Returns the vector `v` as an array.
     ///
-    pub def toArray(v: Vector[a]): Array[a, true] = v
+    pub def toArray(rc: Region[r], v: Vector[a]): Array[a, r] \ Write(r) =
+        let arr = Array.new(rc, length(v));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), v);
+        arr
 
 
     ///
@@ -333,27 +334,20 @@ namespace Vector {
     ///
     /// Returns an empty vector if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): Vector[Int32] =
-        unsafe_cast (
-            if (b >= e)
-                Array#{} @ Static
-            else {
-                let f = x -> x + b;
-                Array.init(Static, f, e - b)
-            }) as Array[Int32, true] \ { }
+    pub def range(b: Int32, e: Int32): Vector[Int32] = region rc {
+        let len = e - b;
+        let s = ref b @ rc;
+        buildVector(rc, if (len < 0) 0 else len, Array.transform!(_ -> {let n = deref s; s := n+1; n}))
+    }
 
     ///
     /// Returns a vector with the element `x` repeated `n` times.
     ///
     /// Returns an empty vector if `n <= 0`.
     ///
-    pub def repeat(n: Int32, x: a): Vector[a] =
-        unsafe_cast (
-            if (n <= 0)
-                (Array#{} @ Static)
-            else
-                $ARRAY_NEW$(Static, x, n)
-           ) as Array[a, true] \ { }
+    pub def repeat(n: Int32, x: a): Vector[a] = region rc {
+        buildVector(rc, n, arr -> Array.transform!(_ -> x, arr))
+    }
 
     ///
     /// Alias for `scanLeft`.
@@ -366,21 +360,42 @@ namespace Vector {
     ///
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
-    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
-        toArray(v)
-            |> castArrayOp(Array.scanLeft(Static, f, s))
-            |> Array.toVector
+    pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
+        let acc = ref s @ rc;
+        buildVector(rc, length(v) + 1, arr -> {
+            Array.put(s, 0, arr);
+            let step = (i, x) -> {
+                let s1 = f(deref acc, x);
+                acc := s1;
+                Array.put(s1, i+1, arr)
+            };
+            forEachWithIndex(step, v)
+        })
+    }
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
     ///
     /// That is, the result is of the form: `[..., f(xn-1, f(xn, s)), f(xn, s), s]`.
     ///
-    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef =
-        toArray(v)
-            |> castArrayOp(Array.scanRight(Static, f, s))
-            |> Array.toVector
-
+    pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
+        let len = length(v);
+        let acc = ref s @ rc;
+        buildVector(rc, len + 1, arr -> {
+            Array.put(s, len, arr);
+            def loop(i) = {
+                if (i < 0)
+                    ()
+                else {
+                    let s1 = f(get(i, v), deref acc);
+                    acc := s1;
+                    Array.put(s1, i, arr);
+                    loop(i - 1)
+                }
+            };
+            loop(len - 1)
+        })
+    }
 
     ///
     /// Returns the result of applying `f` to every element in `v`.
@@ -617,9 +632,9 @@ namespace Vector {
     ///
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
-    pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef =
+    pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
         let len = length(v);
-        let l = unsafe_cast MutList.new(Static) as MutList[Int32, true] \ ef;
+        let l = unsafe_cast MutList.new(rc) as MutList[Int32, true] \ ef;
         def loop(i) = {
             if (i >= len)
                 ()
@@ -631,13 +646,15 @@ namespace Vector {
             }
         };
         loop(0);
-        unsafe_cast MutList.toArray(Static, l) as Array[Int32, true] \ ef
+        unsafe_cast MutList.toArray(rc, l) as Array[Int32, true] \ ef
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
-    pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef =
-        unsafe_cast Array.init(Static, f, len) as Array[a, true] \ef
+    pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
+        buildVector(rc, len, Array.transformWithIndex!((i, _) -> f(i)))
+    }
 
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
