@@ -43,35 +43,56 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Similar to `map` but does not wrap the result in a [[Validation.Success]].
-    *
-    * Preserves the errors.
-    */
-  // Deprecated. Use flatMapN instead.
-  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
-    case Validation.Success(input) => f(input) match {
-      case Validation.Success(value) => Validation.Success(value)
-      case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, errors #::: thatErrors)
-      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
-    }
-
-    case Validation.SoftFailure(input, errors) => f(input) match {
-      case Validation.Success(value) => Validation.SoftFailure(value, errors)
-      case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, errors #::: thatErrors)
-      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
-    }
-
-    case Validation.Failure(errors) => Validation.Failure(errors)
-  }
-
-  /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
   def errors: LazyList[E]
 
+  /**
+    * Converts a soft failure to a hard failure.
+    */
+  def toHardFailure: Validation[T, E] = this match {
+    case Validation.Success(t) => Validation.Success(t)
+    case Validation.SoftFailure(t, errors) => Validation.Failure(errors)
+    case Validation.Failure(errors) => Validation.Failure(errors)
+  }
+
 }
 
 object Validation {
+
+  /**
+    * Implicit class to hide dangerous extensions.
+    */
+  object Implicit {
+
+    /**
+      * Treats the Validation as a monad in order to enable `for`-notation.
+      * Care should be used when enabling this,
+      * as flatMap results in short-circuiting behavior which may not be desirable.
+      */
+    implicit class AsMonad[T, E](v: Validation[T, E]) {
+      /**
+        * Similar to `map` but does not wrap the result in a [[Validation.Success]].
+        *
+        * Preserves the errors.
+        */
+      final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = v match {
+        case Validation.Success(input) => f(input) match {
+          case Validation.Success(value) => Validation.Success(value)
+          case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, v.errors #::: thatErrors)
+          case Validation.Failure(thatErrors) => Validation.Failure(v.errors #::: thatErrors)
+        }
+
+        case Validation.SoftFailure(input, errors) => f(input) match {
+          case Validation.Success(value) => Validation.SoftFailure(value, errors)
+          case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, errors #::: thatErrors)
+          case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
+        }
+
+        case Validation.Failure(errors) => Validation.Failure(errors)
+      }
+    }
+  }
 
   /**
     * Represents a successful validation with the empty list.
@@ -513,7 +534,7 @@ object Validation {
     /**
       * Returns a [[Validation.SoftFailure]] containing [[t]] with no errors.
       */
-    def toSoftFailure[U >: T, E]: Validation[U, E] = Validation.SoftFailure(t, LazyList.empty[E])
+    def toSoftFailure[U >: T, E](e: E): Validation[U, E] = Validation.SoftFailure(t, LazyList(e))
   }
 
   /**

@@ -997,6 +997,20 @@ namespace TestNel {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        Nel(1, 2 :: 3 :: Nil) |> Nel.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        Nel(-100, List.range(-99, 100)) |> Nel.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

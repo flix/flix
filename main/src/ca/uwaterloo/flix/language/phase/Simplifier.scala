@@ -56,8 +56,6 @@ object Simplifier {
 
       case LoweredAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
-      case LoweredAst.Expression.Sig(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, loc) // TODO replace with implementation
-
       case LoweredAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case LoweredAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
@@ -105,6 +103,9 @@ object Simplifier {
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
+
+      case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -254,6 +255,9 @@ object Simplifier {
       case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
+
+      case LoweredAst.Expression.Sig(_, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
       case LoweredAst.Expression.Wild(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
@@ -833,6 +837,9 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
+
+      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
 
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)

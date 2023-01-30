@@ -23,52 +23,13 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite with TestUtils {
 
-  test("DuplicateAnnotation.01") {
-    val input =
-      """@test @test
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
-
-  test("DuplicateFormal.01") {
-    val input = "def f(x: Int32, x: Int32): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.02") {
-    val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.03") {
-    val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.04") {
-    val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
-  test("DuplicateFormal.05") {
-    val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.DuplicateFormalParam](result)
-  }
-
   test("DuplicateTag.01") {
     val input =
       """enum Color {
         |  case Red,
         |  case Red
         |}
-      """.stripMargin
+    """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
   }
@@ -80,92 +41,47 @@ class TestWeeder extends FunSuite with TestUtils {
         |  case Blu,
         |  case Red
         |}
-      """.stripMargin
+    """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateTag](result)
   }
 
-  test("IllegalFixedAtom.01") {
+  test("IllegalEnum.01") {
     val input =
-      """def f(): Unit =
-        |    let _p = #{
-        |        R(x) :- A(x), not fix B(x).
-        |    };
-        |    ()
+      """
+        |enum E(Int32) {
+        |    case C
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFixedAtom](result)
+    expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalInt8.01") {
-    val input = "def f(): Int8 = -1000i8"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt8.02") {
-    val input = "def f(): Int8 = 1000i8"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt16.01") {
-    val input = "def f(): Int16 = -100000i16"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt16.02") {
-    val input = "def f(): Int16 = 100000i16"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt32.01") {
-    val input = "def f(): Int32 = -10000000000i32"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt32.02") {
-    val input = "def f(): Int32 = 10000000000i32"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt64.01") {
-    val input = "def f(): Int64 = -100000000000000000000i64"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalInt64.02") {
-    val input = "def f(): Int64 = 100000000000000000000i64"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInt](result)
-  }
-
-  test("IllegalNullPattern.01") {
+  test("IllegalEnum.02") {
     val input =
-      s"""
-         |def f(): Int32 = match null {
-         |    case null => 123
-         |    case _    => 456
-         |}
-         |""".stripMargin
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalNullPattern](result)
+    expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalJvmFieldOrMethodName.01") {
+  test("IllegalJavaClass.01") {
     val input =
-      raw"""
-           |def f(): Unit =
-           |    import foo(): Unit \ IO as bar;
-           |    ()
-           |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalJvmFieldOrMethodName](result)
+      """
+        |import java.util.Locale$Builder
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalJavaClass](result)
+  }
+
+  test("IllegalIntrinsic.01") {
+    val input =
+      """
+        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalIntrinsic](result)
   }
 
   test("MismatchedArity.01") {
@@ -190,141 +106,53 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.MismatchedArity](result)
   }
 
-  test("NonLinearPattern.01") {
-    val input =
-      """def f(): Bool = match (21, 42) {
-        |  case (x, x) => true
-        |}
-      """.stripMargin
+  test("EmptyInterpolatedExpression.01") {
+    val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  test("NonLinearPattern.02") {
-    val input =
-      """def f(): Bool = match (21, 42, 84) {
-        |  case (x, x, x) => true
-        |}
-      """.stripMargin
+  test("HalfInterpolationEscape.01") {
+    val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
+    expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  test("NonLinearPattern.03") {
-    val input =
-      """def f(): Bool = match (1, (2, (3, 4))) {
-        |  case (x, (y, (z, x))) => true
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonLinearPattern](result)
-  }
-
-  test("UndefinedAnnotation.01") {
-    val input =
-      """@abc
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UndefinedAnnotation](result)
-  }
-
-  test("UndefinedAnnotation.02") {
-    val input =
-      """@foobarbaz
-        |def foo(x: Int32): Int32 = 42
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UndefinedAnnotation](result)
-  }
-
-  test("IllegalPrivateDeclaration.01") {
+  test("IllegalResume.01") {
     val input =
       """
-        |class C[a] {
-        |    def f(): a
-        |}
+        |def f(): Bool = resume("Hello!")
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalResume](result)
   }
 
-  test("IllegalPrivateDeclaration.02") {
+  test("IllegalResume.02") {
     val input =
       """
-        |instance C[Int32] {
-        |    def f(): Int32 = 1
-        |}
+        |def f(): Bool =
+        |   try {
+        |       true
+        |   } catch {
+        |       case _: ##java.lang.Exception => resume(true)
+        |   }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalPrivateDeclaration](result)
+    expectError[WeederError.IllegalResume](result)
   }
 
-  test("IllegalTypeConstraintParameter.01") {
+  test("IllegalResume.03") {
     val input =
       """
-        |class C[a] with D[Int32]
+        |def f(): Bool =
+        |   try {
+        |       resume(true)
+        |   } with Fail {
+        |       def fail() = false
+        |   }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
-  }
-
-  test("IllegalTypeConstraintParameter.02") {
-    val input =
-      """
-        |instance C[a] with D[Some[a]]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalTypeConstraintParameter](result)
-  }
-
-  test("InconsistentTypeParameters.01") {
-    val input =
-      """
-        |enum E[a, b: Bool] {
-        |    case E1
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
-  }
-
-  test("InconsistentTypeParameters.02") {
-    val input =
-      """
-        |type alias T[a, b: Bool] = Int32
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
-  }
-
-  test("InconsistentTypeParameters.03") {
-    val input =
-      """
-        |enum T[a, b: Bool](Int32)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InconsistentTypeParameters](result)
-  }
-
-  test("UnkindedTypeParameters.01") {
-    val input =
-      """
-        |def f[a](x: a): a = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
-  }
-
-  test("UnkindedTypeParameters.02") {
-    val input =
-      """
-        |class C[a] {
-        |    def f[b](x: b): a = ???
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
+    expectError[WeederError.IllegalResume](result)
   }
 
   test("MalformedUnicodeEscape.String.01") {
@@ -483,6 +311,12 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.InvalidEscapeSequence](result)
   }
 
+  test("HalfInterpolationEscape.02") {
+    val input = s"""pub def foo(): String = "\\$$ {""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidEscapeSequence](result)
+  }
+
   test("NonSingleCharacter.Char.01") {
     val input =
       """
@@ -504,28 +338,284 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonSingleCharacter](result)
   }
 
-  test("EmptyInterpolatedExpression.01") {
-    val input = "def f(): String = \"${}\""
+  test("NonLinearPattern.01") {
+    val input =
+      """def f(): Bool = match (21, 42) {
+        |  case (x, x) => true
+        |}
+      """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.EmptyInterpolatedExpression](result)
+    expectError[WeederError.NonLinearPattern](result)
   }
 
-  test("HalfInterpolationEscape.01") {
-    val input = "def f(): String = \"${}\""
+  test("NonLinearPattern.02") {
+    val input =
+      """def f(): Bool = match (21, 42, 84) {
+        |  case (x, x, x) => true
+        |}
+      """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.EmptyInterpolatedExpression](result)
+    expectError[WeederError.NonLinearPattern](result)
   }
 
-  test("HalfInterpolationEscape.02") {
-    val input = s"""pub def foo(): String = "\\$$ {""""
+  test("NonLinearPattern.03") {
+    val input =
+      """def f(): Bool = match (1, (2, (3, 4))) {
+        |  case (x, (y, (z, x))) => true
+        |}
+      """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.InvalidEscapeSequence](result)
+    expectError[WeederError.NonLinearPattern](result)
+  }
+
+  test("IllegalNullPattern.01") {
+    val input =
+      s"""
+         |def f(): Int32 = match null {
+         |    case null => 123
+         |    case _    => 456
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
+  test("IllegalFixedAtom.01") {
+    val input =
+      """def f(): Unit =
+        |    let _p = #{
+        |        R(x) :- A(x), not fix B(x).
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFixedAtom](result)
+  }
+
+  test("DuplicateAnnotation.01") {
+    val input =
+      """@test @test
+        |def foo(x: Int32): Int32 = 42
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateAnnotation](result)
+  }
+
+  test("UndefinedAnnotation.01") {
+    val input =
+      """@abc
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
+  test("UndefinedAnnotation.02") {
+    val input =
+      """@foobarbaz
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
   }
 
   test("IllegalModifier.01") {
     val input = "pub instance I[a]"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalPrivateDeclaration.01") {
+    val input =
+      """
+        |class C[a] {
+        |    def f(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalPrivateDeclaration.02") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    def f(): Int32 = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalOperationEffect.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ IO
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("IllegalOperationEffect.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalOperationEffect](result)
+  }
+
+  test("NonUnitOperationType.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnitOperationType](result)
+  }
+
+  test("MissingFormalParamAscription.01") {
+    val input =
+      """
+        |def f(x): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingFormalParamAscription](result)
+  }
+
+  test("IllegalFormalParamAscription.01") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(x: String) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("DuplicateFormal.01") {
+    val input = "def f(x: Int32, x: Int32): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.02") {
+    val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.03") {
+    val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.04") {
+    val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("DuplicateFormal.05") {
+    val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateFormalParam](result)
+  }
+
+  test("InconsistentTypeParameters.01") {
+    val input =
+      """
+        |enum E[a, b: Bool] {
+        |    case E1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.02") {
+    val input =
+      """
+        |type alias T[a, b: Bool] = Int32
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("InconsistentTypeParameters.03") {
+    val input =
+      """
+        |enum T[a, b: Bool](Int32)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InconsistentTypeParameters](result)
+  }
+
+  test("UnkindedTypeParameters.01") {
+    val input =
+      """
+        |def f[a](x: a): a = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
+
+  test("UnkindedTypeParameters.02") {
+    val input =
+      """
+        |class C[a] {
+        |    def f[b](x: b): a = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnkindedTypeParameters](result)
+  }
+
+  test("IllegalTypeConstraintParameter.01") {
+    val input =
+      """
+        |class C[a] with D[Int32]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
+  test("IllegalTypeConstraintParameter.02") {
+    val input =
+      """
+        |instance C[a] with D[Some[a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
   test("ReservedName.Def.01") {
@@ -617,134 +707,64 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
-  test("IllegalEffectTypeParams.01") {
-    val input =
-      """
-        |eff MyEffect[a]
-        |""".stripMargin
+  // TODO: IllegalFloat
+
+  test("IllegalInt8.01") {
+    val input = "def f(): Int8 = -1000i8"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalEffectTypeParams.02") {
-    val input =
-      """
-        |eff MyEffect {
-        |    def op[a](x: a): Unit
-        |}
-        |""".stripMargin
+  test("IllegalInt8.02") {
+    val input = "def f(): Int8 = 1000i8"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEffectTypeParams](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalResume.01") {
-    val input =
-      """
-        |def f(): Bool = resume("Hello!")
-        |""".stripMargin
+  test("IllegalInt16.01") {
+    val input = "def f(): Int16 = -100000i16"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalResume.02") {
-    val input =
-      """
-        |def f(): Bool =
-        |   try {
-        |       true
-        |   } catch {
-        |       case _: ##java.lang.Exception => resume(true)
-        |   }
-        |""".stripMargin
+  test("IllegalInt16.02") {
+    val input = "def f(): Int16 = 100000i16"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalResume.03") {
-    val input =
-      """
-        |def f(): Bool =
-        |   try {
-        |       resume(true)
-        |   } with Fail {
-        |       def fail() = false
-        |   }
-        |""".stripMargin
+  test("IllegalInt32.01") {
+    val input = "def f(): Int32 = -10000000000i32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalResume](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalFormalParamAscription.01") {
-    val input =
-      """
-        |def f(): String =
-        |    try ??? with Fail {
-        |        def fail(x: String) = "hello"
-        |    }
-        |""".stripMargin
+  test("IllegalInt32.02") {
+    val input = "def f(): Int32 = 10000000000i32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalFormalParamAscription](result)
+    expectError[WeederError.IllegalInt](result)
   }
 
-  test("IllegalOperationEffect.01") {
+  test("IllegalInt64.01") {
+    val input = "def f(): Int64 = -100000000000000000000i64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalInt](result)
+  }
+
+  test("IllegalInt64.02") {
+    val input = "def f(): Int64 = 100000000000000000000i64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalInt](result)
+  }
+
+  test("IllegalJvmFieldOrMethodName.01") {
     val input =
-      """
-        |eff E {
-        |    def op(): Unit \ IO
-        |}
-        |""".stripMargin
+      raw"""
+           |def f(): Unit =
+           |    import foo(): Unit \ IO as bar;
+           |    ()
+           |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalOperationEffect](result)
-  }
-
-  test("IllegalOperationEffect.02") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Unit \ E
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationEffect](result)
-  }
-
-  test("NonUnitOperationType.01") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonUnitOperationType](result)
-  }
-
-  test("IllegalEnum.01") {
-    val input =
-      """
-        |enum E(Int32) {
-        |    case C
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEnum](result)
-  }
-
-  test("IllegalEnum.02") {
-    val input =
-      """
-        |enum E(Int32) { }
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEnum](result)
-  }
-
-  test("IllegalJavaClass.01") {
-    val input =
-      """
-        |import java.util.Locale$Builder
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalJavaClass](result)
+    expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 }

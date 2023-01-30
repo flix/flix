@@ -205,7 +205,7 @@ namespace String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 rem len, s) };
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.rem` len, s) };
         init(f, len)
 
     ///
@@ -224,9 +224,9 @@ namespace String {
     ///
     def rotateRightHelper(n: Int32, s: String): String =
         let len = length(s);
-        let n1 = n rem len;
+        let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 rem len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.rem` len, s)};
         init(f, len)
 
     ///
@@ -1212,21 +1212,13 @@ namespace String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: String): Iterator[Char, r] \ Write(r) =
-        let len = length(s);
-        let i = ref 0 @ r;
-        let done = () -> deref i >= len;
-        let next = () -> {
-            let x = charAt(deref i, s);
-            i := deref i + 1;
-            x
-        };
-        Iterator.Iterator(done, next)
+    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ Write(r) =
+        Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), r] \ Write(r) =
-        iterator(r, s) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ Write(r) =
+        iterator(rc, s) |> Iterator.zipWithIndex
 
 }

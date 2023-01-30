@@ -310,6 +310,9 @@ object Redundancy {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Use(_, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
@@ -396,6 +399,11 @@ object Redundancy {
         (innerUsed ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
         (innerUsed ++ shadowedVar) - sym
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

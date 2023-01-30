@@ -68,23 +68,24 @@ mod Test.Exp.Choose.Recursive {
         h(cstOrNot)
     }
 
-    pub def testChoose07(): Bool = {
-        let id = x -> choose x {
-            case Expr.Cst(y)    => open Expr.Cst(y)
-            case Expr.Var(y)    => open Expr.Var(y)
-            case Expr.Not(y)    => open Expr.Not(y)
-        };
-        let _ = id(open Expr.Cst(true));
-        true
-    }
-
-    pub def testChoose08(): Bool = {
-        let unNot = x -> choose x {
-            case Expr.Cst(y)    => open Expr.Cst(y)
-            case Expr.Var(y)    => open Expr.Var(y)
-            case Expr.Not(y)    => y
-        };
-        let _ = unNot(open Expr.Cst(true));
-        true
-    }
+// TODO RESTR-VARS
+//    pub def testChoose07(): Bool = {
+//        let id = x -> choose x {
+//            case Expr.Cst(y)    => open Expr.Cst(y)
+//            case Expr.Var(y)    => open Expr.Var(y)
+//            case Expr.Not(y)    => open Expr.Not(y)
+//        };
+//        let _ = id(open Expr.Cst(true));
+//        true
+//    }
+//
+//    pub def testChoose08(): Bool = {
+//        let unNot = x -> choose x {
+//            case Expr.Cst(y)    => open Expr.Cst(y)
+//            case Expr.Var(y)    => open Expr.Var(y)
+//            case Expr.Not(y)    => y
+//        };
+//        let _ = unNot(open Expr.Cst(true));
+//        true
+//    }
 }

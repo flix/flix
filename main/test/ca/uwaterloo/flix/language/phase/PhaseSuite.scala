@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.unification.{TestBdd, TestBoolFormulaTable, TestQMCtoBoolFormula, TestSetUnification, TestUnification}
 import org.scalatest.Suites
 

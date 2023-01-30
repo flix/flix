@@ -35,10 +35,6 @@ instance Newable[MutDeque[a]] {
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
-instance Scoped[MutDeque[a]] {
-    pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutDeque {
 
     ///
@@ -214,7 +210,7 @@ namespace MutDeque {
             let a1 = deref a;
             let f1 = deref f;
             let x = a1[f1];
-            f := (f1 + 1) mod capacity(d);
+            f := (f1 + 1) `Int32.mod` capacity(d);
             compress!(d);
             Some(x)
         }
@@ -229,7 +225,7 @@ namespace MutDeque {
         else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
             let MutDeque(_, a, _, b) = d;
             let a1 = deref a;
-            let b1 = (deref b - 1) mod capacity(d);
+            let b1 = (deref b - 1) `Int32.mod` capacity(d);
             let x = a1[b1];
             b := b1;
             compress!(d);
@@ -242,10 +238,10 @@ namespace MutDeque {
     pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(_, a, f, _) = d;
         let a1 = deref a;
-        let f1 = (deref f - 1) mod capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
-        a1[f1] = x;                             // Store `x` in the array.
-        f := f1;                                // Update the front index reference.
-        expand!(d)                              // Optionally expand `d`.
+        let f1 = (deref f - 1) `Int32.mod` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
+        a1[f1] = x;                                     // Store `x` in the array.
+        f := f1;                                        // Update the front index reference.
+        expand!(d)                                      // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
@@ -254,9 +250,9 @@ namespace MutDeque {
         let MutDeque(_, a, _, b) = d;
         let a1 = deref a;
         let b1 = deref b;
-        a1[b1] = x;                    // Store `x` in the array.
-        b := (b1 + 1) mod capacity(d); // Update back index reference to point to next empty index.
-        expand!(d)                     // Optionally expand `d`.
+        a1[b1] = x;                            // Store `x` in the array.
+        b := (b1 + 1) `Int32.mod` capacity(d); // Update back index reference to point to next empty index.
+        expand!(d)                             // Optionally expand `d`.
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -395,7 +391,7 @@ namespace MutDeque {
         let i = deref f;
         let j = deref b;
         if (i == j)
-            [] @ r1
+            Array#{} @ r1
         else if (i  < j)
             Array.copyOfRange(r1, i, j, deref a)
         else
@@ -425,16 +421,19 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ r1;
-        let done = () -> deref i == deref b;
+        let i = ref (deref f) @ rc;
         let next = () -> {
-            let x = (deref a)[deref i];
-            i := deref i + 1 &&& (capacity(d) - 1);
-            x
+            if (deref i < deref b) {
+                let x = (deref a)[deref i];
+                i := deref i + 1 &&& (capacity(d) - 1);
+                Some(x)
+            } else {
+                None
+            }
         };
-        Iterator.Iterator(upcast done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

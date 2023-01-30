@@ -74,6 +74,8 @@ object KindedAst {
 
     case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
     case class Use(sym: Symbol, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Expression
@@ -99,6 +101,8 @@ object KindedAst {
     case class Region(tpe: Type, loc: SourceLocation) extends KindedAst.Expression
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class ScopeExit(exp1: KindedAst.Expression, exp2: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Match(exp: KindedAst.Expression, rules: List[KindedAst.MatchRule], loc: SourceLocation) extends KindedAst.Expression
 
@@ -298,9 +302,9 @@ object KindedAst {
 
   case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme)
+  case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme)
+  case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
   case class Constraint(cparams: List[KindedAst.ConstraintParam], head: KindedAst.Predicate.Head, body: List[KindedAst.Predicate.Body], loc: SourceLocation)
 
@@ -318,7 +322,7 @@ object KindedAst {
 
   case class RelationalChoiceRule(pat: List[KindedAst.RelationalChoicePattern], exp: KindedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: KindedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: KindedAst.Expression)
+  case class RestrictableChoiceRule(pat: KindedAst.RestrictableChoicePattern, exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 

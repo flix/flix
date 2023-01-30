@@ -117,8 +117,8 @@ object Resolver {
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
     // TODO NS-REFACTOR this will be added once Cases become proper symbols
-    case ResolvedAst.Declaration.Case(sym, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.RestrictableCase(sym, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
     case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
   }
@@ -190,10 +190,13 @@ object Resolver {
     */
   def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
-      val tparams = resolveTypeParams(tparams0, env0, ns, root)
-      val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-      semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root) map {
-        tpe => ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root) map {
+            tpe => ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+          }
       }
   }
 
@@ -206,13 +209,16 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    for {
-      semiResolved <- semiResolveTypeAliases(root)
-      orderedSyms <- findResolutionOrder(semiResolved.values)
-      orderedSemiResolved = orderedSyms.map(semiResolved)
-      aliases <- finishResolveTypeAliases(orderedSemiResolved)
-    } yield (aliases, orderedSyms)
-
+    flatMapN(semiResolveTypeAliases(root)) {
+      case semiResolved =>
+        flatMapN(findResolutionOrder(semiResolved.values)) {
+          case orderedSyms =>
+            val orderedSemiResolved = orderedSyms.map(semiResolved)
+            mapN(finishResolveTypeAliases(orderedSemiResolved)) {
+              case aliases => (aliases, orderedSyms)
+            }
+        }
+    }
   }
 
   /**
@@ -226,6 +232,10 @@ object Resolver {
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
     case UnkindedType.ReadWrite(tpe, loc) => getAliasUses(tpe)
+    case _: UnkindedType.CaseSet => Nil
+    case UnkindedType.CaseComplement(tpe, loc) => getAliasUses(tpe)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
@@ -325,8 +335,8 @@ object Resolver {
       resolveEffect(eff, env0, taenv, ns0, root)
     case op@NamedAst.Declaration.Op(sym, spec) => throw InternalCompilerException("unexpected op", sym.loc)
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
-    case NamedAst.Declaration.Case(sym, tpe) => throw InternalCompilerException("unexpected case", sym.loc)
-    case NamedAst.Declaration.RestrictableCase(sym, tpe) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
   }
 
   /**
@@ -391,17 +401,20 @@ object Resolver {
     */
   def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
     case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
-      val tparam = Params.resolveTparam(tparam0)
-      val env = env0 ++ mkTypeParamEnv(List(tparam))
-      val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
-      // ignore the parameter of the super class; we don't use it
-      val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
-      val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-      val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-      mapN(sigsListVal, superClassesVal, lawsVal) {
-        case (sigsList, superClasses, laws) =>
-          val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-          ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      val tparamVal = Params.resolveTparam(tparam0, env0, ns0, root)
+      flatMapN(tparamVal) {
+        case tparam =>
+          val env = env0 ++ mkTypeParamEnv(List(tparam))
+          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
+          // ignore the parameter of the super class; we don't use it
+          val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
+          val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
+          mapN(sigsListVal, superClassesVal, lawsVal) {
+            case (sigsList, superClasses, laws) =>
+              val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
+              ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+          }
       }
   }
 
@@ -411,19 +424,22 @@ object Resolver {
   def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
-      val tparams = resolveTypeParams(tparams0, env0, ns0, root)
-      val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-      val clazzVal = lookupClassForImplementation(clazz0, env, ns0, root)
-      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
-      flatMapN(clazzVal, tpeVal, tconstrsVal) {
-        case (clazz, tpe, tconstrs) =>
-          val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
-          val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-          mapN(defsVal) {
-            case defs =>
-              val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
-              ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val clazzVal = lookupClassForImplementation(clazz0, env, ns0, root)
+          val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
+          val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+          flatMapN(clazzVal, tpeVal, tconstrsVal) {
+            case (clazz, tpe, tconstrs) =>
+              val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
+              val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
+              mapN(defsVal) {
+                case defs =>
+                  val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
+                  ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+              }
           }
       }
   }
@@ -469,21 +485,23 @@ object Resolver {
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
     case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env1 = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val fparamsVal = resolveFormalParams(fparams0, env1, taenv, ns0, root)
+          flatMapN(fparamsVal) {
+            case fparams =>
+              val env = env1 ++ mkFormalParamEnv(fparams)
+              val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
+              val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
+              val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
 
-      val tparams = resolveTypeParams(tparams0, env0, ns0, root)
-      val env1 = env0 ++ mkTypeParamEnv(tparams.tparams)
-      val fparamsVal = resolveFormalParams(fparams0, env1, taenv, ns0, root)
-      flatMapN(fparamsVal) {
-        case fparams =>
-          val env = env1 ++ mkFormalParamEnv(fparams)
-          val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
-          val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
-          val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
-
-          mapN(tpeVal, purAndEffVal, tconstrsVal) {
-            case (tpe, purAndEff, tconstrs) =>
-              // add the inherited type constraint to the the list
-              ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
+              mapN(tpeVal, purAndEffVal, tconstrsVal) {
+                case (tpe, purAndEff, tconstrs) =>
+                  // add the inherited type constraint to the the list
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
+              }
           }
       }
   }
@@ -493,13 +511,16 @@ object Resolver {
     */
   def resolveEnum(e0: NamedAst.Declaration.Enum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = e0 match {
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams0, derives0, cases0, loc) =>
-      val tparams = resolveTypeParams(tparams0, env0, ns0, root)
-      val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-      val derivesVal = resolveDerivations(derives0, env, ns0, root)
-      val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
-      mapN(derivesVal, casesVal) {
-        case (derives, cases) =>
-          ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val casesVal = traverse(cases0)(resolveCase(_, env, taenv, ns0, root))
+          mapN(derivesVal, casesVal) {
+            case (derives, cases) =>
+              ResolvedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
+          }
       }
   }
 
@@ -508,14 +529,17 @@ object Resolver {
     */
   def resolveRestrictableEnum(e0: NamedAst.Declaration.RestrictableEnum, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableEnum, ResolutionError] = e0 match {
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index0, tparams0, derives0, cases0, loc) =>
-      val index = Params.resolveTparam(index0)
-      val tparams = resolveTypeParams(tparams0, env0, ns0, root)
-      val env = env0 ++ mkTypeParamEnv(index :: tparams.tparams)
-      val derivesVal = resolveDerivations(derives0, env, ns0, root)
-      val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
-      mapN(derivesVal, casesVal) {
-        case (derives, cases) =>
-          ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
+      val indexVal = Params.resolveTparam(index0, env0, ns0, root)
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(indexVal, tparamsVal) {
+        case (index, tparams) =>
+          val env = env0 ++ mkTypeParamEnv(index :: tparams.tparams)
+          val derivesVal = resolveDerivations(derives0, env, ns0, root)
+          val casesVal = traverse(cases0)(resolveRestrictableCase(_, env, taenv, ns0, root))
+          mapN(derivesVal, casesVal) {
+            case (derives, cases) =>
+              ResolvedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc)
+          }
       }
   }
 
@@ -523,10 +547,10 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveCase(caze0: NamedAst.Declaration.Case, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Case, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.Case(sym, tpe0) =>
+    case NamedAst.Declaration.Case(sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.Case(sym, tpe)
+        tpe => ResolvedAst.Declaration.Case(sym, tpe, loc)
       }
   }
 
@@ -534,10 +558,10 @@ object Resolver {
     * Performs name resolution on the given case `caze0` in the given namespace `ns0`.
     */
   private def resolveRestrictableCase(caze0: NamedAst.Declaration.RestrictableCase, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.RestrictableCase, ResolutionError] = caze0 match {
-    case NamedAst.Declaration.RestrictableCase(sym, tpe0) =>
+    case NamedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
       mapN(tpeVal) {
-        tpe => ResolvedAst.Declaration.RestrictableCase(sym, tpe)
+        tpe => ResolvedAst.Declaration.RestrictableCase(sym, tpe, loc)
       }
   }
 
@@ -577,6 +601,36 @@ object Resolver {
         ().toSuccess
       } else {
         ResolutionError.IllegalSignature(sym, sym.loc).toFailure
+      }
+  }
+
+  private def resolveKind(kind0: NamedAst.Kind, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Kind, ResolutionError] = kind0 match {
+    case NamedAst.Kind.Ambiguous(qname, loc) =>
+      if (qname.isUnqualified) {
+        qname.ident.name match {
+          case "Type" => Kind.Star.toSuccess
+          case "Bool" => Kind.Bool.toSuccess
+          case "Eff" => Kind.Effect.toSuccess
+          case "RecordRow" => Kind.RecordRow.toSuccess
+          case "SchemaRow" => Kind.SchemaRow.toSuccess
+          case "Predicate" => Kind.Predicate.toSuccess
+          case "Region" => Kind.Bool.toSuccess
+          case _ =>
+            mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
+              case enum => Kind.CaseSet(enum.sym)
+            }
+        }
+      } else {
+        mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
+          case enum => Kind.CaseSet(enum.sym)
+        }
+      }
+    case NamedAst.Kind.Arrow(k10, k20, loc) =>
+      val k1Val = resolveKind(k10, env, ns0, root)
+      val k2Val = resolveKind(k20, env, ns0, root)
+
+      mapN(k1Val, k2Val) {
+        case (k1, k2) => Kind.Arrow(k1, k2)
       }
   }
 
@@ -820,6 +874,13 @@ object Resolver {
             case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
           }
 
+        case NamedAst.Expression.OpenAs(name, exp, loc) =>
+          val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
+          val eVal = visitExp(exp, env0, region)
+          mapN(enumVal, eVal) {
+            case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
+          }
+
         case NamedAst.Expression.Hole(nameOpt, loc) =>
           val sym = nameOpt match {
             case None => Symbol.freshHoleSym(loc)
@@ -945,6 +1006,13 @@ object Resolver {
             e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
           }
 
+        case NamedAst.Expression.ScopeExit(exp1, exp2, loc) =>
+          val e1Val = visitExp(exp1, env0, region)
+          val e2Val = visitExp(exp2, env0, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.ScopeExit(e1, e2, loc)
+          }
+
         case NamedAst.Expression.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
@@ -1031,19 +1099,7 @@ object Resolver {
               val eVal = visitExp(exp0, env, region)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
-                  val symVal = if (star) {
-                    e match {
-                      case ResolvedAst.Expression.RestrictableTag(sym, exp, _, loc) => Some(sym.sym).toSuccess
-                      case ResolvedAst.Expression.Of(sym, exp, loc) => Some(sym.sym).toSuccess
-                      case otherExp => ResolutionError.MissingRestrictableTag(otherExp.loc).toFailure
-                    }
-                  } else {
-                    None.toSuccess
-                  }
-
-                  mapN(symVal) {
-                    case sym => ResolvedAst.RestrictableChoiceRule(p, sym, e)
-                  }
+                  ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
               }
           }
           mapN(expVal, rulesVal) {
@@ -1096,12 +1152,11 @@ object Resolver {
           }
 
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
-          val esVal = traverse(exps)(visitExp(_, env0, region))
-          val erVal = traverseOpt(exp)(visitExp(_, env0, region))
-          mapN(esVal, erVal) {
-            case (es, er) =>
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.ArrayLit(es, reg, loc)
+          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expVal = visitExp(exp, env0, region)
+          mapN(expsVal, expVal) {
+            case (es, e) =>
+              ResolvedAst.Expression.ArrayLit(es, e, loc)
           }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
@@ -1498,7 +1553,9 @@ object Resolver {
           }
 
         case NamedAst.Expression.Error(m) =>
-          ResolvedAst.Expression.Error(m).toSoftFailure
+          // Note: We must NOT use [[Validation.toSoftFailure]] because
+          // that would duplicate the error inside the Validation.
+          Validation.SoftFailure(ResolvedAst.Expression.Error(m), LazyList.empty)
       }
 
       /**
@@ -1709,17 +1766,21 @@ object Resolver {
     /**
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolveTparam(tparam0: NamedAst.TypeParam): ResolvedAst.TypeParam = tparam0 match {
-      case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam)
-      case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam)
+    def resolveTparam(tparam0: NamedAst.TypeParam, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam, ResolutionError] = tparam0 match {
+      case tparam: NamedAst.TypeParam.Kinded => resolveKindedTparam(tparam, env, ns0, root)
+      case tparam: NamedAst.TypeParam.Unkinded => resolveUnkindedTparam(tparam).toSuccess
       case tparam: NamedAst.TypeParam.Implicit => throw InternalCompilerException("unexpected implicit tparam", tparam.loc)
     }
 
     /**
       * Performs name resolution on the given kinded type parameter `tparam0` in the given namespace `ns0`.
       */
-    def resolveKindedTparam(tparam0: NamedAst.TypeParam.Kinded): ResolvedAst.TypeParam.Kinded = tparam0 match {
-      case NamedAst.TypeParam.Kinded(name, tpe, kind, loc) => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc)
+    def resolveKindedTparam(tparam0: NamedAst.TypeParam.Kinded, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParam.Kinded, ResolutionError] = tparam0 match {
+      case NamedAst.TypeParam.Kinded(name, tpe, kind0, loc) =>
+        val kindVal = resolveKind(kind0, env, ns0, root)
+        mapN(kindVal) {
+          case kind => ResolvedAst.TypeParam.Kinded(name, tpe, kind, loc)
+        }
     }
 
     /**
@@ -1772,16 +1833,18 @@ object Resolver {
   /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
-  def resolveTypeParams(tparams0: NamedAst.TypeParams, env0: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): ResolvedAst.TypeParams = tparams0 match {
+  def resolveTypeParams(tparams0: NamedAst.TypeParams, env0: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.TypeParams, ResolutionError] = tparams0 match {
     case NamedAst.TypeParams.Kinded(tparams1) =>
-      val tparams2 = tparams1.map(Params.resolveKindedTparam)
-      ResolvedAst.TypeParams.Kinded(tparams2)
+      val tparams2Val = traverse(tparams1)(Params.resolveKindedTparam(_, env0, ns0, root))
+      mapN(tparams2Val) {
+        case tparams2 => ResolvedAst.TypeParams.Kinded(tparams2)
+      }
     case NamedAst.TypeParams.Unkinded(tparams1) =>
       val tparams2 = tparams1.map(Params.resolveUnkindedTparam)
-      ResolvedAst.TypeParams.Unkinded(tparams2)
+      ResolvedAst.TypeParams.Unkinded(tparams2).toSuccess
     case NamedAst.TypeParams.Implicit(tparams1) =>
       val tparams2 = tparams1.flatMap(Params.resolveImplicitTparam(_, env0))
-      ResolvedAst.TypeParams.Unkinded(tparams2)
+      ResolvedAst.TypeParams.Unkinded(tparams2).toSuccess
   }
 
   /**
@@ -2031,6 +2094,20 @@ object Resolver {
   }
 
   /**
+    * Looks up the restrictable enum name.
+    */
+  private def lookupRestrictableEnum(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
+    val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect {
+      case Resolution.Declaration(c: NamedAst.Declaration.RestrictableEnum) => c
+    }
+
+    matches match {
+      case Nil => ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
+      case enum :: _ => enum.toSuccess
+    }
+  }
+
+  /**
     * Returns `true` iff the given type `tpe0` is the Unit type.
     */
   def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
@@ -2228,9 +2305,32 @@ object Resolver {
 
       case NamedAst.Type.Empty(loc) => UnkindedType.Cst(TypeConstructor.Empty, loc).toSuccess
 
-      case NamedAst.Type.Ascribe(tpe, kind, loc) =>
+      case NamedAst.Type.CaseSet(cases0, loc) =>
+        val casesVal = traverse(cases0)(lookupRestrictableTag(_, env, ns0, root))
+        mapN(casesVal) {
+          case cases => UnkindedType.CaseSet(cases.map(_.sym), loc)
+        }
+
+      case NamedAst.Type.CaseComplement(tpe, loc) =>
         mapN(visit(tpe)) {
-          t => UnkindedType.Ascribe(t, kind, loc)
+          t => UnkindedType.CaseComplement(t, loc)
+        }
+
+      case NamedAst.Type.CaseUnion(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => UnkindedType.CaseUnion(t1, t2, loc)
+        }
+
+      case NamedAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => UnkindedType.CaseIntersection(t1, t2, loc)
+        }
+
+      case NamedAst.Type.Ascribe(t0, kind0, loc) =>
+        val tVal = visit(t0)
+        val kindVal = resolveKind(kind0, env, ns0, root)
+        mapN(tVal, kindVal) {
+          (t, kind) => UnkindedType.Ascribe(t, kind, loc)
         }
 
     }
@@ -2297,6 +2397,11 @@ object Resolver {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
+      case _: UnkindedType.CaseSet =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case UnkindedType.Arrow(purAndEff, arity, loc) =>
         val purAndEffVal = finishResolvePurityAndEffect(purAndEff, taenv)
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
@@ -2309,6 +2414,29 @@ object Resolver {
         val targsVal = traverse(targs)(finishResolveType(_, taenv))
         mapN(tpeVal, targsVal) {
           case (t, ts) => UnkindedType.mkApply(UnkindedType.ReadWrite(t, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseComplement(tpe, loc) =>
+        val tpeVal = finishResolveType(tpe, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpeVal, targsVal) {
+          case (t, ts) => UnkindedType.mkApply(UnkindedType.CaseComplement(t, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseUnion(tpe1, tpe2, loc) =>
+        val tpe1Val = finishResolveType(tpe1, taenv)
+        val tpe2Val = finishResolveType(tpe2, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpe1Val, tpe2Val, targsVal) {
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseUnion(t1, t2, loc), ts, tpe0.loc)
+        }
+
+      case UnkindedType.CaseIntersection(tpe1, tpe2, loc) =>
+        val tpe1Val = finishResolveType(tpe1, taenv)
+        val tpe2Val = finishResolveType(tpe2, taenv)
+        val targsVal = traverse(targs)(finishResolveType(_, taenv))
+        mapN(tpe1Val, tpe2Val, targsVal) {
+          case (t1, t2, ts) => UnkindedType.mkApply(UnkindedType.CaseIntersection(t1, t2, loc), ts, tpe0.loc)
         }
 
       case UnkindedType.Ascribe(tpe, kind, loc) =>
@@ -3142,9 +3270,7 @@ object Resolver {
         case TypeConstructor.True => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.Union => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseComplement(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseConstant(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseEmpty(_) => ResolutionError.IllegalType(tpe, loc).toFailure
-        case TypeConstructor.CaseAll(_) => ResolutionError.IllegalType(tpe, loc).toFailure
+        case TypeConstructor.CaseSet(_, _) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseIntersection(_) => ResolutionError.IllegalType(tpe, loc).toFailure
         case TypeConstructor.CaseUnion(_) => ResolutionError.IllegalType(tpe, loc).toFailure
 
@@ -3190,6 +3316,10 @@ object Resolver {
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.ReadWrite => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseSet => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.CaseIntersection => ResolutionError.IllegalType(tpe, loc).toFailure
 
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
@@ -3249,8 +3379,8 @@ object Resolver {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
-    case NamedAst.Declaration.Case(sym, tpe) => sym
-    case NamedAst.Declaration.RestrictableCase(sym, tpe) => sym
+    case NamedAst.Declaration.Case(sym, tpe, _) => sym
+    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 

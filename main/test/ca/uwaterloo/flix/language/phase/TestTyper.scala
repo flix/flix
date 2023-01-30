@@ -1179,7 +1179,7 @@ class TestTyper extends FunSuite with TestUtils {
     // Regression test. See https://github.com/flix/flix/issues/4062
     val input =
       """
-        |def mkArray(): Array[Int32, Static] \ IO = []
+        |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
         |def zero(): Int32 & Pure = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
@@ -1832,6 +1832,85 @@ class TestTyper extends FunSuite with TestUtils {
         |    choose star {
         |        case Expr.Cst(_) => false
         |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.01") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Not all cases caught
+        |def isRed(c: Color[s]): Bool = choose c {
+        |    case Color.Red => true
+        |    case Color.Green => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.02") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// forgot Green intro
+        |def redToGreen(c: Color[s]): Color[s -- <Color.Red>] = choose* c {
+        |    case Color.Red => Color.Green
+        |    case Color.Green => Color.Green
+        |    case Color.Blue => Color.Blue
+        |}
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.03") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus
+        |def isRed(c: Color[s -- <Color.Blue>]): Bool = choose* c {
+        |    case Color.Red => true
+        |    case Color.Blue => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.04") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus parsing
+        |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.05") {
+    val input =
+      """
+        |restrictable enum Binary[s] {
+        |    case Zero(Binary[s]), One(Binary[s]), End
+        |}
+        |
+        |// forgot open on recursive variable use
+        |def id(b: Binary[s]): Binary[s] = choose* b {
+        |    case Binary.Zero(x) => open Binary.Zero(id(x))
+        |    case Binary.One(x) => open Binary.One(id(x))
+        |    case Binary.End => Binary.End
         |}
         |""".stripMargin
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))

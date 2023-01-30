@@ -523,6 +523,16 @@ object ParsedAst {
     case class Open(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * An Open Qualified Name Expression (This opens the type of restrictable tags) (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param exp  the body expression
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class OpenAs(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Hole Expression.
       *
       * @param sp1   the position of the first character in the expression
@@ -852,14 +862,14 @@ object ParsedAst {
     case class New(sp1: SourcePosition, qname: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayLit Expression.
+      * Array Literal expression.
       *
-      * @param sp1  the position of the first character in the expression.
+      * @param sp1  the position of the first character in the `Array` keyword.
       * @param exps the elements of the array.
-      * @param exp  the optional region.
+      * @param exp  the region of the array.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLoad Expression
@@ -899,16 +909,6 @@ object ParsedAst {
       * @param exp2 the second list.
       */
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
-
-    /**
-      * Array expression.
-      *
-      * @param sp1  the position of the first character in the `Array` keyword.
-      * @param sp2  the position of the last character in the `Array` keyword.
-      * @param exps the elements of the array.
-      * @param exp  the region of the array.
-      */
-    case class FArray(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * List expression.
@@ -1554,6 +1554,50 @@ object ParsedAst {
     case class Effect(sp1: SourcePosition, eff: ParsedAst.EffectSet, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * A type representing a case set.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param cases the case constants.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class CaseSet(sp1: SourcePosition, cases: Seq[Name.QName], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a union of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseUnion(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing an intersection of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseIntersection(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing a difference of two case set formulas.
+      *
+      * @param tpe1 the 1st type.
+      * @param tpe2 the 2nd type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class CaseDifference(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * A type representing the complement of a case set formula.
+      *
+      * @param tpe the complemented type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class CaseComplement(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Kind Ascription.
       *
       * @param tpe  the ascribed type.
@@ -1718,39 +1762,9 @@ object ParsedAst {
   object Kind {
 
     /**
-      * The Star kind.
+      * A non-builtin kind.
       */
-    case class Star(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Bool kind.
-      */
-    case class Bool(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Region kind.
-      */
-    case class Region(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Effect kind.
-      */
-    case class Effect(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Record Row kind.
-      */
-    case class RecordRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Schema Row kind.
-      */
-    case class SchemaRow(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
-
-    /**
-      * The Predicate kind.
-      */
-    case class Predicate(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Kind
+    case class QName(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Kind
 
     /**
       * The Arrow kind.

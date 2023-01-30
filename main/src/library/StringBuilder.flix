@@ -23,10 +23,6 @@ instance Newable[StringBuilder] {
     pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)
 }
 
-instance Scoped[StringBuilder] {
-    pub def regionOf(_: StringBuilder[r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace StringBuilder {
 
     ///
@@ -107,23 +103,15 @@ namespace StringBuilder {
     ///
     /// Returns an iterator over `sb`.
     ///
-    pub def iterator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def iterator(rc: Region[r1], sb: StringBuilder[r2]): Iterator[Char, r1 and r2, r1] \ { Read(r2), Write(r1) } =
         import java.lang.StringBuilder.charAt(Int32): Char \ Read(r2);
         let StringBuilder(msb) = sb;
-        let len = length(sb);
-        let i = ref 0 @ r1;
-        let done = () -> unsafe_cast { deref i >= len } as _ \ { r1, r2 };
-        let next = () -> {
-            let x = charAt(msb, deref i);
-            i := deref i + 1;
-            x
-        };
-        Iterator.Iterator(done, next)
+        Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> charAt(msb, i))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2] \ { Read(r2), Write(r1) } =
+    pub def enumerator(r1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 and r2, r1] \ { Read(r2), Write(r1) } =
         iterator(r1, sb) |> Iterator.zipWithIndex
 
     ///

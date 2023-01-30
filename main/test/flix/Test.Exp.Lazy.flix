@@ -55,7 +55,7 @@ namespace Test/Exp/Lazy {
     @test
     def testArrayOfIntLazy01(): Unit = region r {
         discard {
-            let array = [1, 2] @ r;
+            let array = Array#{1, 2} @ r;
             lazy array
         }
     }
@@ -63,7 +63,7 @@ namespace Test/Exp/Lazy {
     @test
     def testArrayOfStringLazy01(): Unit = region r {
         discard {
-            let array = ["str", "str2"] @ r;
+            let array = Array#{"str", "str2"} @ r;
             lazy array
         }
     }

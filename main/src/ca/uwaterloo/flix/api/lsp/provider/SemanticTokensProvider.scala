@@ -288,6 +288,8 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
+
     case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
@@ -322,6 +324,8 @@ object SemanticTokensProvider {
     case Expression.Scope(sym, _, exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -637,7 +641,6 @@ object SemanticTokensProvider {
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.All => true
-    case TypeConstructor.CaseConstant(_) => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -660,8 +663,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
-    case TypeConstructor.CaseEmpty(_) => false
-    case TypeConstructor.CaseAll(_) => false
+    case TypeConstructor.CaseSet(_, _) => false
   }
 
   /**

@@ -53,7 +53,7 @@ object Weeder {
 
 
   // NB: The following words should be reserved, but are currently allowed because of their presence in the standard library:
-  // as, and, choose, choose*, forall, from, get, mod, new, not, or, project, query, rem, select, solve, try
+  // as, and, choose, choose*, forall, from, get, new, not, or, project, query, select, solve, try
 
 
   /**
@@ -315,7 +315,7 @@ object Weeder {
         // Case 1: empty enum
         case (None, None) => Map.empty.toSuccess
         // Case 2: singleton enum
-        case (Some(t0), None) => Map(ident -> WeededAst.Case(ident, visitType(t0))).toSuccess
+        case (Some(t0), None) => Map(ident -> WeededAst.Case(ident, visitType(t0), mkSL(sp1, sp2))).toSuccess
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
           /*
@@ -338,8 +338,8 @@ object Weeder {
               }
           }
         // Case 4: both singleton and multiton syntax used: Error.
-        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
-
+        case (Some(_), Some(_)) =>
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -363,7 +363,7 @@ object Weeder {
         // Case 1: empty enum
         case (None, None) => Map.empty.toSuccess
         // Case 2: singleton enum
-        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0))).toSuccess
+        case (Some(t0), None) => Map(ident -> WeededAst.RestrictableCase(ident, visitType(t0), mkSL(sp1, sp2))).toSuccess
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
           /*
@@ -386,8 +386,8 @@ object Weeder {
               }
           }
         // Case 4: both singleton and multiton syntax used: Error.
-        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
-
+        case (Some(_), Some(_)) =>
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -400,18 +400,18 @@ object Weeder {
     * Performs weeding on the given enum case `c0`.
     */
   private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): WeededAst.Case = c0 match {
-    case ParsedAst.Case(_, ident, tpe0, _) =>
+    case ParsedAst.Case(sp1, ident, tpe0, sp2) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
-      WeededAst.Case(ident, tpe)
+      WeededAst.Case(ident, tpe, mkSL(sp1, sp2))
   }
 
   /**
     * Performs weeding on the given enum case `c0`.
     */
   private def visitRestrictableCase(c0: ParsedAst.RestrictableCase)(implicit flix: Flix): WeededAst.RestrictableCase = c0 match {
-    case ParsedAst.RestrictableCase(_, ident, tpe0, _) =>
+    case ParsedAst.RestrictableCase(sp1, ident, tpe0, sp2) =>
       val tpe = tpe0.map(visitType).getOrElse(WeededAst.Type.Unit(ident.loc))
-      WeededAst.RestrictableCase(ident, tpe)
+      WeededAst.RestrictableCase(ident, tpe, mkSL(sp1, sp2))
   }
 
   /**
@@ -536,29 +536,15 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Open(sp1, qname, sp2) =>
-      val parts = qname.namespace.idents :+ qname.ident
-      val prefix = parts.takeWhile(_.isUpper)
-      val suffix = parts.dropWhile(_.isUpper)
-      suffix match {
-        // Case 1: upper qualified name
-        case Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, qname.ident.loc).toSuccess
+      // TODO RESTR-VARS make sure it's capital
+      WeededAst.Expression.Open(qname, mkSL(sp1, sp2)).toSuccess
 
-        // Case 1: basic qualified name
-        case ident :: Nil =>
-          // NB: We only use the source location of the identifier itself.
-          WeededAst.Expression.Open(qname, ident.loc).toSuccess
-
-        // Case 2: actually a record access
-        case ident :: fields =>
-          // NB: We only use the source location of the identifier itself.
-          val base = WeededAst.Expression.Open(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-          fields.foldLeft(base: WeededAst.Expression) {
-            case (acc, field) => WeededAst.Expression.RecordSelect(acc, Name.mkField(field), field.loc) // TODO NS-REFACTOR should use better location
-          }.toSuccess
+    case ParsedAst.Expression.OpenAs(sp1, qname, exp, sp2) =>
+      // TODO RESTR-VARS make sure it's capital
+      val eVal = visitExp(exp, senv)
+      mapN(eVal) {
+        case e => WeededAst.Expression.OpenAs(qname, e, mkSL(sp1, sp2))
       }
-
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -746,7 +732,11 @@ object Weeder {
           case ("ARRAY_SLICE", e1 :: e2 :: e3 :: e4 :: Nil) => WeededAst.Expression.ArraySlice(e1, e2, e3, e4, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
 
-          case _ => WeederError.IllegalIntrinsic(loc).toFailure
+          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expression.ScopeExit(e1, e2, loc).toSuccess
+
+          case _ =>
+            val err = WeederError.IllegalIntrinsic(loc)
+            WeededAst.Expression.Error(err).toSoftFailure(err)
         }
       }
 
@@ -1226,7 +1216,8 @@ object Weeder {
       for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
-          return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
+          val err = WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2))
+          return WeededAst.Expression.Error(err).toSoftFailure(err)
         }
       }
 
@@ -1331,10 +1322,8 @@ object Weeder {
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      mapN(traverse(exps)(visitExp(_, senv)), traverseOpt(exp)(visitExp(_, senv))) {
-        case (es, e) =>
-          WeededAst.Expression.ArrayLit(es, e, loc)
+      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
+        case (es, e) => WeededAst.Expression.ArrayLit(es, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -1378,16 +1367,6 @@ object Weeder {
           // NB: We painstakingly construct the qualified name
           // to ensure that source locations are available.
           mkApplyFqn("List.append", List(e1, e2), loc)
-      }
-
-    case ParsedAst.Expression.FArray(sp1, sp2, exps, exp) =>
-      /*
-       * Rewrites an `FArray` expression into an array literal.
-       */
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
-        case (es, e) => WeededAst.Expression.ArrayLit(es, Some(e), loc)
       }
 
     case ParsedAst.Expression.FList(sp1, sp2, exps) =>
@@ -1504,10 +1483,12 @@ object Weeder {
               }
             // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
-              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              WeededAst.Expression.Error(err).toSoftFailure(err)
             // Case 5: empty interpolated debug
             case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
-              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              WeededAst.Expression.Error(err).toSoftFailure(err)
           }
       }
 
@@ -1587,18 +1568,19 @@ object Weeder {
 
     case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
       val loc = mkSL(sp1, sp2)
-
-      // ensure we are in a handler
-      val handlerVal = senv match {
-        // Case 1: In a handler. All is well.
-        case SyntacticEnv.Handler => ().toSuccess
-        // Case 2: Not in a handler. Error.
-        case SyntacticEnv.Top => WeederError.IllegalResume(loc).toFailure
-      }
-
       val argVal = visitArgument(arg0, senv)
-      mapN(handlerVal, argVal) {
-        case (_, arg) => WeededAst.Expression.Resume(arg, loc)
+      flatMapN(argVal) {
+        case arg =>
+          // ensure we are in a handler
+          senv match {
+            // Case 1: In a handler. All is well.
+            case SyntacticEnv.Handler =>
+              WeededAst.Expression.Resume(arg, loc).toSuccess
+            // Case 2: Not in a handler. Error.
+            case SyntacticEnv.Top =>
+              val err = WeederError.IllegalResume(loc)
+              WeededAst.Expression.Error(err).toSoftFailure(err)
+          }
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
@@ -1715,7 +1697,8 @@ object Weeder {
       /// Check for [[MismatchedArity]].
       ///
       if (exps.length != idents.length) {
-        return WeederError.MismatchedArity(exps.length, idents.length, loc).toFailure
+        val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
+        return WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
       mapN(traverse(exps)(visitExp(_, senv))) {
@@ -1860,7 +1843,7 @@ object Weeder {
       case Some(g) => WeederError.RestrictableChoiceGuard(star, g.loc).toFailure
       case None => ().toSuccess
     }
-    // Check that patterns are only tags of variables (or wildcards as variables)
+    // Check that patterns are only tags of variables (or wildcards as variables, or unit)
     val pVal = p0 match {
       case Pattern.Tag(qname, pat, loc) =>
         val innerVal = pat match {
@@ -1868,16 +1851,18 @@ object Weeder {
             traverse(elms) {
               case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
+              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
           case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
+          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
         }
         mapN(innerVal) {
           case inner => WeededAst.RestrictableChoicePattern.Tag(qname, inner, loc)
         }
-      case _ => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
+      case other => WeederError.UnsupportedRestrictedChoicePattern(star, p0.loc).toFailure
     }
     mapN(gVal, pVal) {
       case (_, p) => WeededAst.RestrictableChoiceRule(p, b0)
@@ -1973,8 +1958,6 @@ object Weeder {
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
         case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
         case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
-        case "rem" => OperatorResult.BuiltIn(Name.mkQName("Rem.rem", sp1, sp2))
-        case "mod" => OperatorResult.BuiltIn(Name.mkQName("Mod.mod", sp1, sp2))
         case "**" => OperatorResult.BuiltIn(Name.mkQName("Exp.exp", sp1, sp2))
         case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
         case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))
@@ -2532,6 +2515,36 @@ object Weeder {
       }: (WeededAst.Type, WeededAst.Type) => WeededAst.Type)
       effOpt.getOrElse(WeededAst.Type.Empty(loc))
 
+    case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Type.CaseSet(cases.toList, loc)
+
+    case ParsedAst.Type.CaseUnion(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseUnion(t1, t2, loc)
+
+    case ParsedAst.Type.CaseIntersection(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseIntersection(t1, t2, loc)
+
+    case ParsedAst.Type.CaseDifference(tpe1, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(sp1, sp2)
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      WeededAst.Type.CaseIntersection(t1, WeededAst.Type.CaseComplement(t2, loc), loc)
+
+    case ParsedAst.Type.CaseComplement(sp1, tpe, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val t = visitType(tpe)
+      WeededAst.Type.CaseComplement(t, loc)
+
     case ParsedAst.Type.Ascribe(tpe, kind, sp2) =>
       val sp1 = leftMostSourcePosition(tpe)
       val t = visitType(tpe)
@@ -2830,15 +2843,11 @@ object Weeder {
   /**
     * Weeds the given kind `kind`.
     */
-  private def visitKind(kind: ParsedAst.Kind): Kind = kind match {
-    case ParsedAst.Kind.Star(_, _) => Kind.Star
-    case ParsedAst.Kind.Bool(_, _) => Kind.Bool
-    case ParsedAst.Kind.Region(_, _) => Kind.Bool
-    case ParsedAst.Kind.Effect(_, _) => Kind.Effect
-    case ParsedAst.Kind.RecordRow(_, _) => Kind.RecordRow
-    case ParsedAst.Kind.SchemaRow(_, _) => Kind.SchemaRow
-    case ParsedAst.Kind.Predicate(_, _) => Kind.Predicate
-    case ParsedAst.Kind.Arrow(k1, k2, _) => Kind.Arrow(visitKind(k1), visitKind(k2))
+  private def visitKind(kind: ParsedAst.Kind): WeededAst.Kind = kind match {
+    case ParsedAst.Kind.QName(sp1, qname, sp2) => WeededAst.Kind.Ambiguous(qname, mkSL(sp1, sp2))
+    case ParsedAst.Kind.Arrow(k1, k2, sp2) =>
+      val sp1 = leftMostSourcePosition(k1)
+      WeededAst.Kind.Arrow(visitKind(k1), visitKind(k2), mkSL(sp1, sp2))
   }
 
   /**
@@ -3047,6 +3056,7 @@ object Weeder {
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Open(sp1, _, _) => sp1
+    case ParsedAst.Expression.OpenAs(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.HolyName(ident, _) => ident.sp1
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
@@ -3080,12 +3090,11 @@ object Weeder {
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
-    case ParsedAst.Expression.FArray(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FList(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
@@ -3141,6 +3150,11 @@ object Weeder {
     case ParsedAst.Type.And(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Or(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Effect(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.CaseIntersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.CaseSet(sp1, _, _) => sp1
+    case ParsedAst.Type.CaseUnion(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Ascribe(tpe, _, _) => leftMostSourcePosition(tpe)
   }
 
@@ -3175,13 +3189,7 @@ object Weeder {
     */
   @tailrec
   private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
-    case ParsedAst.Kind.Star(sp1, _) => sp1
-    case ParsedAst.Kind.Bool(sp1, _) => sp1
-    case ParsedAst.Kind.Region(sp1, _) => sp1
-    case ParsedAst.Kind.Effect(sp1, _) => sp1
-    case ParsedAst.Kind.RecordRow(sp1, _) => sp1
-    case ParsedAst.Kind.SchemaRow(sp1, _) => sp1
-    case ParsedAst.Kind.Predicate(sp1, _) => sp1
+    case ParsedAst.Kind.QName(sp1, _, _) => sp1
     case ParsedAst.Kind.Arrow(k1, _, _) => leftMostSourcePosition(k1)
   }
 

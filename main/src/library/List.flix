@@ -88,7 +88,6 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -120,11 +119,11 @@ instance Monoid[List[a]] {
 }
 
 instance Collectable[List] {
-    pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
 }
 
 instance Iterable[List] {
-    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(rh, l)
+    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
 namespace List {
@@ -422,8 +421,8 @@ namespace List {
         if (len == 0)
             l
         else {
-            let rem = n rem len;
-            let rotate = if (rem < 0) rem + len else rem;
+            let rem1 = n `Int32.rem` len;
+            let rotate = if (rem1 < 0) rem1 + len else rem1;
             drop(rotate, l) ::: take(rotate, l)
         }
 
@@ -1156,7 +1155,7 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
-        case None    => [] @ r
+        case None    => Array#{} @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
             forEach(match (i, b) -> a[i] = b, zipWithIndex(l));
@@ -1313,24 +1312,20 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref l @ r;
-        let done = () -> match (deref cursor) {
-            case Nil => true
-            case _   => false
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
+        let ls = ref xs @ rc;
+        let next = () -> {
+            match (deref ls) {
+                case Nil     => None
+                case x :: rs => ls := rs; Some(x)
+            }
         };
-        let next = () -> match (deref cursor) {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs =>
-                cursor := xs;
-                x
-        };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

@@ -104,7 +104,7 @@ namespace Test/Exp/Ref/Deref {
 
     @test
     def testDeref18(): Bool = region r {
-        let a = [ref 1 @ r];
+        let a = Array#{ref 1 @ r} @ r;
         deref a[0] == 1
     }
 }
