@@ -156,16 +156,20 @@ object Kinder {
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, Map.empty)).map(_.flatten)
 
       flatMapN(indexVal, tparamsVal) {
-        case (index, tparams) =>
-          val targs = (index :: tparams).map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-          val tpe = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
+        case (index0, tparams) =>
+          val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+          val index0Var = Type.Var(index0.sym, index0.loc.asSynthetic)
+          def tpe(index: Type): Type = Type.mkApply(Type.Cst(TypeConstructor.RestrictableEnum(sym, getRestrictableEnumKind(enum0)), sym.loc.asSynthetic), index :: targs, sym.loc.asSynthetic)
           val casesVal = traverse(cases0) {
-            case case0 => mapN(visitRestrictableCase(case0, index, tparams, tpe, kenv, taenv, root)) {
-              caze => caze.sym -> caze
-            }
+            case case0 =>
+              // s + caseTag
+              val index = Type.mkCaseUnion(index0Var, Type.Cst(TypeConstructor.CaseSet(SortedSet(case0.sym), sym), case0.loc.asSynthetic), sym, case0.loc.asSynthetic)
+              mapN(visitRestrictableCase(case0, index0, tparams, tpe(index), kenv, taenv, root)) {
+                caze => caze.sym -> caze
+              }
           }
           mapN(casesVal) {
-            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases.toMap, tpe, loc)
+            case cases => KindedAst.RestrictableEnum(doc, ann, mod, sym, index0, tparams, derives, cases.toMap, tpe(index0Var), loc)
           }
       }
 
@@ -225,7 +229,7 @@ object Kinder {
         case tpe =>
           val quants = (index :: tparams).map(_.sym)
           val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
-          KindedAst.RestrictableCase(sym, tpe, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
+          KindedAst.RestrictableCase(sym, tpe, sc, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
 

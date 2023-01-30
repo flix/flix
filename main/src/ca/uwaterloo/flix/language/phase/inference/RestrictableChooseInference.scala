@@ -95,7 +95,7 @@ object RestrictableChooseInference {
           // Γ ⊢ e: τ_in
           (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
-          _ <- unifyTypeM(tpe :: patTpes, loc)
+//          _ <- unifyTypeM(tpe :: patTpes, loc)
 
           // τ_in = (... + l_i(τ_i) + ...)[φ_in]
           _ <- unifyTypeM(enumType, tpe, loc)
@@ -193,24 +193,8 @@ object RestrictableChooseInference {
       // Lookup the case declaration.
       val caze = decl.cases(symUse.sym)
 
-      val (enumType, indexVar, _) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
-
       // Instantiate the type scheme of the case.
       val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
-
-      // Add a free variable only if the tag is open
-      val index = if (isOpen) {
-        // φ ∪ {l_i}
-        Type.mkCaseUnion(
-          Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-          Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic),
-          enumSym,
-          loc.asSynthetic
-        )
-      } else {
-        // {l_i}
-        Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
-      }
 
       //
       // The tag type is a function from the type of variant to the type of the enum.
@@ -219,9 +203,6 @@ object RestrictableChooseInference {
         // Γ ⊢ e: τ
         (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
         _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
-        // τ = (... + l_i(τ_i) + ...)[φ ∪ {l_i}]
-        _ <- unifyTypeM(enumType, tvar, loc)
-        _ <- unifyTypeM(indexVar, index, loc)
         resultTyp = tvar
         resultPur = pur
         resultEff = eff
