@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.util.Validation.SoftFailure
-
 import scala.collection.mutable
 
 sealed trait Validation[+T, +E] {
