@@ -768,21 +768,21 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
 
-  test("IllegalLoop.01") {
+  test("IllegalForFragment.01") {
     val input =
       """
         |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[WeederError.LoopOverNoCollection](result)
+    expectError[WeederError.IllegalForFragment](result)
   }
 
-  test("IllegalLoop.02") {
+  test("IllegalForFragment.02") {
     val input =
       """
         |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
-    expectError[WeederError.LoopGuardsBeforeCollection](result)
+    expectError[WeederError.IllegalForFragment](result)
   }
 }

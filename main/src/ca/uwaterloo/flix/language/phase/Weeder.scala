@@ -916,7 +916,7 @@ object Weeder {
       // Check that first fragment is an iterable collection
       // Also implies that there exists at least 1 iterable collection.
       frags.headOption match {
-        case Some(ParsedAst.ForFragment.Generator(_, _, _, _)) => {
+        case Some(ParsedAst.ForFragment.Generator(_, _, _, _)) =>
           // Desugar yield-exp
           //    ... yield x
           // Becomes
@@ -975,16 +975,11 @@ object Weeder {
           mapN(resultExp) {
             case e => WeededAst.Expression.Scope(regionIdent, e, baseLoc)
           }
-        }
-        case Some(ParsedAst.ForFragment.Guard(_, _, _)) => {
-          val hasGenerator = frags.exists {
-            case ParsedAst.ForFragment.Generator(_, _, _, _) => true
-            case _ => false
-          }
 
-          val err = if (hasGenerator) WeederError.LoopGuardsBeforeCollection(baseLoc) else WeederError.LoopOverNoCollection(baseLoc)
+        case Some(ParsedAst.ForFragment.Guard(_, _, _)) =>
+          val err = WeederError.IllegalForFragment(baseLoc)
           WeededAst.Expression.Error(err).toSoftFailure(err)
-        }
+
         case None => // Unreachable case since parser rejects foreach () yield exp
           throw InternalCompilerException("Unexpected empty ForEachYield loop", baseLoc)
       }

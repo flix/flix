@@ -900,55 +900,29 @@ object WeederError {
 
   /**
     * An error raised to indicate that a loop does not iterate over any collection.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
     */
-  case class LoopOverNoCollection(loc: SourceLocation) extends WeederError {
-    def summary: String = "Loop does not contain a collection to loop over."
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A foreach expression must start with a collection comprehension."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> No iterable collection in loop.
+         |>> Loop does not start with collection comprehension.
          |
-         |${code(loc, "Loop does not iterate over collection")}
+         |${code(loc, "Loop does not start with collection comprehension.")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
-      s"""A loop requires at least one collection with an instance of
-         |the Iterable type class on it.
+      s"""A loop must start with collection comprehension where the collection
+         |has an instance of the Iterable type class on it.
          |
          |A minimal loop is written as follows:
          |
-         |foreach (x <- xs) yield x
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
-    * An error raised to indicate that a loop has guards before
-    * first iterable collection.
-    */
-  case class LoopGuardsBeforeCollection(loc: SourceLocation) extends WeederError {
-    def summary: String = "Loop contains guard(s) before any iterable collection."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Loop guard appears before first iterable collection.
-         |
-         |${code(loc, "Guard appears before first iterable collection")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""The first loop guard must come after a iterable collection.
-         |
-         |A minimal loop with a guard is written as follows:
-         |
-         |foreach (x <- xs; if x > 0) yield x
+         |    foreach (x <- xs) yield x
          |
          |""".stripMargin
     })
