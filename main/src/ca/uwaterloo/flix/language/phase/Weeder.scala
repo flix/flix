@@ -890,11 +890,11 @@ object Weeder {
       //
       // desugars to
       //
-      //     region rh {
+      //     region rc {
       //         Collectable.collect(
       //             Iterator.flatMap(
-      //                 match x -> Iterator.singleton(rh, x),
-      //                 Iterable.iterator(rh, xs)
+      //                 match x -> Iterator.singleton(rc, x),
+      //                 Iterable.iterator(rc, xs)
       //             )
       //         )
       //     }
@@ -920,7 +920,7 @@ object Weeder {
           // Desugar yield-exp
           //    ... yield x
           // Becomes
-          //     Iterator.singleton(rh, x)
+          //     Iterator.singleton(rc, x)
           val yieldExp = mapN(visitExp(exp, senv)) {
             case e =>
               mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
@@ -951,7 +951,7 @@ object Weeder {
             =>
               // Case 2: a guard fragment i.e. `if exp`
               // This should be desugared into
-              //     if (exp) accExp else Iterator.empty(rh)
+              //     if (exp) accExp else Iterator.empty(rc)
               mapN(visitExp(exp1, senv)) {
                 case e1 =>
                   val loc = mkSL(sp11, sp12).asSynthetic
