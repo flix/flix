@@ -20,7 +20,7 @@ def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>] =
     choose* e {
         case Expr.Var(x) => Expr.Var(x)
         case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(openExpr(simplify(x)))
+        case Expr.Not(x) => open Expr.Not(open_as Expr simplify(x))
         case Expr.And(x, y) => Expr.And(???, ???)
         case Expr.Or(x, y) => Expr.Or(???, ???)
         case Expr.Xor(x, y) => Expr.Not(???)
@@ -30,7 +30,7 @@ def subst(e: Expr[s]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>] =
     choose* e {
         case Expr.Var(x) => Expr.Cst(true)
         case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(openExpr(subst(x)))
+        case Expr.Not(x) => open Expr.Not(open_as Expr subst(x))
         case Expr.Or(x, y) => Expr.Or(???, ???)
         case Expr.And(x, y) => Expr.And(???, ???)
         case Expr.Xor(x, y) => Expr.Xor(???, ???)
@@ -43,9 +43,6 @@ def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>]): Bool =
         case Expr.Or(x, y) => fasteval(x) or fasteval(y)
         case Expr.And(x, y) => fasteval(x) and fasteval(y)
     }
-
-def openExpr(e: Expr[s]): Expr[s ++ any] =
-    unsafe_cast e as Expr[s ++ any]
 
 def eval(e: Expr[s]): Bool = {
     let f = simplify >> subst >> fasteval;
