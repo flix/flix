@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2023 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.library.LibrarySuite
-import ca.uwaterloo.flix.tools.ToolsSuite
-import ca.uwaterloo.flix.util.UtilSuite
-import flix.CompilerSuite
-import flix.experimental.ExperimentalSuite
-import org.scalatest.Suites
+import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class TestAll extends Suites(
-  new BenchmarkSuite,
-  new CompilerSuite,
-  new ExampleSuite,
-  new ExperimentalSuite,
-  new LanguageSuite,
-  new LibrarySuite,
-  new TestMain,
-  new ToolsSuite,
-  new UtilSuite,
-)
+class BenchmarkSuite extends FlixSuite(incremental = true) {
+
+  private implicit val TestOptions: Options = Options.TestWithLibAll
+
+  mkTestDir("main/src/resources/benchmark")
+
+}

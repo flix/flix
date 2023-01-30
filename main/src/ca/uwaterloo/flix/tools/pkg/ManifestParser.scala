@@ -17,11 +17,10 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.json4s.DefaultReaders.StringReader
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
-import java.io.{IOException, PrintStream, StringReader}
-import java.nio.file.{InvalidPathException, Path, Paths}
+import java.io.{IOException, StringReader}
+import java.nio.file.Path
 import scala.collection.mutable
 
 object ManifestParser {
@@ -252,7 +251,7 @@ object ManifestParser {
     */
   private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
     val stringSet = mutable.Set.empty[String]
-    for(i <- 0 until array.size()) {
+    for (i <- 0 until array.size()) {
       try {
         val s = array.getString(i)
         stringSet.add(s)

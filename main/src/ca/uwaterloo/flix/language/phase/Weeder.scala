@@ -338,8 +338,8 @@ object Weeder {
               }
           }
         // Case 4: both singleton and multiton syntax used: Error.
-        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
-
+        case (Some(_), Some(_)) =>
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -386,8 +386,8 @@ object Weeder {
               }
           }
         // Case 4: both singleton and multiton syntax used: Error.
-        case (Some(_), Some(_)) => WeederError.IllegalEnum(ident.loc).toFailure
-
+        case (Some(_), Some(_)) =>
+          WeederError.IllegalEnum(ident.loc).toFailure
       }
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
@@ -1325,7 +1325,8 @@ object Weeder {
       for (ParsedAst.RelationalChoiceRule(sp1, pat, _, sp2) <- rules) {
         val actualArity = pat.length
         if (actualArity != expectedArity) {
-          return WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2)).toFailure
+          val err = WeederError.MismatchedArity(expectedArity, actualArity, mkSL(sp1, sp2))
+          return WeededAst.Expression.Error(err).toSoftFailure(err)
         }
       }
 
@@ -1591,10 +1592,12 @@ object Weeder {
               }
             // Case 4: empty interpolated expression
             case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
-              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              WeededAst.Expression.Error(err).toSoftFailure(err)
             // Case 5: empty interpolated debug
             case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
-              WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2)).toFailure
+              val err = WeederError.EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+              WeededAst.Expression.Error(err).toSoftFailure(err)
           }
       }
 
@@ -1674,18 +1677,19 @@ object Weeder {
 
     case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
       val loc = mkSL(sp1, sp2)
-
-      // ensure we are in a handler
-      val handlerVal = senv match {
-        // Case 1: In a handler. All is well.
-        case SyntacticEnv.Handler => ().toSuccess
-        // Case 2: Not in a handler. Error.
-        case SyntacticEnv.Top => WeederError.IllegalResume(loc).toFailure
-      }
-
       val argVal = visitArgument(arg0, senv)
-      mapN(handlerVal, argVal) {
-        case (_, arg) => WeededAst.Expression.Resume(arg, loc)
+      flatMapN(argVal) {
+        case arg =>
+          // ensure we are in a handler
+          senv match {
+            // Case 1: In a handler. All is well.
+            case SyntacticEnv.Handler =>
+              WeededAst.Expression.Resume(arg, loc).toSuccess
+            // Case 2: Not in a handler. Error.
+            case SyntacticEnv.Top =>
+              val err = WeederError.IllegalResume(loc)
+              WeededAst.Expression.Error(err).toSoftFailure(err)
+          }
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
@@ -1802,7 +1806,8 @@ object Weeder {
       /// Check for [[MismatchedArity]].
       ///
       if (exps.length != idents.length) {
-        return WeederError.MismatchedArity(exps.length, idents.length, loc).toFailure
+        val err = WeederError.MismatchedArity(exps.length, idents.length, loc)
+        return WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
       mapN(traverse(exps)(visitExp(_, senv))) {
