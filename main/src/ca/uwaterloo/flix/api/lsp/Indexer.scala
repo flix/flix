@@ -179,6 +179,9 @@ object Indexer {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => // TODO RESTR-VARS sym
+      Index.occurrenceOf(exp0) ++ visitExp(exp)
+
     case Expression.Use(_, _, _) =>
       Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
 
@@ -206,6 +209,9 @@ object Indexer {
     case Expression.Scope(sym, _, exp, _, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)

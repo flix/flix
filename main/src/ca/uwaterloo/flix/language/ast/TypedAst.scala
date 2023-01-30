@@ -35,7 +35,6 @@ object TypedAst {
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum],
                   effects: Map[Symbol.EffectSym, TypedAst.Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypedAst.TypeAlias],
-                  univ: Ast.Multiverse,
                   uses: Map[Symbol.ModuleSym, List[Ast.UseOrImport]],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
@@ -116,6 +115,12 @@ object TypedAst {
 
     case class HoleWithExp(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+    }
+
     case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = exp.tpe
 
@@ -147,6 +152,8 @@ object TypedAst {
     }
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ScopeExit(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

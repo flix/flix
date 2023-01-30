@@ -83,4 +83,28 @@ object KindError {
       */
     def explain(formatter: Formatter): Option[String] = None
   }
+
+  /**
+    * An error resulting from a type whose kind cannot be inferred.
+    *
+    * @param loc The location where the error occurred.
+    */
+  case class UninferrableKind(loc: SourceLocation) extends KindError {
+    override def summary: String = "Unable to infer kind."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unable to infer kind.
+         |
+         |${code(loc, "uninferred kind.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip: ")} Add a kind annotation."
+    })
+  }
 }

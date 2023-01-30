@@ -887,25 +887,25 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMap01(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, singleton(1)) == Nil
+    def filterMap01(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == Nil
 
     @test
-    def filterMap02(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
+    def filterMap02(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
 
     @test
-    def filterMap03(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
+    def filterMap03(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
 
     @test
-    def filterMap04(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
+    def filterMap04(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
 
     @test
-    def filterMap05(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
+    def filterMap05(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
 
     @test
-    def filterMap07(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
+    def filterMap07(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
 
     @test
-    def filterMap08(): Bool = Nec.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
+    def filterMap08(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
                             0 :: 1 :: 2 :: 5 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
@@ -913,25 +913,25 @@ namespace TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findMap01(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, singleton(1)) == None
+    def findMap01(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == None
 
     @test
-    def findMap02(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
+    def findMap02(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
 
     @test
-    def findMap03(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
+    def findMap03(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
 
     @test
-    def findMap04(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
+    def findMap04(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
 
     @test
-    def findMap05(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
+    def findMap05(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
 
     @test
-    def findMap06(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
+    def findMap06(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
 
     @test
-    def findMap07(): Bool = Nec.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
+    def findMap07(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -1225,25 +1225,25 @@ namespace TestNec {
     @test
     def toArray01(): Bool = region r {
         let a = Nec.toArray(r, singleton(1));
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
         let a = Nec.toArray(r, necOf2(1, 2));
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
         let a = Nec.toArray(r, necOf3(1, 2, 3));
-        Array.sameElements(a, [1, 2, 3] @ r)
+        Array.sameElements(a, Array#{1, 2, 3} @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
         let a = Nec.toArray(r, necOf3(3, 2, 3));
-        Array.sameElements(a, [3, 2, 3] @ r)
+        Array.sameElements(a, Array#{3, 2, 3} @ r)
     }
 
 
@@ -1264,6 +1264,22 @@ namespace TestNec {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // enumerator                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def enumerator01(): Bool = region r {
+        necOf3(1, 2, 3) |> Nec.enumerator(r) |> Iterator.toList == (0, 1) :: (1, 2) :: (2, 3) :: Nil
+    }
+
+    @test
+    def enumerator02(): Bool = region r {
+        match Nec.range(-100, 100) {
+            case Some(nec) => nec |> Nec.enumerator(r) |> Iterator.toList == List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100)))
+            case None      => unreachable!()
+        }
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // The following tests for sort functions correspond to those in TestList  //

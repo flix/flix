@@ -112,6 +112,11 @@ object Stratifier {
         case e => Expression.HoleWithExp(e, tpe, pur, eff, loc)
       }
 
+    case Expression.OpenAs(sym, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.OpenAs(sym, e, tpe, loc)
+      }
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -150,6 +155,11 @@ object Stratifier {
     case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc)
+      }
+
+    case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
@@ -489,8 +499,10 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Error(_, _, _, _) =>
-      exp0.toSoftFailure
+    case Expression.Error(m, tpe, pur, eff) =>
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(Expression.Error(m, tpe, pur, eff), LazyList.empty)
 
   }
 
@@ -546,6 +558,9 @@ object Stratifier {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.Use(_, exp, _) =>
       labelledGraphOfExp(exp)
 
@@ -575,6 +590,9 @@ object Stratifier {
 
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
@@ -889,7 +907,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)(root.univ, flix)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

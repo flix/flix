@@ -87,6 +87,7 @@ object Statistics {
       case Expression.Sig(sym, tpe, loc) => Counter.empty
       case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expression.Use(_, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
@@ -96,6 +97,7 @@ object Statistics {
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Region(tpe, loc) => Counter.empty
       case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Discard(exp, pur, eff, loc) => visitExp(exp)

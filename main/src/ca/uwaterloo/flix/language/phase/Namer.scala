@@ -174,10 +174,10 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case caze@NamedAst.Declaration.Case(sym, _) =>
+    case caze@NamedAst.Declaration.Case(sym, _, _) =>
       addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
 
-    case caze@NamedAst.Declaration.RestrictableCase(sym, _) =>
+    case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
   }
@@ -349,7 +349,8 @@ object Namer {
     */
   private def visitRestrictableEnum(enum0: WeededAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableEnum, NameError] = enum0 match {
     case WeededAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives, cases0, loc) =>
-      val sym = Symbol.mkRestrictableEnumSym(ns0, ident)
+      val caseIdents = cases0.map(_.ident)
+      val sym = Symbol.mkRestrictableEnumSym(ns0, ident, caseIdents)
 
       // Compute the type parameters.
       val index = getTypeParam(index0)
@@ -368,11 +369,11 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitCase(case0: WeededAst.Case, enumSym: Symbol.EnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Case, NameError] = case0 match {
-    case WeededAst.Case(ident, tpe0) =>
+    case WeededAst.Case(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
           val caseSym = Symbol.mkCaseSym(enumSym, ident)
-          NamedAst.Declaration.Case(caseSym, tpe)
+          NamedAst.Declaration.Case(caseSym, tpe, loc)
       }
   }
 
@@ -380,11 +381,11 @@ object Namer {
     * Performs naming on the given enum case.
     */
   private def visitRestrictableCase(case0: WeededAst.RestrictableCase, enumSym: Symbol.RestrictableEnumSym)(implicit flix: Flix): Validation[NamedAst.Declaration.RestrictableCase, NameError] = case0 match {
-    case WeededAst.RestrictableCase(ident, tpe0) =>
+    case WeededAst.RestrictableCase(ident, tpe0, loc) =>
       mapN(visitType(tpe0)) {
         case tpe =>
           val caseSym = Symbol.mkRestrictableCaseSym(enumSym, ident)
-          NamedAst.Declaration.RestrictableCase(caseSym, tpe)
+          NamedAst.Declaration.RestrictableCase(caseSym, tpe, loc)
       }
   }
 
@@ -561,6 +562,11 @@ object Namer {
     case WeededAst.Expression.Ambiguous(name, loc) =>
       NamedAst.Expression.Ambiguous(name, loc).toSuccess
 
+    case WeededAst.Expression.OpenAs(name, exp, loc) =>
+      mapN(visitExp(exp, ns0)) {
+        case e => NamedAst.Expression.OpenAs(name, e, loc)
+      }
+
     case WeededAst.Expression.Open(name, loc) =>
       NamedAst.Expression.Open(name, loc).toSuccess
 
@@ -648,6 +654,11 @@ object Namer {
 
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expression.Scope(sym, regionVar, e, loc)
+      }
+
+    case WeededAst.Expression.ScopeExit(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+        case (e1, e2) => NamedAst.Expression.ScopeExit(e1, e2, loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -740,7 +751,7 @@ object Namer {
       }
 
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
-      mapN(traverse(exps)(visitExp(_, ns0)), traverseOpt(exp)(visitExp(_, ns0))) {
+      mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)
       }
 
@@ -1032,7 +1043,9 @@ object Namer {
       }
 
     case WeededAst.Expression.Error(m) =>
-      NamedAst.Expression.Error(m).toSoftFailure
+      // Note: We must NOT use [[Validation.toSoftFailure]] because
+      // that would duplicate the error inside the Validation.
+      Validation.SoftFailure(NamedAst.Expression.Error(m), LazyList.empty)
 
   }
 
@@ -1254,13 +1267,42 @@ object Namer {
 
       case WeededAst.Type.Empty(loc) => NamedAst.Type.Empty(loc).toSuccess
 
-      case WeededAst.Type.Ascribe(tpe, kind, loc) =>
+      case WeededAst.Type.CaseSet(cases, loc) => NamedAst.Type.CaseSet(cases, loc).toSuccess
+
+      case WeededAst.Type.CaseComplement(tpe, loc) =>
+        mapN(visitType(tpe)) {
+          case t => NamedAst.Type.CaseComplement(t, loc)
+        }
+
+      case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => NamedAst.Type.CaseUnion(t1, t2, loc)
+        }
+
+      case WeededAst.Type.CaseIntersection(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1), visit(tpe2)) {
+          case (t1, t2) => NamedAst.Type.CaseIntersection(t1, t2, loc)
+        }
+
+      case WeededAst.Type.Ascribe(tpe, kind0, loc) =>
+        val kind = visitKind(kind0)
         mapN(visit(tpe)) {
           t => NamedAst.Type.Ascribe(t, kind, loc)
         }
     }
 
     visit(t0)
+  }
+
+  /**
+    * Performs naming on the given kind.
+    */
+  private def visitKind(k0: WeededAst.Kind): NamedAst.Kind = k0 match {
+    case WeededAst.Kind.Ambiguous(qname, loc) => NamedAst.Kind.Ambiguous(qname, loc)
+    case WeededAst.Kind.Arrow(k10, k20, loc) =>
+      val k1 = visitKind(k10)
+      val k2 = visitKind(k20)
+      NamedAst.Kind.Arrow(k1, k2, loc)
   }
 
   /**
@@ -1366,6 +1408,10 @@ object Namer {
     case WeededAst.Type.Read(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Write(tpe, loc) => freeTypeVars(tpe)
     case WeededAst.Type.Empty(_) => Nil
+    case WeededAst.Type.CaseSet(_, _) => Nil
+    case WeededAst.Type.CaseComplement(tpe, loc) => freeTypeVars(tpe)
+    case WeededAst.Type.CaseUnion(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
+    case WeededAst.Type.CaseIntersection(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case WeededAst.Type.Ascribe(tpe, _, _) => freeTypeVars(tpe)
   }
 
@@ -1441,7 +1487,7 @@ object Namer {
     */
   private def getTypeParam(tparam0: WeededAst.TypeParam)(implicit flix: Flix): NamedAst.TypeParam = tparam0 match {
     case WeededAst.TypeParam.Kinded(ident, kind) =>
-      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
+      NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
     case WeededAst.TypeParam.Unkinded(ident) =>
       NamedAst.TypeParam.Unkinded(ident, mkTypeVarSym(ident), ident.loc)
   }
@@ -1476,7 +1522,7 @@ object Namer {
   private def getExplicitKindedTypeParams(tparams0: List[WeededAst.TypeParam.Kinded])(implicit flix: Flix): NamedAst.TypeParams.Kinded = {
     val tparams = tparams0.map {
       case WeededAst.TypeParam.Kinded(ident, kind) =>
-        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), kind, ident.loc)
+        NamedAst.TypeParam.Kinded(ident, mkTypeVarSym(ident), visitKind(kind), ident.loc)
     }
     NamedAst.TypeParams.Kinded(tparams)
   }
@@ -1538,8 +1584,8 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
-    case NamedAst.Declaration.Case(sym, tpe) => sym.loc
-    case NamedAst.Declaration.RestrictableCase(sym, tpe) => sym.loc
+    case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc
+    case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym.loc
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }

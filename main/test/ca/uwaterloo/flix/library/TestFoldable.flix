@@ -92,19 +92,19 @@ namespace TestFoldable {
 
     @test
     def findLeft01(): Bool =
-        Foldable.findLeft(x -> x mod 2 == 0, Nil: List[Int32]) == None
+        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, Nil: List[Int32]) == None
 
     @test
     def findLeft02(): Bool =
-        Foldable.findLeft(x -> x mod 2 == 0, 1 :: Nil) == None
+        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: Nil) == None
 
     @test
     def findLeft03(): Bool =
-        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: Nil) == Some(2)
 
     @test
     def findLeft04(): Bool =
-        Foldable.findLeft(x -> x mod 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -250,17 +250,17 @@ namespace TestFoldable {
 
     @test
     def toArray01(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), [1])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, Nil)), Array#{1} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), [1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
-        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), [1, 1, 2, 3])
+        Array.sameElements(Foldable.toArray(r, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ r)
     }
 
 

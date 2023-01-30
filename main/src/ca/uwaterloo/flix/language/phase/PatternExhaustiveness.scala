@@ -137,6 +137,7 @@ object PatternExhaustiveness {
       case Expression.Sig(_, _, _) => Nil
       case Expression.Hole(_, _, _) => Nil
       case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.OpenAs(_, exp, _, _) => visitExp(exp, root)
       case Expression.Use(_, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
@@ -147,6 +148,7 @@ object PatternExhaustiveness {
       case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Region(_, _) => Nil
       case Expression.Scope(_, _, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.ScopeExit(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp(_, root))
       case Expression.Stm(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Discard(exp, _, _, _) => visitExp(exp, root)

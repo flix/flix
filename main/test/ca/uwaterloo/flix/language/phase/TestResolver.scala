@@ -1379,7 +1379,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |def foo(): String \ IO = {
         |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
-        |    deepToString([])
+        |    deepToString(Array#{} @ Static)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1391,7 +1391,7 @@ class TestResolver extends FunSuite with TestUtils {
       """
         |def foo(): String \ IO = {
         |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
-        |    deepToString([])
+        |    deepToString(Array#{} @ Static)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)

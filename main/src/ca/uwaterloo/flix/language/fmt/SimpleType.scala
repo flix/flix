@@ -535,7 +535,11 @@ object SimpleType {
             case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
 
-        case TypeConstructor.CaseConstant(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.CaseSet(syms, _) =>
+          val names = syms.toList.map(sym => SimpleType.Name(sym.name))
+          val set = SimpleType.Union(names)
+          mkApply(set, t.typeArguments.map(visit))
+
         case TypeConstructor.CaseComplement(sym) =>
           t.typeArguments.map(visit) match {
             case Nil => Complement(Hole)
@@ -558,9 +562,6 @@ object SimpleType {
             case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
             case _ => throw new OverAppliedType(t.loc)
           }
-
-        case TypeConstructor.CaseEmpty(sym) => SimpleType.Empty
-        case TypeConstructor.CaseAll(sym) => SimpleType.All
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))

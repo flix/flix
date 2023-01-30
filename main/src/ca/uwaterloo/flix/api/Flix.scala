@@ -20,13 +20,12 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.net.URI
 import java.nio.charset.Charset
@@ -61,9 +60,9 @@ class Flix {
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
-  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Ast.Multiverse(ListMap.empty), Map.empty, None, Map.empty, MultiMap.empty)
+  private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Ast.Multiverse(ListMap.empty), Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -83,8 +82,6 @@ class Flix {
     "Sub.flix" -> LocalResource.get("/src/library/Sub.flix"),
     "Mul.flix" -> LocalResource.get("/src/library/Mul.flix"),
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
-    "Rem.flix" -> LocalResource.get("/src/library/Rem.flix"),
-    "Mod.flix" -> LocalResource.get("/src/library/Mod.flix"),
     "Exp.flix" -> LocalResource.get("/src/library/Exp.flix"),
     "BitwiseNot.flix" -> LocalResource.get("/src/library/BitwiseNot.flix"),
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
@@ -140,6 +137,7 @@ class Flix {
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
+    "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
@@ -160,8 +158,8 @@ class Flix {
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
-    "Scoped.flix" -> LocalResource.get("/src/library/Scoped.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
@@ -468,7 +466,7 @@ class Flix {
     * Decides whether or not to print the explanation.
     */
   def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
-    if (options.explain || errors.length == 1)
+    if (options.explain)
       errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
       errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
@@ -478,6 +476,8 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
+
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -526,7 +526,7 @@ class Flix {
     // Reset the progress bar.
     progressBar.complete()
 
-    // Return the result.
+    // Return the result (which could contain soft failures).
     result
   } catch {
     case ex: InternalCompilerException =>
@@ -538,6 +538,7 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
@@ -579,8 +580,10 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[CompilationResult, CompilationMessage] =
-    Validation.flatMapN(check())(codeGen)
+  def compile(): Validation[CompilationResult, CompilationMessage] = {
+    val result = check().toHardFailure
+    Validation.flatMapN(result)(codeGen)
+  }
 
   /**
     * Enters the phase with the given name.

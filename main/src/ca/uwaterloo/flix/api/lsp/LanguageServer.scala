@@ -325,11 +325,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, LazyList.empty, t)
+          processSuccessfulCheck(requestId, root, LazyList.empty, flix.options.explain, t)
 
         case SoftFailure(root, errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, root, errors, t)
+          processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
         case Failure(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
@@ -339,7 +339,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           this.currentErrors = errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(errors)
+          val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -354,7 +354,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
     this.current = true
@@ -368,15 +368,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     // Compute Code Quality hints.
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-    if (codeHints.isEmpty) {
-      // Case 1: No code hints.
-      val results = PublishDiagnosticsParams.fromMessages(errors)
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    } else {
-      // Case 2: Code hints are available.
-      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    }
+
+    // Determine the status based on whether there are errors.
+    val status = if (errors.isEmpty) "success" else "failure"
+    val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    ("id" -> requestId) ~ ("status" -> status) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**

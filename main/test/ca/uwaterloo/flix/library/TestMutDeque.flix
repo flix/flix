@@ -803,21 +803,21 @@ namespace TestMutDeque {
 
     @test
     def foldLeft01(): Bool = region r {
-        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, new MutDeque(r)) == 100
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, new MutDeque(r)) == 100
     }
 
     @test
     def foldLeft02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldLeft03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -825,7 +825,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 196
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 196
     }
 
     @test
@@ -834,7 +834,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, d) == 386
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 386
     }
 
 
@@ -844,21 +844,21 @@ namespace TestMutDeque {
 
     @test
     def foldRight01(): Bool = region r {
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, new MutDeque(r)) == 100
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, new MutDeque(r)) == 100
     }
 
     @test
     def foldRight02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldRight03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -866,7 +866,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, d) == 194
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
     }
 
     @test
@@ -875,7 +875,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, d) == 382
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 382
     }
 
 
@@ -885,21 +885,21 @@ namespace TestMutDeque {
 
     @test
     def foldRightWithCont01(): Bool = region r {
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, new MutDeque(r)) == 100
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, new MutDeque(r)) == 100
     }
 
     @test
     def foldRightWithCont02(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldRightWithCont03(): Bool = region r {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 198
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -907,7 +907,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 194
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
     }
 
     @test
@@ -916,7 +916,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, d) == 382
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1014,7 +1014,7 @@ namespace TestMutDeque {
         let d = new MutDeque(r): MutDeque[Int32, _];
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [] @ r)
+        Array.sameElements(a, Array#{} @ r)
     }
 
     @test
@@ -1023,7 +1023,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(1, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
@@ -1033,7 +1033,7 @@ namespace TestMutDeque {
         MutDeque.pushBack(2, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
@@ -1045,7 +1045,7 @@ namespace TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let a = MutDeque.toArray(r, d);
-        Array.sameElements(a, [4, 3, 1, 2] @ r)
+        Array.sameElements(a, Array#{4, 3, 1, 2} @ r)
     }
 
 
@@ -1127,13 +1127,21 @@ namespace TestMutDeque {
     @test
     def iterator01(): Bool = region r {
         let d = new MutDeque(r): MutDeque[Int32, r];
-        MutDeque.iterator(r, d) |> invokeIsEmpty(100)
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) {
+            case None => true
+            case _    => false
+        }
     }
 
     @test
     def iterator02(): Bool = region r {
         let d = List.toMutDeque(r, 1 :: 2 :: 3 :: Nil);
-        not (MutDeque.iterator(r, d) |> invokeIsEmpty(100))
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) {
+            case Some(_) => true
+            case _       => false
+        }
     }
 
     @test
@@ -1142,7 +1150,11 @@ namespace TestMutDeque {
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        MutDeque.iterator(r, d) |> invokeIsEmpty(100)
+        let iter = MutDeque.iterator(r, d);
+        match Iterator.next(iter) {
+            case None => true
+            case _    => false
+        }
     }
 
     @test
@@ -1166,21 +1178,6 @@ namespace TestMutDeque {
         iter |> Iterator.toList == List.range(50, 100) and
         MutDeque.toList(d) == List.range(0, 100)
     }
-
-    ///
-    /// Invokes `Iterator.isEmpty(iter)` `n` times and combines the results with `and`.
-    ///
-    /// Assumes `n > 0`.
-    ///
-    def invokeIsEmpty(n: Int32, iter: Iterator[a, r]): Bool \ Read(r) =
-        def loop(i, acc) = {
-            if (i >= n)
-                acc
-            else
-                loop(i + 1, Iterator.isEmpty(iter) and acc)
-        };
-        loop(1, Iterator.isEmpty(iter))
-
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

@@ -47,7 +47,7 @@ namespace Fixpoint {
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
             case RamStmt.Seq(stmts) => List.forEach(evalStmt(r, db), stmts)
             case RamStmt.Until(test, body) =>
-                if (evalBoolExp(r, db, ([] @ r, [] @ r), test)) {
+                if (evalBoolExp(r, db, (Array#{} @ r, Array#{} @ r), test)) {
                     ()
                 } else {
                     evalStmt(r, db, body);

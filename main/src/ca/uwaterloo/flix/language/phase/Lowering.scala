@@ -170,7 +170,7 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.univ, root.entryPoint, root.sources, root.classEnv).toSuccess
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv).toSuccess
   }
 
   /**
@@ -224,9 +224,10 @@ object Lowering {
     * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, _, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, tpe0, loc) =>
       // index is erased since related checking has concluded.
       // Restrictable tag is lowered into a regular tag
+      val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
@@ -237,7 +238,7 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
-      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -371,6 +372,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
+      visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 
@@ -417,6 +421,12 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
+
+    case TypedAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expression.ScopeExit(e1, e2, t, pur, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -955,14 +965,18 @@ object Lowering {
     case TypedAst.RestrictableChoiceRule(pat, exp) =>
       val e = visitExp(exp)
       pat match {
-        case TypedAst.RestrictableChoicePattern.Tag(sym, pat, tpe, loc) =>
-          val termPatterns = pat.map {
+        case TypedAst.RestrictableChoicePattern.Tag(sym, pat0, tpe, loc) =>
+          val termPatterns = pat0.map {
             case TypedAst.RestrictableChoicePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
             case TypedAst.RestrictableChoicePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
           }
-          val tuplepat = LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuplish(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+          val pat1 = termPatterns match {
+            case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
+            case singular :: Nil => singular
+            case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuple(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+          }
           val tagSym = visitRestrictableCaseSymUse(sym)
-          val p = LoweredAst.Pattern.Tag(tagSym, tuplepat, tpe, loc)
+          val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
       }
   }
@@ -1835,9 +1849,6 @@ object Lowering {
   private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
     cparams0.exists(p => p.sym == sym)
 
-
-  // TODO: Move into TypedAstOps
-
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.
     */
@@ -1894,6 +1905,11 @@ object Lowering {
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
       LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

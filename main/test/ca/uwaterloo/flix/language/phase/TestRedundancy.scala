@@ -278,9 +278,9 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def f(): Unit = {
         |   region r {
-        |       discard [] @ r;
+        |       discard Array#{} @ r;
         |       region r {
-        |           discard [] @ r;
+        |           discard Array#{} @ r;
         |           ()
         |       }
         |   }
@@ -831,7 +831,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    x -> [123] @ Static;
+         |    x -> Array#{123} @ Static;
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -842,7 +842,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    def g(x, y) = [x, y] @ Static;
+         |    def g(x, y) = Array#{x, y} @ Static;
          |    g;
          |    ()
          |""".stripMargin
@@ -892,7 +892,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       raw"""
            |pub def f(): Array[Int32, false] \ IO =
-           |  let x = [1, 2, 3];
+           |  let x = Array#{1, 2, 3} @ Static;
            |  unsafe_cast x as _ & Pure
            |
        """.stripMargin
@@ -1106,7 +1106,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit \ IO =
-        |    discard [2];
+        |    discard Array#{2} @ Static;
         |    ()
         |
         |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
@@ -1122,7 +1122,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit \ IO =
-        |    discard [2];
+        |    discard Array#{2} @ Static;
         |    ()
         |
         |def f(): Unit \ IO =
@@ -1140,7 +1140,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
         |
         |def h(): Unit \ IO =
-        |    let arr = [()];
+        |    let arr = Array#{()} @ Static;
         |    discard f((i: Int32) -> arr[i], 0)
         |
         |""".stripMargin

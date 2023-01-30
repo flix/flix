@@ -98,6 +98,9 @@ object Safety {
       case Expression.HoleWithExp(exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.OpenAs(_, exp, _, _) =>
+        visit(exp)
+
       case Expression.Use(_, exp, _) =>
         visit(exp)
 
@@ -124,6 +127,9 @@ object Safety {
 
       case Expression.Scope(_, _, exp, _, _, _, _) =>
         visit(exp)
+
+      case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
         visit(exp1) ::: visit(exp2) ::: visit(exp3)
@@ -434,7 +440,7 @@ object Safety {
       val s2 = tpe2.arrowEffectType
       val s3 = Type.freshVar(Kind.Effect, loc)
       val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)(root.univ, flix)
+      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
 
       // check that parameters are supertypes
       val args1 = tpe1.arrowArgTypes

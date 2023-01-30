@@ -23,10 +23,6 @@ instance Newable[MutSet[t]] {
     pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
 }
 
-instance Scoped[MutSet[t]] {
-    pub def regionOf(_: MutSet[t, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutSet {
 
     ///
@@ -412,15 +408,15 @@ namespace MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r1: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
         let MutSet(ms) = s;
-        unsafe_cast Set.iterator(r1, deref ms) as Iterator[a, r1 and r2]
+        Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(r1: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2] \ { Write(r1), Read(r2) } =
-        iterator(r1, s) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 and r2, r1] \ { Write(r1), Read(r2) } =
+        iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.

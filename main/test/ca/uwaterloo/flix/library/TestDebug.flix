@@ -64,51 +64,51 @@ namespace TestDebug {
         "\"" + "\\n" + "\\r" + "\\\\" + "\\\"" + "\\\'" + "\\t" + "\${" + "\%{" + "\u1234" + "\u0000" + "\""
 
     @test
-    def testArrayOfUnitStringify01(): Bool \ IO = stringify([(), ()]) == "[(), ()]"
+    def testArrayOfUnitStringify01(): Bool \ IO = stringify(Array#{(), ()} @ Static) == "[(), ()]"
 
 
     @test
-    def testArrayOfBoolStringify01(): Bool \ IO = stringify([true, false]) == "[true, false]"
+    def testArrayOfBoolStringify01(): Bool \ IO = stringify(Array#{true, false} @ Static) == "[true, false]"
 
 
     @test
-    def testArrayOfCharStringify01(): Bool \ IO = stringify(['a', 'b', 'c']) == "[a, b, c]"
+    def testArrayOfCharStringify01(): Bool \ IO = stringify(Array#{'a', 'b', 'c'} @ Static) == "[a, b, c]"
 
 
     @test
-    def testArrayOfFloat32Stringify01(): Bool \ IO = stringify([21.42f32, 98.6f32]) == "[21.42, 98.6]"
+    def testArrayOfFloat32Stringify01(): Bool \ IO = stringify(Array#{21.42f32, 98.6f32} @ Static) == "[21.42, 98.6]"
 
 
     @test
-    def testArrayOfInt8Stringify01(): Bool \ IO = stringify([42i8, 43i8]) == "[42, 43]"
+    def testArrayOfInt8Stringify01(): Bool \ IO = stringify(Array#{42i8, 43i8} @ Static) == "[42, 43]"
 
 
     @test
-    def testArrayOfInt16Stringify01(): Bool \ IO = stringify([42i16, 43i16]) == "[42, 43]"
+    def testArrayOfInt16Stringify01(): Bool \ IO = stringify(Array#{42i16, 43i16} @ Static) == "[42, 43]"
 
 
     @test
-    def testArrayOfInt32Stringify01(): Bool \ IO = stringify([42i32, 43i32]) == "[42, 43]"
+    def testArrayOfInt32Stringify01(): Bool \ IO = stringify(Array#{42i32, 43i32} @ Static) == "[42, 43]"
 
 
     @test
-    def testArrayOfInt64Stringify01(): Bool \ IO = stringify([42i64, 43i64]) == "[42, 43]"
+    def testArrayOfInt64Stringify01(): Bool \ IO = stringify(Array#{42i64, 43i64} @ Static) == "[42, 43]"
 
 
     @test
-    def testArrayOfBigIntStringify01(): Bool \ IO = stringify([42ii, 43ii]) == "[42, 43]"
+    def testArrayOfBigIntStringify01(): Bool \ IO = stringify(Array#{42ii, 43ii} @ Static) == "[42, 43]"
 
 
     @test
-    def testArrayOfStringStringify01(): Bool \ IO = stringify(["Hello", "World!"]) == "[Hello, World!]"
+    def testArrayOfStringStringify01(): Bool \ IO = stringify(Array#{"Hello", "World!"} @ Static) == "[Hello, World!]"
 
 
     @test
-    def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify([[1, 2], [3, 4]]) == "[[1, 2], [3, 4]]"
+    def testArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static) == "[[1, 2], [3, 4]]"
 
 
     @test
-    def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify([[[1, 2], [3, 4]], [[5, 6], [7, 8]]]) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
+    def testArrayOfArrayOfArrayOfIntStringify01(): Bool \ IO = stringify(Array#{Array#{Array#{1, 2} @ Static, Array#{3, 4} @ Static} @ Static, Array#{Array#{5, 6} @ Static, Array#{7, 8} @ Static} @ Static} @ Static) == "[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]"
 
 
     @test
@@ -223,7 +223,7 @@ namespace TestDebug {
 
     @test
     def testNullStringify06(): Bool = region r {
-        let s = stringify([unsafe_cast null as String, "42"] @ r);
+        let s = stringify(Array#{unsafe_cast null as String, "42"} @ r);
         s == "[null, 42]"
     }
 

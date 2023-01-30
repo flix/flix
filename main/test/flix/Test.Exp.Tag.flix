@@ -105,17 +105,17 @@ namespace Test/Exp/Tag {
 
 
     @test
-    def testArrayOfIntTag01(): A \ IO = A.OfArrayOfInt([1, 2, 3])
+    def testArrayOfIntTag01(): A \ IO = A.OfArrayOfInt(Array#{1, 2, 3} @ Static)
 
     @test
-    def testArrayOfIntTag02(): A \ IO = Test/Exp/Tag/A.OfArrayOfInt([1, 2, 3])
+    def testArrayOfIntTag02(): A \ IO = Test/Exp/Tag/A.OfArrayOfInt(Array#{1, 2, 3} @ Static)
 
 
     @test
-    def testArrayOfStringTag01(): A \ IO = A.OfArrayOfString(["a", "b", "c"])
+    def testArrayOfStringTag01(): A \ IO = A.OfArrayOfString(Array#{"a", "b", "c"} @ Static)
 
     @test
-    def testArrayOfStringTag02(): A \ IO = Test/Exp/Tag/A.OfArrayOfString(["a", "b", "c"])
+    def testArrayOfStringTag02(): A \ IO = Test/Exp/Tag/A.OfArrayOfString(Array#{"a", "b", "c"} @ Static)
 
 
     @test

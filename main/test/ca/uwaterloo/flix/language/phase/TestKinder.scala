@@ -918,4 +918,107 @@ class TestKinder extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
+
+  test("KindError.CaseSet.01") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |def f[a: E](x: a): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.CaseSet.02") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |def f(x: a[<>]): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UninferrableKind](result)
+  }
+
+  test("KindError.CaseSet.03") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |restrictable enum F[s] {
+        |    case D1
+        |    case D2
+        |}
+        |def f(x: a[<E.C1, F.D1>]): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.CaseSet.04") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |restrictable enum F[s] {
+        |    case D1
+        |    case D2
+        |}
+        |
+        |def f(x: F[<E.C1>]): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.CaseSet.05") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |restrictable enum F[s] {
+        |    case D1
+        |    case D2
+        |}
+        |
+        |def f(x: F[s], y: E[s]): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
+
+  test("KindError.CaseSet.06") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case C1
+        |    case C2
+        |}
+        |
+        |restrictable enum F[s] {
+        |    case D1
+        |    case D2
+        |}
+        |
+        |def f(x: F[s ++ d], y: E[~~d]): String = ???
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.MismatchedKinds](result)
+  }
 }

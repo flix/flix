@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -90,14 +90,14 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     checkLessThanEqual(sc1, sc2, classEnv) match {
       case Validation.Success(_) => true
       case _failure => false
@@ -107,7 +107,7 @@ object Scheme {
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit univ: Ast.Multiverse, flix: Flix): Validation[Substitution, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
@@ -129,12 +129,18 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    for {
-      subst <- Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation
-      newTconstrs1 <- ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
-      newTconstrs2 <- ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
-      _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
-    } yield subst
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
+      case subst =>
+        val newTconstrs1Val = ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
+        val newTconstrs2Val = ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
+        flatMapN(newTconstrs1Val, newTconstrs2Val) {
+          case (newTconstrs1, newTconstrs2) =>
+            mapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
+              case _ => subst
+            }
+
+        }
+    }
   }
 
 }
