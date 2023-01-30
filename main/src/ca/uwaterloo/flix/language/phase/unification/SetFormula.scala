@@ -164,6 +164,180 @@ object SetFormula {
     toCaseType(minimizedSetFormula, sym, m, loc)
   }
 
+  private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
+
+  /**
+    * Substitutes all variables in `f` using the substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a (new) variable.
+    */
+  def substitute(f: SetFormula, m: Map[Int, Int]): SetFormula = f match {
+    case Cst(s) => Cst(s)
+    case Var(x) => m.get(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
+      case Some(y) => Var(y)
+    }
+    case Not(f1) => Not(substitute(f1, m))
+    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
+    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
+  }
+
+  /**
+    * Runs the function `fn` on all the variables in the formula.
+    */
+  def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
+    case Cst(s) => Cst(s)
+    case Var(x) => fn(x)
+    case Not(f1) => mkNot(map(f1)(fn))
+    case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
+    case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
+  }
+
+  /**
+    * Creates an environment for mapping between proper types and formulas.
+    */
+  def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
+    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
+    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
+    // TODO RESTR-VARS do I even need the ts part here?
+
+    val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
+    val backward = forward.map { case (a, b) => (b, a) }
+
+    val newUniv = univ.map {
+      case sym => forward(VarOrCase.Case(sym))
+    }
+
+    (Bimap(forward, backward), newUniv.toSet)
+  }
+
+  /**
+    * Converts a rigidity environment to an equivalent environment for use with set formulas.
+    */
+  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[VarOrCase, Int]): Set[Int] = {
+    // We use flatmap because if a var is not in the env,
+    // then it is not relevant to the types.
+    renv.s.flatMap {
+      case sym => env.getForward(VarOrCase.Var(sym))
+    }
+  }
+
+  /**
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int], univ: Set[Int]): SetFormula = tpe match {
+    case Type.Var(sym, _) => m.getForward(VarOrCase.Var(sym)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
+    case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
+      val cases = syms.toSet
+        .map(VarOrCase.Case) // convert to case
+        .map(m.getForward) // lookup in the map
+        .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
+
+      Cst(cases)
+    case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) =>
+      Not(fromCaseType(tpe1, m, univ))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) =>
+      And(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) =>
+      Or(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+  }
+
+  /**
+    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
+    *
+    * The map `m` must bind each free variable in `f` to a type variable.
+    */
+  def toCaseType(f: SetFormula, enumSym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
+    case Cst(s) =>
+      val syms = s
+        .map(m.getBackward) // lookup in the map
+        .map(_.getOrElse(throw InternalCompilerException("Unexpected unbound case set constant", loc)))
+        .map(VarOrCase.getCase)
+      Type.Cst(TypeConstructor.CaseSet(syms.to(SortedSet), enumSym), loc)
+    case Var(x) => m.getBackward(x) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
+      case Some(VarOrCase.Var(sym)) => Type.Var(sym, loc)
+      case Some(VarOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym), enumSym), loc)
+    }
+    case Not(f1) => Type.mkCaseComplement(toCaseType(f1, enumSym, m, loc), enumSym, loc)
+    case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
+    case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
+  }
+
+  /**
+    * Union of variable and case types.
+    */
+  sealed trait VarOrCase
+
+  object VarOrCase {
+    /**
+      * A type variable.
+      */
+    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrCase
+
+    /**
+      * A Case constant.
+      */
+    case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrCase
+
+    /**
+      * Extracts the sym from the case.
+      */
+    def getCase(x: VarOrCase): Symbol.RestrictableCaseSym = x match {
+      case Var(_) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
+      case Case(sym) => sym
+    }
+  }
+
+  /**
+    * Returns the case set bounds of a restrictable enum. The case set bounds
+    * include what cases the set will always have, what cases the set can
+    * maximally have, and what cases the set can never have. The two last sets
+    * mentioned are complements of each other.
+    * {{{
+    * restrictableEnumBounds(Expr[s ++ <Expr.Cst>][Int32]) =
+    *     Must have  : {Cst}
+    *     Has at most: {Cst, Var, Not, And, Or, Xor}
+    *
+    * restrictableEnumBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
+    *     Must have  : {Cst, Not}
+    *     Has at most: {Cst, Var, Not, Or}
+    * }}}
+    */
+  def restrictableEnumBounds(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
+    for {
+      (index, sym) <- findIndexOfEnum(tpe)
+      emumDecl = root.restrictableEnums(sym)
+      (lower, upper) <- boundsAnalysisType(index, emumDecl)
+    } yield formatBounds(lower, upper)
+  }
+
+  /**
+    * Extracts the index type (kind CaseSet) of a restrictable enum along
+    * with its enumSym.
+    * {{{
+    * findIndexOfEnum(E[index: CaseSet(Color), Int32, String]) = Some((index, Color))
+    * findIndexOfEnum(Int32) = None
+    * findIndexOfEnum(Int32 -> E[index]) = None
+    * }}}
+    */
+  @tailrec
+  private def findIndexOfEnum(tpe: Type): Option[(Type, Symbol.RestrictableEnumSym)] = tpe match {
+    case Type.Apply(Type.Cst(TypeConstructor.RestrictableEnum(_, _), _), index, _) =>
+      index.kind match {
+        case Kind.CaseSet(sym) => Some((index, sym))
+        case _ => None
+      }
+    case Type.Apply(base, _, _) => findIndexOfEnum(base)
+    case _ => None
+  }
+
   /**
     * Returns `(lowerBound,upperBound)` if `tpe` is a case set, otherwise
     * returns `None`. The bounds are only in terms of constants, cases that must
@@ -241,107 +415,6 @@ object SetFormula {
     (minimum, maximum)
   }
 
-  private def applySubst(f: SetFormula, m: Map[Int, SetFormula])(implicit univ: Set[Int]): SetFormula = SetFormula.map(f)(m)(univ)
-
-  /**
-    * Substitutes all variables in `f` using the substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a (new) variable.
-    */
-  def substitute(f: SetFormula, m: Map[Int, Int]): SetFormula = f match {
-    case Cst(s) => Cst(s)
-    case Var(x) => m.get(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
-      case Some(y) => Var(y)
-    }
-    case Not(f1) => Not(substitute(f1, m))
-    case And(f1, f2) => And(substitute(f1, m), substitute(f2, m))
-    case Or(f1, f2) => Or(substitute(f1, m), substitute(f2, m))
-  }
-
-  /**
-    * Runs the function `fn` on all the variables in the formula.
-    */
-  def map(f: SetFormula)(fn: Int => SetFormula)(implicit univ: Set[Int]): SetFormula = f match {
-    case Cst(s) => Cst(s)
-    case Var(x) => fn(x)
-    case Not(f1) => mkNot(map(f1)(fn))
-    case And(f1, f2) => mkAnd(map(f1)(fn), map(f2)(fn))
-    case Or(f1, f2) => mkOr(map(f1)(fn), map(f2)(fn))
-  }
-
-  /**
-    * Creates an environment for mapping between proper types and formulas.
-    */
-  def mkEnv(ts: List[Type], univ: SortedSet[Symbol.RestrictableCaseSym]): (Bimap[VarOrCase, Int], Set[Int]) = {
-    val vars = ts.flatMap(_.typeVars).map(_.sym).distinct.map(VarOrCase.Var)
-    val cases = (univ.toSet ++ ts.flatMap(_.cases)).map(VarOrCase.Case)
-    // TODO RESTR-VARS do I even need the ts part here?
-
-    val forward = (vars ++ cases).zipWithIndex.toMap[VarOrCase, Int]
-    val backward = forward.map { case (a, b) => (b, a) }
-
-    val newUniv = univ.map {
-      case sym => forward(VarOrCase.Case(sym))
-    }
-
-    (Bimap(forward, backward), newUniv.toSet)
-  }
-
-  /**
-    * Converts a rigidity environment to an equivalent environment for use with set formulas.
-    */
-  def liftRigidityEnv(renv: RigidityEnv, env: Bimap[VarOrCase, Int]): Set[Int] = {
-    // We use flatmap because if a var is not in the env,
-    // then it is not relevant to the types.
-    renv.s.flatMap {
-      case sym => env.getForward(VarOrCase.Var(sym))
-    }
-  }
-
-  /**
-    * Extracts the index type (kind CaseSet) of a restrictable enum along
-    * with its enumSym.
-    * {{{
-    * findIndexOfEnum(E[index: CaseSet(Color), Int32, String]) = Some((index, Color))
-    * findIndexOfEnum(Int32) = None
-    * findIndexOfEnum(Int32 -> E[index]) = None
-    * }}}
-    */
-  @tailrec
-  private def findIndexOfEnum(tpe: Type): Option[(Type, Symbol.RestrictableEnumSym)] = tpe match {
-    case Type.Apply(Type.Cst(TypeConstructor.RestrictableEnum(_, _), _), index, _) =>
-      index.kind match {
-        case Kind.CaseSet(sym) => Some((index, sym))
-        case _ => None
-      }
-    case Type.Apply(base, _, _) => findIndexOfEnum(base)
-    case _ => None
-  }
-
-  /**
-    * Returns the case set bounds of a restrictable enum. The case set bounds
-    * include what cases the set will always have, what cases the set can
-    * maximally have, and what cases the set can never have. The two last sets
-    * mentioned are complements of each other.
-    * {{{
-    * restrictableEnumBounds(Expr[s ++ <Expr.Cst>][Int32]) =
-    *     Must have  : {Cst}
-    *     Has at most: {Cst, Var, Not, And, Or, Xor}
-    *
-    * restrictableEnumBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
-    *     Must have  : {Cst, Not}
-    *     Has at most: {Cst, Var, Not, Or}
-    * }}}
-    */
-  def restrictableEnumBounds(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
-    for {
-      (index, sym) <- findIndexOfEnum(tpe)
-      emumDecl = root.restrictableEnums(sym)
-      (lower, upper) <- boundsAnalysisType(index, emumDecl)
-    } yield formatBounds(lower, upper)
-  }
-
   /**
     * Returns a string like:
     * {{{
@@ -354,79 +427,6 @@ object SetFormula {
     val minStr = lowerBound.map(_.name).mkString("{", ", ", "}")
     val maxStr = upperBound.map(_.name).mkString("{", ", ", "}")
     s"Must have  : $minStr\nHas at most: $maxStr\n"
-  }
-
-  /**
-    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a type variable.
-    */
-  def fromCaseType(tpe: Type, m: Bimap[VarOrCase, Int], univ: Set[Int]): SetFormula = tpe match {
-    case Type.Var(sym, _) => m.getForward(VarOrCase.Var(sym)) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$sym'.", sym.loc)
-      case Some(x) => Var(x)
-    }
-    case Type.Cst(TypeConstructor.CaseSet(syms, _), _) =>
-      val cases = syms.toSet
-        .map(VarOrCase.Case) // convert to case
-        .map(m.getForward) // lookup in the map
-        .map(_.getOrElse(throw InternalCompilerException(s"Unexpected unbound case", SourceLocation.Unknown)))
-
-      Cst(cases)
-    case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe1, _) =>
-      Not(fromCaseType(tpe1, m, univ))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), tpe1, _), tpe2, _) =>
-      And(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), tpe1, _), tpe2, _) =>
-      Or(fromCaseType(tpe1, m, univ), fromCaseType(tpe2, m, univ))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
-  }
-
-  /**
-    * Converts the given algebraic expression `f` back to a type under the given variable substitution map `m`.
-    *
-    * The map `m` must bind each free variable in `f` to a type variable.
-    */
-  def toCaseType(f: SetFormula, enumSym: Symbol.RestrictableEnumSym, m: Bimap[VarOrCase, Int], loc: SourceLocation): Type = f match {
-    case Cst(s) =>
-      val syms = s
-        .map(m.getBackward) // lookup in the map
-        .map(_.getOrElse(throw InternalCompilerException("Unexpected unbound case set constant", loc)))
-        .map(VarOrCase.getCase)
-      Type.Cst(TypeConstructor.CaseSet(syms.to(SortedSet), enumSym), loc)
-    case Var(x) => m.getBackward(x) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
-      case Some(VarOrCase.Var(sym)) => Type.Var(sym, loc)
-      case Some(VarOrCase.Case(sym)) => Type.Cst(TypeConstructor.CaseSet(SortedSet(sym), enumSym), loc)
-    }
-    case Not(f1) => Type.mkCaseComplement(toCaseType(f1, enumSym, m, loc), enumSym, loc)
-    case And(t1, t2) => Type.mkCaseIntersection(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
-    case Or(t1, t2) => Type.mkCaseUnion(toCaseType(t1, enumSym, m, loc), toCaseType(t2, enumSym, m, loc), enumSym, loc)
-  }
-
-  /**
-    * Union of variable and case types.
-    */
-  sealed trait VarOrCase
-
-  object VarOrCase {
-    /**
-      * A type variable.
-      */
-    case class Var(sym: Symbol.KindedTypeVarSym) extends VarOrCase
-
-    /**
-      * A Case constant.
-      */
-    case class Case(sym: Symbol.RestrictableCaseSym) extends VarOrCase
-
-    /**
-      * Extracts the sym from the case.
-      */
-    def getCase(x: VarOrCase): Symbol.RestrictableCaseSym = x match {
-      case Var(_) => throw InternalCompilerException("unexpected var", SourceLocation.Unknown)
-      case Case(sym) => sym
-    }
   }
 
 }
