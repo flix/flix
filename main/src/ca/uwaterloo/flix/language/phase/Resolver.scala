@@ -209,13 +209,16 @@ object Resolver {
     *     such that any alias only depends on those earlier in the list
     */
   def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    for {
-      semiResolved <- semiResolveTypeAliases(root)
-      orderedSyms <- findResolutionOrder(semiResolved.values)
-      orderedSemiResolved = orderedSyms.map(semiResolved)
-      aliases <- finishResolveTypeAliases(orderedSemiResolved)
-    } yield (aliases, orderedSyms)
-
+    flatMapN(semiResolveTypeAliases(root)) {
+      case semiResolved =>
+        flatMapN(findResolutionOrder(semiResolved.values)) {
+          case orderedSyms =>
+            val orderedSemiResolved = orderedSyms.map(semiResolved)
+            mapN(finishResolveTypeAliases(orderedSemiResolved)) {
+              case aliases => (aliases, orderedSyms)
+            }
+        }
+    }
   }
 
   /**
