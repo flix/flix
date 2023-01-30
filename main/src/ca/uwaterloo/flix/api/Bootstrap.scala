@@ -15,32 +15,67 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.tools.pkg.Manifest
+
+import java.nio.file.Path
+import scala.collection.mutable
+
+// TODO: This class is ultimately to replace functionality in:
+// SourceProvider, SourceFiles, Packager, etc.
+// Feel free to look there for functionality that can be reused.
+
 object Bootstrap {
+  def main(args: Array[String]): Unit = {
+    // TODO: Do ad-hoc testing here.
+    val b = new Bootstrap
+    b.bootstrap("path-to-flix-project")
+  }
 
-  // What's the input?
+}
 
-  // Given a working dir p.
-  // 1. Does `p/flix.toml` exist?
-  // 1.1 If yes, the enter project mode.
-  // 1.2 Otherwise enter folder mode.
-  // TODO: What about filemode?
+class Bootstrap {
 
-  // Project Mode:
-  // Read, parse, and validate flix.toml.
-  // Check each dependency is available or download it.
-  // Compute the set of JAR paths and Flix fpkg paths.
-  // Add src/* and test/*.
+  private val sourcePaths: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
 
+  def bootstrap(path: String): Unit = { // TODO: Probably return Result or Validation
+    //
+    // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
+    //
+    if (???) {
+      projectMode()
+    } else {
+      folderMode()
+    }
+  }
 
-  // Directory Mode:
+  private def projectMode(): Unit = { // TODO: Probably return Result or Validation
+    // 1. Read, parse, and validate flix.toml.
+    // 2. Check each dependency is available or download it.
+    // 3. Compute the set of JAR paths and Flix fpkg paths.
+    // 4. Add *.flix, src/**.flix and test/**.flix
+  }
 
+  private def folderMode(): Unit = { // TODO: Probably return Result or Validation
+    // 1. Add *.flix, src/**.flix and test/**.flix
+  }
 
+  def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
 
-  sealed trait Mode
+    val manifest: Manifest = ??? // TODO: Probably from a field.
 
-  object Mode {
-    case object Project extends Mode
-    case object Directory extends Mode
+    // TODO: Add logic to check if the file has changed.
+    for (path <- sourcePaths) {
+      flix.addSourcePath(path)
+    }
+
+    for (flixPackagePath <- manifest.getFlixPackages) {
+      flix.addSourcePath(flixPackagePath)
+    }
+
+    for (mavenJarPath <- manifest.getMavenPackages) {
+      flix.addSourcePath(mavenJarPath)
+    }
+
   }
 
 
