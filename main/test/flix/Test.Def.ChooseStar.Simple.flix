@@ -153,46 +153,45 @@ mod Test.Def.ChooseStar.Simple {
         }
     }
 
-    def helper12_1(e: Expr[s && <Expr.Cst, Expr.Var>]): Expr[(s && <Expr.Cst>) ++ <Expr.Xor> ++ _] = choose* e {
-        case Expr.Cst => Expr.Cst
-        case Expr.Var => Expr.Xor
-    }
-
-    def helper12_2(e: Expr[s && <Expr.Cst, Expr.Xor>]): Expr[(s && <Expr.Cst>) ++ <Expr.Var> ++ _] = choose* e {
-        case Expr.Cst => Expr.Cst
-        case Expr.Xor => Expr.Var
-    }
-
-    pub def testChooseStar12(): Bool = {
-        let h = if (true) helper12_1 else helper12_2;
-        let thing = h(Expr.Cst);
-        ???
-        // TODO RESTR-VARS too complex
-//        choose h(Expr.Cst) {
-//            case Expr.Cst => true
-//            case Expr.Var => true
-//            case Expr.Xor => true
-//        }
-    }
-
-    def helper13_1(e: Expr[s && <Expr.Cst, Expr.Var, Expr.Not>]): Expr[<Expr.Cst>] = choose* e {
-        case Expr.Cst => Expr.Cst
-        case Expr.Var => Expr.Cst
-        case Expr.Not => Expr.Cst
-    }
-
-    def helper13_2(e: Expr[s && <Expr.Cst, Expr.Xor, Expr.Not>]): Expr[<Expr.Cst>] = choose* e {
-        case Expr.Cst => Expr.Cst
-        case Expr.Xor => Expr.Cst
-        case Expr.Not => Expr.Cst
-    }
-
-    pub def testChooseStar13(): Bool = {
-        let h = if (true) helper13_1 else helper13_2;
-        ??? // TODO RESTR-VARs too complex
+// TODO RESTR-VARS too complex
+//    def helper12_1(e: Expr[s && <Expr.Cst, Expr.Var>]): Expr[(s && <Expr.Cst>) ++ <Expr.Xor> ++ _] = choose* e {
+//        case Expr.Cst => Expr.Cst
+//        case Expr.Var => Expr.Xor
+//    }
+//
+//    def helper12_2(e: Expr[s && <Expr.Cst, Expr.Xor>]): Expr[(s && <Expr.Cst>) ++ <Expr.Var> ++ _] = choose* e {
+//        case Expr.Cst => Expr.Cst
+//        case Expr.Xor => Expr.Var
+//    }
+//
+//    pub def testChooseStar12(): Bool = {
+//        let h = if (true) helper12_1 else helper12_2;
+//        let thing = h(Expr.Cst);
+//        ???
+////        choose h(Expr.Cst) {
+////            case Expr.Cst => true
+////            case Expr.Var => true
+////            case Expr.Xor => true
+////        }
+//    }
+//
+//    def helper13_1(e: Expr[s && <Expr.Cst, Expr.Var, Expr.Not>]): Expr[<Expr.Cst>] = choose* e {
+//        case Expr.Cst => Expr.Cst
+//        case Expr.Var => Expr.Cst
+//        case Expr.Not => Expr.Cst
+//    }
+//
+//    def helper13_2(e: Expr[s && <Expr.Cst, Expr.Xor, Expr.Not>]): Expr[<Expr.Cst>] = choose* e {
+//        case Expr.Cst => Expr.Cst
+//        case Expr.Xor => Expr.Cst
+//        case Expr.Not => Expr.Cst
+//    }
+//
+//    pub def testChooseStar13(): Bool = {
+//        let h = if (true) helper13_1 else helper13_2;
 //        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
 //        choose h(cstOrNot) {case Expr.Cst => true}
-    }
+//    }
 
     def helper14(e: Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>]): Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>] = choose* e {
         case Expr.And    => Expr.And
