@@ -1,15 +1,41 @@
-restrictable enum Expr[s] {
+restrictable enum Expr[_] {
     case Cst, Var, Not, And, Or, Xor
 }
 
-//
-// Properties:
-//   P1) Input upper bounded by pattern case set (like normal choose)
-//   P2) Output lower bounded by non-stable case set
-//   P3) Output maintains information on the absence of stable cases
-//
+restrictable enum Color[_] {
+    case Red
+    case Blue
+    case Green
+}
 
 mod Test.Def.ChooseStar.Simple {
+
+    pub def colorId(c: Color[s]): Color[s] = choose* c {
+        case Color.Red => Color.Red
+        case Color.Blue => Color.Blue
+        case Color.Green => Color.Green
+    }
+
+    pub def rbSwap(c: Color[s && <Color.Red, Color.Blue>]): Color[<Color.Red, Color.Blue>] = choose* c {
+        case Color.Red => Color.Blue
+        case Color.Blue => Color.Red
+    }
+
+    pub def rbSwapAny(c: Color[s]): Color[(s && <Color.Green>) ++ <Color.Red, Color.Blue>] = choose* c {
+        case Color.Red => rbSwap(Color.Red)
+        case Color.Blue => rbSwap(Color.Blue)
+        case Color.Green => Color.Green
+    }
+
+    pub def approx(c: Color[s]): Color[(s && <Color.Red>) ++ <Color.Blue>] = choose* c {
+        case Color.Red => Color.Red
+        case Color.Blue => Color.Blue
+        case Color.Green => Color.Blue
+    }
+
+    pub def approxSwap(c: Color[s]): Color[<Color.Red, Color.Blue>] = {
+        c |> approx |> rbSwap
+    }
 
     def helper01(e: Expr[s && <Expr.Cst>]): Expr[<Expr.Var>] = choose* e {
         case Expr.Cst => Expr.Var
