@@ -426,7 +426,7 @@ object SetFormula {
   private def formatBounds(lowerBound: Set[Symbol.RestrictableCaseSym], upperBound: Set[Symbol.RestrictableCaseSym]): String = {
     val minStr = lowerBound.map(_.name).mkString("{", ", ", "}")
     val maxStr = upperBound.map(_.name).mkString("{", ", ", "}")
-    s"Must have  : $minStr\nHas at most: $maxStr\n"
+    s"Lowerbound: $minStr\nUpperbound: $maxStr\n"
   }
 
 }
