@@ -296,21 +296,41 @@ object SetFormula {
   }
 
   /**
+    * Returns the case set bounds of a restrictable enum or an empty string
+    * otherwise.
+    *
+    * The case set bounds include what cases the set will always have and
+    * cases the set can maximally have.
+    * {{{
+    * formatLowerAndUpperBounds(Expr[s ++ <Expr.Cst>][Int32]) =
+    *     Lowerbound: {Cst}
+    *     Upperbound: {Cst, Var, Not, And, Or, Xor}
+    *
+    * formatLowerAndUpperBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
+    *     Lowerbound: {Cst, Not}
+    *     Upperbound: {Cst, Var, Not, Or}
+    * }}}
+    * The string is prefixed with a newline (if not empty).
+    */
+  def formatLowerAndUpperBounds(tpe: Type)(implicit root: TypedAst.Root): String = {
+    "\n" + restrictableEnumBounds(tpe).getOrElse("")
+  }
+
+  /**
     * Returns the case set bounds of a restrictable enum. The case set bounds
-    * include what cases the set will always have, what cases the set can
-    * maximally have, and what cases the set can never have. The two last sets
-    * mentioned are complements of each other.
+    * include what cases the set will always have and what cases the set can
+    * maximally have.
     * {{{
     * restrictableEnumBounds(Expr[s ++ <Expr.Cst>][Int32]) =
-    *     Must have  : {Cst}
-    *     Has at most: {Cst, Var, Not, And, Or, Xor}
+    *     Lowerbound: {Cst}
+    *     Upperbound: {Cst, Var, Not, And, Or, Xor}
     *
     * restrictableEnumBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
-    *     Must have  : {Cst, Not}
-    *     Has at most: {Cst, Var, Not, Or}
+    *     Lowerbound: {Cst, Not}
+    *     Upperbound: {Cst, Var, Not, Or}
     * }}}
     */
-  def restrictableEnumBounds(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
+  private def restrictableEnumBounds(tpe: Type)(implicit root: TypedAst.Root): Option[String] = {
     for {
       (index, sym) <- findIndexOfEnum(tpe)
       emumDecl = root.restrictableEnums(sym)
@@ -418,8 +438,8 @@ object SetFormula {
   /**
     * Returns a string like:
     * {{{
-    * Must have  : 'nice print of lowerBounds'
-    * Has at most: 'nice print of upperBound'
+    * Lowerbound: 'nice print of lowerBounds'
+    * Upperbound: 'nice print of upperBound'
     * }}}
     * Only the simple names of symbols are used, no namespace info.
     */

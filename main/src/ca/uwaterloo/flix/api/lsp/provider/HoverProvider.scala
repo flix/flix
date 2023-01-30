@@ -79,11 +79,11 @@ object HoverProvider {
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minTpe = minimizeType(tpe)
-    val boundsRep = SetFormula.restrictableEnumBounds(minTpe).getOrElse("")
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix
-         |$boundsRep${FormatType.formatType(minTpe)}
+         |${FormatType.formatType(minTpe)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -96,11 +96,11 @@ object HoverProvider {
     val minPur = minimizeType(pur)
     val minEff = minimizeType(eff)
     val minTpe = minimizeType(tpe)
-    val boundsRep = SetFormula.restrictableEnumBounds(minTpe).getOrElse("")
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix
-         |$boundsRep${formatTypAndEff(minTpe, minPur, minEff)}
+         |${formatTypAndEff(minTpe, minPur, minEff)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
