@@ -103,7 +103,7 @@ namespace BenchmarkMap {
     ///
     @benchmark
     pub def benchmark15(): Bool =
-        Map.size(Map.filterWithKey((k, _) -> k rem 2 == 0, range(0, 24))) == 12
+        Map.size(Map.filterWithKey((k, _) -> Int32.rem(k, 2) == 0, range(0, 24))) == 12
 
     ///
     /// create a map of `Int32 -> Int32` and find the first mapping that satisfies a predicate, searching left to right.

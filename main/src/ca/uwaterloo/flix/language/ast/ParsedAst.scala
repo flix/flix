@@ -789,21 +789,31 @@ object ParsedAst {
       * ForEach Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param frags the foreach fragments.
+      * @param frags the for-fragments.
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForEach(sp1: SourcePosition, frags: Seq[ForEachFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForEach(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForYield Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param frags the for-yield fragments.
+      * @param frags the for-fragments.
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForYield(sp1: SourcePosition, frags: Seq[ForYieldFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForYield(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ForEachYield Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param frags the for-fragments.
+      * @param exp   the body expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ForEachYield(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tuple Expression.
@@ -2286,56 +2296,28 @@ object ParsedAst {
   /**
     * Represents a super type for foreach expression fragments.
     */
-  sealed trait ForEachFragment
+  sealed trait ForFragment
 
-  object ForEachFragment {
+  object ForFragment {
 
     /**
-      * A foreach fragment, i.e. `x <- xs`.
+      * A generator fragment, i.e. `pattern <- xs`.
       *
       * @param sp1 the position of the first character in the fragment.
       * @param pat the pattern on the left hand side.
       * @param exp the iterable expression.
       * @param sp2 the position of the last character in the fragment.
       */
-    case class ForEach(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
+    case class Generator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
     /**
-      * A foreach guard fragment, i.e. `if x > 1`.
+      * A guard fragment, i.e. `if x > 1`.
       *
       * @param sp1   the position of the first character in the fragment.
       * @param guard the guard expression.
       * @param sp2   the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForEachFragment
-
-  }
-
-  /**
-    * Represents a super type for for-yield expression fragments.
-    */
-  sealed trait ForYieldFragment
-
-  object ForYieldFragment {
-
-    /**
-      * A for-yield fragment, i.e. `x <- xs`.
-      *
-      * @param sp1 the position of the first character in the fragment.
-      * @param pat the pattern on the left hand side.
-      * @param exp the functor or monad expression.
-      * @param sp2 the position of the last character in the fragment.
-      */
-    case class ForYield(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
-
-    /**
-      * A for-yield guard fragment, i.e. `if x > 1`.
-      *
-      * @param sp1 the position of the first character in the fragment.
-      * @param exp the guard expression.
-      * @param sp2 the position of the last character in the fragment.
-      */
-    case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForYieldFragment
+    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
   }
 
