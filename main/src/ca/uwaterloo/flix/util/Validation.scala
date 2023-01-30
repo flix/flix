@@ -56,6 +56,16 @@ sealed trait Validation[+T, +E] {
     case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
+  /**
+    * Transform exactly one hard error into a soft error using the given function `f`.
+    */
+  def softRecoverOne[U >: T](f: E => U): Validation[U, E] = this match {
+    case Validation.Failure(errors) if errors.length == 1 =>
+      val one = errors.head
+      Validation.SoftFailure(f(one), LazyList(one))
+    case _ => this
+  }
+
 }
 
 object Validation {
