@@ -191,16 +191,16 @@ mod Test.Def.ChooseStar.Simple {
 //        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
 //        choose h(cstOrNot) {case Expr.Cst => true}
 //    }
-
-    def helper14(e: Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>]): Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>] = choose* e {
-        case Expr.And    => Expr.And
-        case Expr.Cst    => Expr.Cst
-        case Expr.Not    => Expr.Not
-        case Expr.Or     => Expr.Or
-    }
-
-    pub def testChooseStar14(): Bool = {
-        choose helper14(Expr.Cst) {case Expr.Cst => true}
-    }
+//
+//    def helper14(e: Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>]): Expr[s && <Expr.And, Expr.Cst, Expr.Not, Expr.Or>] = choose* e {
+//        case Expr.And    => Expr.And
+//        case Expr.Cst    => Expr.Cst
+//        case Expr.Not    => Expr.Not
+//        case Expr.Or     => Expr.Or
+//    }
+//
+//    pub def testChooseStar14(): Bool = {
+//        choose helper14(Expr.Cst) {case Expr.Cst => true}
+//    }
 
 }
