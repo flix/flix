@@ -88,25 +88,24 @@ mod Test.Def.ChooseStar.Simple {
         }
     }
 
-    def helper07_1(e: Expr[s && <Expr.Not, Expr.Cst>]): Expr[(s && <Expr.Not>) ++ <Expr.Var> ++ _] = choose* e {
-        case Expr.Not => Expr.Not
-        case Expr.Cst => Expr.Var
-    }
-
-    def helper07_2(e: Expr[s && <Expr.Not, Expr.Xor>]): Expr[(s && <Expr.Not>) ++ <Expr.And> ++ _] = choose* e {
-        case Expr.Not => Expr.Not
-        case Expr.Xor => Expr.And
-    }
-
-    pub def testChooseStar07(): Bool = {
-        let f = if (true) helper07_1 else helper07_2;
-        let star = f(Expr.Not);
-        ???
-        // TODO RESTR-VARS too copmlex
-        // choose* star {
-        //     case Expr.Not => true
-        // }
-    }
+// TODO RESTR-VARS too copmlex
+//    def helper07_1(e: Expr[s && <Expr.Not, Expr.Cst>]): Expr[(s && <Expr.Not>) ++ <Expr.Var> ++ _] = choose* e {
+//        case Expr.Not => Expr.Not
+//        case Expr.Cst => Expr.Var
+//    }
+//
+//    def helper07_2(e: Expr[s && <Expr.Not, Expr.Xor>]): Expr[(s && <Expr.Not>) ++ <Expr.And> ++ _] = choose* e {
+//        case Expr.Not => Expr.Not
+//        case Expr.Xor => Expr.And
+//    }
+//
+//    pub def testChooseStar07(): Bool = {
+//        let f = if (true) helper07_1 else helper07_2;
+//        let star = f(Expr.Not);
+//         choose* star {
+//             case Expr.Not => true
+//         }
+//    }
 
     def helper08(e: Expr[<Expr.Cst>]): Expr[<Expr.Cst>] = choose* e {
         case Expr.Cst => Expr.Cst
