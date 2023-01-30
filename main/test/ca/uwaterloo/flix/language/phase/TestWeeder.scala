@@ -767,4 +767,22 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalJvmFieldOrMethodName](result)
   }
+
+  test("IllegalForFragment.01") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalForFragment.02") {
+    val input =
+      """
+        |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[WeederError.IllegalForFragment](result)
+  }
 }
