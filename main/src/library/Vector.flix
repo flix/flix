@@ -96,7 +96,7 @@ namespace Vector {
     pub def length(v: Vector[a]): Int32 = Array.length(v)
 
     ///
-    /// Returns a fresh vector ...
+    /// Returns a fresh vector.
     ///
     pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
         unsafe_cast (
@@ -104,6 +104,18 @@ namespace Vector {
             let _ = f(arr);
             arr
             ) as Array[a, true] \ ef
+
+    ///
+    /// Returns a pair of fresh vectors.
+    ///
+    pub def buildVector2(rc: Region[r], len1: Int32, len2: Int32, f: Array[a, r] -> Array[b, r] -> Unit \ ef): (Vector[a], Vector[b]) \ ef =
+        unsafe_cast (
+            let arr1 = Array.new(rc, len1);
+            let arr2 = Array.new(rc, len2);
+            let _ = f(arr1, arr2);
+            (arr1, arr2)
+            ) as (Array[a, true], Array[b, true]) \ ef
+
 
     pub def liftArrayProducer(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
         unsafe_cast f(rc) as Vector[a]
@@ -958,6 +970,155 @@ namespace Vector {
             case Some(i) => slice(start = i + 1, end = length(v), v)
         }
 
+
+    ///
+    /// Partitions `v` into subvectors such that for any two elements `x` and `y` in a subvector, `f(x, y)` is true.
+    ///
+    /// A subvector is created by iterating through the remaining elements of `v` from left to right and adding an
+    /// element to the subvector if and only if doing so creates no conflicts with the elements already in the subvector.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def groupBy(f: (a, a) -> Bool, v: Vector[a]): Vector[Vector[a]] =
+        let xs = toList(v);
+        groupByHelper(f, xs, Nil) |> List.toVector
+
+    ///
+    /// Helper function for `groupBy`.
+    ///
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
+        case Nil     => List.reverse(ac)
+        case x :: rs =>
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
+            groupByHelper(f, r2, r1 :: ac)
+    }
+
+    ///
+    /// Helper function for `groupBy`.
+    ///
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Vector[a], List[a]) = match xs {
+        case Nil => {
+            let a = List.reverse(ps);
+            (List.toVector(a), List.reverse(ns))
+        }
+        case x :: rs =>
+            if (agreeHelper(f, x, ps))
+                extractHelper(f, rs, x :: ps, ns)
+            else
+                extractHelper(f, rs, ps, x :: ns)
+    }
+
+    ///
+    /// Helper function for `groupBy`.
+    ///
+    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
+        case Nil => true
+        case x :: rs =>
+            if ((f(x, a) and f(a, x)) == false)
+                false
+            else
+                agreeHelper(f, a, rs)
+    }
+
+    ///
+    /// Returns a vector where the element at index `i` is `(x, y)` where
+    /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
+    ///
+    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting vector.
+    ///
+    pub def zip(a: Vector[a], b: Vector[b]): Vector[(a, b)] =
+        let len = Int32.min(length(a), length(b));
+        init(i -> (get(i, a), get(i, b)), len)
+
+    ///
+    /// Returns a vector where the element at index `i` is `f(x, y)` where
+    /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
+    ///
+    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting vector.
+    ///
+    pub def zipWith(f: (a, b) -> c \ ef, a: Vector[a], b: Vector[b]): Vector[c] \ ef =
+        let len = Int32.min(length(a), length(b));
+        init(i -> f(get(i, a), get(i, b)), len)
+
+
+    ///
+    /// Returns a pair of vectors, the first containing all first components in `v`
+    /// and the second containing all second components in `v`.
+    ///
+    pub def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = region rc {
+        let len = length(v);
+        buildVector2(rc, len, len, (arr, brr) ->
+            forEachWithIndex((i, x) -> {
+                    let (l, r) = x;
+                    Array.put(l, i, arr);
+                    Array.put(r, i, brr)
+                }, v)
+            )
+    }
+
+    ///
+    /// Alias for `foldLeft2`.
+    ///
+    pub def fold2(f: (c, a, b) -> c \ ef, c: c, a: Vector[a], b: Vector[b]): c \ ef =
+        foldLeft2(f, c, a, b)
+
+    ///
+    /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
+    /// starting with the initial value `c` and going from left to right.
+    ///
+    pub def foldLeft2(f: (c, a, b) ->  c \ ef, c: c, a: Vector[a], b: Vector[b]): c \ ef =
+        let lena = length(a);
+        let lenb = length(b);
+        def loop(i, acc) = {
+            if (i >= lena or i >= lenb)
+                acc
+            else
+                loop(i + 1, f(acc, get(i, a), get(i, b)))
+        };
+        loop(0, c)
+
+    ///
+    /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
+    /// starting with the initial value `c` and going from right to left.
+    ///
+    pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, a: Vector[a], b: Vector[b]): c \ ef =
+        def loop(i, j, acc) = {
+            if (i < 0 or j < 0)
+                acc
+            else
+                loop(i - 1, j - 1, f(get(i, a), get(j, b), acc))
+        };
+        let starta = length(a) - 1;
+        let startb = length(b) - 1;
+        loop(starta, startb, c)
+
+    ///
+    /// Collects the successful results of applying the partial function `f` to every element in `v`.
+    ///
+    pub def filterMap(f: a -> Option[b] \ ef, v: Vector[a]): Vector[b] \ ef =
+        foldRight((x, xs) -> match f(x) {
+            case None    => xs
+            case Some(b) => b :: xs }, Nil, v) |> List.toVector
+
+    ///
+    /// Returns the first non-None result of applying the partial function `f` to each element of `v`.
+    ///
+    /// Returns `None` if every element of `xs` is `None`.
+    ///
+    pub def findMap(f: a -> Option[b] \ ef, v: Vector[a]): Option[b] \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i >= len)
+                None
+            else
+                let x = f(get(i, v));
+                match x {
+                    case Some(a) => Some(a)
+                    case None    => loop(i + 1)
+                }
+        };
+        loop(0)
+
     ///
     /// Returns the vector `v` as a set.
     ///
@@ -1133,12 +1294,69 @@ namespace Vector {
     /// Returns the concatenation of the string representation
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region r1 {
+    pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r1);
+        let sb = new StringBuilder(rc);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
+    ///
+    /// Returns a sorted copy of vector `v`, where the elements are ordered from low to high according to
+    /// their `Order` instance.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
+    ///
+    /// The sort implementation is a Quicksort.
+    ///
+    pub def sort(v: Vector[a]): Vector[a] with Order[a] =
+        sortWith(Order.compare, v)
+
+    ///
+    /// Returns a sorted copy of vector `v`, where the elements are ordered from low to high according to
+    /// the `Order` instance for the values obtained by applying `f` to each element.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
+    ///
+    /// The sort implementation is a Quicksort.
+    ///
+    pub def sortBy(f: a -> b, v: Vector[a]): Vector[a] with Order[b] =
+        sortWith(Order.compare `on` f, v)
+
+    ///
+    /// Returns a sorted copy of vector `v`, where the elements are ordered from low to high according to
+    /// the comparison function `cmp`.
+    ///
+    /// The sort is not stable, i.e., equal elements may appear in a different order than in the input `v`.
+    ///
+    /// The sort implementation is a Quicksort.
+    ///
+    pub def sortWith(cmp: (a,a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr -> {
+            Array.transformWithIndex!((ix, _) -> get(ix, v), arr);
+            Array.sortWith!(cmp, arr)
+        })
+    }
+
+    ///
+    /// Shuffles `v` using the Fisher–Yates shuffle.
+    ///
+    pub def shuffle(rnd: Random, v: Vector[a]): Vector[a] \ NonDet = region rc {
+        let len = Array.length(v);
+        buildVector(rc, len, arr -> {
+            Array.transformWithIndex!((ix, _) -> get(ix, v), arr);
+            def loop(i) = {
+                if (i > 0) {
+                    let j = Random.nextNatWithMax(rnd, i + 1);
+                    Array.swap!(i, j, arr);
+                    loop(i - 1)
+                }
+                else
+                    ()
+            };
+            loop(len - 1)
+        })
+    }
 }
