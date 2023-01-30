@@ -64,11 +64,17 @@ namespace Vector {
     }
 
     ///
+    /// Returns an empty (length zero) vector.
+    ///
+    pub def empty(): Vector[a] = region rc {
+        buildVector(rc, 0, _ -> ())
+    }
+
+    ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
     pub def get(i: Int32, v: Vector[a]): a =
         v[i]
-
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
@@ -90,13 +96,6 @@ namespace Vector {
     pub def length(v: Vector[a]): Int32 = Array.length(v)
 
     ///
-    /// Returns an empty (length zero) vector.
-    ///
-    pub def empty(): Vector[a] = region rc {
-        buildVector(rc, 0, _ -> ())
-    }
-
-    ///
     /// Returns a fresh vector ...
     ///
     pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
@@ -113,8 +112,8 @@ namespace Vector {
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
-    pub def slice(b: Int32, e: Int32, v: Vector[a]): Vector[a] = region rc {
-        liftArrayProducer(rc, r1 -> Array.slice(r1, b, e, v))
+    pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
+        liftArrayProducer(rc, r1 -> Array.slice(r1, start.start, end.end, v))
     }
 
     ///
@@ -506,6 +505,37 @@ namespace Vector {
      }
 
     ///
+    /// Returns a copy of `v` with the element at index `i` replaced by `x`.
+    ///
+    /// Returns a copy of `v` if `i < 0` or `i > length(xs)-1`.
+    ///
+    pub def update(i: Int32, x: a, v: Vector[a]): Vector[a] = region rc {
+        let len = length(v);
+        buildVector(rc, len, arr ->
+            forEachWithIndex((ix, x1) -> Array.put(if (ix == i) x else x1, ix, arr), v)
+        )
+    }
+
+    ///
+    /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
+    ///
+    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
+    /// If `a` becomes depleted then no further patching is done.
+    /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
+    ///
+    pub def patch(i: Int32, n: Int32, a: Vector[a], b: Vector[a]): Vector[a] =
+        let len1 = length(a);
+        let size = if (n > len1) len1 else n;
+        let sub = slice(start = 0, end = size, a);
+        updateSequence(i, sub, b)
+
+    ///
+    /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
+    ///
+    pub def replace(from: {from = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, v)
+
+    ///
     /// Sum the lengths of a vector of vectors.
     ///
     /// Helper function for `intercalate` and `flatten`.
@@ -783,8 +813,150 @@ namespace Vector {
                         ix := i + 1;
                         Array.put(x, i, arr)
                     } else (), v)
-                ) |> slice(0, deref ix)
+                ) |> slice(start = 0, end = deref ix)
     }
+
+    ///
+    /// Returns a pair of vectors `(v1, v2)`.
+    ///
+    /// `v1` contains all elements of `v` that satisfy the predicate `f`.
+    /// `v2` contains all elements of `v` that do not satisfy the predicate `f`.
+    ///
+    pub def partition(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
+        let step = { (x, acc) ->
+            let (a1, a2) = acc;
+            if (f(x)) (x :: a1, a2) else (a1, x :: a2)
+        };
+        let (xs, ys) = foldRight(step, (Nil, Nil), v);
+        (List.toVector(xs), List.toVector(ys))
+
+    ///
+    /// Returns a pair of vectors `(v1, v2)`.
+    ///
+    /// `v1` is the longest prefix of `v` that satisfies the predicate `f`.
+    /// `v2` is the remainder of `v`.
+    ///
+    pub def span(f: a -> Bool \ ef, v: Vector[a]): (Vector[a], Vector[a]) \ ef =
+        match findIndexOfLeft(x -> not (f(x)), v) {
+            case None    => (takeLeft(length(v), v), empty())
+            case Some(i) => (takeLeft(i, v), dropLeft(i, v))
+        }
+
+    ///
+    /// Alias for `dropLeft`.
+    ///
+    pub def drop(n: Int32, v: Vector[a]): Vector[a] =
+        dropLeft(n, v)
+
+    ///
+    /// Returns a copy of vector `v`, dropping the first `n` elements.
+    ///
+    /// Returns an empty vector if `n > length(v)`.
+    ///
+    pub def dropLeft( n: Int32, v: Vector[a]): Vector[a] =
+        let len = length(v);
+        if (n > len)
+            empty()
+        else {
+            let start = if (n < 0) 0 else n;
+            slice(start = start, end = len, v)
+        }
+
+    ///
+    /// Returns a copy of vector `v`, dropping the last `n` elements.
+    ///
+    /// Returns an empty vector if `n > length(v)`.
+    ///
+    pub def dropRight(n: Int32, v: Vector[a]): Vector[a] =
+        let len = length(v);
+        if (n >= len)
+            empty()
+        else {
+            let end = if (n < 0) len else len - n;
+            slice(start = 0, end = end, v)
+        }
+
+    ///
+    /// Alias for `dropWhileLeft`.
+    ///
+    pub def dropWhile(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        dropWhileLeft(f, v)
+
+    ///
+    /// Returns copy of vector `v` without the longest prefix that satisfies the predicate `f`.
+    ///
+    pub def dropWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        match findIndexOfLeft(x -> not (f(x)), v) {
+            case None    => empty()
+            case Some(i) => dropLeft(i, v)
+        }
+
+    ///
+    /// Returns copy of vector `v` without the longest suffix that satisfies the predicate `f`.
+    ///
+    pub def dropWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        match findIndexOfRight(x -> not (f(x)), v) {
+            case None    => empty()
+            case Some(i) => slice(start = 0, end = i + 1, v)
+        }
+
+    ///
+    /// Alias for `takeLeft`.
+    ///
+    pub def take(n: Int32, v: Vector[a]): Vector[a] =
+        takeLeft(n, v)
+
+    ///
+    /// Returns a fresh vector taking first `n` elements of `v`.
+    ///
+    /// Returns a copy of `v` if `n > length(v)`.
+    ///
+    pub def takeLeft(n: Int32, v: Vector[a]): Vector[a] =
+        if (n <= 0)
+            empty()
+        else {
+            let len = length(v);
+            let end = if (n > len) len else n;
+            slice(start = 0, end = end, v)
+        }
+
+    ///
+    /// Returns a fresh vector taking last `n` elements of `v`.
+    ///
+    /// Returns a copy `v` if `n > length(v)`.
+    ///
+    pub def takeRight(n: Int32, v: Vector[a]): Vector[a] =
+        if (n <= 0)
+            empty()
+        else {
+            let len = length(v);
+            let start = if (n > len) 0 else len - n;
+            slice( start = start, end = len, v)
+        }
+
+    ///
+    /// Alias for `takeWhileLeft`.
+    ///
+    pub def takeWhile(f: a -> Bool \ ef, a: Vector[a]): Vector[a] \ ef =
+        takeWhileLeft(f, a)
+
+    ///
+    /// Returns the longest prefix of `v` that satisfies the predicate `f`.
+    ///
+    pub def takeWhileLeft(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        match findIndexOfLeft(x -> not (f(x)), v) {
+            case None    => slice(start = 0, end = length(v), v)
+            case Some(i) => takeLeft(i, v)
+        }
+
+    ///
+    /// Returns the longest suffix of `v` that satisfies the predicate `f`.
+    ///
+    pub def takeWhileRight(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef =
+        match findIndexOfRight(x -> not (f(x)), v) {
+            case None    => slice(start = 0, end = length(v), v)
+            case Some(i) => slice(start = i + 1, end = length(v), v)
+        }
 
     ///
     /// Returns the vector `v` as a set.
@@ -940,6 +1112,15 @@ namespace Vector {
             }
         };
         loop(0)
+
+    ///
+    /// Returns a copy of `v` with the elements starting at index `i` replaced by `sub`.
+    ///
+    pub def updateSequence(i: Int32, sub: Vector[a], v: Vector[a]): Vector[a] =
+        let end = i + length(sub);
+        let len = length(v);
+        let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, v);
+        init(f, len)
 
     ///
     /// Returns the concatenation of the string representation

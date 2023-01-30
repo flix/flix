@@ -1163,6 +1163,13 @@ namespace List {
         }
 
     ///
+    /// Returns the list `l` as a vector.
+    ///
+    pub def toVector(l: List[a]): Vector[a] = region rc {
+        Vector.liftArrayProducer(rc, r1 -> toArray(r1, l))
+    }
+
+    ///
     /// Returns the list `l` as `Option[Nel[a]]`.
     ///
     /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.
