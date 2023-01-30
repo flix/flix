@@ -133,25 +133,49 @@ object SetFormula {
     case _ => SetFormula.Or(f1, f2)
   }
 
-  // TODO: DOC
+  /**
+    * Returns a minimized, equivalent formula of `f`.
+    *
+    * Currently works by building the exponential form based on [[table]]
+    */
   def minimize(f: SetFormula)(implicit univ: Set[Int]): SetFormula = {
     val bot = SetFormula.Cst(Set.empty): SetFormula
     val top = SetFormula.Cst(univ): SetFormula
 
-    def visit(fvs: List[Int]): List[(SetFormula, Map[Int, SetFormula])] = fvs match {
-      case Nil => List((top, Map.empty))
-      case v :: vs =>
-        visit(vs) flatMap {
-          case (p, partialSubst) =>
-            val p1 = mkAnd(SetFormula.Not(SetFormula.Var(v)), p)
-            val p2 = mkAnd(SetFormula.Var(v), p)
-            List((p1, partialSubst + (v -> bot)), (p2, partialSubst + (v -> top)))
-        }
-    }
-
-    visit(f.freeVars.toList).foldLeft(bot) {
+    // The minimized formula is constructed by adding each table row result to
+    // its formula (`x ∧ y ∧ {Cst}`) and then creating a union of all the row
+    // formulas. The table row result (always a constant set) is the original
+    // formula where the row assignment is substituted in.
+    table(f.freeVars.toList, bot, top).foldLeft(bot) {
       case (acc, (p, subst)) => mkOr(acc, mkAnd(p, applySubst(f, subst)))
     }
+  }
+
+  /**
+    * Returns all exponentially many assignments of `fvs` to top or bot,
+    * together with their respective formula (see example). `bot` and `top`
+    * should always be `Cst(Set.empty)` and `Cst(univ)` but are reused from
+    * arguments for efficiency.
+    *
+    * Examples (the list order is not accurate):
+    * {{{
+    * table(x :: y :: Nil, bot, top) =
+    *     ( x ∧  y, Map(x -> top, y -> top)) ::
+    *     ( x ∧ ¬y, Map(x -> top, y -> bot)) ::
+    *     (¬x ∧  y, Map(x -> bot, y -> top)) ::
+    *     (¬x ∧ ¬y, Map(x -> bot, y -> bot)) ::
+    *     Nil
+    * }}}
+    */
+  private def table(fvs: List[Int], bot: SetFormula, top: SetFormula)(implicit univ: Set[Int]): List[(SetFormula, Map[Int, SetFormula])] = fvs match {
+    case Nil => List((top, Map.empty))
+    case v :: vs =>
+      table(vs, bot, top) flatMap {
+        case (p, partialSubst) =>
+          val p1 = mkAnd(SetFormula.Not(SetFormula.Var(v)), p)
+          val p2 = mkAnd(SetFormula.Var(v), p)
+          List((p1, partialSubst + (v -> bot)), (p2, partialSubst + (v -> top)))
+      }
   }
 
   /**
@@ -412,22 +436,13 @@ object SetFormula {
     val bot = SetFormula.Cst(Set.empty): SetFormula
     val top = SetFormula.Cst(univ): SetFormula
 
-    // create all possible assignments of the free variables (exponentially many)
-    def visit(fvs: List[Int]): List[Map[Int, SetFormula]] = fvs match {
-      case Nil => List(Map.empty)
-      case v :: vs =>
-        visit(vs) flatMap {
-          case partialSubst => List(partialSubst + (v -> bot), partialSubst + (v -> top))
-        }
-    }
-
     // forcefully extracts a set formula of constant form
     def extractCst(form: SetFormula): Set[Int] = form match {
       case Cst(s) => s
       case _ => throw InternalCompilerException("Unexpected non-evalued formula", SourceLocation.Unknown)
     }
 
-    val assignmentResults = visit(f.freeVars.toList).map(assignment => extractCst(applySubst(f, assignment)))
+    val assignmentResults = table(f.freeVars.toList, bot, top).map{case (_, assignment) => extractCst(applySubst(f, assignment))}
     // intersect all possible results to get a lower bound
     val minimum = assignmentResults.reduceOption(_.intersect(_)).getOrElse(extractCst(applySubst(f, Map.empty)))
     // union all possible results to get an upper bound
