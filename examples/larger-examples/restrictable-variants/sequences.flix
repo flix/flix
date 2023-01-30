@@ -35,7 +35,7 @@ def append(w: Int32, s: Seq[i]): Seq[<Seq.One, Seq.Cons>] =
         case Seq.Cons(x, xs) => open Seq.Cons(x, append(w, xs))
     }
 
-def reverse(s: Seq[i]): Seq[i ++ <Seq.One, Seq.Cons>] =
+def reverse(s: Seq[i]): Seq[i ++ <Seq.One>] =
     choose* s {
         case Seq.Nil         => Seq.Nil
         case Seq.One(x)      => Seq.One(x)
