@@ -1837,6 +1837,24 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 
+  test("TestChooseStar.06") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case N(E[s])
+        |    case C
+        |}
+        |
+        |def n(e: E[s && <E.N>]): _ = ???
+        |
+        |def foo(e: E[s]): E[s] = choose* e {
+        |    case E.N(x) => n(x)            // must have x <: <E.N> but this doesn't hold
+        |    case E.C    => E.C
+        |}
+        |""".stripMargin
+    expectError[TypeError.UnexpectedArgument](compile(input, Options.TestWithLibNix))
+  }
+
   test("TestCaseSetAnnotation.01") {
     val input =
       """
