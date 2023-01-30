@@ -31,7 +31,6 @@ object FlixPackageManager {
   // TODO: Move functionality from "Packager" in here.
 
   //TODO: report errors
-  //TODO: download new version and delete old?
   //TODO: tests
   //TODO: comments
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
@@ -63,11 +62,17 @@ object FlixPackageManager {
     }) match {
       case Ok(release) => release
       case Err(e) => return Err(e)
-    }*
+    }
 
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
     val lib = getLibraryDirectory(p)
-    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo)
+    val repoFolder = lib.resolve(proj.owner).resolve(proj.repo)
+    val assetFolder = repoFolder.resolve(s"ver${release.version.toString()}")
+
+    if(!Files.isDirectory(assetFolder)) {
+      // clear the other versions from the folder
+      deleteDirectory(repoFolder.toFile)
+    }
 
     // create the asset directory if it doesn't exist
     Files.createDirectories(assetFolder)
@@ -96,6 +101,14 @@ object FlixPackageManager {
     } else {
       throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
     }
+  }
+
+  private def deleteDirectory(dir: File): Unit = {
+    val files = dir.listFiles()
+    if(files != null) {
+      files.foreach(deleteDirectory)
+    }
+    dir.delete()
   }
 
   private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
