@@ -534,42 +534,34 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
-
-      def ForEachFragment: Rule1[ParsedAst.ForEachFragment.ForEach] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.ForEach
+    def ForFragment: Rule1[ParsedAst.ForFragment] = {
+      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
       }
 
-      def GuardFragment: Rule1[ParsedAst.ForEachFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.Guard
-      }
-
-      def Fragment: Rule1[ParsedAst.ForEachFragment] = rule {
-        ForEachFragment | GuardFragment
+      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
       }
 
       rule {
-        SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+        GeneratorFragment | GuardFragment
       }
     }
 
-    def ForYield: Rule1[ParsedAst.Expression.ForYield] = {
+    def ForFragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
+      "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
+    }
 
-      def ForYieldFragment: Rule1[ParsedAst.ForYieldFragment.ForYield] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
-      }
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+    }
 
-      def GuardFragment: Rule1[ParsedAst.ForYieldFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.Guard
-      }
+    def ForYield: Rule1[ParsedAst.Expression.ForYield] = rule {
+      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+    }
 
-      def Fragment: Rule1[ParsedAst.ForYieldFragment] = rule {
-        ForYieldFragment | GuardFragment
-      }
-
-      rule {
-        SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
-      }
+    def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
     }
 
     def Of: Rule1[ParsedAst.Expression] = rule {
@@ -752,7 +744,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FList |
         FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | OpenAs | HolyName | QName | Hole
+        Discard | Debug | ForEachYield | ForYield | ForEach | NewObject |
+        UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
@@ -1841,7 +1834,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * Namespaces are lower or uppercase.
       */
-      // TODO NS-REFACTOR remove
+    // TODO NS-REFACTOR remove
     def Namespace: Rule1[Name.NName] = rule {
       SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
