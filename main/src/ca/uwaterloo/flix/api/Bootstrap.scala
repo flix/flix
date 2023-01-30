@@ -23,6 +23,8 @@ import scala.collection.mutable
 // TODO: This class is ultimately to replace functionality in:
 // SourceProvider, SourceFiles, Packager, etc.
 // Feel free to look there for functionality that can be reused.
+// The idea is to implement everything in here so it works 100% and then remove the old code.
+// Hence its OK to copy paste some methods from the aforementioned classes in here.
 
 object Bootstrap {
   def main(args: Array[String]): Unit = {
@@ -57,6 +59,8 @@ class Bootstrap {
 
   private def folderMode(): Unit = { // TODO: Probably return Result or Validation
     // 1. Add *.flix, src/**.flix and test/**.flix
+    // 2. Grab all jars in lib/
+    // 3. Grab all flix packages in lib/
   }
 
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
