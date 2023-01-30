@@ -447,8 +447,8 @@ object Typer {
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)) =>
-          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
+        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, sc2, caseLoc)) =>
+          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, sc2, caseLoc)
       }
 
       enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
