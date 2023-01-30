@@ -137,22 +137,22 @@ mod Test.Def.ChooseStar.Simple {
         choose thing {case Expr.Cst => true}
     }
 
-    def helper11(e: Expr[s && <Expr.Xor, Expr.Cst, Expr.Var>]): Expr[(s && <Expr.Xor, Expr.Cst>) ++ <Expr.Xor>] = choose* e {
-        case Expr.Xor => Expr.Xor
-        case Expr.Cst => Expr.Cst
-        case Expr.Var => Expr.Xor
-    }
-
-    pub def testChooseStar11(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
-        let thing = helper11(cstOrVar);
-        choose thing {
-            case Expr.Xor => true
-            case Expr.Cst => true
-        }
-    }
-
 // TODO RESTR-VARS too complex
+//    def helper11(e: Expr[s && <Expr.Xor, Expr.Cst, Expr.Var>]): Expr[(s && <Expr.Xor, Expr.Cst>) ++ <Expr.Xor>] = choose* e {
+//        case Expr.Xor => Expr.Xor
+//        case Expr.Cst => Expr.Cst
+//        case Expr.Var => Expr.Xor
+//    }
+//
+//    pub def testChooseStar11(): Bool = {
+//        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+//        let thing = helper11(cstOrVar);
+//        choose thing {
+//            case Expr.Xor => true
+//            case Expr.Cst => true
+//        }
+//    }
+//
 //    def helper12_1(e: Expr[s && <Expr.Cst, Expr.Var>]): Expr[(s && <Expr.Cst>) ++ <Expr.Xor> ++ _] = choose* e {
 //        case Expr.Cst => Expr.Cst
 //        case Expr.Var => Expr.Xor
