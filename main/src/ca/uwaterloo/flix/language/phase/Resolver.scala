@@ -1409,7 +1409,9 @@ object Resolver {
               UnkindedType.eraseAliases(t) match {
                 case UnkindedType.Cst(TypeConstructor.Native(clazz), _) =>
                   ResolvedAst.Expression.NewObject(name, clazz, ms, loc).toSuccess
-                case _ => ResolutionError.IllegalNonJavaType(t, t.loc).toFailure
+                case _ =>
+                  val err = ResolutionError.IllegalNonJavaType(t, t.loc)
+                  ResolvedAst.Expression.Error(err).toSoftFailure(err)
               }
           }
 
