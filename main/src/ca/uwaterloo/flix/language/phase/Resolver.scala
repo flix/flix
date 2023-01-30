@@ -1339,8 +1339,8 @@ object Resolver {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
                 case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
           val expVal = visitExp(exp, env0, region)
@@ -1352,8 +1352,8 @@ object Resolver {
             case (ts, e, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
                 case method => ResolvedAst.Expression.InvokeMethod(method, clazz, e, as, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
           val argsVal = traverse(args)(visitExp(_, env0, region))
@@ -1364,40 +1364,40 @@ object Resolver {
             case (ts, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0, region)) {
                 case (field, e) => ResolvedAst.Expression.GetField(field, clazz, e, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0, region), visitExp(exp2, env0, region)) {
                 case (field, e1, e2) => ResolvedAst.Expression.PutField(field, clazz, e1, e2, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.GetStaticField(className, fieldName, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
                 case field => ResolvedAst.Expression.GetStaticField(field, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0, region)) {
                 case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
-              }.softRecoverOne(ResolvedAst.Expression.Error)
-          }
+              }
+          }.softRecoverOne(ResolvedAst.Expression.Error)
 
         case NamedAst.Expression.NewObject(name, tpe, methods, loc) =>
           flatMapN(resolveType(tpe, Wildness.ForbidWild, env0, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, env0, taenv, ns0, root))) {
