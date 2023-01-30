@@ -879,7 +879,7 @@ object Resolver {
           val eVal = visitExp(exp, env0, region)
           mapN(enumVal, eVal) {
             case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Hole(nameOpt, loc) =>
           val sym = nameOpt match {
@@ -911,7 +911,7 @@ object Resolver {
               }
 
             case NamedAst.UseOrImport.Import(_, _, loc) => throw InternalCompilerException("unexpected import", loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Cst(cst, loc) => ResolvedAst.Expression.Cst(cst, loc).toSuccess
 
@@ -945,7 +945,7 @@ object Resolver {
               mapN(eVal) {
                 case e => ResolvedAst.Expression.Lambda(p, e, loc)
               }
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Unary(sop, exp, loc) =>
           val eVal = visitExp(exp, env0, region)
@@ -1043,13 +1043,13 @@ object Resolver {
               mapN(tVal, bVal) {
                 case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
               }
-          }
+          } // TODO: softRecoverOne
 
           val eVal = visitExp(exp, env0, region)
           val rsVal = rulesVal
           mapN(eVal, rsVal) {
             case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.RelationalChoose(star, exps, rules, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0, region))
@@ -1104,7 +1104,7 @@ object Resolver {
           }
           mapN(expVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.RestrictableChoose(star, e, rs, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Tuple(elms, loc) =>
           val esVal = traverse(elms)(e => visitExp(e, env0, region))
@@ -1230,14 +1230,14 @@ object Resolver {
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, expectedTypVal, expectedEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Of(qname, exp, loc) =>
           val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
           val eVal = visitExp(exp, env0, region)
           mapN(tagVal, eVal) {
             case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
@@ -1249,7 +1249,7 @@ object Resolver {
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Mask(exp, loc) =>
           val eVal = visitExp(exp, env0, region)
@@ -1281,7 +1281,7 @@ object Resolver {
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Without(exp, eff, loc) =>
           val eVal = visitExp(exp, env0, region)
@@ -1290,7 +1290,7 @@ object Resolver {
             case (e, f) =>
               val effUse = Ast.EffectSymUse(f.sym, eff.loc)
               ResolvedAst.Expression.Without(e, effUse, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
           val eVal = visitExp(exp, env0, region)
@@ -1316,7 +1316,7 @@ object Resolver {
               mapN(rulesVal) {
                 rs => ResolvedAst.Expression.TryWith(e, effUse, rs, loc)
               }
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Do(op, exps, loc) =>
           val opVal = lookupOp(op, env0, ns0, root)
@@ -1325,7 +1325,7 @@ object Resolver {
             case (o, es) =>
               val opUse = Ast.OpSymUse(o.sym, op.loc)
               ResolvedAst.Expression.Do(opUse, es, loc)
-          }
+          } // TODO: softRecoverOne
 
         case NamedAst.Expression.Resume(exp, loc) =>
           val expVal = visitExp(exp, env0, region)
@@ -1340,7 +1340,7 @@ object Resolver {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
                 case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
@@ -1353,7 +1353,7 @@ object Resolver {
             case (ts, e, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
                 case method => ResolvedAst.Expression.InvokeMethod(method, clazz, e, as, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
@@ -1365,7 +1365,7 @@ object Resolver {
             case (ts, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
@@ -1373,7 +1373,7 @@ object Resolver {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0, region)) {
                 case (field, e) => ResolvedAst.Expression.GetField(field, clazz, e, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
@@ -1381,7 +1381,7 @@ object Resolver {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0, region), visitExp(exp2, env0, region)) {
                 case (field, e1, e2) => ResolvedAst.Expression.PutField(field, clazz, e1, e2, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.GetStaticField(className, fieldName, loc) =>
@@ -1389,7 +1389,7 @@ object Resolver {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
                 case field => ResolvedAst.Expression.GetStaticField(field, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
@@ -1397,7 +1397,7 @@ object Resolver {
             case clazz =>
               mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0, region)) {
                 case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
-              }
+              } // TODO: softRecoverOne
           }
 
         case NamedAst.Expression.NewObject(name, tpe, methods, loc) =>
