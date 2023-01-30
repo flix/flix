@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.Validation.SoftFailure
+
 import scala.collection.mutable
 
 sealed trait Validation[+T, +E] {
@@ -54,6 +56,16 @@ sealed trait Validation[+T, +E] {
     case Validation.Success(t) => Validation.Success(t)
     case Validation.SoftFailure(t, errors) => Validation.Failure(errors)
     case Validation.Failure(errors) => Validation.Failure(errors)
+  }
+
+  /**
+    * Transform exactly one hard error into a soft error using the given function `f`.
+    */
+  def softRecoverOne[U >: T](f: E => U): Validation[U, E] = this match {
+    case Validation.Failure(errors) if errors.length == 1 =>
+      val one = errors.head
+      Validation.SoftFailure(f(one), LazyList(one))
+    case _ => this
   }
 
 }

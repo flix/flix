@@ -420,4 +420,9 @@ class TestValidation extends FunSuite {
     assertResult(SoftFailure("cba", LazyList(ex)))(result)
   }
 
+  test("softRecoverOne01") {
+    val ex = new RuntimeException()
+    val result = ex.toFailure.softRecoverOne((e: Exception) => e.toString)
+    assertResult(ex.toString.toSoftFailure(ex))(result)
+  }
 }
