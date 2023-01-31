@@ -28,10 +28,8 @@ import scala.util.Using
 object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
-  
-  //TODO: tests
-  //TODO: comments
 
+  //TODO: tests - how?
   /**
     * Installs all the Flix dependencies for a Manifest.
     */
