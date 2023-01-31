@@ -163,9 +163,10 @@ object Kinder {
           val casesVal = traverse(cases0) {
             case case0 =>
               // s + caseTag
-              val expIndex = Type.mkCaseUnion(index0Var, Type.Cst(TypeConstructor.CaseSet(SortedSet(case0.sym), sym), case0.loc.asSynthetic), sym, case0.loc.asSynthetic)
+              val openIndex = Type.mkCaseUnion(index0Var, Type.Cst(TypeConstructor.CaseSet(SortedSet(case0.sym), sym), case0.loc.asSynthetic), sym, case0.loc.asSynthetic)
+              val closedIndex = Type.Cst(TypeConstructor.CaseSet(SortedSet(case0.sym), sym), case0.loc.asSynthetic)
               val patIndex = index0Var
-              mapN(visitRestrictableCase(case0, index0, tparams, tpe(expIndex), tpe(patIndex), kenv, taenv, root)) {
+              mapN(visitRestrictableCase(case0, index0, tparams, tpe(openIndex), tpe(closedIndex), tpe(patIndex), kenv, taenv, root)) {
                 caze => caze.sym -> caze
               }
           }
@@ -223,15 +224,16 @@ object Kinder {
   /**
     * Performs kinding on the given enum case under the given kind environment.
     */
-  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], expTpe: Type, patTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
+  private def visitRestrictableCase(caze0: ResolvedAst.Declaration.RestrictableCase, index: KindedAst.TypeParam, tparams: List[KindedAst.TypeParam], openTpe: Type, closedTpe: Type, patTpe: Type, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableCase, KindError] = caze0 match {
     case ResolvedAst.Declaration.RestrictableCase(sym, tpe0, loc) =>
       val tpeVal = visitType(tpe0, Kind.Star, kenv, Map.empty, taenv, root)
       mapN(tpeVal) {
         case tpe =>
           val quants = (index :: tparams).map(_.sym)
-          val expSc = Scheme(quants, Nil, Type.mkPureArrow(tpe, expTpe, sym.loc.asSynthetic))
+          val openSc = Scheme(quants, Nil, Type.mkPureArrow(tpe, openTpe, sym.loc.asSynthetic))
+          val closedSc = Scheme(quants, Nil, Type.mkPureArrow(tpe, closedTpe, sym.loc.asSynthetic))
           val patSc = Scheme(quants, Nil, Type.mkPureArrow(tpe, patTpe, sym.loc.asSynthetic))
-          KindedAst.RestrictableCase(sym, tpe, expSc, patSc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
+          KindedAst.RestrictableCase(sym, tpe, openSc, closedSc, patSc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
 

@@ -447,7 +447,7 @@ object Typer {
       val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
       val tparams = getTypeParams(tparams0)
       val cases = cases0 map {
-        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, sc2, caseLoc)) =>
+        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, sc2, _, caseLoc)) => // TODO RESTR-VARS sc3
           name -> TypedAst.RestrictableCase(caseSym, tagType, sc, sc2, caseLoc)
       }
 
