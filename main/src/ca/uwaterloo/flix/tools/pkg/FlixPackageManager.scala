@@ -15,14 +15,13 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.Packager
 import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
-import ca.uwaterloo.flix.util.{Options, Result}
+import ca.uwaterloo.flix.util.Result
 
-import java.io.{File, PrintStream}
+import java.io.PrintStream
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.util.Using
 
@@ -30,15 +29,20 @@ object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
 
-  //TODO: report errors
+  //TODO: report errors - keep going?
   //TODO: tests
   //TODO: comments
+
+  /**
+    * Installs all the Flix dependencies for a Manifest.
+    */
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
     val flixDeps = findFlixDependencies(manifest)
+
     for(dep <- flixDeps) {
       val depName: String = s"${dep.username}/${dep.projectName}"
       out.println(s"Installing $depName")
-      install(depName, Some(dep.version), path, null) match {
+      install(depName, Some(dep.version), path) match {
         case Ok(_) => out.println(s"Installation of $depName completed")
         case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
       }
@@ -53,9 +57,11 @@ object FlixPackageManager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  //TODO: delete options?
-  def install(project: String, version: Option[SemVer], p: Path, o: Options)(implicit out: PrintStream): Result[Unit, PackageError] = {
-    val proj = GitHub.parseProject(project)
+  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
+    val proj = GitHub.parseProject(project) match {
+      case Ok(p) => p
+      case Err(e) => return Err(e)
+    }
     val release = (version match {
       case None => GitHub.getLatestRelease(proj)
       case Some(ver) => GitHub.getSpecificRelease(proj, ver)
@@ -66,13 +72,7 @@ object FlixPackageManager {
 
     val assets = release.assets.filter(_.name.endsWith(".fpkg"))
     val lib = getLibraryDirectory(p)
-    val repoFolder = lib.resolve(proj.owner).resolve(proj.repo)
-    val assetFolder = repoFolder.resolve(s"ver${release.version.toString()}")
-
-    if(!Files.isDirectory(assetFolder)) {
-      // clear the other versions from the folder
-      deleteDirectory(repoFolder.toFile)
-    }
+    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo).resolve(s"ver${release.version.toString()}")
 
     // create the asset directory if it doesn't exist
     Files.createDirectories(assetFolder)
@@ -93,24 +93,8 @@ object FlixPackageManager {
   }
 
   /**
-    * Deletes the file if it is a Flix package.
+    * Finds the Flix dependencies in a Manifest.
     */
-  private def deletePackage(file: File): Unit = {
-    if (Packager.isPkgFile(file.toPath)) {
-      file.delete()
-    } else {
-      throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
-    }
-  }
-
-  private def deleteDirectory(dir: File): Unit = {
-    val files = dir.listFiles()
-    if(files != null) {
-      files.foreach(deleteDirectory)
-    }
-    dir.delete()
-  }
-
   private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
     manifest.dependencies.filter(dep => dep.isInstanceOf[FlixDependency]).map(dep => dep.asInstanceOf[FlixDependency])
   }

@@ -175,7 +175,7 @@ object Main {
 
         case Command.Install(project) =>
           val o = options.copy(progress = false)
-          val result = FlixPackageManager.install(project, None, cwd, o)(System.out)
+          val result = FlixPackageManager.install(project, None, cwd)(System.out)
           val code = result match {
             case Result.Ok(_) => 0
             case Result.Err(_) => -1

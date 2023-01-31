@@ -53,22 +53,23 @@ object GitHub {
     */
   def getReleases(project: Project): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val stream = try {
-      url.openStream()
+    val releaseJsons = try {
+      val stream = url.openStream()
+      val json = StreamOps.readAll(stream)
+      parse(json).asInstanceOf[JArray]
     } catch {
-      case _: IOException => ???
+      case _: IOException => return Err(PackageError.ProjectNotFound(s"Could not open stream to $url"))
+      case _: ClassCastException => return Err(PackageError.JsonError(s"Could not parse $url as JSON array"))
     }
-    val json = StreamOps.readAll(stream)
-    val releaseJsons = parse(json).asInstanceOf[JArray]
     Ok(releaseJsons.arr.map(parseRelease))
   }
 
   /**
     * Parses a GitHub project from an `<owner>/<repo>` string.
     */
-  def parseProject(string: String): Project = string.split('/') match {
-    case Array(owner, repo) => Project(owner, repo)
-    case _ => throw new RuntimeException(s"Invalid project name: ${string}")
+  def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
+    case Array(owner, repo) => Ok(Project(owner, repo))
+    case _ => Err(PackageError.InvalidProjectName(string))
   }
 
   /**
