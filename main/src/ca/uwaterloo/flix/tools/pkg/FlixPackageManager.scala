@@ -21,15 +21,14 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import ca.uwaterloo.flix.util.Result
 
-import java.io.PrintStream
+import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
 import scala.util.Using
 
 object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
-
-  //TODO: report errors - keep going?
+  
   //TODO: tests
   //TODO: comments
 
@@ -81,8 +80,12 @@ object FlixPackageManager {
     for (asset <- assets) {
       val path = assetFolder.resolve(asset.name)
       if(!Files.exists(path)) {
-        Using(GitHub.downloadAsset(asset)) {
-          stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+        try {
+          Using(GitHub.downloadAsset(asset)) {
+            stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+          }
+        } catch {
+          case _: IOException => return Err(PackageError.DownloadError(s"Error occured while downloading ${asset.name}"))
         }
         out.println(s"Installation of ${asset.name} completed")
       } else {

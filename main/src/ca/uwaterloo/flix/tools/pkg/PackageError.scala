@@ -28,4 +28,6 @@ object PackageError {
 
   case class JsonError(msg: String) extends PackageError
 
+  case class DownloadError(msg: String) extends PackageError
+
 }
