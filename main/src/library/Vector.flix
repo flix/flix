@@ -71,10 +71,17 @@ namespace Vector {
     }
 
     ///
+    /// Returns a singleton vector containing `x``.
+    ///
+    pub def singleton(x: a): Vector[a] = region rc {
+        buildVector(rc, 1, arr -> Array.put(x, 0, arr))
+    }
+
+    ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
     pub def get(i: Int32, v: Vector[a]): a =
-        v[i]
+        Array.get(i, v)
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
