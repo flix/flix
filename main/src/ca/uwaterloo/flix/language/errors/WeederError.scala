@@ -896,4 +896,35 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+
+  /**
+    * An error raised to indicate that a loop does not iterate over any collection.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A foreach expression must start with a collection comprehension."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop does not start with collection comprehension.
+         |
+         |${code(loc, "Loop does not start with collection comprehension.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must start with collection comprehension where the collection
+         |has an instance of the Iterable type class on it.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
 }

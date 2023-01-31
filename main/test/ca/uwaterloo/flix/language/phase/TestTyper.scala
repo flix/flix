@@ -1836,4 +1836,101 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
+
+  test("TestChooseStar.06") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case N(E[s])
+        |    case C
+        |}
+        |
+        |def n(e: E[s && <E.N>]): _ = ???
+        |
+        |def foo(e: E[s]): E[s] = choose* e {
+        |    case E.N(x) => n(x)            // must have x <: <E.N> but this doesn't hold
+        |    case E.C    => E.C
+        |}
+        |""".stripMargin
+    expectError[TypeError.UnexpectedArgument](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.01") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Not all cases caught
+        |def isRed(c: Color[s]): Bool = choose c {
+        |    case Color.Red => true
+        |    case Color.Green => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.02") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// forgot Green intro
+        |def redToGreen(c: Color[s]): Color[s -- <Color.Red>] = choose* c {
+        |    case Color.Red => Color.Green
+        |    case Color.Green => Color.Green
+        |    case Color.Blue => Color.Blue
+        |}
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.03") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus
+        |def isRed(c: Color[s -- <Color.Blue>]): Bool = choose* c {
+        |    case Color.Red => true
+        |    case Color.Blue => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.04") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus parsing
+        |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.05") {
+    val input =
+      """
+        |restrictable enum Binary[s] {
+        |    case Zero(Binary[s]), One(Binary[s]), End
+        |}
+        |
+        |// forgot open on recursive variable use
+        |def id(b: Binary[s]): Binary[s] = choose* b {
+        |    case Binary.Zero(x) => open Binary.Zero(id(x))
+        |    case Binary.One(x) => open Binary.One(id(x))
+        |    case Binary.End => Binary.End
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
 }

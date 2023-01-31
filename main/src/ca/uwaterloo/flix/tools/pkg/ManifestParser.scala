@@ -266,7 +266,7 @@ object ManifestParser {
     */
   private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
     val stringSet = mutable.Set.empty[String]
-    for(i <- 0 until array.size()) {
+    for (i <- 0 until array.size()) {
       try {
         val s = array.getString(i)
         stringSet.add(s)

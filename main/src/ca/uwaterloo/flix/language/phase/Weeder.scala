@@ -829,7 +829,7 @@ object Weeder {
       val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
       val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForEachFragment.ForEach(sp11, pat, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -839,7 +839,7 @@ object Weeder {
               mkApplyFqn(fqnForEach, fparams, loc)
           }
 
-        case (ParsedAst.ForEachFragment.Guard(sp11, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
           mapN(visitExp(exp1, senv)) { e1 =>
             val loc = mkSL(sp11, sp12).asSynthetic
             WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
@@ -863,7 +863,7 @@ object Weeder {
       }
 
       foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForYieldFragment.ForYield(sp11, pat, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
           mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -872,7 +872,7 @@ object Weeder {
               mkApplyFqn(fqnFlatMap, fparams, loc)
           }
 
-        case (ParsedAst.ForYieldFragment.Guard(sp11, exp1, sp12), exp0) =>
+        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
           mapN(visitExp(exp1, senv)) {
             case e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
@@ -880,6 +880,110 @@ object Weeder {
               WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
           }
       }
+
+    case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
+      //
+      // Rewrites a foreach-yield loop into a series of iterators
+      // wrapped in a Collectable.collect call:
+      //
+      //     foreach (x <- xs) yield x
+      //
+      // desugars to
+      //
+      //     region rc {
+      //         Collectable.collect(
+      //             Iterator.flatMap(
+      //                 match x -> Iterator.singleton(rc, x),
+      //                 Iterable.iterator(rc, xs)
+      //             )
+      //         )
+      //     }
+      //
+      val baseLoc = mkSL(sp1, sp2).asSynthetic
+
+      // Declare functions
+      val fqnEmpty = "Iterator.empty"
+      val fqnSingleton = "Iterator.singleton"
+      val fqnFlatMap = "Iterator.flatMap"
+      val fqnIterator = "Iterable.iterator"
+      val fqnCollect = "Collectable.collect"
+
+      // Make region variable
+      val regionSym = "forEachYieldIteratorRegion" + Flix.Delimiter + flix.genSym.freshId()
+      val regionIdent = Name.Ident(sp1, regionSym, sp2).asSynthetic
+      val regionVar = WeededAst.Expression.Ambiguous(Name.mkQName(regionIdent), baseLoc)
+
+      // Check that first fragment is an iterable collection
+      // Also implies that there exists at least 1 iterable collection.
+      frags.headOption match {
+        case Some(ParsedAst.ForFragment.Generator(_, _, _, _)) =>
+          // Desugar yield-exp
+          //    ... yield x
+          // Becomes
+          //     Iterator.singleton(rc, x)
+          val yieldExp = mapN(visitExp(exp, senv)) {
+            case e =>
+              mkApplyFqn(fqnSingleton, List(regionVar, e), baseLoc)
+          }
+
+          // Desugar loop
+          val loop = foldRight(frags)(yieldExp) {
+            case (ParsedAst.ForFragment.Generator(sp11, pat1, exp1, sp12), acc) =>
+              // Case 1: a generator fragment i.e. `pat <- exp`
+              // This should be desugared into
+              //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
+              mapN(visitPattern(pat1), visitExp(exp1, senv)) {
+                case (p, e1) =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+
+                  // 1. Create iterator from exp1
+                  val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc)
+
+                  // 2. Create match-lambda with pat1 as params and acc as body
+                  val lambda = mkLambdaMatch(sp11, p, acc, sp12)
+
+                  // 3. Wrap in flatmap call
+                  val fparams = List(lambda, iter)
+                  mkApplyFqn(fqnFlatMap, fparams, loc)
+              }
+
+            case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), acc)
+            =>
+              // Case 2: a guard fragment i.e. `if exp`
+              // This should be desugared into
+              //     if (exp) accExp else Iterator.empty(rc)
+              mapN(visitExp(exp1, senv)) {
+                case e1 =>
+                  val loc = mkSL(sp11, sp12).asSynthetic
+
+                  // 1. Create empty iterator
+                  val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc)
+
+                  // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
+                  WeededAst.Expression.IfThenElse(e1, acc, empty, loc)
+              }
+          }
+
+          // Wrap in Collectable.collect function.
+          // The nested calls to Iterator.flatMap are wrapped in
+          // this function.
+          val resultExp = mapN(loop) {
+            case l => mkApplyFqn(fqnCollect, List(l), baseLoc)
+          }
+
+          // Wrap in region
+          mapN(resultExp) {
+            case e => WeededAst.Expression.Scope(regionIdent, e, baseLoc)
+          }
+
+        case Some(ParsedAst.ForFragment.Guard(_, _, _)) =>
+          val err = WeederError.IllegalForFragment(baseLoc)
+          WeededAst.Expression.Error(err).toSoftFailure(err)
+
+        case None => // Unreachable case since parser rejects foreach () yield exp
+          throw InternalCompilerException("Unexpected empty ForEachYield loop", baseLoc)
+      }
+    }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe, exp1, exp2, sp2) =>
       //
@@ -3073,6 +3177,7 @@ object Weeder {
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
