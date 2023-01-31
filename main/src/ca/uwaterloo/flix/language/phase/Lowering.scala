@@ -231,7 +231,7 @@ object Lowering {
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
+        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, _, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
           val caseSc = visitScheme(caseSc0)
           val caseSym = visitRestrictableCaseSym(caseSym0)

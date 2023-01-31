@@ -95,7 +95,7 @@ object RestrictableChooseInference {
           // Γ ⊢ e: τ_in
           (constrs, tpe, pur, eff) <- Typer.inferExp(exp0, root)
           patTpes <- inferRestrictableChoicePatterns(rules0.map(_.pat), root)
-//          _ <- unifyTypeM(tpe :: patTpes, loc)
+          _ <- unifyTypeM(tpe :: patTpes, loc)
 
           // τ_in = (... + l_i(τ_i) + ...)[φ_in]
           _ <- unifyTypeM(enumType, tpe, loc)
@@ -194,7 +194,7 @@ object RestrictableChooseInference {
       val caze = decl.cases(symUse.sym)
 
       // Instantiate the type scheme of the case.
-      val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+      val (_, tagType) = Scheme.instantiate(caze.expSc, loc.asSynthetic)
 
       //
       // The tag type is a function from the type of variant to the type of the enum.
@@ -326,7 +326,7 @@ object RestrictableChooseInference {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, tagType) = Scheme.instantiate(caze.patSc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.

@@ -463,7 +463,7 @@ object Documentor {
     * Returns the given case `caze` as a JSON value.
     */
   private def visitRestrictableCase(caze: RestrictableCase)(implicit flix: Flix): JObject = caze match {
-    case RestrictableCase(sym, _, _, _) =>
+    case RestrictableCase(sym, _, _, _, _) =>
       val tpe = FormatType.formatType(caze.tpe)
       ("tag" -> sym.name) ~ ("tpe" -> tpe)
   }
