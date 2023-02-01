@@ -45,7 +45,7 @@ object ManifestParser {
     * which should have the .toml format and
     * returns an error if there are parsing
     * errors. The path `p` should be where `s`
-    * comes from
+    * comes from.
     */
   def parse(s: String, p: Path): Result[Manifest, ManifestError] = {
     val stringReader = new StringReader(s)
@@ -61,7 +61,7 @@ object ManifestParser {
   /**
     * Creates a Manifest from the TomlParseResult
     * which should be at path `p` and returns an
-    * error if there are parsing errors
+    * error if there are parsing errors.
     */
   private def createManifest(parser: TomlParseResult, p: Path): Result[Manifest, ManifestError] = {
     val errors = parser.errors
@@ -103,10 +103,9 @@ object ManifestParser {
   }
 
   /**
-    * Parses a String which should be at
-    * `propString` and returns the String
-    * or an error if the result cannot be
-    * found
+    * Parses a String which should be at `propString`
+    * and returns the String or an error if the result
+    * cannot be found.
     */
   private def getRequiredStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
     try {
@@ -122,9 +121,8 @@ object ManifestParser {
   }
 
   /**
-    * Parses a String which might be at
-    * `propString` and returns the String
-    * as an Option
+    * Parses a String which might be at `propString`
+    * and returns the String as an Option.
     */
   private def getOptionalStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
     try {
@@ -137,10 +135,9 @@ object ManifestParser {
   }
 
   /**
-    * Parses an Array which should be at
-    * `propString` and returns the Array
-    * or an error if the result cannot be
-    * found
+    * Parses an Array which should be at `propString`
+    * and returns the Array or an error if the result
+    * cannot be found.
     */
   private def getRequiredArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
     try {
@@ -156,10 +153,9 @@ object ManifestParser {
   }
 
   /**
-    * Parses a Table which should be at
-    * `propString` and returns the Table
-    * or an error if the result cannot be
-    * found
+    * Parses a Table which should be at `propString`
+    * and returns the Table or an error if the result
+    * cannot be found.
     */
   private def getRequiredTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlTable, ManifestError] = {
     try {
@@ -175,10 +171,8 @@ object ManifestParser {
   }
 
   /**
-    * Converts a String `s` to a
-    * semantic version and returns
-    * an error if the String is not
-    * of the correct format
+    * Converts a String `s` to a semantic version and returns
+    * an error if the String is not of the correct format.
     */
   private def toSemVer(s: String, p: Path): Result[SemVer, ManifestError] = {
     val splitVersion = s.split('.')
@@ -197,16 +191,11 @@ object ManifestParser {
   }
 
   /**
-    * Converts a TomlTable to a list
-    * of Dependencies. This requires
-    * the value of each entry is a String
-    * which can be converted to a
-    * semantic version. `flixDep` decides
-    * whether the Dependency is a Flix
-    * or MavenDependency and `prodDep`
-    * decides whether it is for production
-    * or development. Returns an error
-    * if anything is not as expected
+    * Converts a TomlTable to a list of Dependencies. This requires
+    * the value of each entry is a String which can be converted to a
+    * semantic version. `flixDep` decides whether the Dependency is a Flix
+    * or MavenDependency and `prodDep` decides whether it is for production
+    * or development. Returns an error if anything is not as expected.
     */
   private def collectDependencies(deps: TomlTable, flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
     val depsEntries = deps.entrySet()
@@ -217,21 +206,33 @@ object ManifestParser {
       try {
         toSemVer(depVer.asInstanceOf[String], p) match {
           case Ok(version) => if (flixDep) {
-            if (prodDep) {
-              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Production))
-            } else {
-              depsSet.add(Dependency.FlixDependency(depName, version, DependencyKind.Development))
+            depName.split(':') match {
+              case Array(repo, rest) =>
+                rest.split('/') match {
+                  case Array(username, projectName) =>
+                    if(repo == "github") {
+                      if (prodDep) {
+                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
+                      } else {
+                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Development))
+                      }
+                    } else {
+                      return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
+                    }
+
+                  case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+                }
+              case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
             }
           } else {
-            val depNameSplit = depName.split(':')
-            if (depNameSplit.length == 2) {
-              if (prodDep) {
-                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Production))
-              } else {
-                depsSet.add(Dependency.MavenDependency(depNameSplit.apply(0), depNameSplit.apply(1), version, DependencyKind.Development))
-              }
-            } else {
-              return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+            depName.split(':') match {
+              case Array(groupId, artifactId) =>
+                if (prodDep) {
+                  depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
+                } else {
+                  depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
+                }
+              case _ => return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
             }
           }
           case Err(e) => return Err(e)
@@ -244,10 +245,8 @@ object ManifestParser {
   }
 
   /**
-    * Converts a TomlArray to a
-    * list of Strings. Returns an
-    * error if anything in the
-    * array is not a String
+    * Converts a TomlArray to a list of Strings. Returns
+    * an error if anything in the array is not a String.
     */
   private def convertTomlArrayToStringList(array: TomlArray, p: Path): Result[List[String], ManifestError] = {
     val stringSet = mutable.Set.empty[String]

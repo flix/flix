@@ -30,4 +30,8 @@ object SemVer {
 /**
   * A semantic version number.
   */
-case class SemVer(major: Int, minor: Int, patch: Int)
+case class SemVer(major: Int, minor: Int, patch: Int) {
+  override def toString: String = {
+    s"$major.$minor.$patch"
+  }
+}
