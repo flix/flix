@@ -107,7 +107,7 @@ namespace Vector {
     ///
     pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
         unsafe_cast (
-            let arr = Array.new(rc, len);
+            let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
             let _ = f(arr);
             arr
             ) as Array[a, true] \ ef
@@ -117,8 +117,8 @@ namespace Vector {
     ///
     pub def buildVector2(rc: Region[r], len1: Int32, len2: Int32, f: Array[a, r] -> Array[b, r] -> Unit \ ef): (Vector[a], Vector[b]) \ ef =
         unsafe_cast (
-            let arr1 = Array.new(rc, len1);
-            let arr2 = Array.new(rc, len2);
+            let arr1 = if (len1 > 0) Array.new(rc, len1) else Array#{} @ rc;
+            let arr2 = if (len2 > 0) Array.new(rc, len2) else Array#{} @ rc;
             let _ = f(arr1, arr2);
             (arr1, arr2)
             ) as (Array[a, true], Array[b, true]) \ ef
