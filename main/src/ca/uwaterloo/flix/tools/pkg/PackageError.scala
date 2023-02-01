@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait Repository
+sealed trait PackageError
 
-object Repository {
-  case object GitHub extends Repository
-}
+object PackageError {
+  case class VersionDoesNotExist(msg: String) extends PackageError
 
-sealed trait Dependency
+  case class InvalidProjectName(msg: String) extends PackageError
 
-object Dependency {
+  case class NoReleasesFound(msg: String) extends PackageError
 
-  // TODO: What identifies Flix packages?
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, kind: DependencyKind) extends Dependency
+  case class ProjectNotFound(msg: String) extends PackageError
 
-  case class MavenDependency(groupId: String, artifactId: String, version: SemVer, kind: DependencyKind) extends Dependency
+  case class JsonError(msg: String) extends PackageError
+
+  case class DownloadError(msg: String) extends PackageError
 
 }
