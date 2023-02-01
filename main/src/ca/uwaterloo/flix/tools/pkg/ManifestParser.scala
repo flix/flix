@@ -207,14 +207,19 @@ object ManifestParser {
         toSemVer(depVer.asInstanceOf[String], p) match {
           case Ok(version) => if (flixDep) {
             depName.split(':') match {
-              case Array(host, rest) =>
+              case Array(repo, rest) =>
                 rest.split('/') match {
                   case Array(username, projectName) =>
-                    if (prodDep) {
-                      depsSet.add(Dependency.FlixDependency(host, username, projectName, version, DependencyKind.Production))
+                    if(repo == "github") {
+                      if (prodDep) {
+                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
+                      } else {
+                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Development))
+                      }
                     } else {
-                      depsSet.add(Dependency.FlixDependency(host, username, projectName, version, DependencyKind.Development))
+                      return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
                     }
+
                   case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
                 }
               case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))

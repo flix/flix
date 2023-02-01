@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, Manifest, ManifestError, ManifestParser, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, Manifest, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 
@@ -124,9 +124,9 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency("github", "mlutze", "flixball", SemVer(3,2,1), DependencyKind.Production),
-                                 Dependency.FlixDependency("github", "jls", "tic-tac-toe", SemVer(1,2,3), DependencyKind.Production),
-                                 Dependency.FlixDependency("github", "fuzzer", "fuzzer", SemVer(1,2,3), DependencyKind.Development),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1,2,3), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3,2,1), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1,2,3), DependencyKind.Development),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1,2,3), DependencyKind.Production),
                                  Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,3), DependencyKind.Development)))(actual = {
