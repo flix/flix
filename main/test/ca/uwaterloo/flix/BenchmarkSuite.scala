@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2023 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,10 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-class ExampleSuite extends FlixSuite(incremental = true) {
+class BenchmarkSuite extends FlixSuite(incremental = true) {
 
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
+  private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  mkTestDir("examples")
-  mkTestDir("examples/larger-examples/datalog")
-  mkTestDir("examples/larger-examples/program-analysis")
-  mkTestDir("examples/larger-examples/restrictable-variants")
+  mkTestDir("main/src/resources/benchmark")
 
 }

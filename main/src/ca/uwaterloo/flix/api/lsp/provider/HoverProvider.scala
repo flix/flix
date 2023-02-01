@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, MarkupContent, MarkupKind, Posi
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.phase.unification.SetFormula
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeType
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -78,10 +79,11 @@ object HoverProvider {
 
   private def hoverType(tpe: Type, loc: SourceLocation, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     val minTpe = minimizeType(tpe)
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix
-         |${FormatType.formatType(minTpe)}
+         |${FormatType.formatType(minTpe)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)
@@ -94,10 +96,11 @@ object HoverProvider {
     val minPur = minimizeType(pur)
     val minEff = minimizeType(eff)
     val minTpe = minimizeType(tpe)
+    val lowerAndUpperBounds = SetFormula.formatLowerAndUpperBounds(minTpe)
     val markup =
       s"""${mkCurrentMsg(current)}
          |```flix
-         |${formatTypAndEff(minTpe, minPur, minEff)}
+         |${formatTypAndEff(minTpe, minPur, minEff)}$lowerAndUpperBounds
          |```
          |""".stripMargin
     val contents = MarkupContent(MarkupKind.Markdown, markup)

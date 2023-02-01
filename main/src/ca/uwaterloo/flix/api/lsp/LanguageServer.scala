@@ -102,7 +102,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
-    Console.println(s"LSP listening on: '$getAddress'.")
+    Console.println(s"Listen on '$getAddress'.")
   }
 
   /**
@@ -110,13 +110,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
     /* nop */
+    Console.println(s"Client at '${ws.getRemoteSocketAddress}' connected.")
   }
 
   /**
     * Invoked when a client disconnects.
     */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
-    /* nop */
+    Console.println(s"Client at '${ws.getRemoteSocketAddress}' disconnected.")
   }
 
   /**

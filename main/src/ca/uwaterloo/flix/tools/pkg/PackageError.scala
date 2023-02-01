@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2023 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.util.{FlixSuite, Options}
+sealed trait PackageError
 
-class ExampleSuite extends FlixSuite(incremental = true) {
+object PackageError {
+  case class VersionDoesNotExist(msg: String) extends PackageError
 
-  private implicit val TestOptions: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
+  case class InvalidProjectName(msg: String) extends PackageError
 
-  mkTestDir("examples")
-  mkTestDir("examples/larger-examples/datalog")
-  mkTestDir("examples/larger-examples/program-analysis")
-  mkTestDir("examples/larger-examples/restrictable-variants")
+  case class NoReleasesFound(msg: String) extends PackageError
+
+  case class ProjectNotFound(msg: String) extends PackageError
+
+  case class JsonError(msg: String) extends PackageError
+
+  case class DownloadError(msg: String) extends PackageError
 
 }
