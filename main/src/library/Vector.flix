@@ -549,10 +549,49 @@ namespace Vector {
         updateSequence(i, sub, b)
 
     ///
-    /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
+    /// Returns a copy of `v` with `sep` inserted between every two adjacent elements.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, v)
+    pub def intersperse(sep: a, v: Vector[a]): Vector[a] = region rc {
+        let len1 = length(v);
+        let len2 = len1 + len1 - 1;
+        buildVector(rc, len2, arr ->
+            forEachWithIndex((i, x) ->
+                if (i == 0)
+                    Array.put(x, 0, arr)
+                else {
+                    let j = i + i;
+                    Array.put(sep, j - 1, arr);
+                    Array.put(x, j, arr)
+                }, v))
+        }
+
+    ///
+    /// Returns the concatenation of the elements in `vs` with the elements
+    /// of `sep` inserted between every two adjacent elements.
+    ///
+    pub def intercalate(sep: Vector[a], vs: Vector[Vector[a]]): Vector[a] = region rc {
+        let count = length(vs);
+        let sepLength = length(sep);
+        let sepCount = if (count < 2) 0 else count - 1;
+        let len = sumLengths(vs) + (sepCount * sepLength);
+        let pos = ref 0 @ rc;
+        let sepArr = toArray(rc, sep);
+        buildVector(rc, len, arr -> {
+            forEachWithIndex((i, v) ->
+                if (i == 0) {
+                    let a1 = toArray(rc, v);
+                    Array.updateSequence!(0, a1, arr);
+                    pos := length(v)
+                } else {
+                    let ix = deref pos;
+                    Array.updateSequence!(ix, sepArr, arr);
+                    let ix1 = ix + sepLength;
+                    let vArr = toArray(rc, v);
+                    Array.updateSequence!(ix1, vArr, arr);
+                    pos := ix1 + length(v)
+                }, vs)
+            })
+    }
 
     ///
     /// Sum the lengths of a vector of vectors.
@@ -561,6 +600,36 @@ namespace Vector {
     ///
     def sumLengths(vs: Vector[Vector[a]]): Int32 =
         foldLeft((acc, a) -> acc + length(a), 0, vs)
+
+    ///
+    /// Returns the transpose of `vs`.
+    ///
+    /// Returns a non-transposed copy of `vs` if the dimensions of the elements of `vs` are mismatched.
+    ///
+    pub def transpose(vs: Vector[Vector[a]]): Vector[Vector[a]] =
+        let ilen = length(vs);
+        if (ilen == 0)
+            empty()
+        else {
+            let jlen = length(get(0, vs));
+            if (jlen == 0 or nonUniform(jlen, vs))
+                // Non-transposing nested copy
+                init(i -> slice(start = 0, end = length(get(i, vs)), get(i, vs)), ilen)
+            else
+                init(i -> init(j -> get(i, get(j, vs)), ilen), jlen)
+        }
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def nonUniform(l: Int32, vs: Vector[Vector[a]]): Bool =
+        exists(x -> length(x) != l, vs)
+
+    ///
+    /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
+    ///
+    pub def replace(from: {from = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.

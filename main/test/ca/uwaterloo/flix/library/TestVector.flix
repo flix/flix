@@ -30,11 +30,17 @@ namespace TestVector {
     def vectorOf5(u: a, v: a, w: a, x: a, y: a): Vector[a] =
         List.toVector(u :: v :: w :: x :: y :: Nil)
 
+    def vectorOf6(t: a, u: a, v: a, w: a, x: a, y: a): Vector[a] =
+        List.toVector(t :: u :: v :: w :: x :: y :: Nil)
+
     def vectorOf7(s: a, t: a, u: a, v: a, w: a, x: a, y: a): Vector[a] =
         List.toVector(s :: t :: u :: v :: w :: x :: y :: Nil)
 
     def vectorOf8(r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Vector[a] =
         List.toVector(r :: s :: t :: u :: v :: w :: x :: y :: Nil)
+
+    def vectorOf10(p: a, q: a, r: a, s: a, t: a, u: a, v: a, w: a, x: a, y: a): Vector[a] =
+        List.toVector(p :: q :: r :: s :: t :: u :: v :: w :: x :: y :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -1235,7 +1241,7 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def intersperse01(): Bool =
         let v = Vector.intersperse(11, Vector.empty());
@@ -1267,7 +1273,7 @@ namespace TestVector {
 
     @test
     def intercalate01(): Bool =
-        let v = Vector.intercalate(Vector.empty(): Vector[Int32], (Vector.empty()): Vector[Vector[Int32]]);
+        let v = Vector.intercalate(Vector.empty(): Vector[Int32], Vector.empty(): Vector[Vector[Int32]]);
         Vector.sameElements(v, Vector.empty(): Vector[Int32])
 
     @test
@@ -1277,7 +1283,7 @@ namespace TestVector {
 
     @test
     def intercalate03(): Bool =
-        let v = Vector.intercalate(vectorOf3(11, 12, 13), (Vector.empty()): Vector[Vector[Int32]]);
+        let v = Vector.intercalate(vectorOf3(11, 12, 13), Vector.empty(): Vector[Vector[Int32]]);
         Vector.sameElements(v, Vector.empty(): Vector[Int32])
 
     @test
@@ -1287,18 +1293,18 @@ namespace TestVector {
 
     @test
     def intercalate05(): Bool =
-        let v = Vector.intercalate(vectorOf3(11, 12, 13), Array#{Vector.singleton(1), vectorOf2(2, 3)} @ r);
-        Vector.sameElements(v, Array#{1,11,12,13,2,3} @ r)
+        let v = Vector.intercalate(vectorOf3(11, 12, 13), vectorOf2(Vector.singleton(1), vectorOf2(2, 3)));
+        Vector.sameElements(v, vectorOf6(1,11,12,13,2,3))
 
     @test
     def intercalate06(): Bool =
-        let v = Vector.intercalate(Vector.empty(): Vector[Int32], Array#{Vector.singleton(1), vectorOf2(2, 3), Vector.singleton(4)} @ r);
-        Vector.sameElements(v, Array#{1,2,3,4} @ r)
+        let v = Vector.intercalate(Vector.empty(): Vector[Int32], vectorOf3(Vector.singleton(1), vectorOf2(2, 3), Vector.singleton(4)));
+        Vector.sameElements(v, vectorOf4(1, 2, 3, 4))
 
     @test
     def intercalate07(): Bool =
-        let v = Vector.intercalate(vectorOf3(11, 12, 13), Array#{Vector.singleton(1), vectorOf2(2, 3), Vector.singleton(4)} @ r);
-        Vector.sameElements(v, Array#{1,11,12,13,2,3,11,12,13,4} @ r)
+        let v = Vector.intercalate(vectorOf3(11, 12, 13), vectorOf3(Vector.singleton(1), vectorOf2(2, 3), Vector.singleton(4)));
+        Vector.sameElements(v, vectorOf10(1, 11, 12, 13, 2, 3, 11, 12, 13, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // transpose                                                               //
@@ -1307,134 +1313,134 @@ namespace TestVector {
     @test
     def transpose01(): Bool =
         let v = Vector.transpose(Vector.empty());
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b: List[List[Unit]] == Nil
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l: List[List[Unit]] == Nil
 
     @test
     def transpose02(): Bool =
-        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty()} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == Nil :: Nil
+        let v: Vector[Vector[Int32]] = Vector.transpose(Vector.singleton(Vector.empty()));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == Nil :: Nil
 
     @test
     def transpose03(): Bool =
-        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty()} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == Nil :: Nil :: Nil
+        let v: Vector[Vector[Int32]] = Vector.transpose(vectorOf2(Vector.empty(), Vector.empty()));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == Nil :: Nil :: Nil
 
     @test
     def transpose04(): Bool =
-        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty(), Vector.empty()} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == Nil :: Nil :: Nil :: Nil
+        let v: Vector[Vector[Int32]] = Vector.transpose(vectorOf3(Vector.empty(), Vector.empty(), Vector.empty()));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == Nil :: Nil :: Nil :: Nil
 
     @test
     def transpose05(): Bool =
-        let v = Vector.transpose(Array#{ Vector.singleton(1) } @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: Nil) :: Nil
+        let v = Vector.transpose(Vector.singleton(Vector.singleton(1)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: Nil) :: Nil
 
     @test
     def transpose06(): Bool =
-        let v = Vector.transpose(Array#{vectorOf2(1, 2)} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: Nil
+        let v = Vector.transpose(Vector.singleton(vectorOf2(1, 2)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: Nil) :: (2 :: Nil) :: Nil
 
     @test
     def transpose07(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3)} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+        let v = Vector.transpose(Vector.singleton(vectorOf3(1, 2, 3)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
 
     @test
     def transpose08(): Bool =
-        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+        let v = Vector.transpose(Vector.singleton(vectorOf4(1, 2, 3, 4)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
 
     @test
     def transpose09(): Bool =
-        let v = Vector.transpose(Array#{Vector.singleton(1), Vector.singleton(2)} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf2(Vector.singleton(1), Vector.singleton(2)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: Nil) :: Nil
 
     @test
     def transpose10(): Bool =
-        let v = Vector.transpose(Array#{Vector.singleton(1), Vector.singleton(2), Vector.singleton(3)} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(Vector.singleton(1), Vector.singleton(2), Vector.singleton(3)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: 3 :: Nil) :: Nil
 
     @test
     def transpose11(): Bool =
-        let v = Vector.transpose(Array#{Vector.singleton(1), Vector.singleton(2), Vector.singleton(3), Vector.singleton(4)} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf4(Vector.singleton(1), Vector.singleton(2), Vector.singleton(3), Vector.singleton(4)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
 
     @test
     def transpose12(): Bool =
-        let v = Vector.transpose(Array#{vectorOf2(1, 2), Array#{3, 4} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf2(vectorOf2(1, 2), vectorOf2(3, 4)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
 
     @test
     def transpose13(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf2(vectorOf3(1, 2, 3), vectorOf3(4, 5, 6)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
 
     @test
     def transpose14(): Bool =
-        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r, Array#{5, 6, 7, 8} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf2(vectorOf4(1, 2, 3, 4), vectorOf4(5, 6, 7, 8)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
 
     @test
     def transpose15(): Bool =
-        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4, 5} @ r, Array#{6, 7, 8, 9, 10} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf2(vectorOf5(1, 2, 3, 4, 5), vectorOf5(6, 7, 8, 9, 10)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
 
     @test
     def transpose16(): Bool =
-        let v = Vector.transpose(Array#{vectorOf2(1, 2), Array#{3, 4} @ r, Array#{5, 6} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(vectorOf2(1, 2), vectorOf2(3, 4), vectorOf2(5, 6)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
 
     @test
     def transpose17(): Bool =
-        let v = Vector.transpose(Array#{vectorOf2(1, 2), Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7,8} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf4(vectorOf2(1, 2), vectorOf2(3, 4), vectorOf2(5, 6), vectorOf2(7,8)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
 
     @test
     def transpose18(): Bool =
-        let v = Vector.transpose(Array#{vectorOf2(1, 2), Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7, 8} @ r, Array#{9, 10} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf5(vectorOf2(1, 2), vectorOf2(3, 4), vectorOf2(5, 6), vectorOf2(7, 8), vectorOf2(9, 10)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
 
     @test
     def transpose19(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), vectorOf3(4, 5, 6) Array#{7, 8, 9} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(vectorOf3(1, 2, 3), vectorOf3(4, 5, 6), vectorOf3(7, 8, 9)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
 
     @test
     def transpose20(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5} @ r, Array#{7, 8, 9} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(vectorOf3(1, 2, 3), vectorOf2(4, 5), vectorOf3(7, 8, 9)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
 
     @test
     def transpose21(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Vector.empty(), Array#{7, 8, 9} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(vectorOf3(1, 2, 3), Vector.empty(), vectorOf3(7, 8, 9)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
 
     @test
     def transpose22(): Bool =
-        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), vectorOf3(4, 5, 6) Array#{7, 8, 9, 10} @ r} @ r);
-        let b = Vector.toList(a) |> List.map(Vector.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+        let v = Vector.transpose(vectorOf3(vectorOf3(1, 2, 3), vectorOf3(4, 5, 6), vectorOf4(7, 8, 9, 10)));
+        let l = Vector.toList(v) |> List.map(Vector.toList);
+        l == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // isPrefixOf                                                              //
@@ -1490,7 +1496,7 @@ namespace TestVector {
 
     @test
     def isPrefixOf13(): Bool =
-        Vector.isPrefixOf(vectorOf3(1, 2, 3), Array#{89,11,1,2,3,4} @ r) == false
+        Vector.isPrefixOf(vectorOf3(1, 2, 3), vectorOf6(89, 11, 1, 2, 3, 4)) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // isInfixOf                                                               //
@@ -1546,7 +1552,7 @@ namespace TestVector {
 
     @test
     def isInfixOf13(): Bool =
-        Vector.isInfixOf(vectorOf3(1, 2, 3), Array#{89,11,1,2,3,4} @ r)
+        Vector.isInfixOf(vectorOf3(1, 2, 3), vectorOf6(89, 11, 1, 2, 3, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // isSuffixOf                                                              //
@@ -1602,10 +1608,10 @@ namespace TestVector {
 
     @test
     def isSuffixOf13(): Bool =
-        Vector.isSuffixOf(vectorOf3(1, 2, 3), Array#{89,11,1,2,3} @ r)
+        Vector.isSuffixOf(vectorOf3(1, 2, 3), vectorOf5(89, 11, 1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
-    // eq                                                                      //
+    // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
@@ -1638,12 +1644,12 @@ namespace TestVector {
 
     @test
     def testSameElements08(): Bool =
-        (Array#{1,2,3,4} @ r) `sameElements` Array#{1,2,3,4} @ r
+        (vectorOf4(1,2,3,4)) `sameElements` vectorOf4(1,2,3,4)
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-
+/*
     @test
     def testCompare01(): Bool =
         (Vector.empty(): Vector[Int32]) `Vector.compare` (Vector.empty(): Vector[Int32]) == Comparison.EqualTo
