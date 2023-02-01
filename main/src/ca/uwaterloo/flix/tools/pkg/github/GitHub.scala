@@ -76,12 +76,12 @@ object GitHub {
     * Gets the project release with the highest semantic version.
     */
   def getLatestRelease(project: Project): Result[Release, PackageError] = {
-    getReleases(project) match {
-      case Ok(releases) => releases.maxByOption(_.version) match {
-        case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
-        case Some(latest) => Ok(latest)
-      }
-      case Err(e) => Err(e)
+    getReleases(project).flatMap {
+      releases =>
+        releases.maxByOption(_.version) match {
+          case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
+          case Some(latest) => Ok(latest)
+        }
     }
   }
 
@@ -89,13 +89,12 @@ object GitHub {
     * Gets the project release with the relevant semantic version.
     */
   def getSpecificRelease(project: Project, version: SemVer): Result[Release, PackageError] = {
-    try {
-      Ok(getReleases(project) match {
-        case Ok(releases) => releases.filter(release => release.version == version).head
-        case Err(e) => return Err(e)
-      })
-    } catch {
-      case _: NoSuchElementException => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+    getReleases(project).flatMap {
+      releases =>
+        releases.find(r => r.version == version) match {
+          case None => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+          case Some(release) => Ok(release)
+        }
     }
   }
 
