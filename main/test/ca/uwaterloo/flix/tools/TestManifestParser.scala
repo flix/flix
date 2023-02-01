@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, Manifest, ManifestError, ManifestParser, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 

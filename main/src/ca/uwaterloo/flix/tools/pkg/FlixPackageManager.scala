@@ -31,7 +31,6 @@ object FlixPackageManager {
 
   // TODO: Move functionality from "Packager" in here.
 
-  //TODO: tests - how?
   /**
     * Installs all the Flix dependencies for a Manifest.
     */
@@ -87,7 +86,7 @@ object FlixPackageManager {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
                 out.println(s"Installation of $assetName completed")
-                newDownloads.addOne(assetName)
+                newDownloads.addOne(project + "/" + s"ver${release.version.toString}" + "/" + assetName)
               } else {
                 out.println(s"$assetName already exists")
               }
