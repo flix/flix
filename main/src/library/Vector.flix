@@ -1194,21 +1194,16 @@ namespace Vector {
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
-        let len = length(v);
-        let l = unsafe_cast MutList.new(rc) as MutList[Int32, true] \ ef;
-        def loop(i) = {
-            if (i >= len)
-                ()
-            else {
-                if (f(get(i, v))) {
-                    unsafe_cast MutList.push!(i, l) as Unit \ ef
-                } else ();
-                loop(i + 1)
-            }
-        };
-        loop(0);
-        unsafe_cast MutList.toArray(rc, l) as Array[Int32, true] \ ef
+        unsafe_cast findIndicesHelper(rc, f, v) as Vector[Int32] \ ef
     }
+
+    ///
+    /// Helper for `findIndices`.
+    ///
+    def findIndicesHelper(rc: Region[r], f: a -> Bool \ ef, v: Vector[a]): Array[Int32, r] \ { ef, Write(r) } =
+        let l = MutList.new(rc);
+        forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
+        MutList.toArray(rc, l)
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.

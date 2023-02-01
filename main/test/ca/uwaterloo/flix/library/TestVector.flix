@@ -24,6 +24,9 @@ namespace TestVector {
     def vectorOf3(w: a, x: a, y: a): Vector[a] =
         List.toVector(w :: x :: y :: Nil)
 
+    def vectorOf5(u: a, v: a, w: a, x: a, y: a): Vector[a] =
+        List.toVector(u :: v :: w :: x :: y :: Nil)
+
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
@@ -156,61 +159,54 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def toMutDeque01(): Bool = region rc {
-        let a = (Vector.empty()): Array[Int32, _];
-        let d = new MutDeque(r): MutDeque[Int32, _];
-        Vector.toMutDeque(a) `MutDeque.sameElements` d
+        let v = Vector.empty(): Vector[Int32];
+        let d = new MutDeque(rc): MutDeque[Int32, _];
+        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+    }
 
     @test
     def toMutDeque02(): Bool = region rc {
-        let a = (Vector.singleton(1));
-
-        let d = new MutDeque(r);
+        let v = Vector.singleton(1);
+        let d = new MutDeque(rc);
         MutDeque.pushBack(1, d);
-
-        Vector.toMutDeque(a) `MutDeque.sameElements` d
+        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque03(): Bool = region rc {
-        let a = (vectorOf3(1, 2, 3));
-
-        let d = new MutDeque(r);
+        let v = vectorOf3(1, 2, 3);
+        let d = new MutDeque(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-
-        Vector.toMutDeque(a) `MutDeque.sameElements` d
+        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque04(): Bool = region rc {
-        let a = (Array#{1, 2, 3, 4, 5} @ r);
-
-        let d = new MutDeque(r);
+        let v = vectorOf5(1, 2, 3, 4, 5);
+        let d = new MutDeque(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(1, d);
-
-        Vector.toMutDeque(a) `MutDeque.sameElements` d
+        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque05(): Bool = region rc {
-        let a = (Array#{'a', 'b', 'c'} @ r);
-
-        let d = new MutDeque(r);
+        let v = vectorOf3('a', 'b', 'c');
+        let d = new MutDeque(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
-
-        Vector.toMutDeque(a) `MutDeque.sameElements` d
+        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
-*/
+
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -254,46 +250,46 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def append01(): Bool =
-        let a = Vector.append((Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.append(Vector.empty(): Vector[Int32], Vector.empty(): Vector[Int32]);
+        Vector.sameElements(v, Vector.empty(): Vector[Int32])
 
     @test
     def append02(): Bool =
-        let a = Vector.append((Vector.empty()): Array[Int32, _], Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.append(Vector.empty(): Vector[Int32], Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def append03(): Bool =
-        let a = Vector.append((Vector.empty()): Array[Int32, _], vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.append(Vector.empty(): Vector[Int32], vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def append04(): Bool =
-        let a = Vector.append(Vector.singleton(1), (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.append(Vector.singleton(1), Vector.empty(): Vector[Int32]);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def append05(): Bool =
-        let a = Vector.append(vectorOf2(1, 2), (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.append(vectorOf2(1, 2), Vector.empty(): Vector[Int32]);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def append06(): Bool =
-        let a = Vector.append(Vector.singleton(1), Array#{2} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.append(Vector.singleton(1), Vector.singleton(2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def append07(): Bool =
-        let a = Vector.append(vectorOf2(1, 2), Array#{3} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.append(vectorOf2(1, 2), Vector.singleton(3));
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     @test
     def append08(): Bool =
-        let a = Vector.append(Vector.singleton(1), Array#{2,3} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.append(Vector.singleton(1), vectorOf2(2, 3));
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
@@ -309,7 +305,7 @@ namespace TestVector {
 
     @test
     def memberOf03(): Bool =
-        Vector.memberOf(0, Vector.empty()) == true
+        Vector.memberOf(1, Vector.singleton(1)) == true
 
     @test
     def memberOf04(): Bool =
@@ -333,7 +329,7 @@ namespace TestVector {
 
     @test
     def indexOf01(): Bool =
-        Vector.indexOf(0, (Vector.empty()): Array[Int32, _]) == None
+        Vector.indexOf(0, Vector.empty(): Vector[Int32]) == None
 
     @test
     def indexOf02(): Bool =
@@ -361,7 +357,7 @@ namespace TestVector {
 
     @test
     def indexOfLeft01(): Bool =
-        Vector.indexOfLeft(0, (Vector.empty()): Array[Int32, _]) == None
+        Vector.indexOfLeft(0, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def indexOfLeft02(): Bool =
@@ -385,7 +381,7 @@ namespace TestVector {
 
     @test
     def indexOfLeft07(): Bool =
-        Vector.indexOfLeft(1, Array#{1,1} @ r) == Some(0)
+        Vector.indexOfLeft(1, vectorOf2(1, 1)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOfRight                                                            //
@@ -393,7 +389,7 @@ namespace TestVector {
 
     @test
     def indexOfRight01(): Bool =
-        Vector.indexOfRight(0, (Vector.empty()): Array[Int32, _]) == None
+        Vector.indexOfRight(0, Vector.empty(): Vector[Int32]) == None
 
     @test
     def indexOfRight02(): Bool =
@@ -417,7 +413,7 @@ namespace TestVector {
 
     @test
     def indexOfRight07(): Bool =
-        Vector.indexOfRight(1, Array#{1,1} @ r) == Some(1)
+        Vector.indexOfRight(1, vectorOf2(1, 1)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // indices                                                                 //
@@ -425,38 +421,38 @@ namespace TestVector {
 
     @test
     def indices01(): Bool =
-        let a = Vector.indices(0, (Vector.empty()): Array[Int32, r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
-
+        let v = Vector.indices(0, Vector.empty(): Vector[Int32]);
+        Vector.sameElements(v, Vector.empty(): Vector[Int32])
+/*
     @test
     def indices02(): Bool =
-        let a = Vector.indices(0, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.indices(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.empty(): Vector[Int32])
 
     @test
     def indices03(): Bool =
-        let a = Vector.indices(1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.empty())
+        let v = Vector.indices(1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.empty())
 
     @test
     def indices04(): Bool =
-        let a = Vector.indices(0, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.indices(0, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def indices05(): Bool =
-        let a = Vector.indices(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Vector.empty())
+        let v = Vector.indices(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Vector.empty())
 
     @test
     def indices06(): Bool =
-        let a = Vector.indices(2, vectorOf2(1, 2));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.indices(2, vectorOf2(1, 2));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def indices07(): Bool =
-        let a = Vector.indices(1, Array#{1,1} @ r);
-        Vector.sameElements(a, Array#{0,1} @ r)
+        let v = Vector.indices(1, Array#{1,1} @ r);
+        Vector.sameElements(v, Array#{0,1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -560,33 +556,33 @@ namespace TestVector {
 
     @test
     def range01(): Bool =
-        let a = Vector.range(1, 0);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.range(1, 0);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def range02(): Bool =
-        let a = Vector.range(1, 1);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.range(1, 1);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def range03(): Bool =
-        let a = Vector.range(1, 2);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.range(1, 2);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def range04(): Bool =
-        let a = Vector.range(1, 3);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.range(1, 3);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def range05(): Bool =
-        let a = Vector.range(1, 4);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.range(1, 4);
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     @test
     def range06(): Bool =
-        let a = Vector.range(-1, 3);
-        Vector.sameElements(a, Array#{-1,0,1,2} @ r)
+        let v = Vector.range(-1, 3);
+        Vector.sameElements(v, Array#{-1,0,1,2} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
@@ -594,28 +590,28 @@ namespace TestVector {
 
     @test
     def repeat01(): Bool =
-        let a = Vector.repeat(-1, 1);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.repeat(-1, 1);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def repeat02(): Bool =
-        let a = Vector.repeat(0, 1);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.repeat(0, 1);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def repeat03(): Bool =
-        let a = Vector.repeat(1, 1);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.repeat(1, 1);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def repeat04(): Bool =
-        let a = Vector.repeat(2, 1);
-        Vector.sameElements(a, Array#{1,1} @ r)
+        let v = Vector.repeat(2, 1);
+        Vector.sameElements(v, Array#{1,1} @ r)
 
     @test
     def repeat05(): Bool =
-        let a = Vector.repeat(3, 1);
-        Vector.sameElements(a, Array#{1,1,1} @ r)
+        let v = Vector.repeat(3, 1);
+        Vector.sameElements(v, Array#{1,1,1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // scan                                                                    //
@@ -623,38 +619,38 @@ namespace TestVector {
 
     @test
     def scan01(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector.empty());
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector.empty());
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def scan02(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def scan03(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def scan04(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
-        Vector.sameElements(a, Array#{1,3,5} @ r)
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
+        Vector.sameElements(v, Array#{1,3,5} @ r)
 
     @test
     def scan05(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
-        Vector.sameElements(a, Array#{1,3,4} @ r)
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
+        Vector.sameElements(v, Array#{1,3,4} @ r)
 
     @test
     def scan06(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
-        Vector.sameElements(a, Array#{1,2,4} @ r)
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
+        Vector.sameElements(v, Array#{1,2,4} @ r)
 
     @test
     def scan07(): Bool =
-        let a = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
     // scanLeft                                                                //
@@ -662,38 +658,38 @@ namespace TestVector {
 
     @test
     def scanLeft01(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, (Vector.empty()): Array[Bool, _]);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, (Vector.empty()): Array[Bool, _]);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def scanLeft02(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def scanLeft03(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def scanLeft04(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
-        Vector.sameElements(a, Array#{1,3,5} @ r)
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
+        Vector.sameElements(v, Array#{1,3,5} @ r)
 
     @test
     def scanLeft05(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
-        Vector.sameElements(a, Array#{1,3,4} @ r)
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
+        Vector.sameElements(v, Array#{1,3,4} @ r)
 
     @test
     def scanLeft06(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
-        Vector.sameElements(a, Array#{1,2,4} @ r)
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
+        Vector.sameElements(v, Array#{1,2,4} @ r)
 
     @test
     def scanLeft07(): Bool =
-        let a = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
     // scanRight                                                               //
@@ -701,38 +697,38 @@ namespace TestVector {
 
     @test
     def scanRight01(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector.empty());
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector.empty());
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def scanRight02(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
-        Vector.sameElements(a, Array#{3,1} @ r)
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false} @ r);
+        Vector.sameElements(v, Array#{3,1} @ r)
 
     @test
     def scanRight03(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true} @ r);
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def scanRight04(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
-        Vector.sameElements(a, Array#{5,3,1} @ r)
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,false} @ r);
+        Vector.sameElements(v, Array#{5,3,1} @ r)
 
     @test
     def scanRight05(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
-        Vector.sameElements(a, Array#{4,2,1} @ r)
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{false,true} @ r);
+        Vector.sameElements(v, Array#{4,2,1} @ r)
 
     @test
     def scanRight06(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
-        Vector.sameElements(a, Array#{4,3,1} @ r)
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,false} @ r);
+        Vector.sameElements(v, Array#{4,3,1} @ r)
 
     @test
     def scanRight07(): Bool =
-        let a = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
-        Vector.sameElements(a, vectorOf3(3, 2, 1))
+        let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Array#{true,true} @ r);
+        Vector.sameElements(v, vectorOf3(3, 2, 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
@@ -740,38 +736,38 @@ namespace TestVector {
 
     @test
     def map01(): Bool =
-        let a = Vector.map(i -> i > 2, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Bool, _])
+        let v = Vector.map(i -> i > 2, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Array[Bool, _])
 
     @test
     def map02(): Bool =
-        let a = Vector.map(i -> i > 2, Vector.singleton(1));
-        Vector.sameElements(a, Array#{false} @ r)
+        let v = Vector.map(i -> i > 2, Vector.singleton(1));
+        Vector.sameElements(v, Array#{false} @ r)
 
     @test
     def map03(): Bool =
-        let a = Vector.map(i -> i > 2, Array#{3} @ r);
-        Vector.sameElements(a, Array#{true} @ r)
+        let v = Vector.map(i -> i > 2, Array#{3} @ r);
+        Vector.sameElements(v, Array#{true} @ r)
 
     @test
     def map04(): Bool =
-        let a = Vector.map(i -> i > 2, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{false,false} @ r)
+        let v = Vector.map(i -> i > 2, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{false,false} @ r)
 
     @test
     def map05(): Bool =
-        let a = Vector.map(i -> i > 2, Array#{1,8} @ r);
-        Vector.sameElements(a, Array#{false, true} @ r)
+        let v = Vector.map(i -> i > 2, Array#{1,8} @ r);
+        Vector.sameElements(v, Array#{false, true} @ r)
 
     @test
     def map06(): Bool =
-        let a = Vector.map(i -> i > 2, Array#{8,1} @ r);
-        Vector.sameElements(a, Array#{true,false} @ r)
+        let v = Vector.map(i -> i > 2, Array#{8,1} @ r);
+        Vector.sameElements(v, Array#{true,false} @ r)
 
     @test
     def map07(): Bool =
-        let a = Vector.map(i -> i > 2, Array#{7,8} @ r);
-        Vector.sameElements(a, Array#{true,true} @ r)
+        let v = Vector.map(i -> i > 2, Array#{7,8} @ r);
+        Vector.sameElements(v, Array#{true,true} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithIndex                                                            //
@@ -779,38 +775,38 @@ namespace TestVector {
 
     @test
     def mapWithIndex01(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Bool, _])
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Array[Bool, _])
 
     @test
     def mapWithIndex02(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector.singleton(1));
-        Vector.sameElements(a, Array#{false} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector.singleton(1));
+        Vector.sameElements(v, Array#{false} @ r)
 
     @test
     def mapWithIndex03(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{3} @ r);
-        Vector.sameElements(a, Array#{true} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{3} @ r);
+        Vector.sameElements(v, Array#{true} @ r)
 
     @test
     def mapWithIndex04(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{false,true} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{false,true} @ r)
 
     @test
     def mapWithIndex05(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{1,8} @ r);
-        Vector.sameElements(a, Array#{false,false} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{1,8} @ r);
+        Vector.sameElements(v, Array#{false,false} @ r)
 
     @test
     def mapWithIndex06(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{8,1} @ r);
-        Vector.sameElements(a, Array#{true,true} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{8,1} @ r);
+        Vector.sameElements(v, Array#{true,true} @ r)
 
     @test
     def mapWithIndex07(): Bool =
-        let a = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{7,8} @ r);
-        Vector.sameElements(a, Array#{true,false} @ r)
+        let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Array#{7,8} @ r);
+        Vector.sameElements(v, Array#{true,false} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
@@ -820,33 +816,33 @@ namespace TestVector {
 
     @test
     def flatMap01(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def flatMap02(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def flatMap03(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def flatMap04(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), Array#{2} @ r);
-        Vector.sameElements(a, Array#{2,2} @ r)
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), Array#{2} @ r);
+        Vector.sameElements(v, Array#{2,2} @ r)
 
     @test
     def flatMap05(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,2,2} @ r)
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,2,2} @ r)
 
     @test
     def flatMap06(): Bool =
-        let a = Vector.flatMap(i -> Vector.repeat(i, i), Array#{2,3} @ r);
-        Vector.sameElements(a, Array#{2,2,3,3,3} @ r)
+        let v = Vector.flatMap(i -> Vector.repeat(i, i), Array#{2,3} @ r);
+        Vector.sameElements(v, Array#{2,2,3,3,3} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
@@ -854,33 +850,33 @@ namespace TestVector {
 
     @test
     def reverse01(): Bool =
-        let a = Vector.reverse((Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.reverse((Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def reverse02(): Bool =
-        let a = Vector.reverse(Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.reverse(Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def reverse03(): Bool =
-        let a = Vector.reverse(vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.reverse(vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def reverse04(): Bool =
-        let a = Vector.reverse(Array#{1,1} @ r);
-        Vector.sameElements(a, Array#{1,1} @ r)
+        let v = Vector.reverse(Array#{1,1} @ r);
+        Vector.sameElements(v, Array#{1,1} @ r)
 
     @test
     def reverse05(): Bool =
-        let a = Vector.reverse(vectorOf3(1, 2, 3));
-        Vector.sameElements(a, vectorOf3(3, 2, 1))
+        let v = Vector.reverse(vectorOf3(1, 2, 3));
+        Vector.sameElements(v, vectorOf3(3, 2, 1))
 
     @test
     def reverse06(): Bool =
-        let a = Vector.reverse(Array#{1,2,3,4} @ r);
-        Vector.sameElements(a, Array#{4,3,2,1} @ r)
+        let v = Vector.reverse(Array#{1,2,3,4} @ r);
+        Vector.sameElements(v, Array#{4,3,2,1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateLeft                                                              //
@@ -888,58 +884,58 @@ namespace TestVector {
 
     @test
     def rotateLeft01(): Bool =
-        let a = Vector.rotateLeft(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.rotateLeft(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def rotateLeft02(): Bool =
-        let a = Vector.rotateLeft(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.rotateLeft(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def rotateLeft03(): Bool =
-        let a = Vector.rotateLeft(0, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.rotateLeft(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def rotateLeft04(): Bool =
-        let a = Vector.rotateLeft(0, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.rotateLeft(0, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def rotateLeft05(): Bool =
-        let a = Vector.rotateLeft(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateLeft(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateLeft06(): Bool =
-        let a = Vector.rotateLeft(2, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.rotateLeft(2, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def rotateLeft07(): Bool =
-        let a = Vector.rotateLeft(3, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateLeft(3, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateLeft08(): Bool =
-        let a = Vector.rotateLeft(-1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateLeft(-1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateLeft09(): Bool =
-        let a = Vector.rotateLeft(0, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.rotateLeft(0, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     @test
     def rotateLeft10(): Bool =
-        let a = Vector.rotateLeft(1, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{2,3,1} @ r)
+        let v = Vector.rotateLeft(1, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{2,3,1} @ r)
 
     @test
     def rotateLeft11(): Bool =
-        let a = Vector.rotateLeft(2, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{3,1,2} @ r)
+        let v = Vector.rotateLeft(2, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{3,1,2} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //
@@ -947,58 +943,58 @@ namespace TestVector {
 
     @test
     def rotateRight01(): Bool =
-        let a = Vector.rotateRight(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.rotateRight(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def rotateRight02(): Bool =
-        let a = Vector.rotateRight(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.rotateRight(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def rotateRight03(): Bool =
-        let a = Vector.rotateRight(0, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.rotateRight(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def rotateRight04(): Bool =
-        let a = Vector.rotateRight(0, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.rotateRight(0, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def rotateRight05(): Bool =
-        let a = Vector.rotateRight(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateRight(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateRight06(): Bool =
-        let a = Vector.rotateRight(2, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.rotateRight(2, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def rotateRight07(): Bool =
-        let a = Vector.rotateRight(3, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateRight(3, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateRight08(): Bool =
-        let a = Vector.rotateRight(-1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2,1} @ r)
+        let v = Vector.rotateRight(-1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2,1} @ r)
 
     @test
     def rotateRight09(): Bool =
-        let a = Vector.rotateRight(0, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.rotateRight(0, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     @test
     def rotateRight10(): Bool =
-        let a = Vector.rotateRight(1, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{3,1,2} @ r)
+        let v = Vector.rotateRight(1, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{3,1,2} @ r)
 
     @test
     def rotateRight11(): Bool =
-        let a = Vector.rotateRight(2, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{2,3,1} @ r)
+        let v = Vector.rotateRight(2, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{2,3,1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // update                                                                  //
@@ -1006,38 +1002,38 @@ namespace TestVector {
 
     @test
     def update01(): Bool =
-        let a = Vector.update(0, 2, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.update(0, 2, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def update02(): Bool =
-        let a = Vector.update(-1, 2, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.update(-1, 2, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def update03(): Bool =
-        let a = Vector.update(0, 2, Vector.singleton(1));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.update(0, 2, Vector.singleton(1));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def update04(): Bool =
-        let a = Vector.update(1, 2, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.update(1, 2, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def update05(): Bool =
-        let a = Vector.update(0, 5, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{5,2} @ r)
+        let v = Vector.update(0, 5, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{5,2} @ r)
 
     @test
     def update06(): Bool =
-        let a = Vector.update(1, 5, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,5} @ r)
+        let v = Vector.update(1, 5, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,5} @ r)
 
     @test
     def update07(): Bool =
-        let a = Vector.update(2, 5, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.update(2, 5, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
@@ -1045,43 +1041,43 @@ namespace TestVector {
 
     @test
     def replace01(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.replace(from = 3, to = 4, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def replace02(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.replace(from = 3, to = 4, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def replace03(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{3} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.replace(from = 3, to = 4, Array#{3} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def replace04(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.replace(from = 3, to = 4, Array#{4} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def replace05(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{1, 2} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.replace(from = 3, to = 4, Array#{1, 2} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def replace06(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{1,3} @ r);
-        Vector.sameElements(a, Array#{1,4} @ r)
+        let v = Vector.replace(from = 3, to = 4, Array#{1,3} @ r);
+        Vector.sameElements(v, Array#{1,4} @ r)
 
     @test
     def replace07(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{3,4} @ r);
-        Vector.sameElements(a, Array#{4,4} @ r)
+        let v = Vector.replace(from = 3, to = 4, Array#{3,4} @ r);
+        Vector.sameElements(v, Array#{4,4} @ r)
 
     @test
     def replace08(): Bool =
-        let a = Vector.replace(from = 3, to = 4, Array#{3,3} @ r);
-        Vector.sameElements(a, Array#{4,4} @ r)
+        let v = Vector.replace(from = 3, to = 4, Array#{3,3} @ r);
+        Vector.sameElements(v, Array#{4,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // patch                                                                   //
@@ -1089,143 +1085,143 @@ namespace TestVector {
 
     @test
     def patch01(): Bool =
-        let a = Vector.patch(0, 0, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.patch(0, 0, (Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def patch02(): Bool =
-        let a = Vector.patch(0, 2, vectorOf2(1, 2), Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.patch(0, 2, vectorOf2(1, 2), Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def patch03(): Bool =
-        let a = Vector.patch(0, 2, Vector.empty(), vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.patch(0, 2, Vector.empty(), vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def patch04(): Bool =
-        let a = Vector.patch(-3, 3, Array#{1,2,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.patch(-3, 3, Array#{1,2,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def patch05(): Bool =
-        let a = Vector.patch(2, 3, Array#{1,2,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.patch(2, 3, Array#{1,2,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def patch06(): Bool =
-        let a = Vector.patch(0, 0, Vector.empty(), Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.patch(0, 0, Vector.empty(), Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def patch07(): Bool =
-        let a = Vector.patch(1, 0, Array#{2} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.patch(1, 0, Array#{2} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def patch08(): Bool =
-        let a = Vector.patch(0, 1, Array#{2} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.patch(0, 1, Array#{2} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def patch09(): Bool =
-        let a = Vector.patch(0, 2, Array#{2,4} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.patch(0, 2, Array#{2,4} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def patch10(): Bool =
-        let a = Vector.patch(-1, 2, Array#{2,4} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.patch(-1, 2, Array#{2,4} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def patch11(): Bool =
-        let a = Vector.patch(-1, 2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{4,2} @ r)
+        let v = Vector.patch(-1, 2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{4,2} @ r)
 
     @test
     def patch12(): Bool =
-        let a = Vector.patch(1, 2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.patch(1, 2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def patch13(): Bool =
-        let a = Vector.patch(-2, 2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.patch(-2, 2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def patch14(): Bool =
-        let a = Vector.patch(2, 2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.patch(2, 2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def patch15(): Bool =
-        let a = Vector.patch(1, 1, Array#{3} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.patch(1, 1, Array#{3} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def patch16(): Bool =
-        let a = Vector.patch(0, 2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{3,4} @ r)
+        let v = Vector.patch(0, 2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{3,4} @ r)
 
     @test
     def patch17(): Bool =
-        let a = Vector.patch(0, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 2, 3} @ r)
+        let v = Vector.patch(0, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 2, 3} @ r)
 
     @test
     def patch18(): Bool =
-        let a = Vector.patch(1, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 4, 3} @ r)
+        let v = Vector.patch(1, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 4, 3} @ r)
 
     @test
     def patch19(): Bool =
-        let a = Vector.patch(2, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 2, 4} @ r)
+        let v = Vector.patch(2, 1, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 2, 4} @ r)
 
     @test
     def patch20(): Bool =
-        let a = Vector.patch(0, 2, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 5, 3} @ r)
+        let v = Vector.patch(0, 2, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 5, 3} @ r)
 
     @test
     def patch21(): Bool =
-        let a = Vector.patch(1, 2, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 4, 5} @ r)
+        let v = Vector.patch(1, 2, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 4, 5} @ r)
 
     @test
     def patch22(): Bool =
-        let a = Vector.patch(0, 2, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 5, 3} @ r)
+        let v = Vector.patch(0, 2, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 5, 3} @ r)
 
     @test
     def patch23(): Bool =
-        let a = Vector.patch(0, 3, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 5, 6} @ r)
+        let v = Vector.patch(0, 3, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 5, 6} @ r)
 
     @test
     def patch24(): Bool =
-        let a = Vector.patch(2, 4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ r)
+        let v = Vector.patch(2, 4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 14, 15, 16, 17, 7} @ r)
 
     @test
     def patch25(): Bool =
-        let a = Vector.patch(-2, 4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ r)
+        let v = Vector.patch(-2, 4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{16, 17, 3, 4, 5, 6, 7} @ r)
 
     @test
     def patch26(): Bool =
-        let a = Vector.patch(4, 5, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ r)
+        let v = Vector.patch(4, 5, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 3, 4, 14, 15, 16} @ r)
 
     @test
     def patch27(): Bool =
-        let a = Vector.patch(4, 2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ r)
+        let v = Vector.patch(4, 2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 3, 4, 14, 15, 7} @ r)
 
     @test
     def patch28(): Bool =
-        let a = Vector.patch(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ r)
+        let v = Vector.patch(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{-2, -3, -4, -5, -6, -7, -8} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
@@ -1233,28 +1229,28 @@ namespace TestVector {
 
     @test
     def intersperse01(): Bool =
-        let a = Vector.intersperse(11, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.intersperse(11, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def intersperse02(): Bool =
-        let a = Vector.intersperse(11, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.intersperse(11, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def intersperse03(): Bool =
-        let a = Vector.intersperse(11, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,11,2} @ r)
+        let v = Vector.intersperse(11, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,11,2} @ r)
 
     @test
     def intersperse04(): Bool =
-        let a = Vector.intersperse(11, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1,11,2,11,3} @ r)
+        let v = Vector.intersperse(11, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1,11,2,11,3} @ r)
 
     @test
     def intersperse05(): Bool =
-        let a = Vector.intersperse(11, Array#{1,2,3,4} @ r);
-        Vector.sameElements(a, Array#{1,11,2,11,3,11,4} @ r)
+        let v = Vector.intersperse(11, Array#{1,2,3,4} @ r);
+        Vector.sameElements(v, Array#{1,11,2,11,3,11,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // intercalate                                                             //
@@ -1262,38 +1258,38 @@ namespace TestVector {
 
     @test
     def intercalate01(): Bool =
-        let a = Vector.intercalate((Vector.empty()): Array[Int32, r], (Vector.empty()): Array[Array[Int32, r], r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.intercalate((Vector.empty()): Vector[Int32], (Vector.empty()): Array[Vector[Int32], r]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def intercalate02(): Bool =
-        let a = Vector.intercalate((Vector.empty()): Array[Int32, r], Array#{Vector.singleton(1)} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.intercalate((Vector.empty()): Vector[Int32], Array#{Vector.singleton(1)} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def intercalate03(): Bool =
-        let a = Vector.intercalate(Array#{11,12,13} @ r, (Vector.empty()): Array[Array[Int32, r], r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.intercalate(Array#{11,12,13} @ r, (Vector.empty()): Array[Vector[Int32], r]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def intercalate04(): Bool =
-        let a = Vector.intercalate((Vector.empty()): Array[Int32, r], Array#{Vector.singleton(1), Array#{2,3} @ r} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3))
+        let v = Vector.intercalate((Vector.empty()): Vector[Int32], Array#{Vector.singleton(1), Array#{2,3} @ r} @ r);
+        Vector.sameElements(v, vectorOf3(1, 2, 3))
 
     @test
     def intercalate05(): Bool =
-        let a = Vector.intercalate(Array#{11,12,13} @ r, Array#{Vector.singleton(1), Array#{2,3} @ r} @ r);
-        Vector.sameElements(a, Array#{1,11,12,13,2,3} @ r)
+        let v = Vector.intercalate(Array#{11,12,13} @ r, Array#{Vector.singleton(1), Array#{2,3} @ r} @ r);
+        Vector.sameElements(v, Array#{1,11,12,13,2,3} @ r)
 
     @test
     def intercalate06(): Bool =
-        let a = Vector.intercalate((Vector.empty()): Array[Int32, r], Array#{Vector.singleton(1), Array#{2,3} @ r, Array#{4} @ r} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4} @ r)
+        let v = Vector.intercalate((Vector.empty()): Vector[Int32], Array#{Vector.singleton(1), Array#{2,3} @ r, Array#{4} @ r} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4} @ r)
 
     @test
     def intercalate07(): Bool =
-        let a = Vector.intercalate(Array#{11,12,13} @ r, Array#{Vector.singleton(1), Array#{2,3} @ r, Array#{4} @ r} @ r);
-        Vector.sameElements(a, Array#{1,11,12,13,2,3,11,12,13,4} @ r)
+        let v = Vector.intercalate(Array#{11,12,13} @ r, Array#{Vector.singleton(1), Array#{2,3} @ r, Array#{4} @ r} @ r);
+        Vector.sameElements(v, Array#{1,11,12,13,2,3,11,12,13,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // transpose                                                               //
@@ -1301,133 +1297,133 @@ namespace TestVector {
 
     @test
     def transpose01(): Bool =
-        let a = Vector.transpose(Vector.empty());
+        let v = Vector.transpose(Vector.empty());
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b: List[List[Unit]] == Nil
 
     @test
     def transpose02(): Bool =
-        let a: Array[Array[Int32, _], _] = Vector.transpose(Array#{Vector.empty()} @ r);
+        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty()} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == Nil :: Nil
 
     @test
     def transpose03(): Bool =
-        let a: Array[Array[Int32, _], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty()} @ r);
+        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty()} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == Nil :: Nil :: Nil
 
     @test
     def transpose04(): Bool =
-        let a: Array[Array[Int32, _], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty(), Vector.empty()} @ r);
+        let a: Array[Vector[Int32], _] = Vector.transpose(Array#{Vector.empty(), Vector.empty(), Vector.empty()} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == Nil :: Nil :: Nil :: Nil
 
     @test
     def transpose05(): Bool =
-        let a = Vector.transpose(Array#{ Vector.singleton(1) } @ r);
+        let v = Vector.transpose(Array#{ Vector.singleton(1) } @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: Nil) :: Nil
 
     @test
     def transpose06(): Bool =
-        let a = Vector.transpose(Array#{vectorOf2(1, 2)} @ r);
+        let v = Vector.transpose(Array#{vectorOf2(1, 2)} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: Nil) :: (2 :: Nil) :: Nil
 
     @test
     def transpose07(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3)} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3)} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
 
     @test
     def transpose08(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
 
     @test
     def transpose09(): Bool =
-        let a = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r} @ r);
+        let v = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: Nil) :: Nil
 
     @test
     def transpose10(): Bool =
-        let a = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r, Array#{3} @ r} @ r);
+        let v = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r, Array#{3} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: 3 :: Nil) :: Nil
 
     @test
     def transpose11(): Bool =
-        let a = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r, Array#{3} @ r, Array#{4} @ r} @ r);
+        let v = Vector.transpose(Array#{Vector.singleton(1), Array#{2} @ r, Array#{3} @ r, Array#{4} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
 
     @test
     def transpose12(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
 
     @test
     def transpose13(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
 
     @test
     def transpose14(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r, Array#{5, 6, 7, 8} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4} @ r, Array#{5, 6, 7, 8} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
 
     @test
     def transpose15(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2, 3, 4, 5} @ r, Array#{6, 7, 8, 9, 10} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2, 3, 4, 5} @ r, Array#{6, 7, 8, 9, 10} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
 
     @test
     def transpose16(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
 
     @test
     def transpose17(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7,8} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7,8} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
 
     @test
     def transpose18(): Bool =
-        let a = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7, 8} @ r, Array#{9, 10} @ r} @ r);
+        let v = Vector.transpose(Array#{Array#{1, 2} @ r, Array#{3, 4} @ r, Array#{5, 6} @ r, Array#{7, 8} @ r, Array#{9, 10} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
 
     @test
     def transpose19(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r, Array#{7, 8, 9} @ r} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r, Array#{7, 8, 9} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
 
     @test
     def transpose20(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5} @ r, Array#{7, 8, 9} @ r} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5} @ r, Array#{7, 8, 9} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
 
     @test
     def transpose21(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3), Vector.empty(), Array#{7, 8, 9} @ r} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Vector.empty(), Array#{7, 8, 9} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
 
     @test
     def transpose22(): Bool =
-        let a = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r, Array#{7, 8, 9, 10} @ r} @ r);
+        let v = Vector.transpose(Array#{vectorOf3(1, 2, 3), Array#{4, 5, 6} @ r, Array#{7, 8, 9, 10} @ r} @ r);
         let b = Vector.toList(a) |> List.map(Vector.toList);
         b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
 
@@ -1437,15 +1433,15 @@ namespace TestVector {
 
     @test
     def isPrefixOf01(): Bool =
-        Vector.isPrefixOf((Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _])
+        Vector.isPrefixOf((Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32])
 
     @test
     def isPrefixOf02(): Bool =
-        Vector.isPrefixOf(Vector.singleton(1), (Vector.empty()): Array[Int32, _]) == false
+        Vector.isPrefixOf(Vector.singleton(1), (Vector.empty()): Vector[Int32]) == false
 
     @test
     def isPrefixOf03(): Bool =
-        Vector.isPrefixOf((Vector.empty()): Array[Int32, _], Vector.singleton(1))
+        Vector.isPrefixOf((Vector.empty()): Vector[Int32], Vector.singleton(1))
 
     @test
     def isPrefixOf04(): Bool =
@@ -1461,7 +1457,7 @@ namespace TestVector {
 
     @test
     def isPrefixOf07(): Bool =
-        Vector.isPrefixOf((Vector.empty()): Array[Int32, _], vectorOf2(1, 2))
+        Vector.isPrefixOf((Vector.empty()): Vector[Int32], vectorOf2(1, 2))
 
     @test
     def isPrefixOf08(): Bool =
@@ -1493,15 +1489,15 @@ namespace TestVector {
 
     @test
     def isInfixOf01(): Bool =
-        Vector.isInfixOf((Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _])
+        Vector.isInfixOf((Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32])
 
     @test
     def isInfixOf02(): Bool =
-        Vector.isInfixOf(Vector.singleton(1), (Vector.empty()): Array[Int32, _]) == false
+        Vector.isInfixOf(Vector.singleton(1), (Vector.empty()): Vector[Int32]) == false
 
     @test
     def isInfixOf03(): Bool =
-        Vector.isInfixOf((Vector.empty()): Array[Int32, _], Vector.singleton(1))
+        Vector.isInfixOf((Vector.empty()): Vector[Int32], Vector.singleton(1))
 
     @test
     def isInfixOf04(): Bool =
@@ -1517,7 +1513,7 @@ namespace TestVector {
 
     @test
     def isInfixOf07(): Bool =
-        Vector.isInfixOf((Vector.empty()): Array[Int32, _], vectorOf2(1, 2))
+        Vector.isInfixOf((Vector.empty()): Vector[Int32], vectorOf2(1, 2))
 
     @test
     def isInfixOf08(): Bool =
@@ -1549,15 +1545,15 @@ namespace TestVector {
 
     @test
     def isSuffixOf01(): Bool =
-        Vector.isSuffixOf((Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _])
+        Vector.isSuffixOf((Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32])
 
     @test
     def isSuffixOf02(): Bool =
-        Vector.isSuffixOf(Vector.singleton(1), (Vector.empty()): Array[Int32, _]) == false
+        Vector.isSuffixOf(Vector.singleton(1), (Vector.empty()): Vector[Int32]) == false
 
     @test
     def isSuffixOf03(): Bool =
-        Vector.isSuffixOf((Vector.empty()): Array[Int32, _], Vector.singleton(1))
+        Vector.isSuffixOf((Vector.empty()): Vector[Int32], Vector.singleton(1))
 
     @test
     def isSuffixOf04(): Bool =
@@ -1573,7 +1569,7 @@ namespace TestVector {
 
     @test
     def isSuffixOf07(): Bool =
-        Vector.isSuffixOf((Vector.empty()): Array[Int32, _], vectorOf2(1, 2))
+        Vector.isSuffixOf((Vector.empty()): Vector[Int32], vectorOf2(1, 2))
 
     @test
     def isSuffixOf08(): Bool =
@@ -1605,7 +1601,7 @@ namespace TestVector {
 
     @test
     def testSameElements01(): Bool =
-        ((Vector.empty()): Array[Int32, _]) `sameElements` ((Vector.empty()): Array[Int32, _])
+        ((Vector.empty()): Vector[Int32]) `sameElements` ((Vector.empty()): Vector[Int32])
 
     @test
     def testSameElements02(): Bool =
@@ -1641,7 +1637,7 @@ namespace TestVector {
 
     @test
     def testCompare01(): Bool =
-        ((Vector.empty()): Array[Int32, _]) `Vector.compare` ((Vector.empty()): Array[Int32, _]) == Comparison.EqualTo
+        ((Vector.empty()): Vector[Int32]) `Vector.compare` ((Vector.empty()): Vector[Int32]) == Comparison.EqualTo
 
     @test
     def testCompare02(): Bool =
@@ -1801,7 +1797,7 @@ namespace TestVector {
 
     @test
     def reduceLeft01(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, (Vector.empty()): Array[Int32, _]) == None
+        Vector.reduceLeft((a, b) -> a - b, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def reduceLeft02(): Bool =
@@ -1825,7 +1821,7 @@ namespace TestVector {
 
     @test
     def reduceRight01(): Bool =
-        Vector.reduceRight((a, b) -> a - b, (Vector.empty()): Array[Int32, _]) == None
+        Vector.reduceRight((a, b) -> a - b, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def reduceRight02(): Bool =
@@ -1939,53 +1935,53 @@ namespace TestVector {
 
     @test
     def flatten01(): Bool =
-        let a = Vector.flatten((Vector.empty()): Array[Array[Int32, r], r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.flatten((Vector.empty()): Array[Vector[Int32], r]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def flatten02(): Bool =
-        let a = Vector.flatten((Array#{Vector.empty()} @ r): Array[Array[Int32, r], r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.flatten((Array#{Vector.empty()} @ r): Array[Vector[Int32], r]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def flatten03(): Bool =
-        let a = Vector.flatten(Array#{Vector.singleton(1)} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.flatten(Array#{Vector.singleton(1)} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def flatten04(): Bool =
         let a= Vector.flatten(Array#{vectorOf2(1, 2)} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def flatten05(): Bool =
-        let a = Vector.flatten((Array#{Vector.empty(),Vector.empty()} @ r): Array[Array[Int32, r], r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.flatten((Array#{Vector.empty(),Vector.empty()} @ r): Array[Vector[Int32], r]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def flatten06(): Bool =
-        let a = Vector.flatten(Array#{Vector.singleton(1),Vector.empty()} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.flatten(Array#{Vector.singleton(1),Vector.empty()} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def flatten07(): Bool =
-        let a = Vector.flatten(Array#{Vector.empty(),Vector.singleton(1)} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.flatten(Array#{Vector.empty(),Vector.singleton(1)} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def flatten08(): Bool =
-        let a = Vector.flatten(Array#{Vector.singleton(1),Array#{2} @ r} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.flatten(Array#{Vector.singleton(1),Array#{2} @ r} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def flatten09(): Bool =
-        let a = Vector.flatten(Array#{vectorOf2(1, 2),Array#{3,4,5} @ r} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4,5} @ r)
+        let v = Vector.flatten(Array#{vectorOf2(1, 2),Array#{3,4,5} @ r} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4,5} @ r)
 
     @test
     def flatten10(): Bool =
-        let a = Vector.flatten(Array#{Vector.singleton(1),Array#{2,3} @ r,Array#{4} @ r} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4} @ r)
+        let v = Vector.flatten(Array#{Vector.singleton(1),Array#{2,3} @ r,Array#{4} @ r} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -1993,7 +1989,7 @@ namespace TestVector {
 
     @test
     def exists01(): Bool =
-        Vector.exists(i -> i > 3, (Vector.empty()): Array[Int32, _]) == false
+        Vector.exists(i -> i > 3, (Vector.empty()): Vector[Int32]) == false
 
     @test
     def exists02(): Bool =
@@ -2033,7 +2029,7 @@ namespace TestVector {
 
     @test
     def forAll01(): Bool =
-        Vector.forAll(i -> i > 3, (Vector.empty()): Array[Int32, _]) == true
+        Vector.forAll(i -> i > 3, (Vector.empty()): Vector[Int32]) == true
 
     @test
     def forAll02(): Bool =
@@ -2077,43 +2073,43 @@ namespace TestVector {
 
     @test
     def filter01(): Bool =
-        let a = Vector.filter(i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filter(i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filter02(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{2} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filter(i -> i > 3, Array#{2} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filter03(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.filter(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def filter04(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{1,3} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filter(i -> i > 3, Array#{1,3} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filter05(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{1,8} @ r);
-        Vector.sameElements(a, Array#{8} @ r)
+        let v = Vector.filter(i -> i > 3, Array#{1,8} @ r);
+        Vector.sameElements(v, Array#{8} @ r)
 
     @test
     def filter06(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{8,1} @ r);
-        Vector.sameElements(a, Array#{8} @ r)
+        let v = Vector.filter(i -> i > 3, Array#{8,1} @ r);
+        Vector.sameElements(v, Array#{8} @ r)
 
     @test
     def filter07(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{8,9} @ r);
-        Vector.sameElements(a, Array#{8,9} @ r)
+        let v = Vector.filter(i -> i > 3, Array#{8,9} @ r);
+        Vector.sameElements(v, Array#{8,9} @ r)
 
     @test
     def filter08(): Bool =
-        let a = Vector.filter(i -> i > 3, Array#{1,4,11,2,-22,17} @ r);
-        Vector.sameElements(a, Array#{4,11,17} @ r)
+        let v = Vector.filter(i -> i > 3, Array#{1,4,11,2,-22,17} @ r);
+        Vector.sameElements(v, Array#{4,11,17} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // partition                                                               //
@@ -2121,43 +2117,43 @@ namespace TestVector {
 
     @test
     def partition01(): Bool =
-        let (a,b) = Vector.partition(r, i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        let (a,b) = Vector.partition(r, i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def partition02(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, Vector.singleton(1))
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, Vector.singleton(1))
 
     @test
     def partition03(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        Vector.sameElements(v, Array#{4} @ r) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def partition04(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, vectorOf2(1, 2))
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, vectorOf2(1, 2))
 
     @test
     def partition05(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
+        Vector.sameElements(v, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
 
     @test
     def partition06(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
+        Vector.sameElements(v, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
 
     @test
     def partition07(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, Array#{5,8} @ r) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        Vector.sameElements(v, Array#{5,8} @ r) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def partition08(): Bool =
         let (a,b) = Vector.partition(r, i -> i > 3, Array#{4, -3, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{4, 16, 7, 7} @ r) and Vector.sameElements(b, Array#{-3, -5, 1, 2, 1} @ r)
+        Vector.sameElements(v, Array#{4, 16, 7, 7} @ r) and Vector.sameElements(b, Array#{-3, -5, 1, 2, 1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // span                                                                    //
@@ -2165,43 +2161,43 @@ namespace TestVector {
 
     @test
     def span01(): Bool =
-        let (a,b) = Vector.span(r, i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        let (a,b) = Vector.span(r, i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def span02(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a,(Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, Vector.singleton(1))
+        Vector.sameElements(v,(Vector.empty()): Vector[Int32]) and Vector.sameElements(b, Vector.singleton(1))
 
     @test
     def span03(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        Vector.sameElements(v, Array#{4} @ r) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def span04(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, vectorOf2(1, 2))
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, vectorOf2(1, 2))
 
     @test
     def span05(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _]) and Vector.sameElements(b, Array#{1,5} @ r)
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32]) and Vector.sameElements(b, Array#{1,5} @ r)
 
     @test
     def span06(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
+        Vector.sameElements(v, Array#{5} @ r) and Vector.sameElements(b, Vector.singleton(1))
 
     @test
     def span07(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, Array#{5,8} @ r) and Vector.sameElements(b, (Vector.empty()): Array[Int32, _])
+        Vector.sameElements(v, Array#{5,8} @ r) and Vector.sameElements(b, (Vector.empty()): Vector[Int32])
 
     @test
     def span08(): Bool =
         let (a,b) = Vector.span(r, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{4, 6} @ r) and Vector.sameElements(b, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
+        Vector.sameElements(v, Array#{4, 6} @ r) and Vector.sameElements(b, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
@@ -2209,63 +2205,63 @@ namespace TestVector {
 
     @test
     def drop01(): Bool =
-        let a = Vector.drop(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop02(): Bool =
-        let a = Vector.drop(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop03(): Bool =
-        let a = Vector.drop(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop04(): Bool =
-        let a = Vector.drop(-1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.drop(-1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def drop05(): Bool =
-        let a = Vector.drop(0, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.drop(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def drop06(): Bool =
-        let a = Vector.drop(1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop07(): Bool =
-        let a = Vector.drop(2, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(2, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop08(): Bool =
-        let a = Vector.drop(0, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.drop(0, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def drop09(): Bool =
-        let a = Vector.drop(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.drop(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def drop10(): Bool =
-        let a = Vector.drop(2, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.drop(2, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def drop11(): Bool =
-        let a = Vector.drop(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{3,4,5,6} @ r)
+        let v = Vector.drop(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{3,4,5,6} @ r)
 
     @test
     def drop12(): Bool =
-        let a = Vector.drop(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{5,6} @ r)
+        let v = Vector.drop(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{5,6} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
@@ -2273,63 +2269,63 @@ namespace TestVector {
 
     @test
     def dropLeft01(): Bool =
-        let a = Vector.dropLeft(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft02(): Bool =
-        let a = Vector.dropLeft(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft03(): Bool =
-        let a = Vector.dropLeft(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft04(): Bool =
-        let a = Vector.dropLeft(-1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropLeft(-1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropLeft05(): Bool =
-        let a = Vector.dropLeft(0, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropLeft(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropLeft06(): Bool =
-        let a = Vector.dropLeft(1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft07(): Bool =
-        let a = Vector.dropLeft(2, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(2, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft08(): Bool =
-        let a = Vector.dropLeft(0, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropLeft(0, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def dropLeft09(): Bool =
-        let a = Vector.dropLeft(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.dropLeft(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def dropLeft10(): Bool =
-        let a = Vector.dropLeft(2, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropLeft(2, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropLeft11(): Bool =
-        let a = Vector.dropLeft(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{3,4,5,6} @ r)
+        let v = Vector.dropLeft(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{3,4,5,6} @ r)
 
     @test
     def dropLeft12(): Bool =
-        let a = Vector.dropLeft(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{5,6} @ r)
+        let v = Vector.dropLeft(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{5,6} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropRight                                                               //
@@ -2337,63 +2333,63 @@ namespace TestVector {
 
     @test
     def dropRight01(): Bool =
-        let a = Vector.dropRight(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight02(): Bool =
-        let a = Vector.dropRight(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight03(): Bool =
-        let a = Vector.dropRight(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight04(): Bool =
-        let a = Vector.dropRight(-1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropRight(-1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropRight05(): Bool =
-        let a = Vector.dropRight(0, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropRight(0, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropRight06(): Bool =
-        let a = Vector.dropRight(1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight07(): Bool =
-        let a = Vector.dropRight(2, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(2, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight08(): Bool =
-        let a = Vector.dropRight(0, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropRight(0, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def dropRight09(): Bool =
-        let a = Vector.dropRight(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropRight(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropRight10(): Bool =
-        let a = Vector.dropRight(2, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropRight(2, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropRight11(): Bool =
-        let a = Vector.dropRight(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4} @ r)
+        let v = Vector.dropRight(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4} @ r)
 
     @test
     def dropRight12(): Bool =
-        let a = Vector.dropRight(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropRight(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile                                                               //
@@ -2401,43 +2397,43 @@ namespace TestVector {
 
     @test
     def dropWhile01(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhile(i -> i > 3, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhile02(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhile(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhile03(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhile(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhile04(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropWhile(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def dropWhile05(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, Array#{1,5} @ r)
+        let v = Vector.dropWhile(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, Array#{1,5} @ r)
 
     @test
     def dropWhile06(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhile(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhile07(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhile(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhile08(): Bool =
-        let a = Vector.dropWhile(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
+        let v = Vector.dropWhile(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileLeft                                                           //
@@ -2445,43 +2441,43 @@ namespace TestVector {
 
     @test
     def dropWhileLeft01(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileLeft(i -> i > 3, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileLeft02(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhileLeft(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhileLeft03(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileLeft(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileLeft04(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropWhileLeft(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def dropWhileLeft05(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, Array#{1,5} @ r)
+        let v = Vector.dropWhileLeft(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, Array#{1,5} @ r)
 
     @test
     def dropWhileLeft06(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhileLeft(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhileLeft07(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileLeft(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileLeft08(): Bool =
-        let a = Vector.dropWhileLeft(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
+        let v = Vector.dropWhileLeft(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileRight                                                          //
@@ -2489,43 +2485,43 @@ namespace TestVector {
 
     @test
     def dropWhileRight01(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileRight(i -> i > 3, Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileRight02(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhileRight(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhileRight03(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileRight(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileRight04(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.dropWhileRight(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def dropWhileRight05(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.dropWhileRight(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def dropWhileRight06(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Array#{5,1} @ r)
+        let v = Vector.dropWhileRight(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, Array#{5,1} @ r)
 
     @test
     def dropWhileRight07(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.dropWhileRight(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def dropWhileRight08(): Bool =
-        let a = Vector.dropWhileRight(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1} @ r)
+        let v = Vector.dropWhileRight(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // take                                                                    //
@@ -2533,63 +2529,63 @@ namespace TestVector {
 
     @test
     def take01(): Bool =
-        let a = Vector.take(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take02(): Bool =
-        let a = Vector.take(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take03(): Bool =
-        let a = Vector.take(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take04(): Bool =
-        let a = Vector.take(-1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(-1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take05(): Bool =
-        let a = Vector.take(0, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(0, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take06(): Bool =
-        let a = Vector.take(1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.take(1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def take07(): Bool =
-        let a = Vector.take(2, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.take(2, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def take08(): Bool =
-        let a = Vector.take(0, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.take(0, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def take09(): Bool =
-        let a = Vector.take(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.take(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def take10(): Bool =
-        let a = Vector.take(2, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.take(2, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def take11(): Bool =
-        let a = Vector.take(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.take(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def take12(): Bool =
-        let a = Vector.take(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4} @ r)
+        let v = Vector.take(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeLeft                                                                //
@@ -2597,63 +2593,63 @@ namespace TestVector {
 
     @test
     def takeLeft01(): Bool =
-        let a = Vector.takeLeft(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft02(): Bool =
-        let a = Vector.takeLeft(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft03(): Bool =
-        let a = Vector.takeLeft(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft04(): Bool =
-        let a = Vector.takeLeft(-1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(-1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft05(): Bool =
-        let a = Vector.takeLeft(0, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(0, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft06(): Bool =
-        let a = Vector.takeLeft(1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.takeLeft(1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def takeLeft07(): Bool =
-        let a = Vector.takeLeft(2, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.takeLeft(2, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def takeLeft08(): Bool =
-        let a = Vector.takeLeft(0, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeLeft(0, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeLeft09(): Bool =
-        let a = Vector.takeLeft(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.takeLeft(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def takeLeft10(): Bool =
-        let a = Vector.takeLeft(2, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.takeLeft(2, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def takeLeft11(): Bool =
-        let a = Vector.takeLeft(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.takeLeft(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def takeLeft12(): Bool =
-        let a = Vector.takeLeft(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{1,2,3,4} @ r)
+        let v = Vector.takeLeft(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{1,2,3,4} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeRight                                                               //
@@ -2661,63 +2657,63 @@ namespace TestVector {
 
     @test
     def takeRight01(): Bool =
-        let a = Vector.takeRight(-1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(-1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight02(): Bool =
-        let a = Vector.takeRight(0, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(0, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight03(): Bool =
-        let a = Vector.takeRight(1, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(1, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight04(): Bool =
-        let a = Vector.takeRight(-1, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(-1, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight05(): Bool =
-        let a = Vector.takeRight(0, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(0, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight06(): Bool =
-        let a = Vector.takeRight(1, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.takeRight(1, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def takeRight07(): Bool =
-        let a = Vector.takeRight(2, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.takeRight(2, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def takeRight08(): Bool =
-        let a = Vector.takeRight(0, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeRight(0, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeRight09(): Bool =
-        let a = Vector.takeRight(1, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.takeRight(1, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def takeRight10(): Bool =
-        let a = Vector.takeRight(2, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.takeRight(2, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def takeRight11(): Bool =
-        let a = Vector.takeRight(2, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, vectorOf2(5, 6))
+        let v = Vector.takeRight(2, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, vectorOf2(5, 6))
 
     @test
     def takeRight12(): Bool =
-        let a = Vector.takeRight(4, Array#{1,2,3,4,5,6} @ r);
-        Vector.sameElements(a, Array#{3,4,5,6} @ r)
+        let v = Vector.takeRight(4, Array#{1,2,3,4,5,6} @ r);
+        Vector.sameElements(v, Array#{3,4,5,6} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile                                                               //
@@ -2725,43 +2721,43 @@ namespace TestVector {
 
     @test
     def takeWhile01(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhile(i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhile02(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhile(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhile03(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.takeWhile(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def takeWhile04(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhile(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhile05(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhile(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhile06(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Array#{5} @ r)
+        let v = Vector.takeWhile(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, Array#{5} @ r)
 
     @test
     def takeWhile07(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, Array#{5,8} @ r)
+        let v = Vector.takeWhile(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, Array#{5,8} @ r)
 
     @test
     def takeWhile08(): Bool =
-        let a = Vector.takeWhile(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{4, 6} @ r)
+        let v = Vector.takeWhile(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{4, 6} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileLeft                                                           //
@@ -2769,43 +2765,43 @@ namespace TestVector {
 
     @test
     def takeWhileLeft01(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileLeft(i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileLeft02(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileLeft(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileLeft03(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.takeWhileLeft(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def takeWhileLeft04(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileLeft(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileLeft05(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileLeft(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileLeft06(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, Array#{5} @ r)
+        let v = Vector.takeWhileLeft(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, Array#{5} @ r)
 
     @test
     def takeWhileLeft07(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, Array#{5,8} @ r)
+        let v = Vector.takeWhileLeft(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, Array#{5,8} @ r)
 
     @test
     def takeWhileLeft08(): Bool =
-        let a = Vector.takeWhileLeft(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{4, 6} @ r)
+        let v = Vector.takeWhileLeft(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{4, 6} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileRight                                                          //
@@ -2813,43 +2809,43 @@ namespace TestVector {
 
     @test
     def takeWhileRight01(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileRight(i -> i > 3, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileRight02(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileRight(i -> i > 3, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileRight03(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Array#{4} @ r);
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.takeWhileRight(i -> i > 3, Array#{4} @ r);
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def takeWhileRight04(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileRight(i -> i > 3, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileRight05(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Array#{1,5} @ r);
-        Vector.sameElements(a, Array#{5} @ r)
+        let v = Vector.takeWhileRight(i -> i > 3, Array#{1,5} @ r);
+        Vector.sameElements(v, Array#{5} @ r)
 
     @test
     def takeWhileRight06(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Array#{5,1} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.takeWhileRight(i -> i > 3, Array#{5,1} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def takeWhileRight07(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Array#{5,8} @ r);
-        Vector.sameElements(a, Array#{5,8} @ r)
+        let v = Vector.takeWhileRight(i -> i > 3, Array#{5,8} @ r);
+        Vector.sameElements(v, Array#{5,8} @ r)
 
     @test
     def takeWhileRight08(): Bool =
-        let a = Vector.takeWhileRight(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
-        Vector.sameElements(a, Array#{7} @ r)
+        let v = Vector.takeWhileRight(i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ r);
+        Vector.sameElements(v, Array#{7} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
@@ -2857,7 +2853,7 @@ namespace TestVector {
 
     @test
     def groupBy01(): Bool =
-        let arr = Vector.groupBy((a, b) -> a > 3 or b > 8, (Vector.empty()): Array[Int32, r]);
+        let arr = Vector.groupBy((a, b) -> a > 3 or b > 8, (Vector.empty()): Vector[Int32]);
         let xs = Vector.toList(arr) |> List.map(Vector.toList);
         xs == Nil
 
@@ -2903,38 +2899,38 @@ namespace TestVector {
 
     @test
     def zip01(): Bool =
-        let a = Vector.zip((Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[(Int32, Int32), _])
+        let v = Vector.zip((Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Array[(Int32, Int32), _])
 
     @test
     def zip02(): Bool =
-        let a = Vector.zip(Vector.singleton(1), (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[(Int32, Int32), _])
+        let v = Vector.zip(Vector.singleton(1), (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Array[(Int32, Int32), _])
 
     @test
     def zip03(): Bool =
-        let a = Vector.zip((Vector.empty()): Array[Int32, _], Array#{2} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[(Int32, Int32), _])
+        let v = Vector.zip((Vector.empty()): Vector[Int32], Array#{2} @ r);
+        Vector.sameElements(v, (Vector.empty()): Array[(Int32, Int32), _])
 
     @test
     def zip04(): Bool =
-        let a = Vector.zip(Vector.singleton(1), Array#{2} @ r);
-        Vector.sameElements(a, Array#{(1, 2)} @ r)
+        let v = Vector.zip(Vector.singleton(1), Array#{2} @ r);
+        Vector.sameElements(v, Array#{(1, 2)} @ r)
 
     @test
     def zip05(): Bool =
-        let a = Vector.zip(Array#{1,3} @ r, Array#{2,4} @ r);
-        Vector.sameElements(a, Array#{(1, 2), (3, 4)} @ r)
+        let v = Vector.zip(Array#{1,3} @ r, Array#{2,4} @ r);
+        Vector.sameElements(v, Array#{(1, 2), (3, 4)} @ r)
 
     @test
     def zip06(): Bool =
-        let a = Vector.zip(Array#{1,3,5} @ r, Array#{2,4,6} @ r);
-        Vector.sameElements(a, Array#{(1, 2), (3, 4), (5, 6)} @ r)
+        let v = Vector.zip(Array#{1,3,5} @ r, Array#{2,4,6} @ r);
+        Vector.sameElements(v, Array#{(1, 2), (3, 4), (5, 6)} @ r)
 
     @test
     def zip07(): Bool =
-        let a = Vector.zip(Array#{1,3,5,7} @ r, Array#{2,4,6,8} @ r);
-        Vector.sameElements(a, Array#{(1, 2), (3, 4), (5, 6), (7, 8)} @ r)
+        let v = Vector.zip(Array#{1,3,5,7} @ r, Array#{2,4,6,8} @ r);
+        Vector.sameElements(v, Array#{(1, 2), (3, 4), (5, 6), (7, 8)} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
@@ -2942,35 +2938,35 @@ namespace TestVector {
 
     @test
     def zipWith01(): Bool =
-        let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Bool, _]);
-        Vector.sameElements(arr, (Vector.empty()): Array[Int32, _])
+        let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector.empty()): Vector[Int32], (Vector.empty()): Array[Bool, _]);
+        Vector.sameElements(vrr, (Vector.empty()): Vector[Int32])
 
     @test
     def zipWith02(): Bool =
         let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector.singleton(1), (Vector.empty()): Array[Bool, _]);
-        Vector.sameElements(arr, (Vector.empty()): Array[Int32, _])
+        Vector.sameElements(vrr, (Vector.empty()): Vector[Int32])
 
     @test
     def zipWith03(): Bool =
-        let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector.empty()): Array[Int32, _], Array#{true} @ r);
-        Vector.sameElements(arr, (Vector.empty()): Array[Int32, _])
+        let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector.empty()): Vector[Int32], Array#{true} @ r);
+        Vector.sameElements(vrr, (Vector.empty()): Vector[Int32])
 
     @test
     def zipWith04(): Bool =
         let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector.singleton(1), Array#{true} @ r);
-        Vector.sameElements(arr, Array#{2} @ r)
+        Vector.sameElements(vrr, Array#{2} @ r)
 
     @test
     def zipWith05(): Bool =
         let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector.singleton(1), Array#{false} @ r);
-        Vector.sameElements(arr, Vector.singleton(1))
+        Vector.sameElements(vrr, Vector.singleton(1))
 
     @test
     def zipWith06(): Bool =
         let arr = Vector.zipWith((a, b) -> if (b) a + 1 else a,
                         Array#{1, 2, 3, 4, 5, 6, 7, 8} @ r,
                         Array#{false, true, true, false, false, true, true, true} @ r);
-        Vector.sameElements(arr, Array#{1, 3, 4, 4, 5, 7, 8, 9} @ r)
+        Vector.sameElements(vrr, Array#{1, 3, 4, 4, 5, 7, 8, 9} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
@@ -2979,22 +2975,22 @@ namespace TestVector {
     @test
     def unzip01(): Bool =
         let (a,b) = Vector.unzip(r, (Vector.empty()): Array[(Unit, Unit), _]);
-        Vector.sameElements(a, Vector.empty()) and Vector.sameElements(b, Vector.empty())
+        Vector.sameElements(v, Vector.empty()) and Vector.sameElements(b, Vector.empty())
 
     @test
     def unzip02(): Bool =
         let (a,b) = Vector.unzip(r, Array#{(1, true)} @ r);
-        Vector.sameElements(a, Vector.singleton(1)) and Vector.sameElements(b, Array#{true} @ r)
+        Vector.sameElements(v, Vector.singleton(1)) and Vector.sameElements(b, Array#{true} @ r)
 
     @test
     def unzip03(): Bool =
         let (a,b) = Vector.unzip(r, Array#{(1, true), (2, true)} @ r);
-        Vector.sameElements(a, vectorOf2(1, 2))  and Vector.sameElements(b, Array#{true,true} @ r)
+        Vector.sameElements(v, vectorOf2(1, 2))  and Vector.sameElements(b, Array#{true,true} @ r)
 
     @test
     def unzip04(): Bool =
         let (a,b) = Vector.unzip(r, Array#{(1, true), (2, true), (3, false)} @ r);
-        Vector.sameElements(a, vectorOf3(1, 2, 3)) and Vector.sameElements(b, Array#{true,true,false} @ r)
+        Vector.sameElements(v, vectorOf3(1, 2, 3)) and Vector.sameElements(b, Array#{true,true,false} @ r)
 
     @test
     def unzip05(): Bool =
@@ -3012,7 +3008,7 @@ namespace TestVector {
 
     @test
     def fold201(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Bool, _]) == 4
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Vector[Int32], (Vector.empty()): Array[Bool, _]) == 4
 
     @test
     def fold202(): Bool =
@@ -3057,7 +3053,7 @@ namespace TestVector {
 
     @test
     def foldLeft201(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Bool, _]) == 4
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Vector[Int32], (Vector.empty()): Array[Bool, _]) == 4
 
     @test
     def foldLeft202(): Bool =
@@ -3065,7 +3061,7 @@ namespace TestVector {
 
     @test
     def foldLeft203(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Array[Int32, _], Array#{true} @ r) == 4
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector.empty()): Vector[Int32], Array#{true} @ r) == 4
 
     @test
     def foldLeft204(): Bool =
@@ -3102,7 +3098,7 @@ namespace TestVector {
 
     @test
     def foldRight201(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Bool, _]) == 4
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector.empty()): Vector[Int32], (Vector.empty()): Array[Bool, _]) == 4
 
     @test
     def foldRight202(): Bool =
@@ -3110,7 +3106,7 @@ namespace TestVector {
 
     @test
     def foldRight203(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector.empty()): Array[Int32, _], Array#{true} @ r) == 4
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector.empty()): Vector[Int32], Array#{true} @ r) == 4
 
     @test
     def foldRight204(): Bool =
@@ -3147,43 +3143,43 @@ namespace TestVector {
 
     @test
     def filterMap01(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Vector.empty()): Array[Int32, _]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filterMap02(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filterMap03(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{2} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{2} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def filterMap04(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,3} @ r);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,3} @ r);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def filterMap05(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,4} @ r);
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,4} @ r);
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def filterMap06(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1} @ r);
-        Vector.sameElements(a, Array#{3} @ r)
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1} @ r);
+        Vector.sameElements(v, Array#{3} @ r)
 
     @test
     def filterMap07(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6} @ r);
-        Vector.sameElements(a, Array#{4,3} @ r)
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6} @ r);
+        Vector.sameElements(v, Array#{4,3} @ r)
 
     @test
     def filterMap08(): Bool =
-        let a = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r);
-        Vector.sameElements(a, Array#{0,1,2,5} @ r)
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r);
+        Vector.sameElements(v, Array#{0,1,2,5} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // findMap                                                                 //
@@ -3191,7 +3187,7 @@ namespace TestVector {
 
     @test
     def findMap01(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Vector.empty()): Array[Int32, _]) == None
+        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def findMap02(): Bool =
@@ -3227,7 +3223,7 @@ namespace TestVector {
 
     @test
     def toSet01(): Bool =
-        Vector.toSet((Vector.empty()): Array[Int32, _]) == Set#{}
+        Vector.toSet((Vector.empty()): Vector[Int32]) == Set#{}
 
     @test
     def toSet02(): Bool =
@@ -3283,7 +3279,7 @@ namespace TestVector {
 
     @test
     def findIndexOf01(): Bool =
-        Vector.findIndexOf(i -> i > 2, (Vector.empty()): Array[Int32, _]) == None
+        Vector.findIndexOf(i -> i > 2, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def findIndexOf02(): Bool =
@@ -3315,7 +3311,7 @@ namespace TestVector {
 
     @test
     def findIndexOfLeft01(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, (Vector.empty()): Array[Int32, _]) == None
+        Vector.findIndexOfLeft(i -> i > 2, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def findIndexOfLeft02(): Bool =
@@ -3347,7 +3343,7 @@ namespace TestVector {
 
     @test
     def findIndexOfRight01(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, (Vector.empty()): Array[Int32, _]) == None
+        Vector.findIndexOfRight(i -> i > 2, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def findIndexOfRight02(): Bool =
@@ -3379,38 +3375,38 @@ namespace TestVector {
 
     @test
     def findIndices01(): Bool =
-        let a = Vector.findIndices(i -> i > 2, (Vector.empty()): Array[Int32, r]);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.findIndices(i -> i > 2, (Vector.empty()): Vector[Int32]);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def findIndices02(): Bool =
-        let a = Vector.findIndices(i -> i > 2, Vector.singleton(1));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.findIndices(i -> i > 2, Vector.singleton(1));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def findIndices03(): Bool =
-        let a = Vector.findIndices(i -> i > 2, Array#{3} @ r);
-        Vector.sameElements(a, Vector.empty())
+        let v = Vector.findIndices(i -> i > 2, Array#{3} @ r);
+        Vector.sameElements(v, Vector.empty())
 
     @test
     def findIndices04(): Bool =
-        let a = Vector.findIndices(i -> i > 2, vectorOf2(1, 2));
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, r])
+        let v = Vector.findIndices(i -> i > 2, vectorOf2(1, 2));
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def findIndices05(): Bool =
-        let a = Vector.findIndices(i -> i > 2, Array#{6,-6} @ r);
-        Vector.sameElements(a, Vector.empty())
+        let v = Vector.findIndices(i -> i > 2, Array#{6,-6} @ r);
+        Vector.sameElements(v, Vector.empty())
 
     @test
     def findIndices06(): Bool =
-        let a = Vector.findIndices(i -> i > 2, Array#{-6,6} @ r);
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.findIndices(i -> i > 2, Array#{-6,6} @ r);
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def findIndices07(): Bool =
-        let a = Vector.findIndices(i -> i > 2, Array#{6,7} @ r);
-        Vector.sameElements(a, Array#{0,1} @ r)
+        let v = Vector.findIndices(i -> i > 2, Array#{6,7} @ r);
+        Vector.sameElements(v, Array#{0,1} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
@@ -3418,27 +3414,27 @@ namespace TestVector {
 
     @test
     def init01(): Bool =
-        let a = Vector.init(x -> x, 0);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.init(x -> x, 0);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def init02(): Bool =
-        let a = Vector.init(x -> x, -1);
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.init(x -> x, -1);
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def init03(): Bool =
-        let a = Vector.init(x -> x, 1);
-        Vector.sameElements(a, Vector.empty())
+        let v = Vector.init(x -> x, 1);
+        Vector.sameElements(v, Vector.empty())
 
     @test
     def init04(): Bool =
-        let a = Vector.init(x -> x, 2);
-        Vector.sameElements(a, Array#{0,1} @ r)
+        let v = Vector.init(x -> x, 2);
+        Vector.sameElements(v, Array#{0,1} @ r)
 
     @test
     def init05(): Bool =
-        let a = Vector.init(x -> x, 50);
+        let v = Vector.init(x -> x, 50);
         Vector.length(a) == 50
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3447,45 +3443,45 @@ namespace TestVector {
 
     @test
     def sameElements01(): Bool =
-        let a = (Vector.empty()): Array[Int32, _];
-        let b = (Vector.empty()): Array[Int32, _];
-        Vector.sameElements(a,b) == true
+        let a = (Vector.empty()): Vector[Int32];
+        let b = (Vector.empty()): Vector[Int32];
+        Vector.sameElements(v,b) == true
 
     @test
     def sameElements02(): Bool =
-        let a = (Vector.singleton(1)): Array[Int32, _];
-        let b = (Vector.empty()): Array[Int32, _];
-        Vector.sameElements(a,b) == false
+        let a = (Vector.singleton(1)): Vector[Int32];
+        let b = (Vector.empty()): Vector[Int32];
+        Vector.sameElements(v,b) == false
 
     @test
     def sameElements03(): Bool =
-        let a = (Vector.empty()): Array[Int32, _];
-        let b = (Vector.singleton(1)): Array[Int32, _];
-        Vector.sameElements(a,b) == false
+        let a = (Vector.empty()): Vector[Int32];
+        let b = (Vector.singleton(1)): Vector[Int32];
+        Vector.sameElements(v,b) == false
 
     @test
     def sameElements04(): Bool =
-        let a = (Vector.singleton(1)): Array[Int32, _];
-        let b = (Vector.singleton(1)): Array[Int32, _];
-        Vector.sameElements(a,b) == true
+        let a = (Vector.singleton(1)): Vector[Int32];
+        let b = (Vector.singleton(1)): Vector[Int32];
+        Vector.sameElements(v,b) == true
 
     @test
     def sameElements05(): Bool =
-        let a = (Vector.singleton(1)): Array[Int32, _];
-        let b = (Vector.empty()): Array[Int32, _];
-        Vector.sameElements(a,b) == false
+        let a = (Vector.singleton(1)): Vector[Int32];
+        let b = (Vector.empty()): Vector[Int32];
+        Vector.sameElements(v,b) == false
 
     @test
     def sameElements06(): Bool =
-        let a = (vectorOf2(1, 2)): Array[Int32, _];
-        let b = (vectorOf2(1, 2)): Array[Int32, _];
-        Vector.sameElements(a,b) == true
+        let a = (vectorOf2(1, 2)): Vector[Int32];
+        let b = (vectorOf2(1, 2)): Vector[Int32];
+        Vector.sameElements(v,b) == true
 
     @test
     def sameElements07(): Bool =
-        let a = (vectorOf2(1, 2)): Array[Int32, _];
-        let b = (Array#{2,1} @ r): Array[Int32, _];
-        Vector.sameElements(a,b) == false
+        let a = (vectorOf2(1, 2)): Vector[Int32];
+        let b = (Array#{2,1} @ r): Vector[Int32];
+        Vector.sameElements(v,b) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
@@ -3493,7 +3489,7 @@ namespace TestVector {
 
     @test
     def forEach01(): Bool =
-        let a = (Vector.empty()): Array[Int32, _];
+        let a = (Vector.empty()): Vector[Int32];
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, a);
@@ -3501,7 +3497,7 @@ namespace TestVector {
 
     @test
     def forEach02(): Bool =
-        let a = Vector.empty();
+        let v = Vector.empty();
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, a);
@@ -3509,7 +3505,7 @@ namespace TestVector {
 
     @test
     def forEach03(): Bool =
-        let a = Vector.singleton(1);
+        let v = Vector.singleton(1);
         let sb = new StringBuilder(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, a);
@@ -3573,143 +3569,143 @@ namespace TestVector {
 
     @test
     def updateSequence01(): Bool =
-         let a = Vector.updateSequence(0, (Vector.empty()): Array[Int32, _], (Vector.empty()): Array[Int32, _]);
-         Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+         let v = Vector.updateSequence(0, (Vector.empty()): Vector[Int32], (Vector.empty()): Vector[Int32]);
+         Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def updateSequence02(): Bool =
-        let a = Vector.updateSequence(0, vectorOf2(1, 2), Vector.empty());
-        Vector.sameElements(a, (Vector.empty()): Array[Int32, _])
+        let v = Vector.updateSequence(0, vectorOf2(1, 2), Vector.empty());
+        Vector.sameElements(v, (Vector.empty()): Vector[Int32])
 
     @test
     def updateSequence03(): Bool =
-        let a = Vector.updateSequence(0, Vector.empty(), vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.updateSequence(0, Vector.empty(), vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def updateSequence04(): Bool =
-        let a = Vector.updateSequence(-3, Array#{1,2,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.updateSequence(-3, Array#{1,2,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def updateSequence05(): Bool =
-        let a = Vector.updateSequence(2, Array#{1,2,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.updateSequence(2, Array#{1,2,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def updateSequence06(): Bool =
-        let a = Vector.updateSequence(0, Vector.empty(), Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.updateSequence(0, Vector.empty(), Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def updateSequence07(): Bool =
-        let a = Vector.updateSequence(1, Array#{2} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Vector.singleton(1))
+        let v = Vector.updateSequence(1, Array#{2} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Vector.singleton(1))
 
     @test
     def updateSequence08(): Bool =
-        let a = Vector.updateSequence(0, Array#{2} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.updateSequence(0, Array#{2} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def updateSequence09(): Bool =
-        let a = Vector.updateSequence(0, Array#{2,4} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{2} @ r)
+        let v = Vector.updateSequence(0, Array#{2,4} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{2} @ r)
 
     @test
     def updateSequence10(): Bool =
-        let a = Vector.updateSequence(-1, Array#{2,4} @ r, Vector.singleton(1));
-        Vector.sameElements(a, Array#{4} @ r)
+        let v = Vector.updateSequence(-1, Array#{2,4} @ r, Vector.singleton(1));
+        Vector.sameElements(v, Array#{4} @ r)
 
     @test
     def updateSequence11(): Bool =
-        let a = Vector.updateSequence(-1, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{4,2} @ r)
+        let v = Vector.updateSequence(-1, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{4,2} @ r)
 
     @test
     def updateSequence12(): Bool =
-        let a = Vector.updateSequence(1, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.updateSequence(1, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def updateSequence13(): Bool =
-        let a = Vector.updateSequence(-2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.updateSequence(-2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def updateSequence14(): Bool =
-        let a = Vector.updateSequence(2, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, vectorOf2(1, 2))
+        let v = Vector.updateSequence(2, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, vectorOf2(1, 2))
 
     @test
     def updateSequence15(): Bool =
-        let a = Vector.updateSequence(1, Array#{3} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{1,3} @ r)
+        let v = Vector.updateSequence(1, Array#{3} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{1,3} @ r)
 
     @test
     def updateSequence16(): Bool =
-        let a = Vector.updateSequence(0, Array#{3,4} @ r, vectorOf2(1, 2));
-        Vector.sameElements(a, Array#{3,4} @ r)
+        let v = Vector.updateSequence(0, Array#{3,4} @ r, vectorOf2(1, 2));
+        Vector.sameElements(v, Array#{3,4} @ r)
 
     @test
     def updateSequence17(): Bool =
-        let a = Vector.updateSequence(0, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 2, 3} @ r)
+        let v = Vector.updateSequence(0, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 2, 3} @ r)
 
     @test
     def updateSequence18(): Bool =
-        let a = Vector.updateSequence(1, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 4, 3} @ r)
+        let v = Vector.updateSequence(1, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 4, 3} @ r)
 
     @test
     def updateSequence19(): Bool =
-        let a = Vector.updateSequence(2, Array#{4} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 2, 4} @ r)
+        let v = Vector.updateSequence(2, Array#{4} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 2, 4} @ r)
 
     @test
     def updateSequence20(): Bool =
-        let a = Vector.updateSequence(0, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 5, 3} @ r)
+        let v = Vector.updateSequence(0, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 5, 3} @ r)
 
     @test
     def updateSequence21(): Bool =
-        let a = Vector.updateSequence(1, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{1, 4, 5} @ r)
+        let v = Vector.updateSequence(1, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{1, 4, 5} @ r)
 
     @test
     def updateSequence22(): Bool =
-        let a = Vector.updateSequence(-1, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{5, 6, 3} @ r)
+        let v = Vector.updateSequence(-1, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{5, 6, 3} @ r)
 
     @test
     def updateSequence23(): Bool =
-        let a = Vector.updateSequence(0, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
-        Vector.sameElements(a, Array#{4, 5, 6} @ r)
+        let v = Vector.updateSequence(0, Array#{4, 5, 6} @ r, vectorOf3(1, 2, 3));
+        Vector.sameElements(v, Array#{4, 5, 6} @ r)
 
     @test
     def updateSequence24(): Bool =
-        let a = Vector.updateSequence(2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ r)
+        let v = Vector.updateSequence(2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 14, 15, 16, 17, 7} @ r)
 
     @test
     def updateSequence25(): Bool =
-        let a = Vector.updateSequence(-2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ r)
+        let v = Vector.updateSequence(-2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{16, 17, 3, 4, 5, 6, 7} @ r)
 
     @test
     def updateSequence26(): Bool =
-        let a = Vector.updateSequence(4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ r)
+        let v = Vector.updateSequence(4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 3, 4, 14, 15, 16} @ r)
 
     @test
     def updateSequence27(): Bool =
-        let a = Vector.updateSequence(4, Array#{14, 15} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ r)
+        let v = Vector.updateSequence(4, Array#{14, 15} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{1, 2, 3, 4, 14, 15, 7} @ r)
 
     @test
     def updateSequence28(): Bool =
-        let a = Vector.updateSequence(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
-        Vector.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ r)
+        let v = Vector.updateSequence(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ r, Array#{1, 2, 3, 4, 5, 6, 7} @ r);
+        Vector.sameElements(v, Array#{-2, -3, -4, -5, -6, -7, -8} @ r)
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -3722,67 +3718,67 @@ namespace TestVector {
 
     @test
     def sortWith01(): Bool =
-        let a = Vector.sortWith(cmp, (Vector.empty()): Array[Int32, _]);
-        a `sameElements` (Vector.empty()): Array[Int32, _]
+        let v = Vector.sortWith(cmp, (Vector.empty()): Vector[Int32]);
+        a `sameElements` (Vector.empty()): Vector[Int32]
 
     @test
     def sortWith02(): Bool =
-        let a = Vector.sortWith(cmp, Vector.empty());
+        let v = Vector.sortWith(cmp, Vector.empty());
         a `sameElements` Vector.empty()
 
     @test
     def sortWith03(): Bool =
-        let a = Vector.sortWith(cmp, Array#{0,1} @ r);
+        let v = Vector.sortWith(cmp, Array#{0,1} @ r);
         a `sameElements` Array#{0,1} @ r
 
     @test
     def sortWith04(): Bool =
-        let a = Vector.sortWith(cmp, Array#{1,0} @ r);
+        let v = Vector.sortWith(cmp, Array#{1,0} @ r);
         a `sameElements` Array#{0,1} @ r
 
     @test
     def sortWith05(): Bool =
-        let a = Vector.sortWith(cmp, Array#{1,1} @ r);
+        let v = Vector.sortWith(cmp, Array#{1,1} @ r);
         a `sameElements` Array#{1,1} @ r
 
     @test
     def sortWith06(): Bool =
-        let a = Vector.sortWith(cmp, Array#{0,1,2,3,4,5} @ r);
+        let v = Vector.sortWith(cmp, Array#{0,1,2,3,4,5} @ r);
         a `sameElements` Array#{0,1,2,3,4,5} @ r
 
     @test
     def sortWith07(): Bool =
-        let a = Vector.sortWith(cmp, Array#{5,4,3,2,1,0} @ r);
+        let v = Vector.sortWith(cmp, Array#{5,4,3,2,1,0} @ r);
         a `sameElements` Array#{0,1,2,3,4,5} @ r
 
     @test
     def sortWith08(): Bool =
-        let a = Vector.sortWith(cmp, Array#{5,3,0,4,1,2} @ r);
+        let v = Vector.sortWith(cmp, Array#{5,3,0,4,1,2} @ r);
         a `sameElements` Array#{0,1,2,3,4,5} @ r
 
     @test
     def sortWith09(): Bool =
-        let a = Vector.sortWith(cmp, Array#{2,3,0,4,1,2} @ r);
+        let v = Vector.sortWith(cmp, Array#{2,3,0,4,1,2} @ r);
         a `sameElements` Array#{0,1,2,2,3,4} @ r
 
     @test
     def sortWith10(): Bool =
-        let a = Vector.sortWith(flip(cmp), Array#{0,1,2,3,4,5} @ r);
+        let v = Vector.sortWith(flip(cmp), Array#{0,1,2,3,4,5} @ r);
         a `sameElements` Array#{5,4,3,2,1,0} @ r
 
     @test
     def sortWith11(): Bool =
-        let a = Vector.sortWith(flip(cmp), Array#{5,4,3,2,1,0} @ r);
+        let v = Vector.sortWith(flip(cmp), Array#{5,4,3,2,1,0} @ r);
         a `sameElements` Array#{5,4,3,2,1,0} @ r
 
     @test
     def sortWith12(): Bool =
-        let a = Vector.sortWith(flip(cmp), Array#{5,3,0,4,1,2} @ r);
+        let v = Vector.sortWith(flip(cmp), Array#{5,3,0,4,1,2} @ r);
         a `sameElements` Array#{5,4,3,2,1,0} @ r
 
     @test
     def sortWith13(): Bool =
-        let a = Vector.sortWith(flip(cmp), Array#{2,3,0,4,1,2} @ r);
+        let v = Vector.sortWith(flip(cmp), Array#{2,3,0,4,1,2} @ r);
         a `sameElements` Array#{4,3,2,2,1,0} @ r
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3795,7 +3791,7 @@ namespace TestVector {
 
     @test
     def sort01(): Bool =
-        testSortVsSortWith((Vector.empty()): Array[Int32, _])
+        testSortVsSortWith((Vector.empty()): Vector[Int32])
 
     @test
     def sort02(): Bool =
@@ -3840,7 +3836,7 @@ namespace TestVector {
 
     @test
     def sortBy01(): Bool =
-        testSortByVsSort((Vector.empty()): Array[Int32, _])
+        testSortByVsSort((Vector.empty()): Vector[Int32])
 
     @test
     def sortBy02(): Bool =
@@ -3895,7 +3891,7 @@ namespace TestVector {
 
     @test
     def minimumBy01(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, (Vector.empty()): Array[Int32, _]) == None
+        Vector.minimumBy((x, y) -> x <=> y, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def minimumBy02(): Bool =
@@ -3907,7 +3903,7 @@ namespace TestVector {
 
     @test
     def minimumBy04(): Bool =
-        let a = Vector.range(10, 20);
+        let v = Vector.range(10, 20);
         a[5] = -22;
         Vector.minimumBy((x, y) -> x <=> y, a) == Some(-22)
 
@@ -3917,7 +3913,7 @@ namespace TestVector {
 
     @test
     def maximumBy01(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, (Vector.empty()): Array[Int32, _]) == None
+        Vector.maximumBy((x, y) -> x <=> y, (Vector.empty()): Vector[Int32]) == None
 
     @test
     def maximumBy02(): Bool =
@@ -3929,7 +3925,7 @@ namespace TestVector {
 
     @test
     def maximumBy04(): Bool =
-        let a = Vector.range(10, 20);
+        let v = Vector.range(10, 20);
         a[5] = 42;
         Vector.maximumBy((x, y) -> x <=> y, a) == Some(42)
 
@@ -4060,7 +4056,7 @@ namespace TestVector {
 
     @test
     def iterator01(): Bool =
-        (Vector.empty()): Array[Int32, r] |> Vector.iterator(r) |> Iterator.toList == Nil
+        (Vector.empty()): Vector[Int32] |> Vector.iterator(r) |> Iterator.toList == Nil
 
     @test
     def iterator02(): Bool =
@@ -4081,7 +4077,7 @@ namespace TestVector {
 
     @test
     def join01(): Bool =
-        Vector.join(",", (Vector.empty()): Array[Int32, _]) == ""
+        Vector.join(",", (Vector.empty()): Vector[Int32]) == ""
 
     @test
     def join02(): Bool =
@@ -4117,37 +4113,37 @@ namespace TestVector {
 
     @test
     def joinWith05(): Bool =
-        let a: Array[Int32, _] = Vector.empty();
+        let a: Vector[Int32] = Vector.empty();
         let s = Vector.joinWith(Int32.toString, ",", a);
         s == ""
 
     @test
     def joinWith06(): Bool =
-        let a = Vector.singleton(1);
+        let v = Vector.singleton(1);
         let s = Vector.joinWith(Int32.toString, ",", a);
         s == "1"
 
     @test
     def joinWith07(): Bool =
-        let a = vectorOf2(1, 2);
+        let v = VectorOf2(1, 2);
         let s = Vector.joinWith(Int32.toString, ",", a);
         s == "1,2"
 
     @test
     def joinWith08(): Bool =
-        let a = vectorOf3(1, 2, 3);
+        let v = VectorOf3(1, 2, 3);
         let s = Vector.joinWith(Int32.toString, ",", a);
         s == "1,2,3"
 
     @test
     def joinWith09(): Bool =
-        let a = vectorOf3(1, 2, 3);
+        let v = VectorOf3(1, 2, 3);
         let s = Vector.joinWith(Int32.toString, "", a);
         s == "123"
 
     @test
     def joinWith10(): Bool =
-        let a = vectorOf3(1, 2, 3);
+        let v = VectorOf3(1, 2, 3);
         let s = Vector.joinWith(Int32.toString, "..", a);
         s == "1..2..3"
 
@@ -4158,7 +4154,7 @@ namespace TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList((Vector.empty()): Array[Int32, r]), new MutList(rc))
+        MutList.sameElements(Vector.toMutList((Vector.empty()): Vector[Int32]), new MutList(rc))
     }
 
     @test
@@ -4204,7 +4200,7 @@ namespace TestVector {
 
     @test
     def shuffle01(): Bool \ NonDet = region r {
-        let a = (Vector.empty()): Array[Int32, _];
+        let a = (Vector.empty()): Vector[Int32];
         Vector.shuffle(Random.new(), a);
         Vector.length(a) == 0 and Vector.toSet(a) == Set#{}
 
