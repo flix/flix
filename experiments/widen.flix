@@ -94,14 +94,19 @@ def main(): Unit \ IO =
         Edge("C", "A").
         Edge("B", "D").
 
-        // Initial state at A.
+        // To avoid some issues with bottom, we assume the constant 42 is everywhere.
         L("A", "x"; alpha(42ii)).
+        L("B", "x"; alpha(42ii)).
+        L("C", "x"; alpha(42ii)).
+        L("D", "x"; alpha(42ii)).
 
         // Transfer function from A-B with naive widening.
-        L("B", x; naiveWiden(inc(v))) :- L("A", x; v).
+        //L("B", x; naiveWiden(inc(v))) :- L("A", x; v).
+        // Note how the above rule requires several iterations through the cycle.
 
         // Transfer function from A-B with smart widening.
-        L("B", x; smartWiden(vold, inc(v))) :- L("A", x; v), L("B", x; vold). // TODO: Problem: vold is initially bottom.
+        L("B", x; smartWiden(vold, inc(v))) :- L("A", x; v), L("B", x; vold).  // Implicit assumption that vold is not bottom.
+        // Note how this reaches the fixpoint faster.
 
         // Propagate function (excluding A-B)
         L(succ, x; v) :- Edge(pred, succ), L(pred, x; v), if pred != "A".
