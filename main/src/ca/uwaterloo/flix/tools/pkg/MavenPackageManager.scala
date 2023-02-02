@@ -28,20 +28,28 @@ object MavenPackageManager {
     * Installs all MavenDependencies for a Manifest,
     * including transitive dependencies using coursier.
     */
-  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
     val res = depStrings.foldLeft(Resolve()) {
       case (res, depName) =>
         val dep = coursier.parse.DependencyParser.dependency(depName, "2.13")
-        res.addDependencies(dep.getOrElse(return Err(PackageError.CoursierError(s"Error in creating Coursier dependency: ${dep.left}"))))
+        dep match {
+          case Right(d) => res.addDependencies(d)
+          case Left(error) => return Err(PackageError.CoursierError(s"Error in creating Coursier dependency: $error"))
+        }
     }
     val resolution = res.run()
 
     val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-      out.println(s"Installing ${dep.toString()}"); f.addDependencies(dep)
+      out.println(s"Installing ${dep.module.toString()}"); f.addDependencies(dep)
     })
-    fetch.run()
+    try {
+      fetch.run()
+    } catch {
+      //TODO: does not seem to work...
+      case e: Exception => return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: ${e.getMessage}"))
+    }
 
     ().toOk
   }
