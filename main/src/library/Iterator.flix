@@ -154,6 +154,15 @@ namespace Iterator {
     }
 
     ///
+    /// Returns the contents of `iter` as an array.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, Read(r) } = region rc {
+        Vector.buildVectorViaMutList(rc, m -> forEach(a -> MutList.push!(a, m), iter))
+    }
+
+    ///
     /// Returns the contents of `iter` as a list.
     ///
     /// Consumes the entire iterator.

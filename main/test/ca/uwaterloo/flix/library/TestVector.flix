@@ -3011,16 +3011,11 @@ namespace TestVector {
     def unzip04(): Bool =
         let (a,b) = Vector.unzip(vectorOf3((1, true), (2, true), (3, false)));
         Vector.equals(a, vectorOf3(1, 2, 3)) and Vector.equals(b, vectorOf3(true, true, false))
-/*
+
     @test
     def unzip05(): Bool =
-        unzip05Aux(r1, Array#{(1, "1"), (2, "2"), (3, "3")} @ r2) `Vector.equals` (vectorOf3(1, 2, 3))
+        fst(Vector.unzip(vectorOf3((1, "1"), (2, "2"), (3, "3")))) `Vector.equals` vectorOf3(1, 2, 3)
 
-    def unzip05Aux(r1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { Write(r1), Read(r2) } =
-        region r3 {
-            // snd is local, fst is for caller
-            Vector.unzip(r1, r3, a) |> fst
-        }
 
     /////////////////////////////////////////////////////////////////////////////
     // fold2                                                                   //
@@ -3048,24 +3043,24 @@ namespace TestVector {
 
     @test
     def fold206(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, true)) == 9
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, true)) == 9
 
     @test
     def fold207(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, false)) == 14
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, false)) == 14
 
     @test
     def fold208(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, true)) == 14
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, true)) == 14
 
     @test
     def fold209(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, false)) == 24
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, false)) == 24
 
     @test
     def fold210(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ r,
-            Array#{true,false,false,true)) == -118
+        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf4(6, -4, 3, 2),
+            vectorOf4(true, false, false, true)) == -118
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft2                                                               //
@@ -3093,24 +3088,24 @@ namespace TestVector {
 
     @test
     def foldLeft206(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, true)) == 9
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, true)) == 9
 
     @test
     def foldLeft207(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, false)) == 14
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, false)) == 14
 
     @test
     def foldLeft208(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, true)) == 14
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, true)) == 14
 
     @test
     def foldLeft209(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, false)) == 24
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, false)) == 24
 
     @test
     def foldLeft210(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ r,
-            Array#{true,false,false,true)) == -118
+        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, vectorOf4(6, -4, 3, 2),
+            vectorOf4(true, false, false, true)) == -118
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight2                                                              //
@@ -3138,24 +3133,24 @@ namespace TestVector {
 
     @test
     def foldRight206(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, true)) == 9
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, true)) == 9
 
     @test
     def foldRight207(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(true, false)) == 11
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(true, false)) == 11
 
     @test
     def foldRight208(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, true)) == 18
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, true)) == 18
 
     @test
     def foldRight209(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ r, vectorOf2(false, false)) == 24
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, vectorOf2(3, 2), vectorOf2(false, false)) == 24
 
     @test
     def foldRight210(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ r,
-            Array#{true,false,false,true)) == -66
+        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, vectorOf4(6, -4, 3, 2),
+            vectorOf4(true, false, false, true)) == -66
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMap                                                               //
@@ -3188,18 +3183,18 @@ namespace TestVector {
 
     @test
     def filterMap06(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1));
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf2(6, -1));
         Vector.equals(v, Vector.singleton(3))
 
     @test
     def filterMap07(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6));
-        Vector.equals(v, Array#{4,3))
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf2(8, 6));
+        Vector.equals(v, vectorOf2(4, 3))
 
     @test
     def filterMap08(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10));
-        Vector.equals(v, Array#{0,1,2,5))
+        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf7(0, 1, 2, 3, 4, 5, 10));
+        Vector.equals(v, vectorOf4(0, 1, 2, 5))
 
     /////////////////////////////////////////////////////////////////////////////
     // findMap                                                                 //
@@ -3227,15 +3222,15 @@ namespace TestVector {
 
     @test
     def findMap06(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1)) == Some(3)
+        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf2(6, -1)) == Some(3)
 
     @test
     def findMap07(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6)) == Some(4)
+        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf2(8, 6)) == Some(4)
 
     @test
     def findMap08(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10)) == Some(0)
+        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, vectorOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -3263,15 +3258,15 @@ namespace TestVector {
 
     @test
     def toSet06(): Bool =
-        Vector.toSet(Array#{1,2,1)) == Set#{1, 2}
+        Vector.toSet(vectorOf3(1, 2, 1)) == Set#{1, 2}
 
     @test
     def toSet07(): Bool =
-        Vector.toSet(Array#{1,1,2)) == Set#{1, 2}
+        Vector.toSet(vectorOf3(1, 1, 2)) == Set#{1, 2}
 
     @test
     def toSet08(): Bool =
-        Vector.toSet(Array#{2,1,2,3,4,5,6,3,3)) == Set#{1, 2, 3, 4, 5, 6}
+        Vector.toSet(vectorOf9(2, 1, 2, 3, 4, 5, 6, 3, 3)) == Set#{1, 2, 3, 4, 5, 6}
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
@@ -3279,19 +3274,19 @@ namespace TestVector {
 
     @test
     def toMap01(): Bool =
-        Vector.toMap((Vector.empty()): Array[(Int32, Bool), _]) == Map#{}
+        Vector.toMap((Vector.empty()): Vector[(Int32, Bool)]) == Map#{}
 
     @test
     def toMap02(): Bool =
-        Vector.toMap(Array#{(1, true))) == Map#{1 => true}
+        Vector.toMap(Vector.singleton((1, true))) == Map#{1 => true}
 
     @test
     def toMap03(): Bool =
-        Vector.toMap(Array#{(1, true), (2, false))) == Map#{1 => true, 2 => false}
+        Vector.toMap(vectorOf2((1, true), (2, false))) == Map#{1 => true, 2 => false}
 
     @test
     def toMap04(): Bool =
-        Vector.toMap(Array#{(1, true), (1, false))) == Map#{1 => true}
+        Vector.toMap(vectorOf2((1, true), (1, false))) == Map#{1 => true}
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOf                                                             //
@@ -3406,7 +3401,7 @@ namespace TestVector {
     @test
     def findIndices03(): Bool =
         let v = Vector.findIndices(i -> i > 2, Vector.singleton(3));
-        Vector.equals(v, Vector.empty())
+        Vector.equals(v, Vector.singleton(0))
 
     @test
     def findIndices04(): Bool =
@@ -3416,7 +3411,7 @@ namespace TestVector {
     @test
     def findIndices05(): Bool =
         let v = Vector.findIndices(i -> i > 2, vectorOf2(6, -6));
-        Vector.equals(v, Vector.empty())
+        Vector.equals(v, Vector.singleton(0))
 
     @test
     def findIndices06(): Bool =
@@ -3426,7 +3421,7 @@ namespace TestVector {
     @test
     def findIndices07(): Bool =
         let v = Vector.findIndices(i -> i > 2, vectorOf2(6, 7));
-        Vector.equals(v, Array#{0,1))
+        Vector.equals(v, vectorOf2(0, 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
@@ -3445,143 +3440,152 @@ namespace TestVector {
     @test
     def init03(): Bool =
         let v = Vector.init(x -> x, 1);
-        Vector.equals(v, Vector.empty())
+        Vector.equals(v, Vector.singleton(0))
 
     @test
     def init04(): Bool =
         let v = Vector.init(x -> x, 2);
-        Vector.equals(v, Array#{0,1))
+        Vector.equals(v, vectorOf2(0, 1))
 
     @test
     def init05(): Bool =
         let v = Vector.init(x -> x, 50);
-        Vector.length(a) == 50
+        Vector.length(v) == 50
 
     /////////////////////////////////////////////////////////////////////////////
-    // sameElements                                                            //
+    // equals                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sameElements01(): Bool =
+    def equals01(): Bool =
         let a = Vector.empty(): Vector[Int32];
         let b = Vector.empty(): Vector[Int32];
-        Vector.equals(v,b) == true
+        Vector.equals(a, b) == true
 
     @test
-    def sameElements02(): Bool =
+    def equals02(): Bool =
         let a = (Vector.singleton(1)): Vector[Int32];
         let b = Vector.empty(): Vector[Int32];
-        Vector.equals(v,b) == false
+        Vector.equals(a, b) == false
 
     @test
-    def sameElements03(): Bool =
+    def equals03(): Bool =
         let a = Vector.empty(): Vector[Int32];
         let b = (Vector.singleton(1)): Vector[Int32];
-        Vector.equals(v,b) == false
+        Vector.equals(a, b) == false
 
     @test
-    def sameElements04(): Bool =
+    def equals04(): Bool =
         let a = (Vector.singleton(1)): Vector[Int32];
         let b = (Vector.singleton(1)): Vector[Int32];
-        Vector.equals(v,b) == true
+        Vector.equals(a, b) == true
 
     @test
-    def sameElements05(): Bool =
+    def equals05(): Bool =
         let a = (Vector.singleton(1)): Vector[Int32];
         let b = Vector.empty(): Vector[Int32];
-        Vector.equals(v,b) == false
+        Vector.equals(a, b) == false
 
     @test
-    def sameElements06(): Bool =
+    def equals06(): Bool =
         let a = (vectorOf2(1, 2)): Vector[Int32];
         let b = (vectorOf2(1, 2)): Vector[Int32];
-        Vector.equals(v,b) == true
+        Vector.equals(a, b) == true
 
     @test
-    def sameElements07(): Bool =
+    def equals07(): Bool =
         let a = (vectorOf2(1, 2)): Vector[Int32];
         let b = (vectorOf2(2, 1)): Vector[Int32];
-        Vector.equals(v,b) == false
+        Vector.equals(a, b) == false
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEach01(): Bool =
-        let a = Vector.empty(): Vector[Int32];
-        let sb = new StringBuilder(r);
+    def forEach01(): Bool = region rc {
+        let v = Vector.empty(): Vector[Int32];
+        let sb = new StringBuilder(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEach(fn, a);
+        Vector.forEach(fn, v);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def forEach02(): Bool =
-        let v = Vector.empty();
-        let sb = new StringBuilder(r);
+    def forEach02(): Bool = region rc {
+        let v = Vector.singleton(0);
+        let sb = new StringBuilder(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEach(fn, a);
+        Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "F"
+    }
 
     @test
-    def forEach03(): Bool =
+    def forEach03(): Bool = region rc {
         let v = Vector.singleton(1);
-        let sb = new StringBuilder(r);
+        let sb = new StringBuilder(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEach(fn, a);
+        Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "T"
+    }
 
     @test
-    def forEach04(): Bool =
-        let a = Array#{0,1} @ r;
-        let sb = new StringBuilder(r);
+    def forEach04(): Bool = region rc {
+        let v = vectorOf2(0, 1);
+        let sb = new StringBuilder(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEach(fn, a);
+        Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "FT"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forEachWithIndex01(): Bool =
-        let a = (Vector.empty()): Array[Float32, _];
-        let sb = new StringBuilder(r);
+    def forEachWithIndex01(): Bool = region rc {
+        let v = (Vector.empty()): Vector[Float32];
+        let sb = new StringBuilder(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEachWithIndex(fn, a);
+        Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == ""
+    }
 
     @test
-    def forEachWithIndex02(): Bool =
-        let a = Array#{0.0} @ r;
-        let sb = new StringBuilder(r);
+    def forEachWithIndex02(): Bool = region rc {
+        let v = Vector.singleton(0.0f32);
+        let sb = new StringBuilder(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEachWithIndex(fn, a);
+        Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "F"
+    }
 
     @test
-    def forEachWithIndex03(): Bool =
-        let a = Array#{0.0, 0.1} @ r;
-        let sb = new StringBuilder(r);
+    def forEachWithIndex03(): Bool = region rc {
+        let v = vectorOf2(0.0f32, 0.1f32);
+        let sb = new StringBuilder(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEachWithIndex(fn, a);
+        Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FT"
+    }
 
     @test
-    def forEachWithIndex04(): Bool =
-        let a = Array#{0.0, 0.1, 0.2} @ r;
-        let sb = new StringBuilder(r);
+    def forEachWithIndex04(): Bool = region rc {
+        let v = vectorOf3(0.0f32, 0.1f32, 0.2f32);
+        let sb = new StringBuilder(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEachWithIndex(fn, a);
+        Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTT"
+    }
 
     @test
-    def forEachWithIndex05(): Bool =
-        let a = Array#{0.0, 0.1, 0.2, 0.3} @ r;
-        let sb = new StringBuilder(r);
+    def forEachWithIndex05(): Bool = region rc {
+        let v = vectorOf4(0.0f32, 0.1f32, 0.2f32, 0.3f32);
+        let sb = new StringBuilder(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
-        Vector.forEachWithIndex(fn, a);
+        Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTTT"
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // updateSequence                                                          //
@@ -3629,18 +3633,18 @@ namespace TestVector {
 
     @test
     def updateSequence09(): Bool =
-        let v = Vector.updateSequence(0, vectorOf2(2, 4) @ r, Vector.singleton(1));
+        let v = Vector.updateSequence(0, vectorOf2(2, 4), Vector.singleton(1));
         Vector.equals(v, Vector.singleton(2))
 
     @test
     def updateSequence10(): Bool =
-        let v = Vector.updateSequence(-1, vectorOf2(2, 4) @ r, Vector.singleton(1));
+        let v = Vector.updateSequence(-1, vectorOf2(2, 4), Vector.singleton(1));
         Vector.equals(v, Vector.singleton(4))
 
     @test
     def updateSequence11(): Bool =
         let v = Vector.updateSequence(-1, vectorOf2(3, 4), vectorOf2(1, 2));
-        Vector.equals(v, vectorOf2(4, 2) @ r)
+        Vector.equals(v, vectorOf2(4, 2))
 
     @test
     def updateSequence12(): Bool =
@@ -3670,62 +3674,62 @@ namespace TestVector {
     @test
     def updateSequence17(): Bool =
         let v = Vector.updateSequence(0, Vector.singleton(4), vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{4, 2, 3))
+        Vector.equals(v, vectorOf3(4, 2, 3))
 
     @test
     def updateSequence18(): Bool =
         let v = Vector.updateSequence(1, Vector.singleton(4), vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{1, 4, 3))
+        Vector.equals(v, vectorOf3(1, 4, 3))
 
     @test
     def updateSequence19(): Bool =
         let v = Vector.updateSequence(2, Vector.singleton(4), vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{1, 2, 4))
+        Vector.equals(v, vectorOf3(1, 2, 4))
 
     @test
     def updateSequence20(): Bool =
-        let v = Vector.updateSequence(0, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{4, 5, 3))
+        let v = Vector.updateSequence(0, vectorOf2(4, 5), vectorOf3(1, 2, 3));
+        Vector.equals(v, vectorOf3(4, 5, 3))
 
     @test
     def updateSequence21(): Bool =
-        let v = Vector.updateSequence(1, Array#{4, 5} @ r, vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{1, 4, 5))
+        let v = Vector.updateSequence(1, vectorOf2(4, 5), vectorOf3(1, 2, 3));
+        Vector.equals(v, vectorOf3(1, 4, 5))
 
     @test
     def updateSequence22(): Bool =
-        let v = Vector.updateSequence(-1, vectorOf3(4, 5, 6) vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{5, 6, 3))
+        let v = Vector.updateSequence(-1, vectorOf3(4, 5, 6), vectorOf3(1, 2, 3));
+        Vector.equals(v, vectorOf3(5, 6, 3))
 
     @test
     def updateSequence23(): Bool =
-        let v = Vector.updateSequence(0, vectorOf3(4, 5, 6) vectorOf3(1, 2, 3));
-        Vector.equals(v, Array#{4, 5, 6))
+        let v = Vector.updateSequence(0, vectorOf3(4, 5, 6), vectorOf3(1, 2, 3));
+        Vector.equals(v, vectorOf3(4, 5, 6))
 
     @test
     def updateSequence24(): Bool =
-        let v = Vector.updateSequence(2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7));
-        Vector.equals(v, Array#{1, 2, 14, 15, 16, 17, 7))
+        let v = Vector.updateSequence(2, vectorOf4(14, 15, 16, 17), vectorOf7(1, 2, 3, 4, 5, 6, 7));
+        Vector.equals(v, vectorOf7(1, 2, 14, 15, 16, 17, 7))
 
     @test
     def updateSequence25(): Bool =
-        let v = Vector.updateSequence(-2, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7));
-        Vector.equals(v, Array#{16, 17, 3, 4, 5, 6, 7))
+        let v = Vector.updateSequence(-2, vectorOf4(14, 15, 16, 17), vectorOf7(1, 2, 3, 4, 5, 6, 7));
+        Vector.equals(v, vectorOf7(16, 17, 3, 4, 5, 6, 7))
 
     @test
     def updateSequence26(): Bool =
-        let v = Vector.updateSequence(4, Array#{14, 15, 16, 17} @ r, Array#{1, 2, 3, 4, 5, 6, 7));
-        Vector.equals(v, Array#{1, 2, 3, 4, 14, 15, 16))
+        let v = Vector.updateSequence(4, vectorOf4(14, 15, 16, 17), vectorOf7(1, 2, 3, 4, 5, 6, 7));
+        Vector.equals(v, vectorOf7(1, 2, 3, 4, 14, 15, 16))
 
     @test
     def updateSequence27(): Bool =
-        let v = Vector.updateSequence(4, Array#{14, 15} @ r, Array#{1, 2, 3, 4, 5, 6, 7));
-        Vector.equals(v, Array#{1, 2, 3, 4, 14, 15, 7))
+        let v = Vector.updateSequence(4, vectorOf2(14, 15), vectorOf7(1, 2, 3, 4, 5, 6, 7));
+        Vector.equals(v, vectorOf7(1, 2, 3, 4, 14, 15, 7))
 
     @test
     def updateSequence28(): Bool =
-        let v = Vector.updateSequence(-1, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ r, Array#{1, 2, 3, 4, 5, 6, 7));
-        Vector.equals(v, Array#{-2, -3, -4, -5, -6, -7, -8))
+        let v = Vector.updateSequence(-1, vectorOf8(-1, -2, -3, -4, -5, -6, -7, -8), vectorOf7(1, 2, 3, 4, 5, 6, 7));
+        Vector.equals(v, vectorOf7(-2, -3, -4, -5, -6, -7, -8))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -3739,67 +3743,67 @@ namespace TestVector {
     @test
     def sortWith01(): Bool =
         let v = Vector.sortWith(cmp, Vector.empty(): Vector[Int32]);
-        a `equals` Vector.empty(): Vector[Int32]
+        v `equals` Vector.empty(): Vector[Int32]
 
     @test
     def sortWith02(): Bool =
-        let v = Vector.sortWith(cmp, Vector.empty());
-        a `equals` Vector.empty()
+        let v = Vector.sortWith(cmp, Vector.singleton(0));
+        v `equals` Vector.singleton(0)
 
     @test
     def sortWith03(): Bool =
-        let v = Vector.sortWith(cmp, Array#{0,1));
-        a `equals` Array#{0,1} @ r
+        let v = Vector.sortWith(cmp, vectorOf2(0, 1));
+        v `equals` vectorOf2(0, 1)
 
     @test
     def sortWith04(): Bool =
-        let v = Vector.sortWith(cmp, Array#{1,0));
-        a `equals` Array#{0,1} @ r
+        let v = Vector.sortWith(cmp, vectorOf2(1, 0));
+        v `equals` vectorOf2(0, 1)
 
     @test
     def sortWith05(): Bool =
-        let v = Vector.sortWith(cmp, vectorOf2(1,1));
-        a `equals` vectorOf2(1,1)
+        let v = Vector.sortWith(cmp, vectorOf2(1, 1));
+        v `equals` vectorOf2(1, 1)
 
     @test
     def sortWith06(): Bool =
-        let v = Vector.sortWith(cmp, Array#{0,1,2,3,4,5));
-        a `equals` Array#{0,1,2,3,4,5} @ r
+        let v = Vector.sortWith(cmp, vectorOf6(0, 1, 2, 3, 4, 5));
+        v `equals` vectorOf6(0, 1, 2, 3, 4, 5)
 
     @test
     def sortWith07(): Bool =
-        let v = Vector.sortWith(cmp, Array#{5,4,3,2,1,0));
-        a `equals` Array#{0,1,2,3,4,5} @ r
+        let v = Vector.sortWith(cmp, vectorOf6(5, 4, 3, 2, 1, 0));
+        v `equals` vectorOf6(0, 1, 2, 3, 4, 5)
 
     @test
     def sortWith08(): Bool =
-        let v = Vector.sortWith(cmp, Array#{5,3,0,4,1,2));
-        a `equals` Array#{0,1,2,3,4,5} @ r
+        let v = Vector.sortWith(cmp, vectorOf6(5, 3, 0, 4, 1, 2));
+        v `equals` vectorOf6(0, 1, 2, 3, 4, 5)
 
     @test
     def sortWith09(): Bool =
-        let v = Vector.sortWith(cmp, Array#{2,3,0,4,1,2));
-        a `equals` Array#{0,1,2,2,3,4} @ r
+        let v = Vector.sortWith(cmp, vectorOf6(2, 3, 0, 4, 1, 2));
+        v `equals` vectorOf6(0, 1, 2, 2, 3, 4)
 
     @test
     def sortWith10(): Bool =
-        let v = Vector.sortWith(flip(cmp), Array#{0,1,2,3,4,5));
-        a `equals` Array#{5,4,3,2,1,0} @ r
+        let v = Vector.sortWith(flip(cmp), vectorOf6(0, 1, 2, 3, 4, 5));
+        v `equals` vectorOf6(5, 4, 3, 2, 1, 0)
 
     @test
     def sortWith11(): Bool =
-        let v = Vector.sortWith(flip(cmp), Array#{5,4,3,2,1,0));
-        a `equals` Array#{5,4,3,2,1,0} @ r
+        let v = Vector.sortWith(flip(cmp), vectorOf6(5, 4, 3, 2, 1, 0));
+        v `equals` vectorOf6(5, 4, 3, 2, 1, 0)
 
     @test
     def sortWith12(): Bool =
-        let v = Vector.sortWith(flip(cmp), Array#{5,3,0,4,1,2));
-        a `equals` Array#{5,4,3,2,1,0} @ r
+        let v = Vector.sortWith(flip(cmp), vectorOf6(5, 3, 0, 4, 1, 2));
+        v `equals` vectorOf6(5, 4, 3, 2, 1, 0)
 
     @test
     def sortWith13(): Bool =
-        let v = Vector.sortWith(flip(cmp), Array#{2,3,0,4,1,2));
-        a `equals` Array#{4,3,2,2,1,0} @ r
+        let v = Vector.sortWith(flip(cmp), vectorOf6(2, 3, 0, 4, 1, 2));
+        v `equals` vectorOf6(4, 3, 2, 2, 1, 0)
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -3819,31 +3823,31 @@ namespace TestVector {
 
     @test
     def sort03(): Bool =
-        testSortVsSortWith(Array#{0,1))
+        testSortVsSortWith(vectorOf2(0, 1))
 
     @test
     def sort04(): Bool =
-        testSortVsSortWith(Array#{1,0))
+        testSortVsSortWith(vectorOf2(1, 0))
 
     @test
     def sort05(): Bool =
-        testSortVsSortWith(vectorOf2(1,1))
+        testSortVsSortWith(vectorOf2(1, 1))
 
     @test
     def sort06(): Bool =
-        testSortVsSortWith(Array#{0,1,2,3,4,5))
+        testSortVsSortWith(vectorOf6(0, 1, 2, 3, 4, 5))
 
     @test
     def sort07(): Bool =
-        testSortVsSortWith(Array#{5,4,3,2,1,0))
+        testSortVsSortWith(vectorOf6(5, 4, 3, 2, 1, 0))
 
     @test
     def sort08(): Bool =
-        testSortVsSortWith(Array#{5,3,0,4,1,2))
+        testSortVsSortWith(vectorOf6(5, 3, 0, 4, 1, 2))
 
     @test
     def sort09(): Bool =
-        testSortVsSortWith(Array#{2,3,0,4,1,2))
+        testSortVsSortWith(vectorOf6(2, 3, 0, 4, 1, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortBy                                                                  //
@@ -3864,31 +3868,31 @@ namespace TestVector {
 
     @test
     def sortBy03(): Bool =
-        testSortByVsSort(Array#{0,1))
+        testSortByVsSort(vectorOf2(0, 1))
 
     @test
     def sortBy04(): Bool =
-        testSortByVsSort(Array#{1,0))
+        testSortByVsSort(vectorOf2(1, 0))
 
     @test
     def sortBy05(): Bool =
-        testSortByVsSort(vectorOf2(1,1))
+        testSortByVsSort(vectorOf2(1, 1))
 
     @test
     def sortBy06(): Bool =
-        testSortByVsSort(Array#{0,1,2,3,4,5))
+        testSortByVsSort(vectorOf6(0, 1, 2, 3, 4, 5))
 
     @test
     def sortBy07(): Bool =
-        testSortByVsSort(Array#{5,4,3,2,1,0))
+        testSortByVsSort(vectorOf6(5, 4, 3, 2, 1, 0))
 
     @test
     def sortBy08(): Bool =
-        testSortByVsSort(Array#{5,3,0,4,1,2))
+        testSortByVsSort(vectorOf6(5, 3, 0, 4, 1, 2))
 
     @test
     def sortBy09(): Bool =
-        testSortByVsSort(Array#{2,3,0,4,1,2))
+        testSortByVsSort(vectorOf6(2, 3, 0, 4, 1, 2))
 
     enum R {
         case R({i = Int32, s = String})
@@ -3899,11 +3903,13 @@ namespace TestVector {
             let R.R(x) = a;
             let R.R(y) = b;
             x.i == y.i and x.s == y.s
+    }
 
     @test
-    def sortBy10(): Bool = region reg {
-        Vector.sortBy(reg, r -> let R.R(x) = r; x.i, Array#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})} @ reg)
-        `equals` Array#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})} @
+    def sortBy10(): Bool = 
+        let geti = r -> {let R.R(x) = r; x.i};
+        Vector.sortBy(geti, vectorOf3(R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})))
+            `equals` vectorOf3(R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"}))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
@@ -3923,9 +3929,7 @@ namespace TestVector {
 
     @test
     def minimumBy04(): Bool =
-        let v = Vector.range(10, 20);
-        a[5] = -22;
-        Vector.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+        Vector.minimumBy((x, y) -> x <=> y, Vector.range(10, 20)) == Some(10)
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
@@ -3945,9 +3949,7 @@ namespace TestVector {
 
     @test
     def maximumBy04(): Bool =
-        let v = Vector.range(10, 20);
-        a[5] = 42;
-        Vector.maximumBy((x, y) -> x <=> y, a) == Some(42)
+        Vector.maximumBy((x, y) -> x <=> y, Vector.range(10, 20)) == Some(19)
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
@@ -3967,15 +3969,15 @@ namespace TestVector {
 
     @test
     def sum04(): Bool =
-        Vector.sum(Array#{1, 2, 3, -3)) == 3
+        Vector.sum(vectorOf4(1, 2, 3, -3)) == 3
 
     @test
     def sum05(): Bool =
-        Vector.sum(Array#{-1, -2, -3, -4)) == -10
+        Vector.sum(vectorOf4(-1, -2, -3, -4)) == -10
 
     @test
     def sum06(): Bool =
-        Vector.sum(Array#{10, -10)) == 0
+        Vector.sum(vectorOf2(10, -10)) == 0
 
     @test
     def sum07(): Bool =
@@ -3999,15 +4001,15 @@ namespace TestVector {
 
     @test
     def sumWith04(): Bool =
-        Vector.sumWith(x -> x + 1, Array#{1, 2, 3, -3)) == 7
+        Vector.sumWith(x -> x + 1, vectorOf4(1, 2, 3, -3)) == 7
 
     @test
     def sumWith05(): Bool =
-        Vector.sumWith(x -> x + 1, Array#{-1, -2, -3, -4)) == -6
+        Vector.sumWith(x -> x + 1, vectorOf4(-1, -2, -3, -4)) == -6
 
     @test
     def sumWith06(): Bool =
-        Vector.sumWith(x -> x + 1, Array#{10, -10)) == 2
+        Vector.sumWith(x -> x + 1, vectorOf2(10, -10)) == 2
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4020,7 +4022,7 @@ namespace TestVector {
 
     @test
     def toDelayList02(): Bool =
-        (Vector.new(0): Array[String, r]) |> Vector.toDelayList == DelayList.empty()
+        (Vector.empty(): Vector[String]) |> Vector.toDelayList == DelayList.empty()
 
     @test
     def toDelayList03(): Bool =
@@ -4028,7 +4030,7 @@ namespace TestVector {
 
     @test
     def toDelayList04(): Bool =
-        Vector.range(-1000, 1000) |> Vector.toDelayList |> DelayList.toArray(r) `equals` Vector.range(-1000, 1000)
+        Vector.range(-1000, 1000) |> Vector.toDelayList |> DelayList.toVector `equals` Vector.range(-1000, 1000)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
@@ -4075,21 +4077,24 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def iterator01(): Bool =
-        Vector.empty(): Vector[Int32] |> Vector.iterator(r) |> Iterator.toList == Nil
+    def iterator01(): Bool = region rc {
+        Vector.empty(): Vector[Int32] |> Vector.iterator(rc) |> Iterator.toList == Nil
+    }
 
     @test
-    def iterator02(): Bool =
-        (vectorOf3(1, 2, 3)) |> Vector.iterator(r) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    def iterator02(): Bool = region rc {
+        (vectorOf3(1, 2, 3)) |> Vector.iterator(rc) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    }
 
     @test
-    def iterator03(): Bool =
-        (vectorOf3(1, 2, 3)) |> Vector.iterator(r) |> Iterator.toArray(r) `equals` vectorOf3(1, 2, 3)
+    def iterator03(): Bool = region rc {
+        (vectorOf3(1, 2, 3)) |> Vector.iterator(rc) |> Iterator.toVector `equals` vectorOf3(1, 2, 3)
+    }
 
     @test
-    def iterator04(): Bool =
-        Vector.range(-100, 100) |> Vector.iterator(r) |> Iterator.toArray(r) `equals` Vector.range(-100, 100)
-
+    def iterator04(): Bool = region rc {
+        Vector.range(-100, 100) |> Vector.iterator(rc) |> Iterator.toVector `equals` Vector.range(-100, 100)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
@@ -4129,42 +4134,42 @@ namespace TestVector {
 
     @test
     def joinWith04(): Bool =
-        Vector.joinWith(x -> x + x, ",", Array#{"1", "2", "3")) == "11,22,33"
+        Vector.joinWith(x -> x + x, ",", vectorOf3("1", "2", "3")) == "11,22,33"
 
     @test
     def joinWith05(): Bool =
-        let a: Vector[Int32] = Vector.empty();
-        let s = Vector.joinWith(Int32.toString, ",", a);
+        let v: Vector[Int32] = Vector.empty();
+        let s = Vector.joinWith(Int32.toString, ",", v);
         s == ""
 
     @test
     def joinWith06(): Bool =
         let v = Vector.singleton(1);
-        let s = Vector.joinWith(Int32.toString, ",", a);
+        let s = Vector.joinWith(Int32.toString, ",", v);
         s == "1"
 
     @test
     def joinWith07(): Bool =
-        let v = VectorOf2(1, 2);
-        let s = Vector.joinWith(Int32.toString, ",", a);
+        let v = vectorOf2(1, 2);
+        let s = Vector.joinWith(Int32.toString, ",", v);
         s == "1,2"
 
     @test
     def joinWith08(): Bool =
-        let v = VectorOf3(1, 2, 3);
-        let s = Vector.joinWith(Int32.toString, ",", a);
+        let v = vectorOf3(1, 2, 3);
+        let s = Vector.joinWith(Int32.toString, ",", v);
         s == "1,2,3"
 
     @test
     def joinWith09(): Bool =
-        let v = VectorOf3(1, 2, 3);
-        let s = Vector.joinWith(Int32.toString, "", a);
+        let v = vectorOf3(1, 2, 3);
+        let s = Vector.joinWith(Int32.toString, "", v);
         s == "123"
 
     @test
     def joinWith10(): Bool =
-        let v = VectorOf3(1, 2, 3);
-        let s = Vector.joinWith(Int32.toString, "..", a);
+        let v = vectorOf3(1, 2, 3);
+        let s = Vector.joinWith(Int32.toString, "..", v);
         s == "1..2..3"
 
 
@@ -4174,46 +4179,48 @@ namespace TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.equals(Vector.toMutList(Vector.empty(): Vector[Int32]), new MutList(rc))
+        MutList.sameElements(Vector.toMutList(rc, Vector.empty(): Vector[Int32]), new MutList(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let v = new MutList(rc);
-        MutList.push!(1, v);
-        MutList.equals(Vector.toMutList(Vector.singleton(1)), v)
+        let l = new MutList(rc);
+        MutList.push!(1, l);
+        MutList.sameElements(Vector.toMutList(rc, Vector.singleton(1)), l)
+    }
 
     @test
     def toMutList03(): Bool = region rc {
-        let v = new MutList(rc);
-        MutList.push!(1, v);
-        MutList.push!(2, v);
-        MutList.push!(3, v);
-        MutList.equals(Vector.toMutList(vectorOf3(1, 2, 3)), v)
+        let l = new MutList(rc);
+        MutList.push!(1, l);
+        MutList.push!(2, l);
+        MutList.push!(3, l);
+        MutList.sameElements(Vector.toMutList(rc, vectorOf3(1, 2, 3)), l)
+    }
 
     @test
     def toMutList04(): Bool = region rc {
-        MutList.equals((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(0, 100))
+        MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100))
     }
 
     @test
     def toMutList05(): Bool = region rc {
-        let v = Vector.toMutList(vectorOf3(1, 2, 3));
-        MutList.push!(4, v);
-        Vector.equals(MutList.toArray(v), vectorOf4(1, 2, 3, 4))
+        let l = Vector.toMutList(rc, vectorOf3(1, 2, 3));
+        MutList.push!(4, l);
+        Vector.equals(MutList.toVector(l), vectorOf4(1, 2, 3, 4))
     }
 
     @test
     def toMutList06(): Bool = region rc {
-        let v = Vector.toMutList(vectorOf3(1, 2, 3));
-        MutList.push!(4, v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        discard MutList.pop!(v);
-        Vector.equals(MutList.toArray(v), Vector.empty())
+        let l = Vector.toMutList(rc, vectorOf3(1, 2, 3));
+        MutList.push!(4, l);
+        discard MutList.pop!(l);
+        discard MutList.pop!(l);
+        discard MutList.pop!(l);
+        discard MutList.pop!(l);
+        Vector.equals(MutList.toVector(l), Vector.empty())
     }
-*/
+
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////

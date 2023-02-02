@@ -110,7 +110,7 @@ namespace Vector {
             let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
             let _ = f(arr);
             arr
-            ) as Array[a, true] \ ef
+        ) as Array[a, true] \ ef
 
     ///
     /// Returns a pair of fresh vectors.
@@ -121,8 +121,19 @@ namespace Vector {
             let arr2 = if (len2 > 0) Array.new(rc, len2) else Array#{} @ rc;
             let _ = f(arr1, arr2);
             (arr1, arr2)
-            ) as (Array[a, true], Array[b, true]) \ ef
+        ) as (Array[a, true], Array[b, true]) \ ef
 
+    ///
+    /// Returns a fresh vector built from an intermediate MutList.
+    ///
+    /// This is useful when the vector size is unknown.
+    ///
+    pub def buildVectorViaMutList(rc: Region[r], f: MutList[a, r] -> Unit \ ef): Vector[a] \ ef =
+        unsafe_cast (
+            let m = new MutList(rc);
+            f(m);
+            MutList.toArray(rc, m)
+        ) as Array[a, true] \ ef
 
     pub def liftArrayProducer(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
         unsafe_cast f(rc) as Vector[a]
