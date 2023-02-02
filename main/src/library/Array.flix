@@ -190,11 +190,10 @@ namespace Array {
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
-
     ///
     /// Returns `a` as a Vector.
     ///
-    pub def toVector(a: Array[a, true]): Vector[a] = region rc {
+    pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
         Vector.buildVector(rc, length(a), arr1 -> forEachWithIndex((i, x) -> put(x, i, arr1), a))
     }
 

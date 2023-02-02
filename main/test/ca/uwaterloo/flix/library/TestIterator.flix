@@ -321,6 +321,25 @@ namespace TestIterator {
         Iterator.range(rc, -100, 200) |> Iterator.toArray(rc) `Array.sameElements` Array.range(rc, -100, 200)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        (Iterator.empty(rc) |> Iterator.toVector) `Vector.equals` (Vector.empty() : Vector[Int32])
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        (Iterator.singleton(rc, 0) |> Iterator.toVector) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        (Iterator.range(rc, 1, 4) |> Iterator.toVector) `Vector.equals` Vector.range(1, 4)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //

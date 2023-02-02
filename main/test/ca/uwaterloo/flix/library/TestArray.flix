@@ -288,6 +288,25 @@ namespace TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        Array.toVector((Array#{} @ rc) : Array[Int32, _]) `Vector.equals` Vector.empty()
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        Array.toVector((Array#{0} @ rc) : Array[Int32, _]) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        Array.toVector((Array#{1, 2, 3} @ rc) : Array[Int32, _]) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
