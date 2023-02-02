@@ -109,6 +109,12 @@ def main(): Unit \ IO =
         L("B", x; smartWiden(vold, inc(v))) :- L("A", x; v), L("B", x; vold).  // Implicit assumption that vold is not bottom.
         // Note how this reaches the fixpoint faster.
 
+        // IDEA: We need strict and non-strict atoms and then an analysis to sort them out.
+        // By sorting, I mean to ensure that non-strict atoms do not bind variables.
+        // Then we can write:
+        // L("B", x; smartWiden(vold, inc(v))) :- strict L("A", x; v), nonstrict L("B", x; vold).
+        // This also requires new semantics in the engine.
+
         // Propagate function (excluding A-B)
         L(succ, x; v) :- Edge(pred, succ), L(pred, x; v), if pred != "A".
     };
