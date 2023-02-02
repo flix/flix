@@ -1048,6 +1048,8 @@ object Weeder {
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.softRecoverOne(WeededAst.Expression.Error)
 
+    // TODO: Add more here
+
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
