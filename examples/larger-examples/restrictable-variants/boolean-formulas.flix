@@ -16,15 +16,6 @@ def size(e: Expr[s]): Int32 = choose e {
     case Expr.Xor(x, y) => size(x) + size(y) + 1
 }
 
-def traverse(e: Expr[s]): Expr[s] = choose* e {
-    case Expr.Cst(b) => Expr.Cst(b)
-    case Expr.Var(v) => Expr.Var(v)
-    case Expr.Not(x) => open Expr.Not(x)
-    case Expr.And(x, y) => open Expr.And(traverse(x), traverse(y))
-    case Expr.Or(x, y) => open Expr.Or(traverse(x), traverse(y))
-    case Expr.Xor(x, y) => open Expr.Xor(traverse(x), traverse(y))
-}
-
 def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not, Expr.And, Expr.Or>] =
     choose* e {
         case Expr.Var(x) => Expr.Var(x)
