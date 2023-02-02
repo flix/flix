@@ -105,6 +105,9 @@ namespace Vector {
     ///
     /// Returns a fresh vector.
     ///
+    /// The function `f` is applied to a uninitialized array, it should should set each element
+    /// to an actual value.
+    ///
     pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
         unsafe_cast (
             let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
@@ -114,6 +117,9 @@ namespace Vector {
 
     ///
     /// Returns a pair of fresh vectors.
+    ///
+    /// The function `f` is applied to two uninitialized arrays, it should should set each element
+    /// of the arrays to an actual value.
     ///
     pub def buildVector2(rc: Region[r], len1: Int32, len2: Int32, f: Array[a, r] -> Array[b, r] -> Unit \ ef): (Vector[a], Vector[b]) \ ef =
         unsafe_cast (
@@ -135,7 +141,10 @@ namespace Vector {
             MutList.toArray(rc, m)
         ) as Array[a, true] \ ef
 
-    pub def liftArrayProducer(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
+    ///
+    /// Returns a fresh vector "ex nihilo" from just a region.
+    ///
+    def buildVector0(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
         unsafe_cast f(rc) as Vector[a]
 
 
@@ -143,7 +152,7 @@ namespace Vector {
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
-        liftArrayProducer(rc, r1 -> Array.slice(r1, start.start, end.end, v))
+        buildVector0(rc, r1 -> Array.slice(r1, start.start, end.end, v))
     }
 
     ///

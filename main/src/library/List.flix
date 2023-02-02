@@ -1166,7 +1166,8 @@ namespace List {
     /// Returns the list `l` as a vector.
     ///
     pub def toVector(l: List[a]): Vector[a] = region rc {
-        Vector.liftArrayProducer(rc, r1 -> toArray(r1, l))
+        let len = length(l);
+        Vector.buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(x, i, arr), l))
     }
 
     ///
