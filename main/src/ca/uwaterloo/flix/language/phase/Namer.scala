@@ -687,7 +687,7 @@ object Namer {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
-      } // TODO: softRecoverOne
+      }.softRecoverOne(NamedAst.Expression.Error)
 
     case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
@@ -898,7 +898,7 @@ object Namer {
       val retVal = visitType(retTpe)
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
-      } // TODO: softRecoverOne
+      }.softRecoverOne(NamedAst.Expression.Error)
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(visitExp(_, ns0))
@@ -906,7 +906,7 @@ object Namer {
       val retVal = visitType(retTpe)
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
-      } // TODO: softRecoverOne
+      }.softRecoverOne(NamedAst.Expression.Error)
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -931,7 +931,7 @@ object Namer {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
-      } // TODO: softRecoverOne
+      }.softRecoverOne(NamedAst.Expression.Error)
 
     case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
