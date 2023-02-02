@@ -16,24 +16,27 @@ def size(e: Expr[s]): Int32 = choose e {
     case Expr.Xor(x, y) => size(x) + size(y) + 1
 }
 
-def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not>] =
+def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not, Expr.And, Expr.Or>] =
     choose* e {
         case Expr.Var(x) => Expr.Var(x)
         case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(open_as Expr simplify(x))
-        case Expr.And(x, y) => Expr.And(???, ???)
-        case Expr.Or(x, y) => Expr.Or(???, ???)
-        case Expr.Xor(x, y) => Expr.Not(???)
+        case Expr.Not(x) => open Expr.Not(simplify(x))
+        case Expr.And(x, y) => open Expr.And(simplify(x), simplify(y))
+        case Expr.Or(x, y) => open Expr.Or(simplify(x), simplify(y))
+        case Expr.Xor(x, y) =>
+            let xx = simplify(x);
+            let yy = simplify(y);
+            open Expr.Or(open Expr.And(xx, open Expr.Not(yy)), open Expr.And(open Expr.Not(xx), yy))
     }
 
 def subst(e: Expr[s]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>] =
     choose* e {
-        case Expr.Var(x) => Expr.Cst(true)
+        case Expr.Var(_) => Expr.Cst(true)
         case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(open_as Expr subst(x))
-        case Expr.Or(x, y) => Expr.Or(???, ???)
-        case Expr.And(x, y) => Expr.And(???, ???)
-        case Expr.Xor(x, y) => Expr.Xor(???, ???)
+        case Expr.Not(x) => open Expr.Not(subst(x))
+        case Expr.Or(x, y) => open Expr.Or(subst(x), subst(y))
+        case Expr.And(x, y) => open Expr.And(subst(x), subst(y))
+        case Expr.Xor(x, y) => open Expr.Xor(subst(x), subst(y))
     }
 
 def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>]): Bool =
@@ -50,10 +53,10 @@ def eval(e: Expr[s]): Bool = {
 }
 
 def main(): Unit \ IO = {
-    let input: Expr[<Expr.Not, Expr.Var>] = open Expr.Not(open Expr.Var(42));
+    let input = open Expr.Not(open Expr.Var(42));
     println("input is '${toString(input)}'");
     println("input size ${size(input)}");
-    println("input evaluates to ${eval(input)}");
+    println("input evaluates to '${eval(input)}' (all variables mapped to 'true'");
     let fls = Expr.Cst(false);
     println("input ${if (eq(input, fls)) "is" else "is not"} equal to '${toString(fls)}'")
 }
