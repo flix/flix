@@ -110,6 +110,7 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintasts = cmdOpts.xprintasts,
+      xprintboolunif = cmdOpts.xprintboolunif,
       xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
     )
@@ -244,6 +245,7 @@ object Main {
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
                      xprintasts: Set[String] = Set.empty,
+                     xprintboolunif: Boolean = false,
                      xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
@@ -434,6 +436,10 @@ object Main {
 
       // xprint-asts
       opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
+
+      // Xprint-bool-unif
+      opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
+        text("[experimental] prints boolean unification queries")
 
       //
       // Boolean unification flags.
