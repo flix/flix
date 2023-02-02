@@ -114,6 +114,9 @@ def main(): Unit \ IO =
         // Then we can write:
         // L("B", x; smartWiden(vold, inc(v))) :- strict L("A", x; v), nonstrict L("B", x; vold).
         // This also requires new semantics in the engine.
+        // Is this the same as the modedness?
+
+        // Q2: Do we want a transform on programs where you can write: `widen P with smartWiden on L`? - as program transformation?
 
         // Propagate function (excluding A-B)
         L(succ, x; v) :- Edge(pred, succ), L(pred, x; v), if pred != "A".
