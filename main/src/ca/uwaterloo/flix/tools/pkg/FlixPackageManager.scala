@@ -71,7 +71,7 @@ object FlixPackageManager {
             Files.createDirectories(assetFolder)
 
             // download each asset to the folder
-            val newDownloads: mutable.ListBuffer[String] = ListBuffer.empty
+            val installed = assets.map(asset => project + "/" + s"ver${release.version.toString}" + "/" + asset.name)
             for (asset <- assets) {
               val assetName = asset.name
               val path = assetFolder.resolve(assetName)
@@ -86,12 +86,12 @@ object FlixPackageManager {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
                 out.println(s"Installation of $assetName completed")
-                newDownloads.addOne(project + "/" + s"ver${release.version.toString}" + "/" + assetName)
               } else {
                 out.println(s"$assetName already exists")
               }
             }
-            Ok(newDownloads.toList)
+
+            Ok(installed)
         }
     }
   }

@@ -17,41 +17,40 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import coursier._
 
 object MavenPackageManager {
 
+  val scalaVersion = "2.13"
+
   /**
     * Installs all MavenDependencies for a Manifest,
     * including transitive dependencies using coursier.
     */
-  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[List[String], PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
-    val res = depStrings.foldLeft(Resolve()) {
-      case (res, depName) =>
-        val dep = coursier.parse.DependencyParser.dependency(depName, "2.13")
-        dep match {
-          case Right(d) => res.addDependencies(d)
-          case Left(error) => return Err(PackageError.CoursierError(s"Error in creating Coursier dependency: $error"))
-        }
-    }
-    val resolution = res.run()
+    createCoursierDependencies(depStrings).flatMap { deps =>
+      val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
+      val resolution = res.run()
 
-    val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-      out.println(s"Installing ${dep.module.toString()}"); f.addDependencies(dep)
-    })
-    try {
-      fetch.run()
-    } catch {
-      //TODO: does not seem to work...
-      case e: Exception => return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: ${e.getMessage}"))
-    }
+      val installed = resolution.dependencies.map(dep => dep.module.toString()).toList
+      val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
+        out.println(s"Installing ${dep.module.toString()}");
+        f.addDependencies(dep)
+      })
+      try {
+        fetch.run()
+      } catch {
+        //TODO: does not seem to work...
+        case e: Exception => return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: ${e.getMessage}"))
+      }
 
-    ().toOk
+      Ok(installed)
+    }
   }
 
   /**
@@ -62,6 +61,19 @@ object MavenPackageManager {
     manifest.dependencies.collect {
       case dep: MavenDependency => dep
     }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")
+  }
+
+  /**
+    * Creates Coursier dependencies from a list of Strings
+    */
+  private def createCoursierDependencies(depStrings: List[String]): Result[List[Dependency], PackageError] = {
+    Result.sequence(
+      depStrings.map(depName => coursier.parse.DependencyParser.dependency(depName, scalaVersion))
+      .map {
+        case Left(error) => Err(PackageError.CoursierError(s"Error in creating Coursier dependency: $error"))
+        case Right(cDep) => Ok(cDep)
+      }
+    )
   }
 
 }
