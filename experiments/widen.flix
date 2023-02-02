@@ -58,6 +58,19 @@ def shouldWiden(x: Interval): Bool = match x {
     case Top            => true
 }
 
+///
+/// The naive widen function takes an interval and jumps too top if it is too big.
+///
+def naiveWiden(x: Interval): Interval = match x {
+    case Bot            => Bot
+    case Range(b, e)    =>
+        if (e - b <= 20ii)
+            Range(b, e)
+        else
+            Top
+    case Top            => Top
+}
+
 def main(): Unit \ IO =
     let pr = #{
         //
@@ -76,10 +89,10 @@ def main(): Unit \ IO =
         // Initial state at A
         L("A", "x"; alpha(42ii)).
 
-        // Widening if A-C becomes too large.
-        L("A", "x"; Interval.Top) :- L("C", "x"; v), if shouldWiden(v).
+        // Widening on A-C if the interval becomes too large.
+        L("A", "x"; naiveWiden(v)) :- L("C", "x"; v).
 
-        // Transfer function from A-B
+        // Transfer function from A-B.
         L("B", x; inc(v)) :- L("A", x; v).
 
         // Propagate function (excluding A-B)
