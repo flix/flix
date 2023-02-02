@@ -1284,7 +1284,7 @@ namespace Vector {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
+    pub def equals(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
         let alen = length(a);
         let blen = length(b);
         def loop(i) = {
