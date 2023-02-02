@@ -15,25 +15,45 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.{Err, ToOk}
 
 import java.io.PrintStream
 import coursier._
 
 object MavenPackageManager {
 
-  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, ManifestError] = {
+  /**
+    * Installs all MavenDependencies for a Manifest,
+    * including transitive dependencies using coursier.
+    */
+  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+    val depStrings = getMavenDependencyStrings(manifest)
 
+    val res = depStrings.foldLeft(Resolve()) {
+      case (res, depName) =>
+        val dep = coursier.parse.DependencyParser.dependency(depName, "2.13")
+        res.addDependencies(dep.getOrElse(return Err(PackageError.CoursierError(s"Error in creating Coursier dependency: ${dep.left}"))))
+    }
+    val resolution = res.run()
 
-    val resolution = Resolve()
-      .addDependencies(dep"org.tpolecat:doobie-core_2.12:0.6.0")
-      .run()
-    println(resolution)
+    val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
+      out.println(s"Installing ${dep.toString()}"); f.addDependencies(dep)
+    })
+    fetch.run()
 
-    ???
-
+    ().toOk
   }
 
-  private def installArtifact(groupId: String, artifactId: String, version: String)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
+  /**
+    * Finds the MavenDependencies for a Manifest
+    * and converts them to Strings.
+    */
+  private def getMavenDependencyStrings(manifest: Manifest): List[String] = {
+    manifest.dependencies.collect {
+      case dep: MavenDependency => dep
+    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")
+  }
 
 }
