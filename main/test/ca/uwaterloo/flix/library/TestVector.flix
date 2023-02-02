@@ -49,6 +49,62 @@ namespace TestVector {
         List.toVector(o :: p :: q :: r :: s :: t :: u :: v :: w :: x :: y :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def compare01(): Bool =
+        (Vector.empty(): Vector[Int32]) `Vector.compare` (Vector.empty(): Vector[Int32]) == Comparison.EqualTo
+
+    @test
+    def compare02(): Bool =
+        ((Vector.singleton(1)) `Vector.compare` (Vector.empty())) == Comparison.GreaterThan
+
+    @test
+    def compare03(): Bool =
+        ((Vector.empty()) `Vector.compare` (Vector.singleton(1))) == Comparison.LessThan
+
+    @test
+    def compare04(): Bool =
+        ((Vector.singleton(1)) `Vector.compare` (Vector.singleton(1))) == Comparison.EqualTo
+
+    @test
+    def compare05(): Bool =
+        ((Vector.singleton(1)) `Vector.compare` (Vector.singleton(2))) == Comparison.LessThan
+
+    @test
+    def compare06(): Bool =
+        ((Vector.singleton(2)) `Vector.compare` (Vector.singleton(1))) == Comparison.GreaterThan
+
+    @test
+    def compare07(): Bool =
+        ((Vector.singleton(1)) `Vector.compare` (vectorOf2(1, 2))) == Comparison.LessThan
+
+    @test
+    def compare08(): Bool =
+        ((vectorOf2(1, 2)) `Vector.compare` (Vector.singleton(1))) == Comparison.GreaterThan
+
+    @test
+    def compare09(): Bool =
+        ((Vector.singleton(1)) `Vector.compare` (vectorOf2(0, 0))) == Comparison.GreaterThan
+
+    @test
+    def compare10(): Bool =
+        ((vectorOf2(0, 0)) `Vector.compare` (Vector.singleton(1))) == Comparison.LessThan
+
+    @test
+    def compare11(): Bool =
+        ((vectorOf2(1, 2)) `Vector.compare` (vectorOf2(1, 1))) == Comparison.GreaterThan
+
+    @test
+    def compare12(): Bool =
+        ((vectorOf2(1, 2)) `Vector.compare` (vectorOf2(1, 3))) == Comparison.LessThan
+
+    @test
+    def compare13(): Bool =
+        ((vectorOf4(1, 2, 3, 4)) `Vector.compare` (vectorOf4(1, 2, 3, 4))) == Comparison.EqualTo
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -69,27 +125,50 @@ namespace TestVector {
         Vector.toString(List.toVector('a' :: 'b' :: 'c' :: 'd' :: Nil)) == "Vector#{a, b, c, d}"
 
     /////////////////////////////////////////////////////////////////////////////
+    // empty                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def empty01(): Bool =
+        let v = Vector.empty();
+        Vector.length(v) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // singleton                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def singleton01(): Bool =
+        let v = Vector.singleton(0);
+        Vector.nth(0, v) == Some(0)
+    
+    @test
+    def singleton02(): Bool =
+        let v = Vector.singleton('A');
+        Vector.nth(0, v) == Some('A')
+
+    /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testNth01(): Bool =
+    def nth01(): Bool =
         Vector.nth(0, vectorOf3(1, 2, 3)) == Some(1)
 
     @test
-    def testNth02(): Bool =
+    def nth02(): Bool =
         Vector.nth(1, vectorOf3(1, 2, 3)) == Some(2)
 
     @test
-    def testNth03(): Bool =
+    def nth03(): Bool =
         Vector.nth(2, vectorOf3(1, 2, 3)) == Some(3)
 
     @test
-    def testNth04(): Bool =
+    def nth04(): Bool =
         Vector.nth(3, vectorOf3(1, 2, 3)) == None
 
     @test
-    def testNth05(): Bool =
+    def nth05(): Bool =
         Vector.nth(-2, vectorOf3(1, 2, 3)) == None
 
     /////////////////////////////////////////////////////////////////////////////
@@ -97,15 +176,15 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testIsEmpty01(): Bool =
+    def isEmpty01(): Bool =
         Vector.isEmpty(Vector.empty())
 
     @test
-    def testIsEmpty02(): Bool =
+    def isEmpty02(): Bool =
         not Vector.isEmpty(Vector.singleton(1))
 
     @test
-    def testIsEmpty03(): Bool =
+    def isEmpty03(): Bool =
         not Vector.isEmpty(vectorOf3(1, 2, 3))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -113,32 +192,59 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testLength01(): Bool =
+    def length01(): Bool =
         Vector.length(Vector.empty()) == 0
 
     @test
-    def testLength02(): Bool =
+    def length02(): Bool =
         Vector.length(Vector.singleton(1)) == 1
 
     @test
-    def testLength03(): Bool =
+    def length03(): Bool =
         Vector.length(vectorOf3(1, 2, 3)) == 3
 
+    /////////////////////////////////////////////////////////////////////////////
+    // buildVector                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def buildVector01(): Bool = region rc {
+        Vector.buildVector(rc, 1, arr -> Array.put(50, 0, arr)) `Vector.equals` Vector.singleton(50)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // buildVector2                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def buildVector201(): Bool = region rc {
+        let (v1, v2) = Vector.buildVector2(rc, 1, 1, (arr, brr) -> { Array.put(10, 0, arr); Array.put(50, 0, brr) });
+        (v1 `Vector.equals` Vector.singleton(10)) and (v2 `Vector.equals` Vector.singleton(50))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // buildVectorViaMutList                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def buildVectorViaMutList01(): Bool = region rc {
+        Vector.buildVectorViaMutList(rc, l -> MutList.push!(50, l)) `Vector.equals` Vector.singleton(50)
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // slice                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testSlice01(): Bool =
+    def slice01(): Bool =
         Vector.slice(start = 0, end = 1, vectorOf3(1, 2, 3)) |> Vector.get(0) == 1
 
     @test
-    def testSlice02(): Bool =
+    def slice02(): Bool =
         Vector.slice(start = 1, end = 2, vectorOf3(1, 2, 3)) |> Vector.get(0) == 2
 
     @test
-    def testSlice03(): Bool =
+    def slice03(): Bool =
         Vector.slice(start = 2, end = 3, vectorOf3(1, 2, 3)) |> Vector.get(0) == 3
 
     /////////////////////////////////////////////////////////////////////////////
@@ -146,15 +252,15 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testToList01(): Bool =
+    def toList01(): Bool =
         Vector.toList(Vector.empty(): Vector[Int32]) == Nil
 
     @test
-    def testToList02(): Bool =
+    def toList02(): Bool =
         Vector.toList(Vector.singleton(1)) == 1 :: Nil
 
     @test
-    def testToList03(): Bool =
+    def toList03(): Bool =
         Vector.toList(vectorOf2(1, 2)) == 1 :: 2 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1615,98 +1721,6 @@ namespace TestVector {
     @test
     def isSuffixOf13(): Bool =
         Vector.isSuffixOf(vectorOf3(1, 2, 3), vectorOf5(89, 11, 1, 2, 3))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sameElements                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def testSameElements01(): Bool =
-        (Vector.empty(): Vector[Int32]) `equals` (Vector.empty(): Vector[Int32])
-
-    @test
-    def testSameElements02(): Bool =
-        not ((Vector.singleton(1)) `equals` Vector.empty())
-
-    @test
-    def testSameElements03(): Bool =
-        not ((Vector.empty()) `equals` Vector.singleton(1))
-
-    @test
-    def testSameElements04(): Bool =
-        (Vector.singleton(1)) `equals` Vector.singleton(1)
-
-    @test
-    def testSameElements05(): Bool =
-        not ((Vector.singleton(1)) `equals` Vector.singleton(2))
-
-    @test
-    def testSameElements06(): Bool =
-        not ((vectorOf2(1, 2)) `equals` Vector.singleton(1))
-
-    @test
-    def testSameElements07(): Bool =
-        not ((Vector.singleton(1)) `equals` vectorOf2(1, 2))
-
-    @test
-    def testSameElements08(): Bool =
-        (vectorOf4(1,2,3,4)) `equals` vectorOf4(1,2,3,4)
-
-    /////////////////////////////////////////////////////////////////////////////
-    // compare                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def testCompare01(): Bool =
-        (Vector.empty(): Vector[Int32]) `Vector.compare` (Vector.empty(): Vector[Int32]) == Comparison.EqualTo
-
-    @test
-    def testCompare02(): Bool =
-        ((Vector.singleton(1)) `Vector.compare` (Vector.empty())) == Comparison.GreaterThan
-
-    @test
-    def testCompare03(): Bool =
-        ((Vector.empty()) `Vector.compare` (Vector.singleton(1))) == Comparison.LessThan
-
-    @test
-    def testCompare04(): Bool =
-        ((Vector.singleton(1)) `Vector.compare` (Vector.singleton(1))) == Comparison.EqualTo
-
-    @test
-    def testCompare05(): Bool =
-        ((Vector.singleton(1)) `Vector.compare` (Vector.singleton(2))) == Comparison.LessThan
-
-    @test
-    def testCompare06(): Bool =
-        ((Vector.singleton(2)) `Vector.compare` (Vector.singleton(1))) == Comparison.GreaterThan
-
-    @test
-    def testCompare07(): Bool =
-        ((Vector.singleton(1)) `Vector.compare` (vectorOf2(1, 2))) == Comparison.LessThan
-
-    @test
-    def testCompare08(): Bool =
-        ((vectorOf2(1, 2)) `Vector.compare` (Vector.singleton(1))) == Comparison.GreaterThan
-
-    @test
-    def testCompare09(): Bool =
-        ((Vector.singleton(1)) `Vector.compare` (vectorOf2(0, 0))) == Comparison.GreaterThan
-
-    @test
-    def testCompare10(): Bool =
-        ((vectorOf2(0, 0)) `Vector.compare` (Vector.singleton(1))) == Comparison.LessThan
-
-    @test
-    def testCompare11(): Bool =
-        ((vectorOf2(1, 2)) `Vector.compare` (vectorOf2(1, 1))) == Comparison.GreaterThan
-
-    @test
-    def testCompare12(): Bool =
-        ((vectorOf2(1, 2)) `Vector.compare` (vectorOf2(1, 3))) == Comparison.LessThan
-
-    @test
-    def testCompare13(): Bool =
-        ((vectorOf4(1, 2, 3, 4)) `Vector.compare` (vectorOf4(1, 2, 3, 4))) == Comparison.EqualTo
 
     /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
