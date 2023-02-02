@@ -47,7 +47,6 @@ pub def inc(x: Interval): Interval = match x {
     case Top            => Top
 }
 
-
 ///
 /// The naive widen function only looks at a single lattice element.
 ///
@@ -60,6 +59,24 @@ def naiveWiden(x: Interval): Interval = match x {
         else
             Top
     case Top            => Top
+}
+
+///
+/// The general widen function takes both the old and new lattice elements.
+/// This is often called nabla (upside triangle.)
+///
+def smartWiden(oldElm: Interval, newElm: Interval): Interval = match (oldElm, newElm) {
+    case (Range(oldB, oldE), Range(newB, newE))    =>
+        // Compute the length of each interval.
+        let oldLen = oldE - oldB;
+        let newLen = newE - newB;
+        // If the interval only increased by 1 then we jump to top.
+        let delta = debug!!(newLen - oldLen);
+        if (delta <= 1ii)
+            debug!!(Top)
+        else
+            newElm
+    case _            => newElm
 }
 
 def main(): Unit \ IO =
@@ -80,11 +97,11 @@ def main(): Unit \ IO =
         // Initial state at A.
         L("A", "x"; alpha(42ii)).
 
-        // Widening on A-C if the interval becomes too large.
-        L("A", "x"; naiveWiden(v)) :- L("C", "x"; v).
+        // Transfer function from A-B with naive widening.
+        L("B", x; naiveWiden(inc(v))) :- L("A", x; v).
 
-        // Transfer function from A-B.
-        L("B", x; inc(v)) :- L("A", x; v).
+        // Transfer function from A-B with smart widening.
+        L("B", x; smartWiden(vold, inc(v))) :- L("A", x; v), L("B", x; vold). // TODO: Problem: vold is initially bottom.
 
         // Propagate function (excluding A-B)
         L(succ, x; v) :- Edge(pred, succ), L(pred, x; v), if pred != "A".
