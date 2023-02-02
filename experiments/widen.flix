@@ -1,6 +1,3 @@
-///
-/// The elements of the interval lattice.
-///
 enum Interval with Eq, Order, ToString {
                 case Top,
 
@@ -8,7 +5,6 @@ enum Interval with Eq, Order, ToString {
 
                 case Bot
 }
-
 
 instance LowerBound[Interval] {
     pub def minValue(_: Unit): Interval = Interval.Bot
@@ -43,7 +39,6 @@ instance MeetLattice[Interval] {
     }
 }
 
-
 pub def alpha(i: BigInt): Interval = Range(i, i)
 
 pub def inc(x: Interval): Interval = match x {
@@ -52,19 +47,15 @@ pub def inc(x: Interval): Interval = match x {
     case Top            => Top
 }
 
-def shouldWiden(x: Interval): Bool = match x {
-    case Bot            => false
-    case Range(b, e)    => (e - b) > 20ii
-    case Top            => true
-}
 
 ///
-/// The naive widen function takes an interval and jumps too top if it is too big.
+/// The naive widen function only looks at a single lattice element.
 ///
 def naiveWiden(x: Interval): Interval = match x {
     case Bot            => Bot
     case Range(b, e)    =>
-        if (e - b <= 20ii)
+        // Jump to top if the width has become more than 25.
+        if (e - b <= 25ii)
             Range(b, e)
         else
             Top
@@ -86,7 +77,7 @@ def main(): Unit \ IO =
         Edge("C", "A").
         Edge("B", "D").
 
-        // Initial state at A
+        // Initial state at A.
         L("A", "x"; alpha(42ii)).
 
         // Widening on A-C if the interval becomes too large.
