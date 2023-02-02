@@ -1916,21 +1916,4 @@ class TestTyper extends FunSuite with TestUtils {
         |""".stripMargin
     expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
   }
-
-  test("TestCaseSetAnnotation.05") {
-    val input =
-      """
-        |restrictable enum Binary[s] {
-        |    case Zero(Binary[s]), One(Binary[s]), End
-        |}
-        |
-        |// forgot open on recursive variable use
-        |def id(b: Binary[s]): Binary[s] = choose* b {
-        |    case Binary.Zero(x) => open Binary.Zero(id(x))
-        |    case Binary.One(x) => open Binary.One(id(x))
-        |    case Binary.End => Binary.End
-        |}
-        |""".stripMargin
-    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
-  }
 }

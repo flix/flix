@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps.unzip4
 
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
 
 object RestrictableChooseInference {
 
@@ -151,7 +150,7 @@ object RestrictableChooseInference {
 
           // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
           (constrss, tpes, purs, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root)).map(unzip4)
-          _ <- traverseM(tpes.zip(bodyTypes)){case (t1, t2) => unifyTypeM(t1, t2, loc)}
+          _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
 
           // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
           _ <- traverseM((targsOut :: bodyTargs).transpose)(unifyTypeM(_, loc))
@@ -193,24 +192,44 @@ object RestrictableChooseInference {
       // Lookup the case declaration.
       val caze = decl.cases(symUse.sym)
 
-      val (enumType, indexVar, _) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+      // create the schema output type
+      val (enumType, indexVar, targs) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+      // create our output type
+      val (enumTypeOut, indexVarOut, targsOut) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+
+      // for open tags we want to add the label to the index
+      // indexVarOut == indexVar U {label}
+      // targs == targsOut
+
+      // for non-open tags we want to constrict the index to the singelton label
+      // indexVar == {label} == indexVarOut
+      // targs == targsOut
+
+      // We do this because indexVar is unconstrained for non-recursive types
+      // and we want to control the open variables in the source program for
+      // unification performance
+
+      val indexUnification =
+        if (isOpen) {
+          // φ_in ∪ {l_i}
+          val index =
+            Type.mkCaseUnion(
+              indexVar,
+              Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic),
+              enumSym,
+              loc.asSynthetic
+            )
+          unifyTypeM(index, indexVarOut, loc)
+        }
+        else {
+          // {l_i}
+          val index = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
+          unifyTypeM(index, indexVar, loc).flatMap(_ => unifyTypeM(indexVar, indexVarOut, loc))
+        }
+
 
       // Instantiate the type scheme of the case.
       val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
-
-      // Add a free variable only if the tag is open
-      val index = if (isOpen) {
-        // φ ∪ {l_i}
-        Type.mkCaseUnion(
-          Type.freshVar(Kind.CaseSet(enumSym), loc.asSynthetic),
-          Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic),
-          enumSym,
-          loc.asSynthetic
-        )
-      } else {
-        // {l_i}
-        Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
-      }
 
       //
       // The tag type is a function from the type of variant to the type of the enum.
@@ -218,10 +237,10 @@ object RestrictableChooseInference {
       for {
         // Γ ⊢ e: τ
         (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
-        _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
-        // τ = (... + l_i(τ_i) + ...)[φ ∪ {l_i}]
-        _ <- unifyTypeM(enumType, tvar, loc)
-        _ <- unifyTypeM(indexVar, index, loc)
+        _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
+        _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
+        _ <- indexUnification
+        _ <- unifyTypeM(enumTypeOut, tvar, loc)
         resultTyp = tvar
         resultPur = pur
         resultEff = eff
