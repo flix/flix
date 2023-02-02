@@ -65,6 +65,7 @@ def naiveWiden(x: Interval): Interval = match x {
 /// The general widen function takes both the old and new lattice elements.
 /// This is often called nabla (upside triangle.)
 ///
+// Note this is not strict in oldElm which is a problem.
 def smartWiden(oldElm: Interval, newElm: Interval): Interval = match (oldElm, newElm) {
     case (Range(oldB, oldE), Range(newB, newE))    =>
         // Compute the length of each interval.
