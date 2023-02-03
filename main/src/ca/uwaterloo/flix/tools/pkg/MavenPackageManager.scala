@@ -34,19 +34,21 @@ object MavenPackageManager {
     val depStrings = getMavenDependencyStrings(manifest)
 
     createCoursierDependencies(depStrings).flatMap { deps =>
-      val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
-      val resolution = res.run()
+      val installed = try {
+        val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
+        val resolution = res.run()
 
-      val installed = resolution.dependencies.map(dep => dep.module.toString()).toList
-      val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-        out.println(s"Installing ${dep.module.toString()}");
-        f.addDependencies(dep)
-      })
-      try {
+        val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
+          out.println(s"Installing ${dep.module.toString()}");
+          f.addDependencies(dep)
+        })
         fetch.run()
+
+        resolution.dependencies.map(dep => dep.module.toString()).toList
       } catch {
-        //TODO: does not seem to work...
-        case e: Exception => return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: ${e.getMessage}"))
+        case e: Exception =>
+          val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
+          return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
 
       Ok(installed)

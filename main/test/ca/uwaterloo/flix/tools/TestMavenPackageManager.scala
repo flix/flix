@@ -6,7 +6,10 @@ import org.scalatest.FunSuite
 
 class TestMavenPackageManager extends FunSuite {
   test("Install dependency") {
-    assertResult(expected = Ok(()))(actual = {
+    assertResult(expected = Ok(List("org.junit.jupiter:junit-jupiter-api",
+                                    "org.opentest4j:opentest4j",
+                                    "org.junit.platform:junit-platform-commons",
+                                    "org.apiguardian:apiguardian-api")))(actual = {
       val toml = {
         """
           |[package]
@@ -69,10 +72,8 @@ class TestMavenPackageManager extends FunSuite {
     })
   }
 
-  //TODO: does not give exception, but crashes with error
   test("Give error for missing dependency") {
-    //TODO: fix correct error message
-    assertResult(expected = Err(PackageError.CoursierError("Error in creating Coursier dependency: ???")))(actual = {
+    assertResult(expected = Err(PackageError.CoursierError("Error in downloading Maven dependency: Error downloading annablume:helloworld:1.2.3")))(actual = {
       val toml = {
         """
           |[package]
