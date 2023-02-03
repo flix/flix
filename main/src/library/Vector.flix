@@ -143,15 +143,7 @@ namespace Vector {
     /// Returns the vector `v` as a list.
     ///
     pub def toList(v: Vector[a]): List[a] =
-        def loop(i, acc) = {
-            if (i == 0) {
-                acc
-            } else {
-                let x = get(i - 1, v);
-                loop(i - 1, x :: acc)
-            }
-        };
-        loop(length(v), Nil)
+        foldRight((x, acc) -> x :: acc, Nil, v)
 
     ///
     /// Optionally returns the vector `v` as a non-empty list.
@@ -159,46 +151,23 @@ namespace Vector {
     /// If `v` is empty return `None`, otherwise return the Nel wrapped in `Some`.
     ///
     pub def toNel(v: Vector[a]): Option[Nel[a]] =
-        def loop(i, acc) = {
-            if (i == 0) {
-                acc
-            } else {
-                let x = get(i - 1, v);
-                loop(i - 1, Nel.cons(x, acc))
-            }
+        let step = (x, acc) -> match acc {
+            case None    => Some(Nel.singleton(x))
+            case Some(c) => Some(Nel.cons(x, c))
         };
-        if (Array.isEmpty(v)) {
-            None
-        } else {
-            let i = length(v) - 1;
-            Some(loop(i, Nel.singleton(get(i, v))))
-        }
+        foldRight(step, None, v)
 
     ///
     /// Returns the vector `v` as a `DelayList`.
     ///
     pub def toDelayList(v: Vector[a]): DelayList[a] =
-        def loop(i, acc) = {
-            if (i < 0)
-                acc
-            else
-                loop(i - 1, DelayList.ECons(get(i, v), acc))
-        };
-        loop(length(v) - 1, DelayList.ENil)
+        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, v)
 
     ///
     /// Returns the vector `v` as a chain.
     ///
     pub def toChain(v: Vector[a]): Chain[a] =
-        def loop(i, acc) = {
-            if (i == 0) {
-                acc
-            } else {
-                let x = get(i - 1, v);
-                loop(i - 1, Chain.cons(x, acc))
-            }
-        };
-        loop(length(v), Chain.empty())
+        foldRight(Chain.cons, Chain.empty(), v)
 
     ///
     /// Optionally returns the vector `v` as a non-empty chain.
@@ -206,20 +175,11 @@ namespace Vector {
     /// If `v` is empty return `None`, otherwise return the Nec wrapped in `Some`.
     ///
     pub def toNec(v: Vector[a]): Option[Nec[a]] =
-        def loop(i, acc) = {
-            if (i == 0) {
-                acc
-            } else {
-                let x = get(i - 1, v);
-                loop(i - 1, Nec.cons(x, acc))
-            }
+        let step = (x, acc) -> match acc {
+            case None    => Some(Nec.singleton(x))
+            case Some(c) => Some(Nec.cons(x, c))
         };
-        if (isEmpty(v)) {
-            None
-        } else {
-            let i = length(v) - 1;
-            Some(loop(i, Nec.singleton(get(i, v))))
-        }
+        foldRight(step, None, v)
 
     ///
     /// Returns `v` as a MutDeque.
@@ -822,7 +782,7 @@ namespace Vector {
         forEach(v -> {
             let i = deref pos;
             pos := i + length(v);
-            Array.updateSequence!(i, v, arr)
+            arrayUpdateSeqV!(i, v, arr)
         }, vs);
         Array.toVector(arr)
     }
