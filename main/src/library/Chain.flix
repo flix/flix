@@ -33,6 +33,10 @@ instance Eq[Chain[a]] with Eq[a] {
     pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)
 }
 
+instance Order[Chain[a]] with Order[a] {
+    pub def compare(c1: Chain[a], c2: Chain[a]): Comparison = Chain.compare(c1, c2)
+}
+
 instance SemiGroup[Chain[a]] {
     pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
 }
@@ -839,8 +843,23 @@ namespace Chain {
         match (viewLeft(c1), viewLeft(c2)) {
             case (ViewLeft.NoneLeft, ViewLeft.NoneLeft)                           => true
             case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
-            case _                                              => false
+            case _                                                                => false
         }
+
+    ///
+    /// Compares chains `c1` and `c2` lexicographically.
+    ///
+    pub def compare(c1: Chain[a], c2: Chain[a]): Comparison with Order[a] =
+        def loop(v1, v2) = match (v1, v2) {
+            case (SomeLeft(_, _), NoneLeft)         => Comparison.GreaterThan
+            case (NoneLeft, NoneLeft)               => Comparison.EqualTo
+            case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
+            case (SomeLeft(l, ls), SomeLeft(r, rs)) => match (l <=> r) {
+                case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))
+                case cmp                => cmp
+            }
+        };
+        loop(viewLeft(c1), viewLeft(c2))
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to their `Order` instance.
