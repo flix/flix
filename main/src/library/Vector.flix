@@ -73,9 +73,8 @@ namespace Vector {
     ///
     /// Returns a singleton vector containing `x``.
     ///
-    pub def singleton(x: a): Vector[a] = region rc {
-        buildVector(rc, 1, arr -> Array.put(x, 0, arr))
-    }
+    pub def singleton(x: a): Vector[a] =
+        init(_ -> x, 1)
 
     ///
     /// Retrieves the value at position `i` in the vector `v`.
@@ -112,6 +111,25 @@ namespace Vector {
         unsafe_cast (
             let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
             let _ = f(arr);
+            arr
+        ) as Array[a, true] \ ef
+
+    ///
+    /// Returns a fresh vector.
+    ///
+    /// The function `f` is applied to a uninitialized array, it should should set each element
+    /// to an actual value.
+    ///
+    pub def buildVectorWithIndex(rc: Region[r], len: Int32, f: Int32 -> a \ ef): Vector[a] \ ef =
+        unsafe_cast (
+            let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
+            def loop(i) = {
+                if (i < len) {
+                    Array.put(f(i), i, arr);
+                    loop(i + 1)
+                } else ()
+            };
+            loop(0);
             arr
         ) as Array[a, true] \ ef
 
@@ -392,20 +410,17 @@ namespace Vector {
     ///
     /// Returns an empty vector if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): Vector[Int32] = region rc {
+    pub def range(b: Int32, e: Int32): Vector[Int32] =
         let len = e - b;
-        let s = ref b @ rc;
-        buildVector(rc, if (len < 0) 0 else len, Array.transform!(_ -> {let n = deref s; s := n+1; n}))
-    }
+        init(ix -> b + ix, len)
 
     ///
     /// Returns a vector with the element `x` repeated `n` times.
     ///
     /// Returns an empty vector if `n <= 0`.
     ///
-    pub def repeat(n: Int32, x: a): Vector[a] = region rc {
-        buildVector(rc, n, arr -> Array.transform!(_ -> x, arr))
-    }
+    pub def repeat(n: Int32, x: a): Vector[a] =
+        init(_ -> x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -460,35 +475,30 @@ namespace Vector {
     ///
     /// The result is a new vector.
     ///
-    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = region rc {
-        let len = length(v);
-        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(f(x), i, arr), v))
-    }
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = 
+        init(i -> f(get(i, v)), length(v))
+
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
-    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef = region rc {
-        let len = length(v);
-        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(f(i, x), i, arr), v))
-    }
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
+        init(i -> f(i, get(i, v)), length(v))
 
     ///
     /// Returns the result of applying `f` to every element in `v` and concatenating the results.
     ///
     pub def flatMap(f: a -> Vector[b] \ ef, v: Vector[a]): Vector[b] \ ef =
-        let len = length(v);
-        init(i -> f(get(i, v)), len) |> flatten
+        init(i -> f(get(i, v)), length(v)) |> flatten
 
     ///
     /// Returns the reverse of `v`.
     ///
-    pub def reverse(v: Vector[a]): Vector[a] = region rc {
+    pub def reverse(v: Vector[a]): Vector[a] =
         let len = length(v);
-        buildVector(rc, len, arr -> forEachWithIndex((i, x) -> Array.put(x, len - (i + 1), arr), v))
-    }
+        init(ix -> get(len - (ix+1), v), len)
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the left.
@@ -510,12 +520,11 @@ namespace Vector {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] = region rc {
+    def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] = 
         let len = length(v);
-        buildVector(rc, len, arr ->
-            forEachWithIndex((i, x) -> {let ix = Int32.mod(i - n, len); Array.put(x, ix, arr)}, v)
-        )
-    }
+        let f = ix -> {let readIx = Int32.mod(ix + n, len); get(readIx, v)};
+        init(f, len)
+
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the right.
@@ -536,12 +545,10 @@ namespace Vector {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] = region rc {
+    def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        buildVector(rc, len, arr ->
-            forEachWithIndex((i, x) -> {let ix = Int32.mod(i + n, len); Array.put(x, ix, arr)}, v)
-        )
-     }
+        let f = ix -> {let readIx = Int32.mod(ix - n, len); get(readIx, v)};
+        init(f, len)
 
     ///
     /// Returns a copy of `v` with the element at index `i` replaced by `x`.
@@ -857,7 +864,7 @@ namespace Vector {
             foldLeft((acc, x) -> acc * f(x), 1, v)
 
     ///
-    /// Returns the concatenation of the vectorss of in the vector `vs`.
+    /// Returns the concatenation of all the vectors in the vector `vs`.
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
@@ -909,19 +916,7 @@ namespace Vector {
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
-        let len = length(v);
-        let ix = ref 0 @ rc;
-        if (len < 1)
-            empty()
-        else
-            buildVector(rc, len, arr ->
-                forEach(x ->
-                    if (f(x)) {
-                        let i = deref ix;
-                        ix := i + 1;
-                        Array.put(x, i, arr)
-                    } else (), v)
-                ) |> slice(start = 0, end = deref ix)
+        Vector.buildVectorViaMutList(rc, m -> forEach(a -> if (f(a)) MutList.push!(a, m) else (), v))
     }
 
     ///
@@ -1298,7 +1293,7 @@ namespace Vector {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
-        buildVector(rc, len, Array.transformWithIndex!((i, _) -> f(i)))
+        buildVectorWithIndex(rc, len, f)
     }
 
     ///
