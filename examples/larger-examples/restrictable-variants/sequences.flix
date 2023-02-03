@@ -25,13 +25,13 @@ def map(f: Int32 -> Int32, s: Seq[i]): Seq[i] =
     choose* s {
         case Seq.Nil         => Seq.Nil
         case Seq.One(x)      => Seq.One(f(x))
-        case Seq.Cons(x, xs) => open Seq.Cons(f(x), open_as Seq map(f, xs))
+        case Seq.Cons(x, xs) => open Seq.Cons(f(x), map(f, xs))
 }
 
 def append(w: Int32, s: Seq[i]): Seq[<Seq.One, Seq.Cons>] =
     choose* s {
         case Seq.Nil         => Seq.One(w)
-        case Seq.One(x)      => open Seq.Cons(x, open Seq.One(x))
+        case Seq.One(x)      => open Seq.Cons(x, Seq.One(x))
         case Seq.Cons(x, xs) => open Seq.Cons(x, append(w, xs))
     }
 
