@@ -226,8 +226,6 @@ object KindedAst {
 
   object Pattern {
 
-    case class Wild(tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
     case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Pattern

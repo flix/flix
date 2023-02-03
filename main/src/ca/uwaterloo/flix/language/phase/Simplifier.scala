@@ -477,14 +477,6 @@ object Simplifier {
           SimplifiedAst.Expression.IfThenElse(g, succ, fail, succ.tpe, g.purity, g.loc)
 
         /**
-          * Matching a wildcard is guaranteed to succeed.
-          *
-          * We proceed by recursion on the remaining patterns and variables.
-          */
-        case (LoweredAst.Pattern.Wild(tpe, loc) :: ps, v :: vs) =>
-          patternMatchList(ps, vs, guard, succ, fail)
-
-        /**
           * Matching a variable is guaranteed to succeed.
           *
           * We proceed by constructing a let-binding that binds the value

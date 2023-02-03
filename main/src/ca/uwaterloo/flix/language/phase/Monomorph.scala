@@ -575,7 +575,6 @@ object Monomorph {
       * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
       */
     def visitPat(p0: Pattern, subst: StrictSubstitution): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
-      case Pattern.Wild(tpe, loc) => (Pattern.Wild(subst(tpe), loc), Map.empty)
       case Pattern.Var(sym, tpe, loc) =>
         // Generate a fresh variable symbol for the pattern-bound variable.
         val freshSym = Symbol.freshVarSym(sym)

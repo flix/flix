@@ -15,7 +15,6 @@ object TypedAstOps {
     * Returns the set of variable symbols bound by the given pattern `pat0`.
     */
   def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
-    case Pattern.Wild(tpe, loc) => Map.empty
     case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(sym, pat, tpe, loc) => binds(pat)
@@ -407,7 +406,6 @@ object TypedAstOps {
     * Returns the free variables in the given pattern `pat0`.
     */
   private def freeVars(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
-    case Pattern.Wild(_, _) => Map.empty
     case Pattern.Var(sym, tpe, _) => Map(sym -> tpe)
     case Pattern.Cst(_, _, _) => Map.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)

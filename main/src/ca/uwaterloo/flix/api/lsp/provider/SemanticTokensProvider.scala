@@ -557,10 +557,6 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given pattern `pat0`.
     */
   private def visitPat(pat0: Pattern): Iterator[SemanticToken] = pat0 match {
-    case Pattern.Wild(_, loc) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
-      Iterator(t)
-
     case Pattern.Var(sym, tpe, loc) =>
       val o = getSemanticTokenType(sym, tpe)
       val t = SemanticToken(o, Nil, loc)

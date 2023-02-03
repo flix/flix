@@ -131,7 +131,11 @@ object Deriver {
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expression.Cst(Ast.Constant.Bool(false), loc))
+      val defaultRule = KindedAst.MatchRule(
+        KindedAst.Pattern.Var(Symbol.freshVarSym("_", BoundBy.Pattern, loc), Type.freshVar(Kind.Star, loc), loc),
+        None,
+        KindedAst.Expression.Cst(Ast.Constant.Bool(false), loc)
+      )
 
       // group the match rules in an expression
       KindedAst.Expression.Match(
@@ -297,7 +301,7 @@ object Deriver {
       // Create the default rule:
       // `case _ => compare(indexOf(x), indexOf(y))`
       val defaultMatchRule = KindedAst.MatchRule(
-        KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
+        KindedAst.Pattern.Var(Symbol.freshVarSym("_", BoundBy.Pattern, loc), Type.freshVar(Kind.Star, loc), loc),
         None,
         KindedAst.Expression.Apply(
           KindedAst.Expression.Sig(compareSigSym, Type.freshVar(Kind.Star, loc), loc),
@@ -372,7 +376,12 @@ object Deriver {
     */
   private def mkCompareIndexMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation)(implicit Flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, _, _, _) =>
-      val pat = KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), Type.freshVar(Kind.Star, loc), loc)
+      val pat = KindedAst.Pattern.Tag(
+        Ast.CaseSymUse(sym, loc),
+        KindedAst.Pattern.Var(Symbol.freshVarSym("_", BoundBy.Pattern, loc), Type.freshVar(Kind.Star, loc), loc),
+        Type.freshVar(Kind.Star, loc),
+        loc
+      )
       val exp = KindedAst.Expression.Cst(Ast.Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp)
   }

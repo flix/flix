@@ -394,8 +394,6 @@ object PatternExhaustiveness {
     def specializeRow(pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) = pat.head match {
       // A wild constructor is the same as the constructor
       // with all its arguments as wild
-      case a: TypedAst.Pattern.Wild =>
-        (List.fill(numArgs)(a) ::: pat.tail) :: acc
       case a: TypedAst.Pattern.Var =>
         (List.fill(numArgs)(a) ::: pat.tail) :: acc
 
@@ -458,7 +456,6 @@ object PatternExhaustiveness {
   private def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
     val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
       // If it's a wild card, we take the rest of the pattern
-      case _: TypedAst.Pattern.Wild => pat.tail :: acc
       case _: TypedAst.Pattern.Var => pat.tail :: acc
 
       // If it's a constructor, we don't include a row
@@ -487,7 +484,6 @@ object PatternExhaustiveness {
     */
   private def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
     def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
-      case _: Pattern.Wild => pats
       case _: Pattern.Var => pats
       case tg: Pattern.Tag => tg :: pats
       case p => p :: pats
@@ -658,7 +654,6 @@ object PatternExhaustiveness {
     * @return a TypeConstructor representing the given pattern
     */
   private def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
-    case Pattern.Wild(_, _) => TyCon.Wild
     case Pattern.Var(_, _, _) => TyCon.Wild
     case Pattern.Cst(Ast.Constant.Unit, _, _) => TyCon.Unit
     case Pattern.Cst(Ast.Constant.Bool(true), _, _) => TyCon.True

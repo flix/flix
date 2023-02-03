@@ -1053,7 +1053,6 @@ object Namer {
     * Names the given pattern `pat0`.
     */
   private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): NamedAst.Pattern = pat0 match {
-    case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
     case WeededAst.Pattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
@@ -1345,7 +1344,6 @@ object Namer {
     */
   private def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
     case WeededAst.Pattern.Var(ident, loc) => List(ident)
-    case WeededAst.Pattern.Wild(loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Unit, loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Bool(true), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Bool(false), loc) => Nil

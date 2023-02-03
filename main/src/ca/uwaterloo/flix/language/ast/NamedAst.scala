@@ -244,8 +244,6 @@ object NamedAst {
 
   object Pattern {
 
-    case class Wild(loc: SourceLocation) extends NamedAst.Pattern
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends NamedAst.Pattern

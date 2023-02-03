@@ -441,7 +441,6 @@ object Indexer {
     * Returns a reverse index for the given pattern `pat0`.
     */
   private def visitPat(pat0: Pattern): Index = pat0 match {
-    case Pattern.Wild(_, _) => Index.occurrenceOf(pat0)
     case Pattern.Var(sym, tpe, _) =>
       Index.occurrenceOf(pat0) ++ Index.occurrenceOf(sym, tpe)
     case Pattern.Cst(_, _, _) => Index.occurrenceOf(pat0)

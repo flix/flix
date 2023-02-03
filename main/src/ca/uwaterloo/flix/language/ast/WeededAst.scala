@@ -231,8 +231,6 @@ object WeededAst {
 
   object Pattern {
 
-    case class Wild(loc: SourceLocation) extends WeededAst.Pattern
-
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends WeededAst.Pattern

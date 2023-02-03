@@ -873,7 +873,6 @@ object Redundancy {
     * Returns the symbols used in the given pattern `pat`.
     */
   private def visitPat(pat0: Pattern): Used = pat0 match {
-    case Pattern.Wild(_, _) => Used.empty
     case Pattern.Var(_, _, _) => Used.empty
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
@@ -1051,7 +1050,6 @@ object Redundancy {
     * Returns the free variables in the pattern `p0`.
     */
   private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
-    case Pattern.Wild(_, _) => Set.empty
     case Pattern.Var(sym, _, _) => Set(sym)
     case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)

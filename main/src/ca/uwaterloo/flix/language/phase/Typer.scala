@@ -2591,8 +2591,6 @@ object Typer {
       * Local pattern visitor.
       */
     def visit(p: KindedAst.Pattern): InferMonad[Type] = p match {
-      case KindedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
-
       case KindedAst.Pattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
 
       case KindedAst.Pattern.Cst(Ast.Constant.Unit, loc) => liftM(Type.Unit)
@@ -2688,7 +2686,6 @@ object Typer {
       * Local pattern visitor.
       */
     def visit(p: KindedAst.Pattern): TypedAst.Pattern = p match {
-      case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
       case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
       case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, constantType(cst), loc)
 

@@ -850,10 +850,6 @@ object Lowering {
     * Lowers the given pattern `pat0`.
     */
   private def visitPat(pat0: TypedAst.Pattern)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Pattern = pat0 match {
-    case TypedAst.Pattern.Wild(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Pattern.Wild(t, loc)
-
     case TypedAst.Pattern.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Pattern.Var(sym, t, loc)
@@ -968,7 +964,7 @@ object Lowering {
         case TypedAst.RestrictableChoicePattern.Tag(sym, pat0, tpe, loc) =>
           val termPatterns = pat0.map {
             case TypedAst.RestrictableChoicePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
-            case TypedAst.RestrictableChoicePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
+            case TypedAst.RestrictableChoicePattern.Wild(tpe, loc) => LoweredAst.Pattern.Var(Symbol.freshVarSym("_", BoundBy.Pattern, loc), tpe, loc)
           }
           val pat1 = termPatterns match {
             case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
@@ -1131,11 +1127,10 @@ object Lowering {
     * Lowers the given body term `pat0`.
     */
   private def visitBodyTerm(cparams0: List[TypedAst.ConstraintParam], pat0: TypedAst.Pattern)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = pat0 match {
-    case TypedAst.Pattern.Wild(_, loc) =>
-      mkBodyTermWild(loc)
-
     case TypedAst.Pattern.Var(sym, tpe, loc) =>
-      if (isQuantifiedVar(sym, cparams0)) {
+      if (sym.isWild) {
+        mkBodyTermWild(loc)
+      } else if (isQuantifiedVar(sym, cparams0)) {
         // Case 1: Quantified variable.
         mkBodyTermVar(sym)
       } else {
@@ -1480,7 +1475,7 @@ object Lowering {
     default match {
       case Some(defaultExp) =>
         val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Wild(locksType, loc)), loc)
+        val pat = mkTuplePattern(List(LoweredAst.Pattern.Cst(Ast.Constant.Int32(-1), Type.Int32, loc), LoweredAst.Pattern.Var(Symbol.freshVarSym("_", BoundBy.Pattern, loc), locksType, loc)), loc)
         val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
         List(defaultMatch)
       case _ =>

@@ -242,8 +242,6 @@ object ResolvedAst {
 
   object Pattern {
 
-    case class Wild(loc: SourceLocation) extends ResolvedAst.Pattern
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Pattern

@@ -249,8 +249,6 @@ object LoweredAst {
 
   object Pattern {
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern

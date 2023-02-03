@@ -607,7 +607,6 @@ object Safety {
     case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
         case Pattern.Var(_, _, _) => acc
-        case Pattern.Wild(_, _) => acc
         case Pattern.Cst(_, _, _) => acc
         case _ => UnexpectedPatternInBodyAtom(loc) :: acc
       })
@@ -759,7 +758,7 @@ object Safety {
     */
   @tailrec
   private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
-    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
+    case Pattern.Var(sym, _, _) if sym.isWild => List(IllegalNegativelyBoundWildcard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)

@@ -1591,20 +1591,12 @@ object Resolver {
     def resolveInConstraint(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
-        case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
-
         case NamedAst.Pattern.Var(sym0, loc) =>
-          // TODO NS-REFACTOR wild patterns should not be counted as vars
-          // if the sym is wild then just call the pattern wild
-          if (sym0.isWild) {
-            ResolvedAst.Pattern.Wild(loc).toSuccess
-          } else {
-            env(sym0.text).collectFirst {
-              case Resolution.Var(sym) => sym
-            } match {
-              case Some(sym) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
-              case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
-            }
+          env(sym0.text).collectFirst {
+            case Resolution.Var(sym) => sym
+          } match {
+            case Some(sym) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
+            case None => throw InternalCompilerException("unexpected unrecognized sym in constraint pattern", loc)
           }
 
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
@@ -1651,7 +1643,6 @@ object Resolver {
     def resolve(pat0: NamedAst.Pattern, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
-        case NamedAst.Pattern.Wild(loc) => ResolvedAst.Pattern.Wild(loc).toSuccess
 
         case NamedAst.Pattern.Var(sym, loc) => ResolvedAst.Pattern.Var(sym, loc).toSuccess
 
@@ -3494,7 +3485,6 @@ object Resolver {
     */
   @tailrec
   private def mkPatternEnv(pat0: ResolvedAst.Pattern): ListMap[String, Resolution] = pat0 match {
-    case ResolvedAst.Pattern.Wild(loc) => ListMap.empty
     case ResolvedAst.Pattern.Var(sym, loc) => mkVarEnv(sym)
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)

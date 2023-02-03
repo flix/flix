@@ -1955,12 +1955,10 @@ object Weeder {
         val innerVal = pat match {
           case Pattern.Tuple(elms, _) =>
             traverse(elms) {
-              case Pattern.Wild(loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case Pattern.Var(ident, loc) => WeededAst.RestrictableChoicePattern.Var(ident, loc).toSuccess
               case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoicePattern.Wild(loc).toSuccess
               case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
             }
-          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoicePattern.Var(ident, loc)).toSuccess
           case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoicePattern.Wild(loc)).toSuccess
           case other => WeederError.UnsupportedRestrictedChoicePattern(star, other.loc).toFailure
@@ -2242,8 +2240,8 @@ object Weeder {
     def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
       case ParsedAst.Pattern.Var(sp1, ident, sp2) =>
         // Check if the identifier is a wildcard.
-        if (ident.name == "_") {
-          WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
+        if (ident.isWild) {
+          WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>

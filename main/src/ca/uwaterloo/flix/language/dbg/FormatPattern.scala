@@ -11,7 +11,6 @@ object FormatPattern {
     * TypedAst.
     */
   def format(p0: TypedAst.Pattern): String = p0 match {
-    case TypedAst.Pattern.Wild(_, _) => "_"
     case TypedAst.Pattern.Var(sym, _, _) => sym.text
     case TypedAst.Pattern.Cst(cst, _, _) => FormatConstant.format(cst)
     case TypedAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => pat match {
