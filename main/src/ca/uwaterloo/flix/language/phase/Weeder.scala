@@ -563,6 +563,8 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
       mapN(weedLiteral(lit)) {
         case l => WeededAst.Expression.Cst(l, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError.IllegalLiteral => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
@@ -2085,7 +2087,7 @@ object Weeder {
     * Translates the hex code into the corresponding character.
     * Returns an error if the code is not hexadecimal.
     */
-  private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, WeederError] = {
+  private def translateHexCode(code: String, loc: SourceLocation): Validation[Char, WeederError.MalformedUnicodeEscapeSequence] = {
     try {
       Integer.parseInt(code, 16).toChar.toSuccess
     } catch {
@@ -2096,10 +2098,10 @@ object Weeder {
   /**
     * Performs weeding on the given sequence of CharCodes.
     */
-  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, WeederError] = {
+  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Validation[String, WeederError.IllegalLiteral] = {
 
     @tailrec
-    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError] = {
+    def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Validation[String, WeederError.IllegalLiteral] = {
       chars match {
         // Case 1: End of the sequence
         case Nil => acc.reverse.mkString.toSuccess
@@ -2160,7 +2162,7 @@ object Weeder {
   /**
     * Performs weeding on the given literal.
     */
-  private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError] = lit0 match {
+  private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError.IllegalLiteral] = lit0 match {
     case ParsedAst.Literal.Unit(_, _) =>
       Ast.Constant.Unit.toSuccess
 
@@ -2253,7 +2255,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
-        flatMapN(weedLiteral(lit)) {
+        flatMapN(weedLiteral(lit): Validation[Ast.Constant, WeederError]) {
           case Ast.Constant.Null => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
           case l => WeededAst.Pattern.Cst(l, mkSL(sp1, sp2)).toSuccess
         }
@@ -3063,7 +3065,7 @@ object Weeder {
   /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
+  private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError.IllegalFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toFloat.toSuccess
   } catch {
@@ -3073,7 +3075,7 @@ object Weeder {
   /**
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
-  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
+  private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError.IllegalFloat] = try {
     val s = s"$sign$before.$after"
     stripUnderscores(s).toDouble.toSuccess
   } catch {
@@ -3083,7 +3085,7 @@ object Weeder {
   /**
     * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
     */
-  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError] = try {
+  private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Validation[BigDecimal, WeederError.IllegalFloat] = try {
     val frac = after match {
       case Some(digits) => "." + digits
       case None => ""
@@ -3101,7 +3103,7 @@ object Weeder {
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
+  private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError.IllegalInt] = try {
     val s = sign + digits
     JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
@@ -3111,7 +3113,7 @@ object Weeder {
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
+  private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError.IllegalInt] = try {
     val s = sign + digits
     JShort.parseShort(stripUnderscores(s), radix).toSuccess
   } catch {
@@ -3121,7 +3123,7 @@ object Weeder {
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
+  private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError.IllegalInt] = try {
     val s = sign + digits
     JInt.parseInt(stripUnderscores(s), radix).toSuccess
   } catch {
@@ -3131,7 +3133,7 @@ object Weeder {
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
+  private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError.IllegalInt] = try {
     val s = sign + digits
     JLong.parseLong(stripUnderscores(s), radix).toSuccess
   } catch {
@@ -3141,7 +3143,7 @@ object Weeder {
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
+  private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError.IllegalInt] = try {
     val s = sign + digits
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {

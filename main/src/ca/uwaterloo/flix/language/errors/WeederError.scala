@@ -30,6 +30,11 @@ sealed trait WeederError extends CompilationMessage {
 object WeederError {
 
   /**
+    * A common super-type for illegal literals.
+    */
+  sealed trait IllegalLiteral extends WeederError
+
+  /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
     * @param name the name of the attribute.
@@ -204,7 +209,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class IllegalFloat(loc: SourceLocation) extends WeederError {
+  case class IllegalFloat(loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Illegal float."
 
     def message(formatter: Formatter): String = {
@@ -229,7 +234,7 @@ object WeederError {
     *
     * @param loc the location where the illegal int occurs.
     */
-  case class IllegalInt(loc: SourceLocation) extends WeederError {
+  case class IllegalInt(loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Illegal int."
 
     def message(formatter: Formatter): String = {
@@ -602,7 +607,7 @@ object WeederError {
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"Malformed unicode escape sequence '$code'."
 
     def message(formatter: Formatter): String = {
@@ -628,7 +633,7 @@ object WeederError {
     * @param char the invalid escape character.
     * @param loc  the location where the error occurred.
     */
-  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
+  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
@@ -654,7 +659,7 @@ object WeederError {
     * @param chars the characters in the character literal.
     * @param loc   the location where the error occurred.
     */
-  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
+  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Non-single-character literal."
 
     def message(formatter: Formatter): String = {

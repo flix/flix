@@ -1662,6 +1662,86 @@ namespace TestChain {
         Chain.toNec(List.toChain(1 :: 2 :: Nil)) == Some(Nec.cons(1, Nec.singleton(2)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // equals                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def equals01(): Bool =
+        (Chain.empty(): Chain[Int32]) `Chain.equals` (Chain.empty(): Chain[Int32])
+
+    @test
+    def equals02(): Bool =
+        Chain.singleton(1) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals03(): Bool =
+        (Chain.empty() |> Chain.cons(1)) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals04(): Bool =
+        (Chain.empty() `Chain.snoc` 1) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals05(): Bool =
+        (Chain.empty() `Chain.snoc` 1) `Chain.equals` (Chain.empty() |> Chain.cons(1))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def compare01(): Bool =
+        (Chain.empty(): Chain[Int32]) `Chain.compare` (Chain.empty(): Chain[Int32]) == Comparison.EqualTo
+
+    @test
+    def compare02(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.empty() == Comparison.GreaterThan
+
+    @test
+    def compare03(): Bool =
+        Chain.empty() `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+
+    @test
+    def compare04(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.singleton(1) == Comparison.EqualTo
+
+    @test
+    def compare05(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.singleton(2) == Comparison.LessThan
+
+    @test
+    def compare06(): Bool =
+        Chain.singleton(2) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+
+    @test
+    def compare07(): Bool =
+        Chain.singleton(1) `Chain.compare` List.toChain(1 :: 2 :: Nil) == Comparison.LessThan
+
+    @test
+    def compare08(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+
+    @test
+    def compare09(): Bool =
+        Chain.singleton(1) `Chain.compare` List.toChain(0 :: 0 :: Nil) == Comparison.GreaterThan
+
+    @test
+    def compare10(): Bool =
+        List.toChain(0 :: 0 :: Nil)  `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+
+    @test
+    def compare11(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 1 :: Nil) == Comparison.GreaterThan
+
+    @test
+    def compare12(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 3 :: Nil) == Comparison.LessThan
+
+    @test
+    def compare13(): Bool =
+        List.toChain(1 :: 2 :: 3 :: 4 :: Nil) `Chain.compare` List.toChain(1 :: 2 :: 3 :: 4 :: Nil) == Comparison.EqualTo
+
+    /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
