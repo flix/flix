@@ -115,62 +115,11 @@ namespace Vector {
         ) as Array[a, true] \ ef
 
     ///
-    /// Returns a fresh vector.
-    ///
-    /// The function `f` is applied to a uninitialized array, it should should set each element
-    /// to an actual value.
-    ///
-    pub def buildVectorWithIndex(rc: Region[r], len: Int32, f: Int32 -> a \ ef): Vector[a] \ ef =
-        unsafe_cast (
-            let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
-            def loop(i) = {
-                if (i < len) {
-                    Array.put(f(i), i, arr);
-                    loop(i + 1)
-                } else ()
-            };
-            loop(0);
-            arr
-        ) as Array[a, true] \ ef
-
-    ///
-    /// Returns a pair of fresh vectors.
-    ///
-    /// The function `f` is applied to two uninitialized arrays, it should should set each element
-    /// of the arrays to an actual value.
-    ///
-    pub def buildVector2(rc: Region[r], len1: Int32, len2: Int32, f: Array[a, r] -> Array[b, r] -> Unit \ ef): (Vector[a], Vector[b]) \ ef =
-        unsafe_cast (
-            let arr1 = if (len1 > 0) Array.new(rc, len1) else Array#{} @ rc;
-            let arr2 = if (len2 > 0) Array.new(rc, len2) else Array#{} @ rc;
-            let _ = f(arr1, arr2);
-            (arr1, arr2)
-        ) as (Array[a, true], Array[b, true]) \ ef
-
-    ///
-    /// Returns a fresh vector built from an intermediate MutList.
-    ///
-    /// This is useful when the vector size is unknown.
-    ///
-    pub def buildVectorViaMutList(rc: Region[r], f: MutList[a, r] -> Unit \ ef): Vector[a] \ ef =
-        unsafe_cast (
-            let m = new MutList(rc);
-            f(m);
-            MutList.toArray(rc, m)
-        ) as Array[a, true] \ ef
-
-    ///
-    /// Returns a fresh vector "ex nihilo" from just a region.
-    ///
-    def buildVector0(rc: Region[r], f: Region[r] -> Array[a, r] \ ef): Vector[a] \ ef =
-        unsafe_cast f(rc) as Vector[a]
-
-
-    ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
-        buildVector0(rc, r1 -> Array.slice(r1, start.start, end.end, v))
+        let arr = toArray(rc, v);
+        Array.slice(rc, start.start, end.end, arr) |> Array.toVector
     }
 
     ///
@@ -555,12 +504,9 @@ namespace Vector {
     ///
     /// Returns a copy of `v` if `i < 0` or `i > length(xs)-1`.
     ///
-    pub def update(i: Int32, x: a, v: Vector[a]): Vector[a] = region rc {
-        let len = length(v);
-        buildVector(rc, len, arr ->
-            forEachWithIndex((ix, x1) -> Array.put(if (ix == i) x else x1, ix, arr), v)
-        )
-    }
+    pub def update(i: Int32, x: a, v: Vector[a]): Vector[a] =
+        let f = ix -> if (ix == i) x else get(ix, v);
+        init(f, length(v))
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -578,19 +524,15 @@ namespace Vector {
     ///
     /// Returns a copy of `v` with `sep` inserted between every two adjacent elements.
     ///
-    pub def intersperse(sep: a, v: Vector[a]): Vector[a] = region rc {
+    pub def intersperse(sep: a, v: Vector[a]): Vector[a] =
         let len1 = length(v);
         let len2 = len1 + len1 - 1;
-        buildVector(rc, len2, arr ->
-            forEachWithIndex((i, x) ->
-                if (i == 0)
-                    Array.put(x, 0, arr)
-                else {
-                    let j = i + i;
-                    Array.put(sep, j - 1, arr);
-                    Array.put(x, j, arr)
-                }, v))
-        }
+        let f = ix -> match ix {
+            case 0                         => get(0, v)
+            case n if Int32.rem(n, 2) != 0 => sep
+            case n                         => {let i = n / 2; get(i, v)}
+        };
+        init(f, len2)
 
     ///
     /// Returns the concatenation of the elements in `vs` with the elements
@@ -916,7 +858,9 @@ namespace Vector {
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
-        Vector.buildVectorViaMutList(rc, m -> forEach(a -> if (f(a)) MutList.push!(a, m) else (), v))
+        let m = MutList.new(rc);
+        forEach(a -> if (f(a)) MutList.push!(a, m) else (), v);
+        MutList.toVector(m)
     }
 
     ///
@@ -1138,13 +1082,14 @@ namespace Vector {
     ///
     pub def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = region rc {
         let len = length(v);
-        buildVector2(rc, len, len, (arr, brr) ->
-            forEachWithIndex((i, x) -> {
-                    let (l, r) = x;
-                    Array.put(l, i, arr);
-                    Array.put(r, i, brr)
-                }, v)
-            )
+        let arr = Array.new(rc, len);
+        let brr = Array.new(rc, len);
+        forEachWithIndex((i, x) -> {
+            let (l, r) = x;
+            Array.put(l, i, arr);
+            Array.put(r, i, brr)
+            }, v);
+        (Array.toVector(arr), Array.toVector(brr))            
     }
 
     ///
@@ -1293,7 +1238,15 @@ namespace Vector {
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
-        buildVectorWithIndex(rc, len, f)
+        let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
+        def loop(i) = {
+            if (i < len) {
+                Array.put(f(i), i, arr);
+                loop(i + 1)
+            } else ()
+        };
+        loop(0);
+        Array.toVector(arr)
     }
 
     ///
@@ -1418,31 +1371,19 @@ namespace Vector {
     ///
     /// The sort implementation is a Quicksort.
     ///
-    pub def sortWith(cmp: (a,a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
-        let len = length(v);
-        buildVector(rc, len, arr -> {
-            Array.transformWithIndex!((ix, _) -> get(ix, v), arr);
-            Array.sortWith!(cmp, arr)
-        })
+    pub def sortWith(cmp: (a, a) -> Comparison, v: Vector[a]): Vector[a] = region rc {
+        let arr = toArray(rc, v);
+        Array.sortWith!(cmp, arr);
+        Array.toVector(arr)
     }
 
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rnd: Random, v: Vector[a]): Vector[a] \ NonDet = region rc {
-        let len = Array.length(v);
-        buildVector(rc, len, arr -> {
-            Array.transformWithIndex!((ix, _) -> get(ix, v), arr);
-            def loop(i) = {
-                if (i > 0) {
-                    let j = Random.nextNatWithMax(rnd, i + 1);
-                    Array.swap!(i, j, arr);
-                    loop(i - 1)
-                }
-                else
-                    ()
-            };
-            loop(len - 1)
-        })
+        let arr = toArray(rc, v);
+        Array.shuffle(rnd, arr);
+        Array.toVector(arr)
     }
+
 }

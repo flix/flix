@@ -141,7 +141,7 @@ namespace TestVector {
     def singleton01(): Bool =
         let v = Vector.singleton(0);
         Vector.nth(0, v) == Some(0)
-    
+
     @test
     def singleton02(): Bool =
         let v = Vector.singleton('A');
@@ -210,25 +210,6 @@ namespace TestVector {
     @test
     def buildVector01(): Bool = region rc {
         Vector.buildVector(rc, 1, arr -> Array.put(50, 0, arr)) `Vector.equals` Vector.singleton(50)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // buildVector2                                                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def buildVector201(): Bool = region rc {
-        let (v1, v2) = Vector.buildVector2(rc, 1, 1, (arr, brr) -> { Array.put(10, 0, arr); Array.put(50, 0, brr) });
-        (v1 `Vector.equals` Vector.singleton(10)) and (v2 `Vector.equals` Vector.singleton(50))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // buildVectorViaMutList                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def buildVectorViaMutList01(): Bool = region rc {
-        Vector.buildVectorViaMutList(rc, l -> MutList.push!(50, l)) `Vector.equals` Vector.singleton(50)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3920,7 +3901,7 @@ namespace TestVector {
     }
 
     @test
-    def sortBy10(): Bool = 
+    def sortBy10(): Bool =
         let geti = r -> {let R.R(x) = r; x.i};
         Vector.sortBy(geti, vectorOf3(R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})))
             `equals` vectorOf3(R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"}))
@@ -4240,7 +4221,7 @@ namespace TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet = 
+    def shuffle01(): Bool \ NonDet =
         let v = Vector.empty(): Vector[Int32];
         Vector.shuffle(Random.new(), v);
         Vector.length(v) == 0 and Vector.toSet(v) == Set#{}

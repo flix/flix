@@ -159,7 +159,9 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, Read(r) } = region rc {
-        Vector.buildVectorViaMutList(rc, m -> forEach(a -> MutList.push!(a, m), iter))
+        let m = MutList.new(rc);
+        forEach(a -> MutList.push!(a, m), iter);
+        MutList.toVector(m)
     }
 
     ///
