@@ -194,7 +194,8 @@ namespace Array {
     /// Returns `a` as a Vector.
     ///
     pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
-        Vector.buildVector(rc, length(a), arr1 -> forEachWithIndex((i, x) -> put(x, i, arr1), a))
+        let arr1 = copyOfRange(rc, 0, length(a), a);
+        unsafe_cast arr1 as Vector[a]
     }
 
     ///

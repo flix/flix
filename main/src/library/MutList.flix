@@ -744,9 +744,9 @@ namespace MutList {
     /// Returns `xs` as a vector.
     ///
     pub def toVector(xs: MutList[a, r]): Vector[a] \ Read(r) = region rc {
-        Vector.buildVector(rc, length(xs), arr ->
-            forEachWithIndex((i, x) -> Array.put(x, i, arr), xs)
-        )
+        let arr = Array.new(rc, length(xs));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
+        Array.toVector(arr)
     }
 
     ///

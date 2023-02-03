@@ -1205,7 +1205,9 @@ namespace DelayList {
     ///
     @Experimental
     pub def toVector(l: DelayList[a]): Vector[a] = region rc {
-        Vector.buildVector(rc, length(l), arr -> forEach(match (i, y) -> arr[i] = y, zipWithIndex(l)))
+        let arr = Array.new(rc, length(l));
+        forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
+        Array.toVector(arr)
     }
 
     ///

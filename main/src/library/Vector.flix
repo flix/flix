@@ -64,10 +64,31 @@ namespace Vector {
     }
 
     ///
+    /// Version of `Array.updateSequence!` where sub is a vector rather than an array, 
+    /// so a extra copy of `sub` is avoided.
+    ///
+    def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ Write(r)  =
+        let end = Array.length(arr);
+        let subLen = length(sub);
+        def loop(ri, wi) = {
+            if (wi >= end or ri >= subLen) 
+                ()
+            else if (wi < 0) 
+                loop(ri+1, wi+1)
+            else {
+                let x = get(ri, sub); 
+                Array.put(x, wi, arr);
+                loop(ri+1, wi+1)
+            }
+        };
+        loop(0, i)
+
+    ///
     /// Returns an empty (length zero) vector.
     ///
     pub def empty(): Vector[a] = region rc {
-        buildVector(rc, 0, _ -> ())
+        let arr = Array#{} @ rc;
+        Array.toVector(arr)
     }
 
     ///
@@ -100,19 +121,6 @@ namespace Vector {
     /// Returns the length of the vector `v`.
     ///
     pub def length(v: Vector[a]): Int32 = Array.length(v)
-
-    ///
-    /// Returns a fresh vector.
-    ///
-    /// The function `f` is applied to a uninitialized array, it should should set each element
-    /// to an actual value.
-    ///
-    pub def buildVector(rc: Region[r], len: Int32, f: Array[a, r] -> Unit \ ef): Vector[a] \ ef =
-        unsafe_cast (
-            let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
-            let _ = f(arr);
-            arr
-        ) as Array[a, true] \ ef
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
@@ -238,13 +246,13 @@ namespace Vector {
         nth(length(v) - 1, v)
 
     ///
-    /// Return a new vector, appending the elements `b` to elements of `a`.
+    /// Return a new vector, appending the elements `v2` after elements of `v1`.
     ///
-    pub def append(a: Vector[a], b: Vector[a]): Vector[a] = region rc {
-        buildVector(rc, length(a) + length(b), arr -> {
-            Array.updateSequence!(0, a, arr);
-            Array.updateSequence!(length(a), b, arr)
-        })
+    pub def append(v1: Vector[a], v2: Vector[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(v1) + length(v2));
+        arrayUpdateSeqV!(0, v1, arr);
+        arrayUpdateSeqV!(length(v1), v2, arr);
+        Array.toVector(arr)
     }
 
 
@@ -383,16 +391,16 @@ namespace Vector {
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
+        let arr = Array.new(rc, length(v) + 1);
         let acc = ref s @ rc;
-        buildVector(rc, length(v) + 1, arr -> {
-            Array.put(s, 0, arr);
-            let step = (i, x) -> {
-                let s1 = f(deref acc, x);
-                acc := s1;
-                Array.put(s1, i+1, arr)
-            };
-            forEachWithIndex(step, v)
-        })
+        Array.put(s, 0, arr);
+        let step = (i, x) -> {
+            let s1 = f(deref acc, x);
+            acc := s1;
+            Array.put(s1, i+1, arr)
+        };
+        forEachWithIndex(step, v);
+        Array.toVector(arr)
     }
 
     ///
@@ -402,21 +410,21 @@ namespace Vector {
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
+        let arr = Array.new(rc, len + 1);
         let acc = ref s @ rc;
-        buildVector(rc, len + 1, arr -> {
-            Array.put(s, len, arr);
-            def loop(i) = {
-                if (i < 0)
-                    ()
-                else {
-                    let s1 = f(get(i, v), deref acc);
-                    acc := s1;
-                    Array.put(s1, i, arr);
-                    loop(i - 1)
-                }
-            };
-            loop(len - 1)
-        })
+        Array.put(s, len, arr);
+        def loop(i) = {
+            if (i < 0)
+                ()
+            else {
+                let s1 = f(get(i, v), deref acc);
+                acc := s1;
+                Array.put(s1, i, arr);
+                loop(i - 1)
+            }
+        };
+        loop(len - 1);
+        Array.toVector(arr)
     }
 
     ///
@@ -544,22 +552,21 @@ namespace Vector {
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
         let pos = ref 0 @ rc;
-        let sepArr = toArray(rc, sep);
-        buildVector(rc, len, arr -> {
-            forEachWithIndex((i, v) ->
-                if (i == 0) {
-                    let a1 = toArray(rc, v);
-                    Array.updateSequence!(0, a1, arr);
-                    pos := length(v)
-                } else {
-                    let ix = deref pos;
-                    Array.updateSequence!(ix, sepArr, arr);
-                    let ix1 = ix + sepLength;
-                    let vArr = toArray(rc, v);
-                    Array.updateSequence!(ix1, vArr, arr);
-                    pos := ix1 + length(v)
-                }, vs)
-            })
+        let arr = Array.new(rc, len);
+        let f = (i, v) -> {
+            if (i == 0) {
+                arrayUpdateSeqV!(0, v, arr);
+                pos := length(v)
+            } else {
+                let ix = deref pos;
+                arrayUpdateSeqV!(ix, sep, arr);
+                let ix1 = ix + sepLength;
+                arrayUpdateSeqV!(ix1, v, arr);
+                pos := ix1 + length(v)
+            }
+        };
+        forEachWithIndex(f, vs);
+        Array.toVector(arr)
     }
 
     ///
@@ -811,13 +818,13 @@ namespace Vector {
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
         let pos = ref 0 @ rc;
-        buildVector(rc, len, arr ->
-            forEach(v -> {
-                let i = deref pos;
-                pos := i + length(v);
-                Array.updateSequence!(i, v, arr)
-                }, vs)
-        )
+        let arr = Array.new(rc, len);
+        forEach(v -> {
+            let i = deref pos;
+            pos := i + length(v);
+            Array.updateSequence!(i, v, arr)
+        }, vs);
+        Array.toVector(arr)
     }
 
     ///
