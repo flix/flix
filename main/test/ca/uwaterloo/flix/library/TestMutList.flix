@@ -1824,6 +1824,31 @@ namespace TestMutList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        MutList.toVector(MutList.new(rc) : MutList[Int32, _]) `Vector.equals` Vector.empty()
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        let l = MutList.new(rc);
+        MutList.push!(0, l);
+        MutList.toVector(l) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        let l = MutList.new(rc);
+        MutList.push!(1, l);
+        MutList.push!(2, l);
+        MutList.push!(3, l);
+        MutList.toVector(l) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

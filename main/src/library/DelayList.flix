@@ -1199,6 +1199,18 @@ namespace DelayList {
         a
 
     ///
+    /// Returns `l` as a Vector.
+    ///
+    /// Forces the entire list `l`.
+    ///
+    @Experimental
+    pub def toVector(l: DelayList[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(l));
+        forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns `l` as an `Iterator`.
     ///
     /// Does not force any elements of the list.
