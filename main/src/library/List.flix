@@ -754,23 +754,23 @@ namespace List {
         loop(l, identity)
 
     ///
-    /// Returns the sublist of `l` from index `b` (inclusive) to index `e` (exclusive).
+    /// Returns the sublist of `l` from index `start` (inclusive) to index `end` (exclusive).
     ///
-    /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= b` and `i < e`.
-    /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(b, e, l) = slice(max(0,b), min(length(l),e), l)).
+    /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= start` and `i < end`.
+    /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
-    pub def slice(b: Int32, e: Int32, l: List[a]): List[a] =
+    pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (i < b)
+                if (i < start.start)
                     loop(xs, i + 1, k)
-                else if (i >= e)
+                else if (i >= end.end)
                     k(Nil)
                 else
                     loop(xs, i + 1, ks -> k(x :: ks))
         };
-        if (b < e) loop(l, 0, identity) else Nil
+        if (start.start < end.end) loop(l, 0, identity) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.

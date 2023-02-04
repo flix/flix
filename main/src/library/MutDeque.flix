@@ -339,10 +339,10 @@ namespace MutDeque {
     def copyElements!(r2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            Array.updateSequence!(0,     Array.slice(r2, f, b, a), a1)
+            Array.updateSequence!(0,     Array.slice(r2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence!(0,     Array.slice(r2, f, c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence!(c - f, Array.slice(r2, 0, b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence!(0,     Array.slice(r2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence!(c - f, Array.slice(r2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
 
     ///

@@ -64,19 +64,19 @@ namespace Vector {
     }
 
     ///
-    /// Version of `Array.updateSequence!` where sub is a vector rather than an array, 
+    /// Version of `Array.updateSequence!` where sub is a vector rather than an array,
     /// so a extra copy of `sub` is avoided.
     ///
     def arrayUpdateSeqV!(i: Int32, sub: Vector[a], arr: Array[a, r]): Unit \ Write(r)  =
         let end = Array.length(arr);
         let subLen = length(sub);
         def loop(ri, wi) = {
-            if (wi >= end or ri >= subLen) 
+            if (wi >= end or ri >= subLen)
                 ()
-            else if (wi < 0) 
+            else if (wi < 0)
                 loop(ri+1, wi+1)
             else {
-                let x = get(ri, sub); 
+                let x = get(ri, sub);
                 Array.put(x, wi, arr);
                 loop(ri+1, wi+1)
             }
@@ -127,7 +127,7 @@ namespace Vector {
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, v: Vector[a]): Vector[a] = region rc {
         let arr = toArray(rc, v);
-        Array.slice(rc, start.start, end.end, arr) |> Array.toVector
+        Array.slice(rc, start, end, arr) |> Array.toVector
     }
 
     ///
@@ -392,7 +392,7 @@ namespace Vector {
     ///
     /// The result is a new vector.
     ///
-    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = 
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(get(i, v)), length(v))
 
 
@@ -437,7 +437,7 @@ namespace Vector {
     ///
     /// This is an explicit helper to avoid code duplication.
     ///
-    def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] = 
+    def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
         let f = ix -> {let readIx = Int32.mod(ix + n, len); get(readIx, v)};
         init(f, len)
@@ -1056,7 +1056,7 @@ namespace Vector {
             Array.put(l, i, arr);
             Array.put(r, i, brr)
             }, v);
-        (Array.toVector(arr), Array.toVector(brr))            
+        (Array.toVector(arr), Array.toVector(brr))
     }
 
     ///
