@@ -2095,6 +2095,23 @@ def toArray04(): Bool = region r {
 
 
 /////////////////////////////////////////////////////////////////////////////
+// toVector                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toVector01(): Bool =
+    (List.toVector(Nil) : Vector[Int32]) `Vector.equals` Vector.empty()
+
+@test
+def toVector02(): Bool =
+    List.toVector(0 :: Nil) `Vector.equals` Vector.singleton(0)
+
+@test
+def toVector03(): Bool =
+    List.toVector(1 :: 2 :: 3 :: Nil) `Vector.equals` Vector.range(1, 4)
+
+
+/////////////////////////////////////////////////////////////////////////////
 // toNel                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 

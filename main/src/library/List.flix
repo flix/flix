@@ -1163,6 +1163,15 @@ namespace List {
         }
 
     ///
+    /// Returns the list `l` as a vector.
+    ///
+    pub def toVector(l: List[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(l));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the list `l` as `Option[Nel[a]]`.
     ///
     /// If `l` is empty return `None`, otherwise return the Nel wrapped in `Some`.

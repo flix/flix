@@ -851,6 +851,21 @@ namespace TestDelayList {
     	DelayList.toArray(r, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ r
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool =
+        ((DelayList.toVector(ENil)) : Vector[Int32]) `Vector.equals` Vector.empty()
+
+    @test
+    def toVector02(): Bool =
+        DelayList.toVector(LCons(0, lazy ENil)) `Vector.equals` Vector.singleton(0)
+
+    @test
+    def toVector03(): Bool =
+        DelayList.toVector(DelayList.range(1, 4)) `Vector.equals` Vector.range(1, 4)
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

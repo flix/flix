@@ -191,6 +191,14 @@ namespace Array {
         d
 
     ///
+    /// Returns `a` as a Vector.
+    ///
+    pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
+        let arr1 = copyOfRange(rc, 0, length(a), a);
+        unsafe_cast arr1 as Vector[a]
+    }
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
     ///
     /// Returns `None` if `a` is empty.
@@ -1081,15 +1089,11 @@ namespace Array {
     ///
     /// Alias for `takeWhileLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     pub def takeWhile(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         takeWhileLeft(r1, f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def takeWhileLeft(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
@@ -1099,8 +1103,6 @@ namespace Array {
 
     ///
     /// Returns the longest suffix of `a` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def takeWhileRight(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfRight(x -> not (f(x)), a) {
