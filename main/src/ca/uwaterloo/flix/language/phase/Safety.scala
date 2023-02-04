@@ -81,65 +81,55 @@ object Safety {
   private def visitExp(e0: Expression, renv: RigidityEnv, root: Root)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
 
     def visit(exp0: Expression): Validation[Expression, CompilationMessage] = exp0 match {
-      case Expression.Cst(_, _, _) => Success(exp0)
+      case Expression.Cst(cst, tpe, loc) => Expression.Cst(cst, tpe, loc).toSuccess
 
-      case Expression.Wild(_, _) => Success(exp0)
+      case Expression.Wild(tpe, loc) => Expression.Wild(tpe, loc).toSuccess
 
-      case Expression.Var(_, _, _) => Success(exp0)
+      case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc).toSuccess
 
-      case Expression.Def(_, _, _) => Success(exp0)
+      case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc).toSuccess
 
-      case Expression.Sig(_, _, _) => Success(exp0)
+      case Expression.Sig(sym, tpe, loc) => Expression.Sig(sym, tpe, loc).toSuccess
 
-      case Expression.Hole(_, _, _) => Success(exp0)
+      case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, tpe, loc).toSuccess
 
-      case Expression.HoleWithExp(exp, _, _, _, _) =>
-        for {_ <- visit(exp)
-             x <- Success(exp0)} yield x
+      case Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal) { e => Expression.HoleWithExp(e, tpe, pur, eff, loc) }
 
-      case Expression.Use(_, exp, _) =>
-        for {_ <- visit(exp)
-             x <- Success(exp0)} yield x
+      case Expression.Use(sym, exp, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal) { e => Expression.Use(sym, e, loc) }
 
-      case Expression.Lambda(_, exp, _, _) =>
-        for {_ <- visit(exp)
-             x <- Success(exp0)} yield x
+      case Expression.Lambda(fparam, exp, tpe, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal) { e => Expression.Lambda(fparam, e, tpe, loc) }
 
-      case Expression.Apply(exp, exps, _, _, _, _) =>
-        for {
-          _ <- Validation.foldRight(exps)(visit(exp))((e, _) => visit(e))
-          x <- Success(exp0)
-        } yield x
+      case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
+        val expVal = visit(exp)
+        val expsVal = traverse(exps)(visit)
+        mapN(expVal, expsVal) { (e, es) => Expression.Apply(e, es, tpe, pur, eff, loc) }
 
-      case Expression.Unary(_, exp, _, _, _, _) =>
-        for {
-          _ <- visit(exp)
-          x <- Success(exp0)
-        } yield x
+      case Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal) { e => Expression.Unary(sop, e, tpe, pur, eff, loc) }
 
-      case Expression.Binary(_, exp1, exp2, _, _, _, _) =>
-        for {
-          _ <- visit(exp1)
-          _ <- visit(exp2)
-          x <- Success(exp0)
-        } yield x
+      case Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
+        val expVal1 = visit(exp1)
+        val expVal2 = visit(exp2)
+        mapN(expVal1, expVal2) { (e1, e2) => Expression.Binary(sop, e1, e2, tpe, pur, eff, loc) }
 
-      case Expression.Let(_, _, exp1, exp2, _, _, _, _) =>
-        for {
-          _ <- visit(exp1)
-          _ <- visit(exp2)
-          x <- Success(exp0)
-        } yield x
+      case Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+        val expVal1 = visit(exp1)
+        val expVal2 = visit(exp2)
+        mapN(expVal1, expVal2) { (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc) }
 
-      case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) =>
-        for {
-          _ <- visit(exp1)
-          _ <- visit(exp2)
-          x <- Success(exp0)
-        } yield x
+      case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+        val expVal1 = visit(exp1)
+        val expVal2 = visit(exp2)
+        mapN(expVal1, expVal2) { (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, pur, eff, loc) }
 
-      case Expression.Region(_, _) =>
-        Success(exp0)
+      case Expression.Region(tpe, loc) => Expression.Region(tpe, loc).toSuccess
 
       case Expression.Scope(_, _, exp, _, _, _, _) =>
         for {
