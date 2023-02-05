@@ -18,6 +18,23 @@
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 
+instance ToString[Vector[a]] with ToString[a] {
+    pub def toString(v: Vector[a]): String = Vector.toString(v)
+}
+
+instance Hash[Vector[a]] with Hash[a] {
+    pub def hash(v: Vector[a]): Int32 =
+        Vector.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), v)
+}
+
+instance Eq[Vector[a]] with Eq[a] {
+    pub def eq(v1: Vector[a], v2: Vector[a]): Bool = Vector.equals(v1, v2)
+}
+
+instance Order[Vector[a]] with Order[a] {
+    pub def compare(v1: Vector[a], v2: Vector[a]): Comparison = Vector.compare(v1, v2)
+}
+
 namespace Vector {
 
     ///
