@@ -205,6 +205,16 @@ object TypedAst {
 
     case class ArraySlice(region: TypedAst.Expression, base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class VectorLit(exps: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class VectorLoad(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class VectorLength(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+      def eff: Type = exp.eff
+      def tpe: Type = Type.Int32
+    }
+
     case class Ref(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Deref(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression

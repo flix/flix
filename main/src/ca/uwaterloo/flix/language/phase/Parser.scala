@@ -741,8 +741,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FList |
-        FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
+        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
+        SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ForEachYield | ForYield | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
@@ -1127,10 +1127,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       keyword("new") ~ WS ~ SP ~ Names.QName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
-    def ArrayLit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
-    }
-
     def FAppend: Rule1[ParsedAst.Expression] = rule {
       FCons ~ optional(optWS ~ SP ~ operatorX(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
     }
@@ -1139,21 +1135,29 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       RecordSelect ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
-    def FList: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("List") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FList
+    def ArrayLit: Rule1[ParsedAst.Expression.ArrayLit] = rule {
+      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
     }
 
-    def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
-      SP ~ atomic("Set") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FSet
+    def VectorLit: Rule1[ParsedAst.Expression.VectorLit] = rule {
+      SP ~ atomic("Vector") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.VectorLit
     }
 
-    def FMap: Rule1[ParsedAst.Expression.FMap] = {
+    def ListLit: Rule1[ParsedAst.Expression.ListLit] = rule {
+      SP ~ atomic("List") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.ListLit
+    }
+
+    def SetLit: Rule1[ParsedAst.Expression.SetLit] = rule {
+      SP ~ atomic("Set") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.SetLit
+    }
+
+    def FMap: Rule1[ParsedAst.Expression.MapLit] = {
       def KeyValue: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
         Expression ~ optWS ~ operatorX("=>") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
       }
 
       rule {
-        SP ~ atomic("Map") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FMap
+        SP ~ atomic("Map") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.MapLit
       }
     }
 

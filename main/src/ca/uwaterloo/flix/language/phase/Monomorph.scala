@@ -463,6 +463,19 @@ object Monomorph {
         val i2 = visitExp(endIndex, env0, subst)
         Expression.ArraySlice(r, b, i1, i2, subst(tpe), pur, eff, loc)
 
+      case Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+        val es = exps.map(visitExp(_, env0, subst))
+        Expression.VectorLit(es, subst(tpe), pur, eff, loc)
+
+      case Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+        val e1 = visitExp(exp1, env0, subst)
+        val e2 = visitExp(exp2, env0, subst)
+        Expression.VectorLoad(e1, e2, subst(tpe), pur, eff, loc)
+
+      case Expression.VectorLength(exp, loc) =>
+        val e = visitExp(exp, env0, subst)
+        Expression.VectorLength(e, loc)
+
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0, subst)
         val e2 = visitExp(exp2, env0, subst)
