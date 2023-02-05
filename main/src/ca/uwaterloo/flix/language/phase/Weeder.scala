@@ -1362,6 +1362,8 @@ object Weeder {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => WeededAst.Expression.RestrictableChoose(star, e, rs, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -1374,6 +1376,8 @@ object Weeder {
           WeededAst.Expression.Cst(Ast.Constant.Unit, loc)
         case x :: Nil => x
         case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
+      } recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
@@ -1678,6 +1682,8 @@ object Weeder {
             case (acc, eff) => WeededAst.Expression.Without(acc, eff, loc.asSynthetic)
           }
       }
+
+    // TODO: Add more here
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
       val loc = mkSL(sp1, sp2)
