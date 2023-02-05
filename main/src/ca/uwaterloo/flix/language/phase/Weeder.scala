@@ -779,7 +779,9 @@ object Weeder {
       val expVal = visitExp(exp, senv)
       mapN(fparamsVal, expVal) {
         case (fparams, e) => mkCurried(fparams, e, loc)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
       /*
@@ -788,7 +790,9 @@ object Weeder {
       mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) =>
           mkLambdaMatch(sp1, p, e, sp2)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -858,7 +862,9 @@ object Weeder {
       }
 
       mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
-        .softRecoverOne(WeededAst.Expression.Error)
+        .recoverOne {
+          case err: WeederError => WeededAst.Expression.Error(err)
+        }
 
     case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
       //
@@ -891,7 +897,9 @@ object Weeder {
               val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Cst(Ast.Constant.Unit, loc)), loc)
               WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
           }
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
       //
@@ -1015,7 +1023,9 @@ object Weeder {
           // Full-blown pattern match.
           val rule = WeededAst.MatchRule(pat, None, body)
           WeededAst.Expression.Match(withAscription(value, tpe), List(rule), loc)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1047,7 +1057,9 @@ object Weeder {
           val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
           val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
           WeededAst.Expression.Apply(inner, List(value), loc)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, _, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
@@ -1057,7 +1069,9 @@ object Weeder {
         case (fp, e1, e2) =>
           val lambda = mkCurried(fp, e1, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
