@@ -780,6 +780,11 @@ object Namer {
         case (r, b, i1, i2) => NamedAst.Expression.ArraySlice(r, b, i1, i2, loc)
       }
 
+    case WeededAst.Expression.VectorLength(base, loc) =>
+      visitExp(base, ns0) map {
+        case b => NamedAst.Expression.VectorLength(b, loc)
+      }
+
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), traverseOpt(exp2)(visitExp(_, ns0))) {
         case (e1, e2) =>

@@ -138,6 +138,8 @@ object KindedAst {
 
     case class ArraySlice(region: KindedAst.Expression, base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class VectorLength(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+
     case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Deref(exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
