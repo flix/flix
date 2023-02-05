@@ -95,10 +95,10 @@ namespace Array {
     pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
 
     ///
-    /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
+    /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
-    pub def slice(r1: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        $ARRAY_SLICE$(r1, a, b, e)
+    pub def slice(r1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
+        $ARRAY_SLICE$(r1, a, start.start, end.end)
 
     ///
     /// Returns the array `a` as a list.

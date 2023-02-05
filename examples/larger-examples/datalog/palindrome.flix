@@ -3,7 +3,7 @@ def main(): Unit \ IO =
     def trial(input) = {
         let res = input |>
             longestPalindromeSequence |>
-            Option.map(match (b,e) -> String.slice(b, e+1, input)) |>
+            Option.map(match (b,e) -> String.slice(start = b, end = e+1, input)) |>
             Option.getWithDefault("nothing");
         println("> Longest palindrome sequence of ${input} is ${res}")
     };

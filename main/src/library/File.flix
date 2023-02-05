@@ -556,7 +556,7 @@ namespace File {
         } else {
             let countBiggest = numberRead < count;
             if (countBiggest) {
-                Array.slice(r, 0, numberRead, bytes)
+                Array.slice(r, start = 0, end = numberRead, bytes)
             } else {
                 bytes
             }
