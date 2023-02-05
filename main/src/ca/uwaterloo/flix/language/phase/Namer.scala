@@ -598,7 +598,7 @@ object Namer {
       mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expression.Lambda(p, e, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Unary(sop, exp, loc) =>
@@ -690,7 +690,7 @@ object Namer {
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
@@ -810,7 +810,7 @@ object Namer {
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Of(qname, exp, loc) =>
@@ -827,7 +827,7 @@ object Namer {
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Mask(exp, loc) =>
@@ -879,7 +879,7 @@ object Namer {
       mapN(eVal, rulesVal) {
         case (e, rules) => NamedAst.Expression.TryWith(e, eff, rules, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Do(op, exps0, loc) =>
@@ -900,7 +900,7 @@ object Namer {
       mapN(argsVal, sigVal) {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
@@ -911,7 +911,7 @@ object Namer {
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
@@ -921,7 +921,7 @@ object Namer {
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
 
@@ -949,7 +949,7 @@ object Namer {
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
@@ -1035,7 +1035,7 @@ object Namer {
       mapN(psVal, expVal) {
         case (ps, e) => NamedAst.Expression.FixpointLambda(ps, e, loc)
       }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1158,10 +1158,10 @@ object Namer {
   /**
     * Names the given type `tpe`.
     */
-  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError.SuspiciousTypeVarName] = {
+  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError.TypeNameError] = {
     // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
     // TODO NS-REFACTOR Can we merge WeededAst.Type and NamedAst.Type and avoid this whole function?
-    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError.SuspiciousTypeVarName] = tpe0 match {
+    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError.TypeNameError] = tpe0 match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
       case WeededAst.Type.Var(ident, loc) =>
@@ -1353,7 +1353,7 @@ object Namer {
   /**
     * Performs naming on the given purity and effect.
     */
-  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError.SuspiciousTypeVarName] = purAndEff match {
+  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError.TypeNameError] = purAndEff match {
     case WeededAst.PurityAndEffect(pur0, eff0) =>
       val purVal = traverseOpt(pur0)(visitType)
       val effVal = traverseOpt(eff0)(effs => traverse(effs)(visitType))
@@ -1453,7 +1453,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError.SuspiciousTypeVarName] = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError.TypeNameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1470,7 +1470,7 @@ object Namer {
   /**
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
-  private def visitPredicateParam(pparam: WeededAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError.SuspiciousTypeVarName] = pparam match {
+  private def visitPredicateParam(pparam: WeededAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError.TypeNameError] = pparam match {
     case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
 

@@ -176,13 +176,15 @@ object NameError {
 
   }
 
+  sealed trait TypeNameError extends NameError
+
   /**
     * An error raised to indicate a suspicious type variable name.
     *
     * @param name the name of the type variable.
     * @param loc  the location of the suspicious type variable.
     */
-  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
+  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends TypeNameError {
     def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
