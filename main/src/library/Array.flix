@@ -67,7 +67,7 @@ namespace Array {
     /// Retrieves the value at position `i` in the array `a`.
     ///
     pub def get(i: Int32, a: Array[a, r]): a \ Read(r) =
-        a[i]
+        $ARRAY_LOAD$(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
