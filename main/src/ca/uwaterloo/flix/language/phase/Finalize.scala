@@ -411,6 +411,8 @@ object Finalize {
 
             case TypeConstructor.Array => MonoType.Array(args.head)
 
+            case TypeConstructor.Vector => MonoType.Array(args.head)
+
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
             case TypeConstructor.RegionToStar => MonoType.Region

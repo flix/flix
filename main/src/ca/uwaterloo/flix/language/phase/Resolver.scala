@@ -2150,6 +2150,7 @@ object Resolver {
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
         case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
+        case "Vector2" => UnkindedType.Cst(TypeConstructor.Vector, loc).toSuccess
         case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
         case "Region" => UnkindedType.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
@@ -3236,12 +3237,18 @@ object Resolver {
           erased.typeArguments match {
             case elmTyp :: region :: Nil =>
               mapN(getJVMType(elmTyp, loc)) {
-                case elmClass =>
-                  // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-                  java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+                case elmClass => getJVMArrayType(elmClass)
               }
-            case _ =>
-              ResolutionError.IllegalType(tpe, loc).toFailure
+            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+          }
+
+        case TypeConstructor.Vector =>
+          erased.typeArguments match {
+            case elmTyp :: region :: Nil =>
+              mapN(getJVMType(elmTyp, loc)) {
+                case elmClass => getJVMArrayType(elmClass)
+              }
+            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
           }
 
         case TypeConstructor.Native(clazz) => clazz.toSuccess
@@ -3327,6 +3334,14 @@ object Resolver {
       case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
     }
+  }
+
+  /**
+    * Returns the class object for an array with elements of the given `elmClass` type.
+    */
+  private def getJVMArrayType(elmClass: Class[_]): Class[_] = {
+    // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+    java.lang.reflect.Array.newInstance(elmClass, 0).getClass
   }
 
   private def isBaseTypeUnit(tpe: UnkindedType): Boolean = {
