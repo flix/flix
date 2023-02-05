@@ -756,6 +756,8 @@ object Weeder {
         case (e, as) =>
           val es = getArguments(as, loc)
           WeededAst.Expression.Apply(e, es, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
