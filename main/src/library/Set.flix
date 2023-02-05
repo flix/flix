@@ -560,8 +560,8 @@ namespace Set {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
-        MutSet.MutSet(ref s @ r)
+    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
+        MutSet.MutSet(rc, ref s @ rc)
 
     ///
     /// Applies `f` to every element of `s`.

@@ -83,6 +83,8 @@ object PatternExhaustiveness {
 
     case object Array extends TyCon
 
+    case object Vector extends TyCon
+
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
   }
@@ -570,6 +572,7 @@ object PatternExhaustiveness {
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
+    case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
   }
 
@@ -632,6 +635,7 @@ object PatternExhaustiveness {
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
+    case TyCon.Vector => "Vector"
     case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
   }
 
