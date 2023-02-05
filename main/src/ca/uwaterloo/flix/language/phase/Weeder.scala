@@ -475,7 +475,7 @@ object Weeder {
   /**
     * Performs weeding on the given use or import `u0`.
     */
-  private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
+  private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError.IllegalJavaClass] = u0 match {
     case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
@@ -556,9 +556,11 @@ object Weeder {
       WeededAst.Expression.HoleWithExp(exp, loc).toSuccess
 
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
-      mapN(visitUseOrImport(use), visitExp(exp, senv)) { // TODO: recover
+      mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }.recoverOne {
+        case err: WeederError.IllegalJavaClass => WeededAst.Expression.Error(err)
+      }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
       mapN(weedLiteral(lit)) {
@@ -569,7 +571,7 @@ object Weeder {
 
     case ParsedAst.Expression.Intrinsic(sp1, op, exps, sp2) =>
       val loc = mkSL(sp1, sp2)
-      flatMapN(traverse(exps)(visitArgument(_, senv))) { // TODO: recover
+      flatMapN(traverse(exps)(visitArgument(_, senv))) {
         case es => (op.name, es) match {
           case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expression.Unary(SemanticOperator.BoolOp.Not, e1, loc).toSuccess
           case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expression.Binary(SemanticOperator.BoolOp.And, e1, e2, loc).toSuccess
@@ -748,11 +750,11 @@ object Weeder {
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
       val sp1 = leftMostSourcePosition(lambda)
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(lambda, senv), traverse(args)(e => visitArgument(e, senv))) { // TODO: recover
+      mapN(visitExp(lambda, senv), traverse(args)(e => visitArgument(e, senv))) {
         case (e, as) =>
           val es = getArguments(as, loc)
           WeededAst.Expression.Apply(e, es, loc)
-      }.softRecoverOne(WeededAst.Expression.Error)
+      }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
       /*
@@ -769,7 +771,7 @@ object Weeder {
       /*
        * Check for `DuplicateFormal`.
        */
-      val fparamsVal = visitFormalParams(fparams0, Presence.Optional) // TODO: recover
+      val fparamsVal = visitFormalParams(fparams0, Presence.Optional)
       val expVal = visitExp(exp, senv)
       mapN(fparamsVal, expVal) {
         case (fparams, e) => mkCurried(fparams, e, loc)
@@ -779,7 +781,7 @@ object Weeder {
       /*
        * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
        */
-      mapN(visitPattern(pat), visitExp(exp, senv)) { // TODO: recover
+      mapN(visitPattern(pat), visitExp(exp, senv)) {
         case (p, e) =>
           mkLambdaMatch(sp1, p, e, sp2)
       }.softRecoverOne(WeededAst.Expression.Error)
@@ -835,7 +837,7 @@ object Weeder {
 
       val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
         case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) { // TODO: recover
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
               val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
@@ -870,7 +872,7 @@ object Weeder {
 
       foldRight(frags)(yieldExp) {
         case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) { // TODO: recover
+          mapN(visitPattern(pat), visitExp(exp1, senv)) {
             case (p, e1) =>
               val loc = mkSL(sp11, sp12).asSynthetic
               val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
@@ -938,7 +940,7 @@ object Weeder {
               // Case 1: a generator fragment i.e. `pat <- exp`
               // This should be desugared into
               //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
-              mapN(visitPattern(pat1), visitExp(exp1, senv)) { // TODO: recover
+              mapN(visitPattern(pat1), visitExp(exp1, senv)) {
                 case (p, e1) =>
                   val loc = mkSL(sp11, sp12).asSynthetic
 
@@ -996,10 +998,10 @@ object Weeder {
       //
       val loc = mkSL(sp1, sp2)
 
-      val patVal = visitPattern(pat) // TODO: recover
+      val patVal = visitPattern(pat)
       val exp1Val = visitExp(exp1, senv)
       val exp2Val = visitExp(exp2, senv)
-      val modVal = visitModifiers(mod0, legalModifiers = Set.empty) // TODO: recover
+      val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
 
       mapN(patVal, exp1Val, exp2Val, modVal) {
         case (WeededAst.Pattern.Var(ident, _), value, body, mod) =>
@@ -1022,7 +1024,7 @@ object Weeder {
       val ident = Name.Ident(sp1, "flatMap", sp2)
       val flatMap = WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
 
-      mapN(visitPattern(pat), visitExp(exp1, senv), visitExp(exp2, senv)) { // TODO: recover
+      mapN(visitPattern(pat), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
           // No pattern match.
           val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
@@ -1047,11 +1049,13 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
 
-      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) { // TODO: recover
+      mapN(visitFormalParams(fparams, Presence.Optional), visitExp(exp1, senv), visitExp(exp2, senv)) {
         case (fp, e1, e2) =>
           val lambda = mkCurried(fp, e1, e1.loc)
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.softRecoverOne(WeededAst.Expression.Error)
+
+    // TODO: Add more here
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1070,7 +1074,7 @@ object Weeder {
               val className = fqn.toString
 
               val tpe = visitType(tpe0)
-              val purAndEff = visitPurityAndEffect(purAndEff0) // TODO: recover
+              val purAndEff = visitPurityAndEffect(purAndEff0)
 
               //
               // Case 1: No arguments.
