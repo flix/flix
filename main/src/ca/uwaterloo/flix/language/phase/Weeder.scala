@@ -1483,7 +1483,7 @@ object Weeder {
           mkApplyFqn("List.append", List(e1, e2), loc)
       }
 
-    case ParsedAst.Expression.FList(sp1, sp2, exps) =>
+    case ParsedAst.Expression.ListLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
        */
@@ -1498,7 +1498,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.FSet(sp1, sp2, exps) =>
+    case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
        */
@@ -1512,7 +1512,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.FMap(sp1, sp2, exps) =>
+    case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
        */
@@ -3211,9 +3211,9 @@ object Weeder {
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.FList(sp1, _, _) => sp1
-    case ParsedAst.Expression.FSet(sp1, _, _) => sp1
-    case ParsedAst.Expression.FMap(sp1, _, _) => sp1
+    case ParsedAst.Expression.ListLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.SetLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.MapLit(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
