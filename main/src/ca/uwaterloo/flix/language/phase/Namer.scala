@@ -1322,6 +1322,7 @@ object Namer {
     case "bigint" => true
     case "string" => true
     case "array" => true
+    case "vector" => true
     case "ref" => true
     case "pure" => true
     case "impure" => true

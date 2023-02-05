@@ -1,124 +1,189 @@
-restrictable enum Expr[s] {
-    case Cst(Bool)
+mod Variants {
+
+pub restrictable enum Exp[s] {
     case Var(Int32)
-    case Not(Expr[s])
-    case And(Expr[s], Expr[s])
-    case Or(Expr[s], Expr[s])
-    case Xor(Expr[s], Expr[s])
+    case Cst(Bool)
+    case Not(Exp[s])
+    case Or(Exp[s], Exp[s])
+    case And(Exp[s], Exp[s])
+    case Xor(Exp[s], Exp[s])
 }
 
-def size(e: Expr[s]): Int32 = choose e {
-    case Expr.Cst(_) => 1
-    case Expr.Var(_) => 1
-    case Expr.Not(x) => size(x) + 1
-    case Expr.And(x, y) => size(x) + size(y) + 1
-    case Expr.Or(x, y) => size(x) + size(y) + 1
-    case Expr.Xor(x, y) => size(x) + size(y) + 1
-}
-
-def simplify(e: Expr[s]): Expr[(s -- <Expr.Xor>) ++ <Expr.Not, Expr.And, Expr.Or>] =
-    choose* e {
-        case Expr.Var(x) => Expr.Var(x)
-        case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(simplify(x))
-        case Expr.And(x, y) => open Expr.And(simplify(x), simplify(y))
-        case Expr.Or(x, y) => open Expr.Or(simplify(x), simplify(y))
-        case Expr.Xor(x, y) =>
-            let xx = simplify(x);
-            let yy = simplify(y);
-            open Expr.Or(open Expr.And(xx, open Expr.Not(yy)), open Expr.And(open Expr.Not(xx), yy))
-    }
-
-def subst(e: Expr[s]): Expr[(s -- <Expr.Var>) ++ <Expr.Cst>] =
-    choose* e {
-        case Expr.Var(_) => Expr.Cst(true)
-        case Expr.Cst(b) => Expr.Cst(b)
-        case Expr.Not(x) => open Expr.Not(subst(x))
-        case Expr.Or(x, y) => open Expr.Or(subst(x), subst(y))
-        case Expr.And(x, y) => open Expr.And(subst(x), subst(y))
-        case Expr.Xor(x, y) => open Expr.Xor(subst(x), subst(y))
-    }
-
-def fasteval(e: Expr[s -- <Expr.Var, Expr.Xor>]): Bool =
+pub def evalNaive(e: Exp[~~<Exp.Var>]): Bool =
     choose e {
-        case Expr.Cst(b) => b
-        case Expr.Not(x) => not fasteval(x)
-        case Expr.Or(x, y) => fasteval(x) or fasteval(y)
-        case Expr.And(x, y) => fasteval(x) and fasteval(y)
+        // Var case omitted: We can only evaluate closed terms.
+        case Exp.Cst(b)     => b
+        case Exp.Not(x)     => not evalNaive(x)
+        case Exp.Or(x, y)   => evalNaive(x) or evalNaive(y)
+        case Exp.And(x, y)  => evalNaive(x) and evalNaive(y)
+        case Exp.Xor(x, y)  => evalNaive(x) != evalNaive(y)
     }
 
-def eval(e: Expr[s]): Bool = {
-    let f = simplify >> subst >> fasteval;
-    f(e)
+pub def eval(e: Exp[s -- <Exp.Var>]): Bool =
+    choose e {
+        // Var case omitted: We can only evaluate closed terms.
+        case Exp.Cst(b)     => b
+        case Exp.Not(x)     => not eval(x)
+        case Exp.Or(x, y)   => eval(x) or eval(y)
+        case Exp.And(x, y)  => eval(x) and eval(y)
+        case Exp.Xor(x, y)  => eval(x) != eval(y)
+    }
+
+pub def simplifyNaive(e: Exp[s]): Exp[~~<Exp.Xor>] =
+    choose e {
+        case Exp.Var(x)     => open Exp.Var(x)
+        case Exp.Cst(b)     => open Exp.Cst(b)
+        case Exp.Not(x)     => open Exp.Not(simplifyNaive(x))
+        case Exp.Or(x, y)   => open Exp.Or(simplifyNaive(x), simplifyNaive(y))
+        case Exp.And(x, y)  => open Exp.And(simplifyNaive(x), simplifyNaive(y))
+        case Exp.Xor(x, y)  =>
+            let x1 = simplifyNaive(x);
+            let y1 = simplifyNaive(y);
+            open Exp.Or(open Exp.And(x1, open Exp.Not(y1)), open Exp.And(open Exp.Not(x1), y1))
+    }
+
+pub def map(f: Int32 -> Int32, e: Exp[s]): Exp[s] =
+    choose* e {
+        case Exp.Var(x)     => Exp.Var(f(x))
+        case Exp.Cst(b)     => Exp.Cst(b)
+        case Exp.Not(x)     => open Exp.Not(map(f, x))
+        case Exp.Or(x, y)   => open Exp.Or(map(f, x), map(f, y))
+        case Exp.And(x, y)  => open Exp.And(map(f, x), map(f, y))
+        case Exp.Xor(x, y)  => open Exp.Xor(map(f, x), map(f, y))
+    }
+
+pub def simplify(e: Exp[s]): Exp[(s -- <Exp.Xor>) ++ <Exp.Or, Exp.And, Exp.Not>] =
+    choose* e {
+        case Exp.Var(x)     => open Exp.Var(x)
+        case Exp.Cst(b)     => open Exp.Cst(b)
+        case Exp.Not(x)     => open Exp.Not(simplify(x))
+        case Exp.Or(x, y)   => open Exp.Or(simplify(x), simplify(y))
+        case Exp.And(x, y)  => open Exp.And(simplify(x), simplify(y))
+        case Exp.Xor(x, y)  =>
+            let x1 = simplify(x);
+            let y1 = simplify(y);
+            open Exp.Or(open Exp.And(x1, open Exp.Not(y1)), open Exp.And(open Exp.Not(x1), y1))
 }
 
-def main(): Unit \ IO = {
-    let input = open Expr.Not(open Expr.Var(42));
-    println("input is '${toString(input)}'");
-    println("input size ${size(input)}");
-    println("input evaluates to '${eval(input)}' (all variables mapped to 'true'");
-    let fls = Expr.Cst(false);
-    println("input ${if (eq(input, fls)) "is" else "is not"} equal to '${toString(fls)}'")
+pub def run(e: Exp[s -- <Exp.Var>]): Bool =
+    let f = simplify >> eval;
+    f(e)
+
+pub def subst(m: Map[Int32, Bool], e: Exp[s]): Exp[(s -- <Exp.Var>) ++ <Exp.Cst>] =
+    choose* e {
+        case Exp.Var(x)     => Exp.Cst(Map.getWithDefault(x, false, m))
+        case Exp.Cst(b)     => Exp.Cst(b)
+        case Exp.Not(x)     => open Exp.Not(subst(m, x))
+        case Exp.Or(x, y)   => open Exp.Or(subst(m, x), subst(m, y))
+        case Exp.And(x, y)  => open Exp.And(subst(m, x), subst(m, y))
+        case Exp.Xor(x, y)  => open Exp.Xor(subst(m, x), subst(m, y))
+    }
+
+pub def fasteval(e: Exp[s && <Exp.Cst, Exp.Not, Exp.And, Exp.Or>]): Bool =
+    choose e {
+        // Var case omitted: We can only evaluate closed terms.
+        case Exp.Cst(b)     => b
+        case Exp.Not(x)     => not eval(x)
+        case Exp.Or(x, y)   => eval(x) or eval(y)
+        case Exp.And(x, y)  => eval(x) and eval(y)
+    }
+
+pub def fastrun(m: Map[Int32, Bool], e: Exp[s]): Bool =
+    let f = m1 -> simplify >> subst(m1) >> fasteval;
+    f(m, e)
+
+//
+// Main function to run some code
+//
+pub def main(): Unit \ IO = {
+    let subst = Map#{1 => true, 2 => false};
+    // ~v1 and (v2 xor true)
+    let example = open Exp.And(open Exp.Not(open Exp.Var(1)), open Exp.Xor(open Exp.Var(2), open Exp.Cst(true)));
+    println("input is '${toString(example)}'");
+    println("input size ${size(example)}");
+    println("input evaluates to '${fastrun(subst, example)}'");
+    println("using the maaping ${subst}");
+    let fls = Exp.Cst(false);
+    println("input ${if (eq(example, fls)) "is" else "is not"} equal to '${toString(fls)}'")
+}
+
+//
+// Functions not found in the paper
+//
+
+pub def size(e: Exp[s]): Int32 = choose e {
+    case Exp.Cst(_) => 1
+    case Exp.Var(_) => 1
+    case Exp.Not(x) => size(x) + 1
+    case Exp.And(x, y) => size(x) + size(y) + 1
+    case Exp.Or(x, y) => size(x) + size(y) + 1
+    case Exp.Xor(x, y) => size(x) + size(y) + 1
 }
 
 
 /// Structural Equality
-def eq(e1: Expr[s1], e2: Expr[s2]): Bool = choose e1 {
-    case Expr.Var(x1) => choose e2 {
-        case Expr.Var(x2) => x1 == x2
-        case Expr.Cst(_) => false
-        case Expr.Not(_) => false
-        case Expr.And(_, _) => false
-        case Expr.Or(_, _) => false
-        case Expr.Xor(_, _) => false
+pub def eq(e1: Exp[s1], e2: Exp[s2]): Bool = choose e1 {
+    case Exp.Var(x1) => choose e2 {
+        case Exp.Var(x2) => x1 == x2
+        case Exp.Cst(_) => false
+        case Exp.Not(_) => false
+        case Exp.And(_, _) => false
+        case Exp.Or(_, _) => false
+        case Exp.Xor(_, _) => false
     }
-    case Expr.Cst(b1) => choose e2 {
-        case Expr.Cst(b2) => b1 == b2
-        case Expr.Var(_) => false
-        case Expr.Not(_) => false
-        case Expr.And(_, _) => false
-        case Expr.Or(_, _) => false
-        case Expr.Xor(_, _) => false
+    case Exp.Cst(b1) => choose e2 {
+        case Exp.Cst(b2) => b1 == b2
+        case Exp.Var(_) => false
+        case Exp.Not(_) => false
+        case Exp.And(_, _) => false
+        case Exp.Or(_, _) => false
+        case Exp.Xor(_, _) => false
     }
-    case Expr.Not(x1) => choose e2 {
-        case Expr.Not(x2) => eq(x1, x2)
-        case Expr.Var(_) => false
-        case Expr.Cst(_) => false
-        case Expr.And(_, _) => false
-        case Expr.Or(_, _) => false
-        case Expr.Xor(_, _) => false
+    case Exp.Not(x1) => choose e2 {
+        case Exp.Not(x2) => eq(x1, x2)
+        case Exp.Var(_) => false
+        case Exp.Cst(_) => false
+        case Exp.And(_, _) => false
+        case Exp.Or(_, _) => false
+        case Exp.Xor(_, _) => false
     }
-    case Expr.And(x1, y1) => choose e2 {
-        case Expr.And(x2, y2) => eq(x1, x2) and eq(y1, y2)
-        case Expr.Var(_) => false
-        case Expr.Cst(_) => false
-        case Expr.Not(_) => false
-        case Expr.Or(_, _) => false
-        case Expr.Xor(_, _) => false
+    case Exp.And(x1, y1) => choose e2 {
+        case Exp.And(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Exp.Var(_) => false
+        case Exp.Cst(_) => false
+        case Exp.Not(_) => false
+        case Exp.Or(_, _) => false
+        case Exp.Xor(_, _) => false
     }
-    case Expr.Or(x1, y1) => choose e2 {
-        case Expr.Or(x2, y2) => eq(x1, x2) and eq(y1, y2)
-        case Expr.Var(_) => false
-        case Expr.Cst(_) => false
-        case Expr.Not(_) => false
-        case Expr.And(_, _) => false
-        case Expr.Xor(_, _) => false
+    case Exp.Or(x1, y1) => choose e2 {
+        case Exp.Or(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Exp.Var(_) => false
+        case Exp.Cst(_) => false
+        case Exp.Not(_) => false
+        case Exp.And(_, _) => false
+        case Exp.Xor(_, _) => false
     }
-    case Expr.Xor(x1, y1) => choose e2 {
-        case Expr.Xor(x2, y2) => eq(x1, x2) and eq(y1, y2)
-        case Expr.Var(_) => false
-        case Expr.Cst(_) => false
-        case Expr.Not(_) => false
-        case Expr.And(_, _) => false
-        case Expr.Or(_, _) => false
+    case Exp.Xor(x1, y1) => choose e2 {
+        case Exp.Xor(x2, y2) => eq(x1, x2) and eq(y1, y2)
+        case Exp.Var(_) => false
+        case Exp.Cst(_) => false
+        case Exp.Not(_) => false
+        case Exp.And(_, _) => false
+        case Exp.Or(_, _) => false
     }
 }
 
-def toString(e: Expr[s]): String = choose e {
-    case Expr.Var(x) => "v${x}"
-    case Expr.Cst(b) => "${b}"
-    case Expr.Not(x) => "~(${toString(x)})"
-    case Expr.And(x, y) => "(${toString(x)} and ${toString(y)})"
-    case Expr.Or(x, y) => "(${toString(x)} or ${toString(y)})"
-    case Expr.Xor(x, y) => "(${toString(x)} xor ${toString(y)})"
+pub def toString(e: Exp[s]): String = choose e {
+    case Exp.Var(x) => "v${x}"
+    case Exp.Cst(b) => "${b}"
+    case Exp.Not(x) => "~(${toString(x)})"
+    case Exp.And(x, y) => "(${toString(x)} and ${toString(y)})"
+    case Exp.Or(x, y) => "(${toString(x)} or ${toString(y)})"
+    case Exp.Xor(x, y) => "(${toString(x)} xor ${toString(y)})"
+}
+
+}
+
+instance ToString[Variants.Exp[s]] {
+    pub def toString(x: Variants.Exp[s]): String = Variants.toString(x)
 }
