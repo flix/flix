@@ -1055,8 +1055,6 @@ object Weeder {
           WeededAst.Expression.LetRec(ident, mod, lambda, e2, loc)
       }.softRecoverOne(WeededAst.Expression.Error)
 
-    // TODO: Add more here
-
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
@@ -1283,6 +1281,8 @@ object Weeder {
         case ms =>
           val t = visitType(tpe)
           WeededAst.Expression.NewObject(t, ms, mkSL(sp1, sp2))
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
@@ -1305,6 +1305,8 @@ object Weeder {
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expression.Match(e, rs, loc)
+      }.recoverOne {
+        case err: WeederError => WeededAst.Expression.Error(err)
       }
 
     case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
