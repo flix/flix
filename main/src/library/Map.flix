@@ -802,10 +802,10 @@ namespace Map {
         Map.foldLeftWithKey(f, empty(), m)
 
     ///
-    /// Returns `m` as a mutable set.
+    /// Returns `m` as a mutable map.
     ///
-    pub def toMutMap(r: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap.MutMap(ref m @ r)
+    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ Write(r) =
+        MutMap.MutMap(rc, ref m @ rc)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

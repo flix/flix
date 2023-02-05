@@ -767,11 +767,11 @@ namespace DelayMap {
         Map.Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
-    /// Returns `m` as a mutable set.
+    /// Returns `m` as a mutable map.
     ///
     @Experimental @Parallel
-    pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap.MutMap(ref toMap(m) @ r)
+    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
+        MutMap.MutMap(rc, ref toMap(m) @ rc)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
