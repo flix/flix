@@ -901,6 +901,15 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Vector Literal expression.
+      *
+      * @param sp1  the position of the first character in the `Vector` keyword.
+      * @param exps the elements of the vector.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class VectorLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Cons expression (of list).
       *
       * @param exp1 the head of the list.

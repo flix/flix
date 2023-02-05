@@ -1455,6 +1455,11 @@ object Weeder {
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
       }
 
+    case ParsedAst.Expression.VectorLit(sp1, exps, sp2) =>
+      mapN(traverse(exps)(visitExp(_, senv))) {
+        case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
@@ -3202,6 +3207,7 @@ object Weeder {
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1

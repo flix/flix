@@ -545,6 +545,24 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.ArraySlice(r, b, bi, ei, t, pur, eff, loc)
 
+    case TypedAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      val es = visitExps(exps)
+      val t = visitType(tpe)
+      ??? // TODO
+      //LoweredAst.Expression.ArrayLit(es, e, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLoad(base, index, tpe, pur, eff, loc) =>
+      val b = visitExp(base)
+      val i = visitExp(index)
+      val t = visitType(tpe)
+    ??? // TODO
+    //LoweredAst.Expression.ArrayLoad(b, i, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLength(base, loc) =>
+      val b = visitExp(base)
+      ??? // TODO
+      //LoweredAst.Expression.ArrayLength(b, pur, eff, loc)
+
     case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
