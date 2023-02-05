@@ -681,13 +681,15 @@ object Namer {
       val rulesVal = traverse(rules) {
         case WeededAst.MatchTypeRule(ident, tpe, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-          mapN(visitType(tpe), visitExp(body, ns0)) {
+          mapN(visitType(tpe): Validation[NamedAst.Type, NameError], visitExp(body, ns0)) {
             case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
           }
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
-      }.softRecoverOne(NamedAst.Expression.Error)
+      }.recoverOne {
+        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+      }
 
     case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
       val expsVal = traverse(exps)(visitExp(_, ns0))
@@ -895,18 +897,23 @@ object Namer {
       val expVal = visitExp(exp, ns0)
       val argsVal = traverse(args)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType)
-      val retVal = visitType(retTpe)
+      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
-      }.softRecoverOne(NamedAst.Expression.Error)
+      }.recoverOne {
+        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+      }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType)
-      val retVal = visitType(retTpe)
+      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
-      }.softRecoverOne(NamedAst.Expression.Error)
+      }.recoverOne {
+        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+      }
+
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -927,11 +934,13 @@ object Namer {
       }
 
     case WeededAst.Expression.NewObject(tpe, methods, loc) =>
-      mapN(visitType(tpe), traverse(methods)(visitJvmMethod(_, ns0))) {
+      mapN(visitType(tpe): Validation[NamedAst.Type, NameError], traverse(methods)(visitJvmMethod(_, ns0))) {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
-      }.softRecoverOne(NamedAst.Expression.Error)
+      }.recoverOne {
+        case err: NameError.SuspiciousTypeVarName => NamedAst.Expression.Error(err)
+      }
 
     case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
@@ -1137,10 +1146,10 @@ object Namer {
   /**
     * Names the given type `tpe`.
     */
-  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
+  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError.SuspiciousTypeVarName] = {
     // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
     // TODO NS-REFACTOR Can we merge WeededAst.Type and NamedAst.Type and avoid this whole function?
-    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
+    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError.SuspiciousTypeVarName] = tpe0 match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
       case WeededAst.Type.Var(ident, loc) =>
@@ -1332,7 +1341,7 @@ object Namer {
   /**
     * Performs naming on the given purity and effect.
     */
-  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError] = purAndEff match {
+  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError.SuspiciousTypeVarName] = purAndEff match {
     case WeededAst.PurityAndEffect(pur0, eff0) =>
       val purVal = traverseOpt(pur0)(visitType)
       val effVal = traverseOpt(eff0)(effs => traverse(effs)(visitType))
