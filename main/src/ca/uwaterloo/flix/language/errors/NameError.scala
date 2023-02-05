@@ -205,36 +205,4 @@ object NameError {
     })
 
   }
-
-  /**
-    * An error raised to indicate that the class name was not found.
-    *
-    * @param name the class name.
-    * @param loc  the location of the class name.
-    */
-  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
-    def summary: String = s"Undefined Java class '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined Java class '${red(name)}'.
-         |
-         |${code(loc, "undefined Java class.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      """Flix cannot find the Java class. You can check:
-        |
-        |    (a) if there is a simple typo.
-        |    (b) that the relevant JARs are included.
-        |    (c) that you are using the right Java version.
-        |
-        |Flix automatically includes JARs that are passed as arguments and JAR files
-        |located in the `lib` directory.
-        |""".stripMargin
-    })
-  }
-
 }
