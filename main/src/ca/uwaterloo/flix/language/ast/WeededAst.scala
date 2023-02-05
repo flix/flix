@@ -145,7 +145,7 @@ object WeededAst {
 
     case class VectorLit(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

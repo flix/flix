@@ -1197,6 +1197,25 @@ object Resolver {
             case (r, b, i1, i2) => ResolvedAst.Expression.ArraySlice(r, b, i1, i2, loc)
           }
 
+        case NamedAst.Expression.VectorLit(exps, loc) =>
+          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          mapN(expsVal) {
+            case es => ResolvedAst.Expression.VectorLit(es, loc)
+          }
+
+        case NamedAst.Expression.VectorLoad(exp1, exp2, loc) =>
+          val e1Val = visitExp(exp1, env0, region)
+          val e2Val = visitExp(exp2, env0, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.VectorLoad(e1, e2, loc)
+          }
+
+        case NamedAst.Expression.VectorLength(exp, loc) =>
+          val eVal = visitExp(exp, env0, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.VectorLength(e, loc)
+          }
+
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, env0, region)
           val e2Val = traverseOpt(exp2)(visitExp(_, env0, region))
