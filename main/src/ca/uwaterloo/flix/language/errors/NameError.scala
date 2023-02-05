@@ -30,6 +30,11 @@ sealed trait NameError extends CompilationMessage {
 object NameError {
 
   /**
+    * A common super-type for type related [[NameError]]s
+    */
+  sealed trait TypeNameError extends NameError
+
+  /**
     * An error raised to indicate that the given `name` is ambiguous.
     *
     * @param name the ambiguous name.
@@ -175,8 +180,6 @@ object NameError {
     def loc: SourceLocation = loc1
 
   }
-
-  sealed trait TypeNameError extends NameError
 
   /**
     * An error raised to indicate a suspicious type variable name.
