@@ -734,6 +734,9 @@ object Weeder {
           case ("ARRAY_SLICE", e1 :: e2 :: e3 :: e4 :: Nil) => WeededAst.Expression.ArraySlice(e1, e2, e3, e4, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
 
+          case ("VECTOR_GET", e1 :: e2 :: Nil) => WeededAst.Expression.VectorLoad(e1, e2, loc).toSuccess
+          case ("VECTOR_LENGTH", e1 :: Nil) => WeededAst.Expression.VectorLength(e1, loc).toSuccess
+
           case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expression.ScopeExit(e1, e2, loc).toSuccess
 
           case _ =>
@@ -1452,6 +1455,11 @@ object Weeder {
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
       }
 
+    case ParsedAst.Expression.VectorLit(sp1, exps, sp2) =>
+      mapN(traverse(exps)(visitExp(_, senv))) {
+        case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.FCons(exp1, sp1, sp2, exp2) =>
       /*
        * Rewrites a `FCons` expression into a tag expression.
@@ -1475,7 +1483,7 @@ object Weeder {
           mkApplyFqn("List.append", List(e1, e2), loc)
       }
 
-    case ParsedAst.Expression.FList(sp1, sp2, exps) =>
+    case ParsedAst.Expression.ListLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
        */
@@ -1490,7 +1498,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.FSet(sp1, sp2, exps) =>
+    case ParsedAst.Expression.SetLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
        */
@@ -1504,7 +1512,7 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.FMap(sp1, sp2, exps) =>
+    case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
       /*
        * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
        */
@@ -3199,12 +3207,13 @@ object Weeder {
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.ArrayLit(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.FList(sp1, _, _) => sp1
-    case ParsedAst.Expression.FSet(sp1, _, _) => sp1
-    case ParsedAst.Expression.FMap(sp1, _, _) => sp1
+    case ParsedAst.Expression.ListLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.SetLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.MapLit(sp1, _, _) => sp1
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1

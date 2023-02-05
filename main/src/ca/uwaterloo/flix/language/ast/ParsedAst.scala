@@ -901,6 +901,15 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Vector Literal expression.
+      *
+      * @param sp1  the position of the first character in the `Vector` keyword.
+      * @param exps the elements of the vector.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class VectorLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Cons expression (of list).
       *
       * @param exp1 the head of the list.
@@ -921,31 +930,31 @@ object ParsedAst {
     case class FAppend(exp1: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, exp2: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
-      * List expression.
+      * List Literal Expression.
       *
       * @param sp1  the position of the first character in the `List` keyword.
       * @param sp2  the position of the last character in the `List` keyword.
       * @param exps the elements of the list.
       */
-    case class FList(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class ListLit(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
-      * Set Expression.
+      * Set Literal Expression.
       *
       * @param sp1  the position of the first character in the `Set` keyword.
       * @param sp2  the position of the last character in the `Set` keyword.
       * @param exps the elements of the set.
       */
-    case class FSet(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
+    case class SetLit(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[ParsedAst.Expression]) extends ParsedAst.Expression
 
     /**
-      * Map Expression.
+      * Map Literal Expression.
       *
       * @param sp1  the position of the first character in the `Map` keyword.
       * @param sp2  the position of the last character in the `Map` keyword.
       * @param exps the (key, values) of the map.
       */
-    case class FMap(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[(ParsedAst.Expression, ParsedAst.Expression)]) extends ParsedAst.Expression
+    case class MapLit(sp1: SourcePosition, sp2: SourcePosition, exps: Seq[(ParsedAst.Expression, ParsedAst.Expression)]) extends ParsedAst.Expression
 
     /**
       * String Interpolation Expression.

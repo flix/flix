@@ -784,6 +784,21 @@ object Namer {
         case (r, b, i1, i2) => NamedAst.Expression.ArraySlice(r, b, i1, i2, loc)
       }
 
+    case WeededAst.Expression.VectorLit(exps, loc) =>
+      mapN(traverse(exps)(visitExp(_, ns0))) {
+        case es => NamedAst.Expression.VectorLit(es, loc)
+      }
+
+    case WeededAst.Expression.VectorLoad(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+        case (e1, e2) => NamedAst.Expression.VectorLoad(e1, e2, loc)
+      }
+
+    case WeededAst.Expression.VectorLength(exp, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.VectorLength(e, loc)
+      }
+
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), traverseOpt(exp2)(visitExp(_, ns0))) {
         case (e1, e2) =>
