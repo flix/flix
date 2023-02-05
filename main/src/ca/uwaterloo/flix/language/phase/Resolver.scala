@@ -2150,7 +2150,7 @@ object Resolver {
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
         case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
-        case "Vector2" => UnkindedType.Cst(TypeConstructor.Vector, loc).toSuccess
+        case "Vector" => UnkindedType.Cst(TypeConstructor.Vector, loc).toSuccess
         case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
         case "Region" => UnkindedType.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 

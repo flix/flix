@@ -18,8 +18,6 @@
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 
-type alias Vector[a] = Array[a, true]
-
 namespace Vector {
 
     ///
@@ -34,9 +32,9 @@ namespace Vector {
                     loop(i + 1)
                 else
                     cmp
-            } else if (i < Array.length(a)) {
+            } else if (i < length(a)) {
                 Comparison.GreaterThan
-            } else if (i < Array.length(b)) {
+            } else if (i < length(b)) {
                 Comparison.LessThan
             } else {
                 Comparison.EqualTo
@@ -101,7 +99,7 @@ namespace Vector {
     /// Retrieves the value at position `i` in the vector `v`.
     ///
     pub def get(i: Int32, v: Vector[a]): a =
-        Array.get(i, v)
+        Array.get(i, unsafe_cast v as Array[a, true])
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
@@ -120,7 +118,8 @@ namespace Vector {
     ///
     /// Returns the length of the vector `v`.
     ///
-    pub def length(v: Vector[a]): Int32 = Array.length(v)
+    pub def length(v: Vector[a]): Int32 =
+        Array.length(unsafe_cast v as Array[a, true])
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
