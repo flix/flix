@@ -98,8 +98,7 @@ namespace Vector {
     ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
-    pub def get(i: Int32, v: Vector[a]): a =
-        Array.get(i, unsafe_cast v as Array[a, true])
+    pub def get(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
@@ -118,8 +117,7 @@ namespace Vector {
     ///
     /// Returns the length of the vector `v`.
     ///
-    pub def length(v: Vector[a]): Int32 =
-        Array.length(unsafe_cast v as Array[a, true])
+    pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
 
     ///
     /// Returns a fresh array with the elements from the vector `v` from index `b` (inclusive) until index `e` (exclusive).
