@@ -575,150 +575,150 @@ def isSubmatch11(): Bool = String.isSubmatch({regex = "[b]+"}, "aabbbc") == true
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def slice01(): Bool = String.slice(0, 1, "") == ""
+def slice01(): Bool = String.slice(start = 0, end = 1, "") == ""
 
 @test
-def slice02(): Bool = String.slice(0, 1, "a") == "a"
+def slice02(): Bool = String.slice(start = 0, end = 1, "a") == "a"
 
 @test
-def slice03(): Bool = String.slice(1, 2, "a") == ""
+def slice03(): Bool = String.slice(start = 1, end = 2, "a") == ""
 
 @test
-def slice04(): Bool = String.slice(0, 2, "a") == ""
+def slice04(): Bool = String.slice(start = 0, end = 2, "a") == ""
 
 @test
-def slice05(): Bool = String.slice(-1, 0, "a") == ""
+def slice05(): Bool = String.slice(start = -1, end = 0, "a") == ""
 
 @test
-def slice06(): Bool = String.slice(0, 1, "ab") == "a"
+def slice06(): Bool = String.slice(start = 0, end = 1, "ab") == "a"
 
 @test
-def slice07(): Bool = String.slice(1, 2, "ab") == "b"
+def slice07(): Bool = String.slice(start = 1, end = 2, "ab") == "b"
 
 @test
-def slice08(): Bool = String.slice(0, 2, "ab") == "ab"
+def slice08(): Bool = String.slice(start = 0, end = 2, "ab") == "ab"
 
 @test
-def slice09(): Bool = String.slice(0, 3, "ab") == ""
+def slice09(): Bool = String.slice(start = 0, end = 3, "ab") == ""
 
 @test
-def slice10(): Bool = String.slice(-1, 2, "ab") == ""
+def slice10(): Bool = String.slice(start = -1, end = 2, "ab") == ""
 
 @test
-def slice11(): Bool = String.slice(0, 1, "abc") == "a"
+def slice11(): Bool = String.slice(start = 0, end = 1, "abc") == "a"
 
 @test
-def slice12(): Bool = String.slice(1, 2, "abc") == "b"
+def slice12(): Bool = String.slice(start = 1, end = 2, "abc") == "b"
 
 @test
-def slice13(): Bool = String.slice(2, 3, "abc") == "c"
+def slice13(): Bool = String.slice(start = 2, end = 3, "abc") == "c"
 
 @test
-def slice14(): Bool = String.slice(0, 2, "abc") == "ab"
+def slice14(): Bool = String.slice(start = 0, end = 2, "abc") == "ab"
 
 @test
-def slice15(): Bool = String.slice(1, 3, "abc") == "bc"
+def slice15(): Bool = String.slice(start = 1, end = 3, "abc") == "bc"
 
 @test
-def slice16(): Bool = String.slice(0, 3, "abc") == "abc"
+def slice16(): Bool = String.slice(start = 0, end = 3, "abc") == "abc"
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceLeft                                                               //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceLeft01(): Bool = String.sliceLeft(0, "") == ""
+def sliceLeft01(): Bool = String.sliceLeft(end = 0, "") == ""
 
 @test
-def sliceLeft02(): Bool = String.sliceLeft(1, "") == ""
+def sliceLeft02(): Bool = String.sliceLeft(end = 1, "") == ""
 
 @test
-def sliceLeft03(): Bool = String.sliceLeft(1, "a") == "a"
+def sliceLeft03(): Bool = String.sliceLeft(end = 1, "a") == "a"
 
 @test
-def sliceLeft04(): Bool = String.sliceLeft(0, "a") == ""
+def sliceLeft04(): Bool = String.sliceLeft(end = 0, "a") == ""
 
 @test
-def sliceLeft05(): Bool = String.sliceLeft(2, "a") == ""
+def sliceLeft05(): Bool = String.sliceLeft(end = 2, "a") == ""
 
 @test
-def sliceLeft06(): Bool = String.sliceLeft(1, "ab") == "a"
+def sliceLeft06(): Bool = String.sliceLeft(end = 1, "ab") == "a"
 
 @test
-def sliceLeft07(): Bool = String.sliceLeft(2, "ab") == "ab"
+def sliceLeft07(): Bool = String.sliceLeft(end = 2, "ab") == "ab"
 
 @test
-def sliceLeft08(): Bool = String.sliceLeft(0, "ab") == ""
+def sliceLeft08(): Bool = String.sliceLeft(end = 0, "ab") == ""
 
 @test
-def sliceLeft09(): Bool = String.sliceLeft(3, "ab") == ""
+def sliceLeft09(): Bool = String.sliceLeft(end = 3, "ab") == ""
 
 @test
-def sliceLeft10(): Bool = String.sliceLeft(-1, "ab") == ""
+def sliceLeft10(): Bool = String.sliceLeft(end = -1, "ab") == ""
 
 @test
-def sliceLeft11(): Bool = String.sliceLeft(1, "abc") == "a"
+def sliceLeft11(): Bool = String.sliceLeft(end = 1, "abc") == "a"
 
 @test
-def sliceLeft12(): Bool = String.sliceLeft(2, "abc") == "ab"
+def sliceLeft12(): Bool = String.sliceLeft(end = 2, "abc") == "ab"
 
 @test
-def sliceLeft13(): Bool = String.sliceLeft(3, "abc") == "abc"
+def sliceLeft13(): Bool = String.sliceLeft(end = 3, "abc") == "abc"
 
 @test
-def sliceLeft14(): Bool = String.sliceLeft(0, "abc") == ""
+def sliceLeft14(): Bool = String.sliceLeft(end = 0, "abc") == ""
 
 @test
-def sliceLeft15(): Bool = String.sliceLeft(4, "abc") == ""
+def sliceLeft15(): Bool = String.sliceLeft(end = 4, "abc") == ""
 
 @test
-def sliceLeft16(): Bool = String.sliceLeft(-1, "abc") == ""
+def sliceLeft16(): Bool = String.sliceLeft(end = -1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // sliceRight                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def sliceRight01(): Bool = String.sliceRight(0, "") == ""
+def sliceRight01(): Bool = String.sliceRight(start = 0, "") == ""
 
 @test
-def sliceRight02(): Bool = String.sliceRight(1, "") == ""
+def sliceRight02(): Bool = String.sliceRight(start = 1, "") == ""
 
 @test
-def sliceRight03(): Bool = String.sliceRight(1, "a") == ""
+def sliceRight03(): Bool = String.sliceRight(start = 1, "a") == ""
 
 @test
-def sliceRight04(): Bool = String.sliceRight(0, "a") == "a"
+def sliceRight04(): Bool = String.sliceRight(start = 0, "a") == "a"
 
 @test
-def sliceRight05(): Bool = String.sliceRight(1, "a") == ""
+def sliceRight05(): Bool = String.sliceRight(start = 1, "a") == ""
 
 @test
-def sliceRight06(): Bool = String.sliceRight(0, "ab") == "ab"
+def sliceRight06(): Bool = String.sliceRight(start = 0, "ab") == "ab"
 
 @test
-def sliceRight07(): Bool = String.sliceRight(1, "ab") == "b"
+def sliceRight07(): Bool = String.sliceRight(start = 1, "ab") == "b"
 
 @test
-def sliceRight08(): Bool = String.sliceRight(-1, "ab") == ""
+def sliceRight08(): Bool = String.sliceRight(start = -1, "ab") == ""
 
 @test
-def sliceRight09(): Bool = String.sliceRight(2, "ab") == ""
+def sliceRight09(): Bool = String.sliceRight(start = 2, "ab") == ""
 
 @test
-def sliceRight10(): Bool = String.sliceRight(0, "abc") == "abc"
+def sliceRight10(): Bool = String.sliceRight(start = 0, "abc") == "abc"
 
 @test
-def sliceRight11(): Bool = String.sliceRight(1, "abc") == "bc"
+def sliceRight11(): Bool = String.sliceRight(start = 1, "abc") == "bc"
 
 @test
-def sliceRight12(): Bool = String.sliceRight(2, "abc") == "c"
+def sliceRight12(): Bool = String.sliceRight(start = 2, "abc") == "c"
 
 @test
-def sliceRight13(): Bool = String.sliceRight(3, "abc") == ""
+def sliceRight13(): Bool = String.sliceRight(start = 3, "abc") == ""
 
 @test
-def sliceRight14(): Bool = String.sliceRight(-1, "abc") == ""
+def sliceRight14(): Bool = String.sliceRight(start = -1, "abc") == ""
 
 /////////////////////////////////////////////////////////////////////////////
 // findIndexOfLeft                                                         //

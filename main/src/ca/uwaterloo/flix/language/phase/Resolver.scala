@@ -1197,6 +1197,25 @@ object Resolver {
             case (r, b, i1, i2) => ResolvedAst.Expression.ArraySlice(r, b, i1, i2, loc)
           }
 
+        case NamedAst.Expression.VectorLit(exps, loc) =>
+          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          mapN(expsVal) {
+            case es => ResolvedAst.Expression.VectorLit(es, loc)
+          }
+
+        case NamedAst.Expression.VectorLoad(exp1, exp2, loc) =>
+          val e1Val = visitExp(exp1, env0, region)
+          val e2Val = visitExp(exp2, env0, region)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => ResolvedAst.Expression.VectorLoad(e1, e2, loc)
+          }
+
+        case NamedAst.Expression.VectorLength(exp, loc) =>
+          val eVal = visitExp(exp, env0, region)
+          mapN(eVal) {
+            case e => ResolvedAst.Expression.VectorLength(e, loc)
+          }
+
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, env0, region)
           val e2Val = traverseOpt(exp2)(visitExp(_, env0, region))
@@ -2150,6 +2169,7 @@ object Resolver {
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
         case "Array" => UnkindedType.Cst(TypeConstructor.Array, loc).toSuccess
+        case "Vector" => UnkindedType.Cst(TypeConstructor.Vector, loc).toSuccess
         case "Ref" => UnkindedType.Cst(TypeConstructor.Ref, loc).toSuccess
         case "Region" => UnkindedType.Cst(TypeConstructor.RegionToStar, loc).toSuccess
 
@@ -3236,12 +3256,18 @@ object Resolver {
           erased.typeArguments match {
             case elmTyp :: region :: Nil =>
               mapN(getJVMType(elmTyp, loc)) {
-                case elmClass =>
-                  // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-                  java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+                case elmClass => getJVMArrayType(elmClass)
               }
-            case _ =>
-              ResolutionError.IllegalType(tpe, loc).toFailure
+            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+          }
+
+        case TypeConstructor.Vector =>
+          erased.typeArguments match {
+            case elmTyp :: region :: Nil =>
+              mapN(getJVMType(elmTyp, loc)) {
+                case elmClass => getJVMArrayType(elmClass)
+              }
+            case _ => ResolutionError.IllegalType(tpe, loc).toFailure
           }
 
         case TypeConstructor.Native(clazz) => clazz.toSuccess
@@ -3327,6 +3353,14 @@ object Resolver {
       case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
     }
+  }
+
+  /**
+    * Returns the class object for an array with elements of the given `elmClass` type.
+    */
+  private def getJVMArrayType(elmClass: Class[_]): Class[_] = {
+    // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+    java.lang.reflect.Array.newInstance(elmClass, 0).getClass
   }
 
   private def isBaseTypeUnit(tpe: UnkindedType): Boolean = {

@@ -68,7 +68,7 @@ object CaseSetUnification {
     */
   private def booleanUnification(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int], univ: Set[Int], sym: Symbol.RestrictableEnumSym, env: Bimap[VarOrCase, Int])(implicit flix: Flix): Result[CaseSetSubstitution, UnificationError] = {
     // The boolean expression we want to show is 0.
-    val query = mkEq(tpe1, tpe2)(univ)
+    val query = minimize(mkEq(tpe1, tpe2)(univ))(univ)
 
     // Compute the variables in the query.
     val typeVars = query.freeVars.toList

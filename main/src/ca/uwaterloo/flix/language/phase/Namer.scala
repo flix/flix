@@ -595,8 +595,10 @@ object Namer {
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
-      mapN(visitFormalParam(fparam0), visitExp(exp, ns0)) {
+      mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expression.Lambda(p, e, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Unary(sop, exp, loc) =>
@@ -681,12 +683,14 @@ object Namer {
       val rulesVal = traverse(rules) {
         case WeededAst.MatchTypeRule(ident, tpe, body) =>
           val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-          mapN(visitType(tpe), visitExp(body, ns0)) {
+          mapN(visitType(tpe): Validation[NamedAst.Type, NameError], visitExp(body, ns0)) {
             case (t, b) => NamedAst.MatchTypeRule(sym, t, b)
           }
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expression.TypeMatch(e, rs, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.RelationalChoose(star, exps, rules, loc) =>
@@ -780,6 +784,21 @@ object Namer {
         case (r, b, i1, i2) => NamedAst.Expression.ArraySlice(r, b, i1, i2, loc)
       }
 
+    case WeededAst.Expression.VectorLit(exps, loc) =>
+      mapN(traverse(exps)(visitExp(_, ns0))) {
+        case es => NamedAst.Expression.VectorLit(es, loc)
+      }
+
+    case WeededAst.Expression.VectorLoad(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+        case (e1, e2) => NamedAst.Expression.VectorLoad(e1, e2, loc)
+      }
+
+    case WeededAst.Expression.VectorLength(exp, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.VectorLength(e, loc)
+      }
+
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), traverseOpt(exp2)(visitExp(_, ns0))) {
         case (e1, e2) =>
@@ -801,10 +820,12 @@ object Namer {
     case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val expectedTypVal = traverseOpt(expectedType)(visitType)
-      val expectedEffVal = visitPurityAndEffect(expectedEff)
+      val expectedEffVal = visitPurityAndEffect(expectedEff): Validation[NamedAst.PurityAndEffect, NameError]
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Of(qname, exp, loc) =>
@@ -816,10 +837,12 @@ object Namer {
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
-      val declaredEffVal = visitPurityAndEffect(declaredEff)
+      val declaredEffVal = visitPurityAndEffect(declaredEff): Validation[NamedAst.PurityAndEffect, NameError]
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Mask(exp, loc) =>
@@ -862,7 +885,7 @@ object Namer {
       val eVal = visitExp(e0, ns0)
       val rulesVal = traverse(rules0) {
         case WeededAst.HandlerRule(op, fparams0, body0) =>
-          val fparamsVal = traverse(fparams0)(visitFormalParam)
+          val fparamsVal = traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]
           val bodyVal = visitExp(body0, ns0)
           mapN(fparamsVal, bodyVal) {
             (fparams, body) => NamedAst.HandlerRule(op, fparams, body)
@@ -870,6 +893,8 @@ object Namer {
       }
       mapN(eVal, rulesVal) {
         case (e, rules) => NamedAst.Expression.TryWith(e, eff, rules, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.Do(op, exps0, loc) =>
@@ -886,27 +911,34 @@ object Namer {
 
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType)
+      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       mapN(argsVal, sigVal) {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
       val expVal = visitExp(exp, ns0)
       val argsVal = traverse(args)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType)
-      val retVal = visitType(retTpe)
+      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
+      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, ret, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
       val argsVal = traverse(args)(visitExp(_, ns0))
-      val sigVal = traverse(sig)(visitType)
-      val retVal = visitType(retTpe)
+      val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
+      val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
+
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -927,10 +959,12 @@ object Namer {
       }
 
     case WeededAst.Expression.NewObject(tpe, methods, loc) =>
-      mapN(visitType(tpe), traverse(methods)(visitJvmMethod(_, ns0))) {
+      mapN(visitType(tpe): Validation[NamedAst.Type, NameError], traverse(methods)(visitJvmMethod(_, ns0))) {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expression.NewObject(name, tpe, ms, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.NewChannel(exp1, exp2, loc) =>
@@ -1011,10 +1045,12 @@ object Namer {
       }
 
     case WeededAst.Expression.FixpointLambda(pparams, exp, loc) =>
-      val psVal = traverse(pparams)(visitPredicateParam)
+      val psVal = traverse(pparams)(visitPredicateParam): Validation[List[NamedAst.PredicateParam], NameError]
       val expVal = visitExp(exp, ns0)
       mapN(psVal, expVal) {
         case (ps, e) => NamedAst.Expression.FixpointLambda(ps, e, loc)
+      }.recoverOne {
+        case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
     case WeededAst.Expression.FixpointMerge(exp1, exp2, loc) =>
@@ -1137,10 +1173,10 @@ object Namer {
   /**
     * Names the given type `tpe`.
     */
-  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
+  private def visitType(t0: WeededAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError.TypeNameError] = {
     // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
     // TODO NS-REFACTOR Can we merge WeededAst.Type and NamedAst.Type and avoid this whole function?
-    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
+    def visit(tpe0: WeededAst.Type): Validation[NamedAst.Type, NameError.TypeNameError] = tpe0 match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
       case WeededAst.Type.Var(ident, loc) =>
@@ -1322,6 +1358,7 @@ object Namer {
     case "bigint" => true
     case "string" => true
     case "array" => true
+    case "vector" => true
     case "ref" => true
     case "pure" => true
     case "impure" => true
@@ -1331,7 +1368,7 @@ object Namer {
   /**
     * Performs naming on the given purity and effect.
     */
-  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError] = purAndEff match {
+  private def visitPurityAndEffect(purAndEff: WeededAst.PurityAndEffect)(implicit flix: Flix): Validation[NamedAst.PurityAndEffect, NameError.TypeNameError] = purAndEff match {
     case WeededAst.PurityAndEffect(pur0, eff0) =>
       val purVal = traverseOpt(pur0)(visitType)
       val effVal = traverseOpt(eff0)(effs => traverse(effs)(visitType))
@@ -1431,7 +1468,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam)(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError.TypeNameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1448,7 +1485,7 @@ object Namer {
   /**
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
-  private def visitPredicateParam(pparam: WeededAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
+  private def visitPredicateParam(pparam: WeededAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError.TypeNameError] = pparam match {
     case WeededAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
       NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
 
@@ -1463,7 +1500,7 @@ object Namer {
     */
   private def visitJvmMethod(method: WeededAst.JvmMethod, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.JvmMethod, NameError] = method match {
     case WeededAst.JvmMethod(ident, fparams0, exp0, tpe0, purAndEff0, loc) =>
-      flatMapN(traverse(fparams0)(visitFormalParam)) {
+      flatMapN(traverse(fparams0)(visitFormalParam): Validation[List[NamedAst.FormalParam], NameError]) {
         case fparams =>
           val exp = visitExp(exp0, ns0)
           val tpe = visitType(tpe0)
@@ -1471,7 +1508,7 @@ object Namer {
           mapN(exp, tpe, purAndEff) {
             case (e, t, p) => NamedAst.JvmMethod(ident, fparams, e, t, p, loc)
           }
-      }
+      }: Validation[NamedAst.JvmMethod, NameError]
   }
 
   /**
