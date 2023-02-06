@@ -64,11 +64,11 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = {
+  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): Validation[Def, CompilationMessage] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    mapN(visitExp(def0.impl.exp, renv, root))(_ => root)
+    mapN(visitExp(def0.impl.exp, renv, root))(_ => def0)
   }
 
 
@@ -93,7 +93,6 @@ object Safety {
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         mapN(expVal) { e => Expression.HoleWithExp(e, tpe, pur, eff, loc) }
-
 
       case Expression.Use(sym, exp, loc) =>
         val expVal = visit(exp)
@@ -161,12 +160,8 @@ object Safety {
         val expVal = visit(exp)
         val rulesVal = traverse(rules) { case MatchRule(p, g, e) =>
           val eVal = visit(e)
-          g match {
-            case Some(gexp) =>
-              val gexpVal = visit(gexp)
-              mapN(eVal, gexpVal) { (e1, e2) => MatchRule(p, Some(e1), e2) }
-            case None => mapN(eVal) { e => MatchRule(p, None, e) }
-          }
+          val gexpVal = traverseOpt(g)(visit)
+          mapN(gexpVal, eVal)(MatchRule(p, _, _))
         }
         mapN(expVal, rulesVal) { (e, rs) => Expression.Match(e, rs, tpe, pur, eff, loc) }
 
@@ -180,19 +175,22 @@ object Safety {
         }
         val expVal = visit(exp)
         val rulesVal = traverse(rules) { case MatchTypeRule(sym, tpe, mexp) =>
-          mapN(visit(mexp)) { e => MatchTypeRule(sym, tpe, e) } }
+          mapN(visit(mexp)) { e => MatchTypeRule(sym, tpe, e) }
+        }
         mapN(expVal, rulesVal, missingDefault) { (e, rs, _) => Expression.TypeMatch(e, rs, tpe, pur, eff, loc) }
 
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
         val expsVal = traverse(exps)(visit)
         val rulesVal = traverse(rules) { case RelationalChoiceRule(pat, exp) =>
-          mapN(visit(exp)) { e => RelationalChoiceRule(pat, e) } }
+          mapN(visit(exp)) { e => RelationalChoiceRule(pat, e) }
+        }
         mapN(expsVal, rulesVal) { (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc) }
 
       case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         val rulesVal = traverse(rules) { case RestrictableChoiceRule(pat, exp1) =>
-          mapN(visit(exp1)) { e => RestrictableChoiceRule(pat, e) } }
+          mapN(visit(exp1)) { e => RestrictableChoiceRule(pat, e) }
+        }
         mapN(expVal, rulesVal) { (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, pur, eff, loc) }
 
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
@@ -295,11 +293,11 @@ object Safety {
       case e@Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
         val check = checkCastSafety(e)
         val expVal = visit(exp)
-        mapN(expVal, check) { (e, _) => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) }
+        mapN(expVal, check) { (e1, _) => Expression.Cast(e1, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) }
 
       case Expression.Mask(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Mask(exp, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Mask(_, tpe, pur, eff, loc))
 
       case Expression.Upcast(exp, tpe, loc) =>
         val check = checkUpcastSafety(exp, tpe, renv, root, loc)
@@ -313,18 +311,20 @@ object Safety {
 
       case Expression.Without(exp, effUse, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Without(e, effUse, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Without(_, effUse, tpe, pur, eff, loc))
 
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         val rulesVal = traverse(rules) { case CatchRule(sym, clazz, exp) =>
-          mapN(visit(exp)) { e => CatchRule(sym, clazz, e) } }
+          mapN(visit(exp))(CatchRule(sym, clazz, _))
+        }
         mapN(expVal, rulesVal) { (e, rs) => Expression.TryCatch(e, rs, tpe, pur, eff, loc) }
 
       case Expression.TryWith(exp, effUse, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         val rulesVal = traverse(rules) { case HandlerRule(op, fparams, exp) =>
-          mapN(visit(exp)) { e => HandlerRule(op, fparams, e) } }
+          mapN(visit(exp)) { e => HandlerRule(op, fparams, e) }
+        }
         mapN(expVal, rulesVal) { (e, rs) => Expression.TryWith(e, effUse, rs, tpe, pur, eff, loc) }
 
       case Expression.Do(op, exps, pur, eff, loc) =>
@@ -368,7 +368,8 @@ object Safety {
         val erasedType = Type.eraseAliases(tpe)
         val objImpl = traverse(checkObjectImplementation(clazz, erasedType, methods, loc)) { x => x.toFailure }
         val methodsVal = traverse(methods) { case JvmMethod(ident, fparams, exp, retTpe, pur, eff, loc) =>
-          mapN(visit(exp)) { e => JvmMethod(ident, fparams, e, retTpe, pur, eff, loc) } }
+          mapN(visit(exp)) { e => JvmMethod(ident, fparams, e, retTpe, pur, eff, loc) }
+        }
         mapN(methodsVal, objImpl) { (ms, _) => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc) }
 
       case Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
@@ -408,7 +409,8 @@ object Safety {
 
       case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
         val fragsVal = traverse(frags) { case ParYieldFragment(pat, exp, loc) =>
-          mapN(visit(exp)) { e => ParYieldFragment(pat, e, loc) } }
+          mapN(visit(exp)) { e => ParYieldFragment(pat, e, loc) }
+        }
         val expVal = visit(exp)
         mapN(fragsVal, expVal) { (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc) }
 
@@ -489,7 +491,7 @@ object Safety {
 
       // Boolean primitive to other primitives
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
-       ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
 
       // Symmetric case
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
@@ -497,11 +499,11 @@ object Safety {
 
       // JVM Reference types and primitives
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
-       ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
 
       // Symmetric case
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
-       ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
+        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc).toFailure
 
       case _ => cast.toSuccess
     }
@@ -618,7 +620,7 @@ object Safety {
     if (isSubtypeOf(tpe1, tpe2, renv, root))
       exp.toSuccess
     else
-     UnsafeUpcast(exp.tpe, tpe, loc).toFailure
+      UnsafeUpcast(exp.tpe, tpe, loc).toFailure
   }
 
   /**
@@ -858,6 +860,7 @@ object Safety {
       case (acc, term) => acc ++ freeVars(term).keys
     })
 
+    // TODO: Change structure to go over expressions individually
     // Compute the lattice variables that are illegally used in the terms.
     mapN(traverse(allVars.intersect(latVars).toList)(IllegalRelationalUseOfLatticeVariable(_, loc).toFailure)) { _ => terms }
   }
@@ -867,7 +870,7 @@ object Safety {
     *
     * @param loc the location of the atom containing the terms.
     */
-  private def visitPats(terms: List[Pattern], loc: SourceLocation): Validation[List[Pattern],CompilationMessage] = {
+  private def visitPats(terms: List[Pattern], loc: SourceLocation): Validation[List[Pattern], CompilationMessage] = {
     traverse(terms)(visitPat(_, loc))
   }
 
@@ -876,7 +879,7 @@ object Safety {
     *
     * @param l the location of the atom containing the term.
     */
-  private def visitPat(term: Pattern, l: SourceLocation): Validation[Pattern,CompilationMessage] = term match {
+  private def visitPat(term: Pattern, l: SourceLocation): Validation[Pattern, CompilationMessage] = term match {
     case Pattern.Wild(_, _) => IllegalNegativelyBoundWildcard(l).toFailure
     case Pattern.Var(sym, tpe, loc) => Pattern.Var(sym, tpe, loc).toSuccess
     case Pattern.Cst(cst, tpe, loc) => Pattern.Cst(cst, tpe, loc).toSuccess
@@ -954,11 +957,6 @@ object Safety {
   }
 
   /**
-    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
-    */
-  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
-
-  /**
     * Convert a list of Flix methods to a set of MethodSignatures. Returns a map to allow subsequent reverse lookup.
     */
   private def getFlixMethodSignatures(methods: List[JvmMethod]): Map[MethodSignature, JvmMethod] = {
@@ -1012,5 +1010,10 @@ object Safety {
     */
   private def isStaticMethod(m: java.lang.reflect.Method): Boolean =
     java.lang.reflect.Modifier.isStatic(m.getModifiers)
+
+  /**
+    * Represents the signature of a method, used to compare Java signatures against Flix signatures.
+    */
+  private case class MethodSignature(name: String, paramTypes: List[Type], retTpe: Type)
 
 }
