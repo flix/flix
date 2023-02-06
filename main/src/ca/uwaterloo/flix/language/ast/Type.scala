@@ -571,6 +571,12 @@ object Type {
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
 
   /**
+    * Returns the type `Array[tpe]` with the given source location `loc`.
+    */
+  def mkVector(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Vector, loc), tpe, loc)
+
+  /**
     * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
     */
   def mkRef(tpe: Type, reg: Type, loc: SourceLocation): Type =

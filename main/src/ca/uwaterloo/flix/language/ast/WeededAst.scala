@@ -77,6 +77,8 @@ object WeededAst {
 
     case class Open(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
+    case class OpenAs(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class HoleWithExp(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -140,6 +142,12 @@ object WeededAst {
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArraySlice(region: WeededAst.Expression, base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorLit(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 

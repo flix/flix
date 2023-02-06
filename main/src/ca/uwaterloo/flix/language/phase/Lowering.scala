@@ -372,6 +372,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
+      visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 
@@ -541,6 +544,21 @@ object Lowering {
       val ei = visitExp(endIndex)
       val t = visitType(tpe)
       LoweredAst.Expression.ArraySlice(r, b, bi, ei, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      val es = visitExps(exps)
+      val t = visitType(tpe)
+      LoweredAst.Expression.VectorLit(es, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLoad(base, index, tpe, pur, eff, loc) =>
+      val b = visitExp(base)
+      val i = visitExp(index)
+      val t = visitType(tpe)
+      LoweredAst.Expression.VectorLoad(b, i, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLength(base, loc) =>
+      val b = visitExp(base)
+      LoweredAst.Expression.VectorLength(b, loc)
 
     case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -912,6 +930,10 @@ object Lowering {
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
         val t = visitType(tpe)
         Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+
+      case Type.Apply(Type.Cst(TypeConstructor.Vector, loc), tpe, _) =>
+        val t = visitType(tpe)
+        Type.mkArray(t, Type.True, loc)
 
       case Type.Cst(_, _) => tpe0
 
@@ -1990,6 +2012,19 @@ object Lowering {
       val bi = substExp(beginIndex, subst)
       val ei = substExp(endIndex, subst)
       LoweredAst.Expression.ArraySlice(r, b, bi, ei, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expression.VectorLit(es, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expression.VectorLoad(e1, e2, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.VectorLength(exp, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.VectorLength(e, loc)
 
     case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

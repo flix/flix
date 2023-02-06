@@ -516,6 +516,8 @@ object Typer {
           resultEff <- unifyTypeM(atLeastEff, evar, loc)
         } yield (tconstrs, resultTpe, resultPur, resultEff)
 
+      case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
+
       case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
@@ -1389,6 +1391,36 @@ object Typer {
           resultEff = Type.mkUnion(List(eff1, eff2, eff3, eff4), loc)
         } yield (constrs1 ++ constrs2 ++ constrs3 ++ constrs4, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.VectorLit(exps, tvar, pvar, loc) =>
+        for {
+          (constrs, elmTypes, pur, eff) <- traverseM(exps)(visitExp).map(unzip4)
+          elmTyp <- unifyTypeAllowEmptyM(elmTypes, Kind.Star, loc)
+          resultTyp <- unifyTypeM(tvar, Type.mkVector(elmTyp, loc), loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(pur, loc), loc)
+          resultEff = Type.mkUnion(eff, loc)
+        } yield (constrs.flatten, resultTyp, resultPur, resultEff)
+
+      case KindedAst.Expression.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
+        for {
+          (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
+          (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
+          arrayType <- expectTypeM(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
+          indexType <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
+          resultPur <- unifyTypeM(pvar, Type.mkAnd(pur1, pur2, loc), loc)
+          resultEff = Type.mkUnion(eff1, eff2, loc)
+        } yield (constrs1 ++ constrs2, tvar, resultPur, resultEff)
+
+      case KindedAst.Expression.VectorLength(exp, loc) =>
+        val elmVar = Type.freshVar(Kind.Star, loc)
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          _ <- expectTypeM(Type.mkVector(elmVar, loc), tpe, exp.loc)
+          resultTyp = Type.Int32
+          resultPur = pur
+          resultEff = eff
+          _ <- unbindVar(elmVar)
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
         val regionType = Type.mkRegion(regionVar, loc)
@@ -1979,6 +2011,10 @@ object Typer {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.HoleWithExp(e, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
+      case KindedAst.Expression.OpenAs(sym, exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.OpenAs(sym, e, subst0(tvar), loc)
+
       case KindedAst.Expression.Use(sym, exp, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Use(sym, e, loc)
@@ -2121,7 +2157,7 @@ object Typer {
       case KindedAst.Expression.RestrictableChoose(star, exp, rules, tvar, loc) =>
         val e = visitExp(exp, subst0)
         val rs = rules.map {
-          case KindedAst.RestrictableChoiceRule(pat0, _, body0) =>
+          case KindedAst.RestrictableChoiceRule(pat0, body0) =>
             val pat = pat0 match {
               case KindedAst.RestrictableChoicePattern.Tag(sym, pats, tvar, loc) =>
                 val ps = pats.map {
@@ -2226,6 +2262,27 @@ object Typer {
         val pur = subst0(pvar)
         val eff = Type.mkUnion(List(e1.eff, e2.eff, e3.eff, e4.eff), loc)
         TypedAst.Expression.ArraySlice(e1, e2, e3, e4, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.VectorLit(exps, tvar, pvar, loc) =>
+        val es = exps.map(visitExp(_, subst0))
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = Type.mkUnion(es.map(_.eff), loc)
+        TypedAst.Expression.VectorLit(es, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.VectorLoad(exp1, exp2, tvar, pvar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        val tpe = subst0(tvar)
+        val pur = subst0(pvar)
+        val eff = Type.mkUnion(e1.eff, e2.eff, loc)
+        TypedAst.Expression.VectorLoad(e1, e2, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.VectorLength(exp, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = e.pur
+        val eff = e.eff
+        TypedAst.Expression.VectorLength(e, loc)
 
       case KindedAst.Expression.Ref(exp1, exp2, tvar, pvar, loc) =>
         val e1 = visitExp(exp1, subst0)

@@ -35,6 +35,10 @@ object BoolUnification {
     //
     // Optimize common unification queries.
     //
+    if (flix.options.xprintboolunif) {
+      val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
+      println(s"$loc: $tpe1 =?= $tpe2")
+    }
 
     if (!flix.options.xnoboolspecialcases) {
 

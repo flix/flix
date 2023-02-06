@@ -416,6 +416,14 @@ object Kinder {
           KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc)
       }
 
+    case ResolvedAst.Expression.OpenAs(sym, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        case exp =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          KindedAst.Expression.OpenAs(sym, exp, tvar, loc)
+      }
+
     case ResolvedAst.Expression.Use(sym, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
@@ -632,6 +640,30 @@ object Kinder {
         case (reg, base, beginIndex, endIndex) =>
           val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
           KindedAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, pvar, loc)
+      }
+
+    case ResolvedAst.Expression.VectorLit(exps, loc) =>
+      val expsVal = traverse(exps)(visitExp(_, kenv0, senv, taenv, henv0, root))
+      mapN(expsVal) {
+        case es =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.VectorLit(es, tvar, pvar, loc)
+      }
+
+    case ResolvedAst.Expression.VectorLoad(exp1, exp2, loc) =>
+      val exp1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
+      val exp2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) =>
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          KindedAst.Expression.VectorLoad(e1, e2, Type.freshVar(Kind.Star, loc.asSynthetic), pvar, loc)
+      }
+
+    case ResolvedAst.Expression.VectorLength(exp, loc) =>
+      val expVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        e => KindedAst.Expression.VectorLength(e, loc)
       }
 
     case ResolvedAst.Expression.Ref(exp1, exp2, loc) =>
@@ -941,11 +973,11 @@ object Kinder {
     * Performs kinding on the given relational choice rule under the given kind environment.
     */
   private def visitRestrictableChoiceRule(rule0: ResolvedAst.RestrictableChoiceRule, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], henv: Option[(Type.Var, Type.Var)], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.RestrictableChoiceRule, KindError] = rule0 match {
-    case ResolvedAst.RestrictableChoiceRule(pat0, sym, exp0) =>
+    case ResolvedAst.RestrictableChoiceRule(pat0, exp0) =>
       val patVal = visitRestrictableChoicePattern(pat0)
       val expVal = visitExp(exp0, kenv, senv, taenv, henv, root)
       mapN(patVal, expVal) {
-        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, sym, exp)
+        case (pat, exp) => KindedAst.RestrictableChoiceRule(pat, exp)
       }
   }
 

@@ -1397,4 +1397,37 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.IllegalWildType](result)
   }
+
+  test("UndefinedName.ForEachYield.01") {
+    val input =
+      """
+        |def foo(): List[String] =
+        |    foreach (x <- "1" :: "2" :: Nil; if y != "0")
+        |        yield x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.ForEachYield.02") {
+    val input =
+      """
+        |def foo(): List[String] =
+        |    foreach (x <- "1" :: "2" :: Nil)
+        |        yield y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.ForEachYield.03") {
+    val input =
+      """
+        |def foo(): List[(String, Int32)] =
+        |    foreach (x <- "1" :: "2" :: Nil; if y > 0; y <- 0 :: 1 :: Nil)
+        |        yield (x, y)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[ResolutionError.UndefinedName](result)
+  }
 }

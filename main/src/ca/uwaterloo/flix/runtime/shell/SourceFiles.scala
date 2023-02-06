@@ -45,7 +45,7 @@ case object SourceProvider {
       case Command.Fpkg => Packager.buildPkg(path, options)
       case Command.Bench => Packager.benchmark(path, options)
       case Command.Test => Packager.test(path, options)
-      case Command.Install(s) => FlixPackageManager.install(s, path, options)
+      case Command.Install(s) => FlixPackageManager.install(s, None, path)(System.out)
       case _ => // No-op (other cases are handled within Shell)
     }
   }

@@ -87,6 +87,7 @@ object Statistics {
       case Expression.Sig(sym, tpe, loc) => Counter.empty
       case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
       case Expression.Use(_, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
@@ -117,6 +118,9 @@ object Statistics {
       case Expression.ArrayLength(base, pur, eff, loc) => visitExp(base)
       case Expression.ArrayStore(base, index, elm, _, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
       case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+      case Expression.VectorLit(exps, _, _, _, _) => Counter.merge(exps.map(visitExp))
+      case Expression.VectorLoad(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.VectorLength(exp, _) => visitExp(exp)
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)

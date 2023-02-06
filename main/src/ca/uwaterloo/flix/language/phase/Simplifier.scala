@@ -169,6 +169,23 @@ object Simplifier {
         val i2 = visitExp(endIndex)
         SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
+      case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
+
+      case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ArrayLoad(e1, e2, tpe, loc)
+
+      case LoweredAst.Expression.VectorLength(exp, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val e = visitExp(exp)
+        val pur = e.purity
+        SimplifiedAst.Expression.ArrayLength(e, Type.Int32, pur, loc)
+
       case LoweredAst.Expression.Ref(exp, _, tpe, pur, eff, loc) =>
         // Note: The region expression is erased.
         val e = visitExp(exp)

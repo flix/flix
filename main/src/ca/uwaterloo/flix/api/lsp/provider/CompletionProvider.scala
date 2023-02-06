@@ -74,6 +74,7 @@ object CompletionProvider {
   // Built-in types with type parameters
   private val BuiltinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
     ("Array", List("a", "r")),
+    ("Vector", List("a")),
     ("Ref", List("a", "r")),
     ("Sender", List("t", "r")),
     ("Receiver", List("t", "r")),

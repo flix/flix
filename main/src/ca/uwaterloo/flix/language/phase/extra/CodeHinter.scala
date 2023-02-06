@@ -95,6 +95,8 @@ object CodeHinter {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
@@ -197,6 +199,15 @@ object CodeHinter {
 
     case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
+
+    case Expression.VectorLit(exps, exp, _, _, _) =>
+      visitExps(exps)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

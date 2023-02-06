@@ -94,9 +94,14 @@ object Safety {
         val expVal = visit(exp)
         mapN(expVal) { e => Expression.HoleWithExp(e, tpe, pur, eff, loc) }
 
+
       case Expression.Use(sym, exp, loc) =>
         val expVal = visit(exp)
         mapN(expVal) { e => Expression.Use(sym, e, loc) }
+
+      case Expression.OpenAs(sym, exp, tpe, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal)(Expression.OpenAs(sym, _, tpe, loc))
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val expVal = visit(exp)
@@ -257,6 +262,19 @@ object Safety {
         val expVal2 = visit(exp2)
         mapN(expVal1, expVal2) { (e1, e2) => Expression.Ref(e1, e2, tpe, pur, eff, loc) }
 
+      case Expression.VectorLit(elms, tpe, pur, eff, loc) =>
+        val elmsVal = traverse(elms)(visit)
+        mapN(elmsVal)(Expression.VectorLit(_, tpe, pur, eff, loc))
+
+      case Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+        val expVal1 = visit(exp1)
+        val expVal2 = visit(exp2)
+        mapN(expVal1, expVal2)(Expression.VectorLoad(_, _, tpe, pur, eff, loc))
+
+      case Expression.VectorLength(exp, loc) =>
+        val expVal = visit(exp)
+        mapN(expVal)(Expression.VectorLength(_, loc))
+
       case Expression.Deref(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         mapN(expVal) { e => Expression.Deref(e, tpe, pur, eff, loc) }
@@ -391,7 +409,7 @@ object Safety {
       case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
         val fragsVal = traverse(frags) { case ParYieldFragment(pat, exp, loc) =>
           mapN(visit(exp)) { e => ParYieldFragment(pat, e, loc) } }
-        val expVal = visit(exp) // Maybe?
+        val expVal = visit(exp)
         mapN(fragsVal, expVal) { (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc) }
 
       case Expression.Lazy(exp, tpe, loc) =>
