@@ -876,6 +876,79 @@ namespace TestVector {
         v == Vector#{true, false}
 
     /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool =
+        let v = Vector.ap((Vector#{} : Vector[Int32 -> Int32]), (Vector#{} : Vector[Int32]));
+        v == Vector#{}
+
+    @test
+    def ap02(): Bool =
+        let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{});
+        v == Vector#{}
+
+    @test
+    def ap03(): Bool =
+        let v = Vector.ap((Vector#{} : Vector[Int32 -> Int32]), Vector#{5});
+        v == Vector#{}
+
+    @test
+    def ap04(): Bool =
+        let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{5});
+        v == Vector#{6}
+
+    @test
+    def ap05(): Bool =
+        let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{0, 5});
+        v == Vector#{1, 6}
+
+    @test
+    def ap06(): Bool =
+        let v = Vector.ap(Vector#{(x -> x+1), (x -> x*2)}, Vector#{0, 4});
+        v == Vector#{1, 5, 0, 8}
+
+    /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool =
+        let v: Vector[Option[Int32]] = Vector#{};
+        Vector.sequence(v) == Some(Vector#{})
+
+    @test
+    def sequence02(): Bool =
+        let v: Vector[Option[Int32]] = Vector#{None};
+        Vector.sequence(v) == None
+
+    @test
+    def sequence03(): Bool =
+        let v = Vector#{Some(1)};
+        Vector.sequence(v) == Some(Vector#{1})
+
+    @test
+    def sequence04(): Bool =
+        let v: Vector[Option[Int32]] = Vector#{None, None};
+        Vector.sequence(v) == None
+
+    @test
+    def sequence05(): Bool =
+        let v = Vector#{Some(1), None};
+        Vector.sequence(v) == None
+
+    @test
+    def sequence06(): Bool =
+        let v = Vector#{None, Some(2)};
+        Vector.sequence(v) == None
+
+    @test
+    def sequence07(): Bool =
+        let v = Vector#{Some(1), Some(2)};
+        Vector.sequence(v) == Some(Vector#{1, 2})
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1387,7 +1460,7 @@ namespace TestVector {
 
     @test
     def transpose06(): Bool =
-        let v = Vector.transpose(Vector#{Vector#{1, 2}});        
+        let v = Vector.transpose(Vector#{Vector#{1, 2}});
         v == Vector#{Vector#{1}, Vector#{2}}
 
     @test
