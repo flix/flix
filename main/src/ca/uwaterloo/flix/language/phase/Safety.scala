@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.language.phase.unification.Unification
@@ -14,7 +14,6 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import java.math.BigInteger
-import scala.annotation.tailrec
 
 /**
   * Performs safety and well-formedness checks on:
@@ -92,11 +91,11 @@ object Safety {
 
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.HoleWithExp(e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.HoleWithExp(_, tpe, pur, eff, loc))
 
       case Expression.Use(sym, exp, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Use(sym, e, loc) }
+        mapN(expVal)(Expression.Use(sym, _, loc))
 
       case Expression.OpenAs(sym, exp, tpe, loc) =>
         val expVal = visit(exp)
@@ -104,66 +103,67 @@ object Safety {
 
       case Expression.Lambda(fparam, exp, tpe, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Lambda(fparam, e, tpe, loc) }
+        mapN(expVal)(Expression.Lambda(fparam, _, tpe, loc))
 
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         val expsVal = traverse(exps)(visit)
-        mapN(expVal, expsVal) { (e, es) => Expression.Apply(e, es, tpe, pur, eff, loc) }
+        mapN(expVal, expsVal)(Expression.Apply(_, _, tpe, pur, eff, loc))
 
       case Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Unary(sop, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Unary(sop, _, tpe, pur, eff, loc))
 
       case Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Binary(sop, e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Binary(sop, _, _, tpe, pur, eff, loc))
 
       case Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Let(sym, mod, e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Let(sym, mod, _, _, tpe, pur, eff, loc))
 
       case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.LetRec(sym, mod, e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.LetRec(sym, mod, _, _, tpe, pur, eff, loc))
 
       case Expression.Region(tpe, loc) => Expression.Region(tpe, loc).toSuccess
 
       case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Scope(sym, regionVar, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Scope(sym, regionVar, _, tpe, pur, eff, loc))
 
       case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.ScopeExit(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.ScopeExit(_, _, tpe, pur, eff, loc))
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
         val expVal3 = visit(exp3)
-        mapN(expVal1, expVal2, expVal3) { (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2, expVal3)(Expression.IfThenElse(_, _, _, tpe, pur, eff, loc))
 
       case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Stm(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Stm(_, _, tpe, pur, eff, loc))
 
       case Expression.Discard(exp, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Discard(e, pur, eff, loc) }
+        mapN(expVal)(Expression.Discard(_, pur, eff, loc))
 
       case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        val rulesVal = traverse(rules) { case MatchRule(p, g, e) =>
-          val eVal = visit(e)
-          val gexpVal = traverseOpt(g)(visit)
-          mapN(gexpVal, eVal)(MatchRule(p, _, _))
+        val rulesVal = traverse(rules) {
+          case MatchRule(p, g, e) =>
+            val eVal = visit(e)
+            val gexpVal = traverseOpt(g)(visit)
+            mapN(gexpVal, eVal)(MatchRule(p, _, _))
         }
-        mapN(expVal, rulesVal) { (e, rs) => Expression.Match(e, rs, tpe, pur, eff, loc) }
+        mapN(expVal, rulesVal)(Expression.Match(_, _, tpe, pur, eff, loc))
 
       case Expression.TypeMatch(exp, rules, tpe, pur, eff, loc) =>
         // check whether the last case in the type match looks like `...: _`
@@ -174,91 +174,91 @@ object Safety {
           }
         }
         val expVal = visit(exp)
-        val rulesVal = traverse(rules) { case MatchTypeRule(sym, tpe, mexp) =>
-          mapN(visit(mexp)) { e => MatchTypeRule(sym, tpe, e) }
+        val rulesVal = traverse(rules) {
+          case MatchTypeRule(sym, tpe, mexp) => mapN(visit(mexp))(MatchTypeRule(sym, tpe, _))
         }
-        mapN(expVal, rulesVal, missingDefault) { (e, rs, _) => Expression.TypeMatch(e, rs, tpe, pur, eff, loc) }
+        mapN(expVal, rulesVal, missingDefault) {
+          (e, rs, _) => Expression.TypeMatch(e, rs, tpe, pur, eff, loc)
+        }
 
       case Expression.RelationalChoose(exps, rules, tpe, pur, eff, loc) =>
         val expsVal = traverse(exps)(visit)
-        val rulesVal = traverse(rules) { case RelationalChoiceRule(pat, exp) =>
-          mapN(visit(exp)) { e => RelationalChoiceRule(pat, e) }
+        val rulesVal = traverse(rules) {
+          case RelationalChoiceRule(pat, exp) => mapN(visit(exp))(RelationalChoiceRule(pat, _))
         }
-        mapN(expsVal, rulesVal) { (es, rs) => Expression.RelationalChoose(es, rs, tpe, pur, eff, loc) }
+        mapN(expsVal, rulesVal)(Expression.RelationalChoose(_, _, tpe, pur, eff, loc))
 
       case Expression.RestrictableChoose(star, exp, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        val rulesVal = traverse(rules) { case RestrictableChoiceRule(pat, exp1) =>
-          mapN(visit(exp1)) { e => RestrictableChoiceRule(pat, e) }
+        val rulesVal = traverse(rules) {
+          case RestrictableChoiceRule(pat, exp1) => mapN(visit(exp1))(RestrictableChoiceRule(pat, _))
         }
-        mapN(expVal, rulesVal) { (e, rs) => Expression.RestrictableChoose(star, e, rs, tpe, pur, eff, loc) }
+        mapN(expVal, rulesVal)(Expression.RestrictableChoose(star, _, _, tpe, pur, eff, loc))
 
       case Expression.Tag(sym, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Tag(sym, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Tag(sym, _, tpe, pur, eff, loc))
 
       case Expression.RestrictableTag(sym, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.RestrictableTag(sym, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.RestrictableTag(sym, _, tpe, pur, eff, loc))
 
       case Expression.Tuple(elms, tpe, pur, eff, loc) =>
         val elmsVal = traverse(elms)(visit)
-        mapN(elmsVal) { e => Expression.Tuple(e, tpe, pur, eff, loc) }
+        mapN(elmsVal)(Expression.Tuple(_, tpe, pur, eff, loc))
 
       case Expression.RecordEmpty(tpe, loc) => Expression.RecordEmpty(tpe, loc).toSuccess
 
       case Expression.RecordSelect(exp, field, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.RecordSelect(e, field, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.RecordSelect(_, field, tpe, pur, eff, loc))
 
       case Expression.RecordExtend(field, value, rest, tpe, pur, eff, loc) =>
         val valueVal = visit(value)
         val restVal = visit(rest)
-        mapN(valueVal, restVal) { (v, r) => Expression.RecordExtend(field, v, r, tpe, pur, eff, loc) }
+        mapN(valueVal, restVal)(Expression.RecordExtend(field, _, _, tpe, pur, eff, loc))
 
       case Expression.RecordRestrict(field, rest, tpe, pur, eff, loc) =>
         val restVal = visit(rest)
-        mapN(restVal) { r => Expression.RecordRestrict(field, r, tpe, pur, eff, loc) }
+        mapN(restVal)(Expression.RecordRestrict(field, _, tpe, pur, eff, loc))
 
       case Expression.ArrayLit(elms, exp, tpe, pur, eff, loc) =>
         val elmsVal = traverse(elms)(visit)
         val expVal = visit(exp)
-        mapN(elmsVal, expVal) { (es, e) => Expression.ArrayLit(es, e, tpe, pur, eff, loc) }
+        mapN(elmsVal, expVal)(Expression.ArrayLit(_, _, tpe, pur, eff, loc))
 
       case Expression.ArrayNew(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
         val expVal3 = visit(exp3)
-        mapN(expVal1, expVal2, expVal3) { (e1, e2, e3) => Expression.ArrayNew(e1, e2, e3, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2, expVal3)(Expression.ArrayNew(_, _, _, tpe, pur, eff, loc))
 
       case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) =>
         val baseVal = visit(base)
         val indexVal = visit(index)
-        mapN(baseVal, indexVal) { (b, i) => Expression.ArrayLoad(b, i, tpe, pur, eff, loc) }
+        mapN(baseVal, indexVal)(Expression.ArrayLoad(_, _, tpe, pur, eff, loc))
 
       case Expression.ArrayLength(base, pur, eff, loc) =>
         val baseVal = visit(base)
-        mapN(baseVal) { b => Expression.ArrayLength(b, pur, eff, loc) }
+        mapN(baseVal)(Expression.ArrayLength(_, pur, eff, loc))
 
       case Expression.ArrayStore(base, index, elm, pur, eff, loc) =>
         val baseVal = visit(base)
         val indexVal = visit(index)
         val elmVal = visit(elm)
-        mapN(baseVal, indexVal, elmVal) { (b, i, e) => Expression.ArrayStore(b, i, e, pur, eff, loc) }
+        mapN(baseVal, indexVal, elmVal)(Expression.ArrayStore(_, _, _, pur, eff, loc))
 
       case Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
         val regVal = visit(reg)
         val baseVal = visit(base)
         val beginIndexVal = visit(beginIndex)
         val endIndexVal = visit(endIndex)
-        mapN(regVal, baseVal, beginIndexVal, endIndexVal) { (r, b, bi, ei) =>
-          Expression.ArraySlice(r, b, bi, ei, tpe, pur, eff, loc)
-        }
+        mapN(regVal, baseVal, beginIndexVal, endIndexVal)(Expression.ArraySlice(_, _, _, _, tpe, pur, eff, loc))
 
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Ref(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Ref(_, _, tpe, pur, eff, loc))
 
       case Expression.VectorLit(elms, tpe, pur, eff, loc) =>
         val elmsVal = traverse(elms)(visit)
@@ -275,25 +275,27 @@ object Safety {
 
       case Expression.Deref(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Deref(e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Deref(_, tpe, pur, eff, loc))
 
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Assign(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Assign(_, _, tpe, pur, eff, loc))
 
       case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Ascribe(e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Ascribe(_, tpe, pur, eff, loc))
 
       case Expression.Of(sym, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Of(sym, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Of(sym, _, tpe, pur, eff, loc))
 
       case e@Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
         val check = checkCastSafety(e)
         val expVal = visit(exp)
-        mapN(expVal, check) { (e1, _) => Expression.Cast(e1, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) }
+        mapN(expVal, check) {
+          (e1, _) => Expression.Cast(e1, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+        }
 
       case Expression.Mask(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
@@ -302,12 +304,16 @@ object Safety {
       case Expression.Upcast(exp, tpe, loc) =>
         val check = checkUpcastSafety(exp, tpe, renv, root, loc)
         val expVal = visit(exp)
-        mapN(expVal, check) { (e, _) => Expression.Upcast(e, tpe, loc) }
+        mapN(expVal, check) {
+          (e, _) => Expression.Upcast(e, tpe, loc)
+        }
 
       case Expression.Supercast(exp, tpe, loc) =>
         val check = checkSupercastSafety(exp, tpe, loc)
         val expVal = visit(exp)
-        mapN(expVal, check) { (e, _) => Expression.Supercast(e, tpe, loc) }
+        mapN(expVal, check) {
+          (e, _) => Expression.Supercast(e, tpe, loc)
+        }
 
       case Expression.Without(exp, effUse, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
@@ -315,112 +321,116 @@ object Safety {
 
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        val rulesVal = traverse(rules) { case CatchRule(sym, clazz, exp) =>
-          mapN(visit(exp))(CatchRule(sym, clazz, _))
+        val rulesVal = traverse(rules) {
+          case CatchRule(sym, clazz, exp) => mapN(visit(exp))(CatchRule(sym, clazz, _))
         }
-        mapN(expVal, rulesVal) { (e, rs) => Expression.TryCatch(e, rs, tpe, pur, eff, loc) }
+        mapN(expVal, rulesVal)(Expression.TryCatch(_, _, tpe, pur, eff, loc))
 
       case Expression.TryWith(exp, effUse, rules, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        val rulesVal = traverse(rules) { case HandlerRule(op, fparams, exp) =>
-          mapN(visit(exp)) { e => HandlerRule(op, fparams, e) }
+        val rulesVal = traverse(rules) {
+          case HandlerRule(op, fparams, exp) => mapN(visit(exp))(HandlerRule(op, fparams, _))
         }
-        mapN(expVal, rulesVal) { (e, rs) => Expression.TryWith(e, effUse, rs, tpe, pur, eff, loc) }
+        mapN(expVal, rulesVal)(Expression.TryWith(_, effUse, _, tpe, pur, eff, loc))
 
       case Expression.Do(op, exps, pur, eff, loc) =>
         val expsVal = traverse(exps)(visit)
-        mapN(expsVal) { es => Expression.Do(op, es, pur, eff, loc) }
+        mapN(expsVal)(Expression.Do(op, _, pur, eff, loc))
 
       case Expression.Resume(exp, tpe, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Resume(e, tpe, loc) }
+        mapN(expVal)(Expression.Resume(_, tpe, loc))
 
       case Expression.InvokeConstructor(constructor, args, tpe, pur, eff, loc) =>
         val argsVal = traverse(args)(visit)
-        mapN(argsVal) { as => Expression.InvokeConstructor(constructor, as, tpe, pur, eff, loc) }
+        mapN(argsVal)(Expression.InvokeConstructor(constructor, _, tpe, pur, eff, loc))
 
       case Expression.InvokeMethod(method, exp, args, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         val argsVal = traverse(args)(visit)
-        mapN(expVal, argsVal) { (e, as) => Expression.InvokeMethod(method, e, as, tpe, pur, eff, loc) }
+        mapN(expVal, argsVal)(Expression.InvokeMethod(method, _, _, tpe, pur, eff, loc))
 
       case Expression.InvokeStaticMethod(method, args, tpe, pur, eff, loc) =>
         val argsVal = traverse(args)(visit)
-        mapN(argsVal) { as => Expression.InvokeStaticMethod(method, as, tpe, pur, eff, loc) }
+        mapN(argsVal)(Expression.InvokeStaticMethod(method, _, tpe, pur, eff, loc))
 
       case Expression.GetField(field, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.GetField(field, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.GetField(field, _, tpe, pur, eff, loc))
 
       case Expression.PutField(field, exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.PutField(field, e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.PutField(field, _, _, tpe, pur, eff, loc))
 
       case Expression.GetStaticField(field, tpe, pur, eff, loc) =>
         Expression.GetStaticField(field, tpe, pur, eff, loc).toSuccess
 
       case Expression.PutStaticField(field, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.PutStaticField(field, e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.PutStaticField(field, _, tpe, pur, eff, loc))
 
       case Expression.NewObject(name, clazz, tpe, pur, eff, methods, loc) =>
         val erasedType = Type.eraseAliases(tpe)
-        val objImpl = traverse(checkObjectImplementation(clazz, erasedType, methods, loc)) { x => x.toFailure }
-        val methodsVal = traverse(methods) { case JvmMethod(ident, fparams, exp, retTpe, pur, eff, loc) =>
-          mapN(visit(exp)) { e => JvmMethod(ident, fparams, e, retTpe, pur, eff, loc) }
+        val objImpl = traverse(checkObjectImplementation(clazz, erasedType, methods, loc))(_.toFailure)
+        val methodsVal = traverse(methods) {
+          case JvmMethod(ident, fparams, exp, retTpe, pur, eff, loc) =>
+            mapN(visit(exp))(JvmMethod(ident, fparams, _, retTpe, pur, eff, loc))
         }
-        mapN(methodsVal, objImpl) { (ms, _) => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc) }
+        mapN(methodsVal, objImpl) {
+          (ms, _) => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
+        }
 
       case Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.NewChannel(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.NewChannel(_, _, tpe, pur, eff, loc))
 
       case Expression.GetChannel(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.GetChannel(e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.GetChannel(_, tpe, pur, eff, loc))
 
       case Expression.PutChannel(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.PutChannel(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.PutChannel(_, _, tpe, pur, eff, loc))
 
       case Expression.SelectChannel(rules, default, tpe, pur, eff, loc) =>
-        val rulesVal = traverse(rules) { case SelectChannelRule(sym, chan, body) =>
-          val chanVal = visit(chan)
-          val bodyVal = visit(body)
-          mapN(chanVal, bodyVal) { (c, b) => SelectChannelRule(sym, c, b) }
+        val rulesVal = traverse(rules) {
+          case SelectChannelRule(sym, chan, body) =>
+            val chanVal = visit(chan)
+            val bodyVal = visit(body)
+            mapN(chanVal, bodyVal)(SelectChannelRule(sym, _, _))
         }
         val defaultVal = traverseOpt(default)(visit)
-        mapN(rulesVal, defaultVal) { (rs, d) => Expression.SelectChannel(rs, d, tpe, pur, eff, loc) }
+        mapN(rulesVal, defaultVal)(Expression.SelectChannel(_, _, tpe, pur, eff, loc))
 
       case Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.Spawn(e1, e2, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.Spawn(_, _, tpe, pur, eff, loc))
 
       case Expression.Par(exp, loc) =>
         // Only tuple expressions are allowed to be parallelized with `par`.
         exp match {
-          case e: Expression.Tuple => mapN(visit(e)) { ex => Expression.Par(ex, loc) }
+          case e: Expression.Tuple => mapN(visit(e))(Expression.Par(_, loc))
           case _ => IllegalParExpression(exp, exp.loc).toFailure
         }
 
       case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
-        val fragsVal = traverse(frags) { case ParYieldFragment(pat, exp, loc) =>
-          mapN(visit(exp)) { e => ParYieldFragment(pat, e, loc) }
+        val fragsVal = traverse(frags) {
+          case ParYieldFragment(pat, exp, loc) => mapN(visit(exp))(ParYieldFragment(pat, _, loc))
         }
         val expVal = visit(exp)
-        mapN(fragsVal, expVal) { (fs, e) => Expression.ParYield(fs, e, tpe, pur, eff, loc) }
+        mapN(fragsVal, expVal)(Expression.ParYield(_, _, tpe, pur, eff, loc))
 
       case Expression.Lazy(exp, tpe, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Lazy(e, tpe, loc) }
+        mapN(expVal)(Expression.Lazy(_, tpe, loc))
 
       case Expression.Force(exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
-        mapN(expVal) { e => Expression.Force(e, tpe, pur, eff, loc) }
+        mapN(expVal)(Expression.Force(_, tpe, pur, eff, loc))
 
       case Expression.FixpointConstraintSet(cs, stf, tpe, loc) =>
         val csVal = traverse(cs)(checkConstraint(_, renv, root))
@@ -433,7 +443,7 @@ object Safety {
       case Expression.FixpointMerge(exp1, exp2, stf, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
-        mapN(expVal1, expVal2) { (e1, e2) => Expression.FixpointMerge(e1, e2, stf, tpe, pur, eff, loc) }
+        mapN(expVal1, expVal2)(Expression.FixpointMerge(_, _, stf, tpe, pur, eff, loc))
 
       case Expression.FixpointSolve(exp, stf, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
@@ -450,7 +460,6 @@ object Safety {
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) =>
         val expVal = visit(exp)
         mapN(expVal)(Expression.FixpointProject(pred, _, tpe, pur, eff, loc))
-
 
       case Expression.Error(m, tpe, pur, eff) => Expression.Error(m, tpe, pur, eff).toSuccess
 
@@ -765,7 +774,7 @@ object Safety {
       })(_ => den)
 
       // Combine the messages
-      mapN(err1, err2) { (e1, e2) => Predicate.Body.Atom(pred, e2, e1, fixity, terms, tpe, loc) }
+      mapN(err2, err1)(Predicate.Body.Atom(pred, _, _, fixity, terms, tpe, loc))
 
     case Predicate.Body.Guard(exp, loc) => mapN(visitExp(exp, renv, root))(Predicate.Body.Guard(_, loc))
 
@@ -862,7 +871,7 @@ object Safety {
 
     // TODO: Change structure to go over expressions individually
     // Compute the lattice variables that are illegally used in the terms.
-    mapN(traverse(allVars.intersect(latVars).toList)(IllegalRelationalUseOfLatticeVariable(_, loc).toFailure)) { _ => terms }
+    mapN(traverse(allVars.intersect(latVars).toList)(IllegalRelationalUseOfLatticeVariable(_, loc).toFailure))(_ => terms)
   }
 
   /**
