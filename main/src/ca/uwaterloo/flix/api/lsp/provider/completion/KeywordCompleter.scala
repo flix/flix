@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Context, Priority}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object KeywordCompleter {
@@ -24,7 +24,7 @@ object KeywordCompleter {
   /**
     * Returns a list of keyword completions.
     */
-  def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  def getKeywordCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     // NB: Please keep the list alphabetically sorted.
     List(
       "@Deprecated",
@@ -94,7 +94,7 @@ object KeywordCompleter {
     ) map keywordCompletion
   }
 
-  private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+  private def keywordCompletion(name: String)(implicit context: CompletionContext, index: Index, root: TypedAst.Root): CompletionItem = {
     CompletionItem(label = name,
       sortText = Priority.normal(name),
       textEdit = TextEdit(context.range, s"$name "),
