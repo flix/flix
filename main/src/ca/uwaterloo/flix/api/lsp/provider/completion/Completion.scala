@@ -27,8 +27,9 @@ sealed trait Completion {
     * Returns a LSP completion item for `this`.
     */
   def toCompletionItem: CompletionItem = this match {
-    case KeywordCompletion(name, context) =>
+    case Completion.KeywordCompletion(name, context) =>
       CompletionItem(label = name, sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Keyword)
+    case Completion.EnumTypeCompletion(context) => ??? // TODO
   }
 }
 
