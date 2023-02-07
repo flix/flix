@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
+import ca.uwaterloo.flix.api.lsp.provider.completion.KeywordCompleter
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -26,10 +27,12 @@ import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
+
 import java.lang.reflect.Executable
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import ca.uwaterloo.flix.util.collection.MultiMap
+
 import java.lang.reflect.Field
 
 /**
@@ -217,10 +220,10 @@ object CompletionProvider {
   /**
     * Returns a list of completions that may be used in a position where an expression is needed.
     * This should include all completions supported that could be an expression.
-    * All of the completions are not neccesarily sound.
+    * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: Context, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    getKeywordCompletions() ++
+    KeywordCompleter.getKeywordCompletions() ++
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
@@ -248,83 +251,6 @@ object CompletionProvider {
         }
         suggestions.iterator
     }
-  }
-
-  private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
-    CompletionItem(label = name,
-      sortText = Priority.normal(name),
-      textEdit = TextEdit(context.range, s"$name "),
-      kind = CompletionItemKind.Keyword)
-  }
-
-  private def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
-    // NB: Please keep the list alphabetically sorted.
-    List(
-      "@Deprecated",
-      "@Parallel",
-      "@ParallelWhenPure",
-      "@Lazy",
-      "@LazyWhenPure",
-      "@Test",
-      "and",
-      "as",
-      "case",
-      "class",
-      "def",
-      "deref",
-      "discard",
-      "do",
-      "eff",
-      "else",
-      "enum",
-      "false",
-      "fix",
-      "for",
-      "forall",
-      "force",
-      "foreach",
-      "from",
-      "get",
-      "if",
-      "inject",
-      "import",
-      "instance",
-      "into",
-      "lat",
-      "law",
-      "lazy",
-      "let",
-      "match",
-      "mod",
-      "new",
-      "not",
-      "null",
-      "opaque",
-      "or",
-      "override",
-      "par",
-      "pub",
-      "query",
-      "Record",
-      "ref",
-      "region",
-      "rel",
-      "Schema",
-      "sealed",
-      "select",
-      "set",
-      "solve",
-      "spawn",
-      "true",
-      "try",
-      "type",
-      "typematch",
-      "use",
-      "where",
-      "with",
-      "without",
-      "yield"
-    ) map keywordCompletion
   }
 
   private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
@@ -1370,7 +1296,7 @@ object CompletionProvider {
    * @param previousWord The word before the above (note that this may be on either the current or previous line)
    * @param prefix       The text from the start of the line up to the cursor
    */
-  private case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
+  case class Context(uri: String, range: Range, word: String, previousWord: String, prefix: String)
 
   /**
     * Characters that constitute a word.
