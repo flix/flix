@@ -931,10 +931,6 @@ object Lowering {
         val t = visitType(tpe)
         Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Apply(Type.Cst(TypeConstructor.Vector, loc), tpe, _) =>
-        val t = visitType(tpe)
-        Type.mkArray(t, Type.True, loc)
-
       case Type.Cst(_, _) => tpe0
 
       case Type.Apply(tpe1, tpe2, loc) =>
