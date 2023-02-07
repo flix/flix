@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Lukas Rønn
+ * Copyright 2022 Paul Butcher
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,11 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Context, Priority}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-
-/**
-  * KeywordCompleter
-  *
-  * Used to getKeywordCompletions for the CompletionProvider
-  *
-  * Everything need for these functions are provided through CompletionProvider.scala
-  */
 object KeywordCompleter {
 
-  private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
-    CompletionItem(label = name,
-      sortText = Priority.normal(name),
-      textEdit = TextEdit(context.range, s"$name "),
-      kind = CompletionItemKind.Keyword)
-  }
-
+  /**
+    * Returns a list of keyword completions.
+    */
   def getKeywordCompletions()(implicit context: Context, index: Index, root: TypedAst.Root): List[CompletionItem] = {
     // NB: Please keep the list alphabetically sorted.
     List(
@@ -104,5 +92,12 @@ object KeywordCompleter {
       "without",
       "yield"
     ) map keywordCompletion
+  }
+
+  private def keywordCompletion(name: String)(implicit context: Context, index: Index, root: TypedAst.Root): CompletionItem = {
+    CompletionItem(label = name,
+      sortText = Priority.normal(name),
+      textEdit = TextEdit(context.range, s"$name "),
+      kind = CompletionItemKind.Keyword)
   }
 }
