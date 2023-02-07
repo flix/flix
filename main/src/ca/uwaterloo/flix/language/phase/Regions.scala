@@ -67,6 +67,11 @@ object Regions {
         case e => checkType(tpe, loc)
       }
 
+    case Expression.OpenAs(_, exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => checkType(tpe, loc)
+      }
+
     case Expression.Use(_, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
@@ -225,6 +230,21 @@ object Regions {
     case Expression.ArraySlice(exp1, exp2, exp3, exp4, tpe, _, _, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitExp(exp4)) {
         case (r, b, i1, i2) => checkType(tpe, loc)
+      }
+
+    case Expression.VectorLit(exps, tpe, _, _, loc) =>
+      flatMapN(traverse(exps)(visitExp)) {
+        case es => checkType(tpe, loc)
+      }
+
+    case Expression.VectorLoad(exp1, exp2, tpe, _, _, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (b, i) => checkType(tpe, loc)
+      }
+
+    case Expression.VectorLength(exp, loc) =>
+      flatMapN(visitExp(exp)) {
+        case b => ().toSuccess
       }
 
     case Expression.Ref(exp1, exp2, tpe, _, _, loc) =>

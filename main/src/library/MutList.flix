@@ -741,6 +741,15 @@ namespace MutList {
         Array.copyOfRange(r1, 0, deref l, deref a)
 
     ///
+    /// Returns `xs` as a vector.
+    ///
+    pub def toVector(xs: MutList[a, r]): Vector[a] \ Read(r) = region rc {
+        let arr = Array.new(rc, length(xs));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the mutable list `xs` as a chain.
     ///
     pub def toChain(xs: MutList[a, r]): Chain[a] \ Read(r) =

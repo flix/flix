@@ -310,6 +310,9 @@ object Redundancy {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Use(_, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
@@ -602,6 +605,17 @@ object Redundancy {
       val us3 = visitExp(begin, env0, rc)
       val us4 = visitExp(end, env0, rc)
       us1 ++ us2 ++ us3 ++ us4
+
+    case Expression.VectorLit(exps, tpe, eff, loc, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

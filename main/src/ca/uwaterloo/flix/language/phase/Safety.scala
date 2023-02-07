@@ -98,6 +98,9 @@ object Safety {
       case Expression.HoleWithExp(exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.OpenAs(_, exp, _, _) =>
+        visit(exp)
+
       case Expression.Use(_, exp, _) =>
         visit(exp)
 
@@ -197,6 +200,15 @@ object Safety {
 
       case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
         visit(reg) ::: visit(base) ::: visit(beginIndex) ::: visit(endIndex)
+
+      case Expression.VectorLit(elms, _, _, _, _) =>
+        elms.flatMap(visit)
+
+      case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+        visit(exp1) ::: visit(exp2)
+
+      case Expression.VectorLength(exp, _) =>
+        visit(exp)
 
       case Expression.Ref(exp1, exp2, _, _, _, _) =>
         visit(exp1) ::: visit(exp2)

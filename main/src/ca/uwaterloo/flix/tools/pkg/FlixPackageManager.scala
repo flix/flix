@@ -15,14 +15,16 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.Packager
 import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.Result.ToOk
-import ca.uwaterloo.flix.util.{Options, Result}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result
 
-import java.io.File
+import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.util.Using
 
 object FlixPackageManager {
@@ -30,44 +32,83 @@ object FlixPackageManager {
   // TODO: Move functionality from "Packager" in here.
 
   /**
-    * Installs a flix package from the Github `project`.
+    * Installs all the Flix dependencies for a Manifest.
+    */
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[String], PackageError] = {
+    val flixDeps = findFlixDependencies(manifest)
+    val installed: mutable.ListBuffer[String] = ListBuffer.empty
+
+    for(dep <- flixDeps) {
+      val depName: String = s"${dep.username}/${dep.projectName}"
+      install(depName, Some(dep.version), path) match {
+        case Ok(list) => installed.addAll(list)
+        case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
+      }
+    }
+    Ok(installed.toList)
+  }
+
+  /**
+    *  Installs a flix package from the Github `project`.
     *
     * `project` must be of the form `<owner>/<repo>`
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, p: Path, o: Options): Result[Unit, Int] = {
-    val proj = GitHub.parseProject(project)
-    val release = GitHub.getLatestRelease(proj)
-    val assets = release.assets.filter(_.name.endsWith(".fpkg"))
-    val lib = getLibraryDirectory(p)
-    val assetFolder = lib.resolve(proj.owner).resolve(proj.repo)
+  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[String], PackageError] = {
+    GitHub.parseProject(project).flatMap {
+      proj =>
+        (version match {
+          case None => GitHub.getLatestRelease(proj)
+          case Some(ver) => GitHub.getSpecificRelease(proj, ver)
+        }).flatMap {
+          release =>
+            val assets = release.assets.filter(_.name.endsWith(".fpkg"))
+            val lib = getLibraryDirectory(p)
+            val assetFolder = createAssetFolderPath(proj, release, lib)
 
-    // create the asset directory if it doesn't exist
-    Files.createDirectories(assetFolder)
+            // create the asset directory if it doesn't exist
+            Files.createDirectories(assetFolder)
 
-    // clear the asset folder
-    assetFolder.toFile.listFiles.foreach(deletePackage)
-
-    // download each asset to the folder
-    for (asset <- assets) {
-      val path = assetFolder.resolve(asset.name)
-      Using(GitHub.downloadAsset(asset)) {
-        stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
-      }
+            // download each asset to the folder
+            val newDownloads: mutable.ListBuffer[String] = ListBuffer.empty
+            for (asset <- assets) {
+              val assetName = asset.name
+              val path = assetFolder.resolve(assetName)
+              val newDownload = !Files.exists(path)
+              if(newDownload) {
+                out.println(s"Installing $assetName")
+                try {
+                  Using(GitHub.downloadAsset(asset)) {
+                    stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+                  }
+                } catch {
+                  case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
+                }
+                out.println(s"Installation of $assetName completed")
+                newDownloads.addOne(project + "/" + s"ver${release.version.toString}" + "/" + assetName)
+              } else {
+                out.println(s"$assetName already exists")
+              }
+            }
+            Ok(newDownloads.toList)
+        }
     }
-    ().toOk
   }
 
   /**
-    * Deletes the file if it is a Flix package.
+    * Creates a path from the `lib` folder to where assets should be stored.
+    * The path will look like this: `lib`/owner/repo/verX.X.X.
     */
-  private def deletePackage(file: File): Unit = {
-    if (Packager.isPkgFile(file.toPath)) {
-      file.delete()
-    } else {
-      throw new RuntimeException(s"Refusing to delete non-Flix package file: ${file.getAbsolutePath}")
-    }
+  private def createAssetFolderPath(proj: GitHub.Project, release: GitHub.Release, lib: Path): Path = {
+    lib.resolve(proj.owner).resolve(proj.repo).resolve(s"ver${release.version.toString()}")
+  }
+
+  /**
+    * Finds the Flix dependencies in a Manifest.
+    */
+  private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
+    manifest.dependencies.collect{ case dep: FlixDependency => dep }
   }
 
 }

@@ -35,9 +35,13 @@ sealed trait UnkindedType {
     case t: UnkindedType.Enum => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
+    case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
     case UnkindedType.ReadWrite(tpe, loc) => UnkindedType.ReadWrite(tpe.map(f), loc)
+    case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(tpe.map(f), loc)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(tpe1.map(f), tpe2.map(f), loc)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
   }
@@ -79,6 +83,10 @@ sealed trait UnkindedType {
       val p = pur.iterator.flatMap(_.typeVars).to(SortedSet)
       val e = eff.iterator.flatMap(_.flatMap(_.typeVars)).to(SortedSet)
       p ++ e
+    case UnkindedType.CaseSet(_, _) => SortedSet.empty
+    case UnkindedType.CaseComplement(tpe, loc) => tpe.typeVars
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
     case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
     case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
     case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
@@ -183,6 +191,54 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(tpe)
+  }
+
+  /**
+    * A case set type.
+    */
+  case class CaseSet(cases: List[Symbol.RestrictableCaseSym], loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case CaseSet(cases2, _) => cases == cases2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(cases)
+  }
+
+  /**
+    * A case complement type.
+    */
+  case class CaseComplement(tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case CaseComplement(tpe2, _) => tpe == tpe2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(tpe)
+  }
+
+  /**
+    * A case union type.
+    */
+  case class CaseUnion(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case CaseUnion(thatTpe1, thatTpe2, _) => tpe1 == thatTpe1 && tpe2 == thatTpe2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(tpe1, tpe2)
+  }
+
+  /**
+    * A case intersection type.
+    */
+  case class CaseIntersection(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case CaseIntersection(thatTpe1, thatTpe2, _) => tpe1 == thatTpe1 && tpe2 == thatTpe2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
   /**
@@ -428,9 +484,13 @@ object UnkindedType {
     case tpe: Cst => tpe
     case tpe: Enum => tpe
     case tpe: RestrictableEnum => tpe
+    case tpe: UnkindedType.CaseSet => tpe
     case Apply(tpe1, tpe2, loc) => Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Arrow(purAndEff, arity, loc) => Arrow(purAndEff.map(eraseAliases), arity, loc)
     case ReadWrite(tpe, loc) => ReadWrite(eraseAliases(tpe), loc)
+    case UnkindedType.CaseComplement(tpe, loc) => UnkindedType.CaseComplement(eraseAliases(tpe), loc)
+    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => UnkindedType.CaseUnion(eraseAliases(tpe1), eraseAliases(tpe2), loc)
+    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)

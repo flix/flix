@@ -171,17 +171,17 @@ namespace TestArray {
 
     @test
     def testSlice01(): Bool = region r {
-        Array.slice(r, 0, 1, Array#{1, 2, 3} @ r)[0] == 1
+        Array.slice(r, start = 0, end = 1, Array#{1, 2, 3} @ r)[0] == 1
     }
 
     @test
     def testSlice02(): Bool = region r {
-        Array.slice(r, 1, 2, Array#{1, 2, 3} @ r)[0] == 2
+        Array.slice(r, start = 1, end = 2, Array#{1, 2, 3} @ r)[0] == 2
     }
 
     @test
     def testSlice03(): Bool = region r {
-        Array.slice(r, 2, 3, Array#{1, 2, 3} @ r)[0] == 3
+        Array.slice(r, start = 2, end = 3, Array#{1, 2, 3} @ r)[0] == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -285,6 +285,25 @@ namespace TestArray {
         MutDeque.pushFront('a', d);
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        Array.toVector((Array#{} @ rc) : Array[Int32, _]) `Vector.equals` Vector.empty()
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        Array.toVector((Array#{0} @ rc) : Array[Int32, _]) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        Array.toVector((Array#{1, 2, 3} @ rc) : Array[Int32, _]) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2476,22 +2495,22 @@ namespace TestArray {
 
     @test
     def foldLeft01(): Bool = region r {
-        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, Array#{} @ r) == 100
+        Array.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{} @ r) == 100
     }
 
     @test
     def foldLeft02(): Bool = region r {
-        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, Array#{1} @ r) == 198
+        Array.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1} @ r) == 198
     }
 
     @test
     def foldLeft03(): Bool = region r {
-        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, Array#{1,2} @ r) == 196
+        Array.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2} @ r) == 196
     }
 
     @test
     def foldLeft04(): Bool = region r {
-        Array.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, Array#{1,2,3} @ r) == 386
+        Array.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2,3} @ r) == 386
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2500,22 +2519,22 @@ namespace TestArray {
 
     @test
     def foldRight01(): Bool = region r {
-        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, Array#{} @ r) == 100
+        Array.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{} @ r) == 100
     }
 
     @test
     def foldRight02(): Bool = region r {
-        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, Array#{1} @ r) == 198
+        Array.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1} @ r) == 198
     }
 
     @test
     def foldRight03(): Bool = region r {
-        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, Array#{1,2} @ r) == 194
+        Array.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2} @ r) == 194
     }
 
     @test
     def foldRight04(): Bool = region r {
-        Array.foldRight((e, i) -> (i - e) * (e rem 2 + 1), 100, Array#{1,2,3} @ r) == 382
+        Array.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2,3} @ r) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2524,22 +2543,22 @@ namespace TestArray {
 
     @test
     def foldRightWithCont01(): Bool = region r {
-        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Array#{} @ r) == 100
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Array#{} @ r) == 100
     }
 
     @test
     def foldRightWithCont02(): Bool = region r {
-        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Array#{1} @ r) == 198
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Array#{1} @ r) == 198
     }
 
     @test
     def foldRightWithCont03(): Bool = region r {
-        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Array#{1,2} @ r) == 194
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2} @ r) == 194
     }
 
     @test
     def foldRightWithCont04(): Bool = region r {
-        Array.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Array#{1,2,3} @ r) == 382
+        Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Array#{1,2,3} @ r) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4179,49 +4198,49 @@ namespace TestArray {
 
     @test
     def filterMap01(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, (Array#{} @ r): Array[Int32, _]);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Array#{} @ r): Array[Int32, _]);
         Array.sameElements(a, (Array#{} @ r): Array[Int32, _])
     }
 
     @test
     def filterMap02(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1} @ r);
         Array.sameElements(a, (Array#{} @ r): Array[Int32, _])
     }
 
     @test
     def filterMap03(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{2} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{2} @ r);
         Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
     def filterMap04(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1,3} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,3} @ r);
         Array.sameElements(a, (Array#{} @ r): Array[Int32, _])
     }
 
     @test
     def filterMap05(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1,4} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,4} @ r);
         Array.sameElements(a, Array#{2} @ r)
     }
 
     @test
     def filterMap06(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{6,-1} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1} @ r);
         Array.sameElements(a, Array#{3} @ r)
     }
 
     @test
     def filterMap07(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{8,6} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6} @ r);
         Array.sameElements(a, Array#{4,3} @ r)
     }
 
     @test
     def filterMap08(): Bool = region r {
-        let a = Array.filterMap(r, i -> if (i rem 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r);
+        let a = Array.filterMap(r, i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r);
         Array.sameElements(a, Array#{0,1,2,5} @ r)
     }
 
@@ -4231,42 +4250,42 @@ namespace TestArray {
 
     @test
     def findMap01(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, (Array#{} @ r): Array[Int32, _]) == None
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, (Array#{} @ r): Array[Int32, _]) == None
     }
 
     @test
     def findMap02(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1} @ r) == None
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1} @ r) == None
     }
 
     @test
     def findMap03(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{2} @ r) == Some(1)
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{2} @ r) == Some(1)
     }
 
     @test
     def findMap04(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1,3} @ r) == None
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,3} @ r) == None
     }
 
     @test
     def findMap05(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{1,4} @ r) == Some(2)
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{1,4} @ r) == Some(2)
     }
 
     @test
     def findMap06(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{6,-1} @ r) == Some(3)
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{6,-1} @ r) == Some(3)
     }
 
     @test
     def findMap07(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{8,6} @ r) == Some(4)
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{8,6} @ r) == Some(4)
     }
 
     @test
     def findMap08(): Bool = region r {
-        Array.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r) == Some(0)
+        Array.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ r) == Some(0)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5289,8 +5308,8 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
-        let b = Array.slice(r1, 0, Array.length(a), a);
-        let c = Array.slice(r1, 0, Array.length(a), a);
+        let b = Array.slice(r1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sort!(b);
         Array.sortWith!(cmp, c);
         b `sameElements` c
@@ -5418,8 +5437,8 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ { Read(r) } = region r1 {
-        let b = Array.slice(r1, 0, Array.length(a), a);
-        let c = Array.slice(r1, 0, Array.length(a), a);
+        let b = Array.slice(r1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sortBy!(identity, b);
         Array.sortBy!(x -> 4 * x + 7, c);
         (b `sameElements` Array.sortBy(r1, x -> 4 * x + 7, a)) and

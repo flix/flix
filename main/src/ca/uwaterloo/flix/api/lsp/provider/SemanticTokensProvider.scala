@@ -288,6 +288,8 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
+
     case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
@@ -397,6 +399,15 @@ object SemanticTokensProvider {
 
     case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
+
+    case Expression.VectorLit(exps, _, _, _, _) =>
+      visitExps(exps)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -633,6 +644,7 @@ object SemanticTokensProvider {
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
+    case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true

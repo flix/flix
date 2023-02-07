@@ -175,6 +175,16 @@ object LoweredAst {
 
     case class ArraySlice(region: LoweredAst.Expression, base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
+    case class VectorLit(exps: List[LoweredAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
+    case class VectorLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
+    case class VectorLength(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Expression {
+      def pur: Type = exp.pur
+      def eff: Type = exp.eff
+      def tpe: Type = Type.Int32
+    }
+
     case class Ref(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Deref(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression

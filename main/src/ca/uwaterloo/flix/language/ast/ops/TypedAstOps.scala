@@ -49,6 +49,7 @@ object TypedAstOps {
     case Expression.Sig(sym, _, _) => Set(sym)
     case Expression.Hole(_, _, _) => Set.empty
     case Expression.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Use(_, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
@@ -79,6 +80,9 @@ object TypedAstOps {
     case Expression.ArrayLength(base, _, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
     case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => sigSymsOf(reg) ++ sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
+    case Expression.VectorLit(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.VectorLength(exp, _) => sigSymsOf(exp)
     case Expression.Ref(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -148,6 +152,9 @@ object TypedAstOps {
     case Expression.Hole(_, _, _) => Map.empty
 
     case Expression.HoleWithExp(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.OpenAs(_, exp, _, _) =>
       freeVars(exp)
 
     case Expression.Use(_, exp, _) =>
@@ -259,6 +266,17 @@ object TypedAstOps {
 
     case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
       freeVars(reg) ++ freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+
+    case Expression.VectorLit(elms, _, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, e) => acc ++ freeVars(e)
+      }
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      freeVars(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

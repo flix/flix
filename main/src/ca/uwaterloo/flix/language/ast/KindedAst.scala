@@ -74,6 +74,8 @@ object KindedAst {
 
     case class HoleWithExp(exp: KindedAst.Expression, tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
     case class Use(sym: Symbol, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends KindedAst.Expression
@@ -135,6 +137,12 @@ object KindedAst {
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArraySlice(region: KindedAst.Expression, base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class VectorLit(exps: List[KindedAst.Expression], tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class VectorLoad(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+
+    case class VectorLength(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Ref(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -320,7 +328,7 @@ object KindedAst {
 
   case class RelationalChoiceRule(pat: List[KindedAst.RelationalChoicePattern], exp: KindedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: KindedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: KindedAst.Expression)
+  case class RestrictableChoiceRule(pat: KindedAst.RestrictableChoicePattern, exp: KindedAst.Expression)
 
   case class MatchRule(pat: KindedAst.Pattern, guard: Option[KindedAst.Expression], exp: KindedAst.Expression)
 

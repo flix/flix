@@ -534,42 +534,34 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
-    def ForEach: Rule1[ParsedAst.Expression.ForEach] = {
-
-      def ForEachFragment: Rule1[ParsedAst.ForEachFragment.ForEach] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.ForEach
+    def ForFragment: Rule1[ParsedAst.ForFragment] = {
+      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
       }
 
-      def GuardFragment: Rule1[ParsedAst.ForEachFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForEachFragment.Guard
-      }
-
-      def Fragment: Rule1[ParsedAst.ForEachFragment] = rule {
-        ForEachFragment | GuardFragment
+      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
       }
 
       rule {
-        SP ~ keyword("foreach") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+        GeneratorFragment | GuardFragment
       }
     }
 
-    def ForYield: Rule1[ParsedAst.Expression.ForYield] = {
+    def ForFragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
+      "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
+    }
 
-      def ForYieldFragment: Rule1[ParsedAst.ForYieldFragment.ForYield] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.ForYield
-      }
+    def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
+    }
 
-      def GuardFragment: Rule1[ParsedAst.ForYieldFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForYieldFragment.Guard
-      }
+    def ForYield: Rule1[ParsedAst.Expression.ForYield] = rule {
+      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+    }
 
-      def Fragment: Rule1[ParsedAst.ForYieldFragment] = rule {
-        ForYieldFragment | GuardFragment
-      }
-
-      rule {
-        SP ~ keyword("for") ~ optWS ~ "(" ~ optWS ~ oneOrMore(Fragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
-      }
+    def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
+      SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
     }
 
     def Of: Rule1[ParsedAst.Expression] = rule {
@@ -632,7 +624,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ (operator("**") | operator("*") | operator("/") | operator("mod") | operator("rem")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
+      Compose ~ zeroOrMore(optWS ~ (operator("**") | operator("*") | operator("/")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
@@ -749,10 +741,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | FList |
-        FSet | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
+        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
+        SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForYield | ForEach | NewObject | UnaryLambda | Open | HolyName | QName | Hole
+        Discard | Debug | ForEachYield | ForYield | ForEach | NewObject |
+        UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
     def Cast: Rule1[ParsedAst.Expression] = {
@@ -1134,10 +1127,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       keyword("new") ~ WS ~ SP ~ Names.QName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
-    def ArrayLit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
-    }
-
     def FAppend: Rule1[ParsedAst.Expression] = rule {
       FCons ~ optional(optWS ~ SP ~ operatorX(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
     }
@@ -1146,21 +1135,29 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       RecordSelect ~ optional(optWS ~ SP ~ operatorX("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
-    def FList: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("List") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FList
+    def ArrayLit: Rule1[ParsedAst.Expression.ArrayLit] = rule {
+      SP ~ atomic("Array") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayLit
     }
 
-    def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
-      SP ~ atomic("Set") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FSet
+    def VectorLit: Rule1[ParsedAst.Expression.VectorLit] = rule {
+      SP ~ atomic("Vector") ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.VectorLit
     }
 
-    def FMap: Rule1[ParsedAst.Expression.FMap] = {
+    def ListLit: Rule1[ParsedAst.Expression.ListLit] = rule {
+      SP ~ atomic("List") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.ListLit
+    }
+
+    def SetLit: Rule1[ParsedAst.Expression.SetLit] = rule {
+      SP ~ atomic("Set") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.SetLit
+    }
+
+    def FMap: Rule1[ParsedAst.Expression.MapLit] = {
       def KeyValue: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
         Expression ~ optWS ~ operatorX("=>") ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
       }
 
       rule {
-        SP ~ atomic("Map") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.FMap
+        SP ~ atomic("Map") ~ SP ~ atomic("#{") ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~> ParsedAst.Expression.MapLit
       }
     }
 
@@ -1170,6 +1167,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Open: Rule1[ParsedAst.Expression.Open] = rule {
       SP ~ keyword("open") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
+    }
+
+    def OpenAs: Rule1[ParsedAst.Expression.OpenAs] = rule {
+      SP ~ keyword("open_as") ~ optWS ~ Names.QName ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.OpenAs
     }
 
     def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
@@ -1410,7 +1411,25 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      Or ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      CaseUnionOrDifference ~ optional(optWS ~ atomic("->") ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+    }
+
+    def CaseUnionOrDifference: Rule1[ParsedAst.Type] = {
+      def CaseUnionTail = rule {
+        WS ~ atomic("++") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
+      }
+
+      def CaseDifferenceTail = rule {
+        WS ~ atomic("--") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
+      }
+
+      rule {
+        CaseIntersection ~ zeroOrMore(CaseUnionTail | CaseDifferenceTail)
+      }
+    }
+
+    def CaseIntersection: Rule1[ParsedAst.Type] = rule {
+      Or ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
     def Or: Rule1[ParsedAst.Type] = rule {
@@ -1430,7 +1449,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
+      Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | CaseComplement | Native | True | False | Pure | Impure | Not | Var | Ambiguous | Effect
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1514,6 +1533,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("not") ~ WS ~ Apply ~ SP ~> ParsedAst.Type.Not
     }
 
+    def CaseComplement: Rule1[ParsedAst.Type] = rule {
+      // NB: We must not use Type here because it gives the wrong precedence.
+      SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
@@ -1524,6 +1548,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Effect: Rule1[ParsedAst.Type] = rule {
       SP ~ Effects.NonSingletonEffectSet ~ SP ~> ParsedAst.Type.Effect
+    }
+
+    def CaseSet: Rule1[ParsedAst.Type] = rule {
+      SP ~ "<" ~ optWS ~ zeroOrMore(Names.QName).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ">" ~ SP ~> ParsedAst.Type.CaseSet
     }
 
     private def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -1810,7 +1838,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * Namespaces are lower or uppercase.
       */
-      // TODO NS-REFACTOR remove
+    // TODO NS-REFACTOR remove
     def Namespace: Rule1[Name.NName] = rule {
       SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))

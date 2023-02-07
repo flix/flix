@@ -112,6 +112,11 @@ object Stratifier {
         case e => Expression.HoleWithExp(e, tpe, pur, eff, loc)
       }
 
+    case Expression.OpenAs(sym, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.OpenAs(sym, e, tpe, loc)
+      }
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -273,6 +278,21 @@ object Stratifier {
     case Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
       mapN(visitExp(reg), visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
         case (r, b, i1, i2) => Expression.ArraySlice(r, b, i1, i2, tpe, pur, eff, loc)
+      }
+
+    case Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      mapN(traverse(exps)(visitExp)) {
+        case es => Expression.VectorLit(es, tpe, pur, eff, loc)
+      }
+
+    case Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.VectorLoad(e1, e2, tpe, pur, eff, loc)
+      }
+
+    case Expression.VectorLength(exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.VectorLength(e, loc)
       }
 
     case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
@@ -553,6 +573,9 @@ object Stratifier {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.Use(_, exp, _) =>
       labelledGraphOfExp(exp)
 
@@ -665,6 +688,17 @@ object Stratifier {
 
     case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
       labelledGraphOfExp(reg) + labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
+
+    case Expression.VectorLit(exps, _, _, _, _) =>
+      exps.foldLeft(LabelledGraph.empty) {
+        case (acc, e) => acc + labelledGraphOfExp(e)
+      }
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)

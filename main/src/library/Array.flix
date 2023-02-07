@@ -95,10 +95,10 @@ namespace Array {
     pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
 
     ///
-    /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
+    /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
-    pub def slice(r1: Region[r1], b: Int32, e: Int32, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        $ARRAY_SLICE$(r1, a, b, e)
+    pub def slice(r1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
+        $ARRAY_SLICE$(r1, a, start.start, end.end)
 
     ///
     /// Returns the array `a` as a list.
@@ -189,6 +189,14 @@ namespace Array {
         let d = new MutDeque(r1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
+
+    ///
+    /// Returns `a` as a Vector.
+    ///
+    pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
+        let arr1 = copyOfRange(rc, 0, length(a), a);
+        unsafe_cast arr1 as Vector[a]
+    }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -501,7 +509,7 @@ namespace Array {
     ///
     def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; arr[i1 rem len] };
+        let f = i -> { let i1 = n + i; arr[i1 `Int32.rem` len] };
         init(r2, f, len)
 
     ///
@@ -525,9 +533,9 @@ namespace Array {
     ///
     def rotateRightHelper(r2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(a);
-        let n1 = n rem len;
+        let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; a[i1 rem len]};
+        let f = i -> { let i1 = start + i; a[i1 `Int32.rem` len]};
         init(r2, f, len)
 
     ///
@@ -1081,15 +1089,11 @@ namespace Array {
     ///
     /// Alias for `takeWhileLeft`.
     ///
-    /// The function `f` must be pure.
-    ///
     pub def takeWhile(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         takeWhileLeft(r1, f, a)
 
     ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def takeWhileLeft(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfLeft(x -> not (f(x)), a) {
@@ -1099,8 +1103,6 @@ namespace Array {
 
     ///
     /// Returns the longest suffix of `a` that satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
     ///
     pub def takeWhileRight(r1: Region[r1], f: a -> Bool \ ef, a: Array[a, r]): Array[a, r1] \ { ef, Read(r), Write(r1) } =
         match findIndexOfRight(x -> not (f(x)), a) {

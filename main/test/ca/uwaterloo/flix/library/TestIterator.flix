@@ -321,6 +321,25 @@ namespace TestIterator {
         Iterator.range(rc, -100, 200) |> Iterator.toArray(rc) `Array.sameElements` Array.range(rc, -100, 200)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        (Iterator.empty(rc) |> Iterator.toVector) `Vector.equals` (Vector.empty() : Vector[Int32])
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        (Iterator.singleton(rc, 0) |> Iterator.toVector) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        (Iterator.range(rc, 1, 4) |> Iterator.toVector) `Vector.equals` Vector.range(1, 4)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
@@ -552,43 +571,43 @@ namespace TestIterator {
     @test
     def mapWithIndex01(): Bool = region rc {
         Nil |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == Nil
     }
 
     @test
     def mapWithIndex02(): Bool = region rc {
         (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
     }
 
     @test
     def mapWithIndex03(): Bool = region rc {
         (3 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
     }
 
     @test
     def mapWithIndex04(): Bool = region rc {
         (1 :: 2 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 2 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 2 :: Nil
     }
 
     @test
     def mapWithIndex05(): Bool = region rc {
         (1 :: 8 :: 10 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
     }
 
     @test
     def mapWithIndex06(): Bool = region rc {
         (10 :: 8 :: 1 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
     }
 
     @test
     def mapWithIndex07(): Bool = region rc {
         (1 :: 8 :: 10 :: 14 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix mod 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: 14 :: Nil
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.rem` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: 14 :: Nil
     }
 
 
@@ -905,25 +924,25 @@ namespace TestIterator {
     @test
     def foldLeft01(): Bool = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 100
+        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, iter) == 100
     }
 
     @test
     def foldLeft02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 198
+        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, iter) == 198
     }
 
     @test
     def foldLeft03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 196
+        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, iter) == 196
     }
 
     @test
     def foldLeft04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e rem 2 + 1), 100, iter) == 386
+        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, iter) == 386
     }
 
 
@@ -934,25 +953,25 @@ namespace TestIterator {
     @test
     def foldRight01(): Bool = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 100
+        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, iter) == 100
     }
 
     @test
     def foldRight02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 198
+        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, iter) == 198
     }
 
     @test
     def foldRight03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 194
+        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, iter) == 194
     }
 
     @test
     def foldRight04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, iter) == 382
+        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, iter) == 382
     }
 
 
@@ -963,25 +982,25 @@ namespace TestIterator {
     @test
     def foldRightWithCont01(): Bool = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 100
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, iter) == 100
     }
 
     @test
     def foldRightWithCont02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 198
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, iter) == 198
     }
 
     @test
     def foldRightWithCont03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 194
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, iter) == 194
     }
 
     @test
     def foldRightWithCont04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, iter) == 382
+        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, iter) == 382
     }
 
 
@@ -1205,7 +1224,7 @@ namespace TestIterator {
     @test
     def flatMap07(): Bool = region rc {
         List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil) |>
-            Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(rc, i, i) else Iterator.empty(rc)) |>
+            Iterator.flatMap(i -> if (i `Int32.rem` 2 == 0) Iterator.repeat(rc, i, i) else Iterator.empty(rc)) |>
             Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
     }
 
@@ -1214,7 +1233,7 @@ namespace TestIterator {
     // def flatMap08(): Bool = region r1 {
     //     region r2 {
     //         List.iterator(r1, 1 :: 2 :: 3 :: 4 :: Nil) |>
-    //             Iterator.flatMap(i -> if (i mod 2 == 0) Iterator.repeat(r2, i, i) else Iterator.empty(r2)) |>
+    //             Iterator.flatMap(i -> if (i `Int32.rem` 2 == 0) Iterator.repeat(r2, i, i) else Iterator.empty(r2)) |>
     //             Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
     //     }
     // }
@@ -1515,24 +1534,24 @@ namespace TestIterator {
     @test
     def filterMap01(): Bool = region rc {
         (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+            Iterator.filterMap(x -> if (x `Int32.rem` 2 == 0) Some(x) else None) |> Iterator.toList == Nil
     }
     @test
     def filterMap02(): Bool = region rc {
         (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+            Iterator.filterMap(x -> if (x `Int32.rem` 2 == 0) Some(x) else None) |> Iterator.toList == Nil
     }
 
     @test
     def filterMap03(): Bool = region rc {
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: Nil
+            Iterator.filterMap(x -> if (x `Int32.rem` 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: Nil
     }
 
     @test
     def filterMap04(): Bool = region rc {
         (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x mod 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
+            Iterator.filterMap(x -> if (x `Int32.rem` 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
