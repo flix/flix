@@ -949,6 +949,73 @@ namespace TestVector {
         Vector.sequence(v) == Some(Vector#{1, 2})
 
     /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool =
+        let v = Vector#{};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{})
+
+    @test
+    def traverse02(): Bool =
+        let v = Vector#{1};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1})
+
+    @test
+    def traverse03(): Bool =
+        let v = Vector#{1, 2};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1, 2})
+
+    @test
+    def traverse04(): Bool =
+        let v = Vector#{1, 2, 3};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == None
+
+    @test
+    def traverse05(): Bool =
+        let v = Vector#{3};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == None
+
+    @test
+    def traverse06(): Bool =
+        let v = Vector#{1, 2, 1};
+        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1, 2, 1})
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWithA                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWithA01(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{}, Vector#{});
+        v == Some(Vector#{})
+    @test
+    def zipWithA02(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1}, Vector#{});
+        v == Some(Vector#{})
+
+    @test
+    def zipWithA03(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1}, Vector#{1});
+        v == Some(Vector#{2})
+
+    @test
+    def zipWithA04(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2}, Vector#{1, 2});
+        v == Some(Vector#{2, 4})
+
+    @test
+    def zipWithA05(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2, 3}, Vector#{1, 2, 3});
+        v == None
+
+    @test
+    def zipWithA06(): Bool =
+        let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2, 3}, Vector#{1, 1, 1});
+        v == Some(Vector#{2, 3, 4})
+
+    /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
