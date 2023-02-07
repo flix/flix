@@ -15,6 +15,17 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-object AstDiff {
+import ca.uwaterloo.flix.language.ast.TypedAst
 
+object Differ {
+
+  /**
+    * Computes the semantic difference between the `oldAst` and `newAst`
+    */
+  def difference(oldAst: TypedAst.Root, newAst: TypedAst.Root): List[Delta] = {
+    val newDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(Delta.AddDef)
+
+    val result = newDefs
+    result
+  }
 }

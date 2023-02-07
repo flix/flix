@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object KeywordCompleter {

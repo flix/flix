@@ -18,16 +18,25 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * A common super-type for semantic differences.
+  * A common super-type for deltas (differences) between ASTs.
   */
-sealed trait SemanticDifference
+sealed trait Delta
 
-object SemanticDifference {
+object Delta {
 
   /**
-    * Represents
+    * Represents the addition of a new function.
+    *
+    * @param sym the symbol of the new function.
     */
-  case class NewDef(sym: Symbol.DefnSym, context: CompletionContext) extends SemanticDifference
+  case class AddDef(sym: Symbol.DefnSym) extends Delta
+
+  /**
+    * Represents the addition of a new enum.
+    *
+    * @param sym the symbol of the new enum.
+    */
+  case class AddEnum(sym: Symbol.EnumSym) extends Delta
 
   // TODO: ...
 

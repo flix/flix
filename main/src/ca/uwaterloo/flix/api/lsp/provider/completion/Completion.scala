@@ -23,26 +23,25 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KeywordCompletio
   * A common super-type for auto-completions.
   */
 sealed trait Completion {
+  /**
+    * Returns a LSP completion item for `this`.
+    */
   def toCompletionItem: CompletionItem = this match {
     case KeywordCompletion(name, context) =>
-      CompletionItem(label = name,
-        sortText = Priority.normal(name),
-        textEdit = TextEdit(context.range, s"$name "),
-        kind = CompletionItemKind.Keyword)
+      CompletionItem(label = name, sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Keyword)
   }
 }
 
 object Completion {
 
   /**
-    * Represents a keyword complete of the given `name` keyword.
+    * Represents a keyword completion.
+    *
+    * @param name the name of the keyword.
     */
   case class KeywordCompletion(name: String, context: CompletionContext) extends Completion
 
-  // TODO
-  case class VarCompletion(/* stuff goes here, */ context: CompletionContext) extends Completion
-
   // TODO:
-  case class FieldCompletion(/* stuff goes here, */ context: CompletionContext) extends Completion
+  case class EnumTypeCompletion(/* stuff goes here, */ context: CompletionContext) extends Completion
 
 }
