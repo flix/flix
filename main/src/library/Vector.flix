@@ -492,13 +492,13 @@ namespace Vector {
         let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len) 
-                k(Applicative.point())
+                k(Applicative.point(arr))
             else {
                 let mx = get(i, v);
-                loop(i+1, _ -> k(putA!(mx, i, arr)))
+                loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(_ -> Array.toVector(arr), loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
     }
 
     ///
@@ -510,22 +510,22 @@ namespace Vector {
         let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len)
-                k(Applicative.point())
+                k(Applicative.point(arr))
             else {
                 let x = get(i, v);
-                loop(i+1, _ -> k(putA!(f(x), i, arr)))
+                loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(_ -> Array.toVector(arr), loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
     }
 
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
     ///
-    def putA!(mx: m[a], i: Int32, arr: Array[a, r]): m[Unit] \ Write(r) with Applicative[m] = 
+    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] = 
         use Functor.{<$>};
         use Applicative.{<*>};
-        (x -> Array.put(x, i, arr)) <$> mx
+        (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
 
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
@@ -535,14 +535,14 @@ namespace Vector {
         let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len)
-                k(Applicative.point())
+                k(Applicative.point(arr))
             else {
                 let x = get(i, v1);
                 let y = get(i, v2);
-                loop(i+1, _ -> k(putA!(f(x, y), i, arr)))
+                loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(_ -> Array.toVector(arr), loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
     }
 
     ///
