@@ -54,3 +54,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Anna Blume Jakobsen](https://github.com/AnnaBlume99)
 - [Andreas Stenbæk Larsen](https://github.com/AStenbaek)
 - [Yisrael Union](https://github.com/yisraelU)
+- [Lukas Rønn](https://github.com/LukasRonn)
