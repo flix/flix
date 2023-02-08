@@ -44,6 +44,7 @@ object Options {
     xnoboolcache = false,
     xnoboolspecialcases = false,
     xnobooltable = false,
+    xnoboolunif = false,
     xnounittests = false,
     xstatistics = false,
     xstrictmono = false,
