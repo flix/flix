@@ -208,6 +208,12 @@ class TestMain extends FunSuite {
     assert(opts.xnobooltable)
   }
 
+  test("--Xno-bool-unif") {
+    val args = Array("--Xno-bool-unif")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolunif)
+  }
+
   test("--Xno-unit-tests") {
     val args = Array("--Xno-unit-tests")
     val opts = Main.parseCmdOpts(args).get
