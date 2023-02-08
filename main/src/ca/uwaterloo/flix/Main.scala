@@ -231,7 +231,7 @@ object Main {
                      xbenchmarkPhases: Boolean = false,
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
-                     xbddthreshold: Option[Int] = Some(0),
+                     xbddthreshold: Option[Int] = None,
                      xlib: LibLevel = LibLevel.All,
                      xdebug: Boolean = false,
                      xboolclassic: Boolean = false,
