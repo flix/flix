@@ -208,6 +208,12 @@ class TestMain extends FunSuite {
     assert(opts.xnobooltable)
   }
 
+  test("--Xno-bool-unif") {
+    val args = Array("--Xno-bool-unif")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoboolunif)
+  }
+
   test("--Xno-unit-tests") {
     val args = Array("--Xno-unit-tests")
     val opts = Main.parseCmdOpts(args).get
@@ -232,10 +238,10 @@ class TestMain extends FunSuite {
     assert(opts.xvirtualthreads)
   }
 
-  test("--Xqmc") {
-    val args = Array("--Xqmc")
+  test("--Xno-qmc") {
+    val args = Array("--Xno-qmc")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xqmc)
+    assert(opts.xnoqmc)
   }
 
   test("--explain") {
