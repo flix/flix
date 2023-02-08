@@ -102,6 +102,7 @@ object Main {
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
+      xnoboolunif = cmdOpts.xnoboolunif,
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -237,6 +238,7 @@ object Main {
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
+                     xnoboolunif: Boolean = false,
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -463,6 +465,10 @@ object Main {
       // Xno-bool-table
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
+
+      // Xno-bool-unif
+      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
+        text("[experimental] disables Boolean unification. (DO NOT USE).")
 
       // Xno-unit-tests
       opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
