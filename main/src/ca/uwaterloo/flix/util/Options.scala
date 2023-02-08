@@ -54,7 +54,7 @@ object Options {
     xvirtualthreads = false,
     xprintasts = Set.empty,
     xprintboolunif = false,
-    xqmc = false,
+    xnoqmc = false,
     xflexibleregions = false,
   )
 
@@ -101,7 +101,7 @@ object Options {
   * @param xnobooltable       disable Boolean minimization via tabling.
   * @param xnounittests       excludes unit tests from performance benchmarks.
   * @param xstatistics        enables statistics collection.
-  * @param xqmc               enables the Quine McCluskey algorihm when using BDDs.
+  * @param xnoqmc               enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono        enables strict monomorphization.
   * @param xprintast          prints the chosen AST to a given path.
   */
@@ -125,6 +125,7 @@ case class Options(lib: LibLevel,
                    xnoboolspecialcases: Boolean,
                    xnobooltable: Boolean,
                    xnoboolunif: Boolean,
+                   xnoqmc: Boolean,
                    xnounittests: Boolean,
                    xstatistics: Boolean,
                    xstrictmono: Boolean,
@@ -134,7 +135,6 @@ case class Options(lib: LibLevel,
                    xvirtualthreads: Boolean,
                    xprintasts: Set[String],
                    xprintboolunif: Boolean,
-                   xqmc: Boolean,
                    xflexibleregions: Boolean,
                   )
 
