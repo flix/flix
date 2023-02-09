@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.tools.pkg.Manifest
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
-import java.nio.file.Path
+import java.io.File
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 
 // TODO: This class is ultimately to replace functionality in:
@@ -43,24 +45,50 @@ class Bootstrap {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
-    if (???) {
-      projectMode()
+    val tomlPath = Paths.get(path).resolve("flix.toml")
+    if (Files.exists(tomlPath)) {
+      projectMode(tomlPath)
     } else {
       folderMode()
     }
   }
 
-  private def projectMode(): Unit = { // TODO: Probably return Result or Validation
+  private def projectMode(tomlPath: Path): List[Path] = { // TODO: Probably return Result or Validation
     // 1. Read, parse, and validate flix.toml.
+    val manifest = ManifestParser.parse(tomlPath) match {
+      case Ok(m) => m
+      case Err(_) => ??? //TODO: error handling
+    }
+
     // 2. Check each dependency is available or download it.
+    FlixPackageManager.installAll(manifest, Paths.get(""))(System.out)
+    MavenPackageManager.installDeps(manifest)(System.out)
+
     // 3. Compute the set of JAR paths and Flix fpkg paths.
+    val filesFlix = manifest.getFlixPackages //TODO: implement
+    val filesMaven = manifest.getMavenPackages //TODO: implement
+
     // 4. Add *.flix, src/**.flix and test/**.flix
+    val filesHere = createPathList("", "flix")
+    val filesSrc = createPathListRec("/src", "flix")
+    val filesTest = createPathListRec("/test", "flix")
+
+    filesFlix ++ filesMaven ++ filesHere ++ filesSrc ++ filesTest
   }
 
-  private def folderMode(): Unit = { // TODO: Probably return Result or Validation
+  private def folderMode(): List[Path] = { // TODO: Probably return Result or Validation
     // 1. Add *.flix, src/**.flix and test/**.flix
+    val filesHere = createPathList("", "flix")
+    val filesSrc = createPathListRec("/src", "flix")
+    val filesTest = createPathListRec("/test", "flix")
+
     // 2. Grab all jars in lib/
+    val jarFilesLib = createPathList("/lib", "jar")
+
     // 3. Grab all flix packages in lib/
+    val flixFilesLib = createPathList("/lib", "fpkg")
+
+    filesHere ++ filesSrc ++ filesTest ++ jarFilesLib ++ flixFilesLib
   }
 
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
@@ -80,6 +108,27 @@ class Bootstrap {
       flix.addSourcePath(mavenJarPath)
     }
 
+  }
+
+  private def createPathList(pathName: String, ext: String): List[Path] = {
+    val files = new File(pathName).listFiles.toList
+    files.filter(file =>
+      if (file.isFile) {
+        val i = file.toString.lastIndexOf('.')
+        val extension = if (i > 0) file.toString.substring(i + 1) else ""
+        println(extension)
+        extension == s".$ext"
+      } else {
+        false
+      }
+    ).map(file => file.toPath)
+  }
+
+  private def createPathListRec(pathName: String, ext: String): List[Path] = {
+    val filesHere = createPathList(pathName, ext)
+    val dirs = new File(pathName).listFiles.toList.filter(file => file.isDirectory)
+    val filesRec = dirs.foldLeft[List[Path]](List.empty)((l, f) => l ++ createPathListRec(f.getPath, ext))
+    filesHere ++ filesRec
   }
 
 
