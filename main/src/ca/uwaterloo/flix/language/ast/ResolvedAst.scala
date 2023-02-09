@@ -258,12 +258,6 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Array(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[ResolvedAst.Pattern], sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
-
   }
 
   sealed trait RelationalChoicePattern {

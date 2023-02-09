@@ -269,12 +269,6 @@ object LoweredAst {
 
     case class Tuple(elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
-    case class Array(elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
-    case class ArrayTailSpread(elms: List[LoweredAst.Pattern], sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
   }
 
   sealed trait RelationalChoicePattern {

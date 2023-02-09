@@ -2336,37 +2336,6 @@ object Weeder {
           case xs => WeededAst.Pattern.Tuple(xs, loc)
         }
 
-      case ParsedAst.Pattern.Array(sp1, pats, sp2) =>
-        traverse(pats)(visit) map {
-          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
-        flatMapN(traverse(pats)(visit)) {
-          case elms if ident.name == "_" => WeededAst.Pattern.ArrayTailSpread(elms, None, mkSL(sp2, sp2)).toSuccess
-          case elms =>
-            seen.get(ident.name) match {
-              case None =>
-                seen += (ident.name -> ident)
-                WeededAst.Pattern.ArrayTailSpread(elms, Some(ident), mkSL(sp1, sp2)).toSuccess
-              case Some(otherIdent) =>
-                NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-            }
-        }
-
-      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
-        flatMapN(traverse(pats)(visit)) {
-          case elms if ident.name == "_" => WeededAst.Pattern.ArrayHeadSpread(None, elms, mkSL(sp1, sp2)).toSuccess
-          case elms =>
-            seen.get(ident.name) match {
-              case None =>
-                seen += (ident.name -> ident)
-                WeededAst.Pattern.ArrayHeadSpread(Some(ident), elms, mkSL(sp1, sp2)).toSuccess
-              case Some(otherIdent) =>
-                NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-            }
-        }
-
       case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
         /*
          * Rewrites a `FCons` pattern into a tag pattern.
