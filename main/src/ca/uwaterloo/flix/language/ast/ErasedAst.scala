@@ -134,13 +134,6 @@ object ErasedAst {
 
     case class Spawn(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Lazy(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class Force(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-
     case class BoxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe = MonoType.Native(java.lang.Boolean.TYPE)
     }
@@ -197,12 +190,6 @@ object ErasedAst {
       final val tpe = MonoType.Char
     }
 
-    case class UnboxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Float32
-    }
-
-
-
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -215,6 +202,8 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
+    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
+
     case object MatchError extends IntrinsicOperator0
 
   }
@@ -222,6 +211,12 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
+
+    case object Lazy extends IntrinsicOperator1
+
+    case object Force extends IntrinsicOperator1
+
+    case object UnboxFloat32 extends IntrinsicOperator1
 
     case object UnboxFloat64 extends IntrinsicOperator1
 

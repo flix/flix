@@ -630,12 +630,6 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
-
-      case Expression.Force(exp, _, _) => visitExp(exp)
-
-      case Expression.HoleError(_, _, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -663,8 +657,6 @@ object JvmOps {
       case Expression.UnboxInt64(exp, _) => visitExp(exp)
 
       case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
@@ -981,12 +973,6 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
-
-      case Expression.Force(exp, _, _) => visitExp(exp)
-
-      case Expression.HoleError(_, _, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -1014,8 +1000,6 @@ object JvmOps {
       case Expression.UnboxInt64(exp, _) => visitExp(exp)
 
       case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
 
@@ -1223,12 +1207,6 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
-
-      case Expression.Force(exp, _, _) => visitExp(exp)
-
-      case Expression.HoleError(_, _, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -1256,8 +1234,6 @@ object JvmOps {
       case Expression.UnboxInt64(exp, _) => visitExp(exp)
 
       case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 

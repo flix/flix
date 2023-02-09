@@ -935,64 +935,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.Lazy(exp, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Find the Lazy class name (Lazy$tpe).
-      val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
-
-      // Make a new lazy object and dup it to leave it on the stack.
-      visitor.visitTypeInsn(NEW, classType)
-      visitor.visitInsn(DUP)
-
-      // Compile the thunked expression and call new Lazy$erased_tpe(expression).
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
-
-    case Expression.Force(exp, _, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Find the Lazy class type (Lazy$tpe) and the inner value type.
-      val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
-      val classType = JvmOps.getLazyClassType(classMonoType)
-      val internalClassType = classType.name.toInternalName
-      val MonoType.Lazy(tpe) = classMonoType
-      val erasedType = JvmOps.getErasedJvmType(tpe)
-
-      // Emit code for the lazy expression.
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-      // Lazy$tpe is expected.
-      visitor.visitTypeInsn(CHECKCAST, internalClassType)
-
-      // Dup for later lazy.value or lazy.force(context)
-      visitor.visitInsn(DUP)
-      // Get expression
-      visitor.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
-      val alreadyInit = new Label()
-      val end = new Label()
-      // If expression == null the we just use lazy.value, otherwise lazy.force(context)
-      visitor.visitJumpInsn(IFNULL, alreadyInit)
-
-      // Call force().
-      visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
-      // goto the cast to undo erasure
-      visitor.visitJumpInsn(GOTO, end)
-
-      visitor.visitLabel(alreadyInit)
-      // Retrieve the erased value
-      visitor.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
-
-      visitor.visitLabel(end)
-      // The result of force is a generic object so a cast is needed.
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.HoleError(sym, _, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
-
     case Expression.BoxBool(exp, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1080,20 +1022,77 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
 
-
-    case Expression.UnboxFloat32(exp, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
-
     case Expression.Intrinsic0(op, tpe, loc) => op match {
+      case IntrinsicOperator0.HoleError(sym) =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
+
       case IntrinsicOperator0.MatchError =>
         addSourceLine(visitor, loc)
         AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Lazy =>
+        // Add source line numbers for debugging.
+        addSourceLine(visitor, loc)
+
+        // Find the Lazy class name (Lazy$tpe).
+        val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+
+        // Make a new lazy object and dup it to leave it on the stack.
+        visitor.visitTypeInsn(NEW, classType)
+        visitor.visitInsn(DUP)
+
+        // Compile the thunked expression and call new Lazy$erased_tpe(expression).
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+
+      case IntrinsicOperator1.Force =>
+        // Add source line numbers for debugging.
+        addSourceLine(visitor, loc)
+
+        // Find the Lazy class type (Lazy$tpe) and the inner value type.
+        val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
+        val classType = JvmOps.getLazyClassType(classMonoType)
+        val internalClassType = classType.name.toInternalName
+        val MonoType.Lazy(tpe) = classMonoType
+        val erasedType = JvmOps.getErasedJvmType(tpe)
+
+        // Emit code for the lazy expression.
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+        // Lazy$tpe is expected.
+        visitor.visitTypeInsn(CHECKCAST, internalClassType)
+
+        // Dup for later lazy.value or lazy.force(context)
+        visitor.visitInsn(DUP)
+        // Get expression
+        visitor.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
+        val alreadyInit = new Label()
+        val end = new Label()
+        // If expression == null the we just use lazy.value, otherwise lazy.force(context)
+        visitor.visitJumpInsn(IFNULL, alreadyInit)
+
+        // Call force().
+        visitor.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
+        // goto the cast to undo erasure
+        visitor.visitJumpInsn(GOTO, end)
+
+        visitor.visitLabel(alreadyInit)
+        // Retrieve the erased value
+        visitor.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
+
+        visitor.visitLabel(end)
+        // The result of force is a generic object so a cast is needed.
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.UnboxFloat32 =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
 
       case IntrinsicOperator1.UnboxFloat64 =>
         addSourceLine(visitor, loc)
