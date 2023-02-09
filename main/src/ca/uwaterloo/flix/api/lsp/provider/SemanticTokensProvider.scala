@@ -583,15 +583,6 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
-    case Pattern.Array(pats, _, _) => pats.flatMap(visitPat).iterator
-
-    case Pattern.ArrayTailSpread(pats, sym, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      Iterator(t) ++ pats.flatMap(visitPat).iterator
-
-    case Pattern.ArrayHeadSpread(sym, pats, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      Iterator(t) ++ pats.flatMap(visitPat).iterator
   }
 
   /**

@@ -22,20 +22,6 @@ object TypedAstOps {
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
-    case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-      case (macc, elm) => macc ++ binds(elm)
-    }
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      Map(sym -> tpe) ++ boundElms
-
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      Map(sym -> tpe) ++ boundElms
   }
 
   /**
@@ -429,15 +415,6 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
-
-    case Pattern.Array(elms, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-
-    case Pattern.ArrayTailSpread(elms, sym, _, _) => ??? // TODO
-
-    case Pattern.ArrayHeadSpread(sym, elms, _, _) => ??? // TODO
   }
 
   /**
