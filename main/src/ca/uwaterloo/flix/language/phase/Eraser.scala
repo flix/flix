@@ -173,9 +173,6 @@ object Eraser {
     case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
       ErasedAst.Expression.ArrayLength(visitExp(base), tpe, loc)
 
-    case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc)
-
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
       ErasedAst.Expression.Ref(visitExp(exp), tpe, loc)
 

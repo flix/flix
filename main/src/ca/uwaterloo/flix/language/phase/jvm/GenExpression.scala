@@ -317,7 +317,7 @@ object GenExpression {
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name, 
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       visitor.visitLabel(afterTryBlock)
 
@@ -339,7 +339,7 @@ object GenExpression {
       // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-      
+
       // Compile the expression representing the region
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
@@ -649,46 +649,6 @@ object GenExpression {
       // Pushes the 'length' of the array on top of stack
       visitor.visitInsn(ARRAYLENGTH)
 
-    case Expression.ArraySlice(base, startIndex, endIndex, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
-      // Evaluating the 'base'
-      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'startIndex'
-      compileExpression(startIndex, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'endIndex'
-      compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint)
-      // Swaps the startIndex and 'endIndex'
-      visitor.visitInsn(SWAP)
-      // Duplicates the 'startIndex' two places down the stack
-      visitor.visitInsn(DUP_X1)
-      // Subtracts the 'startIndex' from the 'endIndex' (leaving the 'length' of the array)
-      visitor.visitInsn(ISUB)
-      // Duplicates the 'length'
-      visitor.visitInsn(DUP)
-      // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-      }
-      // Duplicates the 'array reference' and 'length' 4 places down the stack
-      visitor.visitInsn(DUP2_X2)
-      // Swaps the 'array reference' and 'length'
-      visitor.visitInsn(SWAP)
-      // Pushes 0 on top of stack
-      visitor.visitInsn(ICONST_0)
-      // Swaps 'length' and 0
-      visitor.visitInsn(SWAP)
-      // Invoking the method to copy the source array to the destination array
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.System.toInternalName, "arraycopy", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.PrimInt, JvmType.Object, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void), false)
-      // Swaps 'new array reference' and 'length'
-      visitor.visitInsn(SWAP)
-      // Pops the 'length' - leaving 'new array reference' top of stack
-      visitor.visitInsn(POP)
-
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -916,7 +876,7 @@ object GenExpression {
 
       exp2 match {
         // The expression represents the `Static` region, just start a thread directly
-        case Expression.Region(_, _) => 
+        case Expression.Region(_, _) =>
 
           // Compile the expression, putting a function implementing the Runnable interface on the stack
           compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -934,7 +894,7 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
           }
 
-        case _ => 
+        case _ =>
           // Compile the expression representing the region
           compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
           visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
