@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.fmt.{FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -30,8 +30,6 @@ trait RedundancyError extends CompilationMessage {
 }
 
 object RedundancyError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * An error raised to indicate that the variable symbol `sym` is hidden.

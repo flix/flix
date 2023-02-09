@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -30,8 +30,6 @@ sealed trait ReificationError extends CompilationMessage {
 }
 
 object ReificationError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * An error raised to indicate an internal error in the Monomorpher.
