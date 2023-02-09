@@ -674,69 +674,6 @@ object GenExpression {
       // Pops the 'length' - leaving 'new array reference' top of stack
       visitor.visitInsn(POP)
 
-    case Expression.Ref(exp, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // JvmType of the reference class
-      val classType = JvmOps.getRefClassType(tpe)
-
-      // the previous function is already partial
-      val MonoType.Ref(refValueType) = tpe
-      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
-      // Create a new reference object
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      // Duplicate it since one instance will get consumed by constructor
-      visitor.visitInsn(DUP)
-      // Call the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-      // Duplicate it since one instance will get consumed by putfield
-      visitor.visitInsn(DUP)
-      // Evaluate the underlying expression
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Erased type of the value of the reference
-      val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
-      // set the field with the ref value
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
-
-    case Expression.Deref(exp, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // Evaluate the exp
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // JvmType of the reference class
-      val classType = JvmOps.getRefClassType(exp.tpe)
-
-      // the previous function is already partial
-      val MonoType.Ref(refValueType) = exp.tpe
-      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
-      // Cast the ref
-      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-      // Dereference the expression
-      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-      // Cast underlying value to the correct type if the underlying type is Object
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.Assign(exp1, exp2, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // Evaluate the reference address
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the value to be assigned to the reference
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      // JvmType of the reference class
-      val classType = JvmOps.getRefClassType(exp1.tpe)
-
-      // the previous function is already partial
-      val MonoType.Ref(refValueType) = exp1.tpe
-      val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
-      // Invoke `setValue` method to set the value to the given number
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
-      // Since the return type is unit, we put an instance of unit on top of the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -947,6 +884,50 @@ object GenExpression {
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
 
+      case IntrinsicOperator1.Ref =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // JvmType of the reference class
+        val classType = JvmOps.getRefClassType(tpe)
+
+        // the previous function is already partial
+        val MonoType.Ref(refValueType) = tpe
+        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
+        // Create a new reference object
+        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+        // Duplicate it since one instance will get consumed by constructor
+        visitor.visitInsn(DUP)
+        // Call the constructor
+        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+        // Duplicate it since one instance will get consumed by putfield
+        visitor.visitInsn(DUP)
+        // Evaluate the underlying expression
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Erased type of the value of the reference
+        val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
+        // set the field with the ref value
+        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
+
+      case IntrinsicOperator1.Deref =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // Evaluate the exp
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // JvmType of the reference class
+        val classType = JvmOps.getRefClassType(exp.tpe)
+
+        // the previous function is already partial
+        val MonoType.Ref(refValueType) = exp.tpe
+        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
+        // Cast the ref
+        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        // Dereference the expression
+        visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        // Cast underlying value to the correct type if the underlying type is Object
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
       case IntrinsicOperator1.Lazy =>
         // Add source line numbers for debugging.
         addSourceLine(visitor, loc)
@@ -1092,6 +1073,25 @@ object GenExpression {
     }
 
     case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
+
+      case IntrinsicOperator2.Assign =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // Evaluate the reference address
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        // Evaluating the value to be assigned to the reference
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        // JvmType of the reference class
+        val classType = JvmOps.getRefClassType(exp1.tpe)
+
+        // the previous function is already partial
+        val MonoType.Ref(refValueType) = exp1.tpe
+        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
+        // Invoke `setValue` method to set the value to the given number
+        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+        // Since the return type is unit, we put an instance of unit on top of the stack
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case IntrinsicOperator2.ArrayLoad =>
         // Adding source line number for debugging

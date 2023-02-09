@@ -178,13 +178,16 @@ object Eraser {
       ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc)
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      ErasedAst.Expression.Ref(visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.Ref
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      ErasedAst.Expression.Deref(visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.Deref
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator2.Assign
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
       ErasedAst.Expression.Cast(visitExp(exp), tpe, loc)

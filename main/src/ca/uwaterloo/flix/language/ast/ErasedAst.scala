@@ -106,12 +106,6 @@ object ErasedAst {
 
     case class ArraySlice(base: ErasedAst.Expression, beginIndex: ErasedAst.Expression, endIndex: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Ref(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class Deref(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class Assign(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -156,6 +150,10 @@ object ErasedAst {
 
   object IntrinsicOperator1 {
 
+    case object Ref extends IntrinsicOperator1
+
+    case object Deref extends IntrinsicOperator1
+
     case object Lazy extends IntrinsicOperator1
 
     case object Force extends IntrinsicOperator1
@@ -197,6 +195,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator2
 
   object IntrinsicOperator2 {
+
+    case object Assign extends IntrinsicOperator2
 
     case object ArrayLoad extends IntrinsicOperator2
 

@@ -584,12 +584,6 @@ object JvmOps {
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
       case Expression.TryCatch(exp, rules, _, _) =>
@@ -901,12 +895,6 @@ object JvmOps {
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
       case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
@@ -1113,12 +1101,6 @@ object JvmOps {
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
