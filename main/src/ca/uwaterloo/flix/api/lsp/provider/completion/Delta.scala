@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 34, revision = 0)
-}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * A case class to represent versions.
+  * A common super-type for deltas (differences) between ASTs.
   */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+sealed trait Delta
+
+object Delta {
+
+  /**
+    * Represents the addition of a new function.
+    *
+    * @param sym the symbol of the new function.
+    */
+  case class AddDef(sym: Symbol.DefnSym) extends Delta
+
+  /**
+    * Represents the addition of a new enum.
+    *
+    * @param sym the symbol of the new enum.
+    */
+  case class AddEnum(sym: Symbol.EnumSym) extends Delta
+
+  // TODO: ...
+
 }

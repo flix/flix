@@ -18,6 +18,89 @@
 /// A Vector data type which is fundamentally like Array but is immutable.
 ///
 
+instance ToString[Vector[a]] with ToString[a] {
+    pub def toString(v: Vector[a]): String = Vector.toString(v)
+}
+
+instance Hash[Vector[a]] with Hash[a] {
+    pub def hash(v: Vector[a]): Int32 =
+        Vector.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), v)
+}
+
+instance Eq[Vector[a]] with Eq[a] {
+    pub def eq(v1: Vector[a], v2: Vector[a]): Bool = Vector.equals(v1, v2)
+}
+
+instance Order[Vector[a]] with Order[a] {
+    pub def compare(v1: Vector[a], v2: Vector[a]): Comparison = Vector.compare(v1, v2)
+}
+
+instance Functor[Vector] {
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = Vector.map(f, v)
+}
+
+instance Applicative[Vector] {
+    pub def point(a: a) : Vector[a] = Vector.singleton(a)
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef = Vector.ap(f, v)
+}
+
+instance Monad[Vector] {
+    pub def flatMap(f: a -> Vector[b] \ ef, v : Vector[a]) : Vector[b] \ ef = Vector.flatMap(f, v)
+}
+
+instance MonadZero[Vector] {
+    pub def empty(): Vector[a] = Vector.empty()
+}
+
+instance MonadZip[Vector] {
+    pub def zipWith(f: (a, b) -> c \ ef, xs: Vector[a], ys: Vector[b]): Vector[c] \ ef = Vector.zipWith(f, xs, ys)
+    pub def zipWithA(f: (a, b) -> f[c] \ ef, xs: Vector[a], ys: Vector[b]): f[Vector[c]] \ ef with Applicative[f] = Vector.zipWithA(f, xs, ys)
+    pub override def zip(v1: Vector[a], v2: Vector[b]): Vector[(a, b)] = Vector.zip(v1, v2)
+    pub override def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = Vector.unzip(v)
+}
+
+instance Foldable[Vector] {
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldLeft(f, s, v)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRight(f, s, v)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRightWithCont(f, s, v)
+}
+
+instance UnorderedFoldable[Vector] {
+    pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with CommutativeMonoid[b] = Vector.foldMap(f, v)
+    override pub def isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
+    override pub def exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
+    override pub def forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.forAll(f, v)
+    override pub def memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
+}
+
+instance Traversable[Vector] {
+    pub def traverse(f: a -> m[b] \ ef, t: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = Vector.traverse(f, t)
+    pub override def sequence(t: Vector[m[a]]): m[Vector[a]] with Applicative[m] = Vector.sequence(t)
+}
+
+instance Filterable[Vector] {
+    pub def filterMap(f: a -> Option[b] \ ef, x: Vector[a]): Vector[b] \ ef = Vector.filterMap(f, x)
+    pub override def filter(f: a -> Bool \ ef, x: Vector[a]): Vector[a] \ ef = Vector.filter(f, x)
+}
+
+instance Witherable[Vector]
+
+instance SemiGroup[Vector[a]] {
+    pub def combine(x: Vector[a], y: Vector[a]): Vector[a] = Vector.append(x, y)
+}
+
+instance Monoid[Vector[a]] {
+    pub def empty(): Vector[a] = Vector.empty()
+}
+
+instance Collectable[Vector] {
+    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
+}
+
+instance Iterable[Vector] {
+    pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ Write(r) = Vector.iterator(rc, v)
+}
+
 namespace Vector {
 
     ///
@@ -392,7 +475,6 @@ namespace Vector {
     pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(get(i, v)), length(v))
 
-
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
@@ -400,6 +482,76 @@ namespace Vector {
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(i, get(i, v)), length(v))
+
+    ///
+    /// Returns the result of running all the actions in the list `v` going from left
+    /// to right.
+    ///
+    pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] = region rc {
+        let len = length(v);
+        let arr = Array.new(rc, len);
+        def loop(i, k) = {
+            if (i == len) 
+                k(Applicative.point(arr))
+            else {
+                let mx = get(i, v);
+                loop(i+1, karr -> k(putA!(mx, i, karr)))
+            }
+        };
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
+    }
+
+    ///
+    /// Returns the result of applying the applicative mapping function `f` to all the elements of the
+    /// vector `v` going from left to right.
+    ///
+    pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = region rc {
+        let len = length(v);
+        let arr = Array.new(rc, len);
+        def loop(i, k) = {
+            if (i == len)
+                k(Applicative.point(arr))
+            else {
+                let x = get(i, v);
+                loop(i+1, karr -> k(putA!(f(x), i, karr)))
+            }
+        };
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
+    }
+
+    ///
+    /// Helper for `sequence`, `traverse` and `zipWithA`.
+    ///
+    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] = 
+        use Functor.{<$>};
+        use Applicative.{<*>};
+        (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
+
+    ///
+    /// Generalize `zipWith` to an applicative functor `f`.
+    ///
+    pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] = region rc {
+        let len = Int32.min(length(v1), length(v2));
+        let arr = Array.new(rc, len);
+        def loop(i, k) = {
+            if (i == len)
+                k(Applicative.point(arr))
+            else {
+                let x = get(i, v1);
+                let y = get(i, v2);
+                loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
+            }
+        };
+        Functor.map(Array.toVector, loop(0, upcast(identity)))
+    }
+
+    ///
+    /// Apply every function from `f` to every argument from `v` and return a list with all results.
+    /// For `f = f1, f2, ...` and `x = x1, x2, ...` the results appear in the order
+    /// `f1(x1), f1(x2), ..., f2(x1), f2(x2), ...`.
+    ///
+    pub def ap(f: Vector[a -> b \ ef], v: Vector[a]) : Vector[b] \ ef =
+        map(g -> map(g, v), f) |> flatten
 
     ///
     /// Returns the result of applying `f` to every element in `v` and concatenating the results.

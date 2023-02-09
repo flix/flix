@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-package ca.uwaterloo.flix.api
+import ca.uwaterloo.flix.language.ast.TypedAst
 
-object Version {
+object Differ {
+
   /**
-    * Represents the current version of Flix.
+    * Computes the semantic difference between the `oldAst` and `newAst`
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 34, revision = 0)
-}
+  def difference(oldAst: TypedAst.Root, newAst: TypedAst.Root): List[Delta] = {
+    val newDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(Delta.AddDef)
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+    val result = newDefs
+    result
+  }
 }

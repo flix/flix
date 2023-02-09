@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
@@ -211,6 +211,14 @@ object ManifestParser {
                 rest.split('/') match {
                   case Array(username, projectName) =>
                     if(repo == "github") {
+                      checkNameCharacters(username, p) match {
+                        case Ok(_) => //the name is fine, do nothing
+                        case Err(e) => return Err(e)
+                      }
+                      checkNameCharacters(projectName, p) match {
+                        case Ok(_) => //the name is fine, do nothing
+                        case Err(e) => return Err(e)
+                      }
                       if (prodDep) {
                         depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
                       } else {
@@ -219,26 +227,37 @@ object ManifestParser {
                     } else {
                       return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
                     }
-
-                  case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+                  case _ =>
+                    return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
                 }
-              case _ => return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+              case _ =>
+                return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
             }
           } else {
             depName.split(':') match {
               case Array(groupId, artifactId) =>
+                checkNameCharacters(groupId, p) match {
+                  case Ok(_) => //the name is fine, do nothing
+                  case Err(e) => return Err(e)
+                }
+                checkNameCharacters(artifactId, p) match {
+                  case Ok(_) => //the name is fine, do nothing
+                  case Err(e) => return Err(e)
+                }
                 if (prodDep) {
                   depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
                 } else {
                   depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
                 }
-              case _ => return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+              case _ =>
+                return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
             }
           }
           case Err(e) => return Err(e)
         }
       } catch {
-        case _: ClassCastException => return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+        case _: ClassCastException =>
+          return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
       }
     })
     Ok(depsSet.toList)
@@ -255,10 +274,21 @@ object ManifestParser {
         val s = array.getString(i)
         stringSet.add(s)
       } catch {
-        case _: TomlInvalidTypeException => return Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
+        case _: TomlInvalidTypeException =>
+          return Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
       }
     }
     Ok(stringSet.toList)
+  }
+
+  /**
+    * Checks that a package name does not include any illegal characters.
+    */
+  private def checkNameCharacters(name: String, p: Path): Result[Unit, ManifestError] = {
+    if(name.matches("^[a-zA-Z0-9.-]+$"))
+      ().toOk
+    else
+      Err(ManifestError.IllegalName(p, s"A dependency name cannot include any special characters: $name"))
   }
 
 }
