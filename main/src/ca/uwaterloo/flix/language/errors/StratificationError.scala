@@ -19,15 +19,13 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
 case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage {
-  private implicit val audience: Audience = Audience.External
-
   def kind: String = "Stratification Error"
 
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."

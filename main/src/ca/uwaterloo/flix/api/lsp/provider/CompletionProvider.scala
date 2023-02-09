@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionContext, Keyword
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
@@ -49,7 +49,6 @@ import java.lang.reflect.Field
   * we're consistent with Flix's parser.
   */
 object CompletionProvider {
-  private implicit val audience: Audience = Audience.External
 
   //
   // This list manually maintained. If a new built-in type is added, it must be extended.
