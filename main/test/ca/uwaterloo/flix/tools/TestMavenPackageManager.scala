@@ -6,10 +6,7 @@ import org.scalatest.FunSuite
 
 class TestMavenPackageManager extends FunSuite {
   test("Install dependency") {
-    assertResult(expected = Ok(List("org.junit.jupiter:junit-jupiter-api",
-                                    "org.opentest4j:opentest4j",
-                                    "org.junit.platform:junit-platform-commons",
-                                    "org.apiguardian:apiguardian-api")))(actual = {
+    assertResult(expected = Ok(()))(actual = {
       val toml = {
         """
           |[package]
@@ -25,38 +22,6 @@ class TestMavenPackageManager extends FunSuite {
           |
           |[mvn-dependencies]
           |"org.junit.jupiter:junit-jupiter-api" = "5.9.2"
-          |
-          |[dev-mvn-dependencies]
-          |
-          |""".stripMargin
-      }
-
-      val manifest = ManifestParser.parse(toml, null) match {
-        case Ok(m) => m
-        case Err(_) => ??? //should not happen
-      }
-
-      MavenPackageManager.installAll(manifest)(System.out)
-    })
-  }
-
-  test("Give error for wrong dependency format") {
-    assertResult(expected = Err(PackageError.CoursierError("Error in creating Coursier dependency: organization hello/ contains invalid '/'")))(actual = {
-      val toml = {
-        """
-          |[package]
-          |name = "test"
-          |description = "test"
-          |version = "0.0.0"
-          |flix = "0.0.0"
-          |authors = ["Anna Blume"]
-          |
-          |[dependencies]
-          |
-          |[dev-dependencies]
-          |
-          |[mvn-dependencies]
-          |"hello/:world" = "1.2.3"
           |
           |[dev-mvn-dependencies]
           |

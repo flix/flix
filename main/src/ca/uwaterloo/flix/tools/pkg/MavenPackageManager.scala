@@ -15,8 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
@@ -24,17 +25,17 @@ import coursier._
 
 object MavenPackageManager {
 
-  val scalaVersion = "2.13"
+  private val scalaVersion = "2.13"
 
   /**
     * Installs all MavenDependencies for a Manifest,
     * including transitive dependencies using coursier.
     */
-  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[List[String], PackageError] = {
+  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
-    createCoursierDependencies(depStrings).flatMap { deps =>
-      val installed = try {
+    Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
+      try {
         val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
         val resolution = res.run()
 
@@ -43,15 +44,14 @@ object MavenPackageManager {
           f.addDependencies(dep)
         })
         fetch.run()
-
-        resolution.dependencies.map(dep => dep.module.toString()).toList
       } catch {
         case e: Exception =>
+          out.println(e.getMessage)
+          //Shortens the error message to just give the name of the dependency
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
           return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
-
-      Ok(installed)
+      ().toOk
     }
   }
 
@@ -68,14 +68,12 @@ object MavenPackageManager {
   /**
     * Creates Coursier dependencies from a list of Strings
     */
-  private def createCoursierDependencies(depStrings: List[String]): Result[List[Dependency], PackageError] = {
-    Result.sequence(
-      depStrings.map(depName => coursier.parse.DependencyParser.dependency(depName, scalaVersion))
-      .map {
-        case Left(error) => Err(PackageError.CoursierError(s"Error in creating Coursier dependency: $error"))
-        case Right(cDep) => Ok(cDep)
-      }
-    )
-  }
+  private def createCoursierDependencies(depString: String): Result[Dependency, PackageError] =
+    coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
+      case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
+      case Right(cDep) => Ok(cDep)
+    }
+
+
 
 }
