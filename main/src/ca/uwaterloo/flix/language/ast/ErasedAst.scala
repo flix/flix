@@ -100,8 +100,6 @@ object ErasedAst {
 
     case class ArrayNew(elm: ErasedAst.Expression, len: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class ArrayStore(base: ErasedAst.Expression, index: ErasedAst.Expression, elm: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArraySlice(base: ErasedAst.Expression, beginIndex: ErasedAst.Expression, endIndex: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -133,6 +131,8 @@ object ErasedAst {
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
+    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
   }
 
@@ -199,6 +199,14 @@ object ErasedAst {
     case object Assign extends IntrinsicOperator2
 
     case object ArrayLoad extends IntrinsicOperator2
+
+  }
+
+  sealed trait IntrinsicOperator3
+
+  object IntrinsicOperator3 {
+
+    case object ArrayStore extends IntrinsicOperator3
 
   }
 

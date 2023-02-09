@@ -603,25 +603,6 @@ object GenExpression {
       // Invoking the method to fill the array with the default element
       visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
-    case Expression.ArrayStore(base, index, elm, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the jvmType of the element to be stored
-      val jvmType = JvmOps.getErasedJvmType(elm.tpe)
-      // Evaluating the 'base'
-      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-      // Evaluating the 'index' to be stored in
-      compileExpression(index, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'element' to be stored
-      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
-      // Stores the 'element' at the given 'index' in the 'array'
-      // with the store instruction corresponding to the stored element
-      visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
-      // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
     case Expression.ArrayLength(base, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -1109,6 +1090,29 @@ object GenExpression {
         visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
 
     }
+
+    case Expression.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => op match {
+      case IntrinsicOperator3.ArrayStore =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the jvmType of the element to be stored
+        val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
+        // Evaluating the 'base'
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        // Cast the object to Array
+        visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
+        // Evaluating the 'index' to be stored in
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        // Evaluating the 'element' to be stored
+        compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
+        // Stores the 'element' at the given 'index' in the 'array'
+        // with the store instruction corresponding to the stored element
+        visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+        // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+    }
+
 
   }
 
