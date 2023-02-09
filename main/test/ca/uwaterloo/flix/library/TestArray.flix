@@ -171,17 +171,17 @@ namespace TestArray {
 
     @test
     def testSlice01(): Bool = region r {
-        Array.slice(r, 0, 1, Array#{1, 2, 3} @ r)[0] == 1
+        Array.slice(r, start = 0, end = 1, Array#{1, 2, 3} @ r)[0] == 1
     }
 
     @test
     def testSlice02(): Bool = region r {
-        Array.slice(r, 1, 2, Array#{1, 2, 3} @ r)[0] == 2
+        Array.slice(r, start = 1, end = 2, Array#{1, 2, 3} @ r)[0] == 2
     }
 
     @test
     def testSlice03(): Bool = region r {
-        Array.slice(r, 2, 3, Array#{1, 2, 3} @ r)[0] == 3
+        Array.slice(r, start = 2, end = 3, Array#{1, 2, 3} @ r)[0] == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -285,6 +285,25 @@ namespace TestArray {
         MutDeque.pushFront('a', d);
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toVector01(): Bool = region rc {
+        Array.toVector((Array#{} @ rc) : Array[Int32, _]) `Vector.equals` Vector.empty()
+    }
+
+    @test
+    def toVector02(): Bool = region rc {
+        Array.toVector((Array#{0} @ rc) : Array[Int32, _]) `Vector.equals` Vector.singleton(0)
+    }
+
+    @test
+    def toVector03(): Bool = region rc {
+        Array.toVector((Array#{1, 2, 3} @ rc) : Array[Int32, _]) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5289,8 +5308,8 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def testSort!VsSortWith!(a: Array[Int32, r]): Bool \ { Read(r) } = region r1 {
-        let b = Array.slice(r1, 0, Array.length(a), a);
-        let c = Array.slice(r1, 0, Array.length(a), a);
+        let b = Array.slice(r1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sort!(b);
         Array.sortWith!(cmp, c);
         b `sameElements` c
@@ -5418,8 +5437,8 @@ namespace TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     def testSortBy!VsSortBy(a: Array[Int32, r]) : Bool \ { Read(r) } = region r1 {
-        let b = Array.slice(r1, 0, Array.length(a), a);
-        let c = Array.slice(r1, 0, Array.length(a), a);
+        let b = Array.slice(r1, start = 0, end = Array.length(a), a);
+        let c = Array.slice(r1, start = 0, end = Array.length(a), a);
         Array.sortBy!(identity, b);
         Array.sortBy!(x -> 4 * x + 7, c);
         (b `sameElements` Array.sortBy(r1, x -> 4 * x + 7, a)) and

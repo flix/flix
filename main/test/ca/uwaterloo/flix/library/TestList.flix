@@ -1291,46 +1291,46 @@ def init07(): Bool = List.init(2 :: 1 :: 0 :: -1 :: Nil) == Some(2 :: 1 :: 0 :: 
 // slice                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def slice01(): Bool = List.slice(0, 0, Nil: List[Unit]) == Nil
+def slice01(): Bool = List.slice(start = 0, end = 0, Nil: List[Unit]) == Nil
 
 @test
-def slice02(): Bool = List.slice(-1, 1, Nil: List[Unit]) == Nil
+def slice02(): Bool = List.slice(start = -1, end = 1, Nil: List[Unit]) == Nil
 
 @test
-def slice03(): Bool = List.slice(0, 0, 1 :: Nil) == Nil
+def slice03(): Bool = List.slice(start = 0, end = 0, 1 :: Nil) == Nil
 
 @test
-def slice04(): Bool = List.slice(0, 1, 1 :: Nil) == 1 :: Nil
+def slice04(): Bool = List.slice(start = 0, end = 1, 1 :: Nil) == 1 :: Nil
 
 @test
-def slice05(): Bool = List.slice(0, 2, 1 :: Nil) == 1 :: Nil
+def slice05(): Bool = List.slice(start = 0, end = 2, 1 :: Nil) == 1 :: Nil
 
 @test
-def slice06(): Bool = List.slice(2, 5, 1 :: Nil) == Nil
+def slice06(): Bool = List.slice(start = 2, end = 5, 1 :: Nil) == Nil
 
 @test
-def slice07(): Bool = List.slice(-1, 1, 1 :: Nil) == 1 :: Nil
+def slice07(): Bool = List.slice(start = -1, end = 1, 1 :: Nil) == 1 :: Nil
 
 @test
-def slice08(): Bool = List.slice(0, 1, 1 :: 2 :: Nil) == 1 :: Nil
+def slice08(): Bool = List.slice(start = 0, end = 1, 1 :: 2 :: Nil) == 1 :: Nil
 
 @test
-def slice09(): Bool = List.slice(0, 2, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+def slice09(): Bool = List.slice(start = 0, end = 2, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
 
 @test
-def slice10(): Bool = List.slice(1, 2, 1 :: 2 :: Nil) == 2 :: Nil
+def slice10(): Bool = List.slice(start = 1, end = 2, 1 :: 2 :: Nil) == 2 :: Nil
 
 @test
-def slice11(): Bool = List.slice(0, 3, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+def slice11(): Bool = List.slice(start = 0, end = 3, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
 
 @test
-def slice12(): Bool = List.slice(0, 2, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: Nil
+def slice12(): Bool = List.slice(start = 0, end = 2, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: Nil
 
 @test
-def slice13(): Bool = List.slice(1, 3, 1 :: 2 :: 3 :: Nil) == 2 :: 3 :: Nil
+def slice13(): Bool = List.slice(start = 1, end = 3, 1 :: 2 :: 3 :: Nil) == 2 :: 3 :: Nil
 
 @test
-def slice14(): Bool = List.slice(1, 2, 1 :: 2 :: 3 :: Nil) == 2 :: Nil
+def slice14(): Bool = List.slice(start = 1, end = 2, 1 :: 2 :: 3 :: Nil) == 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
@@ -2092,6 +2092,23 @@ def toArray04(): Bool = region r {
     let a = List.toArray(r, 1 :: 2 :: 3 :: Nil);
     Array.sameElements(a, Array#{1, 2, 3} @ r)
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// toVector                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toVector01(): Bool =
+    (List.toVector(Nil) : Vector[Int32]) `Vector.equals` Vector.empty()
+
+@test
+def toVector02(): Bool =
+    List.toVector(0 :: Nil) `Vector.equals` Vector.singleton(0)
+
+@test
+def toVector03(): Bool =
+    List.toVector(1 :: 2 :: 3 :: Nil) `Vector.equals` Vector.range(1, 4)
 
 
 /////////////////////////////////////////////////////////////////////////////

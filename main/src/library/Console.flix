@@ -117,9 +117,9 @@ namespace Console {
             use Option.flatMap;
             let* hex = String.stripPrefix(substr = "#", hexCode);
             if (String.length(hex) == 6) {
-                let* r = String.sliceLeft(2, hex) |> stringToHex;
-                let* g = String.slice(2, 4, hex) |> stringToHex;
-                let* b = String.slice(4, 6, hex) |> stringToHex;
+                let* r = String.sliceLeft(end = 2, hex) |> stringToHex;
+                let* g = String.slice(start = 2, end = 4, hex) |> stringToHex;
+                let* b = String.slice(start = 4, end = 6, hex) |> stringToHex;
                 Some(rgb((r, g, b), text, isFg = true))
             } else Option.None
         };

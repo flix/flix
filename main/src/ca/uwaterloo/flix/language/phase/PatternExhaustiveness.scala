@@ -83,6 +83,8 @@ object PatternExhaustiveness {
 
     case object Array extends TyCon
 
+    case object Vector extends TyCon
+
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
   }
@@ -186,6 +188,9 @@ object PatternExhaustiveness {
       case Expression.ArrayStore(base, index, elm, _, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
       case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
       case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => List(reg, base, beginIndex, endIndex).flatMap(visitExp(_, root))
+      case Expression.VectorLit(exps, _, _, _, _) => exps.flatMap(visitExp(_, root))
+      case Expression.VectorLoad(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
+      case Expression.VectorLength(exp, _) => visitExp(exp, root)
       case Expression.Ref(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
@@ -570,6 +575,7 @@ object PatternExhaustiveness {
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
+    case TyCon.Vector => 0
     case TyCon.Enum(_, _, numArgs, _) => numArgs
   }
 
@@ -632,6 +638,7 @@ object PatternExhaustiveness {
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
+    case TyCon.Vector => "Vector"
     case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
   }
 

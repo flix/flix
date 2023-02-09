@@ -102,6 +102,8 @@ object Main {
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
+      xnoboolunif = cmdOpts.xnoboolunif,
+      xnoqmc = cmdOpts.xnoqmc,
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -111,7 +113,6 @@ object Main {
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintasts = cmdOpts.xprintasts,
       xprintboolunif = cmdOpts.xprintboolunif,
-      xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
     )
 
@@ -237,6 +238,8 @@ object Main {
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
+                     xnoboolunif: Boolean = false,
+                     xnoqmc: Boolean = false,
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -246,7 +249,6 @@ object Main {
                      xvirtualthreads: Boolean = false,
                      xprintasts: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
-                     xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -464,13 +466,17 @@ object Main {
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
 
+      // Xno-bool-unif
+      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
+        text("[experimental] disables Boolean unification. (DO NOT USE).")
+
       // Xno-unit-tests
       opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
         text("[experimental] excludes unit tests from performance benchmarks.")
 
-      // Xqmc
-      opt[Unit]("Xqmc").action((_, c) => c.copy(xqmc = true)).
-        text("[experimental] enables Quine McCluskey when using BDDs.")
+      // Xno-qmc
+      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
+        text("[experimental] disables Quine McCluskey when using BDDs.")
 
       note("")
 

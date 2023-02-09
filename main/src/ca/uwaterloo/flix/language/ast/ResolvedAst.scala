@@ -154,6 +154,12 @@ object ResolvedAst {
 
     case class ArraySlice(region: ResolvedAst.Expression, base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class VectorLit(exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLoad(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLength(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Ref(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Deref(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
