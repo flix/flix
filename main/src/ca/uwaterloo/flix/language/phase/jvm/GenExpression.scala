@@ -770,36 +770,6 @@ object GenExpression {
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
       }
 
-    case Expression.GetField(field, exp, tpe, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
-
-    case Expression.PutField(field, exp1, exp2, _, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
-
-      // Push Unit on the stack.
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
-    case Expression.GetStaticField(field, tpe, loc) =>
-      addSourceLine(visitor, loc)
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
-
-    case Expression.PutStaticField(field, exp, _, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
-
-      // Push Unit on the stack.
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
     case Expression.NewObject(name, _, tpe, methods, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
@@ -854,6 +824,12 @@ object GenExpression {
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.Intrinsic0(op, tpe, loc) => op match {
+
+      case IntrinsicOperator0.GetStaticField(field) =>
+        addSourceLine(visitor, loc)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
       case IntrinsicOperator0.HoleError(sym) =>
         addSourceLine(visitor, loc)
         AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
@@ -962,6 +938,21 @@ object GenExpression {
         visitor.visitLabel(end)
         // The result of force is a generic object so a cast is needed.
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.GetField(field) =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+      case IntrinsicOperator1.PutStaticField(field) =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
+
+        // Push Unit on the stack.
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case IntrinsicOperator1.BoxBool =>
         addSourceLine(visitor, loc)
@@ -1088,6 +1079,16 @@ object GenExpression {
         // Loads the 'element' at the given 'index' from the 'array'
         // with the load instruction corresponding to the loaded element
         visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
+
+      case IntrinsicOperator2.PutField(field) =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+        visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
+
+        // Push Unit on the stack.
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
     }
 

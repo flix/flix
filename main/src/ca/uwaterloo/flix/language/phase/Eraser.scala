@@ -210,16 +210,20 @@ object Eraser {
       ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.GetField(field, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.GetField(field)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.PutField(field, visitExp(exp1), visitExp(exp2), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator2.PutField(field)
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      ErasedAst.Expression.GetStaticField(field, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.GetStaticField(field)
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      ErasedAst.Expression.PutStaticField(field, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.PutStaticField(field)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
       val methods = methods0.map {

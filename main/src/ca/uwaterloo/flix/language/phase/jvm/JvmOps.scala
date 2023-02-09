@@ -603,18 +603,6 @@ object JvmOps {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 
-      case Expression.GetField(_, exp, _, _) =>
-        visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) =>
-        Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) =>
-        visitExp(exp)
-
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
@@ -913,14 +901,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.GetField(_, exp, _, _) => visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) => Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
-
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
@@ -1119,14 +1099,6 @@ object JvmOps {
       case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.GetField(_, exp, _, _) => visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) => Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
 
       case obj: Expression.NewObject => Set(obj)
 

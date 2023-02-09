@@ -114,14 +114,6 @@ object ErasedAst {
 
     case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class GetField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class PutField(field: Field, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class GetStaticField(field: Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class PutStaticField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends ErasedAst.Expression
 
     case class Spawn(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -140,6 +132,8 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
+    case class GetStaticField(field: Field) extends IntrinsicOperator0
+
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
 
     case object MatchError extends IntrinsicOperator0
@@ -157,6 +151,10 @@ object ErasedAst {
     case object Lazy extends IntrinsicOperator1
 
     case object Force extends IntrinsicOperator1
+
+    case class GetField(field: Field) extends IntrinsicOperator1
+
+    case class PutStaticField(field: Field) extends IntrinsicOperator1
 
     case object BoxBool extends IntrinsicOperator1
 
@@ -199,6 +197,8 @@ object ErasedAst {
     case object Assign extends IntrinsicOperator2
 
     case object ArrayLoad extends IntrinsicOperator2
+
+    case class PutField(field: Field) extends IntrinsicOperator2
 
   }
 
