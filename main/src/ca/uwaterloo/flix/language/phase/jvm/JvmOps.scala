@@ -938,7 +938,7 @@ object JvmOps {
 
       case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
+      case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
     }) ++ Set(exp0.tpe)
 
