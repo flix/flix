@@ -578,8 +578,6 @@ object JvmOps {
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
@@ -933,8 +931,6 @@ object JvmOps {
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
       case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
@@ -1183,8 +1179,6 @@ object JvmOps {
       }
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
-
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 

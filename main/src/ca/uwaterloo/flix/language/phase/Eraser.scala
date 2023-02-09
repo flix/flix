@@ -164,8 +164,9 @@ object Eraser {
     case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
       ErasedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
 
-    case FinalAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-      ErasedAst.Expression.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
+    case FinalAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperator2.ArrayLoad
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
       ErasedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc)
@@ -237,7 +238,7 @@ object Eraser {
       ErasedAst.Expression.HoleError(sym, tpe, loc)
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
-      val op = ErasedAst.InstrinsicOp0.MatchError
+      val op = ErasedAst.IntrinsicOperator0.MatchError
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
   }
 

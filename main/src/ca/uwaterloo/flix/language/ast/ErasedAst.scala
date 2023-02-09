@@ -203,35 +203,35 @@ object ErasedAst {
 
 
 
-    case class Intrinsic0(op: ErasedAst.InstrinsicOp0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Intrinsic1(op: ErasedAst.IntristricOp1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Intrinsic2(op: ErasedAst.IntrinsicOp2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-  }
-
-  sealed trait InstrinsicOp0
-
-  object InstrinsicOp0 {
-
-    case object MatchError extends InstrinsicOp0
+    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
   }
 
-  sealed trait IntristricOp1
+  sealed trait IntrinsicOperator0
 
-  object IntristricOp1 {
+  object IntrinsicOperator0 {
 
-    case object UnboxFloat64 extends IntristricOp1
+    case object MatchError extends IntrinsicOperator0
 
   }
 
-  sealed trait IntrinsicOp2
+  sealed trait IntrinsicOperator1
 
-  object IntrinsicOp2 {
+  object IntrinsicOperator1 {
 
-    case object ArrayLoad extends IntrinsicOp2
+    case object UnboxFloat64 extends IntrinsicOperator1
+
+  }
+
+  sealed trait IntrinsicOperator2
+
+  object IntrinsicOperator2 {
+
+    case object ArrayLoad extends IntrinsicOperator2
 
   }
 

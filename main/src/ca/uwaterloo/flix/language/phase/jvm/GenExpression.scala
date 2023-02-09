@@ -1088,14 +1088,14 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
 
     case Expression.Intrinsic0(op, tpe, loc) => op match {
-      case InstrinsicOp0.MatchError =>
+      case IntrinsicOperator0.MatchError =>
         addSourceLine(visitor, loc)
         AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
 
-      case IntristricOp1.UnboxFloat64 =>
+      case IntrinsicOperator1.UnboxFloat64 =>
         addSourceLine(visitor, loc)
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
@@ -1105,7 +1105,7 @@ object GenExpression {
 
     case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
 
-      case IntrinsicOp2.ArrayLoad =>
+      case IntrinsicOperator2.ArrayLoad =>
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the jvmType of the element to be loaded
