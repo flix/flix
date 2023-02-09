@@ -175,15 +175,6 @@ object Main {
           shell.loop()
           System.exit(0)
 
-        case Command.Install(project) =>
-          val o = options.copy(progress = false)
-          val result = FlixPackageManager.install(project, None, cwd)(System.out)
-          val code = result match {
-            case Result.Ok(_) => 0
-            case Result.Err(_) => -1
-          }
-          System.exit(code)
-
         case Command.Lsp(port) =>
           val o = options.copy(progress = false)
           try {
@@ -279,8 +270,6 @@ object Main {
 
     case object Repl extends Command
 
-    case class Install(project: String) extends Command
-
     case class Lsp(port: Int) extends Command
 
   }
@@ -321,12 +310,6 @@ object Main {
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
-
-      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
-        .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
-            .required()
-        )
 
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
