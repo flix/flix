@@ -100,8 +100,6 @@ object ErasedAst {
 
     case class ArrayNew(elm: ErasedAst.Expression, len: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class ArrayLoad(base: ErasedAst.Expression, index: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class ArrayStore(base: ErasedAst.Expression, index: ErasedAst.Expression, elm: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -232,6 +230,8 @@ object ErasedAst {
   sealed trait IntrinsicOp2
 
   object IntrinsicOp2 {
+
+    case object ArrayLoad extends IntrinsicOp2
 
   }
 

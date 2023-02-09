@@ -603,21 +603,6 @@ object GenExpression {
       // Invoking the method to fill the array with the default element
       visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
-    case Expression.ArrayLoad(base, index, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the jvmType of the element to be loaded
-      val jvmType = JvmOps.getErasedJvmType(tpe)
-      // Evaluating the 'base'
-      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
-      // Evaluating the 'index' to load from
-      compileExpression(index, visitor, currentClass, lenv0, entryPoint)
-      // Loads the 'element' at the given 'index' from the 'array'
-      // with the load instruction corresponding to the loaded element
-      visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
-
     case Expression.ArrayStore(base, index, elm, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -1118,7 +1103,24 @@ object GenExpression {
 
     }
 
-    case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
+    case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
+
+      case IntrinsicOp2.ArrayLoad =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the jvmType of the element to be loaded
+        val jvmType = JvmOps.getErasedJvmType(tpe)
+        // Evaluating the 'base'
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        // Cast the object to Array
+        visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
+        // Evaluating the 'index' to load from
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        // Loads the 'element' at the given 'index' from the 'array'
+        // with the load instruction corresponding to the loaded element
+        visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
+
+    }
 
   }
 
