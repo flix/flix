@@ -1126,11 +1126,11 @@ object BackendObjType {
     ))
 
     // final public void runOnExit(Runnable r) {
-    //   onExit.add(r);
+    //   onExit.addFirst(r);
     // }
     def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(
       thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
-      INVOKEVIRTUAL(LinkedList.AddMethod) ~ POP() ~
+      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
       RETURN()
     ))
   }
@@ -1273,8 +1273,8 @@ object BackendObjType {
 
   case object LinkedList extends BackendObjType {
 
-    def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "add", 
-      mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
+    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "addFirst", 
+      mkDescriptor(JavaObject.toTpe)(VoidableType.Void), None)
 
     def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "iterator",
       mkDescriptor()(BackendObjType.Iterator.toTpe), None)
