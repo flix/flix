@@ -31,16 +31,14 @@ object FieldCompleter {
 
     val regex = raw"(.*)[.].*".r
 
-    // Please review this - not sure if the functionality is preserved..
     context.word match {
       case regex(prefix) =>
-        List(
           index.fieldDefs.m.concat(index.fieldUses.m)
             .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
-            .foreach {
-              case (field, _) =>
-                s"$prefix.${field.name}"
-            }) map Completion.FieldCompletion
+            .foldLeft[List[CompletionItem]](Nil) {
+              case (acc, (field, _)) =>
+                Completion.FieldCompletion(s"$prefix.${field.name}", context).toCompletionItem :: acc
+            }
       case _ => Nil
     }
   }

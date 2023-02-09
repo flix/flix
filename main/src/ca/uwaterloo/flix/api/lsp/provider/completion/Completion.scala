@@ -31,7 +31,7 @@ sealed trait Completion {
     case Completion.FieldCompletion(name, context) =>
       CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Field)
     case Completion.PredicateCompletion(name, priority, context) =>
-      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name), kind = CompletionItemKind.Variable) // Variable?
+      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Variable) // Variable?
     case Completion.EnumTypeCompletion(context) => ??? // TODO
   }
 }

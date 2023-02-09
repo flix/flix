@@ -90,6 +90,8 @@ object KeywordCompleter {
       "with",
       "without",
       "yield"
-    ) map Completion.KeywordCompletion
+    ).foldLeft[List[CompletionItem]](Nil) {
+      case (acc, name) => Completion.KeywordCompletion(name, context).toCompletionItem :: acc
+    }
   }
 }
