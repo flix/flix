@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionContext, KeywordCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionContext, FieldCompleter, KeywordCompleter, PredicateCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -210,7 +210,7 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        getPredicateCompletions() ++
+        PredicateCompleter.getPredicateCompletions() ++
         getTypeCompletions() ++
         getEffectCompletions()
     }
@@ -226,7 +226,7 @@ object CompletionProvider {
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
-      getFieldCompletions() ++
+      FieldCompleter.getFieldCompletions() ++
       getOpCompletions() ++
       getMatchCompletitions()
   }
@@ -614,59 +614,6 @@ object CompletionProvider {
       documentation = None,
       insertTextFormat = InsertTextFormat.Snippet,
       kind = CompletionItemKind.Snippet)
-  }
-
-  /**
-    * Returns a list of completion for predicates
-    */
-  private def getPredicateCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    index.predDefs.m.concat(index.predUses.m).foldLeft[List[CompletionItem]](Nil)({
-      case (acc, (pred, locs)) => {
-        val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
-        val name = pred.name
-        CompletionItem(label = name,
-          sortText = priority(name),
-          textEdit = TextEdit(context.range, name),
-          documentation = None,
-          insertTextFormat = InsertTextFormat.PlainText,
-          kind = CompletionItemKind.Variable) :: acc
-      }
-    })
-  }
-
-  /**
-    * Gets completions for record fields
-    */
-  private def getFieldCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    // Do not get field completions if we are importing or using.
-    if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
-      return Nil
-    }
-
-    val regex = raw"(.*)[.].*".r
-
-    context.word match {
-      case regex(prefix) => {
-        index.fieldDefs.m.concat(index.fieldUses.m)
-          .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
-          .foldLeft[List[CompletionItem]](Nil) {
-            case (acc, (field, locs)) => {
-              val name = s"$prefix.${field.name}"
-              CompletionItem(label = name,
-                sortText = Priority.high(name),
-                textEdit = TextEdit(context.range, name),
-                documentation = None,
-                insertTextFormat = InsertTextFormat.PlainText,
-                kind = CompletionItemKind.Variable) :: acc
-            }
-          }
-      }
-      case _ => Nil
-    }
   }
 
   /**

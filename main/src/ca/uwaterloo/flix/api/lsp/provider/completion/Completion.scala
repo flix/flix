@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.KeywordCompletion
 
 /**
   * A common super-type for auto-completions.
@@ -29,6 +28,10 @@ sealed trait Completion {
   def toCompletionItem: CompletionItem = this match {
     case Completion.KeywordCompletion(name, context) =>
       CompletionItem(label = name, sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Keyword)
+    case Completion.FieldCompletion(name, context) =>
+      CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, s"$name "), kind = CompletionItemKind.Field)
+    case Completion.PredicateCompletion(name, priority, context) =>
+      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name), kind = CompletionItemKind.Variable) // Variable?
     case Completion.EnumTypeCompletion(context) => ??? // TODO
   }
 }
@@ -41,6 +44,22 @@ object Completion {
     * @param name the name of the keyword.
     */
   case class KeywordCompletion(name: String, context: CompletionContext) extends Completion
+
+  /**
+    * Represents a field completion.
+    *
+    * @param name the name of the field.
+    */
+  case class FieldCompletion(name: String, context: CompletionContext) extends Completion
+
+
+  /**
+    * Represents a predicate completion.
+    *
+    * @param name the name of the predicate
+    * @param priority the priority of the predicate
+    */
+  case class PredicateCompletion(name: String, priority: String, context: CompletionContext) extends Completion
 
   // TODO:
   case class EnumTypeCompletion(/* stuff goes here, */ context: CompletionContext) extends Completion
