@@ -894,11 +894,6 @@ object Safety {
     case Pattern.Cst(cst, tpe, loc) => Pattern.Cst(cst, tpe, loc).toSuccess
     case Pattern.Tag(sym, pat, tpe, loc) => mapN(visitPat(pat, l))(Pattern.Tag(sym, _, tpe, loc))
     case Pattern.Tuple(elms, tpe, loc) => mapN(visitPats(elms, l))(Pattern.Tuple(_, tpe, loc))
-    case Pattern.Array(elms, tpe, loc) => mapN(visitPats(elms, l))(Pattern.Array(_, tpe, loc))
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      mapN(visitPats(elms, l))(Pattern.ArrayTailSpread(_, sym, tpe, loc))
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      mapN(visitPats(elms, l))(Pattern.ArrayHeadSpread(sym, _, tpe, loc))
   }
 
   /**

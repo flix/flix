@@ -1102,24 +1102,6 @@ object Namer {
 
     case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visitPattern, loc)
 
-    case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visitPattern, loc)
-
-    case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-      case None =>
-        val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
-        NamedAst.Pattern.ArrayTailSpread(elms map visitPattern, sym, loc)
-      case Some(id) =>
-        val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
-        NamedAst.Pattern.ArrayTailSpread(elms map visitPattern, sym, loc)
-    }
-    case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-      case None =>
-        val sym = Symbol.freshVarSym("_", BoundBy.Pattern, loc)
-        NamedAst.Pattern.ArrayTailSpread(elms map visitPattern, sym, loc)
-      case Some(id) =>
-        val sym = Symbol.freshVarSym(id, BoundBy.Pattern)
-        NamedAst.Pattern.ArrayHeadSpread(sym, elms map visitPattern, loc)
-    }
   }
 
   /**
@@ -1399,19 +1381,6 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-    case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
-    case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) =>
-      val freeElms = elms flatMap freeVars
-      ident match {
-        case None => freeElms
-        case Some(value) => freeElms.appended(value)
-      }
-    case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) =>
-      val freeElms = elms flatMap freeVars
-      ident match {
-        case None => freeElms
-        case Some(value) => freeElms.appended(value)
-      }
   }
 
   /**
