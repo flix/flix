@@ -134,62 +134,6 @@ object ErasedAst {
 
     case class Spawn(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class BoxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Boolean.TYPE)
-    }
-
-    case class BoxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Byte.TYPE)
-    }
-
-    case class BoxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Short.TYPE)
-    }
-
-    case class BoxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Integer.TYPE)
-    }
-
-    case class BoxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Long.TYPE)
-    }
-
-    case class BoxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Character.TYPE)
-    }
-
-    case class BoxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Float.TYPE)
-    }
-
-    case class BoxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Double.TYPE)
-    }
-
-    case class UnboxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Bool
-    }
-
-    case class UnboxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int8
-    }
-
-    case class UnboxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int16
-    }
-
-    case class UnboxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int32
-    }
-
-    case class UnboxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int64
-    }
-
-    case class UnboxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Char
-    }
-
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -215,6 +159,34 @@ object ErasedAst {
     case object Lazy extends IntrinsicOperator1
 
     case object Force extends IntrinsicOperator1
+
+    case object BoxBool extends IntrinsicOperator1
+
+    case object BoxInt8 extends IntrinsicOperator1
+
+    case object BoxInt16 extends IntrinsicOperator1
+
+    case object BoxInt32 extends IntrinsicOperator1
+
+    case object BoxInt64 extends IntrinsicOperator1
+
+    case object BoxChar extends IntrinsicOperator1
+
+    case object BoxFloat32 extends IntrinsicOperator1
+
+    case object BoxFloat64 extends IntrinsicOperator1
+
+    case object UnboxBool extends IntrinsicOperator1
+
+    case object UnboxInt8 extends IntrinsicOperator1
+
+    case object UnboxInt16 extends IntrinsicOperator1
+
+    case object UnboxInt32 extends IntrinsicOperator1
+
+    case object UnboxInt64 extends IntrinsicOperator1
+
+    case object UnboxChar extends IntrinsicOperator1
 
     case object UnboxFloat32 extends IntrinsicOperator1
 

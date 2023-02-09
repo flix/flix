@@ -630,34 +630,6 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
-
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
       case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
@@ -973,34 +945,6 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
-
       case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
 
       case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
@@ -1206,34 +1150,6 @@ object JvmOps {
       case obj: Expression.NewObject => Set(obj)
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
