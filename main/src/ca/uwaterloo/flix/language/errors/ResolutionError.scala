@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, UnkindedType}
-import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.util.Formatter
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -35,8 +34,6 @@ sealed trait ResolutionError extends CompilationMessage {
 }
 
 object ResolutionError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * Ambiguous Tag Error.

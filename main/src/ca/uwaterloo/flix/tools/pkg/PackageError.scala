@@ -30,4 +30,6 @@ object PackageError {
 
   case class DownloadError(msg: String) extends PackageError
 
+  case class CoursierError(msg: String) extends PackageError
+
 }

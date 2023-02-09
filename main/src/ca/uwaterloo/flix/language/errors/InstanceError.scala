@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatScheme, FormatType, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -30,7 +30,6 @@ sealed trait InstanceError extends CompilationMessage {
 }
 
 object InstanceError {
-  private implicit val audience: Audience = Audience.External
 
   /**
     * Error indicating that the types of two instances overlap.
