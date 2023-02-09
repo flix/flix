@@ -207,6 +207,31 @@ object ErasedAst {
     case class UnboxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe = MonoType.Float64
     }
+
+    case class Intrinsic0(op: ErasedAst.InstrinsicOp0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
+    case class Intrinsic1(op: ErasedAst.IntristricOp1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
+    case class Intrinsic2(op: ErasedAst.IntrinsicOp2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
+  }
+
+  sealed trait InstrinsicOp0
+
+  object InstrinsicOp0 {
+
+  }
+
+  sealed trait IntristricOp1
+
+  object IntristricOp1 {
+
+  }
+
+  sealed trait IntrinsicOp2
+
+  object IntrinsicOp2 {
+
   }
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)

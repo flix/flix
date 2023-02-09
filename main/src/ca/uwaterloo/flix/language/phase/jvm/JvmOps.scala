@@ -671,6 +671,12 @@ object JvmOps {
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat64(exp, _) => visitExp(exp)
+
+      case Expression.Intrinsic0(_, _, _) => Set.empty
+
+      case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
+
+      case Expression.Intrinsic2(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
     }
 
     // TODO: Look for closures in other places.
@@ -1022,6 +1028,13 @@ object JvmOps {
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat64(exp, _) => visitExp(exp)
+
+      case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
+
+      case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
+
+      case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
     }) ++ Set(exp0.tpe)
 
     // TODO: Magnus: Look for types in other places.
@@ -1263,6 +1276,13 @@ object JvmOps {
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat64(exp, _) => visitExp(exp)
+
+      case Expression.Intrinsic0(_, _, _) => Set.empty
+
+      case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
+
+      case Expression.Intrinsic2(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
     })
 
     // Visit every definition.

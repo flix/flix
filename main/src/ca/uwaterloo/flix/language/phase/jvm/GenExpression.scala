@@ -317,7 +317,7 @@ object GenExpression {
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name, 
+      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       visitor.visitLabel(afterTryBlock)
 
@@ -339,7 +339,7 @@ object GenExpression {
       // Compile the expression, putting a function implementing the Runnable interface on the stack
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-      
+
       // Compile the expression representing the region
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
@@ -916,7 +916,7 @@ object GenExpression {
 
       exp2 match {
         // The expression represents the `Static` region, just start a thread directly
-        case Expression.Region(_, _) => 
+        case Expression.Region(_, _) =>
 
           // Compile the expression, putting a function implementing the Runnable interface on the stack
           compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -934,7 +934,7 @@ object GenExpression {
             visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
           }
 
-        case _ => 
+        case _ =>
           // Compile the expression representing the region
           compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
           visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
@@ -1112,6 +1112,12 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+
+    case Expression.Intrinsic0(op, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
+
+    case Expression.Intrinsic1(op, exp, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
+
+    case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
 
   }
 
