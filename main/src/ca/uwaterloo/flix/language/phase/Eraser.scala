@@ -237,7 +237,8 @@ object Eraser {
       ErasedAst.Expression.HoleError(sym, tpe, loc)
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
-      ErasedAst.Expression.MatchError(tpe, loc)
+      val op = ErasedAst.InstrinsicOp0.MatchError
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
   }
 
 }

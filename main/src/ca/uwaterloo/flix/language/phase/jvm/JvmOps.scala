@@ -638,8 +638,6 @@ object JvmOps {
 
       case Expression.HoleError(_, _, _) => Set.empty
 
-      case Expression.MatchError(_, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -669,8 +667,6 @@ object JvmOps {
       case Expression.UnboxChar(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
@@ -995,8 +991,6 @@ object JvmOps {
 
       case Expression.HoleError(_, _, _) => Set.empty
 
-      case Expression.MatchError(_, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -1026,8 +1020,6 @@ object JvmOps {
       case Expression.UnboxChar(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
 
@@ -1243,8 +1235,6 @@ object JvmOps {
 
       case Expression.HoleError(_, _, _) => Set.empty
 
-      case Expression.MatchError(_, _) => Set.empty
-
       case Expression.BoxBool(exp, _) => visitExp(exp)
 
       case Expression.BoxInt8(exp, _) => visitExp(exp)
@@ -1274,8 +1264,6 @@ object JvmOps {
       case Expression.UnboxChar(exp, _) => visitExp(exp)
 
       case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 

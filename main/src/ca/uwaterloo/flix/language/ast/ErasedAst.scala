@@ -142,7 +142,6 @@ object ErasedAst {
 
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class MatchError(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class BoxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
       final val tpe = MonoType.Native(java.lang.Boolean.TYPE)
@@ -204,9 +203,7 @@ object ErasedAst {
       final val tpe = MonoType.Float32
     }
 
-    case class UnboxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Float64
-    }
+
 
     case class Intrinsic0(op: ErasedAst.InstrinsicOp0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
@@ -220,11 +217,15 @@ object ErasedAst {
 
   object InstrinsicOp0 {
 
+    case object MatchError extends InstrinsicOp0
+
   }
 
   sealed trait IntristricOp1
 
   object IntristricOp1 {
+
+    case object UnboxFloat64 extends IntristricOp1
 
   }
 

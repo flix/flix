@@ -1008,10 +1008,6 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
-    case Expression.MatchError(_, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
-
     case Expression.BoxBool(exp, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1106,16 +1102,21 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
 
+    case Expression.Intrinsic0(op, tpe, loc) => op match {
+      case InstrinsicOp0.MatchError =>
+        addSourceLine(visitor, loc)
+        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
+    }
 
-    case Expression.UnboxFloat64(exp, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+    case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
 
-    case Expression.Intrinsic0(op, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
+      case IntristricOp1.UnboxFloat64 =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
+        visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
 
-    case Expression.Intrinsic1(op, exp, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
+    }
 
     case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => throw InternalCompilerException(s"Unknown intrinsic: $op", loc)
 
