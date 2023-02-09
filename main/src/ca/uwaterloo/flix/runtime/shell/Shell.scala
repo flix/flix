@@ -33,11 +33,6 @@ import scala.collection.mutable
 class Shell(sourceProvider: SourceProvider, options: Options) {
 
   /**
-    * The audience is always external.
-    */
-  private implicit val audience: Audience = Audience.External
-
-  /**
     * The mutable list of source code fragments.
     */
   private val fragments = mutable.Stack.empty[String]

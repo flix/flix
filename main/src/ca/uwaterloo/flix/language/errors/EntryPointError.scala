@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 sealed trait EntryPointError extends CompilationMessage {
@@ -26,8 +26,6 @@ sealed trait EntryPointError extends CompilationMessage {
 }
 
 object EntryPointError {
-
-  private implicit val audience: Audience = Audience.External
 
   /**
     * Error indicating one or more arguments to an entry point function.
