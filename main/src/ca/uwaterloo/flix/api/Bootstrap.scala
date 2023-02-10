@@ -32,7 +32,7 @@ object Bootstrap {
   def main(args: Array[String]): Unit = {
     // TODO: Do ad-hoc testing here.
     val b = new Bootstrap
-    b.bootstrap("path-to-flix-project")
+    b.bootstrap(".")
   }
 
 }
@@ -46,6 +46,7 @@ class Bootstrap {
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
     val tomlPath = Paths.get(path).resolve("flix.toml")
+    println(tomlPath)
     if (Files.exists(tomlPath)) {
       projectMode(tomlPath)
     } else {
@@ -56,39 +57,45 @@ class Bootstrap {
   private def projectMode(tomlPath: Path): List[Path] = { // TODO: Probably return Result or Validation
     // 1. Read, parse, and validate flix.toml.
     val manifest = ManifestParser.parse(tomlPath) match {
-      case Ok(m) => m
+      case Ok(m) => println(m); m
       case Err(_) => ??? //TODO: error handling
     }
 
     // 2. Check each dependency is available or download it.
     FlixPackageManager.installAll(manifest, Paths.get(""))(System.out)
-    MavenPackageManager.installDeps(manifest)(System.out)
+    MavenPackageManager.installAll(manifest)(System.out)
 
     // 3. Compute the set of JAR paths and Flix fpkg paths.
     val filesFlix = manifest.getFlixPackages //TODO: implement
     val filesMaven = manifest.getMavenPackages //TODO: implement
 
     // 4. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = createPathList("", "flix")
-    val filesSrc = createPathListRec("/src", "flix")
-    val filesTest = createPathListRec("/test", "flix")
+    val p = Paths.get(".")
+    val filesHere = createPathList(p, "flix")
+    val filesSrc = createPathListRec(p.resolve("src"), "flix")
+    val filesTest = createPathListRec(p.resolve("test"), "flix")
 
-    filesFlix ++ filesMaven ++ filesHere ++ filesSrc ++ filesTest
+    val res = filesFlix ++ filesMaven ++ filesHere ++ filesSrc ++ filesTest
+    println(res)
+    res
   }
 
   private def folderMode(): List[Path] = { // TODO: Probably return Result or Validation
     // 1. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = createPathList("", "flix")
-    val filesSrc = createPathListRec("/src", "flix")
-    val filesTest = createPathListRec("/test", "flix")
+    val p = Paths.get(".")
+    val filesHere = createPathList(p, "flix")
+    val filesSrc = createPathListRec(p.resolve("src"), "flix")
+    val filesTest = createPathListRec(p.resolve("test"), "flix")
 
     // 2. Grab all jars in lib/
-    val jarFilesLib = createPathList("/lib", "jar")
+    val jarFilesLib = createPathListRec(p.resolve("lib"), "jar")
 
     // 3. Grab all flix packages in lib/
-    val flixFilesLib = createPathList("/lib", "fpkg")
+    val flixFilesLib = createPathListRec(p.resolve("lib"), "fpkg")
 
-    filesHere ++ filesSrc ++ filesTest ++ jarFilesLib ++ flixFilesLib
+    val res = filesHere ++ filesSrc ++ filesTest ++ jarFilesLib ++ flixFilesLib
+    println(res)
+    res
   }
 
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
@@ -110,25 +117,34 @@ class Bootstrap {
 
   }
 
-  private def createPathList(pathName: String, ext: String): List[Path] = {
-    val files = new File(pathName).listFiles.toList
-    files.filter(file =>
-      if (file.isFile) {
-        val i = file.toString.lastIndexOf('.')
-        val extension = if (i > 0) file.toString.substring(i + 1) else ""
-        println(extension)
-        extension == s".$ext"
-      } else {
-        false
-      }
-    ).map(file => file.toPath)
+  private def createPathList(path: Path, ext: String): List[Path] = {
+    val file = path.toFile
+    val files = file.listFiles()
+    if(files == null) {
+      List.empty
+    } else {
+      files.toList.filter(file =>
+        if (file.isFile) {
+          val i = file.toString.lastIndexOf('.')
+          val extension = if (i > 0) file.toString.substring(i + 1) else ""
+          extension == ext
+        } else {
+          false
+        }
+      ).map(file => file.toPath)
+    }
   }
 
-  private def createPathListRec(pathName: String, ext: String): List[Path] = {
-    val filesHere = createPathList(pathName, ext)
-    val dirs = new File(pathName).listFiles.toList.filter(file => file.isDirectory)
-    val filesRec = dirs.foldLeft[List[Path]](List.empty)((l, f) => l ++ createPathListRec(f.getPath, ext))
-    filesHere ++ filesRec
+  private def createPathListRec(path: Path, ext: String): List[Path] = {
+    val filesHere = createPathList(path, ext)
+    val dirs = path.toFile.listFiles()
+    if(dirs == null) {
+      List.empty
+    } else {
+      dirs.toList.filter(file => file.isDirectory)
+      val filesRec = dirs.foldLeft[List[Path]](List.empty)((l, f) => l ++ createPathListRec(f.toPath, ext))
+      filesHere ++ filesRec
+    }
   }
 
 
