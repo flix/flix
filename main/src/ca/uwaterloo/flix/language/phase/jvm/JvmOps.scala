@@ -578,19 +578,9 @@ object JvmOps {
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
@@ -613,18 +603,6 @@ object JvmOps {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 
-      case Expression.GetField(_, exp, _, _) =>
-        visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) =>
-        Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) =>
-        visitExp(exp)
-
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
@@ -632,45 +610,14 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic0(_, _, _) => Set.empty
 
-      case Expression.Force(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
 
-      case Expression.HoleError(_, _, _) => Set.empty
+      case Expression.Intrinsic2(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.MatchError(_, _) => Set.empty
+      case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
     }
 
     // TODO: Look for closures in other places.
@@ -931,19 +878,9 @@ object JvmOps {
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
@@ -964,14 +901,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.GetField(_, exp, _, _) => visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) => Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
-
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
@@ -983,45 +912,14 @@ object JvmOps {
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
 
-      case Expression.Force(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
 
-      case Expression.HoleError(_, _, _) => Set.empty
+      case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.MatchError(_, _) => Set.empty
+      case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
     }) ++ Set(exp0.tpe)
 
     // TODO: Magnus: Look for types in other places.
@@ -1179,19 +1077,9 @@ object JvmOps {
 
       case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.ArrayStore(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.Ref(exp, _, _) => visitExp(exp)
-
-      case Expression.Deref(exp, _, _) => visitExp(exp)
-
-      case Expression.Assign(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
@@ -1212,57 +1100,18 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.GetField(_, exp, _, _) => visitExp(exp)
-
-      case Expression.PutField(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.GetStaticField(_, _, _) => Set.empty
-
-      case Expression.PutStaticField(_, exp, _, _) => visitExp(exp)
-
       case obj: Expression.NewObject => Set(obj)
 
       case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Lazy(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic0(_, _, _) => Set.empty
 
-      case Expression.Force(exp, _, _) => visitExp(exp)
+      case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
 
-      case Expression.HoleError(_, _, _) => Set.empty
+      case Expression.Intrinsic2(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.MatchError(_, _) => Set.empty
+      case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.BoxBool(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt8(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt16(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt32(exp, _) => visitExp(exp)
-
-      case Expression.BoxInt64(exp, _) => visitExp(exp)
-
-      case Expression.BoxChar(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.BoxFloat64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxBool(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt8(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt16(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxInt64(exp, _) => visitExp(exp)
-
-      case Expression.UnboxChar(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat32(exp, _) => visitExp(exp)
-
-      case Expression.UnboxFloat64(exp, _) => visitExp(exp)
     })
 
     // Visit every definition.
