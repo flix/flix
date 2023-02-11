@@ -54,33 +54,33 @@ namespace Test/Exp/Concurrency/Spawn {
     @test
     def testSpawn18(): Unit \ IO = region r { spawn spawn spawn 123 @ r @ r @ r }
 
-    @test
-    def testExceptionsInChildThread01(): Bool \ IO =
-        try {
-            region r {
-                spawn {
-                    spawn { String.concat(unsafe_cast null as String, "foo") } @ r
-                } @ r;
-                Thread.sleep(Time/Duration.fromSeconds(1));
-                false
-            }
-        } catch {
-            case _: ##java.lang.NullPointerException => true
-        }
+    // Exception re-throwing currently disabled
+    //! @test
+    //! def testExceptionsInChildThread01(): Bool \ IO =
+    //!     try {
+    //!         region r {
+    //!             spawn {
+    //!                 spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+    //!             } @ r;
+    //!             Thread.sleep(Time/Duration.fromSeconds(1));
+    //!             false
+    //!         }
+    //!     } catch {
+    //!         case _: ##java.lang.NullPointerException => true
+    //!     }
 
-
-    @test
-    def testExceptionsInChildThread02(): Bool \ IO = region r {
-        spawn {
-            spawn {
-                try {
-                    String.concat(unsafe_cast null as String, "foo")
-                } catch {
-                    case _: ##java.lang.NullPointerException => ""
-                }
-            } @ r
-        } @ r;
-        Thread.sleep(Time/Duration.fromSeconds(1));
-        true
-    }
+    //! @test
+    //! def testExceptionsInChildThread02(): Bool \ IO = region r {
+    //!     spawn {
+    //!         spawn {
+    //!             try {
+    //!                 String.concat(unsafe_cast null as String, "foo")
+    //!             } catch {
+    //!                 case _: ##java.lang.NullPointerException => ""
+    //!             }
+    //!         } @ r
+    //!     } @ r;
+    //!     Thread.sleep(Time/Duration.fromSeconds(1));
+    //!     true
+    //! }
 }

@@ -53,59 +53,60 @@ class TestFlixErrors extends FunSuite with TestUtils {
     expectRuntimeError(result, "HoleError")
   }
 
-  test("SpawnedThreadError.01") {
-     val input = 
-      """
-        |def main(): Unit \ IO = region r {
-        |    spawn { bug!("Something bad happened") } @ r;
-        |    Thread.sleep(Time/Duration.fromSeconds(1))
-        |}
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
-  }
+  // Exception re-throwing currently disabled
+  //! test("SpawnedThreadError.01") {
+  //!    val input = 
+  //!     """
+  //!       |def main(): Unit \ IO = region r {
+  //!       |    spawn { bug!("Something bad happened") } @ r;
+  //!       |    Thread.sleep(Time/Duration.fromSeconds(1))
+  //!       |}
+  //!     """.stripMargin
+  //!   val result = compile(input, Options.DefaultTest)
+  //!   expectRuntimeError(result, "HoleError")
+  //! }
 
-  test("SpawnedThreadError.02") {
-     val input = 
-      """
-        |def main(): Unit \ IO = region r {
-        |    spawn { 
-        |        spawn { bug!("Something bad happened")  } @ r
-        |    } @ r;
-        |    Thread.sleep(Time/Duration.fromSeconds(1))
-        |}
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
-  }
+  //! test("SpawnedThreadError.02") {
+  //!    val input = 
+  //!     """
+  //!       |def main(): Unit \ IO = region r {
+  //!       |    spawn { 
+  //!       |        spawn { bug!("Something bad happened")  } @ r
+  //!       |    } @ r;
+  //!       |    Thread.sleep(Time/Duration.fromSeconds(1))
+  //!       |}
+  //!     """.stripMargin
+  //!   val result = compile(input, Options.DefaultTest)
+  //!   expectRuntimeError(result, "HoleError")
+  //! }
 
-  test("SpawnedThreadError.03") {
-     val input = 
-      """
-        |def main(): Unit \ IO = region r {
-        |    spawn { 
-        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
-        |    } @ r;
-        |    Thread.sleep(Time/Duration.fromSeconds(1))
-        |}
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "NullPointerException")
-  }
+  //! test("SpawnedThreadError.03") {
+  //!    val input = 
+  //!     """
+  //!       |def main(): Unit \ IO = region r {
+  //!       |    spawn { 
+  //!       |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+  //!       |    } @ r;
+  //!       |    Thread.sleep(Time/Duration.fromSeconds(1))
+  //!       |}
+  //!     """.stripMargin
+  //!   val result = compile(input, Options.DefaultTest)
+  //!   expectRuntimeError(result, "NullPointerException")
+  //! }
 
-  test("SpawnedThreadError.04") {
-     val input = 
-      """
-        |def main(): Unit \ IO = region r {
-        |    let (_tx, rx) = Channel.unbuffered(r);
-        |    spawn { 
-        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
-        |    } @ r;
-        |    discard Channel.recv(rx)
-        |}
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "NullPointerException")
-  }
+  //! test("SpawnedThreadError.04") {
+  //!    val input = 
+  //!     """
+  //!       |def main(): Unit \ IO = region r {
+  //!       |    let (_tx, rx) = Channel.unbuffered(r);
+  //!       |    spawn { 
+  //!       |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+  //!       |    } @ r;
+  //!       |    discard Channel.recv(rx)
+  //!       |}
+  //!     """.stripMargin
+  //!   val result = compile(input, Options.DefaultTest)
+  //!   expectRuntimeError(result, "NullPointerException")
+  //! }
 
 }

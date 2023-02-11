@@ -68,6 +68,8 @@ sealed trait BackendObjType {
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
+    case BackendObjType.Throwable => JvmName(JavaLang, "Throwable")
+    case BackendObjType.System => JvmName(JavaLang, "System")
   }
 
   /**
@@ -993,22 +995,23 @@ object BackendObjType {
     ))
   }
 
+  // Commented out code (marked with //!) implements exception re-throwing (currently disabled)
   case object Region extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal)
 
       cm.mkField(ThreadsField)
-      cm.mkField(RegionThreadField)
-      cm.mkField(ChildExceptionField)
+      //! cm.mkField(RegionThreadField)
+      //! cm.mkField(ChildExceptionField)
       cm.mkField(OnExitField)
 
       cm.mkConstructor(Constructor)
 
       cm.mkMethod(SpawnMethod)
       cm.mkMethod(ExitMethod)
-      cm.mkMethod(ReportChildExceptionMethod)
-      cm.mkMethod(ReThrowChildExceptionMethod)
+      //! cm.mkMethod(ReportChildExceptionMethod)
+      //! cm.mkMethod(ReThrowChildExceptionMethod)
       cm.mkMethod(RunOnExitMethod)
 
       cm.closeClassMaker()
@@ -1021,20 +1024,20 @@ object BackendObjType {
     def OnExitField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "onExit", BackendObjType.LinkedList.toTpe)
 
     // private final Thread regionThread = Thread.currentThread();
-    def RegionThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "regionThread", JvmName.Thread.toTpe)
+    //! def RegionThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "regionThread", JvmName.Thread.toTpe)
 
     // private volatile Throwable childException = null;
-    def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
+    //! def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
-      thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
-      PUTFIELD(RegionThreadField) ~
-      thisLoad() ~ ACONST_NULL() ~
-      PUTFIELD(ChildExceptionField) ~
+      //! thisLoad() ~ INVOKESTATIC(Thread.CurrentThreadMethod) ~
+      //! PUTFIELD(RegionThreadField) ~
+      //! thisLoad() ~ ACONST_NULL() ~
+      //! PUTFIELD(ChildExceptionField) ~
       thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(OnExitField) ~
@@ -1104,26 +1107,26 @@ object BackendObjType {
     //   childException = e;
     //   regionThread.interrupt();
     // }
-    def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
-      thisLoad() ~ ALOAD(1) ~ 
-      PUTFIELD(ChildExceptionField) ~
-      thisLoad() ~ GETFIELD(RegionThreadField) ~ 
-      INVOKEVIRTUAL(Thread.InterruptMethod) ~
-      RETURN()
-    ))
+    //! def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
+    //!   thisLoad() ~ ALOAD(1) ~ 
+    //!   PUTFIELD(ChildExceptionField) ~
+    //!   thisLoad() ~ GETFIELD(RegionThreadField) ~ 
+    //!   INVOKEVIRTUAL(Thread.InterruptMethod) ~
+    //!   RETURN()
+    //! ))
 
     // final public void reThrowChildException() throws Throwable {
     //   if (childException != null)
     //     throw childException;
     // }
-    def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
-      thisLoad() ~ GETFIELD(ChildExceptionField) ~
-      ifTrue(Condition.NONNULL) {
-        thisLoad() ~ GETFIELD(ChildExceptionField) ~
-        ATHROW()
-      } ~
-      RETURN()
-    ))
+    //! def ReThrowChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reThrowChildException", MethodDescriptor.NothingToVoid, Some(
+    //!   thisLoad() ~ GETFIELD(ChildExceptionField) ~
+    //!   ifTrue(Condition.NONNULL) {
+    //!     thisLoad() ~ GETFIELD(ChildExceptionField) ~
+    //!     ATHROW()
+    //!   } ~
+    //!   RETURN()
+    //! ))
 
     // final public void runOnExit(Runnable r) {
     //   onExit.addFirst(r);
@@ -1135,32 +1138,46 @@ object BackendObjType {
     ))
   }
 
+  // UncaughtExceptionHandler
+  //
+  // This code treats any unhandled exception as a fatal error: it prints the exceptiona and exits the JVM
+  //
+  // Commented out code (marked with //!) implements an alternative approach in which the exception is
+  // re-thrown in the "parent" thread (the thread in which the region associated with this thread was created)
   case object UncaughtExceptionHandler extends BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, interfaces = List(ThreadUncaughtExceptionHandler.jvmName))
 
-      cm.mkField(RegionField)
+      //! cm.mkField(RegionField)
       cm.mkConstructor(Constructor)
       cm.mkMethod(UncaughtExceptionMethod)
 
       cm.closeClassMaker()
     }
 
-    // private final Region r;
-    def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
+    //! // private final Region r;
+    //! def RegionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "r", BackendObjType.Region.toTpe)
 
-    // UncaughtExceptionHandler(Region r) { this.r = r; }
+    // UncaughtExceptionHandler(Region r) { 
+    //! //  this.r = r; 
+    // }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
       thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
-      thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
+      //! thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
       RETURN()
     ))
 
-    // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
+    // public void uncaughtException(Thread t, Throwable e) { 
+    //! //   r.reportChildException(e); 
+    //   e.printStackTrace();
+    //   System.exit(1);
+    // }
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
-      thisLoad() ~ GETFIELD(RegionField) ~ 
-      ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      //! thisLoad() ~ GETFIELD(RegionField) ~ 
+      //! ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
+      ALOAD(2) ~ INVOKEVIRTUAL(Throwable.PrintStackTraceMethod) ~
+      ICONST_1() ~ INVOKESTATIC(System.ExitMethod) ~
       RETURN()
     ))
   }
@@ -1335,5 +1352,17 @@ object BackendObjType {
 
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "uncaughtException",
       mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
+  }
+
+  case object Throwable extends BackendObjType {
+
+    def PrintStackTraceMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "printStackTrace",
+      MethodDescriptor.NothingToVoid, None)
+  }
+
+  case object System extends BackendObjType {
+
+    def ExitMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "exit",
+      mkDescriptor(BackendType.Int32)(VoidableType.Void), None)
   }
 }

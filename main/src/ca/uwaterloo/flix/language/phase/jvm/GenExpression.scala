@@ -287,19 +287,19 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Introduce a label for before the try block.
-      val beforeTryBlock = new Label()
+      //! val beforeTryBlock = new Label()
 
       // Introduce a label for after the try block.
-      val afterTryBlock = new Label()
+      //! val afterTryBlock = new Label()
 
       // Introduce a label for the finally block.
-      val finallyBlock = new Label()
+      //! val finallyBlock = new Label()
 
       // Introduce a label after the finally block.
-      val afterFinally = new Label()
+      //! val afterFinally = new Label()
 
-      // Emit try finally block.
-      visitor.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
+      // Emit try finally block (currently disabled)
+      //! visitor.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // Create an instance of Region
       visitor.visitTypeInsn(NEW, BackendObjType.Region.jvmName.toInternalName)
@@ -311,7 +311,7 @@ object GenExpression {
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
 
       // Compile the scope body
-      visitor.visitLabel(beforeTryBlock)
+      //! visitor.visitLabel(beforeTryBlock)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // When we exit the scope, call the region's `exit` method
@@ -319,21 +319,21 @@ object GenExpression {
       visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
       visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
-      visitor.visitLabel(afterTryBlock)
+      //! visitor.visitLabel(afterTryBlock)
 
-      // Compile the finally block which gets called if no exception is thrown
-      visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
-      visitor.visitJumpInsn(GOTO, afterFinally)
+      // Compile the finally block which gets called if no exception is thrown (currently disabled)
+      //! visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      //! visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
+      //!   BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
+      //! visitor.visitJumpInsn(GOTO, afterFinally)
 
-      // Compile the finally block which gets called if an exception is thrown
-      visitor.visitLabel(finallyBlock)
-      visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
-        BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
-      visitor.visitInsn(ATHROW)
-      visitor.visitLabel(afterFinally)
+      // Compile the finally block which gets called if an exception is thrown (currently disabled)
+      //! visitor.visitLabel(finallyBlock)
+      //! visitor.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      //! visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
+      //!   BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
+      //! visitor.visitInsn(ATHROW)
+      //! visitor.visitLabel(afterFinally)
 
     case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
       // Compile the expression, putting a function implementing the Runnable interface on the stack
