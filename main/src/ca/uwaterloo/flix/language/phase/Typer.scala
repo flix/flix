@@ -559,13 +559,13 @@ object Typer {
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
         for {
           (constrs, bodyType, bodyPur, bodyEff) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc), loc)
+          resultTyp = Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc)
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
@@ -2029,10 +2029,10 @@ object Typer {
         val es = exps.map(visitExp(_, subst0))
         TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
-      case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp, subst0)
-        val t = subst0(tvar)
+        val t = Type.mkArrowWithEffect(p.tpe, e.pur, e.eff, e.tpe, loc)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) =>
