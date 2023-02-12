@@ -47,7 +47,7 @@ object Summary {
     * Returns `true` if the given module `mod` should be printed.
     */
   private def include(mod: String, lines: Int): Boolean =
-    !mod.contains("/") && lines > 700
+    lines >= 125
 
   def printSummary(v: Validation[Root, CompilationMessage]): Unit = mapN(v) {
     case root =>
@@ -130,9 +130,9 @@ object Summary {
     * Returns the [[Spec]] of all instance functions in the given `source`.
     */
   private def getInstanceFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
-    root.instances.collect {
-      case (sym, instances) if sym.loc.source == source => instances.flatMap(_.defs).map(_.spec)
-    }.flatten
+    root.instances.values.flatMap {
+      case instances => instances.filter(_.loc.source == source).flatMap(_.defs).map(_.spec)
+    }
 
   /**
     * Formats the given number `n`.
