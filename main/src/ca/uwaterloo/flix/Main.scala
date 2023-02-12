@@ -114,6 +114,7 @@ object Main {
       xprintasts = cmdOpts.xprintasts,
       xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
+      xsummary = cmdOpts.xsummary
     )
 
     // Don't use progress bar if benchmarking.
@@ -242,6 +243,7 @@ object Main {
                      xprintasts: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
+                     xsummary: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -464,6 +466,10 @@ object Main {
       // Xno-qmc
       opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
         text("[experimental] disables Quine McCluskey when using BDDs.")
+
+      // Xsummary
+      opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
+        text("[experimental] prints a summary of the compiled modules.")
 
       note("")
 
