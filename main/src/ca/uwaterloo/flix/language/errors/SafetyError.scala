@@ -579,30 +579,30 @@ object SafetyError {
   /**
     * Unable to derive Sendable error
     *
-    * @param sym the enum for which we're trying to derive Sendable
+    * @param tpe the type that is not sendable.
     * @param loc the location where the error occurred.
     */
   case class SendableError(tpe: Type, loc: SourceLocation) extends SafetyError {
-    def summary: String = s"Cannot derive Sendable for ${tpe}"
+    def summary: String = s"Cannot derive Sendable for $tpe"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        |>> Cannot derive 'Sendable' for type ${red(tpe.toString)}
-        |
-        |Because it takes a type parameter of kind 'Region'.
-        |
-        |${code(loc, "unable to derive Sendable.")}
-        |
-        |""".stripMargin
+         |>> Cannot derive 'Sendable' for type ${red(tpe.toString)}
+         |
+         |Because it takes a type parameter of kind 'Region'.
+         |
+         |${code(loc, "unable to derive Sendable.")}
+         |
+         |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""
-        |An example of a type parameter of kind 'Region':
-        |
-        |enum MyEnum[r: Region] { ... }
-        |""".stripMargin
+         |An example of a type parameter of kind 'Region':
+         |
+         |enum MyEnum[r: Region] { ... }
+         |""".stripMargin
     )
   }
 }

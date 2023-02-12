@@ -889,9 +889,6 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
-    case Pattern.Array(elms, _, _) => visitPats(elms)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
   }
 
   /**
@@ -1067,15 +1064,6 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.Array(elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
   }

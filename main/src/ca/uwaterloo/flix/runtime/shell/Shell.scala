@@ -33,11 +33,6 @@ import scala.collection.mutable
 class Shell(sourceProvider: SourceProvider, options: Options) {
 
   /**
-    * The audience is always external.
-    */
-  private implicit val audience: Audience = Audience.External
-
-  /**
     * The mutable list of source code fragments.
     */
   private val fragments = mutable.Stack.empty[String]
@@ -248,7 +243,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
     w.println("  :benchmark :bench           Runs the benchmarks for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
-    w.println("  :install     <owner>/<repo> Installs the Flix package from the given GitHub project")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()

@@ -1038,21 +1038,6 @@ object Kinder {
       mapN(elmsVal) {
         elms => KindedAst.Pattern.Tuple(elms, loc)
       }
-    case ResolvedAst.Pattern.Array(elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.Array(elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-    case ResolvedAst.Pattern.ArrayTailSpread(elms0, sym, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.ArrayTailSpread(elms, sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-    case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.ArrayHeadSpread(sym, elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
   }
 
   /**

@@ -242,12 +242,6 @@ object KindedAst {
 
     case class Tuple(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
 
-    case class Array(elms: List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[KindedAst.Pattern], sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
   }
 
   sealed trait RelationalChoicePattern {

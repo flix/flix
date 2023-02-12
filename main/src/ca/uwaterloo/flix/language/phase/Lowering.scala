@@ -885,21 +885,6 @@ object Lowering {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       LoweredAst.Pattern.Tuple(es, t, loc)
-
-    case TypedAst.Pattern.Array(elms, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.Array(es, t, loc)
-
-    case TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.ArrayTailSpread(es, sym, t, loc)
-
-    case TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.ArrayHeadSpread(sym, es, t, loc)
   }
 
   /**
@@ -1165,11 +1150,6 @@ object Lowering {
 
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Array(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayTailSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**

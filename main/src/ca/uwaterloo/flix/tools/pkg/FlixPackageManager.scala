@@ -34,18 +34,17 @@ object FlixPackageManager {
   /**
     * Installs all the Flix dependencies for a Manifest.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[String], PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
     val flixDeps = findFlixDependencies(manifest)
-    val installed: mutable.ListBuffer[String] = ListBuffer.empty
 
     for(dep <- flixDeps) {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, Some(dep.version), path) match {
-        case Ok(list) => installed.addAll(list)
+        case Ok(_) => //do nothing
         case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
       }
     }
-    Ok(installed.toList)
+    ().toOk
   }
 
   /**
@@ -55,7 +54,7 @@ object FlixPackageManager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[String], PackageError] = {
+  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
         (version match {
@@ -71,7 +70,6 @@ object FlixPackageManager {
             Files.createDirectories(assetFolder)
 
             // download each asset to the folder
-            val newDownloads: mutable.ListBuffer[String] = ListBuffer.empty
             for (asset <- assets) {
               val assetName = asset.name
               val path = assetFolder.resolve(assetName)
@@ -86,12 +84,11 @@ object FlixPackageManager {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
                 out.println(s"Installation of $assetName completed")
-                newDownloads.addOne(project + "/" + s"ver${release.version.toString}" + "/" + assetName)
               } else {
                 out.println(s"$assetName already exists")
               }
             }
-            Ok(newDownloads.toList)
+            ().toOk
         }
     }
   }

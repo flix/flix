@@ -295,6 +295,8 @@ object Safety {
         val expVal = visit(exp)
         mapN(expVal, check) {
           (e1, _) => Expression.Cast(e1, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+        } recoverOne {
+          case err: ImpossibleCast => Expression.Error(err, tpe, pur, eff)
         }
 
       case Expression.Mask(exp, tpe, pur, eff, loc) =>
@@ -306,6 +308,8 @@ object Safety {
         val expVal = visit(exp)
         mapN(expVal, check) {
           (e, _) => Expression.Upcast(e, tpe, loc)
+        } recoverOne {
+          case err: UnsafeUpcast => Expression.Error(err, tpe, exp.pur, exp.eff)
         }
 
       case Expression.Supercast(exp, tpe, loc) =>
@@ -379,6 +383,8 @@ object Safety {
         }
         mapN(methodsVal, objImpl) {
           (ms, _) => Expression.NewObject(name, clazz, tpe, pur, eff, ms, loc)
+        } recoverOne {
+          case err: SafetyError => Expression.Error(err, tpe, pur, eff)
         }
 
       case Expression.NewChannel(exp1, exp2, tpe, pur, eff, loc) =>
@@ -412,9 +418,9 @@ object Safety {
 
       case Expression.Par(exp, loc) =>
         // Only tuple expressions are allowed to be parallelized with `par`.
-        exp match {
-          case e: Expression.Tuple => mapN(visit(e))(Expression.Par(_, loc))
-          case _ => IllegalParExpression(exp, exp.loc).toFailure
+        flatMapN(visit(exp)) {
+          case e: Expression.Tuple => Expression.Par(e, loc).toSuccess
+          case e => e.toSoftFailure(IllegalParExpression(e, e.loc))
         }
 
       case Expression.ParYield(frags, exp, tpe, pur, eff, loc) =>
@@ -477,7 +483,7 @@ object Safety {
     *
     * No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
+  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): Validation[Expression, ImpossibleCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -623,7 +629,7 @@ object Safety {
   /**
     * Returns a list of errors if the the upcast is invalid.
     */
-  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): Validation[Expression, CompilationMessage] = {
+  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): Validation[Expression, UnsafeUpcast] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
     if (isSubtypeOf(tpe1, tpe2, renv, root))
@@ -894,11 +900,6 @@ object Safety {
     case Pattern.Cst(cst, tpe, loc) => Pattern.Cst(cst, tpe, loc).toSuccess
     case Pattern.Tag(sym, pat, tpe, loc) => mapN(visitPat(pat, l))(Pattern.Tag(sym, _, tpe, loc))
     case Pattern.Tuple(elms, tpe, loc) => mapN(visitPats(elms, l))(Pattern.Tuple(_, tpe, loc))
-    case Pattern.Array(elms, tpe, loc) => mapN(visitPats(elms, l))(Pattern.Array(_, tpe, loc))
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      mapN(visitPats(elms, l))(Pattern.ArrayTailSpread(_, sym, tpe, loc))
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      mapN(visitPats(elms, l))(Pattern.ArrayHeadSpread(sym, _, tpe, loc))
   }
 
   /**
@@ -996,7 +997,7 @@ object Safety {
   private def hasNonPrivateZeroArgConstructor(clazz: java.lang.Class[_]): Boolean = {
     try {
       val constructor = clazz.getDeclaredConstructor()
-      !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers())
+      !java.lang.reflect.Modifier.isPrivate(constructor.getModifiers)
     } catch {
       case _: NoSuchMethodException => false
     }

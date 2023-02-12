@@ -76,11 +76,6 @@ object Command {
   case object Test extends Command
 
   /**
-    * Installs the Flix package from the given GitHub owner/repo
-    */
-  case class Install(project: String) extends Command
-
-  /**
     * Terminates the shell.
     */
   case object Quit extends Command
@@ -188,15 +183,6 @@ object Command {
     //
     if (input == ":test" || input == ":t")
       return Command.Test
-
-    //
-    // Install
-    //
-    val installPattern = raw":install\s+(\S+)\s*".r
-    input match {
-      case installPattern(s) => return Command.Install(s)
-      case _ => // no-op
-    }
 
     //
     // Quit

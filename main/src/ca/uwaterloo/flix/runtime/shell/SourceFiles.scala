@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.runtime.shell
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.tools.Packager
-import ca.uwaterloo.flix.tools.pkg.FlixPackageManager
 import ca.uwaterloo.flix.util.Options
 
 import java.nio.file.{Files, Path}
@@ -45,7 +44,6 @@ case object SourceProvider {
       case Command.Fpkg => Packager.buildPkg(path, options)
       case Command.Bench => Packager.benchmark(path, options)
       case Command.Test => Packager.test(path, options)
-      case Command.Install(s) => FlixPackageManager.install(s, None, path)(System.out)
       case _ => // No-op (other cases are handled within Shell)
     }
   }

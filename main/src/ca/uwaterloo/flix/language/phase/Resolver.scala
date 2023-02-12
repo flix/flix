@@ -1641,24 +1641,6 @@ object Resolver {
           mapN(esVal) {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
-
-        case NamedAst.Pattern.Array(elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.Array(es, loc)
-          }
-
-        case NamedAst.Pattern.ArrayTailSpread(elms, sym, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
-          }
-
-        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
-          }
       }
 
       visit(pat0)
@@ -1690,23 +1672,6 @@ object Resolver {
             es => ResolvedAst.Pattern.Tuple(es, loc)
           }
 
-        case NamedAst.Pattern.Array(elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.Array(es, loc)
-          }
-
-        case NamedAst.Pattern.ArrayTailSpread(elms, sym, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.ArrayTailSpread(es, sym, loc)
-          }
-
-        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, loc) =>
-          val esVal = traverse(elms)(visit)
-          mapN(esVal) {
-            es => ResolvedAst.Pattern.ArrayHeadSpread(sym, es, loc)
-          }
       }
 
       visit(pat0)
@@ -3533,9 +3498,6 @@ object Resolver {
     case ResolvedAst.Pattern.Cst(cst, loc) => ListMap.empty
     case ResolvedAst.Pattern.Tag(sym, pat, loc) => mkPatternEnv(pat)
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
-    case ResolvedAst.Pattern.Array(elms, loc) => mkPatternsEnv(elms)
-    case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, loc) => mkPatternsEnv(elms) ++ mkVarEnv(sym)
-    case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, loc) => mkVarEnv(sym) ++ mkPatternsEnv(elms)
   }
 
   /**
