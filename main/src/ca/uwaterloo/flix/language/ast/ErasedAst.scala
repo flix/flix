@@ -88,10 +88,6 @@ object ErasedAst {
 
     case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class RecordSelect(exp: ErasedAst.Expression, field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArraySlice(base: ErasedAst.Expression, beginIndex: ErasedAst.Expression, endIndex: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -122,6 +118,8 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
+    case object RecordEmpty extends IntrinsicOperator0
+
     case class GetStaticField(field: Field) extends IntrinsicOperator0
 
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
@@ -133,6 +131,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
+
+    case class RecordSelect(field: Name.Field) extends IntrinsicOperator1
 
     case class RecordRestrict(field: Name.Field) extends IntrinsicOperator1
 

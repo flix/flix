@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator1, IntrinsicOperator2}
+import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator2}
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -148,10 +148,12 @@ object Eraser {
       ErasedAst.Expression.Tuple(elms.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.RecordEmpty(tpe, loc) =>
-      ErasedAst.Expression.RecordEmpty(tpe, loc)
+      val op = IntrinsicOperator0.RecordEmpty
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
-      ErasedAst.Expression.RecordSelect(visitExp(exp), field, tpe, loc)
+      val op = IntrinsicOperator1.RecordSelect(field)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.RecordExtend(field, exp1, exp2, tpe, loc) =>
       val op = IntrinsicOperator2.RecordExtend(field)
@@ -223,7 +225,7 @@ object Eraser {
       ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.GetStaticField(field)
+      val op = IntrinsicOperator0.GetStaticField(field)
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
@@ -251,11 +253,11 @@ object Eraser {
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.HoleError(sym)
+      val op = IntrinsicOperator0.HoleError(sym)
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.MatchError
+      val op = IntrinsicOperator0.MatchError
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
   }
 
