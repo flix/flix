@@ -493,22 +493,6 @@ object GenExpression {
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.RecordRestrict(field, rest, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the JvmType of the record interface
-      val interfaceType = JvmOps.getRecordInterfaceType()
-
-      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
-      //Push the label of field (which is going to be the removed/restricted).
-      visitor.visitLdcInsn(field.name)
-
-      // Invoking the restrictField method
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
-        AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
-
-
     case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -734,6 +718,21 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.RecordRestrict(field) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the JvmType of the record interface
+        val interfaceType = JvmOps.getRecordInterfaceType()
+
+        //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        //Push the label of field (which is going to be the removed/restricted).
+        visitor.visitLdcInsn(field.name)
+
+        // Invoking the restrictField method
+        visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
+          AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
       case IntrinsicOperator1.Ref =>
         // Adding source line number for debugging

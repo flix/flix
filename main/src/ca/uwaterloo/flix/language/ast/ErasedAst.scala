@@ -92,8 +92,6 @@ object ErasedAst {
 
     case class RecordSelect(exp: ErasedAst.Expression, field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -137,6 +135,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
+
+    case class RecordRestrict(field: Name.Field) extends IntrinsicOperator1
 
     case object Ref extends IntrinsicOperator1
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.ErasedAst.IntrinsicOperator2
+import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator1, IntrinsicOperator2}
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -157,8 +157,9 @@ object Eraser {
       val op = IntrinsicOperator2.RecordExtend(field)
       ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
-    case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
-      ErasedAst.Expression.RecordRestrict(field, visitExp(rest), tpe, loc)
+    case FinalAst.Expression.RecordRestrict(field, exp, tpe, loc) =>
+      val op = IntrinsicOperator1.RecordRestrict(field)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
       ErasedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
@@ -182,11 +183,11 @@ object Eraser {
       ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc)
 
     case FinalAst.Expression.Ref(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Ref
+      val op = IntrinsicOperator1.Ref
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Deref(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Deref
+      val op = IntrinsicOperator1.Deref
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Assign(exp1, exp2, tpe, loc) =>
@@ -213,7 +214,7 @@ object Eraser {
       ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.GetField(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.GetField(field)
+      val op = IntrinsicOperator1.GetField(field)
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
@@ -225,7 +226,7 @@ object Eraser {
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.PutStaticField(field)
+      val op = IntrinsicOperator1.PutStaticField(field)
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.NewObject(name, clazz, tpe, methods0, loc) =>
@@ -241,11 +242,11 @@ object Eraser {
       ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Lazy
+      val op = IntrinsicOperator1.Lazy
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Force(exp, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Force
+      val op = IntrinsicOperator1.Force
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>

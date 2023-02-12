@@ -568,8 +568,6 @@ object JvmOps {
 
       case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
 
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
-
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -862,8 +860,6 @@ object JvmOps {
 
       case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
 
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
-
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -1054,8 +1050,6 @@ object JvmOps {
       case Expression.RecordEmpty(_, _) => Set.empty
 
       case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
-
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
 
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
