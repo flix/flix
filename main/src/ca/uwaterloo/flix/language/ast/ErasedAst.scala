@@ -94,8 +94,6 @@ object ErasedAst {
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class ArraySlice(base: ErasedAst.Expression, beginIndex: ErasedAst.Expression, endIndex: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
@@ -141,6 +139,8 @@ object ErasedAst {
     case object Ref extends IntrinsicOperator1
 
     case object Deref extends IntrinsicOperator1
+
+    case object ArrayLength extends IntrinsicOperator1
 
     case object Lazy extends IntrinsicOperator1
 

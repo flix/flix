@@ -176,8 +176,9 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperator3.ArrayStore
       ErasedAst.Expression.Intrinsic3(op, visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
 
-    case FinalAst.Expression.ArrayLength(base, tpe, loc) =>
-      ErasedAst.Expression.ArrayLength(visitExp(base), tpe, loc)
+    case FinalAst.Expression.ArrayLength(exp, tpe, loc) =>
+      val op = IntrinsicOperator1.ArrayLength
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       ErasedAst.Expression.ArraySlice(visitExp(base), visitExp(beginIndex), visitExp(endIndex), tpe, loc)
