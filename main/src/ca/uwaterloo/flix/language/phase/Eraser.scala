@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.ErasedAst.IntrinsicOperator2
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -152,8 +153,9 @@ object Eraser {
     case FinalAst.Expression.RecordSelect(exp, field, tpe, loc) =>
       ErasedAst.Expression.RecordSelect(visitExp(exp), field, tpe, loc)
 
-    case FinalAst.Expression.RecordExtend(field, value, rest, tpe, loc) =>
-      ErasedAst.Expression.RecordExtend(field, visitExp(value), visitExp(rest), tpe, loc)
+    case FinalAst.Expression.RecordExtend(field, exp1, exp2, tpe, loc) =>
+      val op = IntrinsicOperator2.RecordExtend(field)
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.RecordRestrict(field, rest, tpe, loc) =>
       ErasedAst.Expression.RecordRestrict(field, visitExp(rest), tpe, loc)
@@ -161,8 +163,9 @@ object Eraser {
     case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
       ErasedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-      ErasedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
+    case FinalAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
+      val op = IntrinsicOperator2.ArrayNew
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator2.ArrayLoad
@@ -234,7 +237,8 @@ object Eraser {
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Spawn(visitExp(exp1), visitExp(exp2), tpe, loc)
+      val op = IntrinsicOperator2.Spawn
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Lazy

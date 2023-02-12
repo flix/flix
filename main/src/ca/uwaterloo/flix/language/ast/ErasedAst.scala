@@ -92,13 +92,9 @@ object ErasedAst {
 
     case class RecordSelect(exp: ErasedAst.Expression, field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression, rest: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
     case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class ArrayNew(elm: ErasedAst.Expression, len: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
@@ -115,8 +111,6 @@ object ErasedAst {
     case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends ErasedAst.Expression
-
-    case class Spawn(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
@@ -194,9 +188,15 @@ object ErasedAst {
 
   object IntrinsicOperator2 {
 
+    case class RecordExtend(field: Name.Field) extends IntrinsicOperator2
+
     case object Assign extends IntrinsicOperator2
 
+    case object ArrayNew extends IntrinsicOperator2
+
     case object ArrayLoad extends IntrinsicOperator2
+
+    case object Spawn extends IntrinsicOperator2
 
     case class PutField(field: Field) extends IntrinsicOperator2
 

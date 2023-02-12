@@ -493,40 +493,6 @@ object GenExpression {
       // Cast the field value to the expected type.
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-    case Expression.RecordExtend(field, value, rest, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the record extend
-      val classType = JvmOps.getRecordExtendClassType(tpe)
-
-      // We get the JvmType of the record interface
-      val interfaceType = JvmOps.getRecordInterfaceType()
-
-      // previous functions are already partial matches
-      val MonoType.RecordExtend(_, recordValueType, _) = tpe
-      val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
-
-      // Instantiating a new object of tuple
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      visitor.visitInsn(DUP)
-      // Invoking the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
-
-      //Put the label of field (which is going to be the extension).
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(field.name)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.LabelField.name, BackendObjType.String.toDescriptor)
-
-      //Put the value of the field onto the stack, since it is an expression we first need to compile it.
-      visitor.visitInsn(DUP)
-      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(value.tpe).toDescriptor)
-
-      //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
-      visitor.visitInsn(DUP)
-      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
-
     case Expression.RecordRestrict(field, rest, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -569,39 +535,6 @@ object GenExpression {
         // with the store instruction corresponding to the stored element
         visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       }
-
-    case Expression.ArrayNew(elm, len, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
-      // Evaluating the value of the 'default element'
-      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'length' of the array
-      compileExpression(len, visitor, currentClass, lenv0, entryPoint)
-      // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-      }
-      if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
-        // Duplicates the 'array reference' three places down the stack
-        visitor.visitInsn(DUP_X2)
-        // Duplicates the 'array reference' three places down the stack
-        visitor.visitInsn(DUP_X2)
-        // Pops the 'ArrayRef' at the top of the stack
-        visitor.visitInsn(POP)
-      } else {
-        // Duplicates the 'array reference' two places down the stack
-        visitor.visitInsn(DUP_X1)
-        // Swaps the 'array reference' and 'default element'
-        visitor.visitInsn(SWAP)
-      }
-      // We get the array fill type
-      val arrayFillType = AsmOps.getArrayFillType(jvmType)
-      // Invoking the method to fill the array with the default element
-      visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
     case Expression.ArrayLength(base, _, loc) =>
       // Adding source line number for debugging
@@ -783,45 +716,6 @@ object GenExpression {
         GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
-
-    case Expression.Spawn(exp1, exp2, _, loc) =>
-      addSourceLine(visitor, loc)
-
-      exp2 match {
-        // The expression represents the `Static` region, just start a thread directly
-        case Expression.Region(_, _) =>
-
-          // Compile the expression, putting a function implementing the Runnable interface on the stack
-          compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-          // make a thread and run it
-          if (flix.options.xvirtualthreads) {
-            visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-            visitor.visitInsn(POP)
-          } else {
-            visitor.visitTypeInsn(NEW, "java/lang/Thread")
-            visitor.visitInsn(DUP_X1)
-            visitor.visitInsn(SWAP)
-            visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-          }
-
-        case _ =>
-          // Compile the expression representing the region
-          compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-          // Compile the expression, putting a function implementing the Runnable interface on the stack
-          compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-          // Call the Region's `spawn` method
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
-      }
-
-      // Put a Unit value on the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
     case Expression.Intrinsic0(op, tpe, loc) => op match {
 
@@ -1046,6 +940,40 @@ object GenExpression {
 
     case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
 
+      case IntrinsicOperator2.RecordExtend(field) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the JvmType of the class for the record extend
+        val classType = JvmOps.getRecordExtendClassType(tpe)
+
+        // We get the JvmType of the record interface
+        val interfaceType = JvmOps.getRecordInterfaceType()
+
+        // previous functions are already partial matches
+        val MonoType.RecordExtend(_, recordValueType, _) = tpe
+        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
+
+        // Instantiating a new object of tuple
+        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+        visitor.visitInsn(DUP)
+        // Invoking the constructor
+        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+        //Put the label of field (which is going to be the extension).
+        visitor.visitInsn(DUP)
+        visitor.visitLdcInsn(field.name)
+        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.LabelField.name, BackendObjType.String.toDescriptor)
+
+        //Put the value of the field onto the stack, since it is an expression we first need to compile it.
+        visitor.visitInsn(DUP)
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
+
+        //Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+        visitor.visitInsn(DUP)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
+
       case IntrinsicOperator2.Assign =>
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
@@ -1065,6 +993,39 @@ object GenExpression {
         // Since the return type is unit, we put an instance of unit on top of the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
+      case IntrinsicOperator2.ArrayNew =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the inner type of the array
+        val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        // Evaluating the value of the 'default element'
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        // Evaluating the 'length' of the array
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        // Instantiating a new array of type jvmType
+        if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
+          visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+        } else { // Happens if the inner type is a primitive type
+          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        }
+        if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
+          // Duplicates the 'array reference' three places down the stack
+          visitor.visitInsn(DUP_X2)
+          // Duplicates the 'array reference' three places down the stack
+          visitor.visitInsn(DUP_X2)
+          // Pops the 'ArrayRef' at the top of the stack
+          visitor.visitInsn(POP)
+        } else {
+          // Duplicates the 'array reference' two places down the stack
+          visitor.visitInsn(DUP_X1)
+          // Swaps the 'array reference' and 'default element'
+          visitor.visitInsn(SWAP)
+        }
+        // We get the array fill type
+        val arrayFillType = AsmOps.getArrayFillType(jvmType)
+        // Invoking the method to fill the array with the default element
+        visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
+
       case IntrinsicOperator2.ArrayLoad =>
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
@@ -1079,6 +1040,45 @@ object GenExpression {
         // Loads the 'element' at the given 'index' from the 'array'
         // with the load instruction corresponding to the loaded element
         visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType))
+
+      case IntrinsicOperator2.Spawn =>
+        addSourceLine(visitor, loc)
+
+        exp2 match {
+          // The expression represents the `Static` region, just start a thread directly
+          case Expression.Region(_, _) =>
+
+            // Compile the expression, putting a function implementing the Runnable interface on the stack
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+            // make a thread and run it
+            if (flix.options.xvirtualthreads) {
+              visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+              visitor.visitInsn(POP)
+            } else {
+              visitor.visitTypeInsn(NEW, "java/lang/Thread")
+              visitor.visitInsn(DUP_X1)
+              visitor.visitInsn(SWAP)
+              visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
+              visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+            }
+
+          case _ =>
+            // Compile the expression representing the region
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
+
+            // Compile the expression, putting a function implementing the Runnable interface on the stack
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+            // Call the Region's `spawn` method
+            visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
+        }
+
+        // Put a Unit value on the stack
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
       case IntrinsicOperator2.PutField(field) =>
         addSourceLine(visitor, loc)
