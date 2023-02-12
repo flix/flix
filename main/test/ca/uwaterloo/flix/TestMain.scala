@@ -87,7 +87,6 @@ class TestMain extends FunSuite {
     assert(opts.explain)
   }
 
-
   test("--entrypoint foo") {
     val args = Array("--entrypoint", "foo", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -98,6 +97,12 @@ class TestMain extends FunSuite {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.json)
+  }
+
+  test("--no-install") {
+    val args = Array("--no-install")
+    val opts = Main.parseCmdOpts(args).get
+    assert(!opts.installDeps)
   }
 
   test("--listen") {
