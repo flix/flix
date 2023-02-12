@@ -30,6 +30,7 @@ object Options {
     documentor = false,
     entryPoint = None,
     explain = false,
+    installDeps = false,
     incremental = true,
     json = false,
     output = None,
@@ -82,28 +83,30 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param lib                selects the level of libraries to include.
-  * @param debug              enables the emission of debugging information.
-  * @param documentor         enables generation of flixdoc.
-  * @param entryPoint         specifies the main entry point.
-  * @param explain            enables additional explanations.
-  * @param json               enable json output.
-  * @param output             the optional output directory where to place JVM bytecode.
-  * @param progress           print progress during compilation.
-  * @param test               enables test mode.
-  * @param target             the target JVM.
-  * @param threads            selects the number of threads to use.
-  * @param loadClassFiles     loads the generated class files into the JVM.
-  * @param xallowredundancies disables the redundancy checker.
-  * @param xbddthreshold      the threshold for when to use BDDs for SVE.
-  * @param xnoboolcache       disable Boolean caches.
-  * @param xnoboolspecialcases   disable Boolean unification shortcuts.
-  * @param xnobooltable       disable Boolean minimization via tabling.
-  * @param xnounittests       excludes unit tests from performance benchmarks.
-  * @param xstatistics        enables statistics collection.
-  * @param xnoqmc               enables the Quine McCluskey algorihm when using BDDs.
-  * @param xstrictmono        enables strict monomorphization.
-  * @param xprintast          prints the chosen AST to a given path.
+  * @param lib                 selects the level of libraries to include.
+  * @param debug               enables the emission of debugging information.
+  * @param documentor          enables generation of flixdoc.
+  * @param entryPoint          specifies the main entry point.
+  * @param explain             enables additional explanations.
+  * @param incremental         enables incremental compilation.
+  * @param installDeps         enables automatic installation of dependencies.
+  * @param json                enable json output.
+  * @param output              the optional output directory where to place JVM bytecode.
+  * @param progress            print progress during compilation.
+  * @param test                enables test mode.
+  * @param target              the target JVM.
+  * @param threads             selects the number of threads to use.
+  * @param loadClassFiles      loads the generated class files into the JVM.
+  * @param xallowredundancies  disables the redundancy checker.
+  * @param xbddthreshold       the threshold for when to use BDDs for SVE.
+  * @param xnoboolcache        disable Boolean caches.
+  * @param xnoboolspecialcases disable Boolean unification shortcuts.
+  * @param xnobooltable        disable Boolean minimization via tabling.
+  * @param xnounittests        excludes unit tests from performance benchmarks.
+  * @param xstatistics         enables statistics collection.
+  * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
+  * @param xstrictmono         enables strict monomorphization.
+  * @param xprintasts          prints the chosen AST to a given path.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -111,6 +114,7 @@ case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    incremental: Boolean,
+                   installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
                    output: Option[Path],
@@ -185,4 +189,5 @@ object LibLevel {
     * Include the full standard library.
     */
   case object All extends LibLevel
+
 }
