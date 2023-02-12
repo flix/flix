@@ -73,7 +73,9 @@ object Summary {
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
-        val defs = getFunctions(source, root) ++ getInstanceFunctions(source, root)
+        val defs = getFunctions(source, root) ++
+          getClassFunctions(source, root) ++
+          getInstanceFunctions(source, root)
 
         val numberOfLines = loc.endLine
         val numberOfFunctions = defs.size
@@ -125,6 +127,19 @@ object Summary {
     root.defs.collect {
       case (sym, defn) if sym.loc.source == source => defn.spec
     }
+
+  /**
+    * Returns the [[Spec]] of all class functions in the given `source`.
+    *
+    * Note: This means signatures that have an implementation (i.e. body expression).
+    */
+  private def getClassFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
+    root.classes.collect {
+      case (sym, clazz) if sym.loc.source == source =>
+        clazz.signatures.collect {
+          case sig if sig.impl.nonEmpty => sig.spec
+        }
+    }.flatten
 
   /**
     * Returns the [[Spec]] of all instance functions in the given `source`.
