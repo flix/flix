@@ -554,31 +554,13 @@ object JvmOps {
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Untag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Index(base, _, _, _) => visitExp(base)
-
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(_, _) => Set.empty
-
-      case Expression.RecordExtend(_, value, rest, _, _) => visitExp(value) ++ visitExp(rest)
-
-      case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
-
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
-
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
-
-      case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -607,8 +589,6 @@ object JvmOps {
         methods.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
         }
-
-      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
@@ -854,31 +834,13 @@ object JvmOps {
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Untag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Index(base, _, _, _) => visitExp(base)
-
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(_, _) => Set.empty
-
-      case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
-
-      case Expression.RecordExtend(_, value, rest, _, _) => visitExp(value) ++ visitExp(rest)
-
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
-
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
-
-      case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -909,8 +871,6 @@ object JvmOps {
             }
             sacc ++ fs ++ visitExp(clo)
         }
-
-      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
 
@@ -1053,31 +1013,13 @@ object JvmOps {
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Untag(_, exp, _, _) => visitExp(exp)
-
-      case Expression.Index(base, _, _, _) => visitExp(base)
-
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(_, _) => Set.empty
-
-      case Expression.RecordSelect(exp, _, _, _) => visitExp(exp)
-
-      case Expression.RecordExtend(_, value, rest, _, _) => visitExp(value) ++ visitExp(rest)
-
-      case Expression.RecordRestrict(_, rest, _, _) => visitExp(rest)
-
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.ArrayNew(elm, len, _, _) => visitExp(elm) ++ visitExp(len)
-
-      case Expression.ArrayLength(exp, _, _) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -1101,8 +1043,6 @@ object JvmOps {
       }
 
       case obj: Expression.NewObject => Set(obj)
-
-      case Expression.Spawn(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
