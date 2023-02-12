@@ -10,36 +10,48 @@ object Summarizer {
 
   private val Separator = " & "
 
-  private val EndOfLine = "\\\\"
+  private val EndOfLine = " \\\\"
 
   def printSummary(v: Validation[Root, CompilationMessage]): Unit = mapN(v) {
     case root =>
 
-      print(padRight("Module", 30))
+      print(padR("Module", 30))
       print(Separator)
-      print(padLeft("Functions", 20))
+      print(padL("Lines", 10))
+      print(Separator)
+      print(padL("Functions", 10))
+      print(Separator)
+      print(padL("Pure", 10))
+      println(EndOfLine)
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
-        val numberOfLines = loc.endLine
+        val lines = loc.endLine
+        val numberOfLines = number(lines)
         val defs = getDefs(root, source)
-        val numberOfDefs = defs.size
-        val pureDefs = defs.count(isPure)
+        val pureDefs = number(defs.count(isPure))
+
+        val numberOfDefs = number(defs.size)
         val numberOfClasses = countClasses(root, source)
         val numberOfInstances = countInstances(root, source)
-        if (include(module, numberOfLines)) {
-          print(padRight(module, 30))
+
+        if (include(module, lines)) {
+          print(padR(module, 30))
           print(Separator)
-          print(padLeft(thousands(numberOfLines), 10))
+          print(padL(numberOfDefs, 10))
+          print(Separator)
+          print(padL(numberOfLines, 10))
+          print(Separator)
+          print(padL(pureDefs, 10))
           println(EndOfLine)
         }
       }
   }
 
   private def include(mod: String, lines: Int): Boolean =
-    !mod.contains("/") && lines > 100
+    !mod.contains("/") && lines > 1000
 
-  private def thousands(n: Int): String = f"$n%,d".replace(".", ",")
+  private def number(n: Int): String = f"$n%,d".replace(".", ",")
 
   private def getDefs(root: Root, source: Ast.Source): Iterable[Def] =
     root.defs.collect {
@@ -73,9 +85,9 @@ object Summarizer {
 
   private def isHigherOrder(tpe: Type): Boolean = true
 
-  private def padRight(s: String, l: Int): String = s.padTo(l, ' ')
+  private def padR(s: String, l: Int): String = s.padTo(l, ' ')
 
-  def padLeft(s: String, l: Int): String = {
+  def padL(s: String, l: Int): String = {
     if (s.length >= l) return s
     val sb = new StringBuilder
     while (sb.length < l - s.length) sb.append(' ')
