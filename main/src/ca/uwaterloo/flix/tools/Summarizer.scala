@@ -43,25 +43,24 @@ object Summarizer {
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
-        val lines = loc.endLine
-        val defs = getDefs(root, source)
+        val defs = getDefs(source, root)
 
-        val numberOfLines = format(lines)
+        val numberOfLines = loc.endLine
         val numberOfFunctions = defs.size
         val numberOfPureFunctions = defs.count(isPure)
         val numberOfImpureFunctions = defs.count(isImpure)
         val numberOfEffectPolymorphicFunctions = defs.count(isEffectPolymorphic)
 
-        totalLines = totalLines + lines
+        totalLines = totalLines + numberOfLines
         totalFunctions = totalFunctions + numberOfFunctions
         totalPureFunctions = totalPureFunctions + numberOfPureFunctions
         totalImpureFunctions = totalImpureFunctions + numberOfImpureFunctions
         totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
 
-        if (include(module, lines)) {
+        if (include(module, numberOfLines)) {
           print(padR(module, ModWidth))
           print(Separator)
-          print(padL(numberOfLines, ColWidth))
+          print(padL(format(numberOfLines), ColWidth))
           print(Separator)
           print(padL(format(numberOfFunctions), ColWidth))
           print(Separator)
@@ -75,24 +74,46 @@ object Summarizer {
       }
 
       println("---")
-      print(padR("Totals", ModWidth))
+      print(padR("Totals (incl. filtered)", ModWidth))
       print(Separator)
       print(padL(format(totalLines), ColWidth))
       print(Separator)
       print(padL(format(totalFunctions), ColWidth))
+      print(Separator)
+      print(padL(format(totalPureFunctions), ColWidth))
+      print(Separator)
+      print(padL(format(totalImpureFunctions), ColWidth))
+      print(Separator)
+      print(padL(format(totalEffPolymorphicFunctions), ColWidth))
+      println(EndOfLine)
   }
 
-  private def getDefs(root: Root, source: Ast.Source): Iterable[Def] =
+  /**
+    * Returns all defs in the given `source`.
+    */
+  private def getDefs(source: Ast.Source, root: Root): Iterable[Def] =
     root.defs.collect {
       case (sym, defn) if sym.loc.source == source => defn
     }
 
+  /**
+    * Formats the given number `n`.
+    */
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
 
+  /**
+    * Returns `true` if the given `defn` is pure.
+    */
   private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
 
+  /**
+    * Returns `true` if the given `defn` is impure.
+    */
   private def isImpure(defn: Def): Boolean = defn.spec.pur == Type.Impure
 
+  /**
+    * Returns `true` if the given `defn` is effect polymorphic (neither pure or impure).
+    */
   private def isEffectPolymorphic(defn: Def): Boolean = !isPure(defn) && !isImpure(defn)
 
   /**
