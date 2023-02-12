@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.tools.pkg.FlixPackageManager
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -91,6 +90,7 @@ object Main {
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
+      installDeps = cmdOpts.installDeps,
       output = cmdOpts.output.map(s => Paths.get(s)),
       target = Options.Default.target,
       test = Options.Default.test,
@@ -211,6 +211,7 @@ object Main {
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
+                     installDeps: Boolean = true,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -356,6 +357,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 
