@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Type}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Spec}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -73,7 +73,7 @@ object Summary {
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
-        val defs = getDefs(source, root)
+        val defs = getFunctions(source, root) ++ getInstanceFunctions(source, root)
 
         val numberOfLines = loc.endLine
         val numberOfFunctions = defs.size
@@ -119,12 +119,20 @@ object Summary {
   }
 
   /**
-    * Returns all defs in the given `source`.
+    * Returns the [[Spec]] of all top-level functions in the given `source`.
     */
-  private def getDefs(source: Ast.Source, root: Root): Iterable[Def] =
+  private def getFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
     root.defs.collect {
-      case (sym, defn) if sym.loc.source == source => defn
+      case (sym, defn) if sym.loc.source == source => defn.spec
     }
+
+  /**
+    * Returns the [[Spec]] of all instance functions in the given `source`.
+    */
+  private def getInstanceFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
+    root.instances.collect {
+      case (sym, instances) if sym.loc.source == source => instances.flatMap(_.defs).map(_.spec)
+    }.flatten
 
   /**
     * Formats the given number `n`.
@@ -132,19 +140,19 @@ object Summary {
   private def format(n: Int): String = f"$n%,d".replace(".", ",")
 
   /**
-    * Returns `true` if the given `defn` is pure.
+    * Returns `true` if the given `spec` is pure.
     */
-  private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
+  private def isPure(spec: Spec): Boolean = spec.pur == Type.Pure
 
   /**
-    * Returns `true` if the given `defn` is impure.
+    * Returns `true` if the given `spec` is impure.
     */
-  private def isImpure(defn: Def): Boolean = defn.spec.pur == Type.Impure
+  private def isImpure(spec: Spec): Boolean = spec.pur == Type.Impure
 
   /**
-    * Returns `true` if the given `defn` is effect polymorphic (neither pure or impure).
+    * Returns `true` if the given `spec` is effect polymorphic (neither pure or impure).
     */
-  private def isEffectPolymorphic(defn: Def): Boolean = !isPure(defn) && !isImpure(defn)
+  private def isEffectPolymorphic(spec: Spec): Boolean = !isPure(spec) && !isImpure(spec)
 
   /**
     * Right-pads the given string `s` to length `l`.
