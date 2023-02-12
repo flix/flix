@@ -22,6 +22,8 @@ object Summarizer {
       print(padL("Functions", 10))
       print(Separator)
       print(padL("Pure", 10))
+      print(Separator)
+      print(padL("Impure", 10))
       println(EndOfLine)
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
@@ -29,20 +31,21 @@ object Summarizer {
         val lines = loc.endLine
         val numberOfLines = number(lines)
         val defs = getDefs(root, source)
-        val pureDefs = number(defs.count(isPure))
 
         val numberOfDefs = number(defs.size)
-        val numberOfClasses = countClasses(root, source)
-        val numberOfInstances = countInstances(root, source)
+        val numberOfPureDefs = number(defs.count(isPure))
+        val numberOfImpureDefs = number(defs.count(isImpure))
 
         if (include(module, lines)) {
           print(padR(module, 30))
           print(Separator)
-          print(padL(numberOfDefs, 10))
-          print(Separator)
           print(padL(numberOfLines, 10))
           print(Separator)
-          print(padL(pureDefs, 10))
+          print(padL(numberOfDefs, 10))
+          print(Separator)
+          print(padL(numberOfPureDefs, 10))
+          print(Separator)
+          print(padL(numberOfImpureDefs, 10))
           println(EndOfLine)
         }
       }
@@ -82,6 +85,8 @@ object Summarizer {
     }
 
   private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
+
+  private def isImpure(defn: Def): Boolean = defn.spec.pur == Type.Impure
 
   private def isHigherOrder(tpe: Type): Boolean = true
 
