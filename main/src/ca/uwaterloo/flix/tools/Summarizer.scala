@@ -32,16 +32,22 @@ object Summarizer {
       print(padL("Polymorphic", ColWidth))
       println(EndOfLine)
 
+      var totalLines = 0
+      var totalFunctions = 0
+
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
         val lines = loc.endLine
-        val numberOfLines = number(lines)
         val defs = getDefs(root, source)
 
+        val numberOfLines = number(lines)
         val numberOfDefs = number(defs.size)
         val numberOfPureDefs = number(defs.count(isPure))
         val numberOfImpureDefs = number(defs.count(isImpure))
         val numberOfEffectPolymorphicDefs = number(defs.count(isEffectPolymorphic))
+
+        totalLines = totalLines + lines
+        totalFunctions = totalFunctions + defs.size
 
         if (include(module, lines)) {
           print(padR(module, ModWidth))
@@ -58,6 +64,13 @@ object Summarizer {
           println(EndOfLine)
         }
       }
+
+      println("---")
+      print(padR("Totals", ModWidth))
+      print(Separator)
+      print(padL(number(totalLines), ColWidth))
+      print(Separator)
+      print(padL(number(totalFunctions), ColWidth))
   }
 
   private def include(mod: String, lines: Int): Boolean =
