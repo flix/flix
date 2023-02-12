@@ -16,6 +16,9 @@ object Summarizer {
 
   private val ColWidth = 12
 
+  private def include(mod: String, lines: Int): Boolean =
+    !mod.contains("/") && lines > 700
+
   def printSummary(v: Validation[Root, CompilationMessage]): Unit = mapN(v) {
     case root =>
 
@@ -73,38 +76,12 @@ object Summarizer {
       print(padL(number(totalFunctions), ColWidth))
   }
 
-  private def include(mod: String, lines: Int): Boolean =
-    !mod.contains("/") && lines > 700
-
-  private def number(n: Int): String = f"$n%,d".replace(".", ",")
-
   private def getDefs(root: Root, source: Ast.Source): Iterable[Def] =
     root.defs.collect {
       case (sym, defn) if sym.loc.source == source => defn
     }
 
-  private def countDefs(root: Root, source: Ast.Source): Int =
-    root.defs.count {
-      case (sym, _) => sym.loc.source == source
-    }
-
-  private def countHigherOrderDefs(root: Root, source: Ast.Source): Int =
-    root.defs.count {
-      case (sym, defn) =>
-        isHigherOrder(defn.spec.declaredScheme.base) &&
-          sym.loc.source == source
-    }
-
-
-  private def countClasses(root: Root, source: Ast.Source): Int =
-    root.classes.count {
-      case (sym, _) => sym.loc.source == source
-    }
-
-  private def countInstances(root: Root, source: Ast.Source): Int =
-    root.instances.count {
-      case (sym, _) => sym.loc.source == source
-    }
+  private def number(n: Int): String = f"$n%,d".replace(".", ",")
 
   private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
 
@@ -112,14 +89,16 @@ object Summarizer {
 
   private def isEffectPolymorphic(defn: Def): Boolean = !isPure(defn) && !isImpure(defn)
 
-  private def isHigherOrder(tpe: Type): Boolean = true
-
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')
 
-  def padL(s: String, l: Int): String = {
-    if (s.length >= l) return s
+  private def padL(s: String, l: Int): String = {
+    if (s.length >= l) {
+      return s
+    }
     val sb = new StringBuilder
-    while (sb.length < l - s.length) sb.append(' ')
+    while (sb.length < l - s.length) {
+      sb.append(' ')
+    }
     sb.append(s)
     sb.toString
   }
