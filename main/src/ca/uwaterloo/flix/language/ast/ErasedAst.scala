@@ -80,12 +80,6 @@ object ErasedAst {
       final val tpe: MonoType = MonoType.Bool
     }
 
-    case class Tag(sym: Symbol.CaseSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class Untag(sym: Symbol.CaseSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class Index(base: ErasedAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
@@ -131,6 +125,12 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
+
+    case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
+
+    case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
+
+    case class Index(idx: Int) extends IntrinsicOperator1
 
     case class RecordSelect(field: Name.Field) extends IntrinsicOperator1
 

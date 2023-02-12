@@ -136,13 +136,16 @@ object Eraser {
       ErasedAst.Expression.Is(sym, visitExp(exp), loc)
 
     case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
-      ErasedAst.Expression.Tag(sym, visitExp(exp), tpe, loc)
+      val op = IntrinsicOperator1.Tag(sym)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Untag(sym, exp, tpe, loc) =>
-      ErasedAst.Expression.Untag(sym, visitExp(exp), tpe, loc)
+      val op = IntrinsicOperator1.Untag(sym)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.Index(base, offset, tpe, loc) =>
-      ErasedAst.Expression.Index(visitExp(base), offset, tpe, loc)
+    case FinalAst.Expression.Index(base, idx, tpe, loc) =>
+      val op = IntrinsicOperator1.Index(idx)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(base), tpe, loc)
 
     case FinalAst.Expression.Tuple(elms, tpe, loc) =>
       ErasedAst.Expression.Tuple(elms.map(visitExp), tpe, loc)

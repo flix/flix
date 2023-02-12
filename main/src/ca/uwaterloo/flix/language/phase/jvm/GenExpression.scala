@@ -364,76 +364,6 @@ object GenExpression {
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
-    // Normal Tag
-    case Expression.Tag(sym, exp, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // Get the tag info.
-      val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
-      // We get the JvmType of the class for tag
-      val classType = JvmOps.getTagClassType(tagInfo)
-
-      ///
-      /// Special Case: A tag with a single argument: The unit argument.
-      ///
-      // TODO: This is a hack until the new and improved backend arrives.
-      val whitelistedEnums = List(
-        Symbol.mkEnumSym("Comparison"),
-        Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
-        Symbol.mkEnumSym("RedBlackTree.Color"),
-      )
-      if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
-        // TODO: This is could introduce errors by if exp has side effects
-        // Read the "unitInstance" field of the appropriate class.
-        val declaration = classType.name.toInternalName
-        val descriptor = classType.toDescriptor
-        visitor.visitFieldInsn(GETSTATIC, declaration, "unitInstance", descriptor)
-      } else {
-        /*
-       If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
-       there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
-       a new one.
-       */
-        // Creating a new instance of the class
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        visitor.visitInsn(DUP)
-        // Evaluating the single argument of the class constructor
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-        // Calling the constructor of the class
-        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
-      }
-
-    case Expression.Untag(sym, exp, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-
-      // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
-      // We get the JvmType of the class for the tag
-      val classType = JvmOps.getTagClassType(tagInfo)
-      // Evaluate the exp
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Cast the exp to the type of the tag
-      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-      // Descriptor of the method
-      val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
-      // Invoke `getValue()` method to extract the field of the tag
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-      // Cast the object to it's type if it's not a primitive
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.Index(base, offset, tpe, _) =>
-      // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleClassType(base.tpe.asInstanceOf[MonoType.Tuple])
-      // evaluating the `base`
-      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Retrieving the field `field${offset}`
-      visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$offset", JvmOps.getErasedJvmType(tpe).toDescriptor)
-      // Cast the object to it's type if it's not a primitive
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
     case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -673,6 +603,76 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      // Normal Tag
+      case IntrinsicOperator1.Tag(sym) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // Get the tag info.
+        val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
+        // We get the JvmType of the class for tag
+        val classType = JvmOps.getTagClassType(tagInfo)
+
+        ///
+        /// Special Case: A tag with a single argument: The unit argument.
+        ///
+        // TODO: This is a hack until the new and improved backend arrives.
+        val whitelistedEnums = List(
+          Symbol.mkEnumSym("Comparison"),
+          Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
+          Symbol.mkEnumSym("RedBlackTree.Color"),
+        )
+        if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
+          // TODO: This is could introduce errors by if exp has side effects
+          // Read the "unitInstance" field of the appropriate class.
+          val declaration = classType.name.toInternalName
+          val descriptor = classType.toDescriptor
+          visitor.visitFieldInsn(GETSTATIC, declaration, "unitInstance", descriptor)
+        } else {
+          /*
+         If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
+         there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
+         a new one.
+         */
+          // Creating a new instance of the class
+          visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+          visitor.visitInsn(DUP)
+          // Evaluating the single argument of the class constructor
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          // Descriptor of the constructor
+          val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+          // Calling the constructor of the class
+          visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+        }
+
+      case IntrinsicOperator1.Untag(sym) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+
+        // We get the `TagInfo` for the tag
+        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
+        // We get the JvmType of the class for the tag
+        val classType = JvmOps.getTagClassType(tagInfo)
+        // Evaluate the exp
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Cast the exp to the type of the tag
+        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        // Descriptor of the method
+        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
+        // Invoke `getValue()` method to extract the field of the tag
+        visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+        // Cast the object to it's type if it's not a primitive
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.Index(idx) =>
+        // We get the JvmType of the class for the tuple
+        val classType = JvmOps.getTupleClassType(exp.tpe.asInstanceOf[MonoType.Tuple])
+        // evaluating the `base`
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Retrieving the field `field${offset}`
+        visitor.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
+        // Cast the object to it's type if it's not a primitive
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.RecordSelect(field) =>
         // Adding source line number for debugging
