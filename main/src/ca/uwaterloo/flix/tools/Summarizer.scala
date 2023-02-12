@@ -12,18 +12,24 @@ object Summarizer {
 
   private val EndOfLine = " \\\\"
 
+  private val ModWidth = 30
+
+  private val ColWidth = 12
+
   def printSummary(v: Validation[Root, CompilationMessage]): Unit = mapN(v) {
     case root =>
 
-      print(padR("Module", 30))
+      print(padR("Module", ModWidth))
       print(Separator)
-      print(padL("Lines", 10))
+      print(padL("Lines", ColWidth))
       print(Separator)
-      print(padL("Functions", 10))
+      print(padL("Functions", ColWidth))
       print(Separator)
-      print(padL("Pure", 10))
+      print(padL("Pure", ColWidth))
       print(Separator)
-      print(padL("Impure", 10))
+      print(padL("Impure", ColWidth))
+      print(Separator)
+      print(padL("Polymorphic", ColWidth))
       println(EndOfLine)
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
@@ -35,24 +41,27 @@ object Summarizer {
         val numberOfDefs = number(defs.size)
         val numberOfPureDefs = number(defs.count(isPure))
         val numberOfImpureDefs = number(defs.count(isImpure))
+        val numberOfEffectPolymorphicDefs = number(defs.count(isEffectPolymorphic))
 
         if (include(module, lines)) {
-          print(padR(module, 30))
+          print(padR(module, ModWidth))
           print(Separator)
-          print(padL(numberOfLines, 10))
+          print(padL(numberOfLines, ColWidth))
           print(Separator)
-          print(padL(numberOfDefs, 10))
+          print(padL(numberOfDefs, ColWidth))
           print(Separator)
-          print(padL(numberOfPureDefs, 10))
+          print(padL(numberOfPureDefs, ColWidth))
           print(Separator)
-          print(padL(numberOfImpureDefs, 10))
+          print(padL(numberOfImpureDefs, ColWidth))
+          print(Separator)
+          print(padL(numberOfEffectPolymorphicDefs, ColWidth))
           println(EndOfLine)
         }
       }
   }
 
   private def include(mod: String, lines: Int): Boolean =
-    !mod.contains("/") && lines > 1000
+    !mod.contains("/") && lines > 700
 
   private def number(n: Int): String = f"$n%,d".replace(".", ",")
 
@@ -87,6 +96,8 @@ object Summarizer {
   private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
 
   private def isImpure(defn: Def): Boolean = defn.spec.pur == Type.Impure
+
+  private def isEffectPolymorphic(defn: Def): Boolean = !isPure(defn) && !isImpure(defn)
 
   private def isHigherOrder(tpe: Type): Boolean = true
 
