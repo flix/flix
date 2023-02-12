@@ -37,33 +37,39 @@ object Summarizer {
 
       var totalLines = 0
       var totalFunctions = 0
+      var totalPureFunctions = 0
+      var totalImpureFunctions = 0
+      var totalEffPolymorphicFunctions = 0
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
         val lines = loc.endLine
         val defs = getDefs(root, source)
 
-        val numberOfLines = number(lines)
-        val numberOfDefs = number(defs.size)
-        val numberOfPureDefs = number(defs.count(isPure))
-        val numberOfImpureDefs = number(defs.count(isImpure))
-        val numberOfEffectPolymorphicDefs = number(defs.count(isEffectPolymorphic))
+        val numberOfLines = format(lines)
+        val numberOfFunctions = defs.size
+        val numberOfPureFunctions = defs.count(isPure)
+        val numberOfImpureFunctions = defs.count(isImpure)
+        val numberOfEffectPolymorphicFunctions = defs.count(isEffectPolymorphic)
 
         totalLines = totalLines + lines
-        totalFunctions = totalFunctions + defs.size
+        totalFunctions = totalFunctions + numberOfFunctions
+        totalPureFunctions = totalPureFunctions + numberOfPureFunctions
+        totalImpureFunctions = totalImpureFunctions + numberOfImpureFunctions
+        totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
 
         if (include(module, lines)) {
           print(padR(module, ModWidth))
           print(Separator)
           print(padL(numberOfLines, ColWidth))
           print(Separator)
-          print(padL(numberOfDefs, ColWidth))
+          print(padL(format(numberOfFunctions), ColWidth))
           print(Separator)
-          print(padL(numberOfPureDefs, ColWidth))
+          print(padL(format(numberOfPureFunctions), ColWidth))
           print(Separator)
-          print(padL(numberOfImpureDefs, ColWidth))
+          print(padL(format(numberOfImpureFunctions), ColWidth))
           print(Separator)
-          print(padL(numberOfEffectPolymorphicDefs, ColWidth))
+          print(padL(format(numberOfEffectPolymorphicFunctions), ColWidth))
           println(EndOfLine)
         }
       }
@@ -71,9 +77,9 @@ object Summarizer {
       println("---")
       print(padR("Totals", ModWidth))
       print(Separator)
-      print(padL(number(totalLines), ColWidth))
+      print(padL(format(totalLines), ColWidth))
       print(Separator)
-      print(padL(number(totalFunctions), ColWidth))
+      print(padL(format(totalFunctions), ColWidth))
   }
 
   private def getDefs(root: Root, source: Ast.Source): Iterable[Def] =
@@ -81,7 +87,7 @@ object Summarizer {
       case (sym, defn) if sym.loc.source == source => defn
     }
 
-  private def number(n: Int): String = f"$n%,d".replace(".", ",")
+  private def format(n: Int): String = f"$n%,d".replace(".", ",")
 
   private def isPure(defn: Def): Boolean = defn.spec.pur == Type.Pure
 
@@ -89,8 +95,14 @@ object Summarizer {
 
   private def isEffectPolymorphic(defn: Def): Boolean = !isPure(defn) && !isImpure(defn)
 
+  /**
+    * Right-pads the given string `s` to length `l`.
+    */
   private def padR(s: String, l: Int): String = s.padTo(l, ' ')
 
+  /**
+    * Left-pads the given string `s` to length `l`.
+    */
   private def padL(s: String, l: Int): String = {
     if (s.length >= l) {
       return s
