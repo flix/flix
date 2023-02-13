@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completer.{KeywordCompleter, FieldCompleter, PredicateCompleter, TypeCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionContext
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -166,7 +167,7 @@ object CompletionProvider {
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getTypeCompletions()
+      case typeRegex() | typeAliasRegex() => TypeCompleter().getCompletions
       case effectRegex() => getEffectCompletions()
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
@@ -177,8 +178,8 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        PredicateCompleter.getPredicateCompletions() ++
-        TypeCompleter.getTypeCompletions() ++
+        PredicateCompleter().getCompletions ++
+        TypeCompleter().getCompletions ++
         getEffectCompletions()
     }
   }
@@ -189,11 +190,11 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    KeywordCompleter.getKeywordCompletions() ++
+    KeywordCompleter().getCompletions ++
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
-      FieldCompleter.getFieldCompletions() ++
+      FieldCompleter().getCompletions ++
       getOpCompletions() ++
       getMatchCompletitions()
   }

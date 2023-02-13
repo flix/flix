@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.language.ast.TypedAst
-
-object KeywordCompleter {
+object KeywordCompletionProvider {
 
   /**
     * Returns a list of keyword completions.
     */
-  def getKeywordCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): List[CompletionItem] = {
+  def getKeywords()(implicit context: CompletionContext): Iterable[Completion] = {
     // NB: Please keep the list alphabetically sorted.
     List(
       "@Deprecated",
@@ -90,8 +87,6 @@ object KeywordCompleter {
       "with",
       "without",
       "yield"
-    ).foldLeft[List[CompletionItem]](Nil) {
-      case (acc, name) => Completion.KeywordCompletion(name, context).toCompletionItem :: acc
-    }
+    ) map (name => Completion.KeywordCompletion(name, context))
   }
 }

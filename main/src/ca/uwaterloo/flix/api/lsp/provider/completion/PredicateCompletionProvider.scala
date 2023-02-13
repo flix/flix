@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,26 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index}
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object PredicateCompleter {
+object PredicateCompletionProvider {
 
   /**
     * Returns a list of completion for predicates
     */
-  def getPredicateCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  def getPredicates()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }
 
     index.predDefs.m.concat(index.predUses.m)
-      .foldLeft[List[CompletionItem]](Nil) {
-        case (acc, (pred, locs)) =>
+      .map {
+        case (pred, locs) =>
           val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
           val name = pred.name
-          Completion.PredicateCompletion(name, priority(name), context).toCompletionItem :: acc
+          Completion.PredicateCompletion(name, priority(name), context)
       }
   }
 }

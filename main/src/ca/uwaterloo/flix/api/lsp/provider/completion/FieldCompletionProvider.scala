@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index}
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object FieldCompleter {
+object FieldCompletionProvider {
 
   /**
     * Gets completions for record fields
     */
-  def getFieldCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  def getFields()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     // Do not get field completions if we are importing or using.
     if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
@@ -35,9 +35,9 @@ object FieldCompleter {
       case regex(prefix) =>
           index.fieldDefs.m.concat(index.fieldUses.m)
             .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
-            .foldLeft[List[CompletionItem]](Nil) {
-              case (acc, (field, _)) =>
-                Completion.FieldCompletion(s"$prefix.${field.name}", context).toCompletionItem :: acc
+            .map {
+              case (field, _) =>
+                Completion.FieldCompletion(s"$prefix.${field.name}", context)
             }
       case _ => Nil
     }

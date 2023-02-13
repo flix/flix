@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index, TextEdit}
+import ca.uwaterloo.flix.api.lsp.TextEdit
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
-object TypeCompleter {
+object TypeCompletionProvider {
 
   /**
     * Completions for types (enums, aliases, and built-in types)
     */
-  def getTypeCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  def getTypes()(implicit context: CompletionContext, root: TypedAst.Root): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }
@@ -48,19 +48,19 @@ object TypeCompleter {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompleter(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
+        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
 
     val aliases = root.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompleter(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
+        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
 
-    enums ++ aliases ++ BuiltinTypeCompleter.getBuiltinTypeCompletions(priority)
+    enums ++ aliases ++ BuiltinTypeCompletionProvider.getBuiltinTypes(priority)
   }
 
   /**
