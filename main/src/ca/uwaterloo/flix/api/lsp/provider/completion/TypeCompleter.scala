@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.TextEdit
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
-object TypeCompletionProvider {
+object TypeCompleter extends Completer {
 
   /**
-    * Completions for types (enums, aliases, and built-in types)
+    * Returns a List of LSP completion items for types (enums, aliases, and built-in types).
     */
-  def getTypes()(implicit context: CompletionContext, root: TypedAst.Root): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
@@ -38,29 +38,34 @@ object TypeCompletionProvider {
         Priority.low
     }
 
-    // Boost priority if there's a colon immediately before the word the user's typing
-    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
-      Priority.boost _ else Priority.low _
-
     val enums = root.enums.collect {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
+        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
     }
 
     val aliases = root.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priority(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
+        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
     }
 
-    enums ++ aliases ++ BuiltinTypeCompletionProvider.getBuiltinTypes(priority)
+    enums ++ aliases
+  }
+
+  /**
+    * Boost priority if there's a colon immediately before the word the user's typing
+    */
+  def priorityBoostForTypes(name: String)(implicit context: CompletionContext): String = {
+    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
+    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
+    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix))
+      Priority.boost _ else Priority.low _
+    priority(name)
   }
 
   /**

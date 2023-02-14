@@ -21,41 +21,9 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 /**
   * A common super-type for completers.
   */
-sealed trait Completer {
+trait Completer {
   /**
-    * Returns a List of LSP completion items for `this`.
+    * Returns a List of LSP completion items for completer.
     */
-  def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = this match {
-    case Completer.KeywordCompleter() =>
-      KeywordCompletionProvider.getKeywords() map (word => word.toCompletionItem)
-    case Completer.FieldCompleter() =>
-      FieldCompletionProvider.getFields() map (field => field.toCompletionItem)
-    case Completer.PredicateCompleter() =>
-      PredicateCompletionProvider.getPredicates() map (predicate => predicate.toCompletionItem)
-    case Completer.TypeCompleter() =>
-      TypeCompletionProvider.getTypes() map (typ => typ.toCompletionItem)
-  }
-}
-
-object Completer {
-
-  /**
-    * Represents a keyword completer.
-    */
-  case class KeywordCompleter() extends Completer
-
-  /**
-    * Represents a field completer.
-    */
-  case class FieldCompleter() extends Completer
-
-  /**
-    * Represents a predicate completer.
-    */
-  case class PredicateCompleter() extends Completer
-
-  /**
-    * Represents a type completer (enums, aliases, and built-in types).
-    */
-  case class TypeCompleter() extends Completer
+  def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem]
 }

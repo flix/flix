@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{InsertTextFormat, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object BuiltinTypeCompletionProvider {
+object BuiltinTypeCompleter extends Completer {
 
   /* This list is manually maintained. If a new built-in type is added, it must be extended.
    * Built-in types are typically described in TypeConstructor, Namer and Resolver.
@@ -53,30 +53,33 @@ object BuiltinTypeCompletionProvider {
     ("Lazy", List("t"))
   )
 
-  def getBuiltinTypes(priority: String => String)(implicit context: CompletionContext, root: TypedAst.Root): Iterable[Completion] = {
+  /**
+    * Returns a List of LSP completion items for builtin types.
+    */
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
     if (root == null) {
       return Nil
     }
 
     val builtinTypes = BuiltinTypeNames.map { name =>
-        val internalPriority = Priority.high _
-        Completion.BuiltinTypeCompletion(name, priority(internalPriority(name)), TextEdit(context.range, name),
-          InsertTextFormat.PlainText)
+      val internalPriority = Priority.high _
+      Completion.BuiltinTypeCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
+        InsertTextFormat.PlainText).toCompletionItem
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
       val internalPriority = Priority.low _
-      Completion.BuiltinTypeCompletion(name, priority(internalPriority(name)), TextEdit(context.range, name),
-        InsertTextFormat.PlainText)
+      Completion.BuiltinTypeCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
+        InsertTextFormat.PlainText).toCompletionItem
     }
 
     val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
       case (name, tparams) =>
-      val internalPriority = Priority.boost _
-      val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
-      val finalName = s"$name[${tparams.mkString(", ")}]"
-      Completion.BuiltinTypeCompletion(finalName, priority(internalPriority(name)),
-        TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet)
+        val internalPriority = Priority.boost _
+        val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
+        val finalName = s"$name[${tparams.mkString(", ")}]"
+        Completion.BuiltinTypeCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name)),
+          TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet).toCompletionItem
     }
 
     builtinTypes ++ lowPriorityBuiltinTypes ++ builtinTypesWithParams
