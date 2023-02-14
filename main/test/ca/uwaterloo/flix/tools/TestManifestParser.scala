@@ -895,6 +895,66 @@ class TestManifestParser extends FunSuite {
     assertResult(Err(ManifestError.DependencyFormatError(null, "A value in a dependency table should be of type String")))(ManifestParser.parse(toml, null))
   }
 
+  test("Err.dependencies.name.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:ml&tze/flixball" = "3.2.1"
+        |
+        |[dev-dependencies]
+        |"github:fuzzer/fuzzer" = "1.2.3"
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |
+        |[dev-mvn-dependencies]
+        |"org.junit:junit" = "1.2.3"
+        |
+        |""".stripMargin
+    }
+    assertResult(Err(ManifestError.IllegalName(null, "A dependency name cannot include any special characters: ml&tze")))(ManifestParser.parse(toml, null))
+  }
+
+  test("Err.dependencies.name.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic#tac-toe" = "1.2.3"
+        |"github:mlutze/flixball" = "3.2.1"
+        |
+        |[dev-dependencies]
+        |"github:fuzzer/fuzzer" = "1.2.3"
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |
+        |[dev-mvn-dependencies]
+        |"org.junit:junit" = "1.2.3"
+        |
+        |""".stripMargin
+    }
+    assertResult(Err(ManifestError.IllegalName(null, "A dependency name cannot include any special characters: tic#tac-toe")))(ManifestParser.parse(toml, null))
+  }
+
   test("Err.dependencies.format.01") {
     val toml = {
       """
@@ -1430,6 +1490,66 @@ class TestManifestParser extends FunSuite {
     assertResult(Err(ManifestError.DependencyFormatError(null, "A value in a dependency table should be of type String")))(ManifestParser.parse(toml, null))
   }
 
+  test("Err.mvn-dependencies.name.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:mlutze/flixball" = "3.2.1"
+        |
+        |[dev-dependencies]
+        |"github:fuzzer/fuzzer" = "1.2.3"
+        |
+        |[mvn-dependencies]
+        |"org.pos/gresql:post¤resql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |
+        |[dev-mvn-dependencies]
+        |"org.junit:junit" = "1.2.3"
+        |
+        |""".stripMargin
+    }
+    assertResult(Err(ManifestError.IllegalName(null, "A dependency name cannot include any special characters: org.pos/gresql")))(ManifestParser.parse(toml, null))
+  }
+
+  test("Err.mvn-dependencies.name.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:mlutze/flixball" = "3.2.1"
+        |
+        |[dev-dependencies]
+        |"github:fuzzer/fuzzer" = "1.2.3"
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:post¤resql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |
+        |[dev-mvn-dependencies]
+        |"org.junit:junit" = "1.2.3"
+        |
+        |""".stripMargin
+    }
+    assertResult(Err(ManifestError.IllegalName(null, "A dependency name cannot include any special characters: post¤resql")))(ManifestParser.parse(toml, null))
+  }
+
   test("Err.mvn-dependencies.format.01") {
     val toml = {
       """
@@ -1781,7 +1901,7 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = "4.7.0"
         |
         |[dev-mvn-dependencies]
-        |"org;junit;junit" = "1.2.3"
+        |"org/junit/junit" = "1.2.3"
         |
         |""".stripMargin
     }

@@ -19,15 +19,12 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.fmt.Audience
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 import scala.collection.mutable
 
 object PrettyPrinter {
-
-  private implicit val audience: Audience = Audience.External
 
   object Lifted {
 

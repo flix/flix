@@ -29,8 +29,6 @@ import scala.annotation.tailrec
 
 object HoverProvider {
 
-  implicit val audience: Audience = Audience.External
-
   def processHover(uri: String, pos: Position, current: Boolean)(implicit index: Index, root: Root, flix: Flix): JObject = {
     index.query(uri, pos) match {
       case None => mkNotFound(uri, pos)

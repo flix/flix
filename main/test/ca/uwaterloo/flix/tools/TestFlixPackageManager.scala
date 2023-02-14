@@ -9,7 +9,7 @@ import java.nio.file.Files
 class TestFlixPackageManager extends FunSuite {
 
   test("Install missing dependency.01") {
-    assertResult(expected = Ok(List("magnus-madsen/helloworld/ver1.0.0/helloworld.fpkg")))(actual = {
+    assertResult(expected = Ok(()))(actual = {
       val toml = {
         """
           |[package]
@@ -42,8 +42,7 @@ class TestFlixPackageManager extends FunSuite {
   }
 
   test("Install missing dependency.02") {
-    assertResult(expected = Ok(List("magnus-madsen/helloworld/ver1.0.0/helloworld.fpkg",
-                                    "magnus-madsen/helloworld/ver1.1.0/helloworld.fpkg")))(actual = {
+    assertResult(expected = Ok(()))(actual = {
       val toml = {
         """
           |[package]
@@ -77,7 +76,7 @@ class TestFlixPackageManager extends FunSuite {
   }
 
   test("Do not install existing dependency") {
-    assertResult(expected = Ok(List()))(actual = {
+    assertResult(expected = Ok(()))(actual = {
       val toml = {
         """
           |[package]

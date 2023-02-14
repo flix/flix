@@ -31,7 +31,6 @@ sealed trait TypeError extends CompilationMessage {
 }
 
 object TypeError {
-  implicit val audience: Audience = Audience.External
 
   /**
     * Generalization Error.

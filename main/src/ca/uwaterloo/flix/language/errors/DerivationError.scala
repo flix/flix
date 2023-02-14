@@ -17,19 +17,10 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.fmt.FormatType.formatType
-import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
   val kind: String = "Derivation Error"
-}
-
-object DerivationError {
-  implicit val audience = Audience.External
-
 }

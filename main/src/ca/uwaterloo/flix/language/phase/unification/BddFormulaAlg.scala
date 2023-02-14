@@ -116,7 +116,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
   override def toType(f: DD, env: Bimap[Symbol.KindedTypeVarSym, Int]): Type = {
-    if(flix.options.xqmc) {
+    if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
       createTypeFromBDDAux(f, Type.True, env)

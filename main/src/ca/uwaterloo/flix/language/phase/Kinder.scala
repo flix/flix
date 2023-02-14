@@ -447,7 +447,7 @@ object Kinder {
       val fparamVal = visitFormalParam(fparam0, kenv0, senv, taenv, root)
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(fparamVal, expVal) {
-        case (fparam, exp) => KindedAst.Expression.Lambda(fparam, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        case (fparam, exp) => KindedAst.Expression.Lambda(fparam, exp, loc)
       }
 
     case ResolvedAst.Expression.Unary(sop, exp0, loc) =>
@@ -1037,21 +1037,6 @@ object Kinder {
       val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
       mapN(elmsVal) {
         elms => KindedAst.Pattern.Tuple(elms, loc)
-      }
-    case ResolvedAst.Pattern.Array(elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.Array(elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-    case ResolvedAst.Pattern.ArrayTailSpread(elms0, sym, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.ArrayTailSpread(elms, sym, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-    case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms0, loc) =>
-      val elmsVal = traverse(elms0)(visitPattern(_, kenv, root))
-      mapN(elmsVal) {
-        elms => KindedAst.Pattern.ArrayHeadSpread(sym, elms, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
   }
 

@@ -41,6 +41,8 @@ object ManifestError {
 
   case class UnsupportedRepository(path: Path, msg: String) extends ManifestError
 
+  case class IllegalName(path: Path, msg: String) extends ManifestError
+
   case class IOError(path: Path) extends ManifestError
 
 }

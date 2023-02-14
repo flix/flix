@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.api.Version
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.tools.pkg.FlixPackageManager
 import ca.uwaterloo.flix.util._
 
 import java.io.File
@@ -91,6 +90,7 @@ object Main {
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
+      installDeps = cmdOpts.installDeps,
       output = cmdOpts.output.map(s => Paths.get(s)),
       target = Options.Default.target,
       test = Options.Default.test,
@@ -102,6 +102,8 @@ object Main {
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
+      xnoboolunif = cmdOpts.xnoboolunif,
+      xnoqmc = cmdOpts.xnoqmc,
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -111,8 +113,8 @@ object Main {
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintasts = cmdOpts.xprintasts,
       xprintboolunif = cmdOpts.xprintboolunif,
-      xqmc = cmdOpts.xqmc,
       xflexibleregions = cmdOpts.xflexibleregions,
+      xsummary = cmdOpts.xsummary
     )
 
     // Don't use progress bar if benchmarking.
@@ -174,15 +176,6 @@ object Main {
           shell.loop()
           System.exit(0)
 
-        case Command.Install(project) =>
-          val o = options.copy(progress = false)
-          val result = FlixPackageManager.install(project, None, cwd)(System.out)
-          val code = result match {
-            case Result.Ok(_) => 0
-            case Result.Err(_) => -1
-          }
-          System.exit(code)
-
         case Command.Lsp(port) =>
           val o = options.copy(progress = false)
           try {
@@ -219,6 +212,7 @@ object Main {
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
+                     installDeps: Boolean = true,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -237,6 +231,8 @@ object Main {
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
+                     xnoboolunif: Boolean = false,
+                     xnoqmc: Boolean = false,
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -246,8 +242,8 @@ object Main {
                      xvirtualthreads: Boolean = false,
                      xprintasts: Set[String] = Set.empty,
                      xprintboolunif: Boolean = false,
-                     xqmc: Boolean = false,
                      xflexibleregions: Boolean = false,
+                     xsummary: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -276,8 +272,6 @@ object Main {
     case object Test extends Command
 
     case object Repl extends Command
-
-    case class Install(project: String) extends Command
 
     case class Lsp(port: Int) extends Command
 
@@ -319,12 +313,6 @@ object Main {
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
-
-      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
-        .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
-            .required()
-        )
 
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
@@ -371,6 +359,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 
@@ -464,13 +455,21 @@ object Main {
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
 
+      // Xno-bool-unif
+      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
+        text("[experimental] disables Boolean unification. (DO NOT USE).")
+
       // Xno-unit-tests
       opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
         text("[experimental] excludes unit tests from performance benchmarks.")
 
-      // Xqmc
-      opt[Unit]("Xqmc").action((_, c) => c.copy(xqmc = true)).
-        text("[experimental] enables Quine McCluskey when using BDDs.")
+      // Xno-qmc
+      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
+        text("[experimental] disables Quine McCluskey when using BDDs.")
+
+      // Xsummary
+      opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
+        text("[experimental] prints a summary of the compiled modules.")
 
       note("")
 

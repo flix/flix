@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{Entity, Index, InlayHint, InlayHintKind, Posit
 import ca.uwaterloo.flix.language.ast.Ast.TypeSource
 import ca.uwaterloo.flix.language.ast.TypedAst.{FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatType}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization
 
 object InlayHintProvider {

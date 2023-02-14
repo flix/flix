@@ -600,21 +600,6 @@ object Monomorph {
       case Pattern.Tuple(elms, tpe, loc) =>
         val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
         (Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
-      case Pattern.Array(elms, tpe, loc) =>
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.Array(ps, subst(tpe), loc), if (envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
-      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-        val freshSym = Symbol.freshVarSym(sym)
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.ArrayTailSpread(ps, freshSym, subst(tpe), loc),
-          if (envs.isEmpty) Map(sym -> freshSym)
-          else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
-      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-        val freshSym = Symbol.freshVarSym(sym)
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.ArrayHeadSpread(freshSym, ps, subst(tpe), loc),
-          if (envs.isEmpty) Map(sym -> freshSym)
-          else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
     }
 
     def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution) = method match {

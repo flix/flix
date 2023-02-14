@@ -82,7 +82,7 @@ object KindedAst {
 
     case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -241,12 +241,6 @@ object KindedAst {
     case class Tag(sym: Ast.CaseSymUse, pat: KindedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
     case class Tuple(elms: List[KindedAst.Pattern], loc: SourceLocation) extends KindedAst.Pattern
-
-    case class Array(elms: List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[KindedAst.Pattern], sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Pattern
 
   }
 

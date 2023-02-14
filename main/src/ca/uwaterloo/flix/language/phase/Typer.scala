@@ -559,13 +559,13 @@ object Typer {
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
 
-      case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
         for {
           (constrs, bodyType, bodyPur, bodyEff) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
-          resultTyp <- unifyTypeM(tvar, Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc), loc)
+          resultTyp = Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc)
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Apply(exp, exps, tvar, pvar, evar, loc) =>
@@ -2029,10 +2029,10 @@ object Typer {
         val es = exps.map(visitExp(_, subst0))
         TypedAst.Expression.Apply(e, es, subst0(tvar), subst0(pvar), subst0(evar), loc)
 
-      case KindedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+      case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp, subst0)
-        val t = subst0(tvar)
+        val t = Type.mkArrowWithEffect(p.tpe, e.pur, e.eff, e.tpe, loc)
         TypedAst.Expression.Lambda(p, e, t, loc)
 
       case KindedAst.Expression.Unary(sop, exp, tvar, loc) =>
@@ -2696,29 +2696,6 @@ object Typer {
           elementTypes <- traverseM(elms)(visit)
         } yield Type.mkTuple(elementTypes, loc)
 
-      case KindedAst.Pattern.Array(elms, tvar, loc) =>
-        for {
-          elementTypes <- traverseM(elms)(visit)
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          resultType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
-        } yield resultType
-
-      case KindedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-        for {
-          elementTypes <- traverseM(elms)(visit)
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
-          resultType <- unifyTypeM(varSym.tvar, arrayType, loc)
-        } yield resultType
-
-      case KindedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-        for {
-          elementTypes <- traverseM(elms)(visit)
-          elementType <- unifyTypeAllowEmptyM(elementTypes, Kind.Star, loc)
-          arrayType <- unifyTypeM(tvar, Type.mkArray(elementType, Type.False, loc), loc)
-          resultType <- unifyTypeM(varSym.tvar, arrayType, loc)
-        } yield resultType
-
     }
 
     visit(pat0)
@@ -2750,9 +2727,6 @@ object Typer {
         val tpe = Type.mkTuple(es.map(_.tpe), loc)
         TypedAst.Pattern.Tuple(es, tpe, loc)
 
-      case KindedAst.Pattern.Array(elms, tvar, loc) => TypedAst.Pattern.Array(elms map visit, subst0(tvar), loc)
-      case KindedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => TypedAst.Pattern.ArrayTailSpread(elms map visit, sym, subst0(tvar), loc)
-      case KindedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => TypedAst.Pattern.ArrayHeadSpread(sym, elms map visit, subst0(tvar), loc)
     }
 
     visit(pat0)

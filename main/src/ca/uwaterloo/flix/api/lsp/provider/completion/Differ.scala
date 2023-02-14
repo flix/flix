@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Matthew Lutze
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-package ca.uwaterloo.flix.language.fmt
+import ca.uwaterloo.flix.language.ast.TypedAst
 
-/**
-  * Describes the intended audience of the result of a method call.
-  *
-  * [[Audience.External]] indicates the result should be formatted for display to users.
-  *
-  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
-  */
-sealed trait Audience
-object Audience {
-  case object External extends Audience
-  case object Internal extends Audience
+object Differ {
+
+  /**
+    * Computes the semantic difference between the `oldAst` and `newAst`
+    */
+  def difference(oldAst: TypedAst.Root, newAst: TypedAst.Root): List[Delta] = {
+    val newDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(Delta.AddDef)
+
+    val result = newDefs
+    result
+  }
 }

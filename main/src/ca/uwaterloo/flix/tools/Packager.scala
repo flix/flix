@@ -15,17 +15,16 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
-import java.io.{File, PrintWriter}
+import java.io.PrintWriter
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
@@ -64,6 +63,7 @@ object Packager {
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
+    val manifestFile = getManifestFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
     val mainSourceFile = getMainSourceFile(p)
@@ -90,6 +90,14 @@ object Packager {
     newDirectoryIfAbsent(libraryDirectory)
     newDirectoryIfAbsent(sourceDirectory)
     newDirectoryIfAbsent(testDirectory)
+
+    newFileIfAbsent(manifestFile) {
+      s"""[package]
+        |name    = "$packageName"
+        |version = "0.1.0"
+        |flix    = "${Version.CurrentVersion}"
+        |""".stripMargin
+    }
 
     newFileIfAbsent(licenseFile) {
       """Enter license information here.
@@ -400,6 +408,11 @@ object Packager {
   def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
 
   /**
+    * Returns the path to the Manifest file relative to the given path `p`.
+    */
+  private def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
+
+  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
@@ -484,7 +497,7 @@ object Packager {
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a zip-archive.
