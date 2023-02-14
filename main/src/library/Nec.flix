@@ -837,7 +837,7 @@ namespace Nec {
         if (len < 1)
             None
         else {
-            let acc = singleton(get(0, arr));
+            let acc = singleton(Array.get(0, arr));
             loop(1, len, acc) |> Some
         }
 
