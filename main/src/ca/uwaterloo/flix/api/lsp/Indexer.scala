@@ -239,12 +239,12 @@ object Indexer {
     case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
-      }
+      } ++ Index.occurrenceOf(exp0)
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
         case RestrictableChoiceRule(_, body) => visitExp(body)
-      }
+      } ++ Index.occurrenceOf(exp0)
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)

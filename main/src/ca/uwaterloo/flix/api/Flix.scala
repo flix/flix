@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -526,6 +527,11 @@ class Flix {
 
     // Reset the progress bar.
     progressBar.complete()
+
+    // Print summary?
+    if (options.xsummary){
+      Summary.printSummary(result)
+    }
 
     // Return the result (which could contain soft failures).
     result

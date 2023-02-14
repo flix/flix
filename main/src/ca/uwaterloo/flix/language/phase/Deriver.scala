@@ -287,7 +287,6 @@ object Deriver {
       val lambda = KindedAst.Expression.Lambda(
         KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
-        Type.freshVar(Kind.Star, loc),
         loc
       )
 

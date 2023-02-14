@@ -255,4 +255,11 @@ class TestMain extends FunSuite {
     assert(opts.explain)
   }
 
+  test("--Xsummary") {
+    val args = Array("--Xsummary")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xsummary)
+  }
+
+
 }

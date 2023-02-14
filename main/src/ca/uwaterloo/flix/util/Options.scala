@@ -57,6 +57,7 @@ object Options {
     xprintboolunif = false,
     xnoqmc = false,
     xflexibleregions = false,
+    xsummary = false
   )
 
   /**
@@ -107,6 +108,7 @@ object Options {
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xstrictmono         enables strict monomorphization.
   * @param xprintasts          prints the chosen AST to a given path.
+  * @param xsummary            prints a summary of the compiled modules.
   */
 case class Options(lib: LibLevel,
                    debug: Boolean,
@@ -140,6 +142,7 @@ case class Options(lib: LibLevel,
                    xprintasts: Set[String],
                    xprintboolunif: Boolean,
                    xflexibleregions: Boolean,
+                   xsummary: Boolean
                   )
 
 /**
