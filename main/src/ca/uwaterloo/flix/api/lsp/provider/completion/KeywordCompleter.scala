@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index}
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object KeywordCompleter extends Completer {
 
   /**
-    * Returns a List of LSP completion items for keywords.
+    * Returns a List of Completion for keywords.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] =
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] =
   // NB: Please keep the list alphabetically sorted.
     List(
       "@Deprecated",
@@ -89,5 +89,5 @@ object KeywordCompleter extends Completer {
       "with",
       "without",
       "yield"
-    ) map (name => Completion.KeywordCompletion(name, context).toCompletionItem)
+    ) map (name => Completion.KeywordCompletion(name, context))
 }

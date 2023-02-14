@@ -166,7 +166,7 @@ object CompletionProvider {
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions
+      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => getEffectCompletions()
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
@@ -177,9 +177,9 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        PredicateCompleter.getCompletions ++
+        (PredicateCompleter.getCompletions ++
         TypeCompleter.getCompletions ++
-        BuiltinTypeCompleter.getCompletions ++
+        BuiltinTypeCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
         getEffectCompletions()
     }
   }
@@ -190,11 +190,11 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    KeywordCompleter.getCompletions ++
+    (KeywordCompleter.getCompletions map (word => word.toCompletionItem)) ++
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
-      FieldCompleter.getCompletions ++
+      (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
       getOpCompletions() ++
       getMatchCompletitions()
   }

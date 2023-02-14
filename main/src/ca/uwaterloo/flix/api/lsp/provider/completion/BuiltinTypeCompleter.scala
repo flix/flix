@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index, InsertTextFormat, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -54,9 +54,9 @@ object BuiltinTypeCompleter extends Completer {
   )
 
   /**
-    * Returns a List of LSP completion items for builtin types.
+    * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }
@@ -64,13 +64,13 @@ object BuiltinTypeCompleter extends Completer {
     val builtinTypes = BuiltinTypeNames.map { name =>
       val internalPriority = Priority.high _
       Completion.BuiltinTypeCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
-        InsertTextFormat.PlainText).toCompletionItem
+        InsertTextFormat.PlainText)
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
       val internalPriority = Priority.low _
       Completion.BuiltinTypeCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
-        InsertTextFormat.PlainText).toCompletionItem
+        InsertTextFormat.PlainText)
     }
 
     val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters.map {
@@ -79,7 +79,7 @@ object BuiltinTypeCompleter extends Completer {
         val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
         val finalName = s"$name[${tparams.mkString(", ")}]"
         Completion.BuiltinTypeCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name)),
-          TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet).toCompletionItem
+          TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet)
     }
 
     builtinTypes ++ lowPriorityBuiltinTypes ++ builtinTypesWithParams

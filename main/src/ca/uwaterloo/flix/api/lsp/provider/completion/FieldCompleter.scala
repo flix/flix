@@ -15,15 +15,15 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index}
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object FieldCompleter extends Completer {
 
   /**
-    * Returns a List of LSP completion items for fields.
+    * Returns a List of Completion for fields.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     // Do not get field completions if we are importing or using.
     if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
@@ -37,7 +37,7 @@ object FieldCompleter extends Completer {
           .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
           .map {
             case (field, _) =>
-              Completion.FieldCompletion(s"$prefix.${field.name}", context).toCompletionItem
+              Completion.FieldCompletion(s"$prefix.${field.name}", context)
           }
       case _ => Nil
     }

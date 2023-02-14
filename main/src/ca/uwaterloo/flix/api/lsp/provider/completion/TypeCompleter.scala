@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{CompletionItem, Index, TextEdit}
+import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter extends Completer {
 
   /**
-    * Returns a List of LSP completion items for types (enums, aliases, and built-in types).
+    * Returns a List of Completion for types (enums and aliases).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }
@@ -43,7 +43,7 @@ object TypeCompleter extends Completer {
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
         Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
 
     val aliases = root.typeAliases.map {
@@ -51,7 +51,7 @@ object TypeCompleter extends Completer {
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
         Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text)).toCompletionItem
+          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
 
     enums ++ aliases
