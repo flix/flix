@@ -60,18 +60,17 @@ class Bootstrap {
     val tomlPath = getManifestFile(path)
     val manifest = ManifestParser.parse(tomlPath) match {
       case Ok(m) => println(m); m
-      //TODO: correct way to propagate errors?
-      case Err(e) => return Err(BootstrapError.ManifestParseError(tomlPath, e.toString))
+      case Err(e) => return Err(BootstrapError.ManifestParseError(e))
     }
 
     // 2. Check each dependency is available or download it.
     FlixPackageManager.installAll(manifest, path)(System.out) match {
-      case Ok(_) => // do nothing
-      case Err(e) => return Err(BootstrapError.FlixPackageError(e.toString))
+      case Ok(_) => // do nothing TODO: return list of paths
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
     MavenPackageManager.installAll(manifest)(System.out) match {
       case Ok(_) => // do nothing
-      case Err(e) => return Err(BootstrapError.MavenPackageError(e.toString))
+      case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
 
     // 3. Compute the set of JAR paths and Flix fpkg paths.
@@ -79,7 +78,7 @@ class Bootstrap {
     val filesMaven = manifest.getMavenPackages //TODO: implement - where are Coursier dependencies?
 
     // 4. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = getAllFlixFilesHere(path) //TODO: only get files in this directory (?)
+    val filesHere = getAllFlixFilesHere(path)
     val filesSrc = getAllFilesWithExt(getSourceDirectory(path), "flix")
     val filesTest = getAllFilesWithExt(getTestDirectory(path), "flix")
 
