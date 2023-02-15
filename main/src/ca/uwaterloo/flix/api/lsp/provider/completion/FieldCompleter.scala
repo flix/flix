@@ -23,7 +23,7 @@ object FieldCompleter extends Completer {
   /**
     * Returns a List of Completion for fields.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // Do not get field completions if we are importing or using.
     if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil

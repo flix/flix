@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Lukas Rønn
+ * Copyright 2023 Lukas Rønn, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * A common super-type for completers.
+  * Represents a list of changes.
   */
-trait Completer {
-  /**
-    * Returns a List of Completion for completer.
-    */
-  def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion]
+case class DeltaContext(deltas: List[Delta]) {
+
+  def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
+    case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
+    case _ => false
+  }
+
 }
