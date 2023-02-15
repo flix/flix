@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
+import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -87,6 +88,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * The current reverse index. The index is empty until the source code is compiled.
     */
   private var index: Index = Index.empty
+
+  /**
+    * The current delta context. Initially has no changes.
+    */
+  private var delta: DeltaContext = DeltaContext(Nil)
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
@@ -265,7 +271,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull, delta)
 
     case Request.Highlight(id, uri, pos) =>
       ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
@@ -356,8 +362,10 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
   private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+    val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
+    this.delta = Differ.difference(oldRoot, root)
     this.current = true
     this.currentErrors = errors.toList
 

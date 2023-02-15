@@ -15,12 +15,17 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Name, Symbol}
 
 /**
   * A common super-type for deltas (differences) between ASTs.
   */
-sealed trait Delta
+sealed trait Delta {
+  /**
+    * Returns the timestamp (time since UNIX epoch) of when the change happened.
+    */
+  def timestamp: Long
+}
 
 object Delta {
 
@@ -29,14 +34,21 @@ object Delta {
     *
     * @param sym the symbol of the new function.
     */
-  case class AddDef(sym: Symbol.DefnSym) extends Delta
+  case class AddDef(sym: Symbol.DefnSym, timestamp: Long) extends Delta
 
   /**
     * Represents the addition of a new enum.
     *
     * @param sym the symbol of the new enum.
     */
-  case class AddEnum(sym: Symbol.EnumSym) extends Delta
+  case class AddEnum(sym: Symbol.EnumSym, timestamp: Long) extends Delta
+
+  /**
+    * Represents the addition of a new field.
+    *
+    * @param field the name of the field.
+    */
+  case class AddField(field: Name.Field, timestamp: Long) extends Delta
 
   // TODO: ...
 
