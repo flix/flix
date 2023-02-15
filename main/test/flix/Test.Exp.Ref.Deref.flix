@@ -105,6 +105,6 @@ namespace Test/Exp/Ref/Deref {
     @test
     def testDeref18(): Bool = region r {
         let a = Array#{ref 1 @ r} @ r;
-        deref a[0] == 1
+        deref $ARRAY_LOAD$(a, 0) == 1
     }
 }
