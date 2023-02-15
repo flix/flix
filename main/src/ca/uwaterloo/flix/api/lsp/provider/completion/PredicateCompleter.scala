@@ -24,7 +24,7 @@ object PredicateCompleter extends Completer {
   /**
     * Returns a List of Completion for predicates.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }

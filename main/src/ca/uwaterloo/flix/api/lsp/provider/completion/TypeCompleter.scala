@@ -24,7 +24,7 @@ object TypeCompleter extends Completer {
   /**
     * Returns a List of Completion for types (enums and aliases).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[Completion] = {
     if (root == null) {
       return Nil
     }
