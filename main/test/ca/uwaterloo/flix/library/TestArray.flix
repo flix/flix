@@ -48,32 +48,32 @@ namespace TestArray {
 
     @test
     def testNew01(): Bool = region r {
-        Array.new(r, 10)[0] == 0
+        Array.get(0, Array.new(r, 10)) == 0
     }
 
     @test
     def testNew02(): Bool = region r {
-        Array.new(r, 10)[5] == 0
+        Array.get(5, Array.new(r, 10)) == 0
     }
 
     @test
     def testNew03(): Bool = region r {
-        Array.new(r, 10)[9] == 0
+        Array.get(9, Array.new(r, 10)) == 0
     }
 
     @test
     def testNew04(): Bool = region r {
-        Array.new(r, 10)[0] == false
+        Array.get(0, Array.new(r, 10)) == false
     }
 
     @test
     def testNew05(): Bool = region r {
-        Array.new(r, 10)[5] == false
+        Array.get(5, Array.new(r, 10)) == false
     }
 
     @test
     def testNew06(): Bool = region r {
-        Array.new(r, 10)[9] == false
+        Array.get(9, Array.new(r, 10)) == false
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -112,19 +112,19 @@ namespace TestArray {
     @test
     def testPut01(): Bool = region r {
         let a = (Array#{1} @ r) !> Array.put(42, 0);
-        a[0] == 42
+        Array.get(0, a) == 42
     }
 
     @test
     def testPut02(): Bool = region r {
         let a = (Array#{1, 2} @ r) !> Array.put(42, 1);
-        a[1] == 42
+        Array.get(1, a) == 42
     }
 
     @test
     def testPut03(): Bool = region r {
         let a = (Array#{1, 2, 3} @ r) !> Array.put(42, 2);
-        a[2] == 42
+        Array.get(2, a) == 42
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -171,17 +171,17 @@ namespace TestArray {
 
     @test
     def testSlice01(): Bool = region r {
-        Array.slice(r, start = 0, end = 1, Array#{1, 2, 3} @ r)[0] == 1
+        Array.get(0, Array.slice(r, start = 0, end = 1, Array#{1, 2, 3} @ r)) == 1
     }
 
     @test
     def testSlice02(): Bool = region r {
-        Array.slice(r, start = 1, end = 2, Array#{1, 2, 3} @ r)[0] == 2
+        Array.get(0, Array.slice(r, start = 1, end = 2, Array#{1, 2, 3} @ r)) == 2
     }
 
     @test
     def testSlice03(): Bool = region r {
-        Array.slice(r, start = 2, end = 3, Array#{1, 2, 3} @ r)[0] == 3
+        Array.get(0, Array.slice(r, start = 2, end = 3, Array#{1, 2, 3} @ r)) == 3
     }
 
     /////////////////////////////////////////////////////////////////////////////
