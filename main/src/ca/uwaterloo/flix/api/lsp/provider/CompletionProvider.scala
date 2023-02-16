@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext,
+  EffectCompleter, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -167,7 +168,7 @@ object CompletionProvider {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => getWithCompletions()
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
-      case effectRegex() => getEffectCompletions()
+      case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
@@ -178,9 +179,9 @@ object CompletionProvider {
       //
       case _ => getExpCompletions() ++
         (PredicateCompleter.getCompletions ++
-        TypeCompleter.getCompletions ++
-        BuiltinTypeCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
-        getEffectCompletions()
+          TypeCompleter.getCompletions ++
+          BuiltinTypeCompleter.getCompletions ++
+          EffectCompleter.getCompletions map (comp => comp.toCompletionItem))
     }
   }
 
@@ -663,42 +664,6 @@ object CompletionProvider {
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Snippet)
     }.toList
-  }
-
-
-
-  /**
-    * Completions for Effects
-    */
-  private def getEffectCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
-    val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
-
-    val priority = if (context.previousWord == "without") {
-      // If the last word is `without`, we can be very sure an effect is coming.
-      Priority.high _
-    } else if (effSetPrefix.matches(context.prefix) || context.previousWord == "with") {
-      // If the last word is `with` or looks like `\` or `\ {`, it is likely an effect but could be something else.
-      Priority.boost _
-    } else {
-      // Otherwise it's probably not an effect.
-      Priority.low _
-    }
-
-    root.effects.map {
-      case (_, t) =>
-        val name = t.sym.name
-        CompletionItem(label = name,
-          sortText = priority(name),
-          textEdit = TextEdit(context.range, name),
-          documentation = Some(t.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Enum)
-    }
   }
 
   /**
