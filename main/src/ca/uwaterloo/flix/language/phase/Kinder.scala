@@ -551,6 +551,8 @@ object Kinder {
         case (exps, rules) => KindedAst.Expression.RelationalChoose(star, exps, rules, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    // TODO: Continue here using visit[^e]|recoverOne
+
     case ResolvedAst.Expression.RestrictableChoose(star, exp0, rules0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val rulesVal = traverse(rules0)(visitRestrictableChoiceRule(_, kenv0, senv, taenv, henv0, root))
