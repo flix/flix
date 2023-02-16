@@ -420,26 +420,30 @@ class TestValidation extends FunSuite {
     assertResult(SoftFailure("cba", LazyList(ex)))(result)
   }
 
-  test("softRecoverOne01") {
+  test("recoverOne01") {
     val ex = new RuntimeException()
-    val result = ex.toFailure.softRecoverOne((e: Exception) => e.toString)
+    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
+    val result = ex.toFailure.recoverOne(f)
     assertResult(ex.toString.toSoftFailure(ex))(result)
   }
 
-  test("softRecoverOne02") {
-    val result = "abc".toSuccess.softRecoverOne((e: Exception) => e.toString)
+  test("recoverOne02") {
+    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
+    val result = "abc".toSuccess.recoverOne(f)
     assertResult("abc".toSuccess)(result)
   }
 
-  test("softRecoverOne03") {
+  test("recoverOne03") {
     val ex = new RuntimeException()
-    val result = ex.toString.toSoftFailure(ex).softRecoverOne((e: Exception) => e.toString)
+    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
+    val result = ex.toString.toSoftFailure(ex).recoverOne(f)
     assertResult(ex.toString.toSoftFailure(ex))(result)
   }
 
-  test("softRecoverOne04") {
+  test("recoverOne04") {
     val ex = new RuntimeException()
-    val result = Validation.Failure(LazyList(ex, ex)).softRecoverOne((e: Exception) => e.toString)
+    val f: PartialFunction[Exception, String] = (e: Exception) => e.toString
+    val result = Validation.Failure(LazyList(ex, ex)).recoverOne(f)
     assertResult(Validation.Failure(LazyList(ex, ex)))(result)
   }
 }
