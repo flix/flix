@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object EffectCompleter extends Completer {
   /**
-    * Returns a List of Completion for completer.
+    * Returns a List of Completion for effects.
     */
   override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EffectCompletion] = {
     if (root == null) {
