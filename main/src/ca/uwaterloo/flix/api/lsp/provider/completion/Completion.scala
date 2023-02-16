@@ -41,6 +41,9 @@ sealed trait Completion {
     case Completion.TypeCompletion(name, priority, textEdit, documentation) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+    case Completion.EffectCompletion(name, priority, documentation, context) =>
+      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name),
+        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
   }
 }
 
@@ -88,4 +91,13 @@ object Completion {
     * @param documentation  a human-readable string that represents a doc-comment.
     */
   case class TypeCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String]) extends Completion
+
+  /**
+    * Represents a Effect completion
+    *
+    * @param name          the name of the effect.
+    * @param priority      the priority of the effect.
+    * @param documentation a human-readable string that represents a doc-comment.
+    */
+  case class EffectCompletion(name: String, priority: String, documentation: Option[String], context: CompletionContext) extends Completion
 }
