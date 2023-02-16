@@ -1141,7 +1141,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
         |def h(): Unit \ IO =
         |    let arr = Array#{()} @ Static;
-        |    discard f((i: Int32) -> arr[i], 0)
+        |    discard f((i: Int32) -> $ARRAY_LOAD$(arr, i), 0)
         |
         |""".stripMargin
 

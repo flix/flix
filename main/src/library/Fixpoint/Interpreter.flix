@@ -173,10 +173,10 @@ namespace Fixpoint {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            Fixpoint/Tuple.valueAt(tupleEnv[i], index)
+            Fixpoint/Tuple.valueAt(Array.get(i, tupleEnv), index)
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
-            latEnv[i]
+            Array.get(i, latEnv)
         case RamTerm.Meet(cap, lhs, rhs) =>
             evalTerm(env, lhs) `cap` evalTerm(env, rhs)
         case RamTerm.App0(f) =>
