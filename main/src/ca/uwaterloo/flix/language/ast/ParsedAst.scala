@@ -882,15 +882,6 @@ object ParsedAst {
     case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayLoad Expression
-      *
-      * @param base  the array.
-      * @param index the index to load from.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class ArrayLoad(base: ParsedAst.Expression, index: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * ArrayStore Expression
       *
       * @param base    the array.

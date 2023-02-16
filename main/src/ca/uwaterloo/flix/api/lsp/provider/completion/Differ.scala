@@ -22,10 +22,24 @@ object Differ {
   /**
     * Computes the semantic difference between the `oldAst` and `newAst`
     */
-  def difference(oldAst: TypedAst.Root, newAst: TypedAst.Root): List[Delta] = {
-    val newDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(Delta.AddDef)
+  def difference(old: Option[TypedAst.Root], newAst: TypedAst.Root): DeltaContext = old match {
+    case None =>
+      // Case 1: No old AST. No difference.
+      DeltaContext(Nil)
+    case Some(oldAst) => {
+      // Case 2: We have an oldAst and a newAst. Compute their difference.
 
-    val result = newDefs
-    result
+      // TODO: Add some comments and introduce helper functions.
+      val newDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(sym => Delta.AddDef(sym, getCurrentTimestamp))
+      val newEnums = (newAst.enums.keySet -- oldAst.enums.keySet).toList.map(sym => Delta.AddEnum(sym, getCurrentTimestamp))
+
+      DeltaContext(newDefs ++ newEnums)
+    }
   }
+
+  /**
+    * Returns the current timestamp.
+    */
+  private def getCurrentTimestamp: Long = System.nanoTime()
+
 }

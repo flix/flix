@@ -149,7 +149,7 @@ namespace MutDeque {
             if (i == e)
                 acc
             else
-                loop((i + 1) &&& c, e, f(acc, ar[i]));
+                loop((i + 1) &&& c, e, f(acc, Array.get(i, ar)));
         loop(front, back, s)
 
     ///
@@ -168,7 +168,7 @@ namespace MutDeque {
                 acc
             else {
                 let j = (i - 1) &&& c;
-                loop(j, e, f(ar[j], acc))
+                loop(j, e, f(Array.get(j, ar), acc))
             };
         loop(back, front, s)
 
@@ -188,7 +188,7 @@ namespace MutDeque {
             if (i == e)
                 s
             else {
-                f(ar[i], _ -> loop((i + 1) &&& c, e))
+                f(Array.get(i, ar), _ -> loop((i + 1) &&& c, e))
             };
         loop(front, back)
 
@@ -209,7 +209,7 @@ namespace MutDeque {
             let MutDeque(_, a, f, _) = d;
             let a1 = deref a;
             let f1 = deref f;
-            let x = a1[f1];
+            let x = Array.get(f1, a1);
             f := (f1 + 1) `Int32.mod` capacity(d);
             compress!(d);
             Some(x)
@@ -226,7 +226,7 @@ namespace MutDeque {
             let MutDeque(_, a, _, b) = d;
             let a1 = deref a;
             let b1 = (deref b - 1) `Int32.mod` capacity(d);
-            let x = a1[b1];
+            let x = Array.get(b1, a1);
             b := b1;
             compress!(d);
             Some(x)
@@ -264,7 +264,7 @@ namespace MutDeque {
         if (f1 == b1)
             None
         else
-            Some((deref a)[f1])
+            Some(Array.get(f1, deref a))
 
     ///
     /// Optionally returns the back element. Does *not* remove it.
@@ -278,7 +278,7 @@ namespace MutDeque {
         else
             let c = capacity(d) - 1;
             let i = (b1 - 1) &&& c;
-            Some((deref a)[i])
+            Some(Array.get(i, deref a))
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -426,7 +426,7 @@ namespace MutDeque {
         let i = ref (deref f) @ rc;
         let next = () -> {
             if (deref i < deref b) {
-                let x = (deref a)[deref i];
+                let x = Array.get(deref i, deref a);
                 i := deref i + 1 &&& (capacity(d) - 1);
                 Some(x)
             } else {

@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeCompletion
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter extends Completer {
@@ -24,7 +25,7 @@ object TypeCompleter extends Completer {
   /**
     * Returns a List of Completion for types (enums and aliases).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[TypeCompletion] = {
     if (root == null) {
       return Nil
     }

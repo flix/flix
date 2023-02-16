@@ -832,12 +832,12 @@ namespace Nec {
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
-        def loop(ix, end, acc) = if (ix >= end) acc else {let x = arr[ix]; loop(ix+1, end, snoc(acc, x))};
+        def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get(ix, arr); loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
             None
         else {
-            let acc = singleton(arr[0]);
+            let acc = singleton(Array.get(0, arr));
             loop(1, len, acc) |> Some
         }
 
