@@ -118,4 +118,13 @@ object Completion {
     */
   case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
+
+
+  case class ImportNewCompletion() extends Completion
+
+
+  case class ImportMethodCompletion() extends Completion
+
+
+  case class ImportFieldCompletion() extends Completion
 }
