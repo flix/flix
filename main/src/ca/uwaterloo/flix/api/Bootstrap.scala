@@ -41,6 +41,8 @@ object Bootstrap {
 class Bootstrap {
 
   private val sourcePaths: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
+  private var flixPackagePaths: List[Path] = List.empty
+  private var mavenPackagePaths: List[Path] = List.empty
 
   def bootstrap(pathString: String): Result[List[Path], BootstrapError] = {
     //
@@ -48,11 +50,12 @@ class Bootstrap {
     //
     val path = Paths.get(pathString)
     val tomlPath = getManifestFile(path)
-    if (Files.exists(tomlPath)) {
+    val res = if (Files.exists(tomlPath)) {
       projectMode(path)
     } else {
       folderMode(path)
     }
+    res
   }
 
   private def projectMode(path: Path): Result[List[Path], BootstrapError] = {
@@ -65,17 +68,17 @@ class Bootstrap {
 
     // 2. Check each dependency is available or download it.
     FlixPackageManager.installAll(manifest, path)(System.out) match {
-      case Ok(_) => // do nothing TODO: return list of paths
+      case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
     MavenPackageManager.installAll(manifest)(System.out) match {
-      case Ok(_) => // do nothing
+      case Ok(_) => //mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
 
     // 3. Compute the set of JAR paths and Flix fpkg paths.
-    val filesFlix = manifest.getFlixPackages //TODO: implement - why use manifest?
-    val filesMaven = manifest.getMavenPackages //TODO: implement - where are Coursier dependencies?
+    val filesFlix = flixPackagePaths
+    val filesMaven = mavenPackagePaths
 
     // 4. Add *.flix, src/**.flix and test/**.flix
     val filesHere = getAllFlixFilesHere(path)
@@ -106,18 +109,16 @@ class Bootstrap {
 
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
 
-    val manifest: Manifest = ??? // TODO: Probably from a field.
-
     // TODO: Add logic to check if the file has changed.
     for (path <- sourcePaths) {
       flix.addSourcePath(path)
     }
 
-    for (flixPackagePath <- manifest.getFlixPackages) {
+    for (flixPackagePath <- flixPackagePaths) {
       flix.addSourcePath(flixPackagePath)
     }
 
-    for (mavenJarPath <- manifest.getMavenPackages) {
+    for (mavenJarPath <- mavenPackagePaths) {
       flix.addSourcePath(mavenJarPath)
     }
 

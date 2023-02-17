@@ -34,17 +34,16 @@ object FlixPackageManager {
   /**
     * Installs all the Flix dependencies for a Manifest.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val flixDeps = findFlixDependencies(manifest)
 
-    for(dep <- flixDeps) {
+    flixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, Some(dep.version), path) match {
-        case Ok(_) => //do nothing
+        case Ok(l) => l
         case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
       }
-    }
-    ().toOk
+    }).toOk
   }
 
   /**
@@ -54,7 +53,7 @@ object FlixPackageManager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     */
-  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
         (version match {
@@ -88,7 +87,7 @@ object FlixPackageManager {
                 out.println(s"$assetName already exists")
               }
             }
-            ().toOk
+            assets.map(asset => assetFolder.resolve(asset.name)).toOk
         }
     }
   }

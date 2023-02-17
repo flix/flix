@@ -15,21 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
-
-import java.nio.file.{Path, Paths}
-
-case class Manifest(name: String, description: String, version: SemVer, flix: SemVer, license: Option[String], authors: List[String], dependencies: List[Dependency]) {
-
-  def getFlixPackages: List[Path] = {
-    dependencies.collect{
-          //TODO: this is a directory - get all the fpkg file paths from there....
-      case d: FlixDependency => Paths.get(".").resolve("lib").resolve(d.username).resolve(d.projectName).resolve(d.version.toString)
-    }
-
-    List.empty
-  }
-
-  def getMavenPackages: List[Path] = Nil // TODO: Where does Coursier put the files???
-
-}
+case class Manifest(name: String,
+                    description: String,
+                    version: SemVer, flix:
+                    SemVer, license: Option[String],
+                    authors: List[String],
+                    dependencies: List[Dependency]) { }

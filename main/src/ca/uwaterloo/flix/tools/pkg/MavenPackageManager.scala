@@ -74,6 +74,4 @@ object MavenPackageManager {
       case Right(cDep) => Ok(cDep)
     }
 
-
-
 }
