@@ -196,8 +196,8 @@ instance ToString[Array[a, r]] with ToString[a] {
         def loop(i, acc) =
             // NB: we use the intrinsic $ARRAY_LENGTH$ since Array.flix is not in the MinLib
             if (i < $ARRAY_LENGTH$(a)) {
-                if (i == 0) unsafe_cast loop(i + 1, "${a[i]}") as _ \ {}
-                else unsafe_cast loop(i + 1, "${acc}, ${a[i]}") as _ \ {}
+                if (i == 0) unsafe_cast loop(i + 1, "${$ARRAY_LOAD$(a, i)}") as _ \ {}
+                else unsafe_cast loop(i + 1, "${acc}, ${$ARRAY_LOAD$(a, i)}") as _ \ {}
             } else {
                 "[${acc}]"
             };

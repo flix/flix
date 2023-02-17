@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2022 Paul Butcher, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{CompletionContext, KeywordCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext, EffectCompleter, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter, WithCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -51,39 +51,6 @@ import java.lang.reflect.Field
 object CompletionProvider {
 
   //
-  // This list manually maintained. If a new built-in type is added, it must be extended.
-  // Built-in types are typically described in TypeConstructor, Namer and Resolver.
-  //
-  private val BuiltinTypeNames: List[String] = List(
-    "Unit",
-    "Bool",
-    "Char",
-    "Float64",
-    "BigDecimal",
-    "Int32",
-    "Int64",
-    "BigInt",
-    "String"
-  )
-
-  // Built-in types with hardcoded low priority
-  private val LowPriorityBuiltinTypeNames: List[String] = List(
-    "Int8",
-    "Int16",
-    "Float32"
-  )
-
-  // Built-in types with type parameters
-  private val BuiltinTypeNamesWithTypeParameters: List[(String, List[String])] = List(
-    ("Array", List("a", "r")),
-    ("Vector", List("a")),
-    ("Ref", List("a", "r")),
-    ("Sender", List("t", "r")),
-    ("Receiver", List("t", "r")),
-    ("Lazy", List("t"))
-  )
-
-  //
   // To ensure that completions are displayed "most useful" first, we precede sortText with a number. Priorities
   // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
   // are boosted if the cursor is preceded by a ":")
@@ -112,7 +79,7 @@ object CompletionProvider {
   /**
     * Process a completion request.
     */
-  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root): JObject = {
+  def autoComplete(uri: String, pos: Position, source: Option[String], currentErrors: List[CompilationMessage])(implicit flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): JObject = {
     val holeCompletions = getHoleExpCompletions(pos, uri, index, root)
     // If we are currently on a hole the only useful completion is a hole completion.
     if (holeCompletions.nonEmpty) {
@@ -126,7 +93,7 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, flix, index, root) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+      case Some(context) => getCompletions()(context, flix, index, root, deltaContext) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
@@ -169,7 +136,7 @@ object CompletionProvider {
       kind = CompletionItemKind.Function)
   }
 
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
+  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[CompletionItem] = {
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
@@ -198,9 +165,9 @@ object CompletionProvider {
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
-      case withRegex() => getWithCompletions()
-      case typeRegex() | typeAliasRegex() => getTypeCompletions()
-      case effectRegex() => getEffectCompletions()
+      case withRegex() => WithCompleter.getCompletions map (withComp => withComp.toCompletionItem)
+      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
+      case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() => getImportCompletions()
       case useRegex() => getUseCompletions()
@@ -210,9 +177,10 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        getPredicateCompletions() ++
-        getTypeCompletions() ++
-        getEffectCompletions()
+        (PredicateCompleter.getCompletions ++
+          TypeCompleter.getCompletions ++
+          BuiltinTypeCompleter.getCompletions ++
+          EffectCompleter.getCompletions map (comp => comp.toCompletionItem))
     }
   }
 
@@ -221,12 +189,12 @@ object CompletionProvider {
     * This should include all completions supported that could be an expression.
     * All of the completions are not necessarily sound.
     */
-  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    KeywordCompleter.getKeywordCompletions() ++
+  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[CompletionItem] = {
+    (KeywordCompleter.getCompletions map (word => word.toCompletionItem)) ++
       getSnippetCompletions() ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
-      getFieldCompletions() ++
+      (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
       getOpCompletions() ++
       getMatchCompletitions()
   }
@@ -496,58 +464,6 @@ object CompletionProvider {
   }
 
   /**
-    * Returns a list of completion items based on with type class constraints.
-    */
-  private def getWithCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    //
-    // When used with `enum`, `with` needs to be treated differently: we should only show derivable
-    // type classes, and we shouldn't include the type parameter
-    //
-
-    val enumPattern = raw"\s*enum\s+(.*\s)wi?t?h?\s?.*".r
-    val withPattern = raw"\s*(def|instance|class)\s+(.*\s)wi?t?h?\s?.*".r
-    val wordPattern = "wi?t?h?".r
-
-    val currentWordIsWith = wordPattern matches context.word
-
-    if (enumPattern matches context.prefix) {
-      for {
-        (_, clazz) <- root.classes
-        sym = clazz.sym
-        if DerivableSyms.contains(sym)
-        name = sym.toString
-        completion = if (currentWordIsWith) s"with $name" else name
-      } yield
-        CompletionItem(label = completion,
-          sortText = Priority.high(name),
-          textEdit = TextEdit(context.range, completion),
-          documentation = Some(clazz.doc.text),
-          kind = CompletionItemKind.Class)
-    } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
-      root.classes.map {
-        case (_, clazz) =>
-          val name = clazz.sym.toString
-          val hole = "${1:t}"
-          val application = s"$name[$hole]"
-          val completion = if (currentWordIsWith) s"with $application" else application
-          val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
-          CompletionItem(label = label,
-            sortText = Priority.high(name),
-            textEdit = TextEdit(context.range, completion),
-            documentation = Some(clazz.doc.text),
-            insertTextFormat = InsertTextFormat.Snippet,
-            kind = CompletionItemKind.Class)
-      }
-    } else {
-      Nil
-    }
-  }
-
-  /**
     * Returns a list of completion items for match type completions
     */
   private def getMatchCompletitions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root, flix: Flix): Iterable[CompletionItem] = {
@@ -614,59 +530,6 @@ object CompletionProvider {
       documentation = None,
       insertTextFormat = InsertTextFormat.Snippet,
       kind = CompletionItemKind.Snippet)
-  }
-
-  /**
-    * Returns a list of completion for predicates
-    */
-  private def getPredicateCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    index.predDefs.m.concat(index.predUses.m).foldLeft[List[CompletionItem]](Nil)({
-      case (acc, (pred, locs)) => {
-        val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
-        val name = pred.name
-        CompletionItem(label = name,
-          sortText = priority(name),
-          textEdit = TextEdit(context.range, name),
-          documentation = None,
-          insertTextFormat = InsertTextFormat.PlainText,
-          kind = CompletionItemKind.Variable) :: acc
-      }
-    })
-  }
-
-  /**
-    * Gets completions for record fields
-    */
-  private def getFieldCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    // Do not get field completions if we are importing or using.
-    if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
-      return Nil
-    }
-
-    val regex = raw"(.*)[.].*".r
-
-    context.word match {
-      case regex(prefix) => {
-        index.fieldDefs.m.concat(index.fieldUses.m)
-          .filter { case (_, locs) => locs.exists(loc => loc.source.name == context.uri) }
-          .foldLeft[List[CompletionItem]](Nil) {
-            case (acc, (field, locs)) => {
-              val name = s"$prefix.${field.name}"
-              CompletionItem(label = name,
-                sortText = Priority.high(name),
-                textEdit = TextEdit(context.range, name),
-                documentation = None,
-                insertTextFormat = InsertTextFormat.PlainText,
-                kind = CompletionItemKind.Variable) :: acc
-            }
-          }
-      }
-      case _ => Nil
-    }
   }
 
   /**
@@ -748,140 +611,6 @@ object CompletionProvider {
           insertTextFormat = InsertTextFormat.Snippet,
           kind = CompletionItemKind.Snippet)
     }.toList
-  }
-
-  /**
-    * Format type params in the right form to be inserted as a snippet
-    * e.g. "[${1:a}, ${2:b}, ${3:c}]"
-    */
-  private def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
-    tparams match {
-      case Nil => ""
-      case _ => tparams.zipWithIndex.map {
-        case (tparam, idx) => "$" + s"{${idx + 1}:${tparam.name}}"
-      }.mkString("[", ", ", "]")
-    }
-  }
-
-  /**
-    * Format type params in the right form to be displayed in the list of completions
-    * e.g. "[a, b, c]"
-    */
-  private def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
-    tparams match {
-      case Nil => ""
-      case _ => tparams.map(_.name).mkString("[", ", ", "]")
-    }
-  }
-
-  /**
-    * Completions for types (enums, aliases, and built-in types)
-    */
-  private def getTypeCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    def getInternalPriority(loc: SourceLocation, ns: List[String]): String => String = {
-      if (loc.source.name == context.uri)
-        Priority.boost _
-      else if (ns.isEmpty)
-        Priority.normal _
-      else
-        Priority.low _
-    }
-
-    // Boost priority if there's a colon immediately before the word the user's typing
-    val typePriorityBoost = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasPriorityBoost = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val priority = if ((typePriorityBoost matches context.prefix) || (typeAliasPriorityBoost matches context.prefix)) Priority.boost _ else Priority.low _
-
-    val enums = root.enums.collect {
-      case (_, t) if !t.ann.isInternal =>
-        val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = priority(internalPriority(name)),
-          textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
-          documentation = Some(t.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Enum)
-    }
-
-    val aliases = root.typeAliases.map {
-      case (_, t) =>
-        val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        CompletionItem(label = s"$name${formatTParams(t.tparams)}",
-          sortText = priority(internalPriority(name)),
-          textEdit = TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"),
-          documentation = Some(t.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Enum)
-    }
-
-    val builtinTypes = BuiltinTypeNames map { name =>
-      val internalPriority = Priority.high _
-      CompletionItem(label = name,
-        sortText = priority(internalPriority(name)),
-        textEdit = TextEdit(context.range, name),
-        kind = CompletionItemKind.Enum)
-    }
-
-    val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames map { name =>
-      val internalPriority = Priority.low _
-      CompletionItem(label = name,
-        sortText = priority(internalPriority(name)),
-        textEdit = TextEdit(context.range, name),
-        kind = CompletionItemKind.Enum)
-    }
-
-    val builtinTypesWithParams = BuiltinTypeNamesWithTypeParameters map { case (name, tparams) =>
-      val internalPriority = Priority.boost _
-      val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
-      val finalName = s"$name[${tparams.mkString(", ")}]"
-      CompletionItem(label = finalName,
-        sortText = priority(internalPriority(name)),
-        textEdit = TextEdit(context.range, s"$name[$fmtTparams]"),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Enum)
-    }
-
-    enums ++ aliases ++ builtinTypes ++ lowPriorityBuiltinTypes ++ builtinTypesWithParams
-  }
-
-  /**
-    * Completions for Effects
-    */
-  private def getEffectCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
-    val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
-
-    val priority = if (context.previousWord == "without") {
-      // If the last word is `without`, we can be very sure an effect is coming.
-      Priority.high _
-    } else if (effSetPrefix.matches(context.prefix) || context.previousWord == "with") {
-      // If the last word is `with` or looks like `\` or `\ {`, it is likely an effect but could be something else.
-      Priority.boost _
-    } else {
-      // Otherwise it's probably not an effect.
-      Priority.low _
-    }
-
-    root.effects.map {
-      case (_, t) =>
-        val name = t.sym.name
-        CompletionItem(label = name,
-          sortText = priority(name),
-          textEdit = TextEdit(context.range, name),
-          documentation = Some(t.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Enum)
-    }
   }
 
   /**

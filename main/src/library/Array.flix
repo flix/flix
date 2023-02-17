@@ -23,7 +23,7 @@ namespace Array {
         let len = Int32.min(Array.length(a), Array.length(b));
         def loop(i) = {
             if (i < len) {
-                let cmp = a[i] <=> b[i];
+                let cmp = get(i, a) <=> get(i, b);
                 if (cmp == Comparison.EqualTo)
                     loop(i + 1)
                 else
@@ -67,7 +67,7 @@ namespace Array {
     /// Retrieves the value at position `i` in the array `a`.
     ///
     pub def get(i: Int32, a: Array[a, r]): a \ Read(r) =
-        a[i]
+        $ARRAY_LOAD$(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -80,7 +80,7 @@ namespace Array {
     ///
     pub def nth(i: Int32, a: Array[a, r]): Option[a] \ Read(r) =
         if (0 <= i and i < length(a))
-            Some(a[i])
+            Some(get(i, a))
         else
             None
 
@@ -108,7 +108,7 @@ namespace Array {
             if (i == 0) {
                 acc
             } else {
-                let x = a[i - 1];
+                let x = get(i - 1, a);
                 loop(i - 1, x :: acc)
             }
         };
@@ -124,7 +124,7 @@ namespace Array {
             if (i == 0) {
                 acc
             } else {
-                let x = arr[i - 1];
+                let x = get(i - 1, arr);
                 loop(i - 1, Nel.cons(x, acc))
             }
         };
@@ -132,7 +132,7 @@ namespace Array {
             None
         } else {
             let i = length(arr) - 1;
-            Some(loop(i, Nel.singleton(arr[i])))
+            Some(loop(i, Nel.singleton(get(i, arr))))
         }
 
     ///
@@ -143,7 +143,7 @@ namespace Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, DelayList.ECons(a[i], acc))
+                loop(i - 1, DelayList.ECons(get(i, a), acc))
         };
         loop(length(a) - 1, DelayList.ENil)
 
@@ -155,7 +155,7 @@ namespace Array {
             if (i == 0) {
                 acc
             } else {
-                let x = arr[i - 1];
+                let x = get(i - 1, arr);
                 loop(i - 1, Chain.cons(x, acc))
             }
         };
@@ -171,7 +171,7 @@ namespace Array {
             if (i == 0) {
                 acc
             } else {
-                let x = arr[i - 1];
+                let x = get(i - 1, arr);
                 loop(i - 1, Nec.cons(x, acc))
             }
         };
@@ -179,7 +179,7 @@ namespace Array {
             None
         } else {
             let i = length(arr) - 1;
-            Some(loop(i, Nec.singleton(arr[i])))
+            Some(loop(i, Nec.singleton(get(i, arr))))
         }
 
     ///
@@ -204,7 +204,7 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def head(a: Array[a, r]): Option[a] \ Read(r) =
-        if (length(a) > 0) Some(a[0]) else None
+        if (length(a) > 0) Some(get(0, a)) else None
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `a`.
@@ -213,7 +213,7 @@ namespace Array {
     ///
     pub def last(a: Array[a, r]): Option[a] \ Read(r) =
         let len = length(a);
-        if (len > 0) Some(a[len-1]) else None
+        if (len > 0) Some(get(len - 1, a)) else None
 
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
@@ -281,7 +281,7 @@ namespace Array {
         def loop(i) = {
             if (i >= length(arr))
                 -1
-            else if (arr[i] == a)
+            else if (get(i, arr) == a)
                 i
             else
                 loop(i + 1)
@@ -297,7 +297,7 @@ namespace Array {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (arr[i] == a)
+            else if (get(i, arr) == a)
                 i
             else
                 loop(i - 1)
@@ -323,7 +323,7 @@ namespace Array {
     pub def findLeft(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
         match findIndexOfLeft(f, arr) {
             case None    => None
-            case Some(i) => Some(arr[i])
+            case Some(i) => Some(get(i, arr))
         }
 
     ///
@@ -332,7 +332,7 @@ namespace Array {
     pub def findRight(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, Read(r) } =
         match findIndexOfRight(x -> f(x), arr) {
             case None    => None
-            case Some(i) => Some(arr[i])
+            case Some(i) => Some(get(i, arr))
         }
 
     ///
@@ -377,7 +377,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                let s1 = f(acc, arr[i - 1]);
+                let s1 = f(acc, get(i - 1, arr));
                 b[i] = s1;
                 loop(i + 1, s1)
             }
@@ -397,7 +397,7 @@ namespace Array {
             if (i < 0)
                 ()
             else {
-                let s1 = f(a[i], acc);
+                let s1 = f(get(i, a), acc);
                 b[i] = s1;
                 loop(i - 1, s1)
             }
@@ -412,7 +412,7 @@ namespace Array {
     ///
     pub def map(r1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, Read(r), Write(r1) } =
         let len = length(a);
-        init(r1, i -> f(a[i]), len)
+        init(r1, i -> f(get(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -423,7 +423,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(arr[i]);
+                arr[i] = f(get(i, arr));
                 loop(i + 1)
             }
         };
@@ -436,7 +436,7 @@ namespace Array {
     ///
     pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, Read(r), Write(r1) } =
         let len = length(a);
-        init(r1, i -> f(i, a[i]), len)
+        init(r1, i -> f(i, get(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -447,7 +447,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(i, arr[i]);
+                arr[i] = f(i, get(i, arr));
                 loop(i + 1)
             }
         };
@@ -458,7 +458,7 @@ namespace Array {
     ///
     pub def flatMap(r1: Region[r1], f: a -> Array[b, r1] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, Read(r), Write(r1) } =
         let len = length(a);
-        init(r1, i -> f(a[i]), len) |> flatten(r1)
+        init(r1, i -> f(get(i, a)), len) |> flatten(r1)
 
     ///
     /// Returns the reverse of `a`.
@@ -466,7 +466,7 @@ namespace Array {
     pub def reverse(r1: Region[r1], a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         let len = length(a);
         let end = len - 1;
-        init(r1, i -> a[end - i], len)
+        init(r1, i -> get(end - i, a), len)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -478,8 +478,8 @@ namespace Array {
             if (i >= halflen)
                 ()
             else {
-                let x = arr[i];
-                let y = arr[j];
+                let x = get(i, arr);
+                let y = get(j, arr);
                 put(y, i, arr);
                 put(x, j, arr);
                 loop(i + 1, j - 1)
@@ -509,7 +509,7 @@ namespace Array {
     ///
     def rotateLeftHelper(r2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; arr[i1 `Int32.rem` len] };
+        let f = i -> { let i1 = n + i; get(i1 `Int32.rem` len, arr) };
         init(r2, f, len)
 
     ///
@@ -535,7 +535,7 @@ namespace Array {
         let len = length(a);
         let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; a[i1 `Int32.rem` len]};
+        let f = i -> { let i1 = start + i; get(i1 `Int32.rem` len, a)};
         init(r2, f, len)
 
     ///
@@ -545,7 +545,7 @@ namespace Array {
     ///
     pub def update(r1: Region[r1], i: Int32, x: a, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
         let len = length(a);
-        let f = ix -> if (ix == i) x else a[ix];
+        let f = ix -> if (ix == i) x else get(ix, a);
         init(r1, f, len)
 
     ///
@@ -658,7 +658,7 @@ namespace Array {
             if (i >= len)
                 None
             else
-                match head(arrs[i]) {
+                match head(get(i, arrs)) {
                     case Some(x) => Some(x)
                     case None    => loop(i + 1)
                 }
@@ -675,12 +675,12 @@ namespace Array {
         if (ilen == 0)
             Array#{} @ r3
         else {
-            let jlen = length(a[0]);
+            let jlen = length(get(0, a));
             if (jlen == 0 or uniformHelper(a, jlen))
                 // Non-transposing nested copy
-                init(r3, i -> copyOfRange(r3, 0, length(a[i]), a[i]), ilen)
+                init(r3, i -> copyOfRange(r3, 0, length(get(i, a)), get(i, a)), ilen)
             else
-                init(r3, i -> init(r3, j -> a[j][i], ilen), jlen)
+                init(r3, i -> init(r3, j -> a |> get(j) |> get(i), ilen), jlen)
         }
 
     ///
@@ -700,7 +700,7 @@ namespace Array {
             def loop(i) = {
                 if (i >= len1)
                     true
-                else if (a1[i] != a2[i])
+                else if (get(i, a1) != get(i, a2))
                     false
                 else
                     loop(i + 1)
@@ -728,7 +728,7 @@ namespace Array {
     def isInfixOfSearch(a1: Array[a, r1], a2: Array[a, r2], len1: Int32, len2: Int32, j: Int32): Bool \ Read(r1, r2) with Eq[a] =
         if (j >= len2)
             false
-        else if (a1[0] == a2[j])
+        else if (get(0, a1) == get(j, a2))
             isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
         else
             isInfixOfSearch(a1, a2, len1, len2, j+1)
@@ -743,7 +743,7 @@ namespace Array {
         else if (j >= len2)
             // a2 exhausted, a1 still trying to match, so failure
             false
-        else if(a1[i] == a2[j])
+        else if (get(i, a1) == get(j, a2))
             isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
         else
             isInfixOfSearch(a1, a2, len1, len2, j+1)
@@ -760,7 +760,7 @@ namespace Array {
             def loop(i, j) = {
                 if (i < 0)
                     true
-                else if (a1[i] != a2[j])
+                else if (get(i, a1) != get(j, a2))
                     false
                 else
                     loop(i - 1, j - 1)
@@ -783,7 +783,7 @@ namespace Array {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, arr[i]))
+                loop(i + 1, f(acc, get(i, arr)))
         };
         loop(0, s)
 
@@ -797,7 +797,7 @@ namespace Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(arr[i], acc))
+                loop(i - 1, f(get(i, arr), acc))
         };
         loop(length(arr) - 1, s)
 
@@ -812,7 +812,7 @@ namespace Array {
             if (i == length(arr))
                 z
             else
-                f(arr[i], _ -> loop(i + 1))
+                f(get(i, arr), _ -> loop(i + 1))
         };
         loop(0)
 
@@ -833,12 +833,12 @@ namespace Array {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, a[i]))
+                loop(i + 1, f(acc, get(i, a)))
         };
         if (len == 0)
             None
         else
-            Some(loop(1, a[0]))
+            Some(loop(1, get(0, a)))
 
     ///
     /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -851,12 +851,12 @@ namespace Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(arr[i], acc))
+                loop(i - 1, f(get(i, arr), acc))
         };
         if (len == 0)
             None
         else
-            Some(loop(len - 2, arr[len - 1]))
+            Some(loop(len - 2, get(len - 1, arr)))
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -918,7 +918,7 @@ namespace Array {
         def loop(i) = {
             if (i >= len)
                 false
-            else if (f(arr[i]))
+            else if (f(get(i, arr)))
                 true
             else
                 loop(i + 1)
@@ -935,7 +935,7 @@ namespace Array {
         def loop(i) = {
             if (i >= len)
                 true
-            else if (f(arr[i]))
+            else if (f(get(i, arr)))
                 loop(i + 1)
             else
                 false
@@ -955,7 +955,7 @@ namespace Array {
                 if (i >= len)
                     j
                 else {
-                    let x = arr[i];
+                    let x = get(i, arr);
                     if (f(x)) {
                         out[j] = x;
                         loop(i + 1, j + 1)
@@ -1167,7 +1167,7 @@ namespace Array {
     ///
     pub def zip(r3: Region[r3], a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r3] \ { Read(r1, r2), Write(r3) } =
         let len = Int32.min(length(a), length(b));
-        init(r3, i -> (a[i], b[i]), len)
+        init(r3, i -> (get(i, a), get(i, b)), len)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1177,7 +1177,7 @@ namespace Array {
     ///
     pub def zipWith(r3: Region[r3], f: (a, b) -> c \ ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r3] \ { ef, Read(r1, r2), Write(r3) } =
         let len = Int32.min(length(a), length(b));
-        init(r3, i -> f(a[i], b[i]), len)
+        init(r3, i -> f(get(i, a), get(i, b)), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1188,12 +1188,12 @@ namespace Array {
         if (len <= 0)
             (Array#{} @ r1, Array#{} @ r2)
         else {
-            let (x, y) = a[0];
+            let (x, y) = get(0, a);
             let arr = repeat(r1, len, x);
             let brr = repeat(r2, len, y);
             def loop(i) = {
                 if (i < len) {
-                    let (l, r) = a[i];
+                    let (l, r) = get(i, a);
                     arr[i] = l;
                     brr[i] = r;
                     loop(i + 1)
@@ -1221,7 +1221,7 @@ namespace Array {
             if (i >= lena or i >= lenb)
                 acc
             else
-                loop(i + 1, f(acc, a[i], b[i]))
+                loop(i + 1, f(acc, get(i, a), get(i, b)))
         };
         loop(0, c)
 
@@ -1234,7 +1234,7 @@ namespace Array {
             if (i < 0 or j < 0)
                 acc
             else
-                loop(i - 1, j - 1, f(a[i], b[j], acc))
+                loop(i - 1, j - 1, f(get(i, a), get(j, b), acc))
         };
         let starta = length(a) - 1;
         let startb = length(b) - 1;
@@ -1259,7 +1259,7 @@ namespace Array {
             if (i >= len)
                 None
             else
-                let x = f(a[i]);
+                let x = f(get(i, a));
                 match x {
                     case Some(v) => Some(v)
                     case None    => loop(i + 1)
@@ -1309,7 +1309,7 @@ namespace Array {
             def loop(i) = {
                 if (i >= len)
                     -1
-                else if (f(a[i]))
+                else if (f(get(i, a)))
                     i
                 else
                     loop(i + 1)
@@ -1327,7 +1327,7 @@ namespace Array {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (f(a[i]))
+            else if (f(get(i, a)))
                 i
             else
                 loop(i - 1)
@@ -1345,7 +1345,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                if (f(a[i])) MutList.push!(i, l) else ();
+                if (f(get(i, a))) MutList.push!(i, l) else ();
                 loop(i + 1)
             }
         };
@@ -1381,7 +1381,7 @@ namespace Array {
         def loop(i) = {
             if (i >= alen)
                 true
-            else if (a[i] != b[i])
+            else if (get(i, a) != get(i, b))
                 false
             else
                 loop(i + 1)
@@ -1416,7 +1416,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                f(a[i]);
+                f(get(i, a));
                 loop(i + 1)
             }
         };
@@ -1431,7 +1431,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                f(i, a[i]);
+                f(i, get(i, a));
                 loop(i + 1)
             }
         };
@@ -1442,7 +1442,7 @@ namespace Array {
     ///
     pub def updateSequence(r3: Region[r3], i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r3] \ { Read(r1, r2), Write(r3) } =
         let end = i + length(sub);
-        let f = ix -> if (ix >= i and ix < end) sub[ix - i] else a[ix];
+        let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, a);
         let len = length(a);
         init(r3, f, len)
 
@@ -1453,7 +1453,7 @@ namespace Array {
         let end = i + length(sub);
         let f = { (ix, _) ->
             if (ix >= i and ix < end)
-                a[ix] = sub[ix-i]
+                a[ix] = get(ix - i, sub)
             else
                 ()
         };
@@ -1571,8 +1571,8 @@ namespace Array {
     /// Precondition: `i` and `j` are within bounds.
     ///
     pub def swap!(i: Int32, j: Int32, a: Array[a, r]): Unit \ { Read(r), Write(r) } =
-        let x = a[i];
-        let y = a[j];
+        let x = get(i, a);
+        let y = get(j, a);
         a[i] = y;
         a[j] = x;
         ()
@@ -1581,9 +1581,9 @@ namespace Array {
     /// Partition step of the Quicksort algorithm.
     ///
     def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ { Read(r), Write(r) } =
-        let pivot = a[hi];
+        let pivot = get(hi, a);
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (cmp(a[j], pivot) == Comparison.LessThan) {
+            if (cmp(get(j, a), pivot) == Comparison.LessThan) {
                 swap!(ix, j, a);
                 ix+1
             } else
