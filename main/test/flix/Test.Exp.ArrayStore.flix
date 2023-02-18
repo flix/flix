@@ -27,7 +27,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore05(): Unit = region r {
         let x = Array#{1, 2} @ r;
-        $ARRAY_STORE$(x, 10, 42)
+        $ARRAY_STORE$(x, 1, 42)
     }
 
     @test
@@ -45,7 +45,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore08(): Unit = region r {
         let x = Array#{true, false} @ r;
-        $ARRAY_STORE$(x, 10, true)
+        $ARRAY_STORE$(x, 1, true)
     }
 
     @test
@@ -75,7 +75,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore13(): Unit = region r {
         let x = Array#{'a', 'b', 'c'} @ r;
-        $ARRAY_STORE$(x, 10, 'e')
+        $ARRAY_STORE$(x, 1, 'e')
     }
 
     @test
@@ -93,7 +93,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore16(): Unit = region r {
         let x = Array#{1i8, 2i8, 3i8} @ r;
-        $ARRAY_STORE$(x, 10, 42i8)
+        $ARRAY_STORE$(x, 1, 42i8)
     }
 
     @test
@@ -111,7 +111,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore19(): Unit = region r {
         let x = Array#{1i16, 2i16, 3i16} @ r;
-        $ARRAY_STORE$(x, 10, 42i16)
+        $ARRAY_STORE$(x, 1, 42i16)
     }
 
     @test
@@ -129,7 +129,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore22(): Unit = region r {
         let x = Array#{1i64, 2i64, 3i64} @ r;
-        $ARRAY_STORE$(x, 10, 42i64)
+        $ARRAY_STORE$(x, 1, 42i64)
     }
 
     @test
@@ -147,7 +147,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore25(): Unit = region r {
         let x = Array#{1.0f32, 2.0f32, 3.0f32} @ r;
-        $ARRAY_STORE$(x, 10, 42.0f32)
+        $ARRAY_STORE$(x, 1, 42.0f32)
     }
 
     @test
@@ -165,7 +165,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore28(): Unit = region r {
         let x = Array#{1.0f64, 2.0f64, 3.0f64} @ r;
-        $ARRAY_STORE$(x, 10, 42.0f64)
+        $ARRAY_STORE$(x, 1, 42.0f64)
     }
 
     @test
@@ -183,7 +183,7 @@ namespace Test/Exp/ArrayStore {
     @test
     def testArrayStore31(): Unit = region r {
         let x = Array#{"Hello", "World"} @ r;
-        $ARRAY_STORE$(x, 10, "Test")
+        $ARRAY_STORE$(x, 1, "Test")
     }
 
     @test
