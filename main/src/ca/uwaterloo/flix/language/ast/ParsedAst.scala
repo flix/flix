@@ -592,12 +592,12 @@ object ParsedAst {
       *
       * Replaced with Apply by Weeder.
       *
-      * @param e1   the first argument expression.
-      * @param exp1 the name of the function.
-      * @param exp2 the second argument expression.
+      * @param exp1 the first argument expression.
+      * @param exp2 the name of the function.
+      * @param exp3 the second argument expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Infix(e1: ParsedAst.Expression, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Infix(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
