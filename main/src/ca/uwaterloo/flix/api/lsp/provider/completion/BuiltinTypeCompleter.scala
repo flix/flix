@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.BuiltinTypeCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object BuiltinTypeCompleter extends Completer {
@@ -56,7 +57,7 @@ object BuiltinTypeCompleter extends Completer {
   /**
     * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[BuiltinTypeCompletion] = {
     if (root == null) {
       return Nil
     }

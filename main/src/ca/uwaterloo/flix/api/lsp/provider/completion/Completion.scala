@@ -44,6 +44,9 @@ sealed trait Completion {
     case Completion.EffectCompletion(name, priority, documentation, context) =>
       CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name),
         documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+    case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
+      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
+        insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
   }
 }
 
@@ -80,7 +83,8 @@ object Completion {
     * @param textEdit           the edit which is applied to a document when selecting this completion.
     * @param insertTextFormat   the format of the insert text.
     */
-  case class BuiltinTypeCompletion(name: String, priority: String, textEdit: TextEdit, insertTextFormat: InsertTextFormat) extends Completion
+  case class BuiltinTypeCompletion(name: String, priority: String, textEdit: TextEdit,
+                                   insertTextFormat: InsertTextFormat) extends Completion
 
   /**
     * Represents a Type completion (enums, aliases)
@@ -90,7 +94,8 @@ object Completion {
     * @param textEdit       the edit which is applied to a document when selecting this completion.
     * @param documentation  a human-readable string that represents a doc-comment.
     */
-  case class TypeCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String]) extends Completion
+  case class TypeCompletion(name: String, priority: String, textEdit: TextEdit,
+                            documentation: Option[String]) extends Completion
 
   /**
     * Represents a Effect completion
@@ -99,5 +104,18 @@ object Completion {
     * @param priority      the priority of the effect.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class EffectCompletion(name: String, priority: String, documentation: Option[String], context: CompletionContext) extends Completion
+  case class EffectCompletion(name: String, priority: String, documentation: Option[String],
+                              context: CompletionContext) extends Completion
+
+  /**
+    * Represents a With completion
+    *
+    * @param name               the name of the completion.
+    * @param priority           the priority of the completion.
+    * @param textEdit           the edit which is applied to a document when selecting this completion.
+    * @param documentation      a human-readable string that represents a doc-comment.
+    * @param insertTextFormat   the format of the insert text.
+    */
+  case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
+                            insertTextFormat: InsertTextFormat) extends Completion
 }

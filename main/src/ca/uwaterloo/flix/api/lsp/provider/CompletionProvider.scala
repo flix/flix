@@ -17,8 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext,
-  EffectCompleter, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext, EffectCompleter, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter, WithCompleter}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -166,7 +165,7 @@ object CompletionProvider {
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
-      case withRegex() => getWithCompletions()
+      case withRegex() => WithCompleter.getCompletions map (withComp => withComp.toCompletionItem)
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
@@ -462,58 +461,6 @@ object CompletionProvider {
     val uri = context.uri
 
     root.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).flatMap(opCompletion)
-  }
-
-  /**
-    * Returns a list of completion items based on with type class constraints.
-    */
-  private def getWithCompletions()(implicit context: CompletionContext, index: Index, root: TypedAst.Root): Iterable[CompletionItem] = {
-    if (root == null) {
-      return Nil
-    }
-
-    //
-    // When used with `enum`, `with` needs to be treated differently: we should only show derivable
-    // type classes, and we shouldn't include the type parameter
-    //
-
-    val enumPattern = raw"\s*enum\s+(.*\s)wi?t?h?\s?.*".r
-    val withPattern = raw"\s*(def|instance|class)\s+(.*\s)wi?t?h?\s?.*".r
-    val wordPattern = "wi?t?h?".r
-
-    val currentWordIsWith = wordPattern matches context.word
-
-    if (enumPattern matches context.prefix) {
-      for {
-        (_, clazz) <- root.classes
-        sym = clazz.sym
-        if DerivableSyms.contains(sym)
-        name = sym.toString
-        completion = if (currentWordIsWith) s"with $name" else name
-      } yield
-        CompletionItem(label = completion,
-          sortText = Priority.high(name),
-          textEdit = TextEdit(context.range, completion),
-          documentation = Some(clazz.doc.text),
-          kind = CompletionItemKind.Class)
-    } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
-      root.classes.map {
-        case (_, clazz) =>
-          val name = clazz.sym.toString
-          val hole = "${1:t}"
-          val application = s"$name[$hole]"
-          val completion = if (currentWordIsWith) s"with $application" else application
-          val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
-          CompletionItem(label = label,
-            sortText = Priority.high(name),
-            textEdit = TextEdit(context.range, completion),
-            documentation = Some(clazz.doc.text),
-            insertTextFormat = InsertTextFormat.Snippet,
-            kind = CompletionItemKind.Class)
-      }
-    } else {
-      Nil
-    }
   }
 
   /**
