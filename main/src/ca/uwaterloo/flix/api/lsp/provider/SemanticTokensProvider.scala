@@ -397,9 +397,6 @@ object SemanticTokensProvider {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
-
     case Expression.VectorLit(exps, _, _, _, _) =>
       visitExps(exps)
 

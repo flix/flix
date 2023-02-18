@@ -136,8 +136,6 @@ object KindedAst {
 
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
-    case class ArraySlice(region: KindedAst.Expression, base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
     case class VectorLit(exps: List[KindedAst.Expression], tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class VectorLoad(exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression

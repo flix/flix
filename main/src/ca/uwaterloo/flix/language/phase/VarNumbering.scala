@@ -172,11 +172,6 @@ object VarNumbering {
       case Expression.ArrayLength(base, _, _, _) =>
         visitExp(base, i0)
 
-      case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
-        val i1 = visitExp(base, i0)
-        val i2 = visitExp(startIndex, i1)
-        visitExp(endIndex, i2)
-
       case Expression.Ref(exp, _, _) =>
         visitExp(exp, i0)
 

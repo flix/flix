@@ -248,13 +248,6 @@ object Safety {
         val elmVal = visit(elm)
         mapN(baseVal, indexVal, elmVal)(Expression.ArrayStore(_, _, _, pur, eff, loc))
 
-      case Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
-        val regVal = visit(reg)
-        val baseVal = visit(base)
-        val beginIndexVal = visit(beginIndex)
-        val endIndexVal = visit(endIndex)
-        mapN(regVal, baseVal, beginIndexVal, endIndexVal)(Expression.ArraySlice(_, _, _, _, tpe, pur, eff, loc))
-
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val expVal1 = visit(exp1)
         val expVal2 = visit(exp2)
