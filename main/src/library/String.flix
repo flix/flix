@@ -1029,15 +1029,15 @@ namespace String {
         let n = length(t);
         let v0 = Array.repeat(r, n + 1, 0);
         let v1 = Array.repeat(r, n + 1, 0);
-        forIndex(0, n, i -> v0[i] = i);
+        forIndex(0, n, i -> Array.put(i, i, v0));
         forIndex(0, m - 1, i -> {
-            v1[0] = i + 1;
+            Array.put(i + 1, 0, v1);
             forIndex(0, n - 1, j -> {
                 let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
                 let a = Array.get(j, v1) + 1;
                 let b = Array.get(j + 1, v0) + 1;
                 let c = Array.get(j, v0) + substitutionCost;
-                v1[j + 1] = Int32.min(a, Int32.min(b, c))
+                Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
             });
             arraySwap(v0, v1)
         });
@@ -1056,7 +1056,7 @@ namespace String {
     /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { Read(r2), Write(r1) } =
-        forIndex(0, Array.length(a) - 1, {i ->  a[i] = Array.get(i, b)})
+        forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
