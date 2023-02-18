@@ -73,7 +73,7 @@ namespace Array {
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
-        a[i] = x
+        $ARRAY_STORE$(a, i, x)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.

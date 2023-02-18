@@ -882,16 +882,6 @@ object ParsedAst {
     case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayStore Expression
-      *
-      * @param base    the array.
-      * @param indexes the indexes to load from and the last to store into.
-      * @param elm     the element to store into the given index.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Vector Literal expression.
       *
       * @param sp1  the position of the first character in the `Vector` keyword.
