@@ -1811,7 +1811,7 @@ namespace TestMutList {
     def toArray02(): Bool = region r {
         let v = Array.toMutList(r, Array#{1, 2, 3} @ r);
         let a = MutList.toArray(r, v);
-        a[1] = 42;
+        Array.put(42, 1, a);
         MutList.nth(1, v) == Some(2)
     }
 

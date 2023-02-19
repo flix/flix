@@ -1195,7 +1195,7 @@ namespace DelayList {
     @Experimental
     pub def toArray(r: Region[r], l: DelayList[a]): Array[a, r] \ Write(r) =
         let a = Array.new(r, length(l));
-        forEach(match (i, y) -> a[i] = y, zipWithIndex(l));
+        forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
     ///

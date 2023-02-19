@@ -5512,7 +5512,7 @@ namespace TestArray {
     @test
     def minimumBy04(): Bool = region r {
         let a = Array.range(r, 10, 20);
-        a[5] = -22;
+        Array.put(-22, 5, a);
         Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
     }
 
@@ -5538,7 +5538,7 @@ namespace TestArray {
     @test
     def maximumBy04(): Bool = region r {
         let a = Array.range(r, 10, 20);
-        a[5] = 42;
+        Array.put(42, 5, a);
         Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
     }
 
