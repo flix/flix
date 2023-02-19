@@ -534,15 +534,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
+    def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+      SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
+    }
+
+    def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+      SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
+    }
+
     def ForFragment: Rule1[ParsedAst.ForFragment] = {
-      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
-      }
-
-      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
-      }
-
       rule {
         GeneratorFragment | GuardFragment
       }
@@ -552,14 +552,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
-    def ForA: Rule1[ParsedAst.Expression.ForA] = {
-      def ForAFragment: Rule1[ParsedAst.ForAFragment] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForAFragment
-      }
-
-      rule {
-        SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(ForAFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForA
-      }
+    def ForA: Rule1[ParsedAst.Expression.ForA] = rule {
+      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForA
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {

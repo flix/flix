@@ -789,11 +789,11 @@ object ParsedAst {
       * ForA Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param frags the forA-fragments.
+      * @param frags the for-fragments, specifically [[ForFragment.Generator]].
       * @param exp   the body expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForA(sp1: SourcePosition, frags: Seq[ForAFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ForA(sp1: SourcePosition, frags: Seq[ForFragment.Generator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForEach Expression.
@@ -2293,15 +2293,6 @@ object ParsedAst {
     * Represents an optional purity and optional effect.
     */
   case class PurityAndEffect(pur: Option[Type], eff: Option[EffectSet])
-
-  /**
-    *
-    * @param sp1
-    * @param pat
-    * @param exp
-    * @param sp2
-    */
-  case class ForAFragment(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Represents a super type for foreach expression fragments.

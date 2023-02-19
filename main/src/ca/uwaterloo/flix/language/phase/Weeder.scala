@@ -850,9 +850,9 @@ object Weeder {
       val fqnMap = "Functor.map"
       val yieldExp = visitExp(exp, senv)
 
-      // Make lambda for Functor.map(lambda, ...)
+      // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
       val lambda = foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForAFragment(sp11, pat, _, sp12), acc) =>
+        case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
           mapN(visitPattern(pat)) {
             case p => mkLambdaMatch(sp11, p, acc, sp12)
           }
@@ -861,15 +861,15 @@ object Weeder {
       // Apply first fragment to Functor.map
       val xs = visitExp(frags.head.exp, senv)
       val baseExp = mapN(lambda, xs) {
-        case (l, x) =>
-          mkApplyFqn(fqnMap, List(l, x), loc)
+        case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
       }
 
       // Apply rest of fragments to Applicative.ap
       frags.tail.foldLeft(baseExp) {
-        case (acc, ParsedAst.ForAFragment(sp11, _, fexp, sp12)) => mapN(acc, visitExp(fexp, senv)) {
-          case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
-        }
+        case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
+          mapN(acc, visitExp(fexp, senv)) {
+            case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
+          }
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
