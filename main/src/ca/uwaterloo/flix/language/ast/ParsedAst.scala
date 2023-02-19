@@ -810,7 +810,7 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the expression.
       * @param frags the for-fragments.
-      * @param exp   the yield expression.
+      * @param exp   the yield-expression.
       * @param sp2   the position of the last character in the expression.
       */
     case class ForYield(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
