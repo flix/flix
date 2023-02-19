@@ -30,7 +30,7 @@ def main(): Unit \ IO = region r {
         /// with `forEach` or `forEachWithIndex`.
         Iterator.forEach(match (i, x) -> {
             if (i < Array.length(xs))
-                xs[i] = x
+                Array.put(x, i, xs)
             else
                 ()
             }, String.enumerator(r, s));
@@ -38,7 +38,7 @@ def main(): Unit \ IO = region r {
 
         Iterator.forEachWithIndex((i, x) -> {
             if (i < Array.length(xs))
-                xs[i] = x
+                Array.put(x, i, xs)
             else
                 ()
             }, String.iterator(r, s));

@@ -1158,7 +1158,7 @@ namespace List {
         case None    => Array#{} @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
-            forEach(match (i, b) -> a[i] = b, zipWithIndex(l));
+            forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
 
