@@ -308,14 +308,6 @@ object PrettyPrinter {
             visitExp(base) +
             "]"
 
-        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-          visitExp(base) +
-            "[" +
-            visitExp(beginIndex) +
-            ".." +
-            visitExp(endIndex) +
-            "]"
-
         case Expression.Ref(exp, tpe, loc) => "ref " + visitExp(exp)
 
         case Expression.Deref(exp, tpe, loc) => "deref " + visitExp(exp)

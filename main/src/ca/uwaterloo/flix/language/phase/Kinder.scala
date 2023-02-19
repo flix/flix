@@ -643,17 +643,6 @@ object Kinder {
         base => KindedAst.Expression.ArrayLength(base, loc)
       }
 
-    case ResolvedAst.Expression.ArraySlice(reg0, base0, beginIndex0, endIndex0, loc) =>
-      val regVal = visitExp(reg0, kenv0, senv, taenv, henv0, root)
-      val baseVal = visitExp(base0, kenv0, senv, taenv, henv0, root)
-      val beginIndexVal = visitExp(beginIndex0, kenv0, senv, taenv, henv0, root)
-      val endIndexVal = visitExp(endIndex0, kenv0, senv, taenv, henv0, root)
-      mapN(regVal, baseVal, beginIndexVal, endIndexVal) {
-        case (reg, base, beginIndex, endIndex) =>
-          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
-          KindedAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, pvar, loc)
-      }
-
     case ResolvedAst.Expression.VectorLit(exps, loc) =>
       val expsVal = traverse(exps)(visitExp(_, kenv0, senv, taenv, henv0, root))
       mapN(expsVal) {
