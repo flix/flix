@@ -189,9 +189,6 @@ object LateTreeShaker {
     case Expression.ArrayLength(base, _, _, _) =>
       visitExp(base)
 
-    case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
-      visitExp(base) ++ visitExp(startIndex) ++ visitExp(endIndex)
-
     case Expression.Ref(exp, _, _) =>
       visitExp(exp)
 

@@ -98,7 +98,7 @@ namespace Array {
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
     pub def slice(r1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        $ARRAY_SLICE$(r1, a, start.start, end.end)
+        copyOfRange(r1, start.start, end.end, a)
 
     ///
     /// Returns the array `a` as a list.

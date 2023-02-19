@@ -733,7 +733,6 @@ object Weeder {
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
           case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, e3, loc).toSuccess
-          case ("ARRAY_SLICE", e1 :: e2 :: e3 :: e4 :: Nil) => WeededAst.Expression.ArraySlice(e1, e2, e3, e4, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
           case ("ARRAY_LOAD", e1 :: e2 :: Nil) => WeededAst.Expression.ArrayLoad(e1, e2, loc).toSuccess
           case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayStore(e1, e2, e3, loc).toSuccess

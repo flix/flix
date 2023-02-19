@@ -154,8 +154,6 @@ object NamedAst {
 
     case class ArrayLength(base: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(region: NamedAst.Expression, base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
     case class VectorLit(exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
     case class VectorLoad(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

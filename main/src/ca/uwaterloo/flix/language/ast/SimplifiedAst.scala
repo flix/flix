@@ -138,10 +138,6 @@ object SimplifiedAst {
 
     case class ArrayLength(base: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class ArraySlice(base: SimplifiedAst.Expression, beginIndex: SimplifiedAst.Expression, endIndex: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class Ref(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }
