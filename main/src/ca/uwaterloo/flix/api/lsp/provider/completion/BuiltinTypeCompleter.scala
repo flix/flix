@@ -57,8 +57,8 @@ object BuiltinTypeCompleter extends Completer {
   /**
     * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[BuiltinTypeCompletion] = {
-    if (root == null) {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[BuiltinTypeCompletion] = {
+    if (root.isEmpty) {
       return Nil
     }
 

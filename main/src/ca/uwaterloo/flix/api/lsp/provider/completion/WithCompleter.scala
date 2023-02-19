@@ -25,8 +25,8 @@ object WithCompleter extends Completer {
   /**
     * Returns a List of Completion based on with type class constraints.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[WithCompletion] = {
-    if (root == null) {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[WithCompletion] = {
+    if (root.isEmpty) {
       return Nil
     }
 
@@ -43,7 +43,7 @@ object WithCompleter extends Completer {
 
     if (enumPattern matches context.prefix) {
       for {
-        (_, clazz) <- root.classes
+        (_, clazz) <- root.get.classes
         sym = clazz.sym
         if Resolver.DerivableSyms.contains(sym)
         name = sym.toString
@@ -53,7 +53,7 @@ object WithCompleter extends Completer {
           Some(clazz.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
-      root.classes.map {
+      root.get.classes.map {
         case (_, clazz) =>
           val name = clazz.sym.toString
           val hole = "${1:t}"
