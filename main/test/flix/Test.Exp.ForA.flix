@@ -24,6 +24,15 @@ namespace TestForA {
             "${x} world"
         }
 
+    @test
+    def testForA02(): Bool =
+        let res = forA (
+            x <- s("Hello")
+        ) yield {
+            "${x} world"
+        };
+        res == "Hello world" :: Nil
+
     def s(a: a): List[a] =
         a :: Nil
 
