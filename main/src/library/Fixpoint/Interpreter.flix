@@ -68,15 +68,15 @@ namespace Fixpoint {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.forEach(t -> l -> {
-                    tupleEnv[i] = t;
-                    latEnv[i] = l;
+                    Array.put(t, i, tupleEnv);
+                    Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, new MutMap(r1), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.queryWith(evalQuery(env, query), t -> l -> {
-                    tupleEnv[i] = t;
-                    latEnv[i] = l;
+                    Array.put(t, i, tupleEnv);
+                    Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, new MutMap(r1), db))
             case RelOp.Project(terms, ramSym) =>
