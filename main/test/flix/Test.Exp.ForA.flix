@@ -33,6 +33,25 @@ namespace TestForA {
         };
         res == "Hello world" :: Nil
 
+    @test
+    def testForA03(): List[String] =
+        forA (
+            x <- s("Hello");
+            y <- s("world")
+        ) yield {
+            "${x} ${y}"
+        }
+
+    @test
+    def testForA04(): Bool =
+        let res = forA (
+            x <- s("Hello");
+            y <- s("world")
+        ) yield {
+            "${x} ${y}"
+        };
+        res == "Hello world" :: Nil
+
     def s(a: a): List[a] =
         a :: Nil
 
