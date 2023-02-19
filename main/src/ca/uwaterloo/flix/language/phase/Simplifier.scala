@@ -162,13 +162,6 @@ object Simplifier {
         val purity = b.purity
         SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
 
-      case LoweredAst.Expression.ArraySlice(_, base, beginIndex, endIndex, tpe, _, _, loc) =>
-        // Note: The region expression is erased.
-        val b = visitExp(base)
-        val i1 = visitExp(beginIndex)
-        val i2 = visitExp(endIndex)
-        SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
-
       case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
         // Note: We simplify Vectors to Arrays.
         val es = exps.map(visitExp)
@@ -783,9 +776,6 @@ object Simplifier {
         val b = visitExp(base)
         val purity = b.purity
         SimplifiedAst.Expression.ArrayLength(b, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        SimplifiedAst.Expression.ArraySlice(visitExp(base), visitExp(startIndex), visitExp(endIndex), tpe, loc)
 
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)
