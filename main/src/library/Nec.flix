@@ -795,7 +795,7 @@ namespace Nec {
     pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = Array.repeat(r, length(c), x);
-        forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
+        forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
         arr
 
     ///

@@ -659,7 +659,7 @@ namespace Test/Exp/Regions {
                     let l = new MutList(r3);
                     MutList.push!(1, l);
                     MutMap.put!(1, l, m);
-                    a[0] = m;
+                    Array.put(m, 0, a);
                     match MutMap.get(1, Array.get(0, a)) {
                         case Some(k) => MutList.pop!(k) == Some(1)
                         case _       => unreachable!()
@@ -1260,7 +1260,7 @@ namespace Test/Exp/Regions {
                     let l = ref new MutList(r3) @ r1;
                     MutList.push!(1, deref l);
                     MutMap.put!(1, l, deref m);
-                    (deref a)[0] = m;
+                    Array.put(m, 0, deref a);
                     match MutMap.get(1, deref Array.get(0, deref a)) {
                         case Some(k) => MutList.pop!(deref k) == Some(1)
                         case _       => unreachable!()
