@@ -18,11 +18,13 @@ namespace TestForA {
 
     @test
     def testForA01(): List[String] =
-        // Use validation
         forA (
-            _ <- ???
+            x <- s("Hello")
         ) yield {
-            ???
+            "${x} world"
         }
+
+    def s(a: a): List[a] =
+        a :: Nil
 
 }
