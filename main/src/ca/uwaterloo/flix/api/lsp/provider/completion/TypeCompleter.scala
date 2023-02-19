@@ -25,8 +25,8 @@ object TypeCompleter extends Completer {
   /**
     * Returns a List of Completion for types (enums and aliases).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[TypeCompletion] = {
-    if (root == null) {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[TypeCompletion] = {
+    if (root.isEmpty) {
       return Nil
     }
 
@@ -39,7 +39,7 @@ object TypeCompleter extends Completer {
         Priority.low
     }
 
-    val enums = root.enums.collect {
+    val enums = root.get.enums.collect {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
@@ -47,7 +47,7 @@ object TypeCompleter extends Completer {
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
 
-    val aliases = root.typeAliases.map {
+    val aliases = root.get.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
