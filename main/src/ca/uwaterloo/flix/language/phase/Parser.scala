@@ -552,6 +552,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
+    def ForA: Rule1[ParsedAst.Expression.ForA] = {
+      def ForAFragment: Rule1[ParsedAst.ForAFragment] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForAFragment
+      }
+
+      rule {
+        SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(ForAFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForA
+      }
+    }
+
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
     }
@@ -744,7 +754,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForEachYield | ForYield | ForEach | NewObject |
+        Discard | Debug | ForA | ForEachYield | ForYield | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
