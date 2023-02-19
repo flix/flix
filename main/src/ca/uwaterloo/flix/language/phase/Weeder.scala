@@ -833,7 +833,45 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
-    case ParsedAst.Expression.ForA(sp1, frags, exp, sp2) => ???
+    case ParsedAst.Expression.ForA(sp1, frags, exp, sp2) =>
+      //
+      // Rewrites a ForA loop into a series of Applicative.ap calls:
+      //
+      //     forA (
+      //         x <- xs;
+      //         y <- ys
+      //     ) yield exp
+      //
+      // desugars to
+      //
+      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
+      //
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val fqnAp = "Applicative.ap"
+      val fqnMap = "Functor.map"
+      val yieldExp = visitExp(exp, senv)
+
+      // Make lambda for Functor.map(lambda, ...)
+      val lambda = foldRight(frags)(yieldExp) {
+        case (ParsedAst.ForAFragment(sp11, pat, _, sp12), acc) =>
+          mapN(visitPattern(pat)) {
+            case p => mkLambdaMatch(sp11, p, acc, sp12)
+          }
+      }
+
+      // Apply first fragment to Functor.map
+      val xs = visitExp(frags.head.exp, senv)
+      val baseExp = mapN(lambda, xs) {
+        case (l, x) =>
+          mkApplyFqn(fqnMap, List(l, x), loc)
+      }
+
+      // Apply rest of fragments to Applicative.ap
+      frags.tail.foldLeft(baseExp) {
+        case (acc, ParsedAst.ForAFragment(sp11, _, fexp, sp12)) => mapN(acc, visitExp(fexp, senv)) {
+          case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
+        }
+      }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
       //
