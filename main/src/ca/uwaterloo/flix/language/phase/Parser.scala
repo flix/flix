@@ -561,7 +561,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def MonadicFor: Rule1[ParsedAst.Expression.MonadicFor] = rule {
-      SP ~ keyword("forM") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.MonadicFor
+      SP ~ (keyword("forM") | keyword("for")) ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.MonadicFor
     }
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
