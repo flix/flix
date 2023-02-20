@@ -552,16 +552,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
-    def ForA: Rule1[ParsedAst.Expression.ForA] = rule {
-      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForA
+    def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
+      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
     }
 
-    def ForYield: Rule1[ParsedAst.Expression.ForYield] = rule {
-      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+    def MonadicFor: Rule1[ParsedAst.Expression.MonadicFor] = rule {
+      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.MonadicFor
     }
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
@@ -748,7 +748,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForA | ForEachYield | ForYield | ForEach | NewObject |
+        Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 

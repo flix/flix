@@ -786,14 +786,14 @@ object ParsedAst {
     case class RestrictableChoose(sp1: SourcePosition, star: Boolean, exp: ParsedAst.Expression, rules: Seq[MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ForA Expression.
+      * Applicative For Expression (`forA (...) yield`) .
       *
       * @param sp1   the position of the first character in the expression.
       * @param frags the for-fragments, specifically [[ForFragment.Generator]].
       * @param exp   the yield-expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForA(sp1: SourcePosition, frags: Seq[ForFragment.Generator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ApplicativeFor(sp1: SourcePosition, frags: Seq[ForFragment.Generator], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForEach Expression.
@@ -806,14 +806,14 @@ object ParsedAst {
     case class ForEach(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ForYield Expression.
+      * MonadicFor Expression (`for (...) yield`).
       *
       * @param sp1   the position of the first character in the expression.
       * @param frags the for-fragments.
       * @param exp   the yield-expression.
       * @param sp2   the position of the last character in the expression.
       */
-    case class ForYield(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class MonadicFor(sp1: SourcePosition, frags: Seq[ForFragment], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ForEachYield Expression.
