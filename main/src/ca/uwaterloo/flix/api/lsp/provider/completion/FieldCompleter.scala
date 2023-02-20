@@ -24,9 +24,9 @@ object FieldCompleter extends Completer {
   /**
     * Returns a List of Completion for fields.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[FieldCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[FieldCompletion] = {
     // Do not get field completions if we are importing or using.
-    if (root == null || context.prefix.contains("import") || context.prefix.contains("use")) {
+    if (root.isEmpty || context.prefix.contains("import") || context.prefix.contains("use")) {
       return Nil
     }
 
