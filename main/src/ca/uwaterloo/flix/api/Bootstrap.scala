@@ -31,16 +31,24 @@ import scala.collection.mutable
 
 object Bootstrap {
   def main(args: Array[String]): Unit = {
+
     // TODO: Do ad-hoc testing here.
     val b = new Bootstrap
     b.bootstrap(".")
+
+    val f = new Flix
+    b.reconfigureFlix(f)
+    println(b.timestamps)
   }
 
 }
 
 class Bootstrap {
 
-  private val sourcePaths: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
+  // Timestamps at the point the sources were loaded
+  /*private*/ var timestamps: Map[Path, Long] = Map.empty
+
+  private var sourcePaths: List[Path] = List.empty
   private var flixPackagePaths: List[Path] = List.empty
   private var mavenPackagePaths: List[Path] = List.empty
 
@@ -50,19 +58,18 @@ class Bootstrap {
     //
     val path = Paths.get(pathString)
     val tomlPath = getManifestFile(path)
-    val res = if (Files.exists(tomlPath)) {
+    if (Files.exists(tomlPath)) {
       projectMode(path)
     } else {
       folderMode(path)
     }
-    res
   }
 
   private def projectMode(path: Path): Result[List[Path], BootstrapError] = {
     // 1. Read, parse, and validate flix.toml.
     val tomlPath = getManifestFile(path)
     val manifest = ManifestParser.parse(tomlPath) match {
-      case Ok(m) => println(m); m
+      case Ok(m) => m
       case Err(e) => return Err(BootstrapError.ManifestParseError(e))
     }
 
@@ -72,7 +79,7 @@ class Bootstrap {
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
     MavenPackageManager.installAll(manifest)(System.out) match {
-      case Ok(_) => //mavenPackagePaths = l
+      case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
 
@@ -84,6 +91,9 @@ class Bootstrap {
     val filesHere = getAllFlixFilesHere(path)
     val filesSrc = getAllFilesWithExt(getSourceDirectory(path), "flix")
     val filesTest = getAllFilesWithExt(getTestDirectory(path), "flix")
+    sourcePaths = filesHere ++ filesSrc ++ filesTest
+
+    timestamps = timestamps ++ (flixPackagePaths ++ mavenPackagePaths ++ sourcePaths).map(f => f -> f.toFile.lastModified).toMap
 
     val res = filesFlix ++ filesMaven ++ filesHere ++ filesSrc ++ filesTest
     println(res)
@@ -110,18 +120,28 @@ class Bootstrap {
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
 
     // TODO: Add logic to check if the file has changed.
-    for (path <- sourcePaths) {
+    for (path <- sourcePaths
+         if hasChanged(path)) {
       flix.addSourcePath(path)
     }
 
-    for (flixPackagePath <- flixPackagePaths) {
-      flix.addSourcePath(flixPackagePath)
+    for (path <- flixPackagePaths
+         if hasChanged(path)) {
+      flix.addSourcePath(path)
     }
 
-    for (mavenJarPath <- mavenPackagePaths) {
-      flix.addSourcePath(mavenJarPath)
+    for (path <- mavenPackagePaths
+         if hasChanged(path)) {
+      flix.addSourcePath(path)
     }
 
+  }
+
+  /**
+    * Returns true if the timestamp of the given source file has changed since the last reload
+    */
+  private def hasChanged(file: Path) = {
+    !(timestamps contains file) || (timestamps(file) != file.toFile.lastModified())
   }
 
   /**

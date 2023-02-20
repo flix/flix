@@ -4,12 +4,13 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageE
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 
 class TestFlixPackageManager extends FunSuite {
 
+  //TODO: fix returns
   test("Install missing dependency.01") {
-    assertResult(expected = Ok(()))(actual = {
+    assertResult(expected = true)(actual = {
       val toml = {
         """
           |[package]
@@ -37,12 +38,15 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out)
+      FlixPackageManager.installAll(manifest, path)(System.out) match {
+        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg")
+        case Err(e) => e
+      }
     })
   }
 
   test("Install missing dependency.02") {
-    assertResult(expected = Ok(()))(actual = {
+    assertResult(expected = true)(actual = {
       val toml = {
         """
           |[package]
@@ -71,12 +75,16 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out)
+      FlixPackageManager.installAll(manifest, path)(System.out) match {
+        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg") &&
+                      l(1).endsWith("magnus-madsen\\helloworld\\ver1.1.0\\helloworld.fpkg")
+        case Err(e) => e
+      }
     })
   }
 
   test("Do not install existing dependency") {
-    assertResult(expected = Ok(()))(actual = {
+    assertResult(expected = true)(actual = {
       val toml = {
         """
           |[package]
@@ -105,7 +113,10 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) //installs the dependency
-      FlixPackageManager.installAll(manifest, path)(System.out) //does nothing
+      FlixPackageManager.installAll(manifest, path)(System.out) match { //does nothing
+        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg")
+        case Err(e) => e
+      }
     })
   }
 

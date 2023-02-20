@@ -6,7 +6,7 @@ import org.scalatest.FunSuite
 
 class TestMavenPackageManager extends FunSuite {
   test("Install dependency") {
-    assertResult(expected = Ok(()))(actual = {
+    assertResult(expected = true)(actual = {
       val toml = {
         """
           |[package]
@@ -33,7 +33,13 @@ class TestMavenPackageManager extends FunSuite {
         case Err(_) => ??? //should not happen
       }
 
-      MavenPackageManager.installAll(manifest)(System.out)
+      MavenPackageManager.installAll(manifest)(System.out) match {
+        case Ok(l) => l.head.endsWith("org\\junit\\jupiter\\junit-jupiter-api") &&
+                      l(1).endsWith("org\\opentest4j\\opentest4j") &&
+                      l(2).endsWith("org\\junit\\platform\\junit-platform-commons") &&
+                      l(3).endsWith("org\\apiguardian\\apiguardian-api")
+        case Err(e) => e
+      }
     })
   }
 

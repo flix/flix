@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import java.io.PrintStream
 import coursier._
 
+import java.nio.file.{Path, Paths}
+
 object MavenPackageManager {
 
   private val scalaVersion = "2.13"
@@ -31,27 +33,34 @@ object MavenPackageManager {
     * Installs all MavenDependencies for a Manifest,
     * including transitive dependencies using coursier.
     */
-  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
     Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
-      try {
+      val l = try {
         val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
         val resolution = res.run()
 
+        val resList: collection.mutable.ListBuffer[Path] = collection.mutable.ListBuffer.empty
         val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-          out.println(s"Installing ${dep.module.toString()}");
+          val moduleName = dep.module.toString()
+          out.println(s"Installing $moduleName")
+          val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
+          resList.addOne(Paths.get(s"C:/Users/ablum/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2/$moduleNamePath"))
+
           f.addDependencies(dep)
         })
         fetch.run()
+        //TODO: how to return list of paths???
+        resList.toList
       } catch {
         case e: Exception =>
-          out.println(e.getMessage)
+          out.println(e)
           //Shortens the error message to just give the name of the dependency
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
           return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
-      ().toOk
+      l.toOk
     }
   }
 
