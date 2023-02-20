@@ -274,7 +274,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
       ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root.orNull, flix)
