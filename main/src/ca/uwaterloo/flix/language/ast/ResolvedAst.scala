@@ -152,8 +152,6 @@ object ResolvedAst {
 
     case class ArrayLength(base: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArraySlice(region: ResolvedAst.Expression, base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class VectorLit(exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class VectorLoad(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression

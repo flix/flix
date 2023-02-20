@@ -234,13 +234,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ArrayLength(b, t, loc)
 
-      case LiftedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visit(base)
-        val i1 = visit(startIndex)
-        val i2 = visit(endIndex)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArraySlice(b, i1, i2, t, loc)
-
       case LiftedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)

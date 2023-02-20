@@ -327,7 +327,7 @@ namespace MutList {
                 ()
             else {
                 let s1 = f(acc, Array.get(i - 1, a));
-                b[i] = s1;
+                Array.put(s1, i, b);
                 loop(i + 1, s1)
             }
         };
@@ -348,7 +348,7 @@ namespace MutList {
                 ()
             else {
                 let s1 = f(Array.get(i, a), acc);
-                b[i] = s1;
+                Array.put(s1, i, b);
                 loop(i - 1, s1)
             }
         };
@@ -373,7 +373,7 @@ namespace MutList {
                 if (i >= l)
                     ()
                 else {
-                    b[i] = f(Array.get(i, a));
+                    Array.put(f(Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -397,7 +397,7 @@ namespace MutList {
                 if (i >= l)
                     ()
                 else {
-                    b[i] = f(i, Array.get(i, a));
+                    Array.put(f(i, Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -416,7 +416,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                a[i] = f(Array.get(i, a));
+                Array.put(f(Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -433,7 +433,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                a[i] = f(i, Array.get(i, a));
+                Array.put(f(i, Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -570,7 +570,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        (deref a)[len] = x;
+        Array.put(x, len, deref a);
         l := len + 1
 
     ///
@@ -588,7 +588,7 @@ namespace MutList {
         else ();
         let sub = Array.copyOfRange(r, i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
-        (deref a)[i] = x;
+        Array.put(x, i, deref a);
         l := len + 1
 
     ///
@@ -605,11 +605,11 @@ namespace MutList {
         let n = l - 1;
         def loop(i1) = {
             if (i1 < n) {
-                a[i1] = Array.get(i1 + 1, a);
+                Array.put(Array.get(i1 + 1, a), i1, a);
                 loop(i1 + 1)
             }
             else if (i1 == n) {
-                a[i1] = Reflect.default()
+                Array.put(Reflect.default(), i1, a)
             }
             else
                 ()

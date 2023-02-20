@@ -581,23 +581,23 @@ object ParsedAst {
     /**
       * Apply Expression (function call).
       *
-      * @param lambda the lambda expression.
-      * @param args   the arguments.
-      * @param sp2    the position of the last character in the expression.
+      * @param exp  the lambda expression.
+      * @param args the arguments.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(exp: ParsedAst.Expression, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Apply.
       *
       * Replaced with Apply by Weeder.
       *
-      * @param e1   the first argument expression.
-      * @param name the name of the function.
-      * @param e2   the second argument expression.
+      * @param exp1 the first argument expression.
+      * @param exp2 the name of the function.
+      * @param exp3 the second argument expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Infix(e1: ParsedAst.Expression, name: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Infix(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
@@ -854,12 +854,12 @@ object ParsedAst {
     /**
       * Record Operation Expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param ops  the sequence of record operations.
-      * @param rest the base record to apply the operation to.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1 the position of the first character in the expression.
+      * @param ops the sequence of record operations.
+      * @param exp the base record to apply the operation to.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class RecordOperation(sp1: SourcePosition, ops: Seq[ParsedAst.RecordOp], rest: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordOperation(sp1: SourcePosition, ops: Seq[ParsedAst.RecordOp], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * New Expression.
@@ -880,16 +880,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class ArrayLit(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ArrayStore Expression
-      *
-      * @param base    the array.
-      * @param indexes the indexes to load from and the last to store into.
-      * @param elm     the element to store into the given index.
-      * @param sp2     the position of the last character in the expression.
-      */
-    case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Vector Literal expression.
@@ -1082,12 +1072,12 @@ object ParsedAst {
     /**
       * SelectChannel Expression.
       *
-      * @param sp1     the position of the first character in the expression.
-      * @param rules   the rules of the select expression.
-      * @param default the default of the select expression.
-      * @param sp2     the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select expression.
+      * @param exp   the default of the select expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Spawn Expression.
@@ -1196,14 +1186,14 @@ object ParsedAst {
     /**
       * Fixpoint Query expression.
       *
-      * @param sp1      the position of the first character in the expression.
-      * @param exps     the non-empty sequence of expressions to merge and solve.
-      * @param selects  the expressions of the selected tuple. (the head of the pseudo-rule).
-      * @param from     the predicates to select from (the body of the pseudo-rule).
-      * @param whereExp the optional guard of the pseudo-rule.
-      * @param sp2      the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param exps the non-empty sequence of expressions to merge and solve.
+      * @param exp1 the expressions of the selected tuple. (the head of the pseudo-rule).
+      * @param from the predicates to select from (the body of the pseudo-rule).
+      * @param exp2 the optional guard of the pseudo-rule.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], selects: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], whereExp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointQueryWithSelect(sp1: SourcePosition, exps: Seq[ParsedAst.Expression], exp1: Seq[ParsedAst.Expression], from: Seq[ParsedAst.Predicate.Body.Atom], exp2: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Debug expression.
@@ -1345,11 +1335,11 @@ object ParsedAst {
         *
         * @param sp1   the position of the first character in the predicate.
         * @param ident the qualified name of the predicate.
-        * @param terms the terms of the predicate.
-        * @param term  the optional lattice term (if applicable).
+        * @param exps  the terms of the predicate.
+        * @param exp1  the optional lattice term (if applicable).
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, ident: Name.Ident, exps: Seq[ParsedAst.Expression], exp1: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
@@ -1975,20 +1965,20 @@ object ParsedAst {
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
     *
-    * @param pat   the pattern of the rule.
-    * @param guard the optional guard of the rule.
-    * @param exp   the body expression of the rule.
+    * @param pat  the pattern of the rule.
+    * @param exp1 the optional guard of the rule.
+    * @param exp2 the body expression of the rule.
     */
-  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression)
+  case class MatchRule(pat: ParsedAst.Pattern, exp1: Option[ParsedAst.Expression], exp2: ParsedAst.Expression)
 
   /**
     * A select channel rule consists of an identifier, a channel expression, and a body expression.
     *
     * @param ident the bound identifier.
-    * @param chan  the channel expression of the rule.
-    * @param exp   the body expression of the rule.
+    * @param exp1  the channel expression of the rule.
+    * @param exp2  the body expression of the rule.
     */
-  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression)
+  case class SelectChannelRule(ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression)
 
   /**
     * Modifier.
@@ -2203,10 +2193,10 @@ object ParsedAst {
     *
     * @param sp1   the position of the first character in the field.
     * @param field the field of the field.
-    * @param value the value of the field.
+    * @param exp   the value of the field.
     * @param sp2   the position of the last character in the field.
     */
-  case class RecordField(sp1: SourcePosition, field: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
+  case class RecordField(sp1: SourcePosition, field: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Field Type.
@@ -2304,11 +2294,11 @@ object ParsedAst {
     /**
       * A guard fragment, i.e. `if x > 1`.
       *
-      * @param sp1   the position of the first character in the fragment.
-      * @param guard the guard expression.
-      * @param sp2   the position of the last character in the fragment.
+      * @param sp1 the position of the first character in the fragment.
+      * @param exp the guard expression.
+      * @param sp2 the position of the last character in the fragment.
       */
-    case class Guard(sp1: SourcePosition, guard: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
+    case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
   }
 

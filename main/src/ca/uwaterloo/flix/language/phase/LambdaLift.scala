@@ -249,12 +249,6 @@ object LambdaLift {
         val purity = b.purity
         LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
 
-      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visitExp(base)
-        val i1 = visitExp(startIndex)
-        val i2 = visitExp(endIndex)
-        LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
-
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Ref(e, tpe, loc)
