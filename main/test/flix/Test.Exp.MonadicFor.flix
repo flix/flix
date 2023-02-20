@@ -1,4 +1,4 @@
-namespace Test/Exp/ForYield {
+namespace Test/Exp/MonadicFor {
 
     @test
     def testForYield01(): Bool =

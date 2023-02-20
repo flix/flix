@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestForA {
+namespace Test/Exp/ApplicativeFor {
 
     @test
     def testForA01(): List[String] =
