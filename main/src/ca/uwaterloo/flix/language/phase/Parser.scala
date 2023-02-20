@@ -557,7 +557,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ForYield: Rule1[ParsedAst.Expression.ForYield] = rule {
-      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+      SP ~ keyword("forM") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
     }
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
