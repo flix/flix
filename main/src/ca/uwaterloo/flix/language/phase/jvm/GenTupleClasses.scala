@@ -38,8 +38,7 @@ object GenTupleClasses {
         // Construct tuple class.
         val jvmType = JvmOps.getTupleClassType(tpe)
         val jvmName = jvmType.name
-        val targs = elms.map(JvmOps.getErasedJvmType)
-        val bytecode = genByteCode(jvmType, targs)
+        val bytecode = genByteCode(jvmType, elms)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, _) =>
         // Case 2: The type constructor is a non-tuple.
@@ -97,9 +96,11 @@ object GenTupleClasses {
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, monoTargs: List[MonoType])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
+
+    val targs = monoTargs.map(JvmOps.getErasedJvmType)
 
     // internal name of super
     val superClass = BackendObjType.JavaObject.jvmName.toInternalName
@@ -125,7 +126,7 @@ object GenTupleClasses {
     // Emit the code for `getBoxedValue()` method
     compileGetBoxedValueMethod(visitor, classType, targs)
 
-    compileToStringMethod(visitor, classType)
+    compileToStringMethod(visitor, classType, monoTargs)
 
     // Generate `hashCode` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -220,8 +221,11 @@ object GenTupleClasses {
     constructor.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[MonoType])(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    // this is for the new bytecode framework
+    val methodF = new BytecodeInstructions.F(method)
+    // create an array of "(", inner, ")"
     method.visitInsn(ICONST_3)
     method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
     method.visitInsn(DUP)
@@ -230,18 +234,34 @@ object GenTupleClasses {
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_1)
+    // create the inner string, which is the comma separated fields
     method.visitLdcInsn(", ")
-    method.visitVarInsn(ALOAD, 0)
-    method.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getBoxedValue", s"()[Ljava/lang/Object;", false)
+    //     new array
+    method.visitLdcInsn(fields.length)
+    method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
+    //     the running index
+    method.visitInsn(ICONST_M1)
+    //     store string reps of fields
+    for ((field, ind) <- fields.zipWithIndex) {
+      val jvmType = JvmOps.getErasedJvmType(field)
+      // add to index
+      method.visitInsn(ICONST_1)
+      method.visitInsn(IADD)
+      method.visitInsn(DUP2)
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$ind", jvmType.toDescriptor)
+      BytecodeInstructions.xToString(BackendType.toErasedBackendType(field))(methodF)
+      method.visitInsn(AASTORE)
+    }
+    method.visitInsn(POP)
     method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
     method.visitInsn(ICONST_2)
     method.visitLdcInsn(")")
     method.visitInsn(AASTORE)
-    method.visitVarInsn(ASTORE, 1)
     method.visitLdcInsn("")
-    method.visitVarInsn(ALOAD, 1)
+    method.visitInsn(SWAP)
     method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(ARETURN)
     method.visitMaxs(999, 999)
