@@ -26,64 +26,66 @@ object GotoProvider {
   /**
     * Processes a goto request.
     */
-  def processGoto(uri: String, pos: Position)(implicit index: Index, root: Root): JObject = {
-    index.query(uri, pos) match {
-      case None => mkNotFound(uri, pos)
+  def processGoto(uri: String, pos: Position)(implicit index: Index, root: Option[Root]): JObject = root match {
+    case None => mkNotFound(uri, pos)
+    case Some(someRoot) =>
+      index.query(uri, pos) match {
+        case None => mkNotFound(uri, pos)
 
-      case Some(entity) => entity match {
+        case Some(entity) => entity match {
 
-        case Entity.DefUse(sym, loc, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(root).toJSON)
+          case Entity.DefUse(sym, loc, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromDefSym(sym, loc)(someRoot).toJSON)
 
-        case Entity.SigUse(sym, loc, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(root).toJSON)
+          case Entity.SigUse(sym, loc, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromSigSym(sym, loc)(someRoot).toJSON)
 
-        case Entity.VarUse(sym, loc, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
+          case Entity.VarUse(sym, loc, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromVarSym(sym, loc).toJSON)
 
-        case Entity.CaseUse(sym, loc, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
+          case Entity.CaseUse(sym, loc, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
-        case Entity.Exp(_) => mkNotFound(uri, pos)
+          case Entity.Exp(_) => mkNotFound(uri, pos)
 
-        case Entity.Pattern(pat) => pat match {
-          case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(root).toJSON)
+          case Entity.Pattern(pat) => pat match {
+            case Pattern.Tag(Ast.CaseSymUse(sym, loc), _, _, _) =>
+              ("status" -> "success") ~ ("result" -> LocationLink.fromCaseSym(sym, loc)(someRoot).toJSON)
 
-          case _ => mkNotFound(uri, pos)
+            case _ => mkNotFound(uri, pos)
+          }
+
+          case Entity.Type(t) => t match {
+            case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
+              ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(someRoot).toJSON)
+
+            case Type.Cst(TypeConstructor.Effect(sym), loc) =>
+              ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
+
+            case Type.Var(sym, loc) =>
+              ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
+
+            case _ => mkNotFound(uri, pos)
+          }
+
+          case Entity.OpUse(sym, loc, _) =>
+            ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
+
+          case Entity.Case(_) => mkNotFound(uri, pos)
+          case Entity.Class(_) => mkNotFound(uri, pos)
+          case Entity.Def(_) => mkNotFound(uri, pos)
+          case Entity.Effect(_) => mkNotFound(uri, pos)
+          case Entity.Enum(_) => mkNotFound(uri, pos)
+          case Entity.TypeAlias(_) => mkNotFound(uri, pos)
+          case Entity.Field(_) => mkNotFound(uri, pos)
+          case Entity.FormalParam(_) => mkNotFound(uri, pos)
+          case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
+          case Entity.Op(_) => mkNotFound(uri, pos)
+          case Entity.Pred(_, _) => mkNotFound(uri, pos)
+          case Entity.Sig(_) => mkNotFound(uri, pos)
+          case Entity.TypeVar(_) => mkNotFound(uri, pos)
         }
-
-        case Entity.Type(t) => t match {
-          case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEnumSym(sym, loc)(root).toJSON)
-
-          case Type.Cst(TypeConstructor.Effect(sym), loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromEffectSym(sym, loc).toJSON)
-
-          case Type.Var(sym, loc) =>
-            ("status" -> "success") ~ ("result" -> LocationLink.fromTypeVarSym(sym, loc).toJSON)
-
-          case _ => mkNotFound(uri, pos)
-        }
-
-        case Entity.OpUse(sym, loc, _) =>
-          ("status" -> "success") ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
-
-        case Entity.Case(_) => mkNotFound(uri, pos)
-        case Entity.Class(_) => mkNotFound(uri, pos)
-        case Entity.Def(_) => mkNotFound(uri, pos)
-        case Entity.Effect(_) => mkNotFound(uri, pos)
-        case Entity.Enum(_) => mkNotFound(uri, pos)
-        case Entity.TypeAlias(_) => mkNotFound(uri, pos)
-        case Entity.Field(_) => mkNotFound(uri, pos)
-        case Entity.FormalParam(_) => mkNotFound(uri, pos)
-        case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
-        case Entity.Op(_) => mkNotFound(uri, pos)
-        case Entity.Pred(_, _) => mkNotFound(uri, pos)
-        case Entity.Sig(_) => mkNotFound(uri, pos)
-        case Entity.TypeVar(_) => mkNotFound(uri, pos)
       }
-    }
   }
 
   /**
