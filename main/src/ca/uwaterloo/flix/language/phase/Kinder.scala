@@ -448,6 +448,12 @@ object Kinder {
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(fparamVal, expVal) {
         case (fparam, exp) => KindedAst.Expression.Lambda(fparam, exp, loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.Unary(sop, exp0, loc) =>
@@ -530,6 +536,12 @@ object Kinder {
       val rulesVal = traverse(rules0)(visitMatchTypeRule(_, kenv0, senv, taenv, henv0, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.TypeMatch(exp, rules, loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.RelationalChoose(star, exps0, rules0, loc) =>
@@ -682,6 +694,12 @@ object Kinder {
       mapN(expVal, expectedTypeVal, expectedPurAndEffVal) {
         case (exp, expectedType, (expectedPur, expectedEff)) =>
           KindedAst.Expression.Ascribe(exp, expectedType, expectedPur, expectedEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.Of(sym, exp0, loc) =>
@@ -698,6 +716,12 @@ object Kinder {
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
           KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.Mask(exp, loc) =>
@@ -742,6 +766,12 @@ object Kinder {
       val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv0, senv, taenv, tvar, root))
       mapN(expVal, rulesVal) {
         case (exp, rules) => KindedAst.Expression.TryWith(exp, eff, rules, tvar, loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.Do(op, args0, loc) =>
@@ -802,6 +832,12 @@ object Kinder {
     case ResolvedAst.Expression.NewObject(name, clazz, methods, loc) =>
       mapN(traverse(methods)(visitJvmMethod(_, kenv0, senv, taenv, henv0, root))) {
         methods => KindedAst.Expression.NewObject(name, clazz, methods, loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.NewChannel(exp10, exp20, loc) =>
@@ -878,6 +914,12 @@ object Kinder {
       val expVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
       mapN(psVal, expVal) {
         case (ps, e) => KindedAst.Expression.FixpointLambda(ps, e, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }.recoverOne {
+        case err: KindError =>
+          val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+          val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
+          val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
+          KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
     case ResolvedAst.Expression.FixpointMerge(exp10, exp20, loc) =>

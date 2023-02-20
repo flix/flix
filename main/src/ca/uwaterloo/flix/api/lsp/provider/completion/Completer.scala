@@ -25,5 +25,5 @@ trait Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion]
+  def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[Completion]
 }
