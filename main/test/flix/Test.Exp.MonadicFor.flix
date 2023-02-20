@@ -3,26 +3,26 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor01(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil)
+            forM (x <- 1 :: 2 :: 3 :: Nil)
                 yield x + 1;
         l == 2 :: 3 :: 4 :: Nil
 
     @test
     def testMonadicFor02(): Bool =
         let l =
-            for( x <- 1 :: 2 :: 3 :: Nil  )yield x + 1;
+            forM( x <- 1 :: 2 :: 3 :: Nil  )yield x + 1;
         l == 2 :: 3 :: 4 :: Nil
 
     @test
     def testMonadicFor03(): Bool =
         let l =
-            for( x <- 1 :: 2 :: 3 :: Nil  )         yield x + 1;
+            forM( x <- 1 :: 2 :: 3 :: Nil  )         yield x + 1;
         l == 2 :: 3 :: 4 :: Nil
 
     @test
     def testMonadicFor04(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  y <- 4 :: 5 :: Nil)
                     yield (x, y);
         l == (1, 4) :: (1, 5) :: (2, 4) :: (2, 5) :: (3, 4) :: (3, 5) :: Nil
@@ -30,7 +30,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor05(): Bool =
         let l =
-            for ((x, y) <- (1, 0) :: (2, 1) :: (3, 2) :: Nil;
+            forM ((x, y) <- (1, 0) :: (2, 1) :: (3, 2) :: Nil;
                  z <- 4 :: 5 :: Nil)
                     yield (x, y, z);
         l == (1, 0, 4) :: (1, 0, 5) :: (2, 1, 4) :: (2, 1, 5) :: (3, 2, 4) :: (3, 2, 5) :: Nil
@@ -38,7 +38,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor06(): Bool =
         let l =
-            for ((x, y) <- (1, 0) :: (2, 1) :: (3, 2) :: Nil;
+            forM ((x, y) <- (1, 0) :: (2, 1) :: (3, 2) :: Nil;
                  z <- 4 :: 5 :: Nil;
                  _ <- List.range(0, 10))
                     yield (x, y, z);
@@ -48,8 +48,8 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor07(): Bool =
         let l = // Monad.flatMap(match x -> Monad.flatMap(match y -> Applicative.point((x, y)), 4 :: 5 :: Nil), 1 :: 2 :: 3 :: Nil)
-            for (x <- 1 :: 2 :: 3 :: Nil) yield
-                for (y <- 4 :: 5 :: Nil)
+            forM (x <- 1 :: 2 :: 3 :: Nil) yield
+                forM (y <- 4 :: 5 :: Nil)
                     yield (x, y);
         l == ((1, 4) :: (1, 5) :: Nil) :: ((2, 4) :: (2, 5) :: Nil) :: ((3, 4) :: (3, 5) :: Nil) :: Nil
 
@@ -57,7 +57,7 @@ namespace Test/Exp/MonadicFor {
     def testMonadicFor08(): Bool = region r {
         let l1 = ref Nil @ r;
         let l2 =
-            for (x <- 1 :: 2 :: 3 :: Nil) yield {
+            forM (x <- 1 :: 2 :: 3 :: Nil) yield {
                 l1 := x :: deref l1;
                 x
             };
@@ -67,7 +67,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor09(): Bool =
         let l = // Monad.flatMap(match x -> if (x > 1) Applicative.point(x + 1) else MonadZero.empty(), 1 :: 2 :: 3 :: Nil)
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1)
                 yield x + 1;
         l == 3 :: 4 :: Nil
@@ -75,7 +75,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor10(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if (x > 1))
                 yield x + 1;
         l == 3 :: 4 :: Nil
@@ -83,7 +83,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor11(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1 and x < 3)
                 yield x + 1;
         l == 3 :: Nil
@@ -91,7 +91,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor12(): Bool =
         let l = // Monad.flatMap(match x -> if (x > 1) if (x < 3) Applicative.point(x + 1) else MonadZero.empty() else MonadZero.empty(), 1 :: 2 :: 3 :: Nil)
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  if x < 3)
                 yield x + 1;
@@ -100,7 +100,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor13(): Bool =
         let l0 =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  if x < 3)
                 yield x + 1;
@@ -114,7 +114,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor14(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x < 1)
                 yield x + 1;
         l == Nil
@@ -122,7 +122,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor15(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 3)
                 yield x + 1;
         l == Nil
@@ -130,7 +130,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor16(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  if x > 3)
                 yield x + 1;
@@ -139,7 +139,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor17(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x < 1;
                  if x < 3)
                 yield x + 1;
@@ -148,7 +148,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor18(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x < 1;
                  if x > 3)
                 yield x + 1;
@@ -157,7 +157,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor19(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  y <- 4 :: 5 :: Nil;
                  if y < 5)
                     yield (x, y);
@@ -166,7 +166,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor20(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  y <- 4 :: 5 :: Nil;
                  if y < 4)
                     yield (x, y);
@@ -175,7 +175,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor21(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  y <- 4 :: 5 :: 6 :: Nil;
                  if y < 6)
@@ -185,7 +185,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor22(): Bool =
         let l0 =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  if x > 1;
                  y <- 4 :: 5 :: 6 :: Nil;
                  if y < 6)
@@ -208,7 +208,7 @@ namespace Test/Exp/MonadicFor {
     @test
     def testMonadicFor23(): Bool =
         let l =
-            for (x <- 1 :: 2 :: 3 :: Nil;
+            forM (x <- 1 :: 2 :: 3 :: Nil;
                  y <- 4 :: 5 :: 6 :: Nil;
                  if x > 1;
                  if y < 6)
