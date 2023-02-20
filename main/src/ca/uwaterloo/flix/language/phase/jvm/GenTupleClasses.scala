@@ -240,19 +240,20 @@ object GenTupleClasses {
     method.visitLdcInsn(fields.length)
     method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
     //     the running index
-    method.visitInsn(ICONST_0)
-    method.visitVarInsn(ISTORE, 1)
+    method.visitInsn(ICONST_M1)
     //     store string reps of fields
     for ((field, ind) <- fields.zipWithIndex) {
       val jvmType = JvmOps.getErasedJvmType(field)
-      method.visitInsn(DUP)
-      method.visitVarInsn(ILOAD, 1)
+      // add to index
+      method.visitInsn(ICONST_1)
+      method.visitInsn(IADD)
+      method.visitInsn(DUP2)
       method.visitVarInsn(ALOAD, 0)
       method.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$ind", jvmType.toDescriptor)
       BytecodeInstructions.xToString(BackendType.toErasedBackendType(field))(methodF)
       method.visitInsn(AASTORE)
-      method.visitIincInsn(1, 1)
     }
+    method.visitInsn(POP)
     method.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
     method.visitInsn(AASTORE)
     method.visitInsn(DUP)
