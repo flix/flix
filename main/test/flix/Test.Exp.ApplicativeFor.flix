@@ -16,6 +16,10 @@
 
 namespace Test/Exp/ApplicativeFor {
 
+    /////////////////////////////////////////////////////////////////////////////
+    // List                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
     @test
     def testForA01(): List[String] =
         forA (
@@ -132,5 +136,115 @@ namespace Test/Exp/ApplicativeFor {
                ("3ax" :: "3ay" :: "3az" :: Nil) ::
                ("3bx" :: "3by" :: "3bz" :: Nil) ::
                ("3cx" :: "3cy" :: "3cz" :: Nil) :: Nil
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Validation                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testForA11(): Bool =
+        let res = forA (
+            x <- s("Hello"): Validation[Int32, String]
+        ) yield {
+            "${x} world"
+        };
+        res == s("Hello world")
+
+    @test
+    def testForA12(): Bool =
+        let res = forA (
+            x <- s("Hello"): Validation[Int32, String];
+            y <- s("world")
+        ) yield {
+            "${x} ${y}"
+        };
+        res == s("Hello world")
+
+    @test
+    def testForA13(): Bool =
+        let res = forA (
+            (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
+            (c, d) <- s((3, 4))
+        ) yield (a + b) * c + d;
+        res == s((1 + 2) * 3 + 4)
+
+    @test
+    def testForA14(): Bool =
+        let res = forA (
+            (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
+            (c, d) <- f("err")
+        ) yield (a + b) * c + d;
+        res == f("err")
+
+    @test
+    def testForA15(): Bool =
+        let res = forA (
+            (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
+            (c, d) <- f("err1");
+            (_, _) <- f("err2")
+        ) yield (a + b) * c + d;
+        res == fs("err1" :: "err2" :: Nil)
+
+    @test
+    def testForA16(): Bool =
+        let res = forA (
+            a <- s("a"): Validation[Bool, String];
+            b <- s("1");
+            c <- s("x")
+        ) yield "${a}${b}${c}";
+        res == s("a1x")
+
+    @test
+    def testForA17(): Bool =
+        let res = forA (
+            a <- s("a"): Validation[Bool, String];
+            b <- s("1")
+        ) yield {
+            forA (
+                c <- s("x"): Validation[Int32, String]
+            ) yield "${a}${b}${c}"
+        };
+        res == s(s("a1x"))
+
+    @test
+    def testForA18(): Bool =
+        let res = forA (
+            (a, b) <- s((1, 2)): Validation[String, (Int32, Int32)];
+            (c, d) <- f("err1");
+            _ <- f("err2");
+            _ <- f("err3");
+            _ <- f("err4");
+            _ <- f("err5");
+            _ <- f("err6");
+            _ <- f("err7");
+            _ <- f("err8");
+            _ <- f("err9");
+            _ <- f("err10");
+            _ <- f("err11");
+            _ <- f("err12")
+        ) yield (a + b) * c + d;
+        res == fs("err1" :: "err2" :: "err3" :: "err4" :: "err5" :: "err6" :: "err7" :: "err8" :: "err9" :: "err10" :: "err11" :: "err12" :: Nil)
+
+    ///
+    /// Returns a `Validation.Success` containing element `t`.
+    ///
+    def s(t: t): Validation[e, t] =
+        Validation.Success(t)
+
+    ///
+    /// Returns a `Validation.Failure` containing element `e`.
+    ///
+    def f(e: e): Validation[e, t] =
+        Validation.Failure(Nec.singleton(e))
+
+    ///
+    /// Returns a `Validation.Failure` containing element all elements of `es`.
+    /// `es` must be non-empty!
+    ///
+    def fs(es: List[e]): Validation[e, t] = match es {
+        case Nil     => bug!("Called with empty list")
+        case x :: xs => List.foldLeft(Nec.snoc, Nec.singleton(x), xs) |> Validation.Failure
+    }
 
 }
