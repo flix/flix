@@ -988,11 +988,11 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseSymmetricDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    case (Type.Cst(TypeConstructor.CaseEmpty(_), _), t) => t
-    case (t, Type.Cst(TypeConstructor.CaseEmpty(_), _)) => t
-    case (Type.Cst(TypeConstructor.CaseAll(_), _), t) => mkCaseComplement(t, sym, loc)
-    case (t, Type.Cst(TypeConstructor.CaseAll(_), _)) => mkCaseComplement(t, sym, loc)
-    case (Type.Cst(TypeConstructor.CaseConstant(sym1), _), Type.Cst(TypeConstructor.CaseConstant(sym2), _)) if sym1 == sym2 => Type.Cst(TypeConstructor.False, loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      Type.Cst(TypeConstructor.CaseSet((syms1 -- syms2) ++ (syms2 -- syms1), sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
+    case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
+    // TODO RESTR-VARS ALL case: universe
     case _ => mkApply(Type.Cst(TypeConstructor.CaseSymmetricDifference(sym), loc), List(tpe1, tpe2), loc)
   }
 
