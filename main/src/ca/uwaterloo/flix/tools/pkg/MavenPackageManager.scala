@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import java.io.PrintStream
 import coursier._
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
@@ -42,16 +42,21 @@ object MavenPackageManager {
         val resolution = res.run()
 
         val resList: collection.mutable.ListBuffer[Path] = collection.mutable.ListBuffer.empty
-        val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-          val moduleName = dep.module.toString()
-          out.println(s"Installing $moduleName")
-          val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
-          resList.addOne(Paths.get(s"C:/Users/ablum/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2/$moduleNamePath"))
+        val fetch = resolution.dependencies.foldLeft(Fetch())(
+          (f, dep) => {
+            val moduleName = dep.module.toString()
+            val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
+            val versionString = dep.version
+            val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
+            //TODO: change to the correct path for other computers
+            val filePrefix = "C:/Users/ablum/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2"
+            val path = Paths.get(s"$filePrefix/$moduleNamePath/$versionString/$fileName")
+            resList.addOne(path)
 
-          f.addDependencies(dep)
+            out.println(s"Installing $moduleName")
+            f.addDependencies(dep)
         })
         fetch.run()
-        //TODO: how to return list of paths???
         resList.toList
       } catch {
         case e: Exception =>

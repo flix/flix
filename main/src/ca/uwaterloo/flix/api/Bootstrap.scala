@@ -83,11 +83,7 @@ class Bootstrap {
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
 
-    // 3. Compute the set of JAR paths and Flix fpkg paths.
-    val filesFlix = flixPackagePaths
-    val filesMaven = mavenPackagePaths
-
-    // 4. Add *.flix, src/**.flix and test/**.flix
+    // 3. Add *.flix, src/**.flix and test/**.flix
     val filesHere = getAllFlixFilesHere(path)
     val filesSrc = getAllFilesWithExt(getSourceDirectory(path), "flix")
     val filesTest = getAllFilesWithExt(getTestDirectory(path), "flix")
@@ -95,9 +91,7 @@ class Bootstrap {
 
     timestamps = timestamps ++ (flixPackagePaths ++ mavenPackagePaths ++ sourcePaths).map(f => f -> f.toFile.lastModified).toMap
 
-    val res = filesFlix ++ filesMaven ++ filesHere ++ filesSrc ++ filesTest
-    println(res)
-    Ok(res)
+    Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
   }
 
   private def folderMode(path: Path): Result[List[Path], BootstrapError] = {
@@ -105,35 +99,41 @@ class Bootstrap {
     val filesHere = getAllFlixFilesHere(path)
     val filesSrc = getAllFilesWithExt(getSourceDirectory(path), "flix")
     val filesTest = getAllFilesWithExt(getTestDirectory(path), "flix")
+    sourcePaths = filesHere ++ filesSrc ++ filesTest
 
     // 2. Grab all jars in lib/
     val jarFilesLib = getAllFilesWithExt(getLibraryDirectory(path), "jar")
+    mavenPackagePaths = jarFilesLib
 
     // 3. Grab all flix packages in lib/
     val flixFilesLib = getAllFilesWithExt(getLibraryDirectory(path), "fpkg")
+    flixPackagePaths = flixFilesLib
 
-    val res = filesHere ++ filesSrc ++ filesTest ++ jarFilesLib ++ flixFilesLib
-    println(res)
-    Ok(res)
+    Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
   }
 
   def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
+    val previousSources = timestamps.keySet
 
-    // TODO: Add logic to check if the file has changed.
-    for (path <- sourcePaths
-         if hasChanged(path)) {
+    for (path <- sourcePaths if hasChanged(path)) {
       flix.addSourcePath(path)
     }
 
-    for (path <- flixPackagePaths
-         if hasChanged(path)) {
+    for (path <- flixPackagePaths if hasChanged(path)) {
       flix.addSourcePath(path)
     }
 
-    for (path <- mavenPackagePaths
-         if hasChanged(path)) {
+    for (path <- mavenPackagePaths if hasChanged(path)) {
       flix.addSourcePath(path)
     }
+
+    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths).toSet
+
+    val deletedSources = previousSources -- currentSources
+    for (file <- deletedSources)
+      flix.remSourceCode(file.toString)
+
+    timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
 
   }
 
