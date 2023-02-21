@@ -534,15 +534,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
+    def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+      SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
+    }
+
+    def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+      SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
+    }
+
     def ForFragment: Rule1[ParsedAst.ForFragment] = {
-      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
-      }
-
-      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
-        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
-      }
-
       rule {
         GeneratorFragment | GuardFragment
       }
@@ -552,12 +552,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
+    def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
+      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
+    }
+
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ForEach
     }
 
-    def ForYield: Rule1[ParsedAst.Expression.ForYield] = rule {
-      SP ~ keyword("for") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForYield
+    def MonadicFor: Rule1[ParsedAst.Expression.MonadicFor] = rule {
+      SP ~ (keyword("forM") | keyword("for")) ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.MonadicFor
     }
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
@@ -744,7 +748,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
-        Discard | Debug | ForEachYield | ForYield | ForEach | NewObject |
+        Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
