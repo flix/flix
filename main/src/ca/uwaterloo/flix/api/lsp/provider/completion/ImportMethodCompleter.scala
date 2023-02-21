@@ -16,11 +16,13 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportMethodCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ImportMethodCompleter extends Completer {
   /**
     * Returns a List of Completion for importMethod.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = ???
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportMethodCompletion] =
+    null
 }
