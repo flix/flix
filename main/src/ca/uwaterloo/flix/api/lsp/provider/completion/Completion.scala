@@ -47,6 +47,9 @@ sealed trait Completion {
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
+    case Completion.ImportNewCompletion() => null
+    case Completion.ImportFieldCompletion() => null
+    case Completion.ImportMethodCompletion() => null
   }
 }
 
