@@ -331,13 +331,6 @@ object OccurrenceAnalyzer {
       val purity = b.purity
       (OccurrenceAst.Expression.ArrayLength(b, tpe, purity, loc), o.increaseSizeByOne())
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      val (b, o1) = visitExp(sym0, base)
-      val (i1, o2) = visitExp(sym0, beginIndex)
-      val (i2, o3) = visitExp(sym0, endIndex)
-      val o4 = combineAllSeq(o1, combineAllSeq(o2, o3))
-      (OccurrenceAst.Expression.ArraySlice(b, i1, i2, tpe, loc), o4.increaseSizeByOne())
-
     case Expression.Ref(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Ref(e, tpe, loc), o.increaseSizeByOne())

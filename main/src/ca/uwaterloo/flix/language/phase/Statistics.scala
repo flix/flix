@@ -117,7 +117,6 @@ object Statistics {
       case Expression.ArrayLoad(base, index, tpe, pur, eff, loc) => visitExp(base) ++ visitExp(index)
       case Expression.ArrayLength(base, pur, eff, loc) => visitExp(base)
       case Expression.ArrayStore(base, index, elm, _, _, _) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
       case Expression.VectorLit(exps, _, _, _, _) => Counter.merge(exps.map(visitExp))
       case Expression.VectorLoad(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.VectorLength(exp, _) => visitExp(exp)

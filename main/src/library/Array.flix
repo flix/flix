@@ -73,7 +73,7 @@ namespace Array {
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ Write(r) =
-        a[i] = x
+        $ARRAY_STORE$(a, i, x)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -98,7 +98,7 @@ namespace Array {
     /// Returns a fresh array with the elements from the array `a` from index `start` (inclusive) until index `end` (exclusive).
     ///
     pub def slice(r1: Region[r1], start: {start = Int32}, end: {end = Int32}, a: Array[a, r]): Array[a, r1] \ { Read(r), Write(r1) } =
-        $ARRAY_SLICE$(r1, a, start.start, end.end)
+        copyOfRange(r1, start.start, end.end, a)
 
     ///
     /// Returns the array `a` as a list.
@@ -378,7 +378,7 @@ namespace Array {
                 ()
             else {
                 let s1 = f(acc, get(i - 1, arr));
-                b[i] = s1;
+                Array.put(s1, i, b);
                 loop(i + 1, s1)
             }
         };
@@ -398,7 +398,7 @@ namespace Array {
                 ()
             else {
                 let s1 = f(get(i, a), acc);
-                b[i] = s1;
+                Array.put(s1, i, b);
                 loop(i - 1, s1)
             }
         };
@@ -423,7 +423,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(get(i, arr));
+                Array.put(f(get(i, arr)), i, arr);
                 loop(i + 1)
             }
         };
@@ -447,7 +447,7 @@ namespace Array {
             if (i >= len)
                 ()
             else {
-                arr[i] = f(i, get(i, arr));
+                Array.put(f(i, get(i, arr)), i, arr);
                 loop(i + 1)
             }
         };
@@ -597,7 +597,7 @@ namespace Array {
             Array#{} @ r1
         else {
             let b = repeat(r1, len2, x);
-            let f = { (i, v) -> let j = i + i; b[j] = v };
+            let f = { (i, v) -> let j = i + i; Array.put(v, j, b) };
             forEachWithIndex(f, a);
             b
         }
@@ -957,7 +957,7 @@ namespace Array {
                 else {
                     let x = get(i, arr);
                     if (f(x)) {
-                        out[j] = x;
+                        Array.put(x, j, out);
                         loop(i + 1, j + 1)
                     } else {
                         loop(i + 1, j)
@@ -1194,8 +1194,8 @@ namespace Array {
             def loop(i) = {
                 if (i < len) {
                     let (l, r) = get(i, a);
-                    arr[i] = l;
-                    brr[i] = r;
+                    Array.put(l, i, arr);
+                    Array.put(r, i, brr);
                     loop(i + 1)
                 } else
                     ()
@@ -1363,7 +1363,7 @@ namespace Array {
             let a = Array.repeat(r, len, x);
             def loop(i) = {
                 if (i < len) {
-                    a[i] = f(i);
+                    Array.put(f(i), i, a);
                     loop(i + 1)
                 } else
                     ()
@@ -1453,7 +1453,7 @@ namespace Array {
         let end = i + length(sub);
         let f = { (ix, _) ->
             if (ix >= i and ix < end)
-                a[ix] = get(ix - i, sub)
+                Array.put(get(ix - i, sub), ix, a)
             else
                 ()
         };
@@ -1573,9 +1573,8 @@ namespace Array {
     pub def swap!(i: Int32, j: Int32, a: Array[a, r]): Unit \ { Read(r), Write(r) } =
         let x = get(i, a);
         let y = get(j, a);
-        a[i] = y;
-        a[j] = x;
-        ()
+        Array.put(y, i, a);
+        Array.put(x, j, a)
 
     ///
     /// Partition step of the Quicksort algorithm.

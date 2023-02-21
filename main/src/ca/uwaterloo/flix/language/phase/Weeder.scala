@@ -733,9 +733,9 @@ object Weeder {
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expression.NewChannel(e1, e2, loc).toSuccess
 
           case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayNew(e1, e2, e3, loc).toSuccess
-          case ("ARRAY_SLICE", e1 :: e2 :: e3 :: e4 :: Nil) => WeededAst.Expression.ArraySlice(e1, e2, e3, e4, loc).toSuccess
           case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expression.ArrayLength(e1, loc).toSuccess
           case ("ARRAY_LOAD", e1 :: e2 :: Nil) => WeededAst.Expression.ArrayLoad(e1, e2, loc).toSuccess
+          case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => WeededAst.Expression.ArrayStore(e1, e2, e3, loc).toSuccess
 
           case ("VECTOR_GET", e1 :: e2 :: Nil) => WeededAst.Expression.VectorLoad(e1, e2, loc).toSuccess
           case ("VECTOR_LENGTH", e1 :: Nil) => WeededAst.Expression.VectorLength(e1, loc).toSuccess
@@ -833,6 +833,46 @@ object Weeder {
         case e => WeededAst.Expression.Discard(e, loc)
       }
 
+    case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
+      //
+      // Rewrites a ForA loop into a series of Applicative.ap calls:
+      //
+      //     forA (
+      //         x <- xs;
+      //         y <- ys
+      //     ) yield exp
+      //
+      // desugars to
+      //
+      //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
+      //
+      val loc = mkSL(sp1, sp2).asSynthetic
+      val fqnAp = "Applicative.ap"
+      val fqnMap = "Functor.map"
+      val yieldExp = visitExp(exp, senv)
+
+      // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
+      val lambda = foldRight(frags)(yieldExp) {
+        case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
+          mapN(visitPattern(pat)) {
+            case p => mkLambdaMatch(sp11, p, acc, sp12)
+          }
+      }
+
+      // Apply first fragment to Functor.map
+      val xs = visitExp(frags.head.exp, senv)
+      val baseExp = mapN(lambda, xs) {
+        case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
+      }
+
+      // Apply rest of fragments to Applicative.ap
+      frags.tail.foldLeft(baseExp) {
+        case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
+          mapN(acc, visitExp(fexp, senv)) {
+            case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
+          }
+      }
+
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
       //
       // Rewrites a foreach loop to Iterator.forEach call.
@@ -867,7 +907,7 @@ object Weeder {
           case err: WeederError => WeededAst.Expression.Error(err)
         }
 
-    case ParsedAst.Expression.ForYield(sp1, frags, exp, sp2) =>
+    case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
       //
       // Rewrites a for-loop to Monad.flatMap.
       //
@@ -1462,18 +1502,6 @@ object Weeder {
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
         case (es, e) => WeededAst.Expression.ArrayLit(es, e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.ArrayStore(base, indexes, elm, sp2) =>
-      val sp1 = leftMostSourcePosition(base)
-      val loc = mkSL(sp1, sp2)
-
-      mapN(visitExp(base, senv), traverse(indexes)(visitExp(_, senv)), visitExp(elm, senv)) {
-        case (b, es, e) =>
-          val inner = es.init.foldLeft(b) {
-            case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
-          }
-          WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
       }
 
     case ParsedAst.Expression.VectorLit(sp1, exps, sp2) =>
@@ -3189,8 +3217,9 @@ object Weeder {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Stm(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Discard(sp1, _, _) => sp1
+    case ParsedAst.Expression.ApplicativeFor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForEach(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ForYield(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.MonadicFor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
@@ -3209,7 +3238,6 @@ object Weeder {
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.New(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

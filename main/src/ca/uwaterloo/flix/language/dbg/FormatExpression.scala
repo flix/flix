@@ -48,7 +48,6 @@ object FormatExpression {
     case TypedAst.Expression.ArrayLoad(base, index, _, _, _, _) => s"ArrayLoad($base, $index)"
     case TypedAst.Expression.ArrayLength(base, _, _, _) => s"ArrayLength($base)"
     case TypedAst.Expression.ArrayStore(base, index, elm, _, _, _) => s"ArrayStore($base, $index, $elm)"
-    case TypedAst.Expression.ArraySlice(reg, base, begin, end, _, _, _, _) => s"ArraySlice($reg, $base, $begin, $end)"
     case TypedAst.Expression.VectorLit(exps, _, _, _, _) => s"VectorLit(${exps.mkString(", ")})"
     case TypedAst.Expression.VectorLoad(exp1, exp2, _, _, _, _) => s"VectorLoad($exp1, $exp2)"
     case TypedAst.Expression.VectorLength(exp, _) => s"VectorLength($exp)"
