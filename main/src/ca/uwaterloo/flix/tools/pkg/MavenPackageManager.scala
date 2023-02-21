@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import java.io.PrintStream
 import coursier._
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Path, Paths}
 
 object MavenPackageManager {
 
@@ -48,8 +48,7 @@ object MavenPackageManager {
             val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
             val versionString = dep.version
             val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
-            //TODO: change to the correct path for other computers
-            val filePrefix = "C:/Users/ablum/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2"
+            val filePrefix = getFilePrefix
             val path = Paths.get(s"$filePrefix/$moduleNamePath/$versionString/$fileName")
             resList.addOne(path)
 
@@ -66,6 +65,22 @@ object MavenPackageManager {
           return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
       l.toOk
+    }
+  }
+
+  /**
+    * Gives the correct path prefix for the
+    * Coursier cache based on operating system.
+    */
+  private def getFilePrefix: String = {
+    val os = System.getProperty("os.name")
+    if (os.contains("Windows")) { // Windows
+      val user = System.getProperty("user.name")
+      s"C:/Users/$user/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2"
+    } else if (os.contains("Mac OS")){ //Mac OS
+      "~/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2"
+    } else { //Linux
+      "~/.cache/coursier/v1/https/repo1.maven.org/maven2"
     }
   }
 

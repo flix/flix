@@ -112,7 +112,7 @@ class Bootstrap {
     Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
   }
 
-  def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation
+  def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation - what can go wrong?
     val previousSources = timestamps.keySet
 
     for (path <- sourcePaths if hasChanged(path)) {
@@ -134,7 +134,6 @@ class Bootstrap {
       flix.remSourceCode(file.toString)
 
     timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
-
   }
 
   /**
