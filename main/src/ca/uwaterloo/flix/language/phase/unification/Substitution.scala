@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -74,9 +74,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
             case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
             case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
 
-            case Type.Cst(TypeConstructor.CaseComplement(_), _) => CaseSetUnification.mkComplement(y)(CaseSetUnification.Hack.Universe)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(_), _), x, _) => CaseSetUnification.mkIntersection(x, y)(CaseSetUnification.Hack.Universe)
-            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(_), _), x, _) => CaseSetUnification.mkUnion(x, y)(CaseSetUnification.Hack.Universe)
+            case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
+            case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
 
             // Else just apply
             case x => Type.Apply(x, y, loc)
@@ -156,7 +156,12 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
 
     // Add all bindings in `that`. (Applying the current substitution).
     for ((x, t) <- that.m) {
-      newTypeMap.update(x, this.apply(t))
+      // minimize case set formulas if present
+      val tpe = x.kind match {
+        case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
+        case _ => this.apply(t)
+      }
+      newTypeMap.update(x, tpe)
     }
 
     // Add all bindings in `this` that are not in `that`.

@@ -88,7 +88,6 @@ instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
-    override pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(r, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -120,11 +119,11 @@ instance Monoid[List[a]] {
 }
 
 instance Collectable[List] {
-    pub def collect(iter: Iterator[a, r]): List[a] \ r with Order[a] = Iterator.toList(iter)
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
 }
 
 instance Iterable[List] {
-    pub def iterator(rh: Region[r], l: List[a]): Iterator[a, r] \ Write(r) = List.iterator(rh, l)
+    pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
 namespace List {
@@ -422,8 +421,8 @@ namespace List {
         if (len == 0)
             l
         else {
-            let rem = n rem len;
-            let rotate = if (rem < 0) rem + len else rem;
+            let rem1 = n `Int32.rem` len;
+            let rotate = if (rem1 < 0) rem1 + len else rem1;
             drop(rotate, l) ::: take(rotate, l)
         }
 
@@ -755,23 +754,23 @@ namespace List {
         loop(l, identity)
 
     ///
-    /// Returns the sublist of `l` from index `b` (inclusive) to index `e` (exclusive).
+    /// Returns the sublist of `l` from index `start` (inclusive) to index `end` (exclusive).
     ///
-    /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= b` and `i < e`.
-    /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(b, e, l) = slice(max(0,b), min(length(l),e), l)).
+    /// That is, an element at index `i` in `l` is part of the returned sublist if and only if `i >= start` and `i < end`.
+    /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
-    pub def slice(b: Int32, e: Int32, l: List[a]): List[a] =
+    pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
         def loop(ll, i, k) = match ll {
             case Nil     => k(Nil)
             case x :: xs =>
-                if (i < b)
+                if (i < start.start)
                     loop(xs, i + 1, k)
-                else if (i >= e)
+                else if (i >= end.end)
                     k(Nil)
                 else
                     loop(xs, i + 1, ks -> k(x :: ks))
         };
-        if (b < e) loop(l, 0, identity) else Nil
+        if (start.start < end.end) loop(l, 0, identity) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -1156,12 +1155,21 @@ namespace List {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(r: Region[r], l: List[a]): Array[a, r] \ Write(r) = match head(l) {
-        case None    => [] @ r
+        case None    => Array#{} @ r
         case Some(_) =>
             let a = Array.new(r, length(l));
-            forEach(match (i, b) -> a[i] = b, zipWithIndex(l));
+            forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
+
+    ///
+    /// Returns the list `l` as a vector.
+    ///
+    pub def toVector(l: List[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, length(l));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the list `l` as `Option[Nel[a]]`.
@@ -1313,24 +1321,20 @@ namespace List {
     ///
     /// Returns an iterator over `l`.
     ///
-    pub def iterator(r: Region[r], l: List[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref l @ r;
-        let done = () -> match (deref cursor) {
-            case Nil => true
-            case _   => false
+    pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ Write(r) =
+        let ls = ref xs @ rc;
+        let next = () -> {
+            match (deref ls) {
+                case Nil     => None
+                case x :: rs => ls := rs; Some(x)
+            }
         };
-        let next = () -> match (deref cursor) {
-            case Nil     => bug!("Empty Iterator!")
-            case x :: xs =>
-                cursor := xs;
-                x
-        };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         iterator(r, l) |> Iterator.zipWithIndex
 
     ///

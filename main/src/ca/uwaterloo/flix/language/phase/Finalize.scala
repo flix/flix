@@ -155,6 +155,12 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Scope(sym, e, t, loc)
 
+      case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, _, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.ScopeExit(e1, e2, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
@@ -227,13 +233,6 @@ object Finalize {
         val b = visit(base)
         val t = visitType(tpe)
         FinalAst.Expression.ArrayLength(b, t, loc)
-
-      case LiftedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visit(base)
-        val i1 = visit(startIndex)
-        val i2 = visit(endIndex)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArraySlice(b, i1, i2, t, loc)
 
       case LiftedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
@@ -405,6 +404,8 @@ object Finalize {
 
             case TypeConstructor.Array => MonoType.Array(args.head)
 
+            case TypeConstructor.Vector => MonoType.Array(args.head)
+
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
             case TypeConstructor.RegionToStar => MonoType.Region
@@ -443,9 +444,7 @@ object Finalize {
 
             case TypeConstructor.All => MonoType.Unit
 
-            case TypeConstructor.CaseConstant(sym) => MonoType.Unit
-            case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
-            case TypeConstructor.CaseAll(sym) => MonoType.Unit
+            case TypeConstructor.CaseSet(sym, enumSym) => MonoType.Unit
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
             case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
             case TypeConstructor.CaseUnion(sym) => MonoType.Unit

@@ -33,6 +33,10 @@ instance Eq[Chain[a]] with Eq[a] {
     pub def eq(c1: Chain[a], c2: Chain[a]): Bool = Chain.equals(c1, c2)
 }
 
+instance Order[Chain[a]] with Order[a] {
+    pub def compare(c1: Chain[a], c2: Chain[a]): Comparison = Chain.compare(c1, c2)
+}
+
 instance SemiGroup[Chain[a]] {
     pub def combine(c1: Chain[a], c2: Chain[a]): Chain[a] = Chain.append(c1, c2)
 }
@@ -69,7 +73,6 @@ instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(r, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -108,11 +111,11 @@ instance ToString[Chain[a]] with ToString[a] {
 }
 
 instance Collectable[Chain] {
-    pub def collect(iter: Iterator[a, r]): Chain[a] \ r with Order[a] = Iterator.toChain(iter)
+    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
 }
 
 instance Iterable[Chain] {
-    pub def iterator(rh: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) = Chain.iterator(rh, c)
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
 }
 
 namespace Chain {
@@ -785,36 +788,32 @@ namespace Chain {
     /// Returns the chain `c` as an array.
     ///
     pub def toArray(r: Region[r], c: Chain[a]): Array[a, r] \ Write(r) = match head(c) {
-        case None    => [] @ r
+        case None    => Array#{} @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
-            forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
+            forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
         }
 
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Chain[a]): Iterator[a, r] \ Write(r) =
-        let cursor = ref viewLeft(c) @ r;
-        let done = () -> match (deref cursor) {
-            case ViewLeft.NoneLeft    => true
-            case ViewLeft.SomeLeft(_) => false
-        };
+    pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
-            case ViewLeft.NoneLeft        => bug!("Empty Iterator!")
+            case ViewLeft.NoneLeft        => None
             case ViewLeft.SomeLeft(x, xs) => {
                 cursor := viewLeft(xs);
-                x
+                Some(x)
             }
         };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Chain[a]): Iterator[(Int32, a), r] \ Write(r) =
-        iterator(r, c) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.
@@ -844,8 +843,23 @@ namespace Chain {
         match (viewLeft(c1), viewLeft(c2)) {
             case (ViewLeft.NoneLeft, ViewLeft.NoneLeft)                           => true
             case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) if (x == y) => equals(xs, ys)
-            case _                                              => false
+            case _                                                                => false
         }
+
+    ///
+    /// Compares chains `c1` and `c2` lexicographically.
+    ///
+    pub def compare(c1: Chain[a], c2: Chain[a]): Comparison with Order[a] =
+        def loop(v1, v2) = match (v1, v2) {
+            case (SomeLeft(_, _), NoneLeft)         => Comparison.GreaterThan
+            case (NoneLeft, NoneLeft)               => Comparison.EqualTo
+            case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
+            case (SomeLeft(l, ls), SomeLeft(r, rs)) => match (l <=> r) {
+                case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))
+                case cmp                => cmp
+            }
+        };
+        loop(viewLeft(c1), viewLeft(c2))
 
     ///
     /// Sort chain `c` so that elements are ordered from low to high according to their `Order` instance.

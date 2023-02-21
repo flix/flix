@@ -57,9 +57,9 @@ object ResolvedAst {
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: ResolvedAst.TypeParam, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType) extends Declaration
+    case class Case(sym: Symbol.CaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType) extends Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -88,6 +88,9 @@ object ResolvedAst {
 
     case class HoleWithExp(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    // TODO RESTR-VARS should be Ast.RestrictableEnumSymUse for LSP
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
@@ -115,6 +118,8 @@ object ResolvedAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ScopeExit(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], loc: SourceLocation) extends ResolvedAst.Expression
 
     case class TypeMatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchTypeRule], loc: SourceLocation) extends ResolvedAst.Expression
@@ -125,7 +130,7 @@ object ResolvedAst {
 
     case class Tag(sym: Ast.CaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RestrictableTag(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, isOpen: Boolean, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -147,7 +152,11 @@ object ResolvedAst {
 
     case class ArrayLength(base: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArraySlice(region: ResolvedAst.Expression, base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLit(exps: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLoad(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLength(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ref(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -247,12 +256,6 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Array(elms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[ResolvedAst.Pattern], sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Pattern
-
   }
 
   sealed trait RelationalChoicePattern {
@@ -347,7 +350,7 @@ object ResolvedAst {
 
   case class RelationalChoiceRule(pat: List[ResolvedAst.RelationalChoicePattern], exp: ResolvedAst.Expression)
 
-  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, sym: Option[Symbol.RestrictableCaseSym], exp: ResolvedAst.Expression)
+  case class RestrictableChoiceRule(pat: ResolvedAst.RestrictableChoicePattern, exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: Option[ResolvedAst.Expression], exp: ResolvedAst.Expression)
 

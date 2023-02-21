@@ -32,6 +32,24 @@ namespace BigInt {
     pub def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    ///
+    pub def mod(x: BigInt, n: BigInt): BigInt =
+        if (n == 0ii)
+            0ii
+        else
+            $BIGINT_REM$($BIGINT_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    ///
+    pub def rem(x: BigInt, n: BigInt): BigInt =
+        if (n == 0ii)
+            0ii
+        else
+            $BIGINT_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     ///
     pub def dist(x: BigInt, y: BigInt): BigInt = abs(x - y)
@@ -56,12 +74,12 @@ namespace BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
-        if ((x >>> position) rem 2ii == 0ii) 0 else 1
+        if ((x >>> position) `rem` 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
     ///
-    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x rem y)
+    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x `rem` y)
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).

@@ -27,5 +27,5 @@ object Version {
   * A case class to represent versions.
   */
 case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"v$major.$minor.$revision"
+  override val toString: String = s"$major.$minor.$revision"
 }

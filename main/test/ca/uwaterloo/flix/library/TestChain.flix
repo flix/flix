@@ -22,7 +22,7 @@ namespace TestChain {
 
     @test
     def collect01(): Bool = region r {
-        Collectable.collect(Iterator.new(r): Iterator[Int32, r]) == Chain.empty()
+        Collectable.collect(Iterator.empty(r): Iterator[Int32, r, r]) == Chain.empty()
     }
 
     @test
@@ -871,48 +871,48 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldLeft01(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.empty()) == 100
+    def foldLeft01(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, Chain.empty()) == 100
 
     @test
-    def foldLeft02(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, Chain.singleton(1)) == 198
+    def foldLeft02(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, Chain.singleton(1)) == 198
 
     @test
-    def foldLeft03(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 196
+    def foldLeft03(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 196
 
     @test
-    def foldLeft04(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 386
+    def foldLeft04(): Bool = Chain.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 386
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRight01(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
+    def foldRight01(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, Chain.empty()) == 100
 
     @test
-    def foldRight02(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
+    def foldRight02(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, Chain.singleton(1)) == 198
 
     @test
-    def foldRight03(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
+    def foldRight03(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
 
     @test
-    def foldRight04(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
+    def foldRight04(): Bool = Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def foldRightWithCont01(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.empty()) == 100
+    def foldRightWithCont01(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Chain.empty()) == 100
 
     @test
-    def foldRightWithCont02(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, Chain.singleton(1)) == 198
+    def foldRightWithCont02(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Chain.singleton(1)) == 198
 
     @test
-    def foldRightWithCont03(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
+    def foldRightWithCont03(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: Nil)) == 194
 
     @test
-    def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e rem 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
+    def foldRightWithCont04(): Bool = Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -1220,28 +1220,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMap01(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.empty()) == Chain.empty()
+    def filterMap01(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.empty()) == Chain.empty()
 
     @test
-    def filterMap02(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.singleton(1)) == Chain.empty()
+    def filterMap02(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.singleton(1)) == Chain.empty()
 
     @test
-    def filterMap03(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.singleton(2)) == Chain.singleton(1)
+    def filterMap03(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.singleton(2)) == Chain.singleton(1)
 
     @test
-    def filterMap04(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == Chain.empty()
+    def filterMap04(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == Chain.empty()
 
     @test
-    def filterMap05(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Chain.singleton(2)
+    def filterMap05(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Chain.singleton(2)
 
     @test
-    def filterMap06(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Chain.singleton(3)
+    def filterMap06(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Chain.singleton(3)
 
     @test
-    def filterMap07(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == List.toChain(4 :: 3 :: Nil)
+    def filterMap07(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == List.toChain(4 :: 3 :: Nil)
 
     @test
-    def filterMap08(): Bool = Chain.filterMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) ==
+    def filterMap08(): Bool = Chain.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) ==
                             List.toChain(0 :: 1 :: 2 :: 5 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1249,28 +1249,28 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findMap01(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.empty()) == None
+    def findMap01(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.empty()) == None
 
     @test
-    def findMap02(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.singleton(1)) == None
+    def findMap02(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.singleton(1)) == None
 
     @test
-    def findMap03(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, Chain.singleton(2)) == Some(1)
+    def findMap03(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Chain.singleton(2)) == Some(1)
 
     @test
-    def findMap04(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == None
+    def findMap04(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(1 :: 3 :: Nil)) == None
 
     @test
-    def findMap05(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Some(2)
+    def findMap05(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(1 :: 4 :: Nil)) == Some(2)
 
     @test
-    def findMap06(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Some(3)
+    def findMap06(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(6 :: -1 :: Nil)) == Some(3)
 
     @test
-    def findMap07(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == Some(4)
+    def findMap07(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(8 :: 6 :: Nil)) == Some(4)
 
     @test
-    def findMap08(): Bool = Chain.findMap(i -> if (i rem 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) == Some(0)
+    def findMap08(): Bool = Chain.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -1571,25 +1571,25 @@ namespace TestChain {
     @test
     def toArray01(): Bool = region r {
         let c: Chain[Int32] = Chain.empty();
-        Array.sameElements(Chain.toArray(r, c), [] @ r)
+        Array.sameElements(Chain.toArray(r, c), Array#{} @ r)
     }
 
     @test
     def toArray02(): Bool = region r {
         let a = Chain.toArray(r, Chain.singleton(1));
-        Array.sameElements(a, [1] @ r)
+        Array.sameElements(a, Array#{1} @ r)
     }
 
     @test
     def toArray03(): Bool = region r {
         let a = Chain.toArray(r, List.toChain(1 :: 2 :: Nil));
-        Array.sameElements(a, [1, 2] @ r)
+        Array.sameElements(a, Array#{1, 2} @ r)
     }
 
     @test
     def toArray04(): Bool = region r {
         let a = Chain.toArray(r, List.toChain(1 :: 2 :: 3 :: Nil));
-        Array.sameElements(a, [1, 2, 3] @ r)
+        Array.sameElements(a, Array#{1, 2, 3} @ r)
     }
 
 
@@ -1660,6 +1660,86 @@ namespace TestChain {
     @test
     def toNec03(): Bool =
         Chain.toNec(List.toChain(1 :: 2 :: Nil)) == Some(Nec.cons(1, Nec.singleton(2)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // equals                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def equals01(): Bool =
+        (Chain.empty(): Chain[Int32]) `Chain.equals` (Chain.empty(): Chain[Int32])
+
+    @test
+    def equals02(): Bool =
+        Chain.singleton(1) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals03(): Bool =
+        (Chain.empty() |> Chain.cons(1)) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals04(): Bool =
+        (Chain.empty() `Chain.snoc` 1) `Chain.equals` Chain.singleton(1)
+
+    @test
+    def equals05(): Bool =
+        (Chain.empty() `Chain.snoc` 1) `Chain.equals` (Chain.empty() |> Chain.cons(1))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // compare                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def compare01(): Bool =
+        (Chain.empty(): Chain[Int32]) `Chain.compare` (Chain.empty(): Chain[Int32]) == Comparison.EqualTo
+
+    @test
+    def compare02(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.empty() == Comparison.GreaterThan
+
+    @test
+    def compare03(): Bool =
+        Chain.empty() `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+
+    @test
+    def compare04(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.singleton(1) == Comparison.EqualTo
+
+    @test
+    def compare05(): Bool =
+        Chain.singleton(1) `Chain.compare` Chain.singleton(2) == Comparison.LessThan
+
+    @test
+    def compare06(): Bool =
+        Chain.singleton(2) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+
+    @test
+    def compare07(): Bool =
+        Chain.singleton(1) `Chain.compare` List.toChain(1 :: 2 :: Nil) == Comparison.LessThan
+
+    @test
+    def compare08(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+
+    @test
+    def compare09(): Bool =
+        Chain.singleton(1) `Chain.compare` List.toChain(0 :: 0 :: Nil) == Comparison.GreaterThan
+
+    @test
+    def compare10(): Bool =
+        List.toChain(0 :: 0 :: Nil)  `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+
+    @test
+    def compare11(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 1 :: Nil) == Comparison.GreaterThan
+
+    @test
+    def compare12(): Bool =
+        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 3 :: Nil) == Comparison.LessThan
+
+    @test
+    def compare13(): Bool =
+        List.toChain(1 :: 2 :: 3 :: 4 :: Nil) `Chain.compare` List.toChain(1 :: 2 :: 3 :: 4 :: Nil) == Comparison.EqualTo
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //

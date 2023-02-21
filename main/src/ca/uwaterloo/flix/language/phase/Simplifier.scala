@@ -56,8 +56,6 @@ object Simplifier {
 
       case LoweredAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
-      case LoweredAst.Expression.Sig(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(new Symbol.HoleSym(sym.clazz.namespace, sym.name, loc), tpe, loc) // TODO replace with implementation
-
       case LoweredAst.Expression.Hole(sym, tpe, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
       case LoweredAst.Expression.Cst(cst, tpe, loc) => SimplifiedAst.Expression.Cst(cst, tpe, loc)
@@ -105,6 +103,9 @@ object Simplifier {
 
       case LoweredAst.Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, simplifyPurity(pur), loc)
+
+      case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, simplifyPurity(pur), loc)
 
       case LoweredAst.Expression.Match(exp0, rules, tpe, pur, eff, loc) =>
         patternMatchWithLabels(exp0, rules, tpe, loc)
@@ -161,12 +162,22 @@ object Simplifier {
         val purity = b.purity
         SimplifiedAst.Expression.ArrayLength(b, Type.Int32, purity, loc)
 
-      case LoweredAst.Expression.ArraySlice(_, base, beginIndex, endIndex, tpe, _, _, loc) =>
-        // Note: The region expression is erased.
-        val b = visitExp(base)
-        val i1 = visitExp(beginIndex)
-        val i2 = visitExp(endIndex)
-        SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
+      case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val es = exps.map(visitExp)
+        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
+
+      case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ArrayLoad(e1, e2, tpe, loc)
+
+      case LoweredAst.Expression.VectorLength(exp, loc) =>
+        // Note: We simplify Vectors to Arrays.
+        val e = visitExp(exp)
+        val pur = e.purity
+        SimplifiedAst.Expression.ArrayLength(e, Type.Int32, pur, loc)
 
       case LoweredAst.Expression.Ref(exp, _, tpe, pur, eff, loc) =>
         // Note: The region expression is erased.
@@ -254,6 +265,9 @@ object Simplifier {
       case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
+
+      case LoweredAst.Expression.Sig(_, _, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
       case LoweredAst.Expression.Wild(_, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
@@ -541,128 +555,6 @@ object Simplifier {
               SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, Pure, loc), exp, succ.tpe, exp.purity, loc)
           }
 
-        /**
-          * Matching an array may succeed or fail
-          *
-          * We generate an if clause checking array length for each pattern, and then
-          * generate a fresh variable and let-binding for each variable in the
-          * array, which we load with ArrayLoad.
-          * We then recurse over the freshly generated variables as the true case of the if clause
-          */
-        case (LoweredAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
-          val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
-            val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
-              case (((pat, name), idx), exp) =>
-                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc)
-                val purity = Impure
-                SimplifiedAst.Expression.Let(name,
-                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, succ.tpe, purity, loc)
-            }
-          }
-          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
-          val purity = actualBase.purity
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
-          val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val purity1 = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
-          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity1, loc)
-
-        /**
-          * Matching an array with a TailSpread may succeed or fail
-          *
-          * We generate an if clause checking that array length is at least the length of
-          * each pattern, and generate a fresh variable and let-binding for each variable
-          * in the array, which we load with ArrayLoad.
-          * We then check whether the Spread is a variable, creating a let-binding for the
-          * appropriate ArraySlice to the spread, if it is.
-          * We then recurse over the freshly generated variables as the true case of the previously
-          * created if clause
-          */
-        case (LoweredAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
-          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
-          val purity2 = actualBase.purity
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity2, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
-          val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
-            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero = sym.text match {
-              case "_" => inner
-              case _ =>
-                val purity = Impure
-                SimplifiedAst.Expression.Let(sym,
-                  SimplifiedAst.Expression.ArraySlice(
-                    SimplifiedAst.Expression.Var(v, tpe, loc),
-                    expectedArrayLengthExp,
-                    actualArrayLengthExp, tpe, loc),
-                  inner, tpe, purity, loc)
-            }
-            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
-              case (((pat, name), idx), exp) =>
-                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc)
-                val purity = Impure
-                SimplifiedAst.Expression.Let(name,
-                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, succ.tpe, purity, loc)
-            }
-          }
-          val op = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purity = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
-          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity, loc)
-
-        /**
-          * Matching an array with a HeadSpread may succeed or fail
-          *
-          * We generate an if clause checking that array length is at least the length of
-          * each pattern, and generate a fresh variable and let-binding for each variable
-          * in the array, which we load with ArrayLoad.
-          * We then check whether the Spread is a variable, creating a let-binding for the
-          * appropriate ArraySlice to the spread, if it is.
-          * We then recurse over the freshly generated variables as the true case of the previously
-          * created if clause
-          */
-        case (LoweredAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
-          val actualBase = SimplifiedAst.Expression.Var(v, tpe, loc)
-          val purity1 = actualBase.purity
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(actualBase, Type.Int32, purity1, loc)
-          val expectedArrayLengthExp = SimplifiedAst.Expression.Cst(Ast.Constant.Int32(elms.length), Type.Int32, loc)
-          val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val patternCheck = {
-            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm" + Flix.Delimiter, BoundBy.Let, loc))
-            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero = sym.text match {
-              case "_" => inner
-              case _ =>
-                val purity = Impure
-                SimplifiedAst.Expression.Let(sym,
-                  SimplifiedAst.Expression.ArraySlice(
-                    SimplifiedAst.Expression.Var(v, tpe, loc),
-                    SimplifiedAst.Expression.Cst(Ast.Constant.Int32(0), Type.Int32, loc),
-                    expectedArrayLengthExp, tpe, loc),
-                  inner, tpe, purity, loc)
-            }
-            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
-              case (((pat, name), idx), exp) =>
-                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = mkAdd(SimplifiedAst.Expression.Cst(Ast.Constant.Int32(idx), Type.Int32, loc), offset, loc)
-                val purity = Impure
-                SimplifiedAst.Expression.Let(name,
-                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
-                  , exp, succ.tpe, purity, loc)
-            }
-          }
-          val ge = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, actualArrayLengthExp.purity, loc)
-          val purity2 = combine(lengthCheck.purity, patternCheck.purity, fail.purity)
-          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, purity2, loc)
-
-
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs(0).loc)
       }
 
@@ -834,6 +726,9 @@ object Simplifier {
       case SimplifiedAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
         SimplifiedAst.Expression.Scope(sym, visitExp(exp), tpe, purity, loc)
 
+      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+        SimplifiedAst.Expression.ScopeExit(visitExp(exp1), visitExp(exp2), tpe, purity, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         SimplifiedAst.Expression.Is(sym, visitExp(exp), purity, loc)
 
@@ -881,9 +776,6 @@ object Simplifier {
         val b = visitExp(base)
         val purity = b.purity
         SimplifiedAst.Expression.ArrayLength(b, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        SimplifiedAst.Expression.ArraySlice(visitExp(base), visitExp(startIndex), visitExp(endIndex), tpe, loc)
 
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)

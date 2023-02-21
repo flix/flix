@@ -179,6 +179,9 @@ object Indexer {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => // TODO RESTR-VARS sym
+      Index.occurrenceOf(exp0) ++ visitExp(exp)
+
     case Expression.Use(_, _, _) =>
       Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
 
@@ -207,6 +210,9 @@ object Indexer {
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
@@ -233,12 +239,12 @@ object Indexer {
     case Expression.RelationalChoose(exps, rules, _, _, _, _) =>
       visitExps(exps) ++ traverse(rules) {
         case RelationalChoiceRule(_, exp) => visitExp(exp)
-      }
+      } ++ Index.occurrenceOf(exp0)
 
     case Expression.RestrictableChoose(_, exp, rules, _, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
         case RestrictableChoiceRule(_, body) => visitExp(body)
-      }
+      } ++ Index.occurrenceOf(exp0)
 
     case Expression.Tag(Ast.CaseSymUse(sym, loc), exp, _, _, _, _) =>
       val parent = Entity.Exp(exp0)
@@ -279,8 +285,14 @@ object Indexer {
     case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4) ++ Index.occurrenceOf(exp0)
+    case Expression.VectorLit(exps, _, _, _, _) =>
+      visitExps(exps)++ Index.occurrenceOf(exp0)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -443,9 +455,6 @@ object Indexer {
       val parent = Entity.Pattern(pat0)
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
-    case Pattern.Array(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
   }
 
   /**

@@ -266,7 +266,7 @@ namespace ConstantProp {
                     if (a1 == a2 and b1 == b2)
                         MicroFunction.NonBot(a1, b1, lub(c1, c2))
                     else if (c1 == c2)
-                        if((a2-a1) != 0 and 0 == (b1 - b2) rem (a2 - a1)) {
+                        if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.rem` (a2 - a1)) {
                             // Divisible.
                             MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
                         } else {

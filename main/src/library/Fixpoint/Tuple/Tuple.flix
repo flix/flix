@@ -66,6 +66,6 @@ namespace Fixpoint/Tuple {
     ///
     pub def valueAt(t: Tuple[v], v: Int32): v = unsafe_cast {
         let Tuple.Tuple(a) = t;
-        a[v]
+        Array.get(v, a)
     } as _ \ {}
 }

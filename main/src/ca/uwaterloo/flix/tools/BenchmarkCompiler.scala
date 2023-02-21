@@ -151,13 +151,13 @@ object BenchmarkCompiler {
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
-        val root = flix.check().get
+        val root = flix.check().toHardFailure.get
         val totalLines = root.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().get
+        val compilationResult = flix.compile().toHardFailure.get
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }

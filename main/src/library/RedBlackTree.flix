@@ -62,8 +62,6 @@ instance Foldable[RedBlackTree[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
-    override pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[v, r] \ Write(r) =
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (_, v) -> v)
 }
 
 instance UnorderedFoldable[RedBlackTree[k]] {
@@ -87,6 +85,11 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
 }
 
 instance Witherable[RedBlackTree[k]] with Order[k]
+
+instance Iterable[RedBlackTree[k]] {
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ Write(r) =
+            RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
+}
 
 namespace RedBlackTree {
 
@@ -1040,21 +1043,17 @@ namespace RedBlackTree {
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(r: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r] \ Write(r) =
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ Write(r) =
         let stack1 = leftmost(t, Nil);
-        let state = ref stack1 @ r;
-        let done = () -> match (deref state) {
-            case Nil => true
-            case _   => false
-        };
+        let state = ref stack1 @ rc;
         let next = () -> match (deref state) {
-            case Nil                 => bug!("Empty Iterator!")
+            case Nil                 => None
             case (k, v, rtree) :: es => {
                 state := leftmost(rtree, es);
-                (k, v)
+                Some((k, v))
             }
         };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// This represents pending items `(key, value, right-tree)` encountered while finding the

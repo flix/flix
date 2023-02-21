@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Modifier, TypeConstraint}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatType}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
@@ -45,11 +45,6 @@ object Documentor {
     * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./build/api")
-
-  /**
-    * The audience to use for formatting types and effects.
-    */
-  private implicit val audience: Audience = Audience.External
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Documentor") {
     //
@@ -338,6 +333,7 @@ object Documentor {
     */
   def visitKind(kind: Kind): String = kind match {
     case Kind.Wild => ""
+    case Kind.WildCaseSet => ""
     case Kind.Beef => "Bool or Effect"
     case Kind.Star => "Type"
     case Kind.Bool => "Bool"

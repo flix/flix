@@ -224,9 +224,10 @@ object Lowering {
     * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, _, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, tpe0, loc) =>
       // index is erased since related checking has concluded.
       // Restrictable tag is lowered into a regular tag
+      val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
@@ -237,7 +238,7 @@ object Lowering {
           (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
-      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
   }
 
   /**
@@ -371,6 +372,9 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Hole(sym, t, loc)
 
+    case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
+      visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
+
     case TypedAst.Expression.Use(_, exp, _) =>
       visitExp(exp)
 
@@ -417,6 +421,12 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
+
+    case TypedAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val t = visitType(tpe)
+      LoweredAst.Expression.ScopeExit(e1, e2, t, pur, eff, loc)
 
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -527,13 +537,20 @@ object Lowering {
       val e = visitExp(elm)
       LoweredAst.Expression.ArrayStore(b, i, e, pur, eff, loc)
 
-    case TypedAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
-      val r = visitExp(reg)
-      val b = visitExp(base)
-      val bi = visitExp(beginIndex)
-      val ei = visitExp(endIndex)
+    case TypedAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      val es = visitExps(exps)
       val t = visitType(tpe)
-      LoweredAst.Expression.ArraySlice(r, b, bi, ei, t, pur, eff, loc)
+      LoweredAst.Expression.VectorLit(es, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLoad(base, index, tpe, pur, eff, loc) =>
+      val b = visitExp(base)
+      val i = visitExp(index)
+      val t = visitType(tpe)
+      LoweredAst.Expression.VectorLoad(b, i, t, pur, eff, loc)
+
+    case TypedAst.Expression.VectorLength(base, loc) =>
+      val b = visitExp(base)
+      LoweredAst.Expression.VectorLength(b, loc)
 
     case TypedAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -860,21 +877,6 @@ object Lowering {
       val es = elms.map(visitPat)
       val t = visitType(tpe)
       LoweredAst.Pattern.Tuple(es, t, loc)
-
-    case TypedAst.Pattern.Array(elms, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.Array(es, t, loc)
-
-    case TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.ArrayTailSpread(es, sym, t, loc)
-
-    case TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      val es = elms.map(visitPat)
-      val t = visitType(tpe)
-      LoweredAst.Pattern.ArrayHeadSpread(sym, es, t, loc)
   }
 
   /**
@@ -955,14 +957,18 @@ object Lowering {
     case TypedAst.RestrictableChoiceRule(pat, exp) =>
       val e = visitExp(exp)
       pat match {
-        case TypedAst.RestrictableChoicePattern.Tag(sym, pat, tpe, loc) =>
-          val termPatterns = pat.map {
+        case TypedAst.RestrictableChoicePattern.Tag(sym, pat0, tpe, loc) =>
+          val termPatterns = pat0.map {
             case TypedAst.RestrictableChoicePattern.Var(sym, tpe, loc) => LoweredAst.Pattern.Var(sym, tpe, loc)
             case TypedAst.RestrictableChoicePattern.Wild(tpe, loc) => LoweredAst.Pattern.Wild(tpe, loc)
           }
-          val tuplepat = LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuplish(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+          val pat1 = termPatterns match {
+            case Nil => LoweredAst.Pattern.Cst(Constant.Unit, Type.mkUnit(loc), loc)
+            case singular :: Nil => singular
+            case _ => LoweredAst.Pattern.Tuple(termPatterns, Type.mkTuple(termPatterns.map(_.tpe), loc.asSynthetic), loc.asSynthetic)
+          }
           val tagSym = visitRestrictableCaseSymUse(sym)
-          val p = LoweredAst.Pattern.Tag(tagSym, tuplepat, tpe, loc)
+          val p = LoweredAst.Pattern.Tag(tagSym, pat1, tpe, loc)
           LoweredAst.MatchRule(p, None, e)
       }
   }
@@ -1136,11 +1142,6 @@ object Lowering {
 
     case TypedAst.Pattern.Tuple(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
-    case TypedAst.Pattern.Array(_, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayTailSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
-
-    case TypedAst.Pattern.ArrayHeadSpread(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
@@ -1835,9 +1836,6 @@ object Lowering {
   private def isQuantifiedVar(sym: Symbol.VarSym, cparams0: List[TypedAst.ConstraintParam]): Boolean =
     cparams0.exists(p => p.sym == sym)
 
-
-  // TODO: Move into TypedAstOps
-
   /**
     * Applies the given substitution `subst` to the given expression `exp0`.
     */
@@ -1894,6 +1892,11 @@ object Lowering {
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
       LoweredAst.Expression.Scope(s, regionVar, e, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expression.ScopeExit(e1, e2, tpe, pur, eff, loc)
 
     case LoweredAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)
@@ -1971,12 +1974,18 @@ object Lowering {
       val i = substExp(index, subst)
       LoweredAst.Expression.ArrayStore(b, i, elm, pur, eff, loc)
 
-    case LoweredAst.Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
-      val r = substExp(reg, subst)
-      val b = substExp(base, subst)
-      val bi = substExp(beginIndex, subst)
-      val ei = substExp(endIndex, subst)
-      LoweredAst.Expression.ArraySlice(r, b, bi, ei, tpe, pur, eff, loc)
+    case LoweredAst.Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+      val es = exps.map(substExp(_, subst))
+      LoweredAst.Expression.VectorLit(es, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+      val e1 = substExp(exp1, subst)
+      val e2 = substExp(exp2, subst)
+      LoweredAst.Expression.VectorLoad(e1, e2, tpe, pur, eff, loc)
+
+    case LoweredAst.Expression.VectorLength(exp, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.VectorLength(e, loc)
 
     case LoweredAst.Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = substExp(exp1, subst)

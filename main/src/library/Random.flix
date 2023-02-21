@@ -31,7 +31,7 @@ namespace Random {
         } else {
             let m = Array.length(a);
             let i = nextNatWithMax(r, m);
-            Some(a[i])
+            Some(Array.get(i, a))
         }
 
     ///

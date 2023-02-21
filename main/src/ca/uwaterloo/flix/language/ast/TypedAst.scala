@@ -115,6 +115,12 @@ object TypedAst {
 
     case class HoleWithExp(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+    }
+
     case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = exp.tpe
 
@@ -146,6 +152,8 @@ object TypedAst {
     }
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ScopeExit(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -195,7 +203,15 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class ArraySlice(region: TypedAst.Expression, base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class VectorLit(exps: List[TypedAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class VectorLoad(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class VectorLength(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+      def eff: Type = exp.eff
+      def tpe: Type = Type.Int32
+    }
 
     case class Ref(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -327,12 +343,6 @@ object TypedAst {
     case class Tag(sym: Ast.CaseSymUse, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class Array(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class ArrayTailSpread(elms: List[TypedAst.Pattern], sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
   }
 

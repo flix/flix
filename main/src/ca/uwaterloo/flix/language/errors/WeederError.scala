@@ -30,6 +30,11 @@ sealed trait WeederError extends CompilationMessage {
 object WeederError {
 
   /**
+    * A common super-type for illegal literals.
+    */
+  sealed trait IllegalLiteral extends WeederError
+
+  /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
     * @param name the name of the attribute.
@@ -204,7 +209,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class IllegalFloat(loc: SourceLocation) extends WeederError {
+  case class IllegalFloat(loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Illegal float."
 
     def message(formatter: Formatter): String = {
@@ -229,7 +234,7 @@ object WeederError {
     *
     * @param loc the location where the illegal int occurs.
     */
-  case class IllegalInt(loc: SourceLocation) extends WeederError {
+  case class IllegalInt(loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Illegal int."
 
     def message(formatter: Formatter): String = {
@@ -602,7 +607,7 @@ object WeederError {
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError {
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"Malformed unicode escape sequence '$code'."
 
     def message(formatter: Formatter): String = {
@@ -628,7 +633,7 @@ object WeederError {
     * @param char the invalid escape character.
     * @param loc  the location where the error occurred.
     */
-  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends WeederError {
+  case class InvalidEscapeSequence(char: Char, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
@@ -654,7 +659,7 @@ object WeederError {
     * @param chars the characters in the character literal.
     * @param loc   the location where the error occurred.
     */
-  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends WeederError {
+  case class NonSingleCharacter(chars: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = "Non-single-character literal."
 
     def message(formatter: Formatter): String = {
@@ -893,6 +898,37 @@ object WeederError {
          |If you need to use such a class or interface, alias it during import, e.g.:
          |
          |    import java.util.{Locale$$Builder => Builder}
+         |""".stripMargin
+    })
+  }
+
+
+  /**
+    * An error raised to indicate that a loop does not iterate over any collection.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A foreach expression must start with a collection comprehension."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop does not start with collection comprehension.
+         |
+         |${code(loc, "Loop does not start with collection comprehension.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must start with collection comprehension where the collection
+         |has an instance of the Iterable type class on it.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
          |""".stripMargin
     })
   }

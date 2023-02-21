@@ -22,20 +22,6 @@ object TypedAstOps {
     case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (macc, elm) => macc ++ binds(elm)
     }
-    case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-      case (macc, elm) => macc ++ binds(elm)
-    }
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      Map(sym -> tpe) ++ boundElms
-
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      Map(sym -> tpe) ++ boundElms
   }
 
   /**
@@ -49,6 +35,7 @@ object TypedAstOps {
     case Expression.Sig(sym, _, _) => Set(sym)
     case Expression.Hole(_, _, _) => Set.empty
     case Expression.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.OpenAs(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Use(_, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
@@ -58,6 +45,7 @@ object TypedAstOps {
     case Expression.LetRec(_, _, exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Region(_, _) => Set.empty
     case Expression.Scope(_, _, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expression.Stm(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Discard(exp, _, _, _) => sigSymsOf(exp)
@@ -77,7 +65,9 @@ object TypedAstOps {
     case Expression.ArrayLoad(base, index, _, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expression.ArrayLength(base, _, _, _) => sigSymsOf(base)
     case Expression.ArrayStore(base, index, elm, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => sigSymsOf(reg) ++ sigSymsOf(base) ++ sigSymsOf(beginIndex) ++ sigSymsOf(endIndex)
+    case Expression.VectorLit(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expression.VectorLength(exp, _) => sigSymsOf(exp)
     case Expression.Ref(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
@@ -149,6 +139,9 @@ object TypedAstOps {
     case Expression.HoleWithExp(exp, _, _, _, _) =>
       freeVars(exp)
 
+    case Expression.OpenAs(_, exp, _, _) =>
+      freeVars(exp)
+
     case Expression.Use(_, exp, _) =>
       freeVars(exp)
 
@@ -177,6 +170,9 @@ object TypedAstOps {
 
     case Expression.Scope(sym, _, exp, _, _, _, _) =>
       freeVars(exp) - sym
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -253,8 +249,16 @@ object TypedAstOps {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
-      freeVars(reg) ++ freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+    case Expression.VectorLit(elms, _, _, _, _) =>
+      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (acc, e) => acc ++ freeVars(e)
+      }
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      freeVars(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
@@ -407,15 +411,6 @@ object TypedAstOps {
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, pat) => acc ++ freeVars(pat)
       }
-
-    case Pattern.Array(elms, _, _) =>
-      elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, pat) => acc ++ freeVars(pat)
-      }
-
-    case Pattern.ArrayTailSpread(elms, sym, _, _) => ??? // TODO
-
-    case Pattern.ArrayHeadSpread(sym, elms, _, _) => ??? // TODO
   }
 
   /**

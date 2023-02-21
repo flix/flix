@@ -20,12 +20,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
@@ -77,20 +78,24 @@ object Monomorph {
       val t = s(tpe0)
 
       t.map {
-        case Type.Var(sym, loc) if sym.kind == Kind.Bool =>
-          // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-          // TODO: In the future we need to decide what should actually happen if such variables occur.
-          // TODO: In particular, it seems there are two cases.
-          // TODO: A. Variables that occur inside the specialized types (those we can erase?)
-          // TODO: B. Variables that occur inside an expression but nowhere else really.
-          if (flix.options.xstrictmono)
-            throw UnexpectedNonConstBool(tpe0, loc)
-          else
-            Type.True
-        case Type.Var(sym, _) if sym.kind == Kind.RecordRow => Type.RecordRowEmpty
-        case Type.Var(sym, _) if sym.kind == Kind.SchemaRow => Type.SchemaRowEmpty
-        case Type.Var(sym, _) if sym.kind == Kind.Effect => Type.Empty
-        case _ => Type.Unit
+        case Type.Var(sym, loc) =>
+          sym.kind match {
+            case Kind.Bool =>
+              // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+              // TODO: In the future we need to decide what should actually happen if such variables occur.
+              // TODO: In particular, it seems there are two cases.
+              // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+              // TODO: B. Variables that occur inside an expression but nowhere else really.
+              if (flix.options.xstrictmono)
+                throw UnexpectedNonConstBool(tpe0, loc)
+              else
+                Type.True
+            case Kind.Effect => Type.Empty
+            case Kind.RecordRow => Type.RecordRowEmpty
+            case Kind.SchemaRow => Type.SchemaRowEmpty
+            case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
+            case _ => Type.Unit
+          }
       }
     }
 
@@ -319,6 +324,11 @@ object Monomorph {
         val subst1 = subst + (regionVar.sym -> Type.Impure)
         Expression.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), pur, eff, loc)
 
+      case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+        val e1 = visitExp(exp1, env0, subst)
+        val e2 = visitExp(exp2, env0, subst)
+        Expression.ScopeExit(e1, e2, subst(tpe), pur, eff, loc)
+
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0, subst)
         val e2 = visitExp(exp2, env0, subst)
@@ -446,12 +456,18 @@ object Monomorph {
         val b = visitExp(base, env0, subst)
         Expression.ArrayLength(b, pur, eff, loc)
 
-      case Expression.ArraySlice(reg, base, startIndex, endIndex, tpe, pur, eff, loc) =>
-        val r = visitExp(reg, env0, subst)
-        val b = visitExp(base, env0, subst)
-        val i1 = visitExp(startIndex, env0, subst)
-        val i2 = visitExp(endIndex, env0, subst)
-        Expression.ArraySlice(r, b, i1, i2, subst(tpe), pur, eff, loc)
+      case Expression.VectorLit(exps, tpe, pur, eff, loc) =>
+        val es = exps.map(visitExp(_, env0, subst))
+        Expression.VectorLit(es, subst(tpe), pur, eff, loc)
+
+      case Expression.VectorLoad(exp1, exp2, tpe, pur, eff, loc) =>
+        val e1 = visitExp(exp1, env0, subst)
+        val e2 = visitExp(exp2, env0, subst)
+        Expression.VectorLoad(e1, e2, subst(tpe), pur, eff, loc)
+
+      case Expression.VectorLength(exp, loc) =>
+        val e = visitExp(exp, env0, subst)
+        Expression.VectorLength(e, loc)
 
       case Expression.Ref(exp1, exp2, tpe, pur, eff, loc) =>
         val e1 = visitExp(exp1, env0, subst)
@@ -577,21 +593,6 @@ object Monomorph {
       case Pattern.Tuple(elms, tpe, loc) =>
         val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
         (Pattern.Tuple(ps, subst(tpe), loc), envs.reduce(_ ++ _))
-      case Pattern.Array(elms, tpe, loc) =>
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.Array(ps, subst(tpe), loc), if (envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
-      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-        val freshSym = Symbol.freshVarSym(sym)
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.ArrayTailSpread(ps, freshSym, subst(tpe), loc),
-          if (envs.isEmpty) Map(sym -> freshSym)
-          else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
-      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-        val freshSym = Symbol.freshVarSym(sym)
-        val (ps, envs) = elms.map(p => visitPat(p, subst)).unzip
-        (Pattern.ArrayHeadSpread(freshSym, ps, subst(tpe), loc),
-          if (envs.isEmpty) Map(sym -> freshSym)
-          else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
     }
 
     def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution) = method match {
@@ -669,7 +670,7 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.impl.inferredScheme.base, tpe)
 
@@ -754,7 +755,7 @@ object Monomorph {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok(subst) =>
         StrictSubstitution(subst)
@@ -766,15 +767,20 @@ object Monomorph {
   /**
     * Performs type erasure on the given type `tpe`.
     *
-    * Flix does not erase normal types, but it does erase Boolean formulas.
+    * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
     */
   private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
-    case Type.Var(_, loc) =>
-      if (flix.options.xstrictmono)
-        throw UnexpectedNonConstBool(tpe, loc)
-      else {
-        // TODO: We should return Type.ErasedBool or something.
-        Type.True
+    case Type.Var(sym, loc) =>
+      sym.kind match {
+        case Kind.CaseSet(enumSym) =>
+          Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
+        case _ =>
+          if (flix.options.xstrictmono)
+            throw UnexpectedNonConstBool(tpe, loc)
+          else {
+            // TODO: We should return Type.ErasedBool or something.
+            Type.True
+          }
       }
 
     case Type.Cst(_, _) => tpe

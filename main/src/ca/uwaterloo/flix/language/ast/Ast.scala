@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.collection.ListMap
+
 import java.nio.file.Path
 import java.util.Objects
 
@@ -730,5 +732,4 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
-
 }

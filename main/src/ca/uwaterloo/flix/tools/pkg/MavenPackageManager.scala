@@ -15,25 +15,65 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import coursier._
 
 object MavenPackageManager {
 
-  def installDeps(manifest: Manifest)(implicit out: PrintStream): Result[Unit, ManifestError] = {
+  private val scalaVersion = "2.13"
 
+  /**
+    * Installs all MavenDependencies for a Manifest,
+    * including transitive dependencies using coursier.
+    */
+  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+    val depStrings = getMavenDependencyStrings(manifest)
 
-    val resolution = Resolve()
-      .addDependencies(dep"org.tpolecat:doobie-core_2.12:0.6.0")
-      .run()
-    println(resolution)
+    Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
+      try {
+        val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
+        val resolution = res.run()
 
-    ???
-
+        val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
+          out.println(s"Installing ${dep.module.toString()}");
+          f.addDependencies(dep)
+        })
+        fetch.run()
+      } catch {
+        case e: Exception =>
+          out.println(e.getMessage)
+          //Shortens the error message to just give the name of the dependency
+          val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
+          return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
+      }
+      ().toOk
+    }
   }
 
-  private def installArtifact(groupId: String, artifactId: String, version: String)(implicit out: PrintStream): Result[Unit, ManifestError] = ???
+  /**
+    * Finds the MavenDependencies for a Manifest
+    * and converts them to Strings.
+    */
+  private def getMavenDependencyStrings(manifest: Manifest): List[String] = {
+    manifest.dependencies.collect {
+      case dep: MavenDependency => dep
+    }.map(dep => s"${dep.groupId}:${dep.artifactId}:${dep.version.toString}")
+  }
+
+  /**
+    * Creates Coursier dependencies from a list of Strings
+    */
+  private def createCoursierDependencies(depString: String): Result[Dependency, PackageError] =
+    coursier.parse.DependencyParser.dependency(depString, scalaVersion) match {
+      case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
+      case Right(cDep) => Ok(cDep)
+    }
+
+
 
 }

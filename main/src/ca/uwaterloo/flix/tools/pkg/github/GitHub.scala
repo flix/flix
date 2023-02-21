@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
-import ca.uwaterloo.flix.tools.pkg.SemVer
-import ca.uwaterloo.flix.util.StreamOps
+import ca.uwaterloo.flix.tools.pkg.{PackageError, SemVer}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{Result, StreamOps}
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.native.JsonMethods.parse
 
-import java.io.InputStream
+import java.io.{IOException, InputStream}
 import java.net.URL
 
 /**
@@ -50,29 +51,51 @@ object GitHub {
   /**
     * Lists the project's releases.
     */
-  def getReleases(project: Project): List[Release] = {
+  def getReleases(project: Project): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val stream = url.openStream()
-    val json = StreamOps.readAll(stream)
-    val releaseJsons = parse(json).asInstanceOf[JArray]
-    releaseJsons.arr.map(parseRelease)
+    val releaseJsons = try {
+      val stream = url.openStream()
+      val json = StreamOps.readAll(stream)
+      parse(json).asInstanceOf[JArray]
+    } catch {
+      case _: IOException => return Err(PackageError.ProjectNotFound(s"Could not open stream to $url"))
+      case _: ClassCastException => return Err(PackageError.JsonError(s"Could not parse $url as JSON array"))
+    }
+    Ok(releaseJsons.arr.map(parseRelease))
   }
 
   /**
     * Parses a GitHub project from an `<owner>/<repo>` string.
     */
-  def parseProject(string: String): Project = string.split('/') match {
-    case Array(owner, repo) => Project(owner, repo)
-    case _ => throw new RuntimeException(s"Invalid project name: ${string}")
+  def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
+    case Array(owner, repo) => Ok(Project(owner, repo))
+    case _ => Err(PackageError.InvalidProjectName(string))
   }
 
   /**
     * Gets the project release with the highest semantic version.
     */
-  def getLatestRelease(project: Project): Release = {
-    getReleases(project)
-      .maxByOption(_.version)
-      .getOrElse(throw new RuntimeException(s"No releases available for project ${project}"))
+  def getLatestRelease(project: Project): Result[Release, PackageError] = {
+    getReleases(project).flatMap {
+      releases =>
+        releases.maxByOption(_.version) match {
+          case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
+          case Some(latest) => Ok(latest)
+        }
+    }
+  }
+
+  /**
+    * Gets the project release with the relevant semantic version.
+    */
+  def getSpecificRelease(project: Project, version: SemVer): Result[Release, PackageError] = {
+    getReleases(project).flatMap {
+      releases =>
+        releases.find(r => r.version == version) match {
+          case None => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+          case Some(release) => Ok(release)
+        }
+    }
   }
 
   /**

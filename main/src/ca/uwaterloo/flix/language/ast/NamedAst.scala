@@ -58,9 +58,9 @@ object NamedAst {
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
 
-    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class Case(sym: Symbol.CaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type) extends NamedAst.Declaration
+    case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
@@ -87,6 +87,10 @@ object NamedAst {
     case class Wild(loc: SourceLocation) extends NamedAst.Expression
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Open(qname: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+
+    case class OpenAs(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends NamedAst.Expression
 
@@ -118,6 +122,8 @@ object NamedAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class ScopeExit(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], loc: SourceLocation) extends NamedAst.Expression
 
     case class TypeMatch(exp: NamedAst.Expression, rules: List[NamedAst.MatchTypeRule], loc: SourceLocation) extends NamedAst.Expression
@@ -138,7 +144,7 @@ object NamedAst {
 
     case class New(qname: Name.QName, exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayLit(exps: List[NamedAst.Expression], exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayLit(exps: List[NamedAst.Expression], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -148,7 +154,11 @@ object NamedAst {
 
     case class ArrayLength(base: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(region: NamedAst.Expression, base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class VectorLit(exps: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorLoad(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorLength(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
 
@@ -247,12 +257,6 @@ object NamedAst {
     case class Tag(qname: Name.QName, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tuple(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
-
-    case class Array(elms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[NamedAst.Pattern], sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
 
   }
 
@@ -368,8 +372,25 @@ object NamedAst {
 
     case class Empty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Ascribe(tpe: NamedAst.Type, kind: Kind, loc: SourceLocation) extends NamedAst.Type
+    case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends NamedAst.Type
 
+    case class CaseUnion(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class CaseIntersection(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class CaseComplement(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+
+    case class Ascribe(tpe: NamedAst.Type, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Type
+
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends NamedAst.Kind
+
+    case class Arrow(k1: NamedAst.Kind, k2: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Kind
   }
 
   sealed trait TypeParams {

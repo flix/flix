@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Matthew Lutze
+ * Copyright 2023 Lukas Rønn, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-package ca.uwaterloo.flix.language.fmt
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * Describes the intended audience of the result of a method call.
-  *
-  * [[Audience.External]] indicates the result should be formatted for display to users.
-  *
-  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
+  * Represents a list of changes.
   */
-sealed trait Audience
-object Audience {
-  case object External extends Audience
-  case object Internal extends Audience
+case class DeltaContext(deltas: List[Delta]) {
+
+  def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
+    case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
+    case _ => false
+  }
+
 }

@@ -76,6 +76,8 @@ object FinalAst {
 
     case class Scope(sym: Symbol.VarSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
+    case class ScopeExit(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }
@@ -105,8 +107,6 @@ object FinalAst {
     case class ArrayStore(base: FinalAst.Expression, index: FinalAst.Expression, elm: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ArrayLength(base: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class ArraySlice(base: FinalAst.Expression, beginIndex: FinalAst.Expression, endIndex: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class Ref(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 

@@ -86,7 +86,6 @@ instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
-    override pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -118,7 +117,6 @@ instance Reducible[Nec] {
     override pub def dropWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.dropWhileLeft(f, l)
     override pub def takeWhile(f: a -> Bool \ ef, l: Nec[a]): List[a] \ ef = Nec.takeWhileLeft(f, l)
     override pub def toArray(r: Region[r], l: Nec[a]): Array[a, r] \ Write(r) = Nec.toArray(r, l)
-    override pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r] \ Write(r) = Nec.iterator(r, l)
     override pub def toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
@@ -137,6 +135,9 @@ instance ToString[Nec[a]] with ToString[a] {
     }
 }
 
+instance Iterable[Nec] {
+    pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ Write(r) = Nec.iterator(r, l)
+}
 
 namespace Nec {
 
@@ -794,53 +795,49 @@ namespace Nec {
     pub def toArray(r: Region[r], c: Nec[a]): Array[a, r] \ Write(r) =
         let x = head(c);
         let arr = Array.repeat(r, length(c), x);
-        forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
+        forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
         arr
 
     ///
     /// Returns an iterator over `c`.
     ///
-    pub def iterator(r: Region[r], c: Nec[a]): Iterator[a, r] \ Write(r) =
-        iteratorHelper(r, Some(viewLeft(c)))
+    pub def iterator(rc: Region[r], c: Nec[a]): Iterator[a, r, r] \ Write(r) =
+        iteratorHelper(rc, Some(viewLeft(c)))
 
     ///
     /// Returns an iterator over `l`.
     ///
-    def iteratorHelper(r: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r] \ Write(r) =
-        let cursor = ref vl @ r;
-        let done = () -> match (deref cursor) {
-            case None    => true
-            case Some(_) => false
-        };
+    def iteratorHelper(rc: Region[r], vl: Option[ViewLeft[a]]): Iterator[a, r, r] \ Write(r) =
+        let cursor = ref vl @ rc;
         let next = () -> match (deref cursor) {
-            case None             => bug!("Empty Iterator!")
-            case Some(ViewLeft.OneLeft(x)) => {
+            case None             => None
+            case Some(OneLeft(x)) => {
                 cursor := None;
-                x
+                Some(x)
             }
-            case Some(ViewLeft.SomeLeft(x, xs)) => {
+            case Some(SomeLeft(x, xs)) => {
                 cursor := Some(viewLeft(xs));
-                x
+                Some(x)
             }
         };
-        Iterator.Iterator(done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over `c` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], c: Nec[a]): Iterator[(Int32, a), r] \ Write(r) =
-        iterator(r, c) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ Write(r) =
+        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ Read(r) =
-        def loop(ix, end, acc) = if (ix >= end) acc else {let x = arr[ix]; loop(ix+1, end, snoc(acc, x))};
+        def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get(ix, arr); loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
             None
         else {
-            let acc = singleton(arr[0]);
+            let acc = singleton(Array.get(0, arr));
             loop(1, len, acc) |> Some
         }
 

@@ -183,6 +183,11 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
+      case SimplifiedAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
+
       case SimplifiedAst.Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
         LiftedAst.Expression.Is(sym, e, purity, loc)
@@ -243,12 +248,6 @@ object LambdaLift {
         val b = visitExp(base)
         val purity = b.purity
         LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
-
-      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visitExp(base)
-        val i1 = visitExp(startIndex)
-        val i2 = visitExp(endIndex)
-        LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp)

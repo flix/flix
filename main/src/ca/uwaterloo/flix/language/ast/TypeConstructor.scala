@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{IntroducedBy, EliminatedBy}
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
+
+import scala.collection.immutable.SortedSet
 
 /**
   * Representation of type constructors.
@@ -227,6 +229,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of vectors.
+    */
+  case object Vector extends TypeConstructor {
+    /**
+      * The shape of an array is `Array[t]`.
+      */
+    def kind: Kind = Kind.Star ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of references.
     */
   case object Ref extends TypeConstructor {
@@ -382,22 +394,8 @@ object TypeConstructor {
   /**
     * A type constructor that represents a case constant.
     */
-  case class CaseConstant(sym: Symbol.RestrictableCaseSym) extends TypeConstructor {
-    def kind: Kind = Kind.CaseSet(sym.enumSym)
-  }
-
-  /**
-    * A type constructor that represents an empty case set.
-    */
-  case class CaseEmpty(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
-    def kind: Kind = Kind.CaseSet(sym)
-  }
-
-  /**
-    * A type constructor that represents the universal case set.
-    */
-  case class CaseAll(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
-    def kind: Kind = Kind.CaseSet(sym)
+  case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(enumSym)
   }
 
   /**

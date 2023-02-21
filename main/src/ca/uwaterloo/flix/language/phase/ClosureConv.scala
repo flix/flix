@@ -129,6 +129,9 @@ object ClosureConv {
     case Expression.Scope(sym, e, tpe, purity, loc) =>
       Expression.Scope(sym, visitExp(e), tpe, purity, loc)
 
+    case Expression.ScopeExit(e1, e2, tpe, purity, loc) =>
+      Expression.ScopeExit(visitExp(e1), visitExp(e2), tpe, purity, loc)
+
     case Expression.Is(sym, e, purity, loc) =>
       Expression.Is(sym, visitExp(e), purity, loc)
 
@@ -183,12 +186,6 @@ object ClosureConv {
       val b = visitExp(exp)
       val purity = b.purity
       Expression.ArrayLength(b, tpe, purity, loc)
-
-    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
     case Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -359,6 +356,9 @@ object ClosureConv {
 
     case Expression.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _) =>
+      freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.Is(_, exp, _, _) => freeVars(exp)
 
     case Expression.Untag(_, exp, _, _, _) => freeVars(exp)
@@ -386,8 +386,6 @@ object ClosureConv {
     case Expression.ArrayStore(base, index, elm, _, _) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
     case Expression.ArrayLength(base, _, _, _) => freeVars(base)
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
 
     case Expression.Ref(exp, _, _) => freeVars(exp)
 
@@ -550,6 +548,11 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Scope(newSym, e, tpe, purity, loc)
 
+      case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.ScopeExit(e1, e2, tpe, purity, loc)
+
       case Expression.Is(sym, exp, purity, loc) =>
         val e = visitExp(exp)
         Expression.Is(sym, e, purity, loc)
@@ -610,12 +613,6 @@ object ClosureConv {
         val b = visitExp(base)
         val purity = b.purity
         Expression.ArrayLength(b, tpe, purity, loc)
-
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-        val b = visitExp(base)
-        val i1 = visitExp(beginIndex)
-        val i2 = visitExp(endIndex)
-        Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       case Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp)

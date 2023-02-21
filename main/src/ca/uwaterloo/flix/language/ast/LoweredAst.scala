@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
+import ca.uwaterloo.flix.language.phase.Monomorph
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -89,6 +90,7 @@ object LoweredAst {
       def eff: Type = Type.Empty
     }
 
+    @EliminatedBy(Monomorph.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = Type.Pure
 
@@ -124,6 +126,8 @@ object LoweredAst {
     }
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
+    case class ScopeExit(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class IfThenElse(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, exp3: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -169,7 +173,15 @@ object LoweredAst {
       def tpe: Type = Type.Unit
     }
 
-    case class ArraySlice(region: LoweredAst.Expression, base: LoweredAst.Expression, beginIndex: LoweredAst.Expression, endIndex: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+    case class VectorLit(exps: List[LoweredAst.Expression], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
+    case class VectorLoad(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
+    case class VectorLength(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Expression {
+      def pur: Type = exp.pur
+      def eff: Type = exp.eff
+      def tpe: Type = Type.Int32
+    }
 
     case class Ref(exp1: LoweredAst.Expression, exp2: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
@@ -254,12 +266,6 @@ object LoweredAst {
     case class Tag(sym: Ast.CaseSymUse, pat: LoweredAst.Pattern, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
     case class Tuple(elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
-    case class Array(elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
-    case class ArrayTailSpread(elms: List[LoweredAst.Pattern], sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
-
-    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Pattern
 
   }
 
