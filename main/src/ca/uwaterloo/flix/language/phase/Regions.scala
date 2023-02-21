@@ -388,7 +388,7 @@ object Regions {
       }
 
     case Expression.Spawn(exp1, exp2, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
+      flatMapN(visitExp(exp1)(Nil, flix), visitExp(exp2)) {
         case (e1, e2) => checkType(tpe, loc)
       }
 

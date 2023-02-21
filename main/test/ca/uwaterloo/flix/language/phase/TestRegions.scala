@@ -63,4 +63,53 @@ class TestRegions extends FunSuite with TestUtils {
     expectError[TypeError.RegionVarEscapes](result)
   }
 
+  test("RegionVarEscapes.Spawn.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    region rc {
+        |        let r = ref 123 @ rc;
+        |        spawn (deref r) @ rc;
+        |        ()
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("RegionVarEscapes.Spawn.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    region rc1 {
+        |        region rc2 {
+        |            let r = ref 123 @ rc1;
+        |            spawn (deref r) @ rc2;
+        |            ()
+        |        }
+        |    }
+        |
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
+  test("RegionVarEscapes.Spawn.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    region rc1 {
+        |        region rc2 {
+        |            let r = ref 123 @ rc2;
+        |            spawn (deref r) @ rc1;
+        |            ()
+        |        }
+        |    }
+        |
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.RegionVarEscapes](result)
+  }
+
 }
