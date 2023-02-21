@@ -34,10 +34,11 @@ class TestMavenPackageManager extends FunSuite {
       }
 
       MavenPackageManager.installAll(manifest)(System.out) match {
-        case Ok(l) => l.head.endsWith("org\\junit\\jupiter\\junit-jupiter-api") &&
-                      l(1).endsWith("org\\opentest4j\\opentest4j") &&
-                      l(2).endsWith("org\\junit\\platform\\junit-platform-commons") &&
-                      l(3).endsWith("org\\apiguardian\\apiguardian-api")
+        case Ok(l) => println(l);
+                      l.head.endsWith("org\\junit\\jupiter\\junit-jupiter-api\\5.9.2\\junit-jupiter-api-5.9.2.jar") &&
+                      l(1).endsWith("org\\opentest4j\\opentest4j\\1.2.0\\opentest4j-1.2.0.jar") &&
+                      l(2).endsWith("org\\junit\\platform\\junit-platform-commons\\1.9.2\\junit-platform-commons-1.9.2.jar") &&
+                      l(3).endsWith("org\\apiguardian\\apiguardian-api\\1.1.2\\apiguardian-api-1.1.2.jar")
         case Err(e) => e
       }
     })
