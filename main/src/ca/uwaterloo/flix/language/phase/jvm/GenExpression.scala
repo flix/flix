@@ -351,19 +351,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.Is(sym, exp, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
-      // We get the JvmType of the class for tag
-      val classType = JvmOps.getTagClassType(tagInfo)
-
-      // First we compile the `exp`
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // We check if the enum is `instanceof` the class
-      visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
-
     case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -806,6 +793,19 @@ object GenExpression {
 
         // Push Unit on the stack.
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+      case IntrinsicOperator1.Is(sym) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the `TagInfo` for the tag
+        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
+        // We get the JvmType of the class for tag
+        val classType = JvmOps.getTagClassType(tagInfo)
+
+        // First we compile the `exp`
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // We check if the enum is `instanceof` the class
+        visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
       case IntrinsicOperator1.BoxBool =>
         addSourceLine(visitor, loc)

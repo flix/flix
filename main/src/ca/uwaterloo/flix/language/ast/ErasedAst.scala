@@ -85,10 +85,6 @@ object ErasedAst {
     // dont touch
     case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Is(sym: Symbol.CaseSym, exp: ErasedAst.Expression, loc: SourceLocation) extends Expression {
-      final val tpe: MonoType = MonoType.Bool
-    }
-
     case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
@@ -157,6 +153,8 @@ object ErasedAst {
     case class GetField(field: Field) extends IntrinsicOperator1
 
     case class PutStaticField(field: Field) extends IntrinsicOperator1
+
+    case class Is(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
     case object BoxBool extends IntrinsicOperator1
 
