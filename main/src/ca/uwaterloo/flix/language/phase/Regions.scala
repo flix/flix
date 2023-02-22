@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -49,22 +49,27 @@ object Regions {
       case e => def0
     }
 
-  private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = exp0 match {
-    case Expression.Cst(_, _, _) => ().toSuccess
+  private def visitExp(exp0: Expression)(implicit scope: List[Type.Var], flix: Flix): Validation[Expression, CompilationMessage] = exp0 match {
+    case Expression.Cst(cst, tpe, loc) => Expression.Cst(cst, tpe, loc).toSuccess
 
-    case Expression.Wild(_, _) => ().toSuccess
+    case Expression.Wild(tpe, loc) => Expression.Wild(tpe, loc).toSuccess
 
-    case Expression.Var(_, tpe, loc) => checkType(tpe, loc)
+    case Expression.Var(sym, tpe, loc) =>
+      mapN(checkType(tpe, loc)) {
+        case t => Expression.Var(sym, t, loc)
+      }
 
-    case Expression.Def(_, _, _) => ().toSuccess
+    case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc).toSuccess
 
-    case Expression.Sig(_, _, _) => ().toSuccess
+    case Expression.Sig(sym, tpe, loc) => Expression.Sig(sym, tpe, loc).toSuccess
 
-    case Expression.Hole(_, _, _) => ().toSuccess
+    case Expression.Hole(sym, tpe, loc) => Expression.Hole(sym, tpe, loc).toSuccess
 
-    case Expression.HoleWithExp(exp, tpe, _, _, loc) =>
+    case Expression.HoleWithExp(exp, tpe, pur, eff, loc) =>
       flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
+        case e => mapN(checkType(tpe, loc)) {
+          case t => Expression.HoleWithExp(e, t, pur, eff, loc)
+        }
       }
 
     case Expression.OpenAs(_, exp, tpe, loc) =>
@@ -463,7 +468,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Unit, CompilationMessage] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): Validation[Type, CompilationMessage] = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
     val regs = regionVarsOf(tpe)
@@ -472,7 +477,7 @@ object Regions {
         return TypeError.RegionVarEscapes(reg, tpe, loc).toFailure
       }
     }
-    ().toSuccess
+    tpe.toSuccess
   }
 
   /**
