@@ -72,31 +72,44 @@ object Regions {
         }
       }
 
-    case Expression.OpenAs(_, exp, tpe, loc) =>
+    case Expression.OpenAs(sym, exp, tpe, loc) =>
       flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
+        case e => mapN(checkType(tpe, loc)) {
+          case t => Expression.OpenAs(sym, e, t, loc)
+        }
       }
 
-    case Expression.Use(_, exp, loc) => visitExp(exp)
-
-    case Expression.Lambda(_, exp, tpe, loc) =>
-      flatMapN(visitExp(exp)) {
-        case e => checkType(tpe, loc)
+    case Expression.Use(sym, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Use(sym, e, loc)
       }
 
-    case Expression.Apply(exp, exps, tpe, _, _, loc) =>
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
+      flatMapN(visitExp(exp)) {
+        case e => mapN(checkType(tpe, loc)) {
+          case t => Expression.Lambda(fparam, e, t, loc)
+        }
+      }
+
+    case Expression.Apply(exp, exps, tpe, pur, eff, loc) =>
       flatMapN(visitExp(exp), traverse(exps)(visitExp)) {
-        case (e, es) => checkType(tpe, loc)
+        case (e, es) => mapN(checkType(tpe, loc)) {
+          case t => Expression.Apply(e, es, t, pur, eff, loc)
+        }
       }
 
-    case Expression.Unary(_, exp, tpe, _, _, loc) =>
+    case Expression.Unary(sop, exp, tpe, pur, eff, loc) =>
       flatMapN(visitExp(exp)) {
-        case _ => checkType(tpe, loc)
+        case e => mapN(checkType(tpe, loc)) {
+          case t => Expression.Unary(sop, e, t, pur, eff, loc)
+        }
       }
 
-    case Expression.Binary(_, exp1, exp2, tpe, _, _, loc) =>
+    case Expression.Binary(sop, exp1, exp2, tpe, pur, eff, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (_, _) => checkType(tpe, loc)
+        case (e1, e2) => mapN(checkType(tpe, loc)) {
+          case t => Expression.Binary(sop, e1, e2, t, pur, eff, loc)
+        }
       }
 
     case Expression.Let(_, _, exp1, exp2, tpe, _, _, loc) =>
