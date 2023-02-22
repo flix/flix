@@ -1319,8 +1319,8 @@ object Lowering {
         LoweredAst.Expression.Lambda(fparam, acc, lambdaType, loc)
     }
 
-    // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
+    // Map the lambda expression to operate on boxed values.
+    val liftedExp = mapXb(lambdaExp, fvs.map(_._2))
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1370,7 +1370,7 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
+    val liftedExp = mapX(lambdaExp, fvs.map(_._2), exp.tpe)
 
     // Construct the `Fixpoint.Ast/BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1476,16 +1476,16 @@ object Lowering {
   }
 
   /**
-    * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
+    * Maps the given lambda expression `exp0` with the given argument types `argTypes`.
     *
-    * Note: liftX and liftXb are similar and should probably be maintained together.
+    * Note: mapX and mapXb are similar and should probably be maintained together.
     */
-  private def liftX(exp0: LoweredAst.Expression, argTypes: List[Type], resultType: Type): LoweredAst.Expression = {
-    // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${argTypes.length}")
+  private def mapX(exp0: LoweredAst.Expression, argTypes: List[Type], resultType: Type): LoweredAst.Expression = {
+    // Compute the mapXb symbol.
+    val sym = Symbol.mkDefnSym(s"Boxable.map${argTypes.length}")
 
     //
-    // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
+    // The mapX family of functions are of the form: a -> b -> c -> `resultType` and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Boxed`.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
@@ -1496,25 +1496,25 @@ object Lowering {
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Boxed.
     val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Types.Boxed, exp0.loc)
 
-    // The type of the overall liftX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
+    // The type of the overall mapX function, i.e. (a -> b -> c -> `resultType`) -> (Boxed -> Boxed -> Boxed -> Boxed).
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
-    // Construct a call to the liftX function.
+    // Construct a call to the mapX function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
   }
 
   /**
-    * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
+    * Maps the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
     *
-    * Note: liftX and liftXb are similar and should probably be maintained together.
+    * Note: mapX and mapXb are similar and should probably be maintained together.
     */
-  private def liftXb(exp0: LoweredAst.Expression, argTypes: List[Type]): LoweredAst.Expression = {
-    // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${argTypes.length}b")
+  private def mapXb(exp0: LoweredAst.Expression, argTypes: List[Type]): LoweredAst.Expression = {
+    // Compute the mapXb symbol.
+    val sym = Symbol.mkDefnSym(s"Boxable.map${argTypes.length}b")
 
     //
-    // The liftX family of functions are of the form: a -> b -> c -> Bool and
+    // The mapX family of functions are of the form: a -> b -> c -> Bool and
     // returns a function of the form Boxed -> Boxed -> Boxed -> Boxed -> Bool.
     // That is, the function accepts a *curried* function and returns a *curried* function.
     //
@@ -1525,10 +1525,10 @@ object Lowering {
     // The type of the returned function, i.e. Boxed -> Boxed -> Boxed -> Bool.
     val returnType = Type.mkPureCurriedArrow(argTypes.map(_ => Types.Boxed), Type.Bool, exp0.loc)
 
-    // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
+    // The type of the overall mapXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
     val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
-    // Construct a call to the liftXb function.
+    // Construct a call to the mapXb function.
     val defn = LoweredAst.Expression.Def(sym, liftType, exp0.loc)
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
   }

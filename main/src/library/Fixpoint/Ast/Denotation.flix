@@ -63,9 +63,9 @@ namespace Fixpoint/Ast {
         case Denotation.Latticenal(bot, leq, lub, glb) =>
             Denotation.Latticenal(
                 Boxable.box(bot),
-                Boxable.lift2b(leq),
-                Boxable.lift2(lub),
-                Boxable.lift2(glb)
+                Boxable.map2b(leq),
+                Boxable.map2(lub),
+                Boxable.map2(glb)
             )
     }
 
