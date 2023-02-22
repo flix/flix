@@ -824,7 +824,7 @@ object CompletionProvider {
     * aliasSuggestion is used to suggest a alias for the function if applicable.
     */
   def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String])(implicit context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => CompletionProvider.convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
+    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
     val finalAliasSuggestion = aliasSuggestion match {
       case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
       case None => ""
@@ -837,7 +837,7 @@ object CompletionProvider {
       case _ => exec.getDeclaringClass
     }
     val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${CompletionProvider.convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
+    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
     (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
