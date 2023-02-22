@@ -112,50 +112,67 @@ object Regions {
         }
       }
 
-    case Expression.Let(_, _, exp1, exp2, tpe, _, _, loc) =>
+    case Expression.Let(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
       flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
-    case Expression.LetRec(_, _, exp1, exp2, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
-    case Expression.Region(_, _) =>
-      ().toSuccess
-
-    case Expression.Scope(_, regionVar, exp, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp)(regionVar :: scope, flix)) {
-        case e => checkType(tpe, loc)
-      }
-
-    case Expression.ScopeExit(exp1, exp2, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => checkType(tpe, loc)
-      }
-
-    case Expression.Stm(exp1, exp2, tpe, _, _, loc) =>
-      flatMapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => checkType(tpe, loc)
-      }
-
-    case Expression.Discard(exp, _, _, _) => visitExp(exp)
-
-    case Expression.Match(exp, rules, tpe, _, _, loc) =>
-      val matchVal = visitExp(exp)
-      val rulesVal = traverse(rules) {
-        case MatchRule(pat, guard, body) => flatMapN(traverse(guard)(visitExp), visitExp(body)) {
-          case (g, b) => ().toSuccess
+        case (e1, e2) => mapN(checkType(tpe, loc)) {
+          case t => Expression.Let(sym, mod, e1, e2, t, pur, eff, loc)
         }
       }
+
+    case Expression.LetRec(sym, mod, exp1, exp2, tpe, pur, eff, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => mapN(checkType(tpe, loc)) {
+          case t => Expression.LetRec(sym, mod, e1, e2, t, pur, eff, loc)
+        }
+      }
+
+    case Expression.Region(tpe, loc) => Expression.Region(tpe, loc).toSuccess
+
+    case Expression.Scope(sym, regionVar, exp, tpe, pur, eff, loc) =>
+      flatMapN(visitExp(exp)(regionVar :: scope, flix)) {
+        case e => mapN(checkType(tpe, loc)) {
+          case t => Expression.Scope(sym, regionVar, e, t, pur, eff, loc)
+        }
+      }
+
+    case Expression.ScopeExit(exp1, exp2, tpe, pur, eff, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => mapN(checkType(tpe, loc)) {
+          case t => Expression.ScopeExit(e1, e2, t, pur, eff, loc)
+        }
+      }
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, pur, eff, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => mapN(checkType(tpe, loc)) {
+          case t => Expression.IfThenElse(e1, e2, e3, t, pur, eff, loc)
+        }
+      }
+
+    case Expression.Stm(exp1, exp2, tpe, pur, eff, loc) =>
+      flatMapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => mapN(checkType(tpe, loc)) {
+          case t => Expression.Stm(e1, e2, t, pur, eff, loc)
+        }
+      }
+
+    case Expression.Discard(exp, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Discard(e, pur, eff, loc)
+      }
+
+    case Expression.Match(exp, rules, tpe, pur, eff, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchRule(pat, guard, body) =>
+          mapN(traverseOpt(guard)(visitExp), visitExp(body)) {
+            case (g, b) => MatchRule(pat, g, b)
+          }
+      }
       flatMapN(matchVal, rulesVal) {
-        case (m, rs) => checkType(tpe, loc)
+        case (m, rs) => mapN(checkType(tpe, loc)) {
+          case t => Expression.Match(m, rs, t, pur, eff, loc)
+        }
       }
 
     case Expression.TypeMatch(exp, rules, tpe, _, _, loc) =>
