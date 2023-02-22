@@ -16,13 +16,28 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromString, getExecutableCompletionInfo}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportNewCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ImportNewCompleter extends Completer {
   /**
-    * Returns a List of Completion for importNew.
+    * Returns a List of Completion for importNew (java constructors).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportNewCompletion] =
-    null
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportNewCompletion] = {
+    val regex = raw"\s*import\s+new\s+(.*)".r
+    context.prefix match {
+      case regex(clazz) => classFromString(clazz) match {
+        case Some((clazzObject, clazz)) =>
+          // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
+          val className = clazz.split('.').last
+          clazzObject.getConstructors.map(constructor => {
+            val (label, priority, textEdit) = getExecutableCompletionInfo(constructor, clazz, Some(s"new$className"))
+            Completion.ImportNewCompletion(label, priority, textEdit)
+          })
+        case None => Nil
+      }
+      case _ => Nil
+    }
+  }
 }

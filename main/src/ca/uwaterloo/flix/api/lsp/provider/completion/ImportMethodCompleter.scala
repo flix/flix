@@ -16,13 +16,38 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromDotSeperatedString, getExecutableCompletionInfo}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportMethodCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 object ImportMethodCompleter extends Completer {
   /**
-    * Returns a List of Completion for importMethod.
+    * Returns a List of Completion for importMethod (both static and instance methods).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportMethodCompletion] =
-    null
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportMethodCompletion] = {
+    val instance = raw"\s*import\s+(.*)".r
+    val static = raw"\s*import\s+static\s+(.*)".r
+    context.prefix match {
+      // We match on static first because import static ... would also match on instance regex.
+      case static(clazz) => methodsCompletion(clazz, isStatic = true)
+      case instance(clazz) => methodsCompletion(clazz, isStatic = false)
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Convert methods of a class into Completion
+    */
+  private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: CompletionContext): Iterable[ImportMethodCompletion] = {
+    classFromDotSeperatedString(clazz) match {
+      case Some((clazzObject, clazz)) => clazzObject.getMethods
+        // Filter if the method is static or not.
+        .filter(method => java.lang.reflect.Modifier.isStatic(method.getModifiers) == isStatic)
+        .map(method => {
+          val (label, priority, textEdit) = getExecutableCompletionInfo(method, clazz, None)
+          Completion.ImportMethodCompletion(label, priority, textEdit)
+        })
+      case None => Nil
+    }
+  }
 }

@@ -47,9 +47,15 @@ sealed trait Completion {
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
-    case Completion.ImportNewCompletion() => null
-    case Completion.ImportFieldCompletion() => null
-    case Completion.ImportMethodCompletion() => null
+    case Completion.ImportNewCompletion(name, priority, textEdit) =>
+      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+    case Completion.ImportMethodCompletion(name, priority, textEdit) =>
+      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+    case Completion.ImportFieldCompletion(name, textEdit) =>
+      CompletionItem(label = name, sortText = Priority.high(name), textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Field)
   }
 }
 
@@ -123,11 +129,30 @@ object Completion {
                             insertTextFormat: InsertTextFormat) extends Completion
 
 
-  case class ImportNewCompletion() extends Completion
+  /**
+    * Represents an importNew completion (java constructors)
+    *
+    * @param name       the name of the completion.
+    * @param priority   the priority of the completion.
+    * @param textEdit   the edit which is applied to a document when selecting this completion.
+    */
+  case class ImportNewCompletion(name: String, priority: String, textEdit: TextEdit) extends Completion
+
+  /**
+    * Represents an importMethod completion (java methods)
+    *
+    * @param name     the name of the completion.
+    * @param priority the priority of the completion.
+    * @param textEdit the edit which is applied to a document when selecting this completion.
+    */
+  case class ImportMethodCompletion(name: String, priority: String, textEdit: TextEdit) extends Completion
 
 
-  case class ImportMethodCompletion() extends Completion
-
-
-  case class ImportFieldCompletion() extends Completion
+  /**
+    * Represents an importField completion
+    *
+    * @param name     the name of the completion.
+    * @param textEdit the edit which is applied to a document when selecting this completion.
+    */
+  case class ImportFieldCompletion(name: String, textEdit: TextEdit) extends Completion
 }

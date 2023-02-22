@@ -15,14 +15,51 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromDotSeperatedString, convertJavaClassToFlixType}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportFieldCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
+
+import java.lang.reflect.Field
 
 object ImportFieldCompleter extends Completer {
   /**
     * Returns a List of Completion for importField.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportFieldCompletion] =
-    null
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportFieldCompletion] = {
+    val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
+    val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
+    val get = raw"\s*import\s+get\s+(.*)".r
+    val set = raw"\s*import\s+set\s+(.*)".r
+    context.prefix match {
+      case static_get(clazz) => importFieldCompletions(clazz, isStatic = true, isGet = true)
+      case static_set(clazz) => importFieldCompletions(clazz, isStatic = true, isGet = false)
+      case get(clazz) => importFieldCompletions(clazz, isStatic = false, isGet = true)
+      case set(clazz) => importFieldCompletions(clazz, isStatic = false, isGet = false)
+      case _ => Nil
+    }
+  }
+
+  /**
+    * Returns completions for a dot seperated class string
+    */
+  private def importFieldCompletions(clazz: String, isStatic: Boolean, isGet: Boolean)(implicit context: CompletionContext): Iterable[ImportFieldCompletion] = {
+    classFromDotSeperatedString(clazz) match {
+      case Some((clazzObject, clazz)) => clazzObject.getFields
+        // Filter if the method is static or not.
+        .filter(field => java.lang.reflect.Modifier.isStatic(field.getModifiers) == isStatic)
+        .map(field => fieldCompletion(clazz, field, isGet))
+      case None => Nil
+    }
+  }
+
+  /**
+    * Creates a field completion from a Field
+    */
+  private def fieldCompletion(clazz: String, field: Field, isGet: Boolean)(implicit context: CompletionContext): ImportFieldCompletion = {
+    val ret = if (isGet) convertJavaClassToFlixType(field.getType) else "Unit"
+    val asSuggestion = if (isGet) s"get${field.getName}" else s"set${field.getName}"
+    val label = s"$clazz.${field.getName}: $ret"
+    Completion.ImportFieldCompletion(label, TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};"))
+  }
 }
