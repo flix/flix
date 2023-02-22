@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromString, getExecutableCompletionInfo}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportNewCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -31,10 +31,8 @@ object ImportNewCompleter extends Completer {
         case Some((clazzObject, clazz)) =>
           // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
           val className = clazz.split('.').last
-          clazzObject.getConstructors.map(constructor => {
-            val (label, priority, textEdit) = getExecutableCompletionInfo(constructor, clazz, Some(s"new$className"))
-            Completion.ImportNewCompletion(label, priority, textEdit)
-          })
+          clazzObject.getConstructors.map(constructor =>
+            Completion.ImportNewCompletion(constructor, clazz, Some(s"new$className"), context))
         case None => Nil
       }
       case _ => Nil

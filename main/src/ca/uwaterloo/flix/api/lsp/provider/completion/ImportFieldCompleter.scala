@@ -15,12 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromDotSeperatedString, convertJavaClassToFlixType}
+import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromDotSeperatedString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportFieldCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
-
-import java.lang.reflect.Field
 
 object ImportFieldCompleter extends Completer {
   /**
@@ -48,18 +46,8 @@ object ImportFieldCompleter extends Completer {
       case Some((clazzObject, clazz)) => clazzObject.getFields
         // Filter if the method is static or not.
         .filter(field => java.lang.reflect.Modifier.isStatic(field.getModifiers) == isStatic)
-        .map(field => fieldCompletion(clazz, field, isGet))
+        .map(field => Completion.ImportFieldCompletion(field, clazz, isGet, context))
       case None => Nil
     }
-  }
-
-  /**
-    * Creates a field completion from a Field
-    */
-  private def fieldCompletion(clazz: String, field: Field, isGet: Boolean)(implicit context: CompletionContext): ImportFieldCompletion = {
-    val ret = if (isGet) convertJavaClassToFlixType(field.getType) else "Unit"
-    val asSuggestion = if (isGet) s"get${field.getName}" else s"set${field.getName}"
-    val label = s"$clazz.${field.getName}: $ret"
-    Completion.ImportFieldCompletion(label, TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};"))
   }
 }

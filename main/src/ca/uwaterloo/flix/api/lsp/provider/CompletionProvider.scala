@@ -17,23 +17,15 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext, EffectCompleter, FieldCompleter, ImportFieldCompleter, ImportMethodCompleter, ImportNewCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter, WithCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
-import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
-
-import java.lang.reflect.Executable
-import java.lang.reflect.Constructor
-import java.lang.reflect.Method
-import ca.uwaterloo.flix.util.collection.MultiMap
-
-import java.lang.reflect.Field
 
 /**
   * CompletionProvider
@@ -816,29 +808,6 @@ object CompletionProvider {
   private def getImportCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[CompletionItem] = {
     if (root.isEmpty) Nil else (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
       getJavaClassCompletions() ++ (ImportFieldCompleter.getCompletions map (comp => comp.toCompletionItem))
-  }
-
-  /**
-    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest a alias for the function if applicable.
-    */
-  def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String])(implicit context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = exec match {
-      case method: Method => method.getReturnType
-      case _ => exec.getDeclaringClass
-    }
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 
   /**

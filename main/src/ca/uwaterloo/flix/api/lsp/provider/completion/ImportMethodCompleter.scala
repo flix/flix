@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{classFromDotSeperatedString, getExecutableCompletionInfo}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromDotSeperatedString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportMethodCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -43,10 +43,7 @@ object ImportMethodCompleter extends Completer {
       case Some((clazzObject, clazz)) => clazzObject.getMethods
         // Filter if the method is static or not.
         .filter(method => java.lang.reflect.Modifier.isStatic(method.getModifiers) == isStatic)
-        .map(method => {
-          val (label, priority, textEdit) = getExecutableCompletionInfo(method, clazz, None)
-          Completion.ImportMethodCompletion(label, priority, textEdit)
-        })
+        .map(method => Completion.ImportMethodCompletion(method, clazz, context))
       case None => Nil
     }
   }
