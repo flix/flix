@@ -32,8 +32,7 @@ object ManifestParser {
     */
   def parse(p: Path): Result[Manifest, ManifestError] = {
     val parser = try {
-      val parser = Toml.parse(p)
-      parser
+      Toml.parse(p)
     } catch {
       case _: IOException => return Err(ManifestError.IOError(p))
     }
@@ -50,8 +49,7 @@ object ManifestParser {
   def parse(s: String, p: Path): Result[Manifest, ManifestError] = {
     val stringReader = new StringReader(s)
     val parser = try {
-      val parser = Toml.parse(stringReader)
-      parser
+      Toml.parse(stringReader)
     } catch {
       case _: IOException => return Err(ManifestError.IOError(p))
     }

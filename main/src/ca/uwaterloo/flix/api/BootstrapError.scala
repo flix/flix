@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.api
 
-case class Manifest(name: String,
-                    description: String,
-                    version: SemVer, flix:
-                    SemVer, license: Option[String],
-                    authors: List[String],
-                    dependencies: List[Dependency]) { }
+import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
+
+import java.nio.file.Path
+
+sealed trait BootstrapError
+
+object BootstrapError {
+  case class ManifestParseError(e: ManifestError) extends BootstrapError
+
+  case class FlixPackageError(e: PackageError) extends BootstrapError
+
+  case class MavenPackageError(e: PackageError) extends BootstrapError
+}
