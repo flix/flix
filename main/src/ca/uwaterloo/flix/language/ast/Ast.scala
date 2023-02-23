@@ -758,6 +758,11 @@ object Ast {
     case object Expr extends SyntacticContext
 
     /**
+      * Inside an instance declaration.
+      */
+    case object Instance extends SyntacticContext
+
+    /**
       * Inside a type.
       */
     case object Type extends SyntacticContext

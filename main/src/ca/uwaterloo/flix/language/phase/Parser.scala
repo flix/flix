@@ -120,6 +120,7 @@ object Parser {
       case "Class" => SyntacticContext.Class
       case "Enum" => SyntacticContext.Enum
       case "Expression" => SyntacticContext.Expr
+      case "Instance" => SyntacticContext.Instance
       case "Type" => SyntacticContext.Type
       case _ =>
         println(name)
