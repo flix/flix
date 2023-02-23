@@ -187,8 +187,8 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[CompletionItem] = {
-    (KeywordCompleter.getCompletions map (word => word.toCompletionItem)) ++
-      getSnippetCompletions() ++
+    (KeywordCompleter.getCompletions ++
+      SnippetCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
       getVarCompletions() ++
       getDefAndSigCompletions() ++
       (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
@@ -215,27 +215,6 @@ object CompletionProvider {
         }
         suggestions.iterator
     }
-  }
-
-  private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): CompletionItem = {
-    CompletionItem(label = name,
-      sortText = Priority.snippet(name),
-      textEdit = TextEdit(context.range, snippet),
-      documentation = Some(documentation),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Snippet)
-  }
-
-  private def getSnippetCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): List[CompletionItem] = {
-    List(
-      // NB: Please keep the list alphabetically sorted.
-      snippetCompletion("main",
-        "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
-        "snippet for Hello World Program"),
-      snippetCompletion("query",
-        "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
-        "snippet for query")
-    )
   }
 
   private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): CompletionItem = {

@@ -67,6 +67,9 @@ sealed trait Completion {
     case Completion.ClassCompletion(name, context) =>
       CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, name),
         documentation = None, insertTextFormat = InsertTextFormat.PlainText, kind = CompletionItemKind.Class)
+    case Completion.SnippetCompletion(name, snippet, documentation, context) =>
+      CompletionItem(label = name, sortText = Priority.snippet(name), textEdit = TextEdit(context.range, snippet),
+        documentation = Some(documentation), insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Snippet)
   }
 
   /**
@@ -196,4 +199,13 @@ object Completion {
     * @param name the name of the class.
     */
   case class ClassCompletion(name: String, context: CompletionContext) extends Completion
+
+  /**
+    * Represents a Snippet completion
+    *
+    * @param name           the name of the snippet.
+    * @param snippet        the snippet for TextEdit.
+    * @param documentation  a human-readable string that represents a doc-comment.
+    */
+  case class SnippetCompletion(name: String, snippet: String, documentation: String, context: CompletionContext) extends Completion
 }
