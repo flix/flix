@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.AliasTypeCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeAliasCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object AliasTypeCompleter extends Completer {
+object TypeAliasCompleter extends Completer {
   /**
     * Returns a List of Completion for alias types.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[AliasTypeCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[TypeAliasCompletion] = {
     if (root.isEmpty) {
       return Nil
     }
@@ -33,7 +33,7 @@ object AliasTypeCompleter extends Completer {
       case (_, t) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.AliasTypeCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
+        Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }

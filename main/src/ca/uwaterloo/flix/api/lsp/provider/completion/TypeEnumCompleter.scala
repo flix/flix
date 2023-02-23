@@ -15,16 +15,16 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTypeCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeEnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
 import ca.uwaterloo.flix.language.ast.TypedAst
 
-object EnumTypeCompleter extends Completer {
+object TypeEnumCompleter extends Completer {
   /**
     * Returns a List of Completion for enum types.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[EnumTypeCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[TypeEnumCompletion] = {
     if (root.isEmpty) {
       return Nil
     }
@@ -33,7 +33,7 @@ object EnumTypeCompleter extends Completer {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.EnumTypeCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
+        Completion.TypeEnumCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }
