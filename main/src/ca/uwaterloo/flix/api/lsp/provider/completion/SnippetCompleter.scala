@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SnippetCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -23,7 +24,7 @@ object SnippetCompleter extends Completer {
   /**
     * Returns a List of Completion for snippet.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[SnippetCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[SnippetCompletion] = {
     List(
       // NB: Please keep the list alphabetically sorted.
       ("main",

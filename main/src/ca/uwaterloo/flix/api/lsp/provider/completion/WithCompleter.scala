@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Index, InsertTextFormat, TextEdit}
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.WithCompletion
@@ -25,7 +26,7 @@ object WithCompleter extends Completer {
   /**
     * Returns a List of Completion based on with type class constraints.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[WithCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[WithCompletion] = {
     if (root.isEmpty) {
       return Nil
     }

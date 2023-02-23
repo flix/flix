@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromDotSeperatedString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportFieldCompletion
@@ -24,7 +25,7 @@ object ImportFieldCompleter extends Completer {
   /**
     * Returns a List of Completion for importField.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportFieldCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportFieldCompletion] = {
     val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
     val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
     val get = raw"\s*import\s+get\s+(.*)".r

@@ -15,8 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority, convertJavaClassToFlixType}
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 import java.lang.reflect.{Constructor, Executable, Field, Method}
 
@@ -70,6 +73,9 @@ sealed trait Completion {
     case Completion.SnippetCompletion(name, snippet, documentation, context) =>
       CompletionItem(label = name, sortText = Priority.snippet(name), textEdit = TextEdit(context.range, snippet),
         documentation = Some(documentation), insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Snippet)
+    case Completion.VarCompletion(sym, tpe, context, flix) =>
+      CompletionItem(label = sym.text, sortText = Priority.local(sym.text), textEdit = TextEdit(context.range, sym.text),
+        detail = Some(FormatType.formatType(tpe)(flix)), kind = CompletionItemKind.Variable)
   }
 
   /**
@@ -208,4 +214,14 @@ object Completion {
     * @param documentation  a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, snippet: String, documentation: String, context: CompletionContext) extends Completion
+
+  /**
+    * Represents a Var completion
+    *
+    * @param sym      the Var symbol.
+    * @param tpe      the type for FormatType to provide a human-readable string with additional information
+    *                 about the symbol.
+    * @param flix     Implicit parameter for FormatType.formatType(...)
+    */
+  case class VarCompletion(sym: Symbol.VarSym, tpe: Type, context: CompletionContext, flix: Flix) extends Completion
 }

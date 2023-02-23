@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromDotSeperatedString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportMethodCompletion
@@ -24,7 +25,7 @@ object ImportMethodCompleter extends Completer {
   /**
     * Returns a List of Completion for importMethod (both static and instance methods).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportMethodCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportMethodCompletion] = {
     val instance = raw"\s*import\s+(.*)".r
     val static = raw"\s*import\s+static\s+(.*)".r
     context.prefix match {

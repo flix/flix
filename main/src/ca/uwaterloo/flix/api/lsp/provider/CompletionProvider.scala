@@ -188,8 +188,8 @@ object CompletionProvider {
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[CompletionItem] = {
     (KeywordCompleter.getCompletions ++
-      SnippetCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
-      getVarCompletions() ++
+      SnippetCompleter.getCompletions ++
+      VarCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
       getDefAndSigCompletions() ++
       (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
       getOpCompletions() ++
@@ -215,30 +215,6 @@ object CompletionProvider {
         }
         suggestions.iterator
     }
-  }
-
-  private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): CompletionItem = {
-    CompletionItem(label = sym.text,
-      sortText = Priority.local(sym.text),
-      textEdit = TextEdit(context.range, sym.text),
-      detail = Some(FormatType.formatType(tpe)),
-      kind = CompletionItemKind.Variable)
-  }
-
-  private def getVarCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): List[CompletionItem] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    ///
-    /// Find all local variables in the current uri with a given range.
-    ///
-    val iter = index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
-      case Entity.LocalVar(sym, tpe) => varCompletion(sym, tpe)
-      case Entity.FormalParam(fparam) => varCompletion(fparam.sym, fparam.tpe)
-    }
-
-    iter.toList
   }
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit
