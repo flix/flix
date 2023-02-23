@@ -16,14 +16,17 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import coursier._
+import coursier.cache.{Cache, FileCache}
+import coursier.util.Task
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
@@ -36,10 +39,16 @@ object MavenPackageManager {
   def installAll(manifest: Manifest)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
+    val cacheString = "./lib/cache"
+    Files.createDirectories(Paths.get(cacheString))
+
     Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
       val l = try {
+        val cache: Cache[Task] = FileCache()
+          .withLocation(cacheString)
+
         val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
-        val resolution = res.run()
+        val resolution = res.withCache(cache).run()
 
         val resList: collection.mutable.ListBuffer[Path] = collection.mutable.ListBuffer.empty
         val fetch = resolution.dependencies.foldLeft(Fetch())(
@@ -48,14 +57,14 @@ object MavenPackageManager {
             val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
             val versionString = dep.version
             val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
-            val filePrefix = getFilePrefix
-            val path = Paths.get(s"$filePrefix/$moduleNamePath/$versionString/$fileName")
+            val filePrefix = "https/repo1.maven.org/maven2"
+            val path = Paths.get(s"$cacheString/$filePrefix/$moduleNamePath/$versionString/$fileName")
             resList.addOne(path)
 
             out.println(s"Installing $moduleName")
             f.addDependencies(dep)
         })
-        fetch.run()
+        fetch.withCache(cache).run()
         resList.toList
       } catch {
         case e: Exception =>
@@ -65,22 +74,6 @@ object MavenPackageManager {
           return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
       l.toOk
-    }
-  }
-
-  /**
-    * Gives the correct path prefix for the
-    * Coursier cache based on operating system.
-    */
-  private def getFilePrefix: String = {
-    val os = System.getProperty("os.name")
-    if (os.contains("Windows")) { // Windows
-      val user = System.getProperty("user.name")
-      s"C:/Users/$user/AppData/Local/Coursier/cache/v1/https/repo1.maven.org/maven2"
-    } else if (os.contains("Mac OS")){ //Mac OS
-      "~/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2"
-    } else { //Linux
-      "~/.cache/coursier/v1/https/repo1.maven.org/maven2"
     }
   }
 

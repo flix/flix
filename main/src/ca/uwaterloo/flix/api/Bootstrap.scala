@@ -112,7 +112,7 @@ class Bootstrap {
     Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
   }
 
-  def reconfigureFlix(flix: Flix): Unit = { // TODO: Probably return Result or Validation - what can go wrong?
+  def reconfigureFlix(flix: Flix): Unit = {
     val previousSources = timestamps.keySet
 
     for (path <- sourcePaths if hasChanged(path)) {
@@ -127,11 +127,12 @@ class Bootstrap {
       flix.addSourcePath(path)
     }
 
-    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths).toSet
+    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths).filter(p => Files.exists(p))
 
     val deletedSources = previousSources -- currentSources
-    for (file <- deletedSources)
-      flix.remSourceCode(file.toString)
+    for (path <- deletedSources) {
+      flix.remSourceCode(path.toString)
+    }
 
     timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
   }
