@@ -166,7 +166,7 @@ object CompletionProvider {
           Nil
         else
           (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions ++ ImportFieldCompleter.getCompletions
-        map (comp => comp.toCompletionItem)) ++ getJavaClassCompletions()
+            ++ ClassCompleter.getCompletions map (comp => comp.toCompletionItem))
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
       //
@@ -805,41 +805,6 @@ object CompletionProvider {
       textEdit = TextEdit(context.range, name),
       documentation = None,
       kind = kind)
-  }
-
-  /**
-    * Gets completions for java packages/classes
-    */
-  private def getJavaClassCompletions()(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
-    context.prefix match {
-      case regex(clazz) => {
-        val path = clazz.split('.').toList;
-        // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-        javaClassCompletionsFromPrefix(path) ++ javaClassCompletionsFromPrefix(path.dropRight(1))
-      }
-      case _ => Nil
-    }
-  }
-
-  /**
-    * Gets completions from a java path prefix
-    */
-  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    if (root.isEmpty) return Nil
-    root.get.names(prefix).map(clazz => {
-      val label = prefix match {
-        case Nil => clazz
-        case v => v.mkString("", ".", s".$clazz")
-      }
-      CompletionItem(
-        label = label,
-        sortText = Priority.high(label),
-        textEdit = TextEdit(context.range, label),
-        documentation = None,
-        insertTextFormat = InsertTextFormat.PlainText,
-        kind = CompletionItemKind.Class)
-    })
   }
 
   /**
