@@ -32,6 +32,6 @@ object SnippetCompleter extends Completer {
       ("query",
         "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
         "snippet for query")
-    ) map Completion.SnippetCompletion
+    ) map { case (name, snippet, documentation) => Completion.SnippetCompletion(name, snippet, documentation, context)}
   }
 }
