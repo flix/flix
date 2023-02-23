@@ -71,10 +71,10 @@ instance Applicative[Option] {
     pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def mapA2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
-    override pub def mapA3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
-    override pub def mapA4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
-    override pub def mapA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
+    override pub def map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
+    override pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
+    override pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
+    override pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
 }
 
 instance Monad[Option] {
@@ -86,8 +86,8 @@ instance MonadZero[Option] {
 }
 
 instance MonadZip[Option] {
-    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.mapA2(f, ma, mb)
-    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.mapA2((x, y) -> (x, y), ma, mb)
+    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
+    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
 
     pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
         use Functor.{<$>};
