@@ -753,6 +753,11 @@ object Ast {
     case object Expr extends SyntacticContext
 
     /**
+      * Inside a type.
+      */
+    case object Type extends SyntacticContext
+
+    /**
       * No known context.
       */
     case object Unknown extends SyntacticContext

@@ -80,14 +80,10 @@ object Parser {
   }
 
   /**
-    * Computes the nearest syntactic context from the given traces.
-    *
-    * Always uses the first trace (i.e. first failed parse).
+    * Computes the nearest syntactic contexts from the given traces.
     */
-  private def parseTraces(traces: Seq[RuleTrace]): SyntacticContext = traces.headOption match {
-    case None => SyntacticContext.Unknown
-    case Some(trace) => parseRuleTrace(trace.prefix.reverse)
-  }
+  private def parseTraces(traces: Seq[RuleTrace]): List[SyntacticContext] =
+    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).toList
 
   /**
     * Computes the nearest syntactic context from the given list of non-terminals.
@@ -121,6 +117,7 @@ object Parser {
     name match {
       case "Enum" => SyntacticContext.Enum
       case "Expression" => SyntacticContext.Expr
+      case "Type" => SyntacticContext.Type
       case _ =>
         println(name)
         SyntacticContext.Unknown
