@@ -278,10 +278,6 @@ object GenExpression {
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.Region(tpe, loc) =>
-      //!TODO: For now, just emit unit
-      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
     case Expression.Scope(sym, exp, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -524,21 +520,10 @@ object GenExpression {
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
       }
 
-    case Expression.NewObject(name, _, tpe, methods, loc) =>
-      addSourceLine(visitor, loc)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
-      visitor.visitTypeInsn(NEW, className)
-      visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-      // For each method, compile the closure which implements the body of that method and store it in a field
-      methods.zipWithIndex.foreach { case (m, i) =>
-        visitor.visitInsn(DUP)
-        GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
-      }
-
     case Expression.Intrinsic0(op, tpe, loc) => op match {
+      case IntrinsicOperator0.Region =>
+        //!TODO: For now, just emit unit
+        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
       case IntrinsicOperator0.RecordEmpty =>
         // Adding source line number for debugging
@@ -552,6 +537,21 @@ object GenExpression {
         addSourceLine(visitor, loc)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+      case IntrinsicOperator0.NewObject(name, clazz, methods) =>
+        addSourceLine(visitor, loc)
+        val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
+        visitor.visitTypeInsn(NEW, className)
+        visitor.visitInsn(DUP)
+        visitor.visitMethodInsn(INVOKESPECIAL, className, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+
+        // For each method, compile the closure which implements the body of that method and store it in a field
+        methods.zipWithIndex.foreach { case (m, i) =>
+          visitor.visitInsn(DUP)
+          GenExpression.compileExpression(m.clo, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
+        }
+
 
       case IntrinsicOperator0.HoleError(sym) =>
         addSourceLine(visitor, loc)
@@ -1005,7 +1005,7 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expression.Region(_, _) =>
+          case Expression.Intrinsic0(IntrinsicOperator0.Region, tpe, loc) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
