@@ -40,7 +40,10 @@ sealed trait Completion {
     case Completion.BuiltinTypeCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
-    case Completion.TypeCompletion(name, priority, textEdit, documentation) =>
+    case Completion.EnumTypeCompletion(name, priority, textEdit, documentation) =>
+      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+    case Completion.AliasTypeCompletion(name, priority, textEdit, documentation) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
     case Completion.EffectCompletion(name, priority, documentation, context) =>
@@ -130,15 +133,26 @@ object Completion {
                                    insertTextFormat: InsertTextFormat) extends Completion
 
   /**
-    * Represents a Type completion (enums, aliases)
+    * Represents an EnumType completion
     *
-    * @param name           the name of the type.
-    * @param priority       the priority of the type.
-    * @param textEdit       the edit which is applied to a document when selecting this completion.
-    * @param documentation  a human-readable string that represents a doc-comment.
+    * @param name          the name of the EnumType.
+    * @param priority      the priority of the EnumType.
+    * @param textEdit      the edit which is applied to a document when selecting this completion.
+    * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class TypeCompletion(name: String, priority: String, textEdit: TextEdit,
-                            documentation: Option[String]) extends Completion
+  case class EnumTypeCompletion(name: String, priority: String, textEdit: TextEdit,
+                                documentation: Option[String]) extends Completion
+
+  /**
+    * Represents an AliasType completion
+    *
+    * @param name          the name of the AliasType.
+    * @param priority      the priority of the AliasType.
+    * @param textEdit      the edit which is applied to a document when selecting this completion.
+    * @param documentation a human-readable string that represents a doc-comment.
+    */
+  case class AliasTypeCompletion(name: String, priority: String, textEdit: TextEdit,
+                                documentation: Option[String]) extends Completion
 
   /**
     * Represents a Effect completion
