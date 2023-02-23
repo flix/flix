@@ -15,8 +15,10 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority, convertJavaClassToFlixType}
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
+
+import java.lang.reflect.{Constructor, Executable, Field, Method}
 
 /**
   * A common super-type for auto-completions.
@@ -47,6 +49,44 @@ sealed trait Completion {
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
+    case Completion.ImportNewCompletion(constructor, clazz, aliasSuggestion, context) =>
+      val (label, priority, textEdit) = getExecutableCompletionInfo(constructor, clazz, aliasSuggestion, context)
+      CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+    case Completion.ImportMethodCompletion(method, clazz, context) =>
+      val (label, priority, textEdit) = getExecutableCompletionInfo(method, clazz, None, context)
+      CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+    case Completion.ImportFieldCompletion(field, clazz, isGet, context) =>
+      val ret = if (isGet) convertJavaClassToFlixType(field.getType) else "Unit"
+      val asSuggestion = if (isGet) s"get${field.getName}" else s"set${field.getName}"
+      val label = s"$clazz.${field.getName}: $ret"
+      val textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};")
+      CompletionItem(label = label, sortText = Priority.high(label), textEdit = textEdit, documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Field)
+  }
+
+  /**
+    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
+    * clazz is the clazz in string form used for the completion.
+    * aliasSuggestion is used to suggest an alias for the function if applicable.
+    */
+  private def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String], context: CompletionContext): (String, String, TextEdit) = {
+    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
+    val finalAliasSuggestion = aliasSuggestion match {
+      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
+      case None => ""
+    }
+    // Get the name of the function if it is not a constructor.
+    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
+    // So for constructors we do not have a return type method but we know it is the declaring class.
+    val returnType = exec match {
+      case method: Method => method.getReturnType
+      case _ => exec.getDeclaringClass
+    }
+    val label = s"$clazz$name$typesString"
+    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
+    (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
   }
 }
 
@@ -118,4 +158,32 @@ object Completion {
     */
   case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
+
+
+  /**
+    * Represents an importNew completion (java constructors)
+    *
+    * @param constructor      the constructor.
+    * @param clazz            clazz is the clazz in string form.
+    * @param aliasSuggestion  an alias for the function.
+    */
+  case class ImportNewCompletion(constructor: Constructor[_], clazz: String, aliasSuggestion: Option[String], context: CompletionContext) extends Completion
+
+  /**
+    * Represents an importMethod completion (java methods)
+    *
+    * @param method  the method.
+    * @param clazz   clazz is the clazz in string form.
+    */
+  case class ImportMethodCompletion(method: Method, clazz: String, context: CompletionContext) extends Completion
+
+
+  /**
+    * Represents an importField completion
+    *
+    * @param field the field.
+    * @param clazz clazz is the clazz in string form.
+    * @param isGet determines whether is it a set or get.
+    */
+  case class ImportFieldCompletion(field: Field, clazz: String, isGet: Boolean, context: CompletionContext) extends Completion
 }
