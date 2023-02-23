@@ -4,11 +4,12 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageE
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 
+import java.io.File
 import java.nio.file.{Files, Paths}
 
 class TestFlixPackageManager extends FunSuite {
+  val s = File.separator
 
-  //TODO: fix returns
   test("Install missing dependency.01") {
     assertResult(expected = true)(actual = {
       val toml = {
@@ -39,7 +40,7 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) match {
-        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })
@@ -76,8 +77,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) match {
-        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg") &&
-                      l(1).endsWith("magnus-madsen\\helloworld\\ver1.1.0\\helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
+                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })
@@ -114,7 +115,7 @@ class TestFlixPackageManager extends FunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) //installs the dependency
       FlixPackageManager.installAll(manifest, path)(System.out) match { //does nothing
-        case Ok(l) => l.head.endsWith("magnus-madsen\\helloworld\\ver1.0.0\\helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })
