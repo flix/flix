@@ -195,7 +195,7 @@ object Typer {
     case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
       val opsVal = traverse(ops0)(visitOp(_, root))
       mapN(opsVal) {
-        case (ops) => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
+        case ops => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
       }
   }
 
@@ -206,11 +206,23 @@ object Typer {
     case KindedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
-      for {
-        // check the main signature before typechecking the def
-        res <- typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)
-        (spec, exp) = res
-      } yield TypedAst.Def(sym, spec, exp)
+      mapN(typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, sym.loc)) {
+        case (spec, impl) => TypedAst.Def(sym, spec, impl)
+      } recoverOne {
+        case err: TypeError =>
+          //
+          // We recover from a type error by replacing the expression body with [[Expression.Error]].
+          //
+          // We use the declared type, purity, and effect as stand-ins.
+          //
+          val tpe = spec0.tpe
+          val pur = spec0.pur
+          val eff = spec0.eff
+          val exp = TypedAst.Expression.Error(err, tpe, pur, eff)
+          val spec = visitSpec(spec0, root, Substitution.empty)
+          val impl = TypedAst.Impl(exp, spec.declaredScheme)
+          TypedAst.Def(sym, spec, impl)
+      }
   }
 
   /**
