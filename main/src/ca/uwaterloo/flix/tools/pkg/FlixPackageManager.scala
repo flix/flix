@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
@@ -32,7 +32,8 @@ object FlixPackageManager {
   // TODO: Move functionality from "Packager" in here.
 
   /**
-    * Installs all the Flix dependencies for a Manifest.
+    * Installs all the Flix dependencies for a Manifest at the /lib folder
+    * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val flixDeps = findFlixDependencies(manifest)
@@ -52,6 +53,8 @@ object FlixPackageManager {
     * `project` must be of the form `<owner>/<repo>`
     *
     * The package is installed at `lib/<owner>/<repo>`
+    *
+    * Returns a list of paths to the downloaded files.
     */
   def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
@@ -62,7 +65,7 @@ object FlixPackageManager {
         }).flatMap {
           release =>
             val assets = release.assets.filter(_.name.endsWith(".fpkg"))
-            val lib = getLibraryDirectory(p)
+            val lib = Bootstrap.getLibraryDirectory(p)
             val assetFolder = createAssetFolderPath(proj, release, lib)
 
             // create the asset directory if it doesn't exist

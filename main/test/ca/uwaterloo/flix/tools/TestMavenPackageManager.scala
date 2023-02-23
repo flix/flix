@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.tools.pkg.{ManifestParser, MavenPackageManager, Package
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 
+import java.nio.file.Files
+
 class TestMavenPackageManager extends FunSuite {
   test("Install dependency") {
     assertResult(expected = true)(actual = {
@@ -33,7 +35,8 @@ class TestMavenPackageManager extends FunSuite {
         case Err(_) => ??? //should not happen
       }
 
-      MavenPackageManager.installAll(manifest)(System.out) match {
+      val path = Files.createTempDirectory("")
+      MavenPackageManager.installAll(manifest, path)(System.out) match {
         case Ok(l) => l.head.endsWith("org\\junit\\jupiter\\junit-jupiter-api\\5.9.2\\junit-jupiter-api-5.9.2.jar") &&
                       l(1).endsWith("org\\opentest4j\\opentest4j\\1.2.0\\opentest4j-1.2.0.jar") &&
                       l(2).endsWith("org\\junit\\platform\\junit-platform-commons\\1.9.2\\junit-platform-commons-1.9.2.jar") &&
@@ -71,7 +74,8 @@ class TestMavenPackageManager extends FunSuite {
         case Err(_) => ??? //should not happen
       }
 
-      MavenPackageManager.installAll(manifest)(System.out)
+      val path = Files.createTempDirectory("")
+      MavenPackageManager.installAll(manifest, path)(System.out)
     })
   }
 

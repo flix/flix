@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
@@ -33,19 +33,20 @@ object MavenPackageManager {
   private val scalaVersion = "2.13"
 
   /**
-    * Installs all MavenDependencies for a Manifest,
-    * including transitive dependencies using coursier.
+    * Installs all MavenDependencies for a Manifest including transitive
+    * dependencies using coursier in the /lib/cache folder of `path`.
+    * Returns a list of paths to the downloadet .jars.
     */
-  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
-    val cacheString = "./lib/cache"
+    val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
+    val cacheString = libPath.toString
     Files.createDirectories(Paths.get(cacheString))
 
     Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
       val l = try {
-        val cache: Cache[Task] = FileCache()
-          .withLocation(cacheString)
+        val cache: Cache[Task] = FileCache().withLocation(cacheString)
 
         val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
         val resolution = res.withCache(cache).run()
@@ -58,8 +59,8 @@ object MavenPackageManager {
             val versionString = dep.version
             val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
             val filePrefix = "https/repo1.maven.org/maven2"
-            val path = Paths.get(s"$cacheString/$filePrefix/$moduleNamePath/$versionString/$fileName")
-            resList.addOne(path)
+            val depPath = libPath.resolve(filePrefix).resolve(moduleNamePath).resolve(versionString).resolve(fileName)
+            resList.addOne(depPath)
 
             out.println(s"Installing $moduleName")
             f.addDependencies(dep)
