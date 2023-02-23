@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.tools.Packager
 import ca.uwaterloo.flix.util.Options
 
@@ -128,8 +128,8 @@ class SourceFiles(sourceProvider: SourceProvider) {
   private def getSourceFiles(path: Path): Set[Path] = {
     import scala.jdk.StreamConverters._
     val currentDirFiles = Files.list(path).toScala(Iterator)
-    val sourceFiles = Packager.getAllFiles(Packager.getSourceDirectory(path))
-    val testFiles = Packager.getAllFiles(Packager.getTestDirectory(path))
+    val sourceFiles = Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(path))
+    val testFiles = Bootstrap.getAllFiles(Bootstrap.getTestDirectory(path))
     filterByExt(sourceFiles ++ testFiles ++ currentDirFiles, ".flix")
   }
 
@@ -137,9 +137,9 @@ class SourceFiles(sourceProvider: SourceProvider) {
     * Returns a set of all the .fpkg and a set of all the .jar files within a project
     */
   private def getPackagesAndLibraries(path: Path): (Set[Path], Set[Path]) = {
-    val libraryDirectory = Packager.getLibraryDirectory(path)
+    val libraryDirectory = Bootstrap.getLibraryDirectory(path)
     if (libraryDirectory.toFile.isDirectory) {
-      val files = Packager.getAllFiles(libraryDirectory)
+      val files = Bootstrap.getAllFiles(libraryDirectory)
       val packages = filterByExt(files, ".fpkg")
       val libraries = filterByExt(files, ".jar")
       (packages, libraries)
