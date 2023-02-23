@@ -41,7 +41,7 @@ object Safety {
     if (errors.isEmpty)
       Validation.Success(root)
     else
-      Validation.Failure(errors.to(LazyList))
+      Validation.SoftFailure(root, errors.to(LazyList))
   }
 
   /**
