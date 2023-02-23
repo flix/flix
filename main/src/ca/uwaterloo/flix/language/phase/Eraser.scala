@@ -122,7 +122,8 @@ object Eraser {
       ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
     case FinalAst.Expression.Region(tpe, loc) =>
-      ErasedAst.Expression.Region(tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.Region
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
@@ -238,7 +239,8 @@ object Eraser {
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
-      ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
+      val op = ErasedAst.IntrinsicOperator0.NewObject(name, clazz, methods)
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
       val op = IntrinsicOperator2.Spawn

@@ -70,8 +70,6 @@ object ErasedAst {
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Region(tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -94,8 +92,6 @@ object ErasedAst {
 
     case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
-
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -110,9 +106,13 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
+    case object Region extends IntrinsicOperator0
+
     case object RecordEmpty extends IntrinsicOperator0
 
     case class GetStaticField(field: Field) extends IntrinsicOperator0
+
+    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[ErasedAst.JvmMethod]) extends IntrinsicOperator0
 
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
 
