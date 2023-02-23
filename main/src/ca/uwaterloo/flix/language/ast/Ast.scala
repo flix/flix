@@ -743,6 +743,11 @@ object Ast {
   object SyntacticContext {
 
     /**
+      * Inside an class declaration.
+      */
+    case object Class extends SyntacticContext
+
+    /**
       * Inside an enum declaration.
       */
     case object Enum extends SyntacticContext

@@ -117,6 +117,7 @@ object Parser {
     */
   private def syntacticContextOf(name: String): SyntacticContext = {
     name match {
+      case "Class" => SyntacticContext.Class
       case "Enum" => SyntacticContext.Enum
       case "Expression" => SyntacticContext.Expr
       case "Type" => SyntacticContext.Type
