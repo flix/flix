@@ -732,4 +732,30 @@ object Ast {
       */
     case class Import(clazz: Class[_], alias: Name.Ident, loc: SourceLocation) extends UseOrImport
   }
+
+  /**
+    * A common super-type for syntactic contexts.
+    *
+    * A syntactic context is an estimate of the syntactic construct a specific source position is inside.
+    */
+  sealed trait SyntacticContext
+
+  object SyntacticContext {
+
+    /**
+      * Inside an enum declaration.
+      */
+    case object Enum extends SyntacticContext
+
+    /**
+      * Inside an expression.
+      */
+    case object Expr extends SyntacticContext
+
+    /**
+      * No known context.
+      */
+    case object Unknown extends SyntacticContext
+  }
+
 }
