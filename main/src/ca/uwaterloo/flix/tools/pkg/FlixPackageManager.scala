@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.Packager.getLibraryDirectory
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
@@ -32,19 +32,19 @@ object FlixPackageManager {
   // TODO: Move functionality from "Packager" in here.
 
   /**
-    * Installs all the Flix dependencies for a Manifest.
+    * Installs all the Flix dependencies for a Manifest at the /lib folder
+    * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val flixDeps = findFlixDependencies(manifest)
 
-    for(dep <- flixDeps) {
+    flixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, Some(dep.version), path) match {
-        case Ok(_) => //do nothing
+        case Ok(l) => l
         case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
       }
-    }
-    ().toOk
+    }).toOk
   }
 
   /**
@@ -53,8 +53,10 @@ object FlixPackageManager {
     * `project` must be of the form `<owner>/<repo>`
     *
     * The package is installed at `lib/<owner>/<repo>`
+    *
+    * Returns a list of paths to the downloaded files.
     */
-  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
         (version match {
@@ -63,7 +65,7 @@ object FlixPackageManager {
         }).flatMap {
           release =>
             val assets = release.assets.filter(_.name.endsWith(".fpkg"))
-            val lib = getLibraryDirectory(p)
+            val lib = Bootstrap.getLibraryDirectory(p)
             val assetFolder = createAssetFolderPath(proj, release, lib)
 
             // create the asset directory if it doesn't exist
@@ -88,7 +90,7 @@ object FlixPackageManager {
                 out.println(s"$assetName already exists")
               }
             }
-            ().toOk
+            assets.map(asset => assetFolder.resolve(asset.name)).toOk
         }
     }
   }
