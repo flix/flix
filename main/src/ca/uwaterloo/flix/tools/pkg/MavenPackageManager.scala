@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -22,36 +23,58 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import coursier._
+import coursier.cache.{Cache, FileCache}
+import coursier.util.Task
+
+import java.nio.file.{Files, Path, Paths}
 
 object MavenPackageManager {
 
   private val scalaVersion = "2.13"
 
   /**
-    * Installs all MavenDependencies for a Manifest,
-    * including transitive dependencies using coursier.
+    * Installs all MavenDependencies for a Manifest including transitive
+    * dependencies using coursier in the /lib/cache folder of `path`.
+    * Returns a list of paths to the downloadet .jars.
     */
-  def installAll(manifest: Manifest)(implicit out: PrintStream): Result[Unit, PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     val depStrings = getMavenDependencyStrings(manifest)
 
-    Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
-      try {
-        val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
-        val resolution = res.run()
+    val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
+    val cacheString = libPath.toString
+    Files.createDirectories(Paths.get(cacheString))
 
-        val fetch = resolution.dependencies.foldLeft(Fetch())((f, dep) => {
-          out.println(s"Installing ${dep.module.toString()}");
-          f.addDependencies(dep)
+    Result.sequence(depStrings.map(createCoursierDependencies)).flatMap { deps =>
+      val l = try {
+        val cache: Cache[Task] = FileCache().withLocation(cacheString)
+
+        val res = deps.foldLeft(Resolve())((res, dep) => res.addDependencies(dep))
+        val resolution = res.withCache(cache).run()
+
+        val resList: collection.mutable.ListBuffer[Path] = collection.mutable.ListBuffer.empty
+        val fetch = resolution.dependencies.foldLeft(Fetch())(
+          (f, dep) => {
+            val moduleName = dep.module.toString()
+            val moduleNamePath = moduleName.replaceAll("[^a-zA-Z0-9-]", "/")
+            val versionString = dep.version
+            val fileName = s"${moduleNamePath.split('/').last}-$versionString.jar"
+            val filePrefix = "https/repo1.maven.org/maven2"
+            val depPath = libPath.resolve(filePrefix).resolve(moduleNamePath).resolve(versionString).resolve(fileName)
+            resList.addOne(depPath)
+
+            out.println(s"Installing $moduleName")
+            f.addDependencies(dep)
         })
-        fetch.run()
+        fetch.withCache(cache).run()
+        resList.toList
       } catch {
         case e: Exception =>
-          out.println(e.getMessage)
+          out.println(e)
           //Shortens the error message to just give the name of the dependency
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
           return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
       }
-      ().toOk
+      l.toOk
     }
   }
 
@@ -73,7 +96,5 @@ object MavenPackageManager {
       case Left(error) => throw InternalCompilerException(s"Coursier error: $error", SourceLocation.Unknown)
       case Right(cDep) => Ok(cDep)
     }
-
-
 
 }

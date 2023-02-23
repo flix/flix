@@ -10,13 +10,13 @@ import java.lang.reflect.{InvocationTargetException, Method}
 /**
   * Loads all the generated classes into the JVM and decorates the AST.
   */
-object Bootstrap {
+object Loader {
 
   /**
     * Loads all the generated classes into the JVM and decorates the AST.
     * The main functions of `Main.class` is returned if it exists.
     */
-  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Option[Array[String] => Unit] = {
+  def load(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Option[Array[String] => Unit] = {
     //
     // Load each class into the JVM in a fresh class loader.
     //

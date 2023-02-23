@@ -17,23 +17,15 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{BuiltinTypeCompleter, CompletionContext, DeltaContext, EffectCompleter, FieldCompleter, KeywordCompleter, PredicateCompleter, TypeCompleter, WithCompleter}
+import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
-import ca.uwaterloo.flix.language.phase.Resolver.DerivableSyms
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.parboiled2.CharPredicate
-
-import java.lang.reflect.Executable
-import java.lang.reflect.Constructor
-import java.lang.reflect.Method
-import ca.uwaterloo.flix.util.collection.MultiMap
-
-import java.lang.reflect.Field
 
 /**
   * CompletionProvider
@@ -169,7 +161,12 @@ object CompletionProvider {
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() => getImportCompletions()
+      case importRegex() =>
+        if (root.isEmpty)
+          Nil
+        else
+          (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions ++ ImportFieldCompleter.getCompletions
+            ++ ClassCompleter.getCompletions map (comp => comp.toCompletionItem))
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
       //
@@ -811,170 +808,9 @@ object CompletionProvider {
   }
 
   /**
-    * Get completions for java imports.
-    */
-  private def getImportCompletions()(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    if (root.isEmpty) Nil else getImportNewCompletions() ++ getImportMethodCompletions() ++ getJavaClassCompletions() ++ getImportFieldCompletions()
-  }
-
-  /**
-    * Get completions for importing java constructors.
-    */
-  private def getImportNewCompletions()(implicit context: CompletionContext): Iterable[CompletionItem] = {
-    val regex = raw"\s*import\s+new\s+(.*)".r
-    context.prefix match {
-      case regex(clazz) => classFromString(clazz) match {
-        case Some((clazzObject, clazz)) => {
-          // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
-          val className = clazz.split('.').last
-          clazzObject.getConstructors().map(constructor => executableCompletion(constructor, clazz, Some(s"new$className")))
-        }
-        case None => Nil
-      }
-      case _ => Nil
-    }
-  }
-
-  /**
-    * Get completions for method imports (both static and instance methods)
-    */
-  private def getImportMethodCompletions()(implicit context: CompletionContext): Iterable[CompletionItem] = {
-    val instance = raw"\s*import\s+(.*)".r
-    val static = raw"\s*import\s+static\s+(.*)".r
-    context.prefix match {
-      // We match on static first because import static ... would also match on instance regex.
-      case static(clazz) => methodsCompletion(clazz, true)
-      case instance(clazz) => methodsCompletion(clazz, false)
-      case _ => Nil
-    }
-  }
-
-  /**
-    * Convert methods of a class into completionitems
-    */
-  private def methodsCompletion(clazz: String, isStatic: Boolean)(implicit context: CompletionContext): Iterable[CompletionItem] = {
-    classFromDotSeperatedString(clazz) match {
-      case Some((clazzObject, clazz)) => clazzObject.getMethods()
-        // Filter if the method is static or not.
-        .filter((method) => java.lang.reflect.Modifier.isStatic(method.getModifiers()) == isStatic)
-        .map((method) => executableCompletion(method, clazz, None))
-      case None => Nil
-    }
-  }
-
-  /**
-    * returns a completion from a java executable (method/constructor) instace.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest a alias for the function if applicable.
-    */
-  private def executableCompletion(exec: Executable, clazz: String, aliasSuggestion: Option[String])(implicit context: CompletionContext): CompletionItem = {
-    val typesString = exec.getParameters().map(param => convertJavaClassToFlixType(param.getType())).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = if (exec.isInstanceOf[Method]) exec.asInstanceOf[Method].getReturnType() else exec.getDeclaringClass()
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    CompletionItem(
-      label = label,
-      // Prioritise executables with fewer parameters.
-      sortText = Priority.high(s"${exec.getParameterCount()}$label"),
-      textEdit = TextEdit(context.range, replace),
-      documentation = None,
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Method)
-  }
-
-  /**
-    * Gets completions for java packages/classes
-    */
-  private def getJavaClassCompletions()(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    val regex = raw"\s*import\s+(?:.*\s+)*(.*)".r
-    context.prefix match {
-      case regex(clazz) => {
-        val path = clazz.split('.').toList;
-        // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-        javaClassCompletionsFromPrefix(path) ++ javaClassCompletionsFromPrefix(path.dropRight(1))
-      }
-      case _ => Nil
-    }
-  }
-
-  /**
-    * Gets completions from a java path prefix
-    */
-  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    if (root.isEmpty) return Nil
-    root.get.names(prefix).map(clazz => {
-      val label = prefix match {
-        case Nil => clazz
-        case v => v.mkString("", ".", s".$clazz")
-      }
-      CompletionItem(
-        label = label,
-        sortText = Priority.high(label),
-        textEdit = TextEdit(context.range, label),
-        documentation = None,
-        insertTextFormat = InsertTextFormat.PlainText,
-        kind = CompletionItemKind.Class)
-    })
-  }
-
-  /**
-    * Gets completions for importing fields
-    */
-  private def getImportFieldCompletions()(implicit context: CompletionContext): Iterable[CompletionItem] = {
-    val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
-    val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
-    val get = raw"\s*import\s+get\s+(.*)".r
-    val set = raw"\s*import\s+set\s+(.*)".r
-    context.prefix match {
-      case static_get(clazz) => importFieldCompletions(clazz, true, true)
-      case static_set(clazz) => importFieldCompletions(clazz, true, false)
-      case get(clazz) => importFieldCompletions(clazz, false, true)
-      case set(clazz) => importFieldCompletions(clazz, false, false)
-      case _ => Nil
-    }
-  }
-
-  /**
-    * Returns completions for a dot seperated class string
-    */
-  private def importFieldCompletions(clazz: String, isStatic: Boolean, isGet: Boolean)(implicit context: CompletionContext): Iterable[CompletionItem] = {
-    classFromDotSeperatedString(clazz) match {
-      case Some((clazzObject, clazz)) => clazzObject.getFields()
-        // Filter if the method is static or not.
-        .filter(field => java.lang.reflect.Modifier.isStatic(field.getModifiers()) == isStatic)
-        .map(field => fieldCompletion(clazz, field, isGet))
-      case None => Nil
-    }
-  }
-
-  /**
-    * Creates a field completion from a Field
-    */
-  private def fieldCompletion(clazz: String, field: Field, isGet: Boolean)(implicit context: CompletionContext): CompletionItem = {
-    val ret = if (isGet) convertJavaClassToFlixType(field.getType()) else "Unit"
-    val asSuggestion = if (isGet) s"get${field.getName()}" else s"set${field.getName()}"
-    val label = s"${clazz}.${field.getName()}: $ret"
-    CompletionItem(
-      label = label,
-      sortText = Priority.high(label),
-      textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};"),
-      documentation = None,
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Field
-    )
-  }
-
-  /**
     * Returns a class object if the string is a class or removing the last "part" makes it a class
     */
-  private def classFromDotSeperatedString(clazz: String): Option[(Class[_ <: Object], String)] = {
+  def classFromDotSeperatedString(clazz: String): Option[(Class[_], String)] = {
     // If the last charachter is . then this drops that
     // I.e if we have java.lang.String. this converts to java.lang.String
     // while if it does not end with . it is unchanged
@@ -987,7 +823,7 @@ object CompletionProvider {
   /**
     * Return a class object if the class exists
     */
-  private def classFromString(clazz: String): Option[(Class[_ <: Object], String)] = {
+  def classFromString(clazz: String): Option[(Class[_], String)] = {
     try {
       Some((java.lang.Class.forName(clazz), clazz))
     }
@@ -1000,7 +836,7 @@ object CompletionProvider {
     * Converts a Java Class Object into a string representing the type in flix syntax.
     * I.e. java.lang.String => String, byte => Int8, java.lang.Object[] => Array[##java.lang.Object, false].
     */
-  private def convertJavaClassToFlixType(clazz: Class[_ <: Object]): String = {
+  def convertJavaClassToFlixType(clazz: Class[_]): String = {
     if (clazz.isArray()) {
       s"Array[${convertJavaClassToFlixType(clazz.getComponentType())}, Static]"
     }

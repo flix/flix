@@ -46,6 +46,8 @@ object KeywordCompleter extends Completer {
       "false",
       "fix",
       "for",
+      "forA",
+      "forM",
       "forall",
       "force",
       "foreach",
