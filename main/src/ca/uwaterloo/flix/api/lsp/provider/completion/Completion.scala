@@ -64,6 +64,9 @@ sealed trait Completion {
       val textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};")
       CompletionItem(label = label, sortText = Priority.high(label), textEdit = textEdit, documentation = None,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Field)
+    case Completion.ClassCompletion(name, context) =>
+      CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, name),
+        documentation = None, insertTextFormat = InsertTextFormat.PlainText, kind = CompletionItemKind.Class)
   }
 
   /**
@@ -186,4 +189,11 @@ object Completion {
     * @param isGet determines whether is it a set or get.
     */
   case class ImportFieldCompletion(field: Field, clazz: String, isGet: Boolean, context: CompletionContext) extends Completion
+
+  /**
+    * Represents a Class completion (java packages/classes)
+    *
+    * @param name the name of the class.
+    */
+  case class ClassCompletion(name: String, context: CompletionContext) extends Completion
 }
