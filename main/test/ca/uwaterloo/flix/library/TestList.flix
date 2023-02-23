@@ -416,29 +416,29 @@ def ap05(): Bool = List.ap((x -> x+1) :: Nil, 0 :: 5 :: Nil) == 1 :: 6 :: Nil
 def ap06(): Bool = List.ap((x -> x+1) :: (x -> x*2) :: Nil, 0 :: 4 :: Nil) == 1 :: 5 :: 0 :: 8 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
-// mapA2                                                                   //
+// map2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def mapA201(): Bool = Applicative.map2((x,y) -> x+y, Nil, Nil) == Nil : List[Int32]
+def map201(): Bool = List.map2((x,y) -> x+y, Nil, Nil) == Nil : List[Int32]
 
 @test
-def mapA202(): Bool = Applicative.map2((x,y) -> x+y, 10 :: Nil, Nil) == Nil
+def map202(): Bool = List.map2((x,y) -> x+y, 10 :: Nil, Nil) == Nil
 
 @test
-def mapA203(): Bool = Applicative.map2((x,y) -> x+y, Nil, 1 :: Nil) == Nil
+def map203(): Bool = List.map2((x,y) -> x+y, Nil, 1 :: Nil) == Nil
 
 @test
-def mapA204(): Bool = Applicative.map2((x,y) -> x+y, 10 :: Nil, 1 :: Nil) == 11 :: Nil
+def map204(): Bool = List.map2((x,y) -> x+y, 10 :: Nil, 1 :: Nil) == 11 :: Nil
 
 @test
-def mapA205(): Bool = Applicative.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: Nil) == 11 :: 21 :: Nil
+def map205(): Bool = List.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: Nil) == 11 :: 21 :: Nil
 
 @test
-def mapA206(): Bool = Applicative.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: 2 :: Nil) == 11 :: 12 :: 21 :: 22 :: Nil
+def map206(): Bool = List.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: 2 :: Nil) == 11 :: 12 :: 21 :: 22 :: Nil
 
 @test
-def mapA207(): Bool = Applicative.map2((x,y) -> (x+y) :: Nil, 10 :: Nil, 1 :: 2 :: Nil) == (11 :: Nil) :: (12 :: Nil) :: Nil
+def map207(): Bool = List.map2((x,y) -> (x+y) :: Nil, 10 :: Nil, 1 :: 2 :: Nil) == (11 :: Nil) :: (12 :: Nil) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // map3                                                                    //
