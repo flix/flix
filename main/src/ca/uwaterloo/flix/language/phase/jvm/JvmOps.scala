@@ -552,8 +552,6 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Is(_, exp, _) => visitExp(exp)
-
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -830,8 +828,6 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Is(_, exp, _) => visitExp(exp)
-
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -1006,8 +1002,6 @@ object JvmOps {
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.Is(_, exp, _) => visitExp(exp)
 
       case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
