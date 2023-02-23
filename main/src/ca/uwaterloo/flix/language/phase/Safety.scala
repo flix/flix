@@ -11,7 +11,6 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 import java.math.BigInteger
 import scala.annotation.tailrec
