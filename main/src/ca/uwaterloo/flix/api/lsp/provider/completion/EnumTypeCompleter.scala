@@ -33,7 +33,7 @@ object EnumTypeCompleter extends Completer {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.EnumTypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
+        Completion.EnumTypeCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }

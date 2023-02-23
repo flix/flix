@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority, convertJavaClassToFlixType}
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
+import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, TypeAliasSym}
 
 import java.lang.reflect.{Constructor, Executable, Field, Method}
 
@@ -40,12 +41,12 @@ sealed trait Completion {
     case Completion.BuiltinTypeCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
-    case Completion.EnumTypeCompletion(name, priority, textEdit, documentation) =>
-      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
-        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
-    case Completion.AliasTypeCompletion(name, priority, textEdit, documentation) =>
-      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
-        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+    case Completion.EnumTypeCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${enumSym.name}$nameSuffix", sortText = priority, textEdit = textEdit,
+        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+    case Completion.AliasTypeCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
+      CompletionItem(label = s"${aliasSym.name}$nameSuffix", sortText = priority, textEdit = textEdit,
+        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
     case Completion.EffectCompletion(name, priority, documentation, context) =>
       CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name),
         documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
@@ -135,23 +136,25 @@ object Completion {
   /**
     * Represents an EnumType completion
     *
-    * @param name          the name of the EnumType.
+    * @param enumSym       the enum symbol.
+    * @param nameSuffix    the suffix for the name of the EnumType.
     * @param priority      the priority of the EnumType.
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class EnumTypeCompletion(name: String, priority: String, textEdit: TextEdit,
+  case class EnumTypeCompletion(enumSym: EnumSym, nameSuffix: String, priority: String, textEdit: TextEdit,
                                 documentation: Option[String]) extends Completion
 
   /**
     * Represents an AliasType completion
     *
-    * @param name          the name of the AliasType.
+    * @param aliasSym      the alias symbol.
+    * @param nameSuffix    the suffix for the name of the AliasType.
     * @param priority      the priority of the AliasType.
     * @param textEdit      the edit which is applied to a document when selecting this completion.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class AliasTypeCompletion(name: String, priority: String, textEdit: TextEdit,
+  case class AliasTypeCompletion(aliasSym: TypeAliasSym, nameSuffix: String, priority: String, textEdit: TextEdit,
                                 documentation: Option[String]) extends Completion
 
   /**
