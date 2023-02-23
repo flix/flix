@@ -416,39 +416,39 @@ def ap05(): Bool = List.ap((x -> x+1) :: Nil, 0 :: 5 :: Nil) == 1 :: 6 :: Nil
 def ap06(): Bool = List.ap((x -> x+1) :: (x -> x*2) :: Nil, 0 :: 4 :: Nil) == 1 :: 5 :: 0 :: 8 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
-// liftA2                                                                  //
+// map2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def liftA201(): Bool = Applicative.liftA2((x,y) -> x+y, Nil, Nil) == Nil : List[Int32]
+def map201(): Bool = List.map2((x,y) -> x+y, Nil, Nil) == Nil : List[Int32]
 
 @test
-def liftA202(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: Nil, Nil) == Nil
+def map202(): Bool = List.map2((x,y) -> x+y, 10 :: Nil, Nil) == Nil
 
 @test
-def liftA203(): Bool = Applicative.liftA2((x,y) -> x+y, Nil, 1 :: Nil) == Nil
+def map203(): Bool = List.map2((x,y) -> x+y, Nil, 1 :: Nil) == Nil
 
 @test
-def liftA204(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: Nil, 1 :: Nil) == 11 :: Nil
+def map204(): Bool = List.map2((x,y) -> x+y, 10 :: Nil, 1 :: Nil) == 11 :: Nil
 
 @test
-def liftA205(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: Nil) == 11 :: 21 :: Nil
+def map205(): Bool = List.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: Nil) == 11 :: 21 :: Nil
 
 @test
-def liftA206(): Bool = Applicative.liftA2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: 2 :: Nil) == 11 :: 12 :: 21 :: 22 :: Nil
+def map206(): Bool = List.map2((x,y) -> x+y, 10 :: 20 :: Nil, 1 :: 2 :: Nil) == 11 :: 12 :: 21 :: 22 :: Nil
 
 @test
-def liftA207(): Bool = Applicative.liftA2((x,y) -> (x+y) :: Nil, 10 :: Nil, 1 :: 2 :: Nil) == (11 :: Nil) :: (12 :: Nil) :: Nil
+def map207(): Bool = List.map2((x,y) -> (x+y) :: Nil, 10 :: Nil, 1 :: 2 :: Nil) == (11 :: Nil) :: (12 :: Nil) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
-// lift3                                                                   //
+// map3                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def lift301(): Bool = List.lift3((x,y,z) -> (x,y,z), Nil, Nil, Nil) == Nil : List[(Int32, String, String)]
+def map301(): Bool = List.map3((x,y,z) -> (x,y,z), Nil, Nil, Nil) == Nil : List[(Int32, String, String)]
 
 @test
-def lift302(): Bool = List.lift3((x,y,z) -> (x,y,z), 1 :: 2 :: 3 :: Nil, "a" :: "b" :: "c" :: Nil, "A" :: "B" :: "C" :: Nil) == (1, "a", "A") :: (1, "a", "B") :: (1, "a", "C") :: (1, "b", "A") :: (1, "b", "B") :: (1, "b", "C") :: (1, "c", "A") :: (1, "c", "B") :: (1, "c", "C") :: (2, "a", "A") :: (2, "a", "B") :: (2, "a", "C") :: (2, "b", "A") :: (2, "b", "B") :: (2, "b", "C") :: (2, "c", "A") :: (2, "c", "B") :: (2, "c", "C") :: (3, "a", "A") :: (3, "a", "B") :: (3, "a", "C") :: (3, "b", "A") :: (3, "b", "B") :: (3, "b", "C") :: (3, "c", "A") :: (3, "c", "B") :: (3, "c", "C") :: Nil
+def map302(): Bool = List.map3((x,y,z) -> (x,y,z), 1 :: 2 :: 3 :: Nil, "a" :: "b" :: "c" :: Nil, "A" :: "B" :: "C" :: Nil) == (1, "a", "A") :: (1, "a", "B") :: (1, "a", "C") :: (1, "b", "A") :: (1, "b", "B") :: (1, "b", "C") :: (1, "c", "A") :: (1, "c", "B") :: (1, "c", "C") :: (2, "a", "A") :: (2, "a", "B") :: (2, "a", "C") :: (2, "b", "A") :: (2, "b", "B") :: (2, "b", "C") :: (2, "c", "A") :: (2, "c", "B") :: (2, "c", "C") :: (3, "a", "A") :: (3, "a", "B") :: (3, "a", "C") :: (3, "b", "A") :: (3, "b", "B") :: (3, "b", "C") :: (3, "c", "A") :: (3, "c", "B") :: (3, "c", "C") :: Nil
 
 
 /////////////////////////////////////////////////////////////////////////////

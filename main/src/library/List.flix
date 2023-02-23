@@ -352,7 +352,7 @@ namespace List {
     /// For argument lists `l1 = x1, x2, ...` and `l2 = y1, y2, ...` the results appear in the order
     /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
     ///
-    pub def lift2(f: t1 -> t2 -> r \ ef, l1: List[t1], l2: List[t2]): List[r] \ ef = Applicative.liftA2(f, l1, l2)
+    pub def map2(f: t1 -> t2 -> r \ ef, l1: List[t1], l2: List[t2]): List[r] \ ef = Applicative.map2(f, l1, l2)
 
     ///
     /// Lift a ternary function to work on lists of its original arguments, returning a list
@@ -366,15 +366,15 @@ namespace List {
     /// ...
     /// ```
     ///
-    pub def lift3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.liftA3(f, l1, l2, l3)
+    pub def map3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.map3(f, l1, l2, l3)
 
     /// Lift a 4-ary function to work on lists of its original arguments, returning a list
-    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.liftA4(f, l1, l2, l3, l4)
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.map4(f, l1, l2, l3, l4)
 
     /// Lift a 5-ary function to work on lists of its original arguments, returning a list
-    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.liftA5(f, l1, l2, l3, l4, l5)
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.map5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
