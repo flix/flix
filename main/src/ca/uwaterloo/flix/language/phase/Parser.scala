@@ -82,8 +82,10 @@ object Parser {
   /**
     * Computes the nearest syntactic contexts from the given traces.
     */
-  private def parseTraces(traces: Seq[RuleTrace]): List[SyntacticContext] =
-    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).toList
+  private def parseTraces(traces: Seq[RuleTrace]): Map[SyntacticContext, Int] =
+    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).foldLeft(Map.empty[SyntacticContext, Int]) {
+      case (macc, ctx) => macc.updated(ctx, macc.getOrElse(ctx, 0) + 1)
+    }
 
   /**
     * Computes the nearest syntactic context from the given list of non-terminals.
