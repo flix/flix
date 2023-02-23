@@ -84,6 +84,9 @@ object Safety {
     */
   private def visitExp(e0: Expression, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
 
+    /**
+      * Local visitor.
+      */
     def visit(exp0: Expression): List[CompilationMessage] = exp0 match {
       case Expression.Cst(_, _, _) => Nil
 
@@ -570,13 +573,16 @@ object Safety {
 
     // The variables that are used in a non-fixed lattice position
     val latVars0 = nonFixedLatticeVariablesOf(c0)
+
     // the variables that are used in a fixed position
     val fixedLatVars0 = fixedLatticeVariablesOf(c0)
 
     // The variables that are used in lattice position, either fixed or non-fixed.
     val latVars = latVars0 union fixedLatVars0
+
     // The lattice variables that are always fixed can be used in the head.
     val safeLatVars = fixedLatVars0 -- latVars0
+
     // The lattice variables that cannot be used relationally in the head.
     val unsafeLatVars = latVars -- safeLatVars
 
