@@ -161,7 +161,12 @@ object CompletionProvider {
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() => getImportCompletions()
+      case importRegex() =>
+        if (root.isEmpty)
+          Nil
+        else
+          (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions ++ ImportFieldCompleter.getCompletions
+        map (comp => comp.toCompletionItem)) ++ getJavaClassCompletions()
       case useRegex() => getUseCompletions()
       case instanceRegex() => getInstanceCompletions()
       //
@@ -800,14 +805,6 @@ object CompletionProvider {
       textEdit = TextEdit(context.range, name),
       documentation = None,
       kind = kind)
-  }
-
-  /**
-    * Get completions for java imports.
-    */
-  private def getImportCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[CompletionItem] = {
-    if (root.isEmpty) Nil else (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
-      getJavaClassCompletions() ++ (ImportFieldCompleter.getCompletions map (comp => comp.toCompletionItem))
   }
 
   /**
