@@ -158,7 +158,7 @@ object CompletionProvider {
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions map (withComp => withComp.toCompletionItem)
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
+      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() =>
@@ -176,7 +176,6 @@ object CompletionProvider {
       case _ => getExpCompletions() ++
         (PredicateCompleter.getCompletions ++
           TypeCompleter.getCompletions ++
-          BuiltinTypeCompleter.getCompletions ++
           EffectCompleter.getCompletions map (comp => comp.toCompletionItem))
     }
   }
