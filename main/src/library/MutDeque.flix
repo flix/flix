@@ -239,7 +239,7 @@ namespace MutDeque {
         let MutDeque(_, a, f, _) = d;
         let a1 = deref a;
         let f1 = (deref f - 1) `Int32.mod` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
-        a1[f1] = x;                                     // Store `x` in the array.
+        Array.put(x, f1, a1);                           // Store `x` in the array.
         f := f1;                                        // Update the front index reference.
         expand!(d)                                      // Optionally expand `d`.
 
@@ -250,7 +250,7 @@ namespace MutDeque {
         let MutDeque(_, a, _, b) = d;
         let a1 = deref a;
         let b1 = deref b;
-        a1[b1] = x;                            // Store `x` in the array.
+        Array.put(x, b1, a1);                  // Store `x` in the array.
         b := (b1 + 1) `Int32.mod` capacity(d); // Update back index reference to point to next empty index.
         expand!(d)                             // Optionally expand `d`.
 

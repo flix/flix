@@ -126,10 +126,6 @@ object OccurrenceAst {
 
     case class ArrayLength(base: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ArraySlice(base: OccurrenceAst.Expression, beginIndex: OccurrenceAst.Expression, endIndex: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Impure
-    }
-
     case class Ref(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Impure
     }

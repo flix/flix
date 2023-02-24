@@ -275,11 +275,6 @@ object Stratifier {
         case (b, i, e) => Expression.ArrayStore(b, i, e, pur, eff, loc)
       }
 
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, tpe, pur, eff, loc) =>
-      mapN(visitExp(reg), visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (r, b, i1, i2) => Expression.ArraySlice(r, b, i1, i2, tpe, pur, eff, loc)
-      }
-
     case Expression.VectorLit(exps, tpe, pur, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
         case es => Expression.VectorLit(es, tpe, pur, eff, loc)
@@ -685,9 +680,6 @@ object Stratifier {
 
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
-
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
-      labelledGraphOfExp(reg) + labelledGraphOfExp(base) + labelledGraphOfExp(beginIndex) + labelledGraphOfExp(endIndex)
 
     case Expression.VectorLit(exps, _, _, _, _) =>
       exps.foldLeft(LabelledGraph.empty) {

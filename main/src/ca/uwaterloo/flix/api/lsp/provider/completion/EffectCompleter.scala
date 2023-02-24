@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EffectCompletion
@@ -24,8 +25,8 @@ object EffectCompleter extends Completer {
   /**
     * Returns a List of Completion for effects.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EffectCompletion] = {
-    if (root == null) {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[EffectCompletion] = {
+    if (root.isEmpty) {
       return Nil
     }
 
@@ -43,7 +44,7 @@ object EffectCompleter extends Completer {
       Priority.low _
     }
 
-    root.effects.map {
+    root.get.effects.map {
       case (_, t) =>
         val name = t.sym.name
         Completion.EffectCompletion(name, priority(name), Some(t.doc.text), context)

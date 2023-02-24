@@ -351,19 +351,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.Is(sym, exp, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
-      // We get the JvmType of the class for tag
-      val classType = JvmOps.getTagClassType(tagInfo)
-
-      // First we compile the `exp`
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // We check if the enum is `instanceof` the class
-      visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
-
     case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -408,46 +395,6 @@ object GenExpression {
         // with the store instruction corresponding to the stored element
         visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       }
-
-    case Expression.ArraySlice(base, startIndex, endIndex, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
-      // Evaluating the 'base'
-      compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'startIndex'
-      compileExpression(startIndex, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'endIndex'
-      compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint)
-      // Swaps the startIndex and 'endIndex'
-      visitor.visitInsn(SWAP)
-      // Duplicates the 'startIndex' two places down the stack
-      visitor.visitInsn(DUP_X1)
-      // Subtracts the 'startIndex' from the 'endIndex' (leaving the 'length' of the array)
-      visitor.visitInsn(ISUB)
-      // Duplicates the 'length'
-      visitor.visitInsn(DUP)
-      // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-      }
-      // Duplicates the 'array reference' and 'length' 4 places down the stack
-      visitor.visitInsn(DUP2_X2)
-      // Swaps the 'array reference' and 'length'
-      visitor.visitInsn(SWAP)
-      // Pushes 0 on top of stack
-      visitor.visitInsn(ICONST_0)
-      // Swaps 'length' and 0
-      visitor.visitInsn(SWAP)
-      // Invoking the method to copy the source array to the destination array
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.System.toInternalName, "arraycopy", AsmOps.getMethodDescriptor(List(JvmType.Object, JvmType.PrimInt, JvmType.Object, JvmType.PrimInt, JvmType.PrimInt), JvmType.Void), false)
-      // Swaps 'new array reference' and 'length'
-      visitor.visitInsn(SWAP)
-      // Pops the 'length' - leaving 'new array reference' top of stack
-      visitor.visitInsn(POP)
 
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -603,6 +550,19 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Is(sym) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the `TagInfo` for the tag
+        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
+        // We get the JvmType of the class for tag
+        val classType = JvmOps.getTagClassType(tagInfo)
+
+        // First we compile the `exp`
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // We check if the enum is `instanceof` the class
+        visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
       // Normal Tag
       case IntrinsicOperator1.Tag(sym) =>

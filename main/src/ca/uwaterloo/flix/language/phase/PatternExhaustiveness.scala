@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
@@ -103,17 +103,18 @@ object PatternExhaustiveness {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, NonExhaustiveMatchError] = flix.phase("PatternExhaustiveness") {
-    val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
-    val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
-    // Only need to check sigs with implementations
-    val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
+    flix.phase("PatternExhaustiveness") {
+      val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
+      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
+      // Only need to check sigs with implementations
+      val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
 
-    (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
-      case Nil => ().toSuccess
-      case errs => Validation.Failure(LazyList.from(errs))
+      (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
+        case Nil => Validation.Success(root)
+        case errs => Validation.SoftFailure(root, LazyList.from(errs))
+      }
     }
-  }
 
   /**
     * Check that all patterns in an implementation are exhaustive
@@ -187,7 +188,6 @@ object PatternExhaustiveness {
       case Expression.ArrayLoad(base, index, _, _, _, _) => List(base, index).flatMap(visitExp(_, root))
       case Expression.ArrayStore(base, index, elm, _, _, _) => List(base, index, elm).flatMap(visitExp(_, root))
       case Expression.ArrayLength(base, _, _, _) => visitExp(base, root)
-      case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) => List(reg, base, beginIndex, endIndex).flatMap(visitExp(_, root))
       case Expression.VectorLit(exps, _, _, _, _) => exps.flatMap(visitExp(_, root))
       case Expression.VectorLoad(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.VectorLength(exp, _) => visitExp(exp, root)
