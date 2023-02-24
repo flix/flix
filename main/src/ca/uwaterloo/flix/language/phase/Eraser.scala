@@ -72,26 +72,32 @@ object Eraser {
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
-      ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), tpe, loc)
+    case FinalAst.Expression.Closure(sym, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.Closure(sym)
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.ApplyClo(visitExp(exp))
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyDef(sym, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyDef(sym, args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ApplyDef(sym, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.ApplyDef(sym)
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyCloTail(visitExp(exp), args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ApplyCloTail(exp, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.ApplyCloTail(visitExp(exp))
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
-      ErasedAst.Expression.ApplyDefTail(sym, args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ApplyDefTail(sym, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.ApplyDefTail(sym)
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.ApplySelfTail(sym, formals0, actuals, tpe, loc) =>
+    case FinalAst.Expression.ApplySelfTail(sym, formals0, exps, tpe, loc) =>
       val formals = formals0.map {
         case FinalAst.FormalParam(formalSym, formalTpe) => ErasedAst.FormalParam(formalSym, formalTpe)
       }
-      ErasedAst.Expression.ApplySelfTail(sym, formals, actuals.map(visitExp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperatorN.ApplySelfTail(sym, formals)
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.Unary(sop, op, exp, tpe, loc) =>
       ErasedAst.Expression.Unary(sop, op, visitExp(exp), tpe, loc)

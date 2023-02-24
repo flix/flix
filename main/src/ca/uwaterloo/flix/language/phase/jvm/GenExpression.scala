@@ -42,129 +42,6 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, closureArgs, tpe, _) =>
-      // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(sym)
-      // new closure instance
-      visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-      // Capturing free args
-      for ((arg, i) <- closureArgs.zipWithIndex) {
-        val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitInsn(DUP)
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
-      }
-
-    case Expression.ApplyClo(exp, args, tpe, _) =>
-      // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
-      // previous JvmOps functions are already partial pattern matches
-      val MonoType.Arrow(_, closureResultType) = exp.tpe
-      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
-
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of closure abstract class
-      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
-      // retrieving the unique thread object
-      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-      // Putting args on the Fn class
-      for ((arg, i) <- args.zipWithIndex) {
-        // Duplicate the FunctionInterface
-        visitor.visitInsn(DUP)
-        // Evaluating the expression
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      // Calling unwind and unboxing
-      visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-        backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.ApplyDef(name, args, tpe, _) =>
-      // JvmType of Def
-      val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
-      // previous JvmOps function are already partial pattern matches
-      val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
-
-
-      // Put the def on the stack
-      AsmOps.compileDefSymbol(name, visitor)
-
-      // Putting args on the Fn class
-      for ((arg, i) <- args.zipWithIndex) {
-        // Duplicate the FunctionInterface
-        visitor.visitInsn(DUP)
-        // Evaluating the expression
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      // Calling unwind and unboxing
-      visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
-        AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
-    case Expression.ApplyCloTail(exp, args, _, _) =>
-      // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
-      // Evaluating the closure
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Casting to JvmType of closure abstract class
-      visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
-      // retrieving the unique thread object
-      visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-      // Putting args on the Fn class
-      for ((arg, i) <- args.zipWithIndex) {
-        // Duplicate the FunctionInterface
-        visitor.visitInsn(DUP)
-        // Evaluating the expression
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      // Return the closure
-      visitor.visitInsn(ARETURN)
-
-    case Expression.ApplyDefTail(name, args, _, _) =>
-      // Type of the function
-      val fnType = root.defs(name).tpe
-      // Type of the function abstract class
-      val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
-
-      // Put the def on the stack
-      AsmOps.compileDefSymbol(name, visitor)
-      // Putting args on the Fn class
-      for ((arg, i) <- args.zipWithIndex) {
-        // Duplicate the FunctionInterface
-        visitor.visitInsn(DUP)
-        // Evaluating the expression
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      // Return the def
-      visitor.visitInsn(ARETURN)
-
-    case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
-      // The function abstract class name
-      val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
-      // Evaluate each argument and put the result on the Fn class.
-      for ((arg, i) <- actuals.zipWithIndex) {
-        visitor.visitVarInsn(ALOAD, 0)
-        // Evaluate the argument and push the result on the stack.
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, functionType.name.toInternalName,
-          s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-      }
-      // Jump to the entry point of the method.
-      visitor.visitJumpInsn(GOTO, entryPoint)
-
     case Expression.Unary(sop, op, exp, _, _) =>
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
@@ -1073,7 +950,130 @@ object GenExpression {
 
     }
 
-    case Expression.IntrinsicN(op, exps, tpe, loc) => ???
+    case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
+      case IntrinsicOperatorN.Closure(sym) =>
+        // JvmType of the closure
+        val jvmType = JvmOps.getClosureClassType(sym)
+        // new closure instance
+        visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
+        // Duplicate
+        visitor.visitInsn(DUP)
+        visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        // Capturing free args
+        for ((arg, i) <- exps.zipWithIndex) {
+          val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
+          visitor.visitInsn(DUP)
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
+        }
+      case IntrinsicOperatorN.ApplyClo(exp) =>
+        // Type of the function abstract class
+        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+        // previous JvmOps functions are already partial pattern matches
+        val MonoType.Arrow(_, closureResultType) = exp.tpe
+        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Casting to JvmType of closure abstract class
+        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+        // retrieving the unique thread object
+        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Calling unwind and unboxing
+        visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+          backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperatorN.ApplyDef(sym) =>
+        // JvmType of Def
+        val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+        // previous JvmOps function are already partial pattern matches
+        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(tpe))
+
+
+        // Put the def on the stack
+        AsmOps.compileDefSymbol(sym, visitor)
+
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, defJvmType.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Calling unwind and unboxing
+        visitor.visitMethodInsn(INVOKEVIRTUAL, defJvmType.name.toInternalName, backendContinuationType.UnwindMethod.name,
+          AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperatorN.ApplyCloTail(exp) =>
+        // Type of the function abstract class
+        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+        // Evaluating the closure
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Casting to JvmType of closure abstract class
+        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+        // retrieving the unique thread object
+        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Return the closure
+        visitor.visitInsn(ARETURN)
+
+      case IntrinsicOperatorN.ApplyDefTail(sym) =>
+        // Type of the function
+        val fnType = root.defs(sym).tpe
+        // Type of the function abstract class
+        val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
+
+        // Put the def on the stack
+        AsmOps.compileDefSymbol(sym, visitor)
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Return the def
+        visitor.visitInsn(ARETURN)
+
+      case IntrinsicOperatorN.ApplySelfTail(sym, _) =>
+        // The function abstract class name
+        val functionType = JvmOps.getFunctionInterfaceType(root.defs(sym).tpe)
+        // Evaluate each argument and put the result on the Fn class.
+        for ((arg, i) <- exps.zipWithIndex) {
+          visitor.visitVarInsn(ALOAD, 0)
+          // Evaluate the argument and push the result on the stack.
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionType.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Jump to the entry point of the method.
+        visitor.visitJumpInsn(GOTO, entryPoint)
+
+    }
 
   }
 

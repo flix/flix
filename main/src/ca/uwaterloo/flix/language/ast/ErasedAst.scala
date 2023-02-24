@@ -45,18 +45,6 @@ object ErasedAst {
     // dont touch in #5434
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class ApplyCloTail(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
     // dont touch in #5434
     case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
@@ -221,6 +209,18 @@ object ErasedAst {
   sealed trait IntrinsicOperatorN
 
   object IntrinsicOperatorN {
+
+    case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+
+    case class ApplyClo(exp: ErasedAst.Expression) extends IntrinsicOperatorN
+
+    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+
+    case class ApplyCloTail(exp: ErasedAst.Expression) extends IntrinsicOperatorN
+
+    case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
 
   }
 
