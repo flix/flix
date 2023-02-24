@@ -158,7 +158,7 @@ object CompletionProvider {
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions map (withComp => withComp.toCompletionItem)
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions ++ BuiltinTypeCompleter.getCompletions map (typ => typ.toCompletionItem)
+      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions map (typ => typ.toCompletionItem)
       case effectRegex() => EffectCompleter.getCompletions map (effect => effect.toCompletionItem)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() =>
@@ -176,7 +176,6 @@ object CompletionProvider {
       case _ => getExpCompletions() ++
         (PredicateCompleter.getCompletions ++
           TypeCompleter.getCompletions ++
-          BuiltinTypeCompleter.getCompletions ++
           EffectCompleter.getCompletions map (comp => comp.toCompletionItem))
     }
   }
@@ -187,9 +186,9 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[CompletionItem] = {
-    (KeywordCompleter.getCompletions map (word => word.toCompletionItem)) ++
-      getSnippetCompletions() ++
-      getVarCompletions() ++
+    (KeywordCompleter.getCompletions ++
+      SnippetCompleter.getCompletions ++
+      VarCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
       getDefAndSigCompletions() ++
       (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
       getOpCompletions() ++
@@ -215,51 +214,6 @@ object CompletionProvider {
         }
         suggestions.iterator
     }
-  }
-
-  private def snippetCompletion(name: String, snippet: String, documentation: String)(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): CompletionItem = {
-    CompletionItem(label = name,
-      sortText = Priority.snippet(name),
-      textEdit = TextEdit(context.range, snippet),
-      documentation = Some(documentation),
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Snippet)
-  }
-
-  private def getSnippetCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): List[CompletionItem] = {
-    List(
-      // NB: Please keep the list alphabetically sorted.
-      snippetCompletion("main",
-        "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
-        "snippet for Hello World Program"),
-      snippetCompletion("query",
-        "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
-        "snippet for query")
-    )
-  }
-
-  private def varCompletion(sym: Symbol.VarSym, tpe: Type)(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): CompletionItem = {
-    CompletionItem(label = sym.text,
-      sortText = Priority.local(sym.text),
-      textEdit = TextEdit(context.range, sym.text),
-      detail = Some(FormatType.formatType(tpe)),
-      kind = CompletionItemKind.Variable)
-  }
-
-  private def getVarCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): List[CompletionItem] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    ///
-    /// Find all local variables in the current uri with a given range.
-    ///
-    val iter = index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
-      case Entity.LocalVar(sym, tpe) => varCompletion(sym, tpe)
-      case Entity.FormalParam(fparam) => varCompletion(fparam.sym, fparam.tpe)
-    }
-
-    iter.toList
   }
 
   private def isUnitType(tpe: Type): Boolean = tpe == Type.Unit

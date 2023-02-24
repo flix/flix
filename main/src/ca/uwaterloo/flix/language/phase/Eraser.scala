@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator2}
-import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -134,7 +134,8 @@ object Eraser {
       ErasedAst.Expression.ScopeExit(e1, e2, tpe, loc)
 
     case FinalAst.Expression.Is(sym, exp, loc) =>
-      ErasedAst.Expression.Is(sym, visitExp(exp), loc)
+      val op = IntrinsicOperator1.Is(sym)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), MonoType.Bool, loc)
 
     case FinalAst.Expression.Tag(sym, exp, tpe, loc) =>
       val op = IntrinsicOperator1.Tag(sym)

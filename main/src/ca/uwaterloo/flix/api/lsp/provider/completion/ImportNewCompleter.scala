@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportNewCompletion
@@ -24,7 +25,7 @@ object ImportNewCompleter extends Completer {
   /**
     * Returns a List of Completion for importNew (java constructors).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportNewCompletion] = {
+  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportNewCompletion] = {
     val regex = raw"\s*import\s+new\s+(.*)".r
     context.prefix match {
       case regex(clazz) => classFromString(clazz) match {
