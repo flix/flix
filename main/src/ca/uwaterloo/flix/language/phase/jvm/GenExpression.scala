@@ -202,19 +202,6 @@ object GenExpression {
         case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
       }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      val ifElse = new Label()
-      val ifEnd = new Label()
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitJumpInsn(IFEQ, ifElse)
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitJumpInsn(GOTO, ifEnd)
-      visitor.visitLabel(ifElse)
-      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitLabel(ifEnd)
-
     case Expression.Branch(exp, branches, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -1071,8 +1058,20 @@ object GenExpression {
         // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    }
+      case IntrinsicOperator3.IfThenElse =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        val ifElse = new Label()
+        val ifEnd = new Label()
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(IFEQ, ifElse)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(GOTO, ifEnd)
+        visitor.visitLabel(ifElse)
+        compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitLabel(ifEnd)
 
+    }
 
   }
 

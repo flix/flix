@@ -63,8 +63,6 @@ object ErasedAst {
     // dont touch in #5434
     case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class IfThenElse(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
-
     // dont touch in #5434
     case class Branch(exp: ErasedAst.Expression, branches: Map[Symbol.LabelSym, ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
@@ -213,6 +211,8 @@ object ErasedAst {
   object IntrinsicOperator3 {
 
     case object ArrayStore extends IntrinsicOperator3
+
+    case object IfThenElse extends IntrinsicOperator3
 
   }
 

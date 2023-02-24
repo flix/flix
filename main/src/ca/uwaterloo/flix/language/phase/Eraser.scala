@@ -100,7 +100,8 @@ object Eraser {
       ErasedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      ErasedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator3.IfThenElse
+      ErasedAst.Expression.Intrinsic3(op, visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
 
     case FinalAst.Expression.Branch(exp, branches0, tpe, loc) =>
       val branches = branches0.map {

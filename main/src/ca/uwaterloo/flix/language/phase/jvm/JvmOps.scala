@@ -533,9 +533,6 @@ object JvmOps {
       case Expression.Binary(_, _, exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)
       }
@@ -809,9 +806,6 @@ object JvmOps {
       case Expression.Binary(_, _, exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
       case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)
       }
@@ -983,9 +977,6 @@ object JvmOps {
 
       case Expression.Binary(_, _, exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)
