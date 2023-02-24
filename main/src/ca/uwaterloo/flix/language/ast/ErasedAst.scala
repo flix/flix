@@ -110,6 +110,8 @@ object ErasedAst {
 
     case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
+    case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+
   }
 
   sealed trait IntrinsicOperator0
@@ -213,6 +215,12 @@ object ErasedAst {
   object IntrinsicOperator3 {
 
     case object ArrayStore extends IntrinsicOperator3
+
+  }
+
+  sealed trait IntrinsicOperatorN
+
+  object IntrinsicOperatorN {
 
   }
 

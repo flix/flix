@@ -1073,6 +1073,7 @@ object GenExpression {
 
     }
 
+    case Expression.IntrinsicN(op, exps, tpe, loc) => ???
 
   }
 

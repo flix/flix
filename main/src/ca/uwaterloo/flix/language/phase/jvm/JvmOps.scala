@@ -594,6 +594,8 @@ object JvmOps {
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+      case Expression.IntrinsicN(op, exps, tpe, loc) => ???
+
     }
 
     // TODO: Look for closures in other places.
@@ -872,6 +874,8 @@ object JvmOps {
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
+      case Expression.IntrinsicN(op, exps, tpe, loc) => ???
+
     }) ++ Set(exp0.tpe)
 
     // TODO: Magnus: Look for types in other places.
@@ -1039,6 +1043,8 @@ object JvmOps {
       case Expression.Intrinsic2(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.IntrinsicN(op, exps, tpe, loc) => ???
 
     })
 
