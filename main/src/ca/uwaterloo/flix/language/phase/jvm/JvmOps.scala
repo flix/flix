@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, MonoType, Name, RigidityEnv, S
 import ca.uwaterloo.flix.language.phase.Finalize
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -546,8 +545,6 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Region(_, _) => Set.empty
-
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
@@ -583,12 +580,24 @@ object JvmOps {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 
-      case Expression.NewObject(_, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
-        }
+      case Expression.Intrinsic0(op, _, _) => op match {
 
-      case Expression.Intrinsic0(_, _, _) => Set.empty
+        case IntrinsicOperator0.Region => Set.empty
+
+        case IntrinsicOperator0.RecordEmpty => Set.empty
+
+        case IntrinsicOperator0.GetStaticField(_) => Set.empty
+
+        case IntrinsicOperator0.NewObject(_, _, methods) =>
+          methods.foldLeft(Set.empty[ClosureInfo]) {
+            case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
+          }
+
+        case IntrinsicOperator0.HoleError(_) => Set.empty
+
+        case IntrinsicOperator0.MatchError => Set.empty
+
+      }
 
       case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
 
@@ -824,8 +833,6 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Region(_, _) => Set.empty
-
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
@@ -859,16 +866,28 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewObject(_, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[MonoType]) {
-          case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
-            val fs = fparams.foldLeft(Set(retTpe)) {
-              case (acc, FormalParam(_, tpe)) => acc + tpe
-            }
-            sacc ++ fs ++ visitExp(clo)
-        }
+      case Expression.Intrinsic0(op, tpe, _) => Set[MonoType](tpe) ++ (op match {
 
-      case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
+        case IntrinsicOperator0.Region => Set.empty
+
+        case IntrinsicOperator0.RecordEmpty => Set.empty
+
+        case IntrinsicOperator0.GetStaticField(_) => Set.empty
+
+        case IntrinsicOperator0.NewObject(_, _, methods) =>
+          methods.foldLeft(Set.empty[MonoType]) {
+            case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
+              val fs = fparams.foldLeft(Set(retTpe)) {
+                case (acc, FormalParam(_, tpe)) => acc + tpe
+              }
+              sacc ++ fs ++ visitExp(clo)
+          }
+
+        case IntrinsicOperator0.HoleError(_) => Set.empty
+
+        case IntrinsicOperator0.MatchError => Set.empty
+
+      })
 
       case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
 
@@ -942,23 +961,23 @@ object JvmOps {
   /**
     * Returns the set of all anonymous classes (NewObjects) in the given AST `root`.
     */
-  def anonClassesOf(root: Root)(implicit flix: Flix): Set[Expression.NewObject] = {
+  def anonClassesOf(root: Root)(implicit flix: Flix): Set[IntrinsicOperator0.NewObject] = {
     /**
       * Returns the set of anonymous classes which occur in the given definition `defn0`.
       */
-    def visitDefn(defn: Def): Set[Expression.NewObject] = {
+    def visitDefn(defn: Def): Set[IntrinsicOperator0.NewObject] = {
       visitExp(defn.exp)
     }
 
     /**
       * Returns the set of anonymous classes which occur in the given expression `exp0`.
       */
-    def visitExp(exp0: Expression): Set[Expression.NewObject] = (exp0 match {
+    def visitExp(exp0: Expression): Set[IntrinsicOperator0.NewObject] = (exp0 match {
       case Expression.Cst(_, _, _) => Set.empty
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -966,7 +985,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplyDef(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.ApplyDef(_, args, _, _) => args.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -974,11 +993,11 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplyDefTail(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.ApplyDefTail(_, args, _, _) => args.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplySelfTail(_, _, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.ApplySelfTail(_, _, args, _, _) => args.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1001,19 +1020,17 @@ object JvmOps {
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Region(_, _) => Set.empty
-
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Is(_, exp, _) => visitExp(exp)
 
-      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1023,7 +1040,7 @@ object JvmOps {
         case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
       }
 
-      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1032,13 +1049,25 @@ object JvmOps {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 
-      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[Expression.NewObject]) {
+      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case obj: Expression.NewObject => Set(obj)
+      case Expression.Intrinsic0(op, _, _) => op match {
 
-      case Expression.Intrinsic0(_, _, _) => Set.empty
+        case IntrinsicOperator0.Region => Set.empty
+
+        case IntrinsicOperator0.RecordEmpty => Set.empty
+
+        case IntrinsicOperator0.GetStaticField(_) => Set.empty
+
+        case obj: IntrinsicOperator0.NewObject => Set(obj)
+
+        case IntrinsicOperator0.HoleError(_) => Set.empty
+
+        case IntrinsicOperator0.MatchError => Set.empty
+
+      }
 
       case Expression.Intrinsic1(_, exp, _, _) => visitExp(exp)
 
@@ -1049,7 +1078,7 @@ object JvmOps {
     })
 
     // Visit every definition.
-    root.defs.foldLeft(Set.empty[Expression.NewObject]) {
+    root.defs.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
       case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
   }
