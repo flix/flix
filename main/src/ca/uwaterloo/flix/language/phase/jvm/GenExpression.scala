@@ -36,9 +36,6 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Cst(cst, tpe, loc) =>
-      compileConstant(visitor, cst, tpe, loc)
-
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
@@ -508,6 +505,9 @@ object GenExpression {
       }
 
     case Expression.Intrinsic0(op, tpe, loc) => op match {
+      case IntrinsicOperator0.Cst(cst) =>
+        compileConstant(visitor, cst, tpe, loc)
+
       case IntrinsicOperator0.Region =>
         //!TODO: For now, just emit unit
         compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)

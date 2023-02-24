@@ -40,7 +40,6 @@ object ErasedAst {
   }
 
   object Expression {
-    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expression
 
     // dont touch in #5434
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -111,6 +110,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator0
 
   object IntrinsicOperator0 {
+
+    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
 
     case object Region extends IntrinsicOperator0
 

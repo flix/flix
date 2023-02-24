@@ -496,8 +496,6 @@ object JvmOps {
       * Returns the set of closures in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
-      case Expression.Cst(_, _, _) => Set.empty
-
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(sym, closureArgs, tpe, _) =>
@@ -579,6 +577,8 @@ object JvmOps {
         }
 
       case Expression.Intrinsic0(op, _, _) => op match {
+
+        case IntrinsicOperator0.Cst(_) => Set.empty
 
         case IntrinsicOperator0.Region => Set.empty
 
@@ -784,8 +784,6 @@ object JvmOps {
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
-      case Expression.Cst(_, _, _) => Set.empty
-
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
@@ -863,6 +861,8 @@ object JvmOps {
       }
 
       case Expression.Intrinsic0(op, tpe, _) => Set[MonoType](tpe) ++ (op match {
+
+        case IntrinsicOperator0.Cst(_) => Set.empty
 
         case IntrinsicOperator0.Region => Set.empty
 
@@ -969,8 +969,6 @@ object JvmOps {
       * Returns the set of anonymous classes which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[IntrinsicOperator0.NewObject] = (exp0 match {
-      case Expression.Cst(_, _, _) => Set.empty
-
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[IntrinsicOperator0.NewObject]) {
@@ -1048,6 +1046,8 @@ object JvmOps {
       }
 
       case Expression.Intrinsic0(op, _, _) => op match {
+
+        case IntrinsicOperator0.Cst(_) => Set.empty
 
         case IntrinsicOperator0.Region => Set.empty
 
