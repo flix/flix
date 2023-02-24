@@ -560,8 +560,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.Cast(exp, _, _) => visitExp(exp)
-
       case Expression.TryCatch(exp, rules, _, _) =>
         rules.foldLeft(visitExp(exp)) {
           case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
@@ -836,8 +834,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.Cast(exp, _, _) => visitExp(exp)
-
       case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
         case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
       }
@@ -1010,8 +1006,6 @@ object JvmOps {
       case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[Expression.NewObject]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.Cast(exp, _, _) => visitExp(exp)
 
       case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
         case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
