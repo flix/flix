@@ -597,11 +597,11 @@ object JvmOps {
   }
 
   /**
-    * Returns the set of tags in the given AST `root`.
+    * Returns the set of tag types in `types` without searching recursively.
     */
-  def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
-    typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
-  }
+  def tagsOf(types: Iterable[MonoType])(implicit flix: Flix, root: Root): Set[TagInfo] = {
+    types.flatMap(tpe => getTagsOf(tpe)(root, flix))
+  }.toSet
 
   /**
     * Returns the set of ref types in `types` without searching recursively.
