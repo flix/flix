@@ -89,8 +89,6 @@ object ErasedAst {
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
-
     // dont touch in #5434
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
 
@@ -135,6 +133,8 @@ object ErasedAst {
     case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
     case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
+
+    case object Cast extends IntrinsicOperator1
 
     case class Index(idx: Int) extends IntrinsicOperator1
 

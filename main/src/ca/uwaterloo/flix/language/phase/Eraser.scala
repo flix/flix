@@ -199,7 +199,8 @@ object Eraser {
       ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      ErasedAst.Expression.Cast(visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.Cast
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
       val rules = rules0.map {
