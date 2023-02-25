@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.phase.jvm.ClosureInfo
+import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -27,7 +27,8 @@ object ErasedAst {
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  closures: Set[ClosureInfo])
+                  closures: Set[ClosureInfo],
+                  anonClasses: Set[AnonClassInfo])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
