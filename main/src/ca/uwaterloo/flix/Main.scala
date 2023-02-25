@@ -157,7 +157,7 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Run =>
-          val result = Packager.run(cwd, options)
+          val result = Packager.run(cwd, cmdOpts.args, options)
           System.exit(getCode(result))
 
         case Command.Benchmark =>

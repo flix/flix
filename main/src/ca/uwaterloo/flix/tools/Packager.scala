@@ -289,14 +289,20 @@ object Packager {
   }
 
   /**
-    * Runs the main function in flix package for the given project path `p`.
+    * Runs the main function in flix package for the given project path `p` with
+    * the space separated args of `args` if present.
     */
-  def run(p: Path, o: Options): Result[Unit, Int] = {
+  def run(p: Path, args: Option[String], o: Options): Result[Unit, Int] = {
     val res = for {
       compilationResult <- build(p, o).toOption
       main <- compilationResult.getMain
     } yield {
-      main(Array.empty)
+      // Compute the arguments to be passed to main.
+      val argArray: Array[String] = args match {
+        case None => Array.empty
+        case Some(a) => a.split(" ")
+      }
+      main(argArray)
       ().toOk[Unit, Int]
     }
     res.getOrElse(1.toErr)
