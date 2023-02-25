@@ -517,10 +517,10 @@ object JvmOps {
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.Branch(exp, branches, _, _) =>
-        val es = branches.map {
+        val exps = branches.map {
           case (_, e) => e
         }
-        visitExp(exp) ++ visitExps(es)
+        visitExp(exp) ++ visitExps(exps)
 
       case Expression.JumpTo(_, _, _) => Set.empty
 
@@ -744,6 +744,12 @@ object JvmOps {
       formalParamTypes ++ expressionTypes + defn.tpe
     }
 
+    def visitExps(exps: Iterable[Expression]): Set[MonoType] = {
+      exps.foldLeft(Set.empty[MonoType]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+    }
+
     /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
@@ -752,18 +758,17 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Unary(_, _, exp, _, _) =>
-        visitExp(exp)
+      case Expression.Unary(_, _, exp, _, _) => visitExp(exp)
 
-      case Expression.Binary(_, _, exp1, exp2, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Binary(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
-        case (sacc, (_, e)) => sacc ++ visitExp(e)
-      }
+      case Expression.Branch(exp, branches, _, _) =>
+        val exps = branches.map {
+          case (_, e) => e
+        }
+        visitExp(exp) ++ visitExps(exps)
 
       case Expression.JumpTo(_, _, _) => Set.empty
 
@@ -777,32 +782,19 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.Tuple(exps, _, _) => visitExps(exps)
 
-      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.ArrayLit(exps, _, _) => visitExps(exps)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
-        case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
-      }
+      case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.InvokeConstructor(_, exps, _, _) => visitExps(exps)
 
-      case Expression.InvokeMethod(_, exp, args, _, _) =>
-        args.foldLeft(visitExp(exp)) {
-          case (sacc, e) => sacc ++ visitExp(e)
-        }
+      case Expression.InvokeMethod(_, exp, exps, _, _) => visitExp(exp) ++ visitExps(exps)
 
-      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.InvokeStaticMethod(_, exps, _, _) => visitExps(exps)
 
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
@@ -828,10 +820,7 @@ object JvmOps {
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
-
-      }) ++ exps.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      }) ++ visitExps(exps)
 
     }) ++ Set(exp0.tpe)
 
@@ -931,10 +920,10 @@ object JvmOps {
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.Branch(exp, branches, _, _) =>
-        val es = branches.map {
+        val exps = branches.map {
           case (_, e) => e
         }
-        visitExp(exp) ++ visitExps(es)
+        visitExp(exp) ++ visitExps(exps)
 
       case Expression.JumpTo(_, _, _) => Set.empty
 
@@ -979,7 +968,6 @@ object JvmOps {
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
-
       }) ++ visitExps(exps)
 
     })
