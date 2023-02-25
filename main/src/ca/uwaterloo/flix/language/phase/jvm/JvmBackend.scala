@@ -72,7 +72,7 @@ object JvmBackend {
       //
       // Compute the set of anonymous classes (NewObjects) in the program.
       //
-      val anonClassDefs = JvmOps.anonClassesOf(root)
+      val anonClassDefs = root.anonClasses
 
       //
       // Generate the main class.
