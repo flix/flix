@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator2}
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType}
-import ca.uwaterloo.flix.language.phase.jvm.ClosureInfo
+import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -33,12 +33,12 @@ object Eraser {
     //
     // A mutable set to hold all type information about all closures in the AST.
     //
-    implicit val closures: mutable.Set[ClosureInfo] = mutable.Set.empty
+    implicit val ctx: Context = Context(mutable.Set.empty, mutable.Set.empty)
 
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, closures.toSet).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.closures.toSet, ctx.anonClasses.toSet).toSuccess
   }
 
   /**
@@ -59,7 +59,7 @@ object Eraser {
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
-  private def visitDef(def0: FinalAst.Def)(implicit closures: mutable.Set[ClosureInfo]): ErasedAst.Def = {
+  private def visitDef(def0: FinalAst.Def)(implicit ctx: Context): ErasedAst.Def = {
     val formals = def0.formals.map(visitFormalParam)
     val exp = visitExp(def0.exp)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals, exp, def0.tpe, def0.loc)
@@ -74,7 +74,7 @@ object Eraser {
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp(exp0: FinalAst.Expression)(implicit closures: mutable.Set[ClosureInfo]): ErasedAst.Expression = exp0 match {
+  private def visitExp(exp0: FinalAst.Expression)(implicit ctx: Context): ErasedAst.Expression = exp0 match {
     case FinalAst.Expression.Cst(cst, tpe, loc) =>
       ErasedAst.Expression.Cst(cst, tpe, loc)
 
@@ -82,7 +82,7 @@ object Eraser {
       ErasedAst.Expression.Var(sym, tpe, loc)
 
     case FinalAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
-      closures += ClosureInfo(sym, closureArgs.map(_.tpe), tpe)
+      ctx.closures += ClosureInfo(sym, closureArgs.map(_.tpe), tpe)
       ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -250,6 +250,7 @@ object Eraser {
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
+      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, methods, loc)
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
@@ -272,5 +273,7 @@ object Eraser {
       val op = IntrinsicOperator0.MatchError
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
   }
+
+  private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])
 
 }
