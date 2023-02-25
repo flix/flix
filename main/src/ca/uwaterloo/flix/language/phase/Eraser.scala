@@ -20,16 +20,25 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator2}
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType}
+import ca.uwaterloo.flix.language.phase.jvm.ClosureInfo
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+
+import scala.collection.mutable
 
 object Eraser {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
+
+    //
+    // A mutable set to hold all type information about all closures in the AST.
+    //
+    implicit val closures: mutable.Set[ClosureInfo] = mutable.Set.empty
+
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, closures.toSet).toSuccess
   }
 
   /**
@@ -50,7 +59,7 @@ object Eraser {
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
-  private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
+  private def visitDef(def0: FinalAst.Def)(implicit closures: mutable.Set[ClosureInfo]): ErasedAst.Def = {
     val formals = def0.formals.map(visitFormalParam)
     val exp = visitExp(def0.exp)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals, exp, def0.tpe, def0.loc)
@@ -65,7 +74,7 @@ object Eraser {
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp(exp0: FinalAst.Expression): ErasedAst.Expression = exp0 match {
+  private def visitExp(exp0: FinalAst.Expression)(implicit closures: mutable.Set[ClosureInfo]): ErasedAst.Expression = exp0 match {
     case FinalAst.Expression.Cst(cst, tpe, loc) =>
       ErasedAst.Expression.Cst(cst, tpe, loc)
 
@@ -73,6 +82,7 @@ object Eraser {
       ErasedAst.Expression.Var(sym, tpe, loc)
 
     case FinalAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      closures += ClosureInfo(sym, closureArgs.map(_.tpe), tpe)
       ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, args, tpe, loc) =>

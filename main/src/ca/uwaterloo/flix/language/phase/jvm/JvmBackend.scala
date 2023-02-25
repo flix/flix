@@ -45,7 +45,7 @@ object JvmBackend {
       //
       // Compute the set of closures in the program.
       //
-      val closures = JvmOps.closuresOf(root)
+      val closures = root.closures
 
       //
       // Compute the set of namespaces in the program.
