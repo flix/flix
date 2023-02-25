@@ -492,6 +492,13 @@ object JvmOps {
     * Returns the set of closures in the given AST `root`.
     */
   def closuresOf(root: Root): Set[ClosureInfo] = {
+
+    def visitExps(exps: Iterable[Expression]): Set[ClosureInfo] = {
+      exps.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+    }
+
     /**
       * Returns the set of closures in the given expression `exp0`.
       */
@@ -509,9 +516,11 @@ object JvmOps {
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
-        case (sacc, (_, e)) => sacc ++ visitExp(e)
-      }
+      case Expression.Branch(exp, branches, _, _) =>
+        val es = branches.map {
+          case (_, e) => e
+        }
+        visitExp(exp) ++ visitExps(es)
 
       case Expression.JumpTo(_, _, _) => Set.empty
 
@@ -525,39 +534,21 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.Tuple(exps, _, _) => visitExps(exps)
 
-      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.ArrayLit(exps, _, _) => visitExps(exps)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, _, _) =>
-        rules.foldLeft(visitExp(exp)) {
-          case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
-        }
+      case Expression.TryCatch(exp, exps, _, _) => visitExp(exp) ++ visitExps(exps.map(_.exp))
 
-      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.InvokeConstructor(_, exps, _, _) => visitExps(exps)
 
-      case Expression.InvokeMethod(_, exp, args, _, _) =>
-        args.foldLeft(visitExp(exp)) {
-          case (sacc, e) => sacc ++ visitExp(e)
-        }
+      case Expression.InvokeMethod(_, exp, exps, _, _) => visitExp(exp) ++ visitExps(exps)
 
-      case Expression.InvokeStaticMethod(_, args, _, _) =>
-        args.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, e) => sacc ++ visitExp(e)
-        }
+      case Expression.InvokeStaticMethod(_, exps, _, _) => visitExps(exps)
 
-      case Expression.NewObject(_, _, _, methods, _) =>
-        methods.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, JvmMethod(_, _, clo, _, _)) => sacc ++ visitExp(clo)
-        }
+      case Expression.NewObject(_, _, _, methods, _) => visitExps(methods.map(_.clo))
 
       case Expression.Intrinsic0(_, _, _) => Set.empty
 
@@ -574,9 +565,7 @@ object JvmOps {
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
-      }) ++ exps.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      }) ++ visitExps(exps)
 
     }
 
@@ -941,8 +930,8 @@ object JvmOps {
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Branch(exp, exps, _, _) =>
-        val es = exps.map {
+      case Expression.Branch(exp, branches, _, _) =>
+        val es = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(es)
