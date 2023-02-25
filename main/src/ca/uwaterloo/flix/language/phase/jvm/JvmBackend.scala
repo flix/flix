@@ -53,14 +53,14 @@ object JvmBackend {
       val namespaces = JvmOps.namespacesOf(root)
 
       //
-      // Compute the set of instantiated tags in the program.
-      //
-      val tags = JvmOps.tagsOf(root)
-
-      //
       // Compute the set of types in the program.
       //
       val types = JvmOps.typesOf(root)
+
+      //
+      // Compute the set of instantiated tags in the program.
+      //
+      val tags = JvmOps.tagsOf(types)
 
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
