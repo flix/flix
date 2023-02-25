@@ -578,11 +578,11 @@ object CompletionProvider {
       case regex(ns) => {
         // Six cases
         // 0: We have nothing i.e.
-        // 1: a path i.e. A/B
+        // 1: a path i.e. A.B
         // 2: an item i.e. Foo (enum/class/def/type alias)
-        // 3: path and item i.e. A/B.Foo
+        // 3: path and item i.e. A.B.Foo
         // 4: item and tag/sig i.e Foo.Bar
-        // 5: path, item and tag/sig i.e A/B.Foo.Bar
+        // 5: path, item and tag/sig i.e A.B.Foo.Bar
 
         val segments = ns.split('.');
         segments.toList match {
@@ -591,8 +591,8 @@ object CompletionProvider {
           // case 1/2
           case x :: Nil => {
             // We might be done typing the namespace or not. We need to try both cases
-            val prefix1 = x.split('/').toList;
-            val prefix2 = x.split('/').dropRight(1).toList;
+            val prefix1 = x.split('.').toList;
+            val prefix2 = x.split('.').dropRight(1).toList;
             // case 1
             nsCompletionsAfterPrefix(prefix1) ++
               nsCompletionsAfterPrefix(prefix2) ++
@@ -604,7 +604,7 @@ object CompletionProvider {
           }
           // case 3/4
           case x :: y :: Nil => {
-            val ns = x.split('/').toList;
+            val ns = x.split('.').toList;
             // case 3
             getItemUseCompletions(ns) ++
               getEnumTagCompletions(ns, y) ++
@@ -615,7 +615,7 @@ object CompletionProvider {
           }
           // case 5
           case x :: y :: _ :: Nil => {
-            val ns = x.split('/').toList;
+            val ns = x.split('.').toList;
             getEnumTagCompletions(ns, y) ++
               getClassSigCompletions(ns, y)
           }
@@ -628,7 +628,7 @@ object CompletionProvider {
 
   /**
     * Gets completions for a sub namespace of a prefix namespace
-    * I.e if you have namespace A/B/C/D, then if prefix is A/B it will return a completion for A/B/C
+    * I.e if you have namespace A.B.C.D, then if prefix is A.B it will return a completion for A.B.C
     */
   private def nsCompletionsAfterPrefix(prefix: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
     if (root.isEmpty) return Nil
@@ -639,7 +639,7 @@ object CompletionProvider {
 
     nss.flatMap(ns => getFirstAfterGivenPrefix(ns, prefix))
       .map(nextNs => {
-        val name = prefix.appended(nextNs).mkString("/")
+        val name = prefix.appended(nextNs).mkString(".")
         useCompletion(name, CompletionItemKind.Module)
       })
   }
@@ -724,28 +724,28 @@ object CompletionProvider {
     if (root.isEmpty) return Nil
     root.get.classes.filter { case (sym, _) => sym.name == className && sym.namespace == ns }
       .flatMap { case (sym, clazz) => clazz.signatures.map {
-        case sig => useCompletion(s"${nsToStringSlash(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember)
+        case sig => useCompletion(s"${nsToStringDot(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember)
       }
       }
   }
 
   /**
-    * Converts a namespace into a /-seperated string with a dot at the end unless it is the root namespace
+    * Converts a namespace into a .-seperated string with a dot at the end unless it is the root namespace
     */
   private def nsToStringDot(ns: List[String]): String = {
     ns match {
       case Nil => ""
-      case _ => s"${ns.mkString("/")}."
+      case _ => s"${ns.mkString(".")}."
     }
   }
 
   /**
-    * Converts a namespace into a /-seperated string with a / at the end unless it is the root namespace
+    * Converts a namespace into a .-seperated string with a / at the end unless it is the root namespace
     */
   private def nsToStringSlash(ns: List[String]): String = {
     ns match {
       case Nil => ""
-      case _ => s"${ns.mkString("/")}/"
+      case _ => s"${ns.mkString(".")}/"
     }
   }
 
