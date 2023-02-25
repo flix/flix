@@ -567,37 +567,15 @@ object JvmOps {
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
-        case IntrinsicOperatorN.Closure(sym) =>
-          val closureInfo = exps.foldLeft(Set.empty[ClosureInfo]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-          Set(ClosureInfo(sym, exps.map(_.tpe), tpe)) ++ closureInfo
-
-        case IntrinsicOperatorN.ApplyClo(exp) =>
-          exps.foldLeft(visitExp(exp)) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplyDef(_) =>
-          exps.foldLeft(Set.empty[ClosureInfo]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplyCloTail(exp) =>
-          exps.foldLeft(visitExp(exp)) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplyDefTail(_) =>
-          exps.foldLeft(Set.empty[ClosureInfo]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplySelfTail(_, _) =>
-          exps.foldLeft(Set.empty[ClosureInfo]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
+      case Expression.IntrinsicN(op, exps, tpe, _) => (op match {
+        case IntrinsicOperatorN.Closure(sym) => Set(ClosureInfo(sym, exps.map(_.tpe), tpe))
+        case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
+        case IntrinsicOperatorN.ApplyDef(_) => Set.empty
+        case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
+        case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
+        case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
+      }) ++ exps.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
       }
 
     }
@@ -854,35 +832,16 @@ object JvmOps {
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
-      case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
-        case IntrinsicOperatorN.Closure(_) =>
-          exps.foldLeft(Set.empty[MonoType]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
+      case Expression.IntrinsicN(op, exps, _, _) => (op match {
+        case IntrinsicOperatorN.Closure(_) => Set.empty
+        case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
+        case IntrinsicOperatorN.ApplyDef(_) => Set.empty
+        case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
+        case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
+        case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
 
-        case IntrinsicOperatorN.ApplyClo(exp) =>
-          exps.foldLeft(visitExp(exp)) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplyDef(_) =>
-          exps.foldLeft(Set.empty[MonoType]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-        case IntrinsicOperatorN.ApplyCloTail(exp) =>
-          exps.foldLeft(visitExp(exp)) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplyDefTail(_) =>
-          exps.foldLeft(Set.empty[MonoType]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
-
-        case IntrinsicOperatorN.ApplySelfTail(_, _) =>
-          exps.foldLeft(Set.empty[MonoType]) {
-            case (sacc, e) => sacc ++ visitExp(e)
-          }
+      }) ++ exps.foldLeft(Set.empty[MonoType]) {
+        case (sacc, e) => sacc ++ visitExp(e)
       }
 
     }) ++ Set(exp0.tpe)
