@@ -383,11 +383,6 @@ object GenExpression {
         visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       }
 
-    case Expression.Cast(exp, tpe, loc) =>
-      addSourceLine(visitor, loc)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-
     case Expression.TryCatch(exp, rules, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
@@ -609,6 +604,11 @@ object GenExpression {
         // Invoke `getValue()` method to extract the field of the tag
         visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.Cast =>
+        addSourceLine(visitor, loc)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
       case IntrinsicOperator1.Index(idx) =>
