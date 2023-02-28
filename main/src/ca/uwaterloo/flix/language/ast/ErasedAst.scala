@@ -97,6 +97,8 @@ object ErasedAst {
 
     case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
+
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -118,8 +120,6 @@ object ErasedAst {
     case object RecordEmpty extends IntrinsicOperator0
 
     case class GetStaticField(field: Field) extends IntrinsicOperator0
-
-    case class NewObject(name: String, clazz: java.lang.Class[_], methods: List[ErasedAst.JvmMethod]) extends IntrinsicOperator0
 
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
 

@@ -241,8 +241,7 @@ object Eraser {
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
-      val op = ErasedAst.IntrinsicOperator0.NewObject(name, clazz, methods)
-      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
+      ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
       val op = IntrinsicOperator2.Spawn

@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for anonymous classes (created through NewObject)
@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: Set[IntrinsicOperator0.NewObject])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: Set[Expression.NewObject])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,7 +49,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: IntrinsicOperator0.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface())
