@@ -16,10 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority, convertJavaClassToFlixType}
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, TypeAliasSym}
 
 import java.lang.reflect.{Constructor, Executable, Field, Method}
@@ -80,6 +81,43 @@ sealed trait Completion {
     case Completion.VarCompletion(sym, tpe, context, flix) =>
       CompletionItem(label = sym.text, sortText = Priority.local(sym.text), textEdit = TextEdit(context.range, sym.text),
         detail = Some(FormatType.formatType(tpe)(flix)), kind = CompletionItemKind.Variable)
+    case Completion.DefCompletion(decl, context, flix) =>
+      val name = decl.sym.toString
+      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
+        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+          sortText = Priority.normal(name),
+          filterText = Some(CompletionProvider.getFilterTextForName(name)),
+          textEdit = TextEdit(context.range, snippet),
+          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+          documentation = Some(decl.spec.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Function)
+      }).orNull
+    case Completion.SigCompletion(decl, context, flix) =>
+      val name = decl.sym.toString
+      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
+        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+          sortText = Priority.normal(name),
+          filterText = Some(CompletionProvider.getFilterTextForName(name)),
+          textEdit = TextEdit(context.range, snippet),
+          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+          documentation = Some(decl.spec.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Interface)
+      }).orNull
+    case Completion.OpCompletion(decl, context, flix) =>
+      // NB: priority is high because only an op can come after `do`
+      val name = decl.sym.toString
+      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
+        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+          sortText = Priority.high(name),
+          filterText = Some(CompletionProvider.getFilterTextForName(name)),
+          textEdit = TextEdit(context.range, snippet),
+          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+          documentation = Some(decl.spec.doc.text),
+          insertTextFormat = InsertTextFormat.Snippet,
+          kind = CompletionItemKind.Interface)
+      }).orNull
   }
 
   /**
@@ -241,4 +279,25 @@ object Completion {
     * @param flix     Implicit parameter for FormatType.formatType(...)
     */
   case class VarCompletion(sym: Symbol.VarSym, tpe: Type, context: CompletionContext, flix: Flix) extends Completion
+
+  /**
+    * Represents a Def completion
+    *
+    * @param decl the def decl.
+    */
+  case class DefCompletion(decl: TypedAst.Def, context: CompletionContext, flix: Flix) extends Completion
+
+  /**
+    * Represents a Signature completion
+    *
+    * @param decl the signature decl.
+    */
+  case class SigCompletion(decl: TypedAst.Sig, context: CompletionContext, flix: Flix) extends Completion
+
+  /**
+    * Represents a Op completion
+    *
+    * @param decl the op decl.
+    */
+  case class OpCompletion(decl: TypedAst.Op, context: CompletionContext, flix: Flix) extends Completion
 }

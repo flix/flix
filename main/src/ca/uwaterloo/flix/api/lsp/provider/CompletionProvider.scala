@@ -188,10 +188,11 @@ object CompletionProvider {
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[CompletionItem] = {
     (KeywordCompleter.getCompletions ++
       SnippetCompleter.getCompletions ++
-      VarCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
-      getDefAndSigCompletions() ++
-      (FieldCompleter.getCompletions map (field => field.toCompletionItem)) ++
-      getOpCompletions() ++
+      VarCompleter.getCompletions ++
+      DefCompleter.getCompletions ++
+      SignatureCompleter.getCompletions ++
+      FieldCompleter.getCompletions ++
+      OpCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
       getMatchCompletitions()
   }
 
@@ -220,7 +221,7 @@ object CompletionProvider {
 
   private def isUnitFunction(fparams: List[TypedAst.FormalParam]): Boolean = fparams.length == 1 && isUnitType(fparams(0).tpe)
 
-  private def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
+  def getLabelForNameAndSpec(name: String, spec: TypedAst.Spec)(implicit flix: Flix): String = spec match {
     case TypedAst.Spec(_, _, _, _, fparams, _, retTpe0, pur0, eff0, _, _) =>
       val args = if (isUnitFunction(fparams))
         Nil
@@ -261,7 +262,7 @@ object CompletionProvider {
     * (i.e. is preceeded by `|>`, `!>`, or `||>`)
     * Returns None if there are two few arguments.
     */
-  private def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Option[String] = {
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Option[String] = {
     val paramsToDrop = context.previousWord match {
       case "||>" => 2
       case "|>" | "!>" => 1
@@ -298,120 +299,8 @@ object CompletionProvider {
     * name. The "(" is there so that they still see completions if they enter the opening
     * bracket of a function call (but not if they start filling in the argument list).
     */
-  private def getFilterTextForName(name: String): String = {
-    s"${name}("
-  }
-
-  private def defCompletion(decl: TypedAst.Def)(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root]): Option[CompletionItem] = {
-    val name = decl.sym.toString
-    getApplySnippet(name, decl.spec.fparams).map(snippet => {
-      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-        sortText = Priority.normal(name),
-        filterText = Some(getFilterTextForName(name)),
-        textEdit = TextEdit(context.range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-        documentation = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Function)
-    })
-  }
-
-  private def sigCompletion(decl: TypedAst.Sig)(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root]): Option[CompletionItem] = {
-    val name = decl.sym.toString
-    getApplySnippet(name, decl.spec.fparams).map(snippet =>
-      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-        sortText = Priority.normal(name),
-        filterText = Some(getFilterTextForName(name)),
-        textEdit = TextEdit(context.range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-        documentation = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Interface))
-  }
-
-  private def opCompletion(decl: TypedAst.Op)(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root]): Option[CompletionItem] = {
-    // NB: priority is high because only an op can come after `do`
-    val name = decl.sym.toString
-    getApplySnippet(name, decl.spec.fparams).map(snippet =>
-      CompletionItem(label = getLabelForNameAndSpec(decl.sym.toString, decl.spec),
-        sortText = Priority.high(name),
-        filterText = Some(getFilterTextForName(name)),
-        textEdit = TextEdit(context.range, snippet),
-        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)),
-        documentation = Some(decl.spec.doc.text),
-        insertTextFormat = InsertTextFormat.Snippet,
-        kind = CompletionItemKind.Interface))
-  }
-
-  /**
-    * Returns `true` if the given definition `decl` should be included in the suggestions.
-    */
-  private def matchesDef(decl: TypedAst.Def, word: String, uri: String): Boolean = {
-    def isInternal(decl: TypedAst.Def): Boolean = decl.spec.ann.isInternal
-
-    val isPublic = decl.spec.mod.isPublic && !isInternal(decl)
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      decl.sym.toString.startsWith(word)
-    else
-      decl.sym.text.startsWith(word)
-    val isInFile = decl.sym.loc.source.name == uri
-
-    isMatch && (isPublic || isInFile)
-  }
-
-  /**
-    * Returns `true` if the given signature `sign` should be included in the suggestions.
-    */
-  private def matchesSig(sign: TypedAst.Sig, word: String, uri: String): Boolean = {
-    val isPublic = sign.spec.mod.isPublic
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      sign.sym.toString.startsWith(word)
-    else
-      sign.sym.name.startsWith(word)
-    val isInFile = sign.sym.loc.source.name == uri
-
-    isMatch && (isPublic || isInFile)
-  }
-
-  /**
-    * Returns `true` if the given effect operation `op` should be included in the suggestions.
-    */
-  private def matchesOp(op: TypedAst.Op, word: String, uri: String): Boolean = {
-    val isPublic = op.spec.mod.isPublic
-    val isNamespace = word.nonEmpty && word.head.isUpper
-    val isMatch = if (isNamespace)
-      op.sym.toString.startsWith(word)
-    else
-      op.sym.name.startsWith(word)
-    val isInFile = op.sym.loc.source.name == uri
-
-    isMatch && (isPublic || isInFile)
-  }
-
-  private def getDefAndSigCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    val word = context.word
-    val uri = context.uri
-
-    val defSuggestions = root.get.defs.values.filter(matchesDef(_, word, uri)).flatMap(defCompletion)
-    val sigSuggestions = root.get.sigs.values.filter(matchesSig(_, word, uri)).flatMap(sigCompletion)
-    defSuggestions ++ sigSuggestions
-  }
-
-  private def getOpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root]): Iterable[CompletionItem] = {
-    if (root.isEmpty || context.previousWord != "do") {
-      return Nil
-    }
-
-    val word = context.word
-    val uri = context.uri
-
-    root.get.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri)).flatMap(opCompletion)
+  def getFilterTextForName(name: String): String = {
+    s"$name("
   }
 
   /**
