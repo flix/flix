@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
+import java.io.PrintStream
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, Paths, SimpleFileVisitor}
 import scala.collection.mutable
@@ -110,15 +111,16 @@ class Bootstrap {
     * Then returns a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  def bootstrap(pathString: String): Result[List[Path], BootstrapError] = {
+  def bootstrap(path: Path)(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
-    val path = Paths.get(pathString)
     val tomlPath = Bootstrap.getManifestFile(path)
     if (Files.exists(tomlPath)) {
+      out.println("Found flix.toml")
       projectMode(path)
     } else {
+      out.println("Did not find flix.toml")
       folderMode(path)
     }
   }
@@ -128,7 +130,7 @@ class Bootstrap {
     * Then makes a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  private def projectMode(path: Path): Result[List[Path], BootstrapError] = {
+  private def projectMode(path: Path)(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
     // 1. Read, parse, and validate flix.toml.
     val tomlPath = Bootstrap.getManifestFile(path)
     val manifest = ManifestParser.parse(tomlPath) match {
@@ -137,11 +139,11 @@ class Bootstrap {
     }
 
     // 2. Check each dependency is available or download it.
-    FlixPackageManager.installAll(manifest, path)(System.out) match {
+    FlixPackageManager.installAll(manifest, path) match {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    MavenPackageManager.installAll(manifest, path)(System.out) match {
+    MavenPackageManager.installAll(manifest, path) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
@@ -151,8 +153,6 @@ class Bootstrap {
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(path), "flix")
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(path), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
-
-    timestamps = timestamps ++ (flixPackagePaths ++ mavenPackagePaths ++ sourcePaths).map(f => f -> f.toFile.lastModified).toMap
 
     Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
   }
