@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: Set[Expression.NewObject])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: Set[AnonClassInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,7 +49,7 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: AnonClassInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface())
