@@ -732,6 +732,7 @@ object JvmOps {
       case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
