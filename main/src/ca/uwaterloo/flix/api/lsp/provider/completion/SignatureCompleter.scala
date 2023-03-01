@@ -32,7 +32,7 @@ object SignatureCompleter extends Completer {
     val word = context.word
     val uri = context.uri
 
-    root.get.sigs.values.filter(matchesSig(_, word, uri)).flatMap(decl => Option(Completion.SigCompletion(decl, context, flix)))
+    root.get.sigs.values.filter(matchesSig(_, word, uri)).map(decl => Completion.SigCompletion(decl, context, flix))
   }
 
   /**

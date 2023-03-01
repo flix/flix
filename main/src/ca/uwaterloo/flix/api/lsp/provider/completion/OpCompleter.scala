@@ -33,7 +33,7 @@ object OpCompleter extends Completer{
     val uri = context.uri
 
     root.get.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri))
-      .flatMap(decl => Option(Completion.OpCompletion(decl, context, flix)))
+      .map(decl => Completion.OpCompletion(decl, context, flix))
   }
 
   /**

@@ -32,7 +32,7 @@ object DefCompleter extends Completer {
     val word = context.word
     val uri = context.uri
 
-    root.get.defs.values.filter(matchesDef(_, word, uri)).flatMap(decl => Option(Completion.DefCompletion(decl, context, flix)))
+    root.get.defs.values.filter(matchesDef(_, word, uri)).map(decl => Completion.DefCompletion(decl, context, flix))
   }
 
   /**
