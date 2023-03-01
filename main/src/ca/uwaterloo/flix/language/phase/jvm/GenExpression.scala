@@ -244,24 +244,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.Tuple(elms, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
-      // Instantiating a new object of tuple
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-      // Duplicating the class
-      visitor.visitInsn(DUP)
-      // Evaluating all the elements to be stored in the tuple class
-      elms.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
-      // Erased type of `elms`
-      val erasedElmTypes = elms.map(_.tpe).map(JvmOps.getErasedJvmType)
-      // Descriptor of constructor
-      val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
-      // Invoking the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
-
     case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -966,7 +948,7 @@ object GenExpression {
 
     }
 
-    case Expression.IntrinsicN(op, exps, tpe, _) => op match {
+    case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
 
       case IntrinsicOperatorN.ApplyDef(sym) =>
         // JvmType of Def
@@ -1025,6 +1007,25 @@ object GenExpression {
         }
         // Jump to the entry point of the method.
         visitor.visitJumpInsn(GOTO, entryPoint)
+
+      case IntrinsicOperatorN.Tuple =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We get the JvmType of the class for the tuple
+        val classType = JvmOps.getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
+        // Instantiating a new object of tuple
+        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+        // Duplicating the class
+        visitor.visitInsn(DUP)
+        // Evaluating all the elements to be stored in the tuple class
+        exps.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+        // Erased type of `elms`
+        val erasedElmTypes = exps.map(_.tpe).map(JvmOps.getErasedJvmType)
+        // Descriptor of constructor
+        val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
+        // Invoking the constructor
+        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
 
     }
 

@@ -75,8 +75,6 @@ object ErasedAst {
     // dont touch in #5434
     case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -219,6 +217,8 @@ object ErasedAst {
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
+
+    case object Tuple extends IntrinsicOperatorN
 
   }
 

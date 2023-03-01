@@ -537,8 +537,6 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Tuple(exps, _, _) => visitExps(exps)
-
       case Expression.ArrayLit(exps, _, _) => visitExps(exps)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
@@ -782,8 +780,6 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Tuple(exps, _, _) => visitExps(exps)
-
       case Expression.ArrayLit(exps, _, _) => visitExps(exps)
 
       case Expression.Cast(exp, _, _) => visitExp(exp)
@@ -933,8 +929,6 @@ object JvmOps {
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.Tuple(exps, _, _) => visitExps(exps)
 
       case Expression.ArrayLit(exps, _, _) => visitExps(exps)
 
