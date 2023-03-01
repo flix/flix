@@ -102,7 +102,7 @@ namespace Test/Exp/Concurrency/Unbuffered {
     def testUnbufferedChannelPutGet15(): Bool \ IO = region r {
         let (tx, rx) = Channel.unbuffered(r);
         spawn Channel.unsafeSend(Array#{1, 2, 3} @ r, tx) @ r;
-        2 == (Channel.recv(rx))[1]
+        2 == Array.get(1, Channel.recv(rx))
     }
 
     @test

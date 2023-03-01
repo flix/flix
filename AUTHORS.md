@@ -55,3 +55,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Andreas Stenbæk Larsen](https://github.com/AStenbaek)
 - [Yisrael Union](https://github.com/yisraelU)
 - [Lukas Rønn](https://github.com/LukasRonn)
+- [Magnus Holm Rasmussen](https://github.com/mR4smussen)

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -59,11 +59,11 @@ object Packager {
     // Compute all the directories and files we intend to create.
     //
     val buildDirectory = getBuildDirectory(p)
-    val libraryDirectory = getLibraryDirectory(p)
-    val sourceDirectory = getSourceDirectory(p)
-    val testDirectory = getTestDirectory(p)
+    val libraryDirectory = Bootstrap.getLibraryDirectory(p)
+    val sourceDirectory = Bootstrap.getSourceDirectory(p)
+    val testDirectory = Bootstrap.getTestDirectory(p)
 
-    val manifestFile = getManifestFile(p)
+    val manifestFile = Bootstrap.getManifestFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
     val mainSourceFile = getMainSourceFile(p)
@@ -180,23 +180,23 @@ object Packager {
     }
 
     // Add all files in `p/src` (recursively).
-    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+    for (sourceFile <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
         flix.addSourcePath(sourceFile)
       }
     }
 
     // Add all files in `p/test` (recursively).
-    for (testFile <- getAllFiles(getTestDirectory(p))) {
+    for (testFile <- Bootstrap.getAllFiles(Bootstrap.getTestDirectory(p))) {
       if (testFile.getFileName.toString.endsWith(".flix")) {
         flix.addSourcePath(testFile)
       }
     }
 
     // Add all library packages.
-    val lib = getLibraryDirectory(p)
+    val lib = Bootstrap.getLibraryDirectory(p)
     if (lib.toFile.isDirectory) {
-      for (file <- getAllFiles(lib)) {
+      for (file <- Bootstrap.getAllFiles(lib)) {
         if (file.getFileName.toString.endsWith(".fpkg")) {
           // Case 1: It's a Flix package.
           flix.addSourcePath(file)
@@ -234,7 +234,7 @@ object Packager {
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- getAllFiles(getBuildDirectory(p))
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(getBuildDirectory(p))
         .map { path => (path, convertPathToRelativeFileName(getBuildDirectory(p), path)) }
         .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, buildFile)
@@ -275,7 +275,7 @@ object Packager {
 
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((sourceFile, fileNameWithSlashes) <- getAllFiles(getSourceDirectory(p))
+      for ((sourceFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(p))
         .map { path => (path, convertPathToRelativeFileName(p, path)) }
         .sortBy(_._2)) {
         addToZip(zip, fileNameWithSlashes, sourceFile)
@@ -356,8 +356,8 @@ object Packager {
     */
   private def checkProjectPath(p: Path): Validation[Unit, Path] = {
     val required = List(
-      getSourceDirectory(p),
-      getTestDirectory(p),
+      Bootstrap.getSourceDirectory(p),
+      Bootstrap.getTestDirectory(p),
       getLicenseFile(p),
       getReadmeFile(p)
     )
@@ -393,26 +393,6 @@ object Packager {
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
   /**
-    * Returns the path to the library directory relative to the given path `p`.
-    */
-  def getLibraryDirectory(p: Path): Path = p.resolve("./lib/").normalize()
-
-  /**
-    * Returns the path to the source directory relative to the given path `p`.
-    */
-  def getSourceDirectory(p: Path): Path = p.resolve("./src/").normalize()
-
-  /**
-    * Returns the path to the test directory relative to the given path `p`.
-    */
-  def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
-
-  /**
-    * Returns the path to the Manifest file relative to the given path `p`.
-    */
-  private def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
-
-  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
@@ -425,12 +405,12 @@ object Packager {
   /**
     * Returns the path to the main source file relative to the given path `p`.
     */
-  private def getMainSourceFile(p: Path): Path = getSourceDirectory(p).resolve("./Main.flix").normalize()
+  private def getMainSourceFile(p: Path): Path = Bootstrap.getSourceDirectory(p).resolve("./Main.flix").normalize()
 
   /**
     * Returns the path to the main test file relative to the given path `p`.
     */
-  private def getMainTestFile(p: Path): Path = getTestDirectory(p).resolve("./TestMain.flix").normalize()
+  private def getMainTestFile(p: Path): Path = Bootstrap.getTestDirectory(p).resolve("./TestMain.flix").normalize()
 
   /**
     * Creates a new directory at the given path `p`.
@@ -477,19 +457,6 @@ object Packager {
   }
 
   /**
-    * Returns all files in the given path `p`.
-    */
-  def getAllFiles(p: Path): List[Path] = {
-    if (Files.isReadable(p) && Files.isDirectory(p)) {
-      val visitor = new FileVisitor
-      Files.walkFileTree(p, visitor)
-      visitor.result.toList
-    } else {
-      Nil
-    }
-  }
-
-  /**
     * Returns `true` if the given path `p` is a jar-file.
     */
   private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
@@ -525,12 +492,4 @@ object Packager {
   private def convertPathToRelativeFileName(root: Path, path: Path): String =
     root.relativize(path).toString.replace('\\', '/')
 
-  private class FileVisitor extends SimpleFileVisitor[Path] {
-    val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
-
-    override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-      result += file
-      FileVisitResult.CONTINUE
-    }
-  }
 }

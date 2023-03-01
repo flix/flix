@@ -257,7 +257,7 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Scope(sym, e, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) => 
+    case OccurrenceAst.Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.ScopeExit(e1, e2, tpe, purity, loc)
@@ -329,12 +329,6 @@ object Inliner {
       val b = visitExp(base, subst0)
       val purity = b.purity
       LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      val b = visitExp(base, subst0)
-      val i1 = visitExp(beginIndex, subst0)
-      val i2 = visitExp(endIndex, subst0)
-      LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
@@ -669,12 +663,6 @@ object Inliner {
     case OccurrenceAst.Expression.ArrayLength(base, tpe, purity, loc) =>
       val b = substituteExp(base, env0)
       LiftedAst.Expression.ArrayLength(b, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      val b = substituteExp(base, env0)
-      val i1 = substituteExp(beginIndex, env0)
-      val i2 = substituteExp(endIndex, env0)
-      LiftedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
     case OccurrenceAst.Expression.Ref(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)

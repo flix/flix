@@ -82,7 +82,7 @@ object KindedAst {
 
     case class Apply(exp: KindedAst.Expression, exps: List[KindedAst.Expression], tpe: Type.Var, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Lambda(fparam: KindedAst.FormalParam, exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Unary(sop: SemanticOperator, exp: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
@@ -135,8 +135,6 @@ object KindedAst {
     case class ArrayStore(base: KindedAst.Expression, index: KindedAst.Expression, elm: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class ArrayLength(base: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
-
-    case class ArraySlice(region: KindedAst.Expression, base: KindedAst.Expression, beginIndex: KindedAst.Expression, endIndex: KindedAst.Expression, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class VectorLit(exps: List[KindedAst.Expression], tvar: Type.Var, pvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 

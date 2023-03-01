@@ -221,9 +221,6 @@ object EarlyTreeShaker {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
-      visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
-
     case Expression.VectorLit(exps, exp, _, _, _) =>
       visitExps(exps)
 

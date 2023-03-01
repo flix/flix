@@ -353,7 +353,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if either of `r1` and `r2` are `Err(e)`.
     ///
-    pub def lift2(f: (t1, t2) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2]): Result[e, u] \ ef =
+    pub def map2(f: (t1, t2) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2]): Result[e, u] \ ef =
         ap(map(f, r1), r2)
 
     ///
@@ -361,64 +361,64 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2` and `r3` are `Err(e)`.
     ///
-    pub def lift3(f: (t1, t2, t3) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3]): Result[e, u] \ ef =
-        ap(lift2(f, r1, r2), r3)
+    pub def map3(f: (t1, t2, t3) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3]): Result[e, u] \ ef =
+        ap(map2(f, r1, r2), r3)
 
     ///
     /// Applies the 4-ary function `f` to the values in `r1`, `r2`, `r3` and `r4`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, `r3` and `r4` are `Err(e)`.
     ///
-    pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4]): Result[e, u] \ ef =
-        ap(lift3(f, r1, r2, r3), r4)
+    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4]): Result[e, u] \ ef =
+        ap(map3(f, r1, r2, r3), r4)
 
     ///
     /// Applies the 5-ary function `f` to the values in `r1`, `r2`, ... `r5`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r5` are `Err(e)`.
     ///
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5]): Result[e, u] \ ef =
-        ap(lift4(f, r1, r2, r3, r4), r5)
+    pub def map5(f: (t1, t2, t3, t4, t5) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5]): Result[e, u] \ ef =
+        ap(map4(f, r1, r2, r3, r4), r5)
 
     ///
     /// Applies the 6-ary function `f` to the values in `r1`, `r2`, ... `r6`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r6` are `Err(e)`.
     ///
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6]): Result[e, u] \ ef =
-        ap(lift5(f, r1, r2, r3, r4, r5), r6)
+    pub def map6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6]): Result[e, u] \ ef =
+        ap(map5(f, r1, r2, r3, r4, r5), r6)
 
     ///
     /// Applies the 7-ary function `f` to the values in `r1`, `r2`, ... `r7`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
     ///
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
-        ap(lift6(f, r1, r2, r3, r4, r5, r6), r7)
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
+        ap(map6(f, r1, r2, r3, r4, r5, r6), r7)
 
     ///
     /// Applies the 8-ary function `f` to the values in `r1`, `r2`, ... `r8`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r8` are `Err(e)`.
     ///
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8]): Result[e, u] \ ef =
-        ap(lift7(f, r1, r2, r3, r4, r5, r6, r7), r8)
+    pub def map8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8]): Result[e, u] \ ef =
+        ap(map7(f, r1, r2, r3, r4, r5, r6, r7), r8)
 
     ///
     /// Applies the 9-ary function `f` to the values in `r1`, `r2`, ... `r9`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r9` are `Err(e)`.
     ///
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9]): Result[e, u] \ ef =
-        ap(lift8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
+    pub def map9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9]): Result[e, u] \ ef =
+        ap(map8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
 
     ///
     /// Applies the 10-ary function `f` to the values in `r1`, `r2`, ... `r10`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r10` are `Err(e)`.
     ///
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9], r10: Result[e, t10]): Result[e, u] \ ef =
-        ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
+    pub def map10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9], r10: Result[e, t10]): Result[e, u] \ ef =
+        ap(map9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
 
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.

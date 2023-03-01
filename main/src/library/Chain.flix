@@ -791,7 +791,7 @@ namespace Chain {
         case None    => Array#{} @ r
         case Some(_) =>
             let arr = Array.new(r, length(c));
-            forEach(match (i, b) -> arr[i] = b, zipWithIndex(c));
+            forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
         }
 
