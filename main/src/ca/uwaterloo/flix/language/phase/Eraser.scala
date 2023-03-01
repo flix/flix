@@ -84,8 +84,8 @@ object Eraser {
       ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyCloTail(exp, exps, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperatorN.ApplyCloTail(visitExp(exp))
-      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1N.ApplyCloTail
+      ErasedAst.Expression.Intrinsic1N(op, visitExp(exp), exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyDefTail(sym, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperatorN.ApplyDefTail(sym)

@@ -216,8 +216,6 @@ object ErasedAst {
 
     case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
-    case class ApplyCloTail(exp: ErasedAst.Expression) extends IntrinsicOperatorN
-
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
@@ -229,6 +227,8 @@ object ErasedAst {
   object IntrinsicOperator1N {
 
     case object ApplyClo extends IntrinsicOperator1N
+
+    case object ApplyCloTail extends IntrinsicOperator1N
 
   }
 

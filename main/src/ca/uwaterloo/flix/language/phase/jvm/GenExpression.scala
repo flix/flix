@@ -992,28 +992,6 @@ object GenExpression {
           AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
-      case IntrinsicOperatorN.ApplyCloTail(exp) =>
-        // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
-        // Evaluating the closure
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Casting to JvmType of closure abstract class
-        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
-        // retrieving the unique thread object
-        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-        // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Duplicate the FunctionInterface
-          visitor.visitInsn(DUP)
-          // Evaluating the expression
-          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-        // Return the closure
-        visitor.visitInsn(ARETURN)
-
       case IntrinsicOperatorN.ApplyDefTail(sym) =>
         // Type of the function
         val fnType = root.defs(sym).tpe
@@ -1077,6 +1055,28 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
           backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1N.ApplyCloTail =>
+        // Type of the function abstract class
+        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+        // Evaluating the closure
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Casting to JvmType of closure abstract class
+        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+        // retrieving the unique thread object
+        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Return the closure
+        visitor.visitInsn(ARETURN)
 
     }
 
