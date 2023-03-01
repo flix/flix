@@ -507,6 +507,8 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
+      case Expression.Closure(sym, exps, tpe, _) => Set(ClosureInfo(sym, exps.map(_.tpe), tpe))
+
       case Expression.Unary(_, _, exp, _, _) =>
         visitExp(exp)
 
@@ -558,8 +560,7 @@ object JvmOps {
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.IntrinsicN(op, exps, tpe, _) => (op match {
-        case IntrinsicOperatorN.Closure(sym) => Set(ClosureInfo(sym, exps.map(_.tpe), tpe))
+      case Expression.IntrinsicN(op, exps, _, _) => (op match {
         case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
@@ -758,6 +759,8 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
+      case Expression.Closure(_, _, _, _) => Set.empty
+
       case Expression.Unary(_, _, exp, _, _) => visitExp(exp)
 
       case Expression.Binary(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
@@ -814,7 +817,6 @@ object JvmOps {
       case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.IntrinsicN(op, exps, _, _) => (op match {
-        case IntrinsicOperatorN.Closure(_) => Set.empty
         case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
@@ -910,6 +912,8 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
+      case Expression.Closure(_, _, _, _) => Set.empty
+
       case Expression.Unary(_, _, exp, _, _) =>
         visitExp(exp)
 
@@ -962,7 +966,6 @@ object JvmOps {
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.IntrinsicN(op, exps, _, _) => (op match {
-        case IntrinsicOperatorN.Closure(_) => Set.empty
         case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)

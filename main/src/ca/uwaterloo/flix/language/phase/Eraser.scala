@@ -73,8 +73,7 @@ object Eraser {
       ErasedAst.Expression.Var(sym, tpe, loc)
 
     case FinalAst.Expression.Closure(sym, exps, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperatorN.Closure(sym)
-      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
+      ErasedAst.Expression.Closure(sym, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperatorN.ApplyClo(visitExp(exp))
