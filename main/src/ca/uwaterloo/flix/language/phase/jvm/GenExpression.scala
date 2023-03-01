@@ -966,33 +966,7 @@ object GenExpression {
 
     }
 
-    case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
-      case IntrinsicOperatorN.ApplyClo(exp) =>
-        // Type of the function abstract class
-        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
-        // previous JvmOps functions are already partial pattern matches
-        val MonoType.Arrow(_, closureResultType) = exp.tpe
-        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
-
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Casting to JvmType of closure abstract class
-        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
-        // retrieving the unique thread object
-        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
-        // Putting args on the Fn class
-        for ((arg, i) <- exps.zipWithIndex) {
-          // Duplicate the FunctionInterface
-          visitor.visitInsn(DUP)
-          // Evaluating the expression
-          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
-            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
-        }
-        // Calling unwind and unboxing
-        visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
-          backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+    case Expression.IntrinsicN(op, exps, tpe, _) => op match {
 
       case IntrinsicOperatorN.ApplyDef(sym) =>
         // JvmType of Def
@@ -1076,7 +1050,35 @@ object GenExpression {
 
     }
 
-    case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+    case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
+      case IntrinsicOperator1N.ApplyClo =>
+        // Type of the function abstract class
+        val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
+        val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
+        // previous JvmOps functions are already partial pattern matches
+        val MonoType.Arrow(_, closureResultType) = exp.tpe
+        val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(closureResultType))
+
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Casting to JvmType of closure abstract class
+        visitor.visitTypeInsn(CHECKCAST, closureAbstractClass.name.toInternalName)
+        // retrieving the unique thread object
+        visitor.visitMethodInsn(INVOKEVIRTUAL, closureAbstractClass.name.toInternalName, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), false)
+        // Putting args on the Fn class
+        for ((arg, i) <- exps.zipWithIndex) {
+          // Duplicate the FunctionInterface
+          visitor.visitInsn(DUP)
+          // Evaluating the expression
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
+            s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
+        }
+        // Calling unwind and unboxing
+        visitor.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName,
+          backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+    }
 
   }
 

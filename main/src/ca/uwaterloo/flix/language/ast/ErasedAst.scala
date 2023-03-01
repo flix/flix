@@ -214,8 +214,6 @@ object ErasedAst {
 
   object IntrinsicOperatorN {
 
-    case class ApplyClo(exp: ErasedAst.Expression) extends IntrinsicOperatorN
-
     case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplyCloTail(exp: ErasedAst.Expression) extends IntrinsicOperatorN
@@ -229,6 +227,8 @@ object ErasedAst {
   sealed trait IntrinsicOperator1N
 
   object IntrinsicOperator1N {
+
+    case object ApplyClo extends IntrinsicOperator1N
 
   }
 

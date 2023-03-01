@@ -562,14 +562,13 @@ object JvmOps {
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.IntrinsicN(op, exps, _, _) => (op match {
-        case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
 
-      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+      case Expression.Intrinsic1N(_, exp, exps, _, _) => visitExp(exp) ++ visitExps(exps)
 
     }
 
@@ -820,14 +819,13 @@ object JvmOps {
       case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.IntrinsicN(op, exps, _, _) => (op match {
-        case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
 
-      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+      case Expression.Intrinsic1N(_, exp, exps, _, _) => visitExp(exp) ++ visitExps(exps)
 
     }) ++ Set(exp0.tpe)
 
@@ -971,14 +969,13 @@ object JvmOps {
       case Expression.Intrinsic3(_, exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.IntrinsicN(op, exps, _, _) => (op match {
-        case IntrinsicOperatorN.ApplyClo(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDef(_) => Set.empty
         case IntrinsicOperatorN.ApplyCloTail(exp) => visitExp(exp)
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
 
-      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+      case Expression.Intrinsic1N(_, exp, exps, _, _) => visitExp(exp) ++ visitExps(exps)
 
     })
 
