@@ -1076,6 +1076,8 @@ object GenExpression {
 
     }
 
+    case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+
   }
 
   private def compileConstant(visitor: MethodVisitor, cst: Ast.Constant, tpe: MonoType, loc: SourceLocation)(implicit root: Root, flix: Flix): Unit = cst match {

@@ -569,6 +569,8 @@ object JvmOps {
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
 
+      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+
     }
 
     // TODO: Look for closures in other places.
@@ -825,6 +827,8 @@ object JvmOps {
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
 
+      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
+
     }) ++ Set(exp0.tpe)
 
     // TODO: Magnus: Look for types in other places.
@@ -973,6 +977,8 @@ object JvmOps {
         case IntrinsicOperatorN.ApplyDefTail(_) => Set.empty
         case IntrinsicOperatorN.ApplySelfTail(_, _) => Set.empty
       }) ++ visitExps(exps)
+
+      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => ???
 
     })
 

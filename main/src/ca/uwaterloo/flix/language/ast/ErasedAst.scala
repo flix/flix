@@ -102,6 +102,8 @@ object ErasedAst {
 
     case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
+    case class Intrinsic1N(op: ErasedAst.IntrinsicOperator1N, exp: ErasedAst.Expression, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+
   }
 
   sealed trait IntrinsicOperator0
@@ -221,6 +223,12 @@ object ErasedAst {
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
+
+  }
+
+  sealed trait IntrinsicOperator1N
+
+  object IntrinsicOperator1N {
 
   }
 
