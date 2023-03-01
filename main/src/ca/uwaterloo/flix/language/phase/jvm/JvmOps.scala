@@ -659,8 +659,6 @@ object JvmOps {
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
-      case Expression.Cst(_, _, _) => Set.empty
-
       case Expression.Var(_, _, _) => Set.empty
 
       case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
@@ -702,8 +700,6 @@ object JvmOps {
       case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.Region(_, _) => Set.empty
 
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
 
