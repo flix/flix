@@ -83,41 +83,38 @@ sealed trait Completion {
         detail = Some(FormatType.formatType(tpe)(flix)), kind = CompletionItemKind.Variable)
     case Completion.DefCompletion(decl, context, flix) =>
       val name = decl.sym.toString
-      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
-        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-          sortText = Priority.normal(name),
-          filterText = Some(CompletionProvider.getFilterTextForName(name)),
-          textEdit = TextEdit(context.range, snippet),
-          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-          documentation = Some(decl.spec.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Function)
-      }).orNull
+      val snippet = CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.normal(name),
+        filterText = Some(CompletionProvider.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Function)
     case Completion.SigCompletion(decl, context, flix) =>
       val name = decl.sym.toString
-      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
-        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-          sortText = Priority.normal(name),
-          filterText = Some(CompletionProvider.getFilterTextForName(name)),
-          textEdit = TextEdit(context.range, snippet),
-          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-          documentation = Some(decl.spec.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Interface)
-      }).orNull
+      val snippet = CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.normal(name),
+        filterText = Some(CompletionProvider.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface)
     case Completion.OpCompletion(decl, context, flix) =>
       // NB: priority is high because only an op can come after `do`
       val name = decl.sym.toString
-      CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context).map(snippet => {
-        CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
-          sortText = Priority.high(name),
-          filterText = Some(CompletionProvider.getFilterTextForName(name)),
-          textEdit = TextEdit(context.range, snippet),
-          detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
-          documentation = Some(decl.spec.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Interface)
-      }).orNull
+      val snippet = CompletionProvider.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionProvider.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.high(name),
+        filterText = Some(CompletionProvider.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface)
   }
 
   /**

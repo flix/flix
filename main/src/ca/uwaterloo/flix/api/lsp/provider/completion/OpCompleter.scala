@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.OpCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -33,7 +34,12 @@ object OpCompleter extends Completer{
     val uri = context.uri
 
     root.get.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri))
-      .map(decl => Completion.OpCompletion(decl, context, flix))
+      .flatMap(decl =>
+        if (CompletionProvider.canApplySnippet(decl.spec.fparams))
+          Some(Completion.OpCompletion(decl, context, flix))
+        else
+          None
+      )
   }
 
   /**

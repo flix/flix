@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -32,7 +33,13 @@ object SignatureCompleter extends Completer {
     val word = context.word
     val uri = context.uri
 
-    root.get.sigs.values.filter(matchesSig(_, word, uri)).map(decl => Completion.SigCompletion(decl, context, flix))
+    root.get.sigs.values.filter(matchesSig(_, word, uri))
+      .flatMap(decl =>
+        if (CompletionProvider.canApplySnippet(decl.spec.fparams))
+          Some(Completion.SigCompletion(decl, context, flix))
+        else
+          None
+      )
   }
 
   /**

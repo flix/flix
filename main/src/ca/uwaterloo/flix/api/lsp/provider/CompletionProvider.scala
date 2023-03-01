@@ -260,28 +260,41 @@ object CompletionProvider {
     * Generate a snippet which represents calling a function.
     * Drops the last one or two arguments in the event that the function is in a pipeline
     * (i.e. is preceeded by `|>`, `!>`, or `||>`)
-    * Returns None if there are two few arguments.
     */
-  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Option[String] = {
-    val paramsToDrop = context.previousWord match {
-      case "||>" => 2
-      case "|>" | "!>" => 1
-      case _ => 0
-    }
-
+  def getApplySnippet(name: String, fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): String = {
     val functionIsUnit = isUnitFunction(fparams)
-
-    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) return None
 
     val args = fparams.dropRight(paramsToDrop).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
     }
     if (functionIsUnit)
-      Some(s"$name()")
+      s"$name()"
     else if (args.nonEmpty)
-      Some(s"$name(${args.mkString(", ")})")
+      s"$name(${args.mkString(", ")})"
     else
-      Some(name)
+      name
+  }
+
+  /**
+    * Helper function for deciding if a snippet can be generated.
+    * Returns false if there are too few arguments.
+    */
+  def canApplySnippet(fparams: List[TypedAst.FormalParam])(implicit context: CompletionContext): Boolean = {
+    val functionIsUnit = isUnitFunction(fparams)
+
+    if (paramsToDrop > fparams.length || (functionIsUnit && paramsToDrop > 0)) false else true
+  }
+
+  /**
+    * Calculates how many params to drops in the event that the function is in a pipeline
+    * (i.e. is preceeded by `|>`, `!>`, or `||>`)
+    */
+  private def paramsToDrop(implicit context: CompletionContext): Int = {
+    context.previousWord match {
+      case "||>" => 2
+      case "|>" | "!>" => 1
+      case _ => 0
+    }
   }
 
   /**
