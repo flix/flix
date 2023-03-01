@@ -507,7 +507,8 @@ object JvmOps {
 
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(sym, exps, tpe, _) => Set(ClosureInfo(sym, exps.map(_.tpe), tpe))
+      case Expression.Closure(sym, exps, tpe, _) =>
+        visitExps(exps) ++ Set(ClosureInfo(sym, exps.map(_.tpe), tpe))
 
       case Expression.Unary(_, _, exp, _, _) =>
         visitExp(exp)
