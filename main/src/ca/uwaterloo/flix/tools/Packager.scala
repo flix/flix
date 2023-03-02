@@ -175,21 +175,21 @@ object Packager {
     // Add all files *directly* in `p` (non-recursively).
     for (sourceFile <- p.toFile.listFiles().map(_.toPath)) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addSourcePath(sourceFile)
+        flix.addFlix(sourceFile)
       }
     }
 
     // Add all files in `p/src` (recursively).
     for (sourceFile <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(p))) {
       if (sourceFile.getFileName.toString.endsWith(".flix")) {
-        flix.addSourcePath(sourceFile)
+        flix.addFlix(sourceFile)
       }
     }
 
     // Add all files in `p/test` (recursively).
     for (testFile <- Bootstrap.getAllFiles(Bootstrap.getTestDirectory(p))) {
       if (testFile.getFileName.toString.endsWith(".flix")) {
-        flix.addSourcePath(testFile)
+        flix.addFlix(testFile)
       }
     }
 
@@ -199,7 +199,7 @@ object Packager {
       for (file <- Bootstrap.getAllFiles(lib)) {
         if (file.getFileName.toString.endsWith(".fpkg")) {
           // Case 1: It's a Flix package.
-          flix.addSourcePath(file)
+          flix.addPkg(file)
         } else if (file.getFileName.toString.endsWith(".jar")) {
           // Case 2: It's a JAR.
           flix.addJar(file)

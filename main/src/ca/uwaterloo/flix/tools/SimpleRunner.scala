@@ -81,8 +81,8 @@ object SimpleRunner {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addSourcePath(file.toPath)
-        case "fpkg" => flix.addSourcePath(file.toPath)
+        case "flix" => flix.addFlix(file.toPath)
+        case "fpkg" => flix.addPkg(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>
           Console.println(s"Unrecognized file extension: '$ext'.")

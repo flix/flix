@@ -109,11 +109,11 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |    pub def cg(x: a): a
          |}
          |""".stripMargin)
-    flix.remSourcePath(Path.of(FileE))
-    flix.remSourcePath(Path.of(FileD))
-    flix.remSourcePath(Path.of(FileF))
-    flix.remSourcePath(Path.of(FileG))
-    flix.remSourcePath(Path.of(FileH))
+    flix.remFlix(Path.of(FileE))
+    flix.remFlix(Path.of(FileD))
+    flix.remFlix(Path.of(FileF))
+    flix.remFlix(Path.of(FileG))
+    flix.remFlix(Path.of(FileH))
 
     flix.compile().get
   }
