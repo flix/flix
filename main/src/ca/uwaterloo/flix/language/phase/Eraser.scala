@@ -76,7 +76,8 @@ object Eraser {
     */
   private def visitExp(exp0: FinalAst.Expression)(implicit ctx: Context): ErasedAst.Expression = exp0 match {
     case FinalAst.Expression.Cst(cst, tpe, loc) =>
-      ErasedAst.Expression.Cst(cst, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.Cst(cst)
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
@@ -132,7 +133,8 @@ object Eraser {
       ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
     case FinalAst.Expression.Region(tpe, loc) =>
-      ErasedAst.Expression.Region(tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.Region
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
