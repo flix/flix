@@ -194,11 +194,11 @@ class Bootstrap {
     val previousSources = timestamps.keySet
 
     for (path <- sourcePaths if hasChanged(path)) {
-      flix.addSourcePath(path)
+      flix.addFlix(path)
     }
 
     for (path <- flixPackagePaths if hasChanged(path)) {
-      flix.addSourcePath(path)
+      flix.addPkg(path)
     }
 
     for (path <- mavenPackagePaths if hasChanged(path)) {

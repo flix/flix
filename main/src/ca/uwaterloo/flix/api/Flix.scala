@@ -325,7 +325,7 @@ class Flix {
   /**
     * Adds the given path `p` to the list of paths to be parsed.
     */
-  def addSourcePath(p: Path): Flix = {
+  def addFlix(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -334,15 +334,29 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a regular file.")
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    if (p.getFileName.toString.endsWith(".flix")) {
-      addInput(p.toString, Input.TxtFile(p))
-    } else if (p.getFileName.toString.endsWith(".fpkg")) {
-      addInput(p.toString, Input.PkgFile(p))
-    } else {
-      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
-    }
+    addInput(p.toString, Input.TxtFile(p))
+    this
+  }
 
+  /**
+    * Adds the given path `p` to the list of paths to be parsed.
+    */
+  def addPkg(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    if (!p.getFileName.toString.endsWith(".fpkg"))
+      throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
+
+    addInput(p.toString, Input.PkgFile(p))
     this
   }
 
@@ -512,7 +526,7 @@ class Flix {
     progressBar.complete()
 
     // Print summary?
-    if (options.xsummary){
+    if (options.xsummary) {
       Summary.printSummary(result)
     }
 
