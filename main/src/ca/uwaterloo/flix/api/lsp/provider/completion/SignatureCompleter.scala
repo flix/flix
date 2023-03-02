@@ -35,7 +35,7 @@ object SignatureCompleter extends Completer {
 
     root.get.sigs.values.filter(matchesSig(_, word, uri))
       .flatMap(decl =>
-        if (CompletionProvider.canApplySnippet(decl.spec.fparams))
+        if (CompletionUtils.canApplySnippet(decl.spec.fparams))
           Some(Completion.SigCompletion(decl, context, flix))
         else
           None

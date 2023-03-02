@@ -35,7 +35,7 @@ object DefCompleter extends Completer {
 
     root.get.defs.values.filter(matchesDef(_, word, uri))
       .flatMap(decl =>
-        if (CompletionProvider.canApplySnippet(decl.spec.fparams))
+        if (CompletionUtils.canApplySnippet(decl.spec.fparams))
           Some(DefCompletion(decl, context, flix))
         else
           None

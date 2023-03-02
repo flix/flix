@@ -35,7 +35,7 @@ object OpCompleter extends Completer{
 
     root.get.effects.values.flatMap(_.ops).filter(matchesOp(_, word, uri))
       .flatMap(decl =>
-        if (CompletionProvider.canApplySnippet(decl.spec.fparams))
+        if (CompletionUtils.canApplySnippet(decl.spec.fparams))
           Some(Completion.OpCompletion(decl, context, flix))
         else
           None

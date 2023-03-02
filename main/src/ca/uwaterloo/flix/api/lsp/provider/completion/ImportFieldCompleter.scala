@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.classFromDotSeperatedString
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.ImportFieldCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -43,7 +42,7 @@ object ImportFieldCompleter extends Completer {
     * Returns completions for a dot seperated class string
     */
   private def importFieldCompletions(clazz: String, isStatic: Boolean, isGet: Boolean)(implicit context: CompletionContext): Iterable[ImportFieldCompletion] = {
-    classFromDotSeperatedString(clazz) match {
+    CompletionUtils.classFromDotSeperatedString(clazz) match {
       case Some((clazzObject, clazz)) => clazzObject.getFields
         // Filter if the method is static or not.
         .filter(field => java.lang.reflect.Modifier.isStatic(field.getModifiers) == isStatic)
