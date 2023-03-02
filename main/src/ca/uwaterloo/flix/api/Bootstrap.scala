@@ -107,10 +107,10 @@ object Bootstrap {
     val bootstrap = new Bootstrap()
     val tomlPath = Bootstrap.getManifestFile(path)
     (if (Files.exists(tomlPath)) {
-      out.println("Found flix.toml")
+      out.println("Found flix.toml. Entering project mode. Will now check dependencies.")
       bootstrap.projectMode(path)
     } else {
-      out.println("Did not find flix.toml")
+      out.println("Did not find flix.toml. Entering folder mode. No dependencies will be downloaded.")
       bootstrap.folderMode(path)
     }) match {
       case Ok(_) => Ok(bootstrap)

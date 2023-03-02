@@ -160,7 +160,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     case Command.Eval(s) => execEval(s)
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
     case Command.Unknown(s) => execUnknown(s)
-    case _ => ???
+    case _ => terminal.writer().println("Package commands are currently not available from the shell")
   }
 
   /**
