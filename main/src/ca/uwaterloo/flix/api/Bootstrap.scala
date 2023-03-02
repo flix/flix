@@ -15,20 +15,14 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, Paths, SimpleFileVisitor}
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import scala.collection.mutable
-
-// TODO: This class is ultimately to replace functionality in:
-// SourceProvider, SourceFiles, Packager, etc.
-// Feel free to look there for functionality that can be reused.
-// The idea is to implement everything in here so it works 100% and then remove the old code.
-// Hence its OK to copy paste some methods from the aforementioned classes in here.
 
 object Bootstrap {
 
@@ -55,7 +49,7 @@ object Bootstrap {
   /**
     * Returns all files in the given path `p` ending with .`ext`.
     */
-  def getAllFilesWithExt(p: Path, ext: String): List[Path] =
+  private def getAllFilesWithExt(p: Path, ext: String): List[Path] =
     getAllFiles(p).filter(p => p.getFileName.toString.endsWith(s".$ext"))
 
   /**
@@ -74,7 +68,7 @@ object Bootstrap {
   /**
     * Returns all .flix files directly in the directory given by `p`.
     */
-  def getAllFlixFilesHere(path: Path): List[Path] = {
+  private def getAllFlixFilesHere(path: Path): List[Path] = {
     val files = path.toFile.listFiles()
     if (files == null) {
       List.empty
@@ -106,15 +100,12 @@ object Bootstrap {
     //
     val bootstrap = new Bootstrap()
     val tomlPath = Bootstrap.getManifestFile(path)
-    (if (Files.exists(tomlPath)) {
-      out.println("Found flix.toml. Entering project mode. Will now check dependencies.")
-      bootstrap.projectMode(path)
+    if (Files.exists(tomlPath)) {
+      out.println("Found `flix.toml'. Checking dependencies...")
+      bootstrap.projectMode(path).map(_ => bootstrap)
     } else {
-      out.println("Did not find flix.toml. Entering folder mode. No dependencies will be downloaded.")
-      bootstrap.folderMode(path)
-    }) match {
-      case Ok(_) => Ok(bootstrap)
-      case Err(e) => Err(e)
+      out.println("No `flix.toml'. Will load source files from `*.flix`, `src/**`, and `test/**`.")
+      bootstrap.folderMode(path).map(_ => bootstrap)
     }
   }
 
@@ -152,6 +143,7 @@ class Bootstrap {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
+    out.println("Dependency resolution completed.")
 
     // 3. Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(path)

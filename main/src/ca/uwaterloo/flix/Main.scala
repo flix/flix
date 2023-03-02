@@ -171,6 +171,10 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The `repl' command cannot be used with a list of files.")
+            System.exit(1)
+          }
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
