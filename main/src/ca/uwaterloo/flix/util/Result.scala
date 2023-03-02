@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
@@ -100,6 +101,26 @@ object Result {
     }
 
     visit(xs, Nil)
+  }
+
+  /**
+    * Applies f to each element in the list.
+    *
+    * Fails at the first error found, or returns the new list.
+    */
+  def traverse[T, E](xs: Iterable[T])(f: T => Result[T, E]): Result[List[T], E] = {
+    val res = ArrayBuffer.empty[T]
+
+    for (x <- xs) {
+      f(x) match {
+        // Case 1: Ok. Add to the list.
+        case Ok(ok) => res.append(ok)
+        // Case 2: Error. Short-circuit.
+        case Err(err) => return Err(err)
+      }
+    }
+
+    Ok(res.toList)
   }
 
   /**
