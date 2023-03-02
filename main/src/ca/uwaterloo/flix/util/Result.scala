@@ -108,8 +108,8 @@ object Result {
     *
     * Fails at the first error found, or returns the new list.
     */
-  def traverse[T, E](xs: Iterable[T])(f: T => Result[T, E]): Result[List[T], E] = {
-    val res = ArrayBuffer.empty[T]
+  def traverse[T, S, E](xs: Iterable[T])(f: T => Result[S, E]): Result[List[S], E] = {
+    val res = ArrayBuffer.empty[S]
 
     for (x <- xs) {
       f(x) match {
