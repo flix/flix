@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.net.URI
 import java.nio.charset.Charset
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -301,13 +301,6 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `s` to the list of strings to be parsed.
-    */
-  def addSourceCode(s: String): Flix = {
-    addSourceCode("<unnamed>", s)
-  }
-
-  /**
     * Adds the given string `text` with the given `name`.
     */
   def addSourceCode(name: String, text: String): Flix = {
@@ -326,16 +319,6 @@ class Flix {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     remInput(name, Input.Text(name, "", stable = false))
-    this
-  }
-
-  /**
-    * Adds the given path `p` to the list of paths to be parsed.
-    */
-  def addSourcePath(p: String): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
-    addSourcePath(Paths.get(p))
     this
   }
 
