@@ -522,7 +522,7 @@ namespace TestResult {
     /////////////////////////////////////////////////////////////////////////////
     // toValidation                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
+    @test 
     pub def toValidation01(): Bool =
         Result.toValidation(Err(1): Result[Unit, Int32]) == Failure(Nec.singleton(1))
 
