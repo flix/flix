@@ -36,7 +36,7 @@ object FlixPackageManager {
 
     flixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, Some(dep.version), path) match {
+      install(depName, dep.version, path) match {
         case Ok(l) => l
         case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
       }
@@ -52,13 +52,10 @@ object FlixPackageManager {
     *
     * Returns a list of paths to the downloaded files.
     */
-  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def install(project: String, version: SemVer, p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
-        (version match {
-          case None => GitHub.getLatestRelease(proj)
-          case Some(ver) => GitHub.getSpecificRelease(proj, ver)
-        }).flatMap {
+        GitHub.getSpecificRelease(proj, version).flatMap {
           release =>
             val assets = release.assets.filter(_.name.endsWith(".fpkg"))
             val lib = Bootstrap.getLibraryDirectory(p)
@@ -73,7 +70,7 @@ object FlixPackageManager {
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
               if (newDownload) {
-                out.print(s"  Downloading `$assetName'... ")
+                out.print(s"  Downloading `$assetName' (v$version)... ")
                 out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
@@ -84,7 +81,7 @@ object FlixPackageManager {
                 }
                 out.println(s"OK.")
               } else {
-                out.println(s"  Found in cached `$assetName'.")
+                out.println(s"  Cached `$assetName' (v$version).")
               }
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
