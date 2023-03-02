@@ -323,7 +323,7 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
+    * Adds the given path `p` as Flix source file.
     */
   def addFlix(p: Path): Flix = {
     if (p == null)
@@ -342,7 +342,7 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
+    * Adds the given path `p` as a Flix package file.
     */
   def addPkg(p: Path): Flix = {
     if (p == null)
@@ -361,17 +361,30 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` to the list of paths to be parsed.
+    * Removes the given path `p` as a Flix source file.
     */
-  def remSourcePath(p: Path): Flix = {
-    if (p.getFileName.toString.endsWith(".flix")) {
-      remInput(p.toString, Input.TxtFile(p))
-    } else if (p.getFileName.toString.endsWith(".fpkg")) {
-      remInput(p.toString, Input.PkgFile(p))
-    } else {
-      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
-    }
+  def remFlix(p: Path): Flix = {
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
+    remInput(p.toString, Input.TxtFile(p))
+    this
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+
+    jarLoader.addURL(p.toUri.toURL)
     this
   }
 
@@ -396,32 +409,6 @@ class Flix {
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
       inputs += name -> Input.Text(name, "", stable = false)
-  }
-
-  /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
-  def addJar(p: String): Flix = {
-    val uri = new URI(p)
-    val path = Path.of(uri)
-    addJar(path)
-  }
-
-  /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
-  def addJar(p: Path): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-
-    jarLoader.addURL(p.toUri.toURL)
-    this
   }
 
   /**

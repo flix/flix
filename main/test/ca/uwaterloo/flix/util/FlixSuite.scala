@@ -71,7 +71,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       }
     } finally {
       // Remove the source path.
-      flix.remSourcePath(path)
+      flix.remFlix(path)
     }
   }
 
