@@ -23,13 +23,9 @@ import ca.uwaterloo.flix.util.Result
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.util.Using
 
 object FlixPackageManager {
-
-  // TODO: Move functionality from "Packager" in here.
 
   /**
     * Installs all the Flix dependencies for a Manifest at the /lib folder
@@ -48,7 +44,7 @@ object FlixPackageManager {
   }
 
   /**
-    *  Installs a flix package from the Github `project`.
+    * Installs a flix package from the Github `project`.
     *
     * `project` must be of the form `<owner>/<repo>`
     *
@@ -76,8 +72,9 @@ object FlixPackageManager {
               val assetName = asset.name
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
-              if(newDownload) {
-                out.println(s"Installing `$assetName'... ")
+              if (newDownload) {
+                out.print(s"Downloading `$assetName'... ")
+                out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
                     stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
@@ -85,9 +82,9 @@ object FlixPackageManager {
                 } catch {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
-                out.println(s"Installation of $assetName completed")
+                out.println(s"OK")
               } else {
-                out.println(s"$assetName already exists")
+                out.println(s"Found `$assetName'. ")
               }
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
@@ -107,7 +104,7 @@ object FlixPackageManager {
     * Finds the Flix dependencies in a Manifest.
     */
   private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
-    manifest.dependencies.collect{ case dep: FlixDependency => dep }
+    manifest.dependencies.collect { case dep: FlixDependency => dep }
   }
 
 }
