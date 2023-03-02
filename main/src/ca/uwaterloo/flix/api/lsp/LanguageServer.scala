@@ -37,8 +37,9 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.io.ByteArrayInputStream
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -251,7 +252,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddJar(id, uri) =>
-      flix.addJar(uri)
+      val path = Path.of(new URI(uri))
+      flix.addJar(path)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
