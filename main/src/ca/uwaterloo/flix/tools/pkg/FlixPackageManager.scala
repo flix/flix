@@ -39,7 +39,7 @@ object FlixPackageManager {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, path) match {
         case Ok(l) => l
-        case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
+        case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
     }).toOk
   }
@@ -71,7 +71,7 @@ object FlixPackageManager {
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
               if (newDownload) {
-                out.print(s"  Downloading `$assetName' (v$version)... ")
+                out.print(s"  Downloading `$project/$assetName' (v$version)... ")
                 out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
@@ -82,7 +82,7 @@ object FlixPackageManager {
                 }
                 out.println(s"OK.")
               } else {
-                out.println(s"  Cached `$assetName' (v$version).")
+                out.println(s"  Cached `$project/$assetName' (v$version).")
               }
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
