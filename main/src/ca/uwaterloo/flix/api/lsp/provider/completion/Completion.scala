@@ -132,6 +132,13 @@ sealed trait Completion {
         documentation = Some(clazz.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
+    case Completion.UseCompletion(name, kind, context) =>
+      CompletionItem(
+        label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        kind = kind)
   }
 
   /**
@@ -331,4 +338,12 @@ object Completion {
     * @param completion the completion string (used as information for TextEdit).
     */
   case class InstanceCompletion(clazz: TypedAst.Class, completion: String, context: CompletionContext) extends Completion
+
+  /**
+    * Represents an Use completion.
+    *
+    * @param name the name of the use completion.
+    * @param kind the kind of completion.
+    */
+  case class UseCompletion(name: String, kind: CompletionItemKind, context: CompletionContext) extends Completion
 }
