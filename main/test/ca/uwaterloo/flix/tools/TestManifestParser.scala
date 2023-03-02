@@ -839,7 +839,7 @@ class TestManifestParser extends FunSuite {
   }
 
   //Dependencies
-  test("Err.dependencies.missing") {
+  test("Ok.dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -862,7 +862,15 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, 3), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, 3), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dependencies.type") {
@@ -1166,7 +1174,7 @@ class TestManifestParser extends FunSuite {
   }
 
   //Dev-dependencies
-  test("Err.dev-dependencies.missing") {
+  test("Ok.dev-dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -1190,7 +1198,17 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dev-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(
+                                 Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, 3), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dev-dependencies.type") {
@@ -1457,7 +1475,15 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'mvn-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, 3), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, 3), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.mvn-dependencies.type") {
@@ -1785,7 +1811,16 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dev-mvn-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, 3), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dev-mvn-dependencies.type") {

@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
+import java.io.PrintStream
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, Paths, SimpleFileVisitor}
 import scala.collection.mutable
@@ -91,6 +92,32 @@ object Bootstrap {
     }
   }
 
+  /**
+    * Creates a new Bootstrap object and initializes it.
+    * If a `flix.toml` file exists, parses that to a Manifest and
+    * downloads all required files. Otherwise checks the /lib folder
+    * to see what dependencies are already downloadet. Also finds
+    * all .flix source files.
+    * Then returns the initialized Bootstrap object or an error.
+    */
+  def bootstrap(path: Path)(implicit out: PrintStream): Result[Bootstrap, BootstrapError] = {
+    //
+    // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
+    //
+    val bootstrap = new Bootstrap()
+    val tomlPath = Bootstrap.getManifestFile(path)
+    (if (Files.exists(tomlPath)) {
+      out.println("Found flix.toml. Entering project mode. Will now check dependencies.")
+      bootstrap.projectMode(path)
+    } else {
+      out.println("Did not find flix.toml. Entering folder mode. No dependencies will be downloaded.")
+      bootstrap.folderMode(path)
+    }) match {
+      case Ok(_) => Ok(bootstrap)
+      case Err(e) => Err(e)
+    }
+  }
+
 }
 
 class Bootstrap {
@@ -104,31 +131,11 @@ class Bootstrap {
   private var mavenPackagePaths: List[Path] = List.empty
 
   /**
-    * If a `flix.toml` file exists, parses that to a Manifest and
-    * downloads all required files. Otherwise checks the /lib folder
-    * to see what dependencies are already downloadet.
-    * Then returns a list of all flix source files, flix packages
-    * and .jar files that this project uses.
-    */
-  def bootstrap(pathString: String): Result[List[Path], BootstrapError] = {
-    //
-    // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
-    //
-    val path = Paths.get(pathString)
-    val tomlPath = Bootstrap.getManifestFile(path)
-    if (Files.exists(tomlPath)) {
-      projectMode(path)
-    } else {
-      folderMode(path)
-    }
-  }
-
-  /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
     * Then makes a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  private def projectMode(path: Path): Result[List[Path], BootstrapError] = {
+  private def projectMode(path: Path)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     // 1. Read, parse, and validate flix.toml.
     val tomlPath = Bootstrap.getManifestFile(path)
     val manifest = ManifestParser.parse(tomlPath) match {
@@ -137,11 +144,11 @@ class Bootstrap {
     }
 
     // 2. Check each dependency is available or download it.
-    FlixPackageManager.installAll(manifest, path)(System.out) match {
+    FlixPackageManager.installAll(manifest, path) match {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    MavenPackageManager.installAll(manifest, path)(System.out) match {
+    MavenPackageManager.installAll(manifest, path) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
@@ -152,9 +159,7 @@ class Bootstrap {
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(path), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
 
-    timestamps = timestamps ++ (flixPackagePaths ++ mavenPackagePaths ++ sourcePaths).map(f => f -> f.toFile.lastModified).toMap
-
-    Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
+    ().toOk
   }
 
   /**
@@ -162,7 +167,7 @@ class Bootstrap {
     * Then makes a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  private def folderMode(path: Path): Result[List[Path], BootstrapError] = {
+  private def folderMode(path: Path): Result[Unit, BootstrapError] = {
     // 1. Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(path)
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(path), "flix")
@@ -177,7 +182,7 @@ class Bootstrap {
     val flixFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(path), "fpkg")
     flixPackagePaths = flixFilesLib
 
-    Ok(sourcePaths ++ flixPackagePaths ++ mavenPackagePaths)
+    ().toOk
   }
 
   /**
