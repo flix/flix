@@ -73,7 +73,7 @@ object FlixPackageManager {
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
               if (newDownload) {
-                out.print(s"Downloading `$assetName'... ")
+                out.print(s"  Downloading `$assetName'... ")
                 out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
@@ -82,9 +82,9 @@ object FlixPackageManager {
                 } catch {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
-                out.println(s"OK")
+                out.println(s"OK.")
               } else {
-                out.println(s"Found `$assetName'. ")
+                out.println(s"  Found in cached `$assetName'.")
               }
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
