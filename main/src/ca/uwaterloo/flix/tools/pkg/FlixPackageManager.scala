@@ -23,32 +23,29 @@ import ca.uwaterloo.flix.util.Result
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.util.Using
 
 object FlixPackageManager {
-
-  // TODO: Move functionality from "Packager" in here.
 
   /**
     * Installs all the Flix dependencies for a Manifest at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
-    val flixDeps = findFlixDependencies(manifest)
+    out.println("Resolving Flix dependencies...")
 
+    val flixDeps = findFlixDependencies(manifest)
     flixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, Some(dep.version), path) match {
+      install(depName, dep.version, path) match {
         case Ok(l) => l
-        case Err(e) => out.println(s"Installation of $depName failed"); return Err(e)
+        case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
     }).toOk
   }
 
   /**
-    *  Installs a flix package from the Github `project`.
+    * Installs a flix package from the Github `project`.
     *
     * `project` must be of the form `<owner>/<repo>`
     *
@@ -56,13 +53,10 @@ object FlixPackageManager {
     *
     * Returns a list of paths to the downloaded files.
     */
-  def install(project: String, version: Option[SemVer], p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def install(project: String, version: SemVer, p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
-        (version match {
-          case None => GitHub.getLatestRelease(proj)
-          case Some(ver) => GitHub.getSpecificRelease(proj, ver)
-        }).flatMap {
+        GitHub.getSpecificRelease(proj, version).flatMap {
           release =>
             val assets = release.assets.filter(_.name.endsWith(".fpkg"))
             val lib = Bootstrap.getLibraryDirectory(p)
@@ -76,8 +70,9 @@ object FlixPackageManager {
               val assetName = asset.name
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
-              if(newDownload) {
-                out.println(s"Installing $assetName")
+              if (newDownload) {
+                out.print(s"  Downloading `$project/$assetName' (v$version)... ")
+                out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
                     stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
@@ -85,9 +80,9 @@ object FlixPackageManager {
                 } catch {
                   case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
                 }
-                out.println(s"Installation of $assetName completed")
+                out.println(s"OK.")
               } else {
-                out.println(s"$assetName already exists")
+                out.println(s"  Cached `$project/$assetName' (v$version).")
               }
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
@@ -107,7 +102,7 @@ object FlixPackageManager {
     * Finds the Flix dependencies in a Manifest.
     */
   private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
-    manifest.dependencies.collect{ case dep: FlixDependency => dep }
+    manifest.dependencies.collect { case dep: FlixDependency => dep }
   }
 
 }
