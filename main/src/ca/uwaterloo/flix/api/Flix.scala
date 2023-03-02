@@ -258,12 +258,12 @@ class Flix {
   /**
     * The current phase we are in. Initially null.
     */
-  var currentPhase: PhaseTime = _
+  private var currentPhase: PhaseTime = _
 
   /**
     * The progress bar.
     */
-  val progressBar: ProgressBar = new ProgressBar
+  private val progressBar: ProgressBar = new ProgressBar
 
   /**
     * The default assumed charset.
@@ -278,7 +278,7 @@ class Flix {
   /**
     * The fork join pool for `this` Flix instance.
     */
-  var forkJoinPool: java.util.concurrent.ForkJoinPool = _
+  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The fork join task support for `this` Flix instance.
