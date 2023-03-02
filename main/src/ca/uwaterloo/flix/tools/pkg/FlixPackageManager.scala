@@ -32,8 +32,9 @@ object FlixPackageManager {
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
-    val flixDeps = findFlixDependencies(manifest)
+    out.println("Resolving Flix dependencies...")
 
+    val flixDeps = findFlixDependencies(manifest)
     flixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, path) match {

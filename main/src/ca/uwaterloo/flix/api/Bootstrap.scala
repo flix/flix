@@ -143,6 +143,7 @@ class Bootstrap {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
+    out.println("Dependency resolution completed.")
 
     // 3. Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(path)
