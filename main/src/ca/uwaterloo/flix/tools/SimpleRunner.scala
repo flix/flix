@@ -64,9 +64,8 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val bootstrap = new Bootstrap()
-      bootstrap.bootstrap(cwd)(System.out) match {
-        case Result.Ok(_) =>
+      Bootstrap.bootstrap(cwd)(System.out) match {
+        case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
