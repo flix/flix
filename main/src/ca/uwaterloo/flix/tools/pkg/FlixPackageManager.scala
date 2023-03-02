@@ -77,7 +77,7 @@ object FlixPackageManager {
               val path = assetFolder.resolve(assetName)
               val newDownload = !Files.exists(path)
               if(newDownload) {
-                out.println(s"Installing $assetName")
+                out.println(s"Installing `$assetName'... ")
                 try {
                   Using(GitHub.downloadAsset(asset)) {
                     stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
