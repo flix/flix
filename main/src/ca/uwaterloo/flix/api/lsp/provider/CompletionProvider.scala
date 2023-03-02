@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.phase.Parser.Letters
@@ -168,7 +168,7 @@ object CompletionProvider {
           (ImportNewCompleter.getCompletions ++ ImportMethodCompleter.getCompletions ++ ImportFieldCompleter.getCompletions
             ++ ClassCompleter.getCompletions map (comp => comp.toCompletionItem))
       case useRegex() => getUseCompletions()
-      case instanceRegex() => getInstanceCompletions()
+      case instanceRegex() => InstanceCompleter.getCompletions map (comp => comp.toCompletionItem)
       //
       // The order of this list doesn't matter because suggestions are ordered
       // through sortText
@@ -186,14 +186,14 @@ object CompletionProvider {
     * All of the completions are not necessarily sound.
     */
   private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[CompletionItem] = {
-    (KeywordCompleter.getCompletions ++
+    KeywordCompleter.getCompletions ++
       SnippetCompleter.getCompletions ++
       VarCompleter.getCompletions ++
       DefCompleter.getCompletions ++
       SignatureCompleter.getCompletions ++
       FieldCompleter.getCompletions ++
-      OpCompleter.getCompletions map (comp => comp.toCompletionItem)) ++
-      getMatchCompletitions()
+      OpCompleter.getCompletions ++
+      MatchCompleter.getCompletions map (comp => comp.toCompletionItem)
   }
 
   /**
@@ -314,156 +314,6 @@ object CompletionProvider {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * Returns a list of completion items for match type completions
-    */
-  private def getMatchCompletitions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): Iterable[CompletionItem] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
-
-    if (!(matchPattern matches context.prefix)) {
-      return Nil
-    }
-
-    val wordPattern = "ma?t?c?h?".r
-    val currentWordIsMatch = wordPattern matches context.word
-
-    root.get.enums.foldLeft[List[CompletionItem]](Nil)((acc, enm) => {
-      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch) match {
-        case Some(v) => v :: acc
-        case None => acc
-      }
-      else acc
-    })
-  }
-
-  /**
-    * Converts an enum into a exhaustive match completion
-    */
-  private def matchCompletion(enm: TypedAst.Enum, currentWordIsMatch: Boolean)(implicit context: CompletionContext, flix: Flix): Option[CompletionItem] = {
-    val includeMatch = if (currentWordIsMatch) "match " else ""
-    val priority: String => String = if (enm.loc.source.name == context.uri) {
-      Priority.high
-    }
-    else if (enm.mod.isPublic && enm.sym.namespace.isEmpty) {
-      Priority.boost
-    }
-    else {
-      return None
-    }
-    val (completion, _) = enm.cases.toList.sortBy(_._1.loc).foldLeft(("", 1))({
-      case ((acc, z), (sym, cas)) => {
-        val name = sym.name
-        val (str, k) = cas.tpe.typeConstructor match {
-          case Some(TypeConstructor.Unit) => (s"$name => $${${z + 1}:???}", z + 1)
-          case Some(TypeConstructor.Tuple(arity)) => (List.range(1, arity + 1)
-            .map(elem => s"$${${elem + z}:_elem$elem}")
-            .mkString(s"$name(", ", ", s") => $${${arity + z + 1}:???}"), z + arity + 1)
-          case _ => (s"$name($${${z + 1}:_elem}) => $${${z + 2}:???}", z + 2)
-        }
-        (acc + "    case " + str + "\n", k)
-      }
-    })
-    Some(matchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}", priority))
-  }
-
-  /**
-    * Creates a completion item for an exhaustive match
-    */
-  private def matchCompletion(sym: String, completion: String, priority: String => String)(implicit context: CompletionContext): CompletionItem = {
-    val label = s"match $sym"
-    CompletionItem(label = label,
-      sortText = priority(label),
-      textEdit = TextEdit(context.range, completion),
-      documentation = None,
-      insertTextFormat = InsertTextFormat.Snippet,
-      kind = CompletionItemKind.Snippet)
-  }
-
-  /**
-    * Returns a list of completion items based on type classes.
-    */
-  private def getInstanceCompletions()(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], flix: Flix): Iterable[CompletionItem] = {
-    if (root.isEmpty || context.previousWord != "instance") {
-      return Nil
-    }
-
-    /**
-      * Replaces the text in the given variable symbol `sym` everywhere in the type `tpe`
-      * with an equivalent variable symbol with the given `newText`.
-      */
-    def replaceText(tvar: Symbol.KindedTypeVarSym, tpe: Type, newText: String): Type = tpe match {
-      case Type.Var(sym, loc) if tvar == sym => Type.Var(sym.withText(Ast.VarText.SourceText(newText)), loc)
-      case Type.Var(_, _) => tpe
-      case Type.Cst(_, _) => tpe
-
-      case Type.Apply(tpe1, tpe2, loc) =>
-        val t1 = replaceText(tvar, tpe1, newText)
-        val t2 = replaceText(tvar, tpe2, newText)
-        Type.Apply(t1, t2, loc)
-
-      case Type.Alias(sym, args0, tpe0, loc) =>
-        val args = args0.map(replaceText(tvar, _, newText))
-        val t = replaceText(tvar, tpe0, newText)
-        Type.Alias(sym, args, t, loc)
-    }
-
-    /**
-      * Formats the given type `tpe`.
-      */
-    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String)(implicit flix: Flix): String =
-      FormatType.formatType(replaceText(clazz.tparam.sym, tpe, hole))
-
-    /**
-      * Formats the given class `clazz`.
-      */
-    def fmtClass(clazz: TypedAst.Class): String = {
-      s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
-    }
-
-    /**
-      * Formats the given formal parameters in `spec`.
-      */
-    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
-      spec.fparams.map {
-        case fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}"
-      }.mkString(", ")
-
-    /**
-      * Formats the given signature `sig`.
-      */
-    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
-      val fparams = fmtFormalParams(clazz, sig.spec, hole)
-      val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
-      val pur = sig.spec.pur match {
-        case Type.Cst(TypeConstructor.True, _) => ""
-        case Type.Cst(TypeConstructor.False, _) => " & Impure"
-        case e => " & " + FormatType.formatType(e)
-      }
-      s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
-    }
-
-    root.get.classes.map {
-      case (_, clazz) =>
-        val hole = "${1:t}"
-        val classSym = clazz.sym
-        val signatures = clazz.signatures.filter(_.impl.isEmpty)
-        val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
-        val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
-
-        CompletionItem(label = s"$classSym[...]",
-          sortText = Priority.high(classSym.toString),
-          textEdit = TextEdit(context.range, completion),
-          detail = Some(fmtClass(clazz)),
-          documentation = Some(clazz.doc.text),
-          insertTextFormat = InsertTextFormat.Snippet,
-          kind = CompletionItemKind.Snippet)
-    }.toList
   }
 
   /**

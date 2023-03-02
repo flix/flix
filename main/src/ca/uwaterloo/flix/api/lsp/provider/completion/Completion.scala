@@ -115,6 +115,23 @@ sealed trait Completion {
         documentation = Some(decl.spec.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Interface)
+    case Completion.MatchCompletion(sym, completion, priority, context) =>
+      val label = s"match $sym"
+      CompletionItem(label = label,
+        sortText = priority(label),
+        textEdit = TextEdit(context.range, completion),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
+    case Completion.InstanceCompletion(clazz, completion, context) =>
+      val classSym = clazz.sym
+      CompletionItem(label = s"$classSym[...]",
+        sortText = Priority.high(classSym.toString),
+        textEdit = TextEdit(context.range, completion),
+        detail = Some(InstanceCompleter.fmtClass(clazz)),
+        documentation = Some(clazz.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
   }
 
   /**
@@ -297,4 +314,21 @@ object Completion {
     * @param decl the op decl.
     */
   case class OpCompletion(decl: TypedAst.Op, context: CompletionContext, flix: Flix) extends Completion
+
+  /**
+    * Represents an exhaustive Match completion
+    *
+    * @param sym        the match sym (it's name).
+    * @param completion the completion string (used as information for TextEdit).
+    * @param priority   the priority of the completion.
+    */
+  case class MatchCompletion(sym: String, completion: String, priority: String => String, context: CompletionContext) extends Completion
+
+  /**
+    * Represents an Instance completion (based on type classes)
+    *
+    * @param clazz      the clazz.
+    * @param completion the completion string (used as information for TextEdit).
+    */
+  case class InstanceCompletion(clazz: TypedAst.Class, completion: String, context: CompletionContext) extends Completion
 }
