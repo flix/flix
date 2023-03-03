@@ -173,6 +173,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
+      case JString("api/showAst") => Request.parseShowAst(json)
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)

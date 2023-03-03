@@ -389,6 +389,17 @@ object Request {
   }
 
   /**
+  * Tries to parse the given `json` value as a [[ShowAst]] request.
+  */
+  def parseShowAst(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      phase <- Ok("Instances") // TODO: unfake this - where do i get the phase? what is the phase?
+    } yield Request.ShowAst(id, phase)
+  }
+
+
+  /**
     * Attempts to parse the `id` from the given JSON value `v`.
     */
   private def parseId(v: JValue): Result[String, String] = {
