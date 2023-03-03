@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.fmt.{Audience, FormatOptions, FormatType}
+import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
@@ -62,6 +62,19 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
+  }
+
+  /**
+    * Gets all the cases in the given type.
+    */
+  def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
+    case Type.Cst(TypeConstructor.CaseSet(syms, _), _) => syms
+
+    case _: Type.Cst => SortedSet.empty
+    case _: Type.Var => SortedSet.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
+    case Type.Alias(_, _, tpe, _) => tpe.cases
   }
 
   /**
@@ -422,15 +435,7 @@ object Type {
       */
     lazy val kind: Kind = {
       tpe1.kind match {
-        case Kind.Arrow(k1, k2) =>
-          // TODO: Kind check (but only for boolean formulas for now).
-          //          if (k1 == Kind.Bool) {
-          //            val k3 = tpe2.kind
-          //            if (k3 != Kind.Bool && !k3.isInstanceOf[Kind.Var]) {
-          //               throw InternalCompilerException(s"Unexpected non-bool kind: '$k3'.")
-          //            }
-          //          }
-          k2
+        case Kind.Arrow(_, k2) => k2
         case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1'.", loc)
       }
     }
@@ -564,6 +569,12 @@ object Type {
     */
   def mkArray(tpe: Type, reg: Type, loc: SourceLocation): Type =
     Apply(Apply(Cst(TypeConstructor.Array, loc), tpe, loc), reg, loc)
+
+  /**
+    * Returns the type `Array[tpe]` with the given source location `loc`.
+    */
+  def mkVector(tpe: Type, loc: SourceLocation): Type =
+    Apply(Cst(TypeConstructor.Vector, loc), tpe, loc)
 
   /**
     * Returns the type `Ref[tpe, reg]` with the given source location `loc`.
@@ -838,7 +849,8 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseComplement(tpe: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = tpe match {
-    // TODO RESTR-VARS maybe optimize
+    case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(_), _), tpe2, _) => tpe2
+    // TODO RESTR-VARS use universe?
     case t => Type.Apply(Type.Cst(TypeConstructor.CaseComplement(sym), loc), t, loc)
   }
 
@@ -884,7 +896,11 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseUnion(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      Type.Cst( TypeConstructor.CaseSet(syms1 ++ syms2, sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
+    case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
+    // TODO RESTR-VARS ALL case: universe
     case _ => mkApply(Type.Cst(TypeConstructor.CaseUnion(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -894,7 +910,11 @@ object Type {
     * Must not be used before kinding.
     */
   def mkCaseIntersection(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
-    // TODO RESTR-VARS maybe optimize
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      Type.Cst(TypeConstructor.CaseSet(syms1 & syms2, sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), _) if syms1.isEmpty => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
+    case (_, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
+    // TODO RESTR-VARS ALL case: universe
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
   }
 
@@ -920,7 +940,9 @@ object Type {
     *
     * Must not be used before kinding.
     */
-  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
+  def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
+    mkCaseIntersection(tpe1, mkCaseComplement(tpe2, sym, loc), sym, loc)
+  }
 
   /**
     * Returns a Region type for the given region argument `r` with the given source location `loc`.

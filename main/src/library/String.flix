@@ -205,7 +205,7 @@ namespace String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 rem len, s) };
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.rem` len, s) };
         init(f, len)
 
     ///
@@ -224,9 +224,9 @@ namespace String {
     ///
     def rotateRightHelper(n: Int32, s: String): String =
         let len = length(s);
-        let n1 = n rem len;
+        let n1 = n `Int32.rem` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 rem len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.rem` len, s)};
         init(f, len)
 
     ///
@@ -270,33 +270,33 @@ namespace String {
     ///
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
-    pub def slice(b: Int32, e: Int32, s: String): String = try {
+    pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
         import java.lang.String.substring(Int32, Int32): String \ {};
-        substring(s, b, e)
+        substring(s, start.start, end.end)
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => ""
     }
 
     ///
-    /// Get the substring of `s` to the left of index `e` (exclusive).
+    /// Get the substring of `s` to the left of index `end` (exclusive).
     ///
     /// `sliceLeft == slice(0 , e, s)`
     ///
-    pub def sliceLeft(e: Int32, s: String): String = match length(s) {
-        case len if e > len => ""
-        case _   if e < 0   => ""
-        case _              => slice(0, e, s)
+    pub def sliceLeft(end: {end = Int32}, s: String): String = match length(s) {
+        case len if end.end > len => ""
+        case _   if end.end < 0   => ""
+        case _                    => slice(start = 0, end, s)
     }
 
     ///
-    /// Get the substring of `s` to the right starting at index `b` (inclusive).
+    /// Get the substring of `s` to the right starting at index `start` (inclusive).
     ///
-    /// `sliceRight == slice(b , length(s), s)`
+    /// `sliceRight == slice(start , length(s), s)`
     ///
-    pub def sliceRight(b: Int32, s: String): String = match length(s) {
-        case len if b >= len => ""
-        case _   if b < 0 => ""
-        case len => slice(b, len, s)
+    pub def sliceRight(start: {start = Int32}, s: String): String = match length(s) {
+        case len if start.start >= len => ""
+        case _   if start.start < 0    => ""
+        case len                       => slice(start, end = len, s)
     }
 
     ///
@@ -378,7 +378,7 @@ namespace String {
     /// of `s`.
     ///
     pub def takeLeft(n: Int32, s: String): String =
-        if (n >= length(s)) s else slice(0, n, s)
+        if (n >= length(s)) s else slice(start = 0, end = n, s)
 
     ///
     /// Take the last `n` characters of string `s` from the right.
@@ -388,7 +388,7 @@ namespace String {
     ///
     pub def takeRight(n: Int32, s: String): String =
         let len = length(s);
-        if (n >= len) s else slice(len - n, len, s)
+        if (n >= len) s else slice(start = len - n, end = len, s)
 
     ///
     /// Alias for `dropLeft`.
@@ -404,7 +404,7 @@ namespace String {
         if (n <= 0)
             s
         else
-            slice(n, length(s), s)
+            slice(start = n, end = length(s), s)
 
     ///
     /// Drop the last `n` characters of string `s` from the right.
@@ -414,7 +414,7 @@ namespace String {
     pub def dropRight(n: Int32, s: String): String =
         if (n > 0)
             let len = length(s);
-            slice(0, len - n, s)
+            slice(start = 0, end = len - n, s)
         else
             s
 
@@ -444,7 +444,7 @@ namespace String {
     pub def takeWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None    => s
-            case Some(i) => slice(i + 1, length(s), s)
+            case Some(i) => slice(start = i + 1, end = length(s), s)
         }
 
     ///
@@ -461,7 +461,7 @@ namespace String {
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> not (f(x)), s) {
             case None    => ""
-            case Some(i) => sliceRight(i, s)
+            case Some(i) => sliceRight(start = i, s)
         }
 
     ///
@@ -473,7 +473,7 @@ namespace String {
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> not (f(x)), s) {
             case None    => ""
-            case Some(i) => sliceLeft(i + 1, s)     // must include i
+            case Some(i) => sliceLeft(end = i + 1, s)     // must include i
         }
 
     ///
@@ -485,9 +485,9 @@ namespace String {
     pub def dropWhileAround(f: Char -> Bool, s: String): String =
         match (findIndexOfLeft(x -> not (f(x)), s), findIndexOfRight(x -> not (f(x)), s)) {
             case (None, None)       => ""
-            case (Some(l), None)    => sliceRight(l, s)
-            case (None, Some(r))    => sliceLeft(r, s)
-            case (Some(l), Some(r)) => slice(l, r + 1, s)
+            case (Some(l), None)    => sliceRight(start = l, s)
+            case (None, Some(r))    => sliceLeft(end = r, s)
+            case (Some(l), Some(r)) => slice(start = l, end = r + 1, s)
         }
 
     ///
@@ -501,7 +501,7 @@ namespace String {
         match length(s) {
             case _   if n <= 0  => ("", s)
             case len if n > len => (s, "")
-            case _              => (sliceLeft(n, s), sliceRight(n, s))
+            case _              => (sliceLeft(end = n, s), sliceRight(start = n, s))
         }
 
 
@@ -831,9 +831,9 @@ namespace String {
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
-                sliceRight(ix, s1)
+                sliceRight(start = ix, s1)
             else if (not Char.isWhiteSpace(charAt(ix, s1)))
-                sliceRight(ix, s1)
+                sliceRight(start = ix, s1)
             else
                 loop(s1, ix + 1)
         };
@@ -999,7 +999,7 @@ namespace String {
             case _   if w < 3   => ""
             case len            => {
                 let start = len - w + 3;
-                "..." + slice(start, len, s)
+                "..." + slice(start = start, end = len, s)
             }
         }
 
@@ -1015,7 +1015,7 @@ namespace String {
         match length(s) {
             case len if len < w => s
             case _   if w < 3   => ""
-            case _              => slice(0, w - 3, s) + "..."
+            case _              => slice(start = 0, end = w - 3, s) + "..."
         }
 
     ///
@@ -1029,19 +1029,19 @@ namespace String {
         let n = length(t);
         let v0 = Array.repeat(r, n + 1, 0);
         let v1 = Array.repeat(r, n + 1, 0);
-        forIndex(0, n, i -> v0[i] = i);
+        forIndex(0, n, i -> Array.put(i, i, v0));
         forIndex(0, m - 1, i -> {
-            v1[0] = i + 1;
+            Array.put(i + 1, 0, v1);
             forIndex(0, n - 1, j -> {
                 let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
-                let a = v1[j] + 1;
-                let b = v0[j + 1] + 1;
-                let c = v0[j] + substitutionCost;
-                v1[j + 1] = Int32.min(a, Int32.min(b, c))
+                let a = Array.get(j, v1) + 1;
+                let b = Array.get(j + 1, v0) + 1;
+                let c = Array.get(j, v0) + substitutionCost;
+                Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
             });
             arraySwap(v0, v1)
         });
-        v0[n]
+        Array.get(n, v0)
     }
 
     ///
@@ -1056,7 +1056,7 @@ namespace String {
     /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { Read(r2), Write(r1) } =
-        forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
+        forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1092,11 +1092,11 @@ namespace String {
             else {
                 match indexOfLeftWithOffset({substr = substr.substr}, {offset = ix}, s) {
                     case None => {
-                        let s1 = sliceRight(ix, s);
+                        let s1 = sliceRight(start = ix, s);
                         Some(s1, maxlen + 1)
                     }
                     case Some(ix2) => {
-                        let s1 = slice(ix, ix2, s);
+                        let s1 = slice(start = ix, end = ix2, s);
                         Some(s1, ix2 + sublen)
                     }
                 }
@@ -1151,8 +1151,8 @@ namespace String {
         let len = length(s);
         let step = pos -> match pos {
             case i if i >= len        => None
-            case i if i + size >= len => Some(sliceRight(i, s), len)
-            case i                    => Some(slice(i, i + size, s), i + size)
+            case i if i + size >= len => Some(sliceRight(start = i, s), len)
+            case i                    => Some(slice(start = i, end = i + size, s), i + size)
         };
         List.unfold(step, 0)
 
@@ -1163,7 +1163,7 @@ namespace String {
     pub def breakOnLeft(substr: {substr = String}, s: String): (String, String) =
         match indexOfLeft({substr = substr.substr}, s) {
             case None    => (s, "")
-            case Some(i) => (sliceLeft(i, s), sliceRight(i, s))
+            case Some(i) => (sliceLeft(end = i, s), sliceRight(start = i, s))
         }
 
     ///
@@ -1174,7 +1174,7 @@ namespace String {
         let sublen = length(substr.substr);
         match indexOfRight({substr = substr.substr}, s) {
             case None    => (s, "")
-            case Some(i) => (sliceLeft(i + sublen, s), sliceRight(i + sublen, s))
+            case Some(i) => (sliceLeft(end  = i + sublen, s), sliceRight(start = i + sublen, s))
         }
 
     ///
@@ -1212,21 +1212,13 @@ namespace String {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: String): Iterator[Char, r] \ Write(r) =
-        let len = length(s);
-        let i = ref 0 @ r;
-        let done = () -> deref i >= len;
-        let next = () -> {
-            let x = charAt(deref i, s);
-            i := deref i + 1;
-            x
-        };
-        Iterator.Iterator(done, next)
+    pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ Write(r) =
+        Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
 
     ///
     /// Returns an iterator over `l` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: String): Iterator[(Int32, Char), r] \ Write(r) =
-        iterator(r, s) |> Iterator.zipWithIndex
+    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ Write(r) =
+        iterator(rc, s) |> Iterator.zipWithIndex
 
 }

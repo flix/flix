@@ -1179,7 +1179,7 @@ class TestTyper extends FunSuite with TestUtils {
     // Regression test. See https://github.com/flix/flix/issues/4062
     val input =
       """
-        |def mkArray(): Array[Int32, Static] \ IO = []
+        |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
         |def zero(): Int32 & Pure = $ARRAY_LENGTH$(mkArray())
         |""".stripMargin
@@ -1664,4 +1664,256 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.UnexpectedArgument](result)
   }
 
+  test("TestChoose.01") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = choose Expr.Cst {
+        |    case Expr.Var(_) => true
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChoose.02") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        | pub def testChoose06(): Bool = {
+        |     let f = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Var(_) => true
+        |     };
+        |     let g = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Xor(_) => true
+        |     };
+        |     let h = if (true) f else g;
+        |     h(Expr.Var)
+        | }
+        |""".stripMargin
+    expectError[TypeError.MismatchedArrowBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChoose.03") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        | pub def testChoose06(): Bool = {
+        |     let f = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Var(_) => true
+        |         case Expr.Not(_) => false
+        |     };
+        |     let g = x -> choose x {
+        |         case Expr.Cst(_) => false
+        |         case Expr.Xor(_) => true
+        |         case Expr.Not(_) => false
+        |     };
+        |     let h = if (true) f else g;
+        |
+        |     let cstOrNotOrVar = if (true) open Expr.Cst else if (true) open Expr.Not else open Expr.Var;
+        |
+        |     h(cstOrNotOrVar)
+        | }
+        |""".stripMargin
+    expectError[TypeError.MismatchedArrowBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.01") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Cst(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.02") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def quack(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Xor(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.03") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def liquorice(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Not()
+        |    };
+        |    choose star {
+        |        case Expr.Not(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.04") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def testChooseStar4(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Cst(_) => Expr.Var()
+        |        case Expr.Not(_) => Expr.Var()
+        |        case Expr.Xor(_) => Expr.Not()
+        |    };
+        |    choose star {
+        |        case Expr.Var(_) => true
+        |        case Expr.Xor(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.05") {
+    val input =
+      """
+        |restrictable enum Expr[s] {
+        |    case Cst, Var, Not, And, Or, Xor
+        |}
+        |
+        |pub def foo(): Bool = {
+        |    // P2: check the lower bound by using result in a choose
+        |    let star = choose* Expr.Cst {
+        |        case Expr.Not(_) => Expr.Not()
+        |        case Expr.Cst(_) => Expr.Var()
+        |    };
+        |    choose star {
+        |        case Expr.Cst(_) => false
+        |    }
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestChooseStar.06") {
+    val input =
+      """
+        |restrictable enum E[s] {
+        |    case N(E[s])
+        |    case C
+        |}
+        |
+        |def n(e: E[s && <E.N>]): _ = ???
+        |
+        |def foo(e: E[s]): E[s] = choose* e {
+        |    case E.N(x) => n(x)            // must have x <: <E.N> but this doesn't hold
+        |    case E.C    => E.C
+        |}
+        |""".stripMargin
+    expectError[TypeError.UnexpectedArgument](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.01") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Not all cases caught
+        |def isRed(c: Color[s]): Bool = choose c {
+        |    case Color.Red => true
+        |    case Color.Green => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.02") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// forgot Green intro
+        |def redToGreen(c: Color[s]): Color[s -- <Color.Red>] = choose* c {
+        |    case Color.Red => Color.Green
+        |    case Color.Green => Color.Green
+        |    case Color.Blue => Color.Blue
+        |}
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.03") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus
+        |def isRed(c: Color[s -- <Color.Blue>]): Bool = choose* c {
+        |    case Color.Red => true
+        |    case Color.Blue => false
+        |}
+        |""".stripMargin
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
+  }
+
+  test("TestCaseSetAnnotation.04") {
+    val input =
+      """
+        |restrictable enum Color[s] {
+        |    case Red, Green, Blue
+        |}
+        |
+        |// Wrong minus parsing
+        |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
+        |""".stripMargin
+    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+  }
 }

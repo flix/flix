@@ -95,6 +95,8 @@ object CodeHinter {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
+
     case Expression.Use(_, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
@@ -127,6 +129,9 @@ object CodeHinter {
 
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -192,8 +197,14 @@ object CodeHinter {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
+    case Expression.VectorLit(exps, exp, _, _, _) =>
+      visitExps(exps)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -205,6 +216,9 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>

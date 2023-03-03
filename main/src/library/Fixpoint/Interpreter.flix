@@ -47,7 +47,7 @@ namespace Fixpoint {
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
             case RamStmt.Seq(stmts) => List.forEach(evalStmt(r, db), stmts)
             case RamStmt.Until(test, body) =>
-                if (evalBoolExp(r, db, ([] @ r, [] @ r), test)) {
+                if (evalBoolExp(r, db, (Array#{} @ r, Array#{} @ r), test)) {
                     ()
                 } else {
                     evalStmt(r, db, body);
@@ -68,15 +68,15 @@ namespace Fixpoint {
             case RelOp.Search(RowVar.Index(i), ramSym, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.forEach(t -> l -> {
-                    tupleEnv[i] = t;
-                    latEnv[i] = l;
+                    Array.put(t, i, tupleEnv);
+                    Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, new MutMap(r1), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
                 MutMap.queryWith(evalQuery(env, query), t -> l -> {
-                    tupleEnv[i] = t;
-                    latEnv[i] = l;
+                    Array.put(t, i, tupleEnv);
+                    Array.put(l, i, latEnv);
                     evalOp(r1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, new MutMap(r1), db))
             case RelOp.Project(terms, ramSym) =>
@@ -173,10 +173,10 @@ namespace Fixpoint {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            Fixpoint/Tuple.valueAt(tupleEnv[i], index)
+            Fixpoint/Tuple.valueAt(Array.get(i, tupleEnv), index)
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
-            latEnv[i]
+            Array.get(i, latEnv)
         case RamTerm.Meet(cap, lhs, rhs) =>
             evalTerm(env, lhs) `cap` evalTerm(env, rhs)
         case RamTerm.App0(f) =>

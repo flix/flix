@@ -57,7 +57,7 @@ namespace Test/Java/Function {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
-        let stream0 = of([mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)]);
+        let stream0 = of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ r);
         let stream1 = filter(stream0, obj -> toString(obj) == "5");
         toString(get(findFirst(stream1))) == "5"
     }
@@ -93,7 +93,7 @@ namespace Test/Java/Function {
         import java.util.stream.IntStream.filter(IntPredicate): IntStream \ IO;
         import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = range(0, 9);
-        let stream1 = filter(stream0, upcast(i -> i mod 2 == 0));
+        let stream1 = filter(stream0, upcast(i -> i `Int32.rem` 2 == 0));
         sum(stream1) == 20
     }
 
@@ -138,7 +138,7 @@ namespace Test/Java/Function {
         import java.util.stream.LongStream.filter(LongPredicate): LongStream \ IO;
         import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = range(0i64, 9i64);
-        let stream1 = filter(stream0, upcast(i -> i mod 2i64 == 0i64));
+        let stream1 = filter(stream0, upcast(i -> i `Int64.rem` 2i64 == 0i64));
         sum(stream1) == 20i64
     }
 
@@ -174,8 +174,8 @@ namespace Test/Java/Function {
     def testDoubleConsumer(): Bool \ IO = {
         import static java.util.stream.DoubleStream.of(Array[Float64, Static]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.forEach(DoubleConsumer): Unit \ IO;
-        let st = ref 0.0f64 @ Static;
-        let stream = of([0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64] @ Static);
+        let st = ref 0.0f64;
+        let stream = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
         let _ = forEach(stream, i -> st := i);
         let last = deref st;
         Float64.tryToInt32(last) == Some(8)
@@ -186,9 +186,9 @@ namespace Test/Java/Function {
         import static java.util.stream.DoubleStream.of(Array[Float64, r]): DoubleStream \ IO;
         import java.util.stream.DoubleStream.filter(DoublePredicate): DoubleStream \ IO;
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
-        let stream0 = of([0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64]);
+        let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ r);
         let stream1 = filter(stream0, upcast(d -> match Float64.tryToInt32(d) {
-            case Some(i) => i mod 2 == 0
+            case Some(i) => i `Int32.rem` 2 == 0
             case None    => false
             }));
         let tot = sum(stream1);

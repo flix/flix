@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Lukas Rønn, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.language.ast.Symbol
 
-object MavenManager {
+/**
+  * Represents a list of changes.
+  */
+case class DeltaContext(deltas: List[Delta]) {
 
-  def installDeps(manifest: Manifest): Result[Unit, PackageError] = ???
-
-  private def installArtifact(groupId: String, artifactId: String, version: String): Result[Unit, PackageError] = ???
+  def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
+    case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
+    case _ => false
+  }
 
 }

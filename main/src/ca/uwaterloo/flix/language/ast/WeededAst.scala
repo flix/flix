@@ -75,6 +75,10 @@ object WeededAst {
 
     case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Open(qname: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+
+    case class OpenAs(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class HoleWithExp(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -105,6 +109,8 @@ object WeededAst {
 
     case class Scope(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class ScopeExit(exp1 : WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class TypeMatch(exp: WeededAst.Expression, rules: List[WeededAst.MatchTypeRule], loc: SourceLocation) extends WeededAst.Expression
@@ -125,7 +131,7 @@ object WeededAst {
 
     case class New(qname: Name.QName, exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLit(exps: List[WeededAst.Expression], exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayLit(exps: List[WeededAst.Expression], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayNew(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -135,7 +141,11 @@ object WeededAst {
 
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArraySlice(region: WeededAst.Expression, base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLit(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
@@ -234,12 +244,6 @@ object WeededAst {
     case class Tag(qname: Name.QName, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class Array(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class ArrayTailSpread(elms: scala.List[WeededAst.Pattern], ident: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class ArrayHeadSpread(ident: Option[Name.Ident], elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
@@ -356,8 +360,24 @@ object WeededAst {
 
     case class Empty(loc: SourceLocation) extends WeededAst.Type
 
-    case class Ascribe(tpe: WeededAst.Type, kind: Kind, loc: SourceLocation) extends WeededAst.Type
+    case class CaseSet(cases: List[Name.QName], loc: SourceLocation) extends WeededAst.Type
 
+    case class CaseUnion(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class CaseIntersection(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class CaseComplement(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Ascribe(tpe: WeededAst.Type, kind: WeededAst.Kind, loc: SourceLocation) extends WeededAst.Type
+
+  }
+
+  sealed trait Kind
+
+  object Kind {
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Kind
+
+    case class Arrow(k1: Kind, k2: Kind, loc: SourceLocation) extends WeededAst.Kind
   }
 
   sealed trait TypeParams
@@ -376,9 +396,9 @@ object WeededAst {
 
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class Case(ident: Name.Ident, tpe: WeededAst.Type)
+  case class Case(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type)
+  case class RestrictableCase(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
@@ -418,7 +438,7 @@ object WeededAst {
 
     case class Unkinded(ident: Name.Ident) extends TypeParam
 
-    case class Kinded(ident: Name.Ident, kind: Kind) extends TypeParam
+    case class Kinded(ident: Name.Ident, kind: WeededAst.Kind) extends TypeParam
 
   }
 

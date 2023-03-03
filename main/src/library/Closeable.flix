@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Matthew Lutze
+ * Copyright 2023 Paul Butcher
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.fmt
-
-/**
-  * Describes the intended audience of the result of a method call.
-  *
-  * [[Audience.External]] indicates the result should be formatted for display to users.
-  *
-  * [[Audience.Internal]] indicates the result should be formatted for display to compiler programmers.
-  */
-sealed trait Audience
-object Audience {
-  case object External extends Audience
-  case object Internal extends Audience
+///
+/// A type class for types that can be closed.
+///
+pub class Closeable[a] {
+    pub def close(x: a): Unit \ IO
 }

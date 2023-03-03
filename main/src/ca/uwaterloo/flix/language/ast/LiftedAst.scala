@@ -83,6 +83,8 @@ object LiftedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
 
+    case class ScopeExit(exp1: LiftedAst.Expression, exp2: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
+
     case class Is(sym: Symbol.CaseSym, exp: LiftedAst.Expression, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression {
       def tpe: Type = Type.Bool
     }
@@ -122,10 +124,6 @@ object LiftedAst {
     }
 
     case class ArrayLength(base: LiftedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends LiftedAst.Expression
-
-    case class ArraySlice(base: LiftedAst.Expression, beginIndex: LiftedAst.Expression, endIndex: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
-      def purity: Purity = Impure
-    }
 
     case class Ref(exp: LiftedAst.Expression, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure

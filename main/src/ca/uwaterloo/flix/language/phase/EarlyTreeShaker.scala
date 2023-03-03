@@ -167,6 +167,9 @@ object EarlyTreeShaker {
     case Expression.Scope(_, _, exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -218,8 +221,14 @@ object EarlyTreeShaker {
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
       visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(reg, base, beginIndex, endIndex, _, _, _, _) =>
-      visitExp(reg) ++ visitExp(base) ++ visitExp(beginIndex) ++ visitExp(endIndex)
+    case Expression.VectorLit(exps, exp, _, _, _) =>
+      visitExps(exps)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)

@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
+import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -36,8 +37,9 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.io.ByteArrayInputStream
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -89,6 +91,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   private var index: Index = Index.empty
 
   /**
+    * The current delta context. Initially has no changes.
+    */
+  private var delta: DeltaContext = DeltaContext(Nil)
+
+  /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
     */
   private var current: Boolean = false
@@ -102,7 +109,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
-    Console.println(s"LSP listening on: '$getAddress'.")
+    Console.println(s"Listen on '$getAddress'.")
   }
 
   /**
@@ -110,13 +117,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
     /* nop */
+    Console.println(s"Client at '${ws.getRemoteSocketAddress}' connected.")
   }
 
   /**
     * Invoked when a client disconnects.
     */
   override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
-    /* nop */
+    Console.println(s"Client at '${ws.getRemoteSocketAddress}' disconnected.")
   }
 
   /**
@@ -244,7 +252,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddJar(id, uri) =>
-      flix.addJar(uri)
+      val path = Path.of(new URI(uri))
+      flix.addJar(path)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
@@ -264,16 +273,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root.orNull, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
@@ -325,11 +334,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, LazyList.empty, t)
+          processSuccessfulCheck(requestId, root, LazyList.empty, flix.options.explain, t)
 
         case SoftFailure(root, errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
-          processSuccessfulCheck(requestId, root, errors, t)
+          processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
         case Failure(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
@@ -339,7 +348,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           this.currentErrors = errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(errors)
+          val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
           ("id" -> requestId) ~ ("status" -> "failure") ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -354,9 +363,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+    val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
+    this.delta = Differ.difference(oldRoot, root)
     this.current = true
     this.currentErrors = errors.toList
 
@@ -368,15 +379,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
     // Compute Code Quality hints.
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
-    if (codeHints.isEmpty) {
-      // Case 1: No code hints.
-      val results = PublishDiagnosticsParams.fromMessages(errors)
-      ("id" -> requestId) ~ ("status" -> "success") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    } else {
-      // Case 2: Code hints are available.
-      val results = PublishDiagnosticsParams.fromMessages(errors) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
-      ("id" -> requestId) ~ ("status" -> "failure") ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
-    }
+
+    // Determine the status based on whether there are errors.
+    val status = if (errors.isEmpty) "success" else "failure"
+    val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    ("id" -> requestId) ~ ("status" -> status) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**

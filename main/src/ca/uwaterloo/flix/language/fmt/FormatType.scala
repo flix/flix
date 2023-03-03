@@ -163,6 +163,7 @@ object FormatType {
       case SimpleType.BigInt => true
       case SimpleType.Str => true
       case SimpleType.Array => true
+      case SimpleType.Vector => true
       case SimpleType.Ref => true
       case SimpleType.Sender => true
       case SimpleType.Receiver => true
@@ -225,6 +226,7 @@ object FormatType {
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
       case SimpleType.Array => "Array"
+      case SimpleType.Vector => "Vector"
       case SimpleType.Ref => "Ref"
       case SimpleType.Sender => "Sender"
       case SimpleType.Receiver => "Receiver"
@@ -332,6 +334,7 @@ object FormatType {
         val prefix: String = kind match {
           case Kind.Wild => "_" + id.toString
           case Kind.Beef => "_b" + id.toString
+          case Kind.WildCaseSet => "_c" + id.toString
           case Kind.Star => "t" + id
           case Kind.Bool => "b" + id
           case Kind.Effect => "e" + id

@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Scheme {
@@ -128,12 +129,18 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    for {
-      subst <- Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation
-      newTconstrs1 <- ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
-      newTconstrs2 <- ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
-      _ <- Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))
-    } yield subst
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
+      case subst =>
+        val newTconstrs1Val = ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
+        val newTconstrs2Val = ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
+        flatMapN(newTconstrs1Val, newTconstrs2Val) {
+          case (newTconstrs1, newTconstrs2) =>
+            mapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
+              case _ => subst
+            }
+
+        }
+    }
   }
 
 }

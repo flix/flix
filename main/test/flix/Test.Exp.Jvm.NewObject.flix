@@ -312,8 +312,8 @@ namespace Test/Exp/Jvm/NewObject {
   @test
   def testMethodClosure01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
-    let x = [1, 2, 3];
-    let y = [4, 5, 6];
+    let x = Array#{1, 2, 3} @ Static;
+    let y = Array#{4, 5, 6} @ Static;
     let anon = new ##java.lang.Object {
       def toString(_this: ##java.lang.Object): String = Array.toString(Array.append(Static, x, y))
     };

@@ -29,10 +29,6 @@ instance Newable[MutList[a]] {
     pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
 }
 
-instance Scoped[MutList[a]] {
-    pub def regionOf(_: MutList[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutList {
 
     ///
@@ -187,7 +183,7 @@ namespace MutList {
             if (i >= l)
                 false
             else
-                if (f(a[i])) true else loop(i + 1)
+                if (f(Array.get(i, a))) true else loop(i + 1)
         };
         loop(0)
 
@@ -204,7 +200,7 @@ namespace MutList {
             if (i >= l)
                 true
             else
-                if (f(a[i])) loop(i + 1) else false
+                if (f(Array.get(i, a))) loop(i + 1) else false
         };
         loop(0)
 
@@ -228,7 +224,7 @@ namespace MutList {
     pub def last(v: MutList[a, r]): Option[a] \ Read(r) =
         let MutList(_, a, l) = v;
         let len = deref l;
-        if (len > 0) Some((deref a)[len - 1]) else None
+        if (len > 0) Some(Array.get(len - 1, deref a)) else None
 
     ///
     /// Alias for `IndexOfLeft`
@@ -248,7 +244,7 @@ namespace MutList {
             if (i >= l)
                 None
             else
-                if (x == a[i]) Some(i) else loop(i + 1)
+                if (x == Array.get(i, a)) Some(i) else loop(i + 1)
         };
         loop(0)
 
@@ -264,7 +260,7 @@ namespace MutList {
             if (i < 0)
                 None
             else
-                if (x == a[i]) Some(i) else loop(i - 1)
+                if (x == Array.get(i, a)) Some(i) else loop(i - 1)
         };
         loop(l - 1)
 
@@ -288,7 +284,7 @@ namespace MutList {
             if (i >= l)
                 None
             else
-                if (f(a[i])) Some(a[i]) else loop(i + 1)
+                if (f(Array.get(i, a))) Some(Array.get(i, a)) else loop(i + 1)
 
         };
         loop(0)
@@ -307,7 +303,7 @@ namespace MutList {
             if (i < 0)
                 None
             else
-                if (f(a[i])) Some(a[i]) else loop(i - 1)
+                if (f(Array.get(i, a))) Some(Array.get(i, a)) else loop(i - 1)
         };
         loop(l - 1)
 
@@ -330,8 +326,8 @@ namespace MutList {
             if (i >= n)
                 ()
             else {
-                let s1 = f(acc, a[i - 1]);
-                b[i] = s1;
+                let s1 = f(acc, Array.get(i - 1, a));
+                Array.put(s1, i, b);
                 loop(i + 1, s1)
             }
         };
@@ -351,8 +347,8 @@ namespace MutList {
             if (i < 0)
                 ()
             else {
-                let s1 = f(a[i], acc);
-                b[i] = s1;
+                let s1 = f(Array.get(i, a), acc);
+                Array.put(s1, i, b);
                 loop(i - 1, s1)
             }
         };
@@ -371,13 +367,13 @@ namespace MutList {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
-            let x = f(a[0]);
+            let x = f(Array.get(0, a));
             let b = Array.repeat(r1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
                 else {
-                    b[i] = f(a[i]);
+                    Array.put(f(Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -395,13 +391,13 @@ namespace MutList {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
-            let x = f(0, a[0]);
+            let x = f(0, Array.get(0, a));
             let b = Array.repeat(r1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
                 else {
-                    b[i] = f(i, a[i]);
+                    Array.put(f(i, Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -420,7 +416,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                a[i] = f(a[i]);
+                Array.put(f(Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -437,7 +433,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                a[i] = f(i, a[i]);
+                Array.put(f(i, Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -456,7 +452,7 @@ namespace MutList {
             if (i >= l)
                 acc
             else {
-                let s1 = f(acc, a[i]);
+                let s1 = f(acc, Array.get(i, a));
                 loop(i + 1, s1)
             }
         };
@@ -477,7 +473,7 @@ namespace MutList {
             if (i < 0)
                 acc
             else {
-                let s1 = f(a[i], acc);
+                let s1 = f(Array.get(i, a), acc);
                 loop(i - 1, s1)
             }
         };
@@ -497,7 +493,7 @@ namespace MutList {
             if (i >= l)
                 z
             else {
-                f(a[i], _ -> loop(i + 1))
+                f(Array.get(i, a), _ -> loop(i + 1))
             }
         };
         loop(0)
@@ -557,7 +553,7 @@ namespace MutList {
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > 0)
-            let last = (deref a)[len - 1];
+            let last = Array.get(len - 1, deref a);
             l := len - 1;
             Array.put(Reflect.default(), len - 1, deref a);
             compress!(v);
@@ -574,7 +570,7 @@ namespace MutList {
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        (deref a)[len] = x;
+        Array.put(x, len, deref a);
         l := len + 1
 
     ///
@@ -592,7 +588,7 @@ namespace MutList {
         else ();
         let sub = Array.copyOfRange(r, i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
-        (deref a)[i] = x;
+        Array.put(x, i, deref a);
         l := len + 1
 
     ///
@@ -609,11 +605,11 @@ namespace MutList {
         let n = l - 1;
         def loop(i1) = {
             if (i1 < n) {
-                a[i1] = a[i1 + 1];
+                Array.put(Array.get(i1 + 1, a), i1, a);
                 loop(i1 + 1)
             }
             else if (i1 == n) {
-                a[i1] = Reflect.default()
+                Array.put(Reflect.default(), i1, a)
             }
             else
                 ()
@@ -667,8 +663,8 @@ namespace MutList {
             if (i >= halflen)
                 ()
             else {
-                let x = a[i];
-                let y = a[j];
+                let x = Array.get(i, a);
+                let y = Array.get(j, a);
                 Array.put(y, i, a);
                 Array.put(x, j, a);
                 loop(i + 1, j - 1)
@@ -745,6 +741,15 @@ namespace MutList {
         Array.copyOfRange(r1, 0, deref l, deref a)
 
     ///
+    /// Returns `xs` as a vector.
+    ///
+    pub def toVector(xs: MutList[a, r]): Vector[a] \ Read(r) = region rc {
+        let arr = Array.new(rc, length(xs));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the mutable list `xs` as a chain.
     ///
     pub def toChain(xs: MutList[a, r]): Chain[a] \ Read(r) =
@@ -771,7 +776,7 @@ namespace MutList {
         def loop(i) = {
             if (i >= l1)
                 true
-            else if (a1[i] == a2[i])
+            else if (Array.get(i, a1) == Array.get(i, a2))
                 loop(i + 1)
             else
                 false
@@ -807,16 +812,21 @@ namespace MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
         let MutList(_, a, len) = l;
-        let i = ref 0 @ r1;
-        let done = () -> deref i == deref len;
+        let len1 = deref len;
+        let ix = ref 0 @ rc;
         let next = () -> {
-            let x = (deref a)[deref i];
-            i := deref i + 1;
-            x
+            let i = deref ix;
+            if (i < len1) {
+                let x = Array.get(i, deref a);
+                ix := i + 1;
+                Some(x)
+            } else {
+                None
+            }
         };
-        unsafe_cast Iterator.Iterator(done, next) as _ \ { Write(r1), Read(r2) }
+        Iterator.iterate(rc, next)
 
     ///
     /// Applies `f` to all the elements in `v`.
@@ -829,7 +839,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                f(a[i]);
+                f(Array.get(i, a));
                 loop(i + 1)
             }
         };
@@ -846,7 +856,7 @@ namespace MutList {
             if (i >= l)
                 ()
             else {
-                f(i, a[i]);
+                f(i, Array.get(i, a));
                 loop(i + 1)
             }
         };

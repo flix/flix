@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -25,7 +26,9 @@ object ErasedAst {
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  closures: Set[ClosureInfo],
+                  anonClasses: Set[AnonClassInfo])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
@@ -40,171 +43,181 @@ object ErasedAst {
   }
 
   object Expression {
-    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ApplyClo(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ApplyCloTail(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ApplyCloTail(exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], actuals: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class IfThenElse(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class IfThenElse(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Branch(exp: ErasedAst.Expression, branches: Map[Symbol.LabelSym, ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Branch(exp: ErasedAst.Expression, branches: Map[Symbol.LabelSym, ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Region(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Is(sym: Symbol.CaseSym, exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe: MonoType = MonoType.Bool
-    }
+    case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Tag(sym: Symbol.CaseSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Untag(sym: Symbol.CaseSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    // dont touch in #5434
+    case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Index(base: ErasedAst.Expression, offset: scala.Int, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Tuple(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class InvokeMethod(method: Method, exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class RecordEmpty(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class RecordSelect(exp: ErasedAst.Expression, field: Name.Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
 
-    case class RecordExtend(field: Name.Field, value: ErasedAst.Expression, rest: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class RecordRestrict(field: Name.Field, rest: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ArrayNew(elm: ErasedAst.Expression, len: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ArrayLoad(base: ErasedAst.Expression, index: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  }
 
-    case class ArrayStore(base: ErasedAst.Expression, index: ErasedAst.Expression, elm: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  sealed trait IntrinsicOperator0
 
-    case class ArrayLength(base: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  object IntrinsicOperator0 {
 
-    case class ArraySlice(base: ErasedAst.Expression, beginIndex: ErasedAst.Expression, endIndex: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
 
-    case class Ref(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object Region extends IntrinsicOperator0
 
-    case class Deref(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object RecordEmpty extends IntrinsicOperator0
 
-    case class Assign(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class GetStaticField(field: Field) extends IntrinsicOperator0
 
-    case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
 
-    case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object MatchError extends IntrinsicOperator0
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  }
 
-    case class InvokeMethod(method: Method, exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  sealed trait IntrinsicOperator1
 
-    case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+  object IntrinsicOperator1 {
 
-    case class GetField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Is(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
-    case class PutField(field: Field, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
-    case class GetStaticField(field: Field, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
-    case class PutStaticField(field: Field, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object Cast extends IntrinsicOperator1
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends ErasedAst.Expression
+    case class Index(idx: Int) extends IntrinsicOperator1
 
-    case class Spawn(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class RecordSelect(field: Name.Field) extends IntrinsicOperator1
 
-    case class Lazy(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class RecordRestrict(field: Name.Field) extends IntrinsicOperator1
 
-    case class Force(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object Ref extends IntrinsicOperator1
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case object Deref extends IntrinsicOperator1
 
-    case class MatchError(tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
-
-    case class BoxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Boolean.TYPE)
-    }
-
-    case class BoxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Byte.TYPE)
-    }
-
-    case class BoxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Short.TYPE)
-    }
-
-    case class BoxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Integer.TYPE)
-    }
-
-    case class BoxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Long.TYPE)
-    }
-
-    case class BoxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Character.TYPE)
-    }
-
-    case class BoxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Float.TYPE)
-    }
-
-    case class BoxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Native(java.lang.Double.TYPE)
-    }
-
-    case class UnboxBool(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Bool
-    }
-
-    case class UnboxInt8(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int8
-    }
-
-    case class UnboxInt16(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int16
-    }
-
-    case class UnboxInt32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int32
-    }
-
-    case class UnboxInt64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Int64
-    }
-
-    case class UnboxChar(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Char
-    }
-
-    case class UnboxFloat32(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Float32
-    }
-
-    case class UnboxFloat64(exp: ErasedAst.Expression, loc: SourceLocation) extends ErasedAst.Expression {
-      final val tpe = MonoType.Float64
-    }
+    case object ArrayLength extends IntrinsicOperator1
+
+    case object Lazy extends IntrinsicOperator1
+
+    case object Force extends IntrinsicOperator1
+
+    case class GetField(field: Field) extends IntrinsicOperator1
+
+    case class PutStaticField(field: Field) extends IntrinsicOperator1
+
+    case object BoxBool extends IntrinsicOperator1
+
+    case object BoxInt8 extends IntrinsicOperator1
+
+    case object BoxInt16 extends IntrinsicOperator1
+
+    case object BoxInt32 extends IntrinsicOperator1
+
+    case object BoxInt64 extends IntrinsicOperator1
+
+    case object BoxChar extends IntrinsicOperator1
+
+    case object BoxFloat32 extends IntrinsicOperator1
+
+    case object BoxFloat64 extends IntrinsicOperator1
+
+    case object UnboxBool extends IntrinsicOperator1
+
+    case object UnboxInt8 extends IntrinsicOperator1
+
+    case object UnboxInt16 extends IntrinsicOperator1
+
+    case object UnboxInt32 extends IntrinsicOperator1
+
+    case object UnboxInt64 extends IntrinsicOperator1
+
+    case object UnboxChar extends IntrinsicOperator1
+
+    case object UnboxFloat32 extends IntrinsicOperator1
+
+    case object UnboxFloat64 extends IntrinsicOperator1
+
+  }
+
+  sealed trait IntrinsicOperator2
+
+  object IntrinsicOperator2 {
+
+    case class RecordExtend(field: Name.Field) extends IntrinsicOperator2
+
+    case object Assign extends IntrinsicOperator2
+
+    case object ArrayNew extends IntrinsicOperator2
+
+    case object ArrayLoad extends IntrinsicOperator2
+
+    case object Spawn extends IntrinsicOperator2
+
+    case class PutField(field: Field) extends IntrinsicOperator2
+
+  }
+
+  sealed trait IntrinsicOperator3
+
+  object IntrinsicOperator3 {
+
+    case object ArrayStore extends IntrinsicOperator3
+
   }
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)

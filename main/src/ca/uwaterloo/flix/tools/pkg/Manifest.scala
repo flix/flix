@@ -15,4 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-case class Manifest(name: String, description: String, version: SemVer, flix: SemVer, license: Option[String], authors: List[String], dependencies: List[Dependency])
+case class Manifest(name: String,
+                    description: String,
+                    version: SemVer, flix:
+                    SemVer, license: Option[String],
+                    authors: List[String],
+                    dependencies: List[Dependency]) { }

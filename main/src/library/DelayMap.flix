@@ -40,8 +40,12 @@ instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
-    override pub def iterator(r: Region[r], m: DelayMap[k, v]): Iterator[v, r] \ Write(r) =
-        DelayMap.iterator(r, m) |> Iterator.mapL(match (_, v) -> v)
+
+}
+
+instance Iterable[DelayMap[k]] {
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ Write(r) =
+        DelayMap.iterator(rc, m) |> Iterator.map(snd)
 }
 
 namespace DelayMap {
@@ -763,11 +767,11 @@ namespace DelayMap {
         Map.Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
-    /// Returns `m` as a mutable set.
+    /// Returns `m` as a mutable map.
     ///
     @Experimental @Parallel
-    pub def toMutMap(r: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
-        MutMap.MutMap(ref toMap(m) @ r)
+    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ Write(r) =
+        MutMap.MutMap(rc, ref toMap(m) @ rc)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -787,9 +791,9 @@ namespace DelayMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
-    pub def iterator(r: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r] \ Write(r) =
+    pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ Write(r) =
         let DMap(t) = m;
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(match (k, v) -> (k, force v))
+        RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
 
     ///
     /// Returns the map `m` as a MutDeque of key-value pairs.

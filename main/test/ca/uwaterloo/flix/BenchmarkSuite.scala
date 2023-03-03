@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.Result
-import org.tomlj.Toml
+import ca.uwaterloo.flix.util.{FlixSuite, Options}
 
-import java.nio.file.Path
+class BenchmarkSuite extends FlixSuite(incremental = true) {
 
-object PackageParser {
+  private implicit val TestOptions: Options = Options.TestWithLibAll
 
-  def parse(path: Path): Result[Manifest, PackageError] = {
-    // TODO: File exists, is a regular file, is readable, etc.
-    val parser = Toml.parse(path)
-    ???
-  }
+  mkTestDir("main/src/resources/benchmark")
 
 }

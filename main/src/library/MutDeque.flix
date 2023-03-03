@@ -35,10 +35,6 @@ instance Newable[MutDeque[a]] {
     pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
 }
 
-instance Scoped[MutDeque[a]] {
-    pub def regionOf(_: MutDeque[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
 namespace MutDeque {
 
     ///
@@ -153,7 +149,7 @@ namespace MutDeque {
             if (i == e)
                 acc
             else
-                loop((i + 1) &&& c, e, f(acc, ar[i]));
+                loop((i + 1) &&& c, e, f(acc, Array.get(i, ar)));
         loop(front, back, s)
 
     ///
@@ -172,7 +168,7 @@ namespace MutDeque {
                 acc
             else {
                 let j = (i - 1) &&& c;
-                loop(j, e, f(ar[j], acc))
+                loop(j, e, f(Array.get(j, ar), acc))
             };
         loop(back, front, s)
 
@@ -192,7 +188,7 @@ namespace MutDeque {
             if (i == e)
                 s
             else {
-                f(ar[i], _ -> loop((i + 1) &&& c, e))
+                f(Array.get(i, ar), _ -> loop((i + 1) &&& c, e))
             };
         loop(front, back)
 
@@ -213,8 +209,8 @@ namespace MutDeque {
             let MutDeque(_, a, f, _) = d;
             let a1 = deref a;
             let f1 = deref f;
-            let x = a1[f1];
-            f := (f1 + 1) mod capacity(d);
+            let x = Array.get(f1, a1);
+            f := (f1 + 1) `Int32.mod` capacity(d);
             compress!(d);
             Some(x)
         }
@@ -229,8 +225,8 @@ namespace MutDeque {
         else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
             let MutDeque(_, a, _, b) = d;
             let a1 = deref a;
-            let b1 = (deref b - 1) mod capacity(d);
-            let x = a1[b1];
+            let b1 = (deref b - 1) `Int32.mod` capacity(d);
+            let x = Array.get(b1, a1);
             b := b1;
             compress!(d);
             Some(x)
@@ -242,10 +238,10 @@ namespace MutDeque {
     pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(_, a, f, _) = d;
         let a1 = deref a;
-        let f1 = (deref f - 1) mod capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
-        a1[f1] = x;                             // Store `x` in the array.
-        f := f1;                                // Update the front index reference.
-        expand!(d)                              // Optionally expand `d`.
+        let f1 = (deref f - 1) `Int32.mod` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
+        Array.put(x, f1, a1);                           // Store `x` in the array.
+        f := f1;                                        // Update the front index reference.
+        expand!(d)                                      // Optionally expand `d`.
 
     ///
     /// Pushes `x` to the back of `d`.
@@ -254,9 +250,9 @@ namespace MutDeque {
         let MutDeque(_, a, _, b) = d;
         let a1 = deref a;
         let b1 = deref b;
-        a1[b1] = x;                    // Store `x` in the array.
-        b := (b1 + 1) mod capacity(d); // Update back index reference to point to next empty index.
-        expand!(d)                     // Optionally expand `d`.
+        Array.put(x, b1, a1);                  // Store `x` in the array.
+        b := (b1 + 1) `Int32.mod` capacity(d); // Update back index reference to point to next empty index.
+        expand!(d)                             // Optionally expand `d`.
 
     ///
     /// Optionally returns the front element. Does *not* remove it.
@@ -268,7 +264,7 @@ namespace MutDeque {
         if (f1 == b1)
             None
         else
-            Some((deref a)[f1])
+            Some(Array.get(f1, deref a))
 
     ///
     /// Optionally returns the back element. Does *not* remove it.
@@ -282,7 +278,7 @@ namespace MutDeque {
         else
             let c = capacity(d) - 1;
             let i = (b1 - 1) &&& c;
-            Some((deref a)[i])
+            Some(Array.get(i, deref a))
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -343,10 +339,10 @@ namespace MutDeque {
     def copyElements!(r2: Region[r2], f: Int32, b: Int32, a: Array[a, r1], a1: Array[a, r2]): Unit \ { Read(r1), Write(r2) } =
         let c = Array.length(a);
         if (f < b) { // If this predicate is true the elements do not "wrap around" in the array, i.e. the elements are laid out sequentially from [0 .. b].
-            Array.updateSequence!(0,     Array.slice(r2, f, b, a), a1)
+            Array.updateSequence!(0,     Array.slice(r2, start = f, end = b, a), a1)
         } else {
-            Array.updateSequence!(0,     Array.slice(r2, f, c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
-            Array.updateSequence!(c - f, Array.slice(r2, 0, b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
+            Array.updateSequence!(0,     Array.slice(r2, start = f, end = c, a), a1); // Copy the front elements of `a` to a1[0 .. (c - f)].
+            Array.updateSequence!(c - f, Array.slice(r2, start = 0, end = b, a), a1)  // Copy the back  elements of `a` to a1[(c - f) .. b].
         }
 
     ///
@@ -395,7 +391,7 @@ namespace MutDeque {
         let i = deref f;
         let j = deref b;
         if (i == j)
-            [] @ r1
+            Array#{} @ r1
         else if (i  < j)
             Array.copyOfRange(r1, i, j, deref a)
         else
@@ -425,16 +421,19 @@ namespace MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(r1: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2] \ { Write(r1), Read(r2) } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 and r2, r1] \ { Write(r1), Read(r2) } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ r1;
-        let done = () -> deref i == deref b;
+        let i = ref (deref f) @ rc;
         let next = () -> {
-            let x = (deref a)[deref i];
-            i := deref i + 1 &&& (capacity(d) - 1);
-            x
+            if (deref i < deref b) {
+                let x = Array.get(deref i, deref a);
+                i := deref i + 1 &&& (capacity(d) - 1);
+                Some(x)
+            } else {
+                None
+            }
         };
-        Iterator.Iterator(upcast done, next)
+        Iterator.iterate(rc, next)
 
     ///
     /// Apply the effectful function `f` to all the elements in the MutDeque `d`.

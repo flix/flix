@@ -288,6 +288,8 @@ object SemanticTokensProvider {
 
     case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp)
 
+    case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
+
     case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
@@ -322,6 +324,8 @@ object SemanticTokensProvider {
     case Expression.Scope(sym, _, exp, _, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
+
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -393,8 +397,14 @@ object SemanticTokensProvider {
     case Expression.ArrayLength(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expression.ArraySlice(exp1, exp2, exp3, exp4, _, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ visitExp(exp4)
+    case Expression.VectorLit(exps, _, _, _, _) =>
+      visitExps(exps)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -407,6 +417,9 @@ object SemanticTokensProvider {
 
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
+
+    case Expression.Of(sym, exp, _, _, _, _) =>
+      visitExp(exp) // TODO RESTR-VARS visit sym
 
     case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
@@ -567,15 +580,6 @@ object SemanticTokensProvider {
 
     case Pattern.Tuple(pats, _, _) => pats.flatMap(visitPat).iterator
 
-    case Pattern.Array(pats, _, _) => pats.flatMap(visitPat).iterator
-
-    case Pattern.ArrayTailSpread(pats, sym, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      Iterator(t) ++ pats.flatMap(visitPat).iterator
-
-    case Pattern.ArrayHeadSpread(sym, pats, _, _) =>
-      val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
-      Iterator(t) ++ pats.flatMap(visitPat).iterator
   }
 
   /**
@@ -628,13 +632,13 @@ object SemanticTokensProvider {
     case TypeConstructor.RestrictableEnum(_, _) => true
     case TypeConstructor.Native(_) => true
     case TypeConstructor.Array => true
+    case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
     case TypeConstructor.All => true
-    case TypeConstructor.CaseConstant(_) => true
 
     // invisible
     case TypeConstructor.Arrow(_) => false
@@ -657,7 +661,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseComplement(_) => false
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
-    case TypeConstructor.CaseEmpty(_) => false
+    case TypeConstructor.CaseSet(_, _) => false
   }
 
   /**

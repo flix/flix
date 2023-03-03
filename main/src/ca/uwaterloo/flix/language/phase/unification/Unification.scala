@@ -95,6 +95,10 @@ object Unification {
         BoolUnification.unify(tpe1, tpe2, renv)
       }
 
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+      val cases = sym1.universe
+      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1)
+
     //
     // Record Rows
     //
@@ -197,6 +201,9 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
+
+        case Result.Err(UnificationError.HackError(message)) =>
+          Err(TypeError.HackError(message, loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)

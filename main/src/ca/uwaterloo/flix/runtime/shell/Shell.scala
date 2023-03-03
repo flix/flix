@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -30,12 +30,7 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
-class Shell(sourceProvider: SourceProvider, options: Options) {
-
-  /**
-    * The audience is always external.
-    */
-  private implicit val audience: Audience = Audience.External
+class Shell(bootstrap: Bootstrap, options: Options) {
 
   /**
     * The mutable list of source code fragments.
@@ -51,11 +46,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     * The result of the most recent compilation
     */
   private var root: Option[Root] = None
-
-  /**
-    * The source files currently loaded.
-    */
-  private val sourceFiles = new SourceFiles(sourceProvider)
 
   /**
     * Is this the first compile
@@ -170,7 +160,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     case Command.Eval(s) => execEval(s)
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
     case Command.Unknown(s) => execUnknown(s)
-    case _ => sourceProvider.execute(cmd, options)
+    case _ => terminal.writer().println("Package commands are currently not available from the shell")
   }
 
   /**
@@ -179,7 +169,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def execReload()(implicit terminal: Terminal): Unit = {
 
     // Scan the disk to find changes, and add source to the flix object
-    sourceFiles.addSourcesAndPackages(flix)
+    bootstrap.reconfigureFlix(flix)
 
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
@@ -248,7 +238,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
     w.println("  :benchmark :bench           Runs the benchmarks for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
-    w.println("  :install     <owner>/<repo> Installs the Flix package from the given GitHub project")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()
@@ -348,7 +337,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
-    val checkResult = flix.check()
+    val checkResult = flix.check().toHardFailure
     checkResult match {
       case Validation.Success(root) => this.root = Some(root)
       case _failure => // no-op

@@ -61,6 +61,9 @@ sealed trait BackendObjType {
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
+    case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
+    case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
+    case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
     case BackendObjType.ConcurrentLinkedQueue => JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
@@ -998,6 +1001,7 @@ object BackendObjType {
       cm.mkField(ThreadsField)
       cm.mkField(RegionThreadField)
       cm.mkField(ChildExceptionField)
+      cm.mkField(OnExitField)
 
       cm.mkConstructor(Constructor)
 
@@ -1005,12 +1009,16 @@ object BackendObjType {
       cm.mkMethod(ExitMethod)
       cm.mkMethod(ReportChildExceptionMethod)
       cm.mkMethod(ReThrowChildExceptionMethod)
+      cm.mkMethod(RunOnExitMethod)
 
       cm.closeClassMaker()
     }
 
     // private final ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
     def ThreadsField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "threads", BackendObjType.ConcurrentLinkedQueue.toTpe)
+
+    // private final LinkedList<Runnable> onExit = new LinkedList<Runnable>();
+    def OnExitField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "onExit", BackendObjType.LinkedList.toTpe)
 
     // private final Thread regionThread = Thread.currentThread();
     def RegionThreadField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "regionThread", JvmName.Thread.toTpe)
@@ -1027,6 +1035,9 @@ object BackendObjType {
       PUTFIELD(RegionThreadField) ~
       thisLoad() ~ ACONST_NULL() ~
       PUTFIELD(ChildExceptionField) ~
+      thisLoad() ~ NEW(BackendObjType.LinkedList.jvmName) ~
+      DUP() ~ invokeConstructor(BackendObjType.LinkedList.jvmName, MethodDescriptor.NothingToVoid) ~
+      PUTFIELD(OnExitField) ~
       RETURN()
     ))
 
@@ -1061,6 +1072,8 @@ object BackendObjType {
     //   Thread t;
     //   while ((t = threads.poll()) != null)
     //     t.join();
+    //   for (Runnable r: onExit)
+    //     r.run();
     // }
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(
       withName(1, BackendObjType.Thread.toTpe) { t =>
@@ -1070,6 +1083,18 @@ object BackendObjType {
           CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store() 
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
+        } ~
+        withName(2, BackendObjType.Iterator.toTpe) { i =>
+          thisLoad() ~ GETFIELD(OnExitField) ~ 
+          INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
+          i.store() ~
+          whileLoop(Condition.NE) {
+            i.load() ~ INVOKEINTERFACE(Iterator.HasNextMethod)
+          } {
+            i.load() ~ INVOKEINTERFACE(Iterator.NextMethod) ~
+            CHECKCAST(Runnable.jvmName) ~
+            INVOKEINTERFACE(Runnable.RunMethod)
+          }
         } ~
         RETURN()
       }
@@ -1097,6 +1122,15 @@ object BackendObjType {
         thisLoad() ~ GETFIELD(ChildExceptionField) ~
         ATHROW()
       } ~
+      RETURN()
+    ))
+
+    // final public void runOnExit(Runnable r) {
+    //   onExit.addFirst(r);
+    // }
+    def RunOnExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "runOnExit", mkDescriptor(BackendObjType.Runnable.toTpe)(VoidableType.Void), Some(
+      thisLoad() ~ GETFIELD(OnExitField) ~ ALOAD(1) ~
+      INVOKEVIRTUAL(LinkedList.AddFirstMethod) ~
       RETURN()
     ))
   }
@@ -1235,6 +1269,30 @@ object BackendObjType {
     def HashMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "hash",
       mkDescriptor(BackendType.Array(JavaObject.toTpe))(BackendType.Int32), None)
 
+  }
+
+  case object LinkedList extends BackendObjType {
+
+    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "addFirst", 
+      mkDescriptor(JavaObject.toTpe)(VoidableType.Void), None)
+
+    def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "iterator",
+      mkDescriptor()(BackendObjType.Iterator.toTpe), None)
+  }
+
+  case object Iterator extends BackendObjType {
+
+    def HasNextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "hasNext",
+      mkDescriptor()(BackendType.Bool))
+
+    def NextMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "next",
+      mkDescriptor()(JavaObject.toTpe))
+  }
+
+  case object Runnable extends BackendObjType {
+
+    def RunMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "run",
+      MethodDescriptor.NothingToVoid)
   }
 
   case object ConcurrentLinkedQueue extends BackendObjType {

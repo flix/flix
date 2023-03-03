@@ -19,7 +19,6 @@ import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeC
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -205,7 +204,6 @@ object BoolFormula {
     case And(t1, t2) => Type.mkIntersection(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
     case Or(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
   }
-
 
   /**
     * Union of variable and effect types.

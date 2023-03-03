@@ -22,8 +22,10 @@ import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.util.Objects
+import scala.collection.immutable.SortedSet
 
 sealed trait Symbol
+
 object Symbol {
 
   /**
@@ -116,8 +118,8 @@ object Symbol {
   /**
     * Returns the restrictable enum symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkRestrictableEnumSym(ns: NName, ident: Ident): RestrictableEnumSym = {
-    new RestrictableEnumSym(ns.parts, ident.name, ident.loc)
+  def mkRestrictableEnumSym(ns: NName, ident: Ident, cases: List[Ident]): RestrictableEnumSym = {
+    new RestrictableEnumSym(ns.parts, ident.name, cases, ident.loc)
   }
 
   /**
@@ -412,7 +414,14 @@ object Symbol {
   /**
     * Restrictable Enum Symbol.
     */
-  final class RestrictableEnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Symbol {
+  final class RestrictableEnumSym(val namespace: List[String], val name: String, cases: List[Name.Ident], val loc: SourceLocation) extends Symbol {
+
+    // NB: it is critical that this be either a lazy val or a def, since otherwise `this` is not fully instantiated
+    /**
+      * The universe of cases associated with this restrictable enum.
+      */
+    def universe: SortedSet[Symbol.RestrictableCaseSym] = cases.map(Symbol.mkRestrictableCaseSym(this, _)).to(SortedSet)
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -463,7 +472,7 @@ object Symbol {
   /**
     * Restrictable Case Symbol.
     */
-  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class RestrictableCaseSym(val enumSym: Symbol.RestrictableEnumSym, val name: String, val loc: SourceLocation) extends Symbol with Ordered[RestrictableCaseSym] {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -486,6 +495,12 @@ object Symbol {
       * The symbol's namespace.
       */
     def namespace: List[String] = enumSym.namespace :+ enumSym.name
+
+    /**
+      * Comparison.
+      */
+    override def compare(that: RestrictableCaseSym): Int = this.toString.compare(that.toString)
+
   }
 
   /**

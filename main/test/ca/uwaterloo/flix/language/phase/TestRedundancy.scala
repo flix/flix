@@ -278,9 +278,9 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def f(): Unit = {
         |   region r {
-        |       discard [] @ r;
+        |       discard Array#{} @ r;
         |       region r {
-        |           discard [] @ r;
+        |           discard Array#{} @ r;
         |           ()
         |       }
         |   }
@@ -831,7 +831,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    x -> [123] @ Static;
+         |    x -> Array#{123} @ Static;
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -842,7 +842,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    def g(x, y) = [x, y] @ Static;
+         |    def g(x, y) = Array#{x, y} @ Static;
          |    g;
          |    ()
          |""".stripMargin
@@ -892,7 +892,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       raw"""
            |pub def f(): Array[Int32, false] \ IO =
-           |  let x = [1, 2, 3];
+           |  let x = Array#{1, 2, 3} @ Static;
            |  unsafe_cast x as _ & Pure
            |
        """.stripMargin
@@ -1106,7 +1106,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit \ IO =
-        |    discard [2];
+        |    discard Array#{2} @ Static;
         |    ()
         |
         |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
@@ -1122,7 +1122,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def fakePrint(_msg: a): Unit \ IO =
-        |    discard [2];
+        |    discard Array#{2} @ Static;
         |    ()
         |
         |def f(): Unit \ IO =
@@ -1140,8 +1140,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |def f(g: a -> b \ ef, x: a): b \ ef = g(x)
         |
         |def h(): Unit \ IO =
-        |    let arr = [()];
-        |    discard f((i: Int32) -> arr[i], 0)
+        |    let arr = Array#{()} @ Static;
+        |    discard f((i: Int32) -> $ARRAY_LOAD$(arr, i), 0)
         |
         |""".stripMargin
 
@@ -1149,31 +1149,35 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
-  test("DiscardedValue.01") {
+  test("MustUse.01") {
     val input =
       """
-        |def f(): Unit = region r {
-        |    let arr = [2] @ r;
-        |    arr[0];
-        |    ()
+        |@MustUse
+        |enum A {
+        |    case A
         |}
+        |
+        |def f(): Int32 \ IO =
+        |    unsafe_cast A as _ \ IO;
+        |    123
+        |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.DiscardedValue](result)
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.MustUse](result)
   }
 
-  test("DiscardedValue.02") {
+  test("MustUse.02") {
     val input =
       """
-        |def f(g: Int32 -> Int32 \ ef): Unit \ ef = {
-        |    g(2);
-        |    ()
-        |}
+        |def f(): Int32 \ IO =
+        |    unsafe_cast (x -> x + 123) as _ \ IO;
+        |    123
+        |
         |""".stripMargin
 
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.DiscardedValue](result)
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.MustUse](result)
   }
 
   test("RedundantUpcast.01") {

@@ -275,7 +275,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = e0 match {
+  private def visitExp(e0: Expression, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = e0 match {
     case Expression.Cst(_, _, _) => Used.empty
 
     case Expression.Wild(_, _) => Used.empty
@@ -308,6 +308,9 @@ object Redundancy {
     case Expression.Hole(sym, _, _) => Used.of(sym)
 
     case Expression.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expression.OpenAs(_, exp, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Use(_, exp, _) =>
@@ -397,6 +400,11 @@ object Redundancy {
       else
         (innerUsed ++ shadowedVar) - sym
 
+    case Expression.ScopeExit(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
+
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
@@ -413,8 +421,8 @@ object Redundancy {
         (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
       } else if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
-      } else if (isImpureDiscardedValue(exp1) && !isHole(exp1)) {
-        (us1 ++ us2) + DiscardedValue(exp1.tpe, exp1.loc)
+      } else if (isMustUse(exp1)(root) && !isHole(exp1)) {
+        (us1 ++ us2) + MustUse(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
       }
@@ -591,12 +599,16 @@ object Redundancy {
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expression.ArraySlice(reg, base, begin, end, _, _, _, _) =>
-      val us1 = visitExp(reg, env0, rc)
-      val us2 = visitExp(base, env0, rc)
-      val us3 = visitExp(begin, env0, rc)
-      val us4 = visitExp(end, env0, rc)
-      us1 ++ us2 ++ us3 ++ us4
+    case Expression.VectorLit(exps, tpe, eff, loc, _) =>
+      visitExps(exps, env0, rc)
+
+    case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
+      val us1 = visitExp(exp1, env0, rc)
+      val us2 = visitExp(exp2, env0, rc)
+      us1 ++ us2
+
+    case Expression.VectorLength(exp, _) =>
+      visitExp(exp, env0, rc)
 
     case Expression.Ref(exp1, exp2, _, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
@@ -612,6 +624,9 @@ object Redundancy {
       us1 ++ us2
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
+    case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
@@ -809,7 +824,7 @@ object Redundancy {
     *
     * 3. All the free variables.
     */
-  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
+  private def visitParYieldFragments(frags: List[ParYieldFragment], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): (Used, Env, Set[Symbol.VarSym]) = {
     frags.foldLeft((Used.empty, env0, Set.empty[Symbol.VarSym])) {
       case ((usedAcc, envAcc, fvsAcc), ParYieldFragment(p, e, _)) =>
         // Find free vars in pattern
@@ -853,7 +868,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit flix: Flix): Used =
+  private def visitExps(es: List[Expression], env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -867,9 +882,6 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Used.empty
     case Pattern.Tag(Ast.CaseSymUse(sym, _), _, _, _) => Used.of(sym.enumSym, sym)
     case Pattern.Tuple(elms, _, _) => visitPats(elms)
-    case Pattern.Array(elms, _, _) => visitPats(elms)
-    case Pattern.ArrayTailSpread(elms, _, _, _) => visitPats(elms)
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => visitPats(elms)
   }
 
   /**
@@ -891,7 +903,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given constraint `c0` under the given environment `env0`.
     */
-  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = {
+  private def visitConstraint(c0: Constraint, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = {
     val head = visitHeadPred(c0.head, env0, rc: RecursionContext)
     val body = c0.body.foldLeft(Used.empty) {
       case (acc, b) => acc ++ visitBodyPred(b, env0, rc: RecursionContext)
@@ -920,7 +932,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
-  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = h0 match {
+  private def visitHeadPred(h0: Predicate.Head, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = h0 match {
     case Head.Atom(_, _, terms, _, _) =>
       visitExps(terms, env0, rc)
   }
@@ -928,7 +940,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
-  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit flix: Flix): Used = b0 match {
+  private def visitBodyPred(b0: Predicate.Body, env0: Env, rc: RecursionContext)(implicit root: Root, flix: Flix): Used = b0 match {
     case Body.Atom(_, _, _, _, terms, _, _) =>
       terms.foldLeft(Used.empty) {
         case (acc, term) => acc ++ Used.of(freeVars(term))
@@ -1013,10 +1025,19 @@ object Redundancy {
     isPure(exp)
 
   /**
-    * Returns true if the expression is not pure and not unit type.
+    * Returns `true` if the expression must be used.
     */
-  private def isImpureDiscardedValue(exp: Expression): Boolean =
-    !isPure(exp) && exp.tpe != Type.Unit && !exp.isInstanceOf[Expression.Mask]
+  private def isMustUse(exp: Expression)(implicit root: Root): Boolean =
+    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.Mask]
+
+  /**
+    * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.
+    */
+  private def isMustUseType(tpe: Type)(implicit root: Root): Boolean = tpe.typeConstructor match {
+    case Some(TypeConstructor.Arrow(_)) => true
+    case Some(TypeConstructor.Enum(sym, _)) => root.enums(sym).ann.isMustUse
+    case _ => false
+  }
 
   /**
     * Returns true if the expression is a hole.
@@ -1036,15 +1057,6 @@ object Redundancy {
     case Pattern.Cst(_, _, _) => Set.empty
     case Pattern.Tag(_, pat, _, _) => freeVars(pat)
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.Array(elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
-      case (acc, pat) => acc ++ freeVars(pat)
-    }
-    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
   }
@@ -1298,7 +1310,7 @@ object Redundancy {
     /**
       * Returns Successful(a) unless `this` contains errors.
       */
-    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.to(LazyList))
+    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else SoftFailure(a, errors.to(LazyList))
   }
 
   /**

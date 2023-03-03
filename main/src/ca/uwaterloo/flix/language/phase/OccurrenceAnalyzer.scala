@@ -258,6 +258,12 @@ object OccurrenceAnalyzer {
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Scope(sym, e, tpe, purity, loc), o.copy(defs = o.defs + (sym0 -> DontInline)).increaseSizeByOne())
 
+    case Expression.ScopeExit(exp1, exp2, tpe, purity, loc) =>
+      val (e1, o1) = visitExp(sym0, exp1)
+      val (e2, o2) = visitExp(sym0, exp2)
+      val o3 = combineAllSeq(o1, o2)
+      (OccurrenceAst.Expression.ScopeExit(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+
     case Expression.Is(sym, exp, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       if (sym.name == "Choice")
@@ -324,13 +330,6 @@ object OccurrenceAnalyzer {
       val (b, o) = visitExp(sym0, base)
       val purity = b.purity
       (OccurrenceAst.Expression.ArrayLength(b, tpe, purity, loc), o.increaseSizeByOne())
-
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      val (b, o1) = visitExp(sym0, base)
-      val (i1, o2) = visitExp(sym0, beginIndex)
-      val (i2, o3) = visitExp(sym0, endIndex)
-      val o4 = combineAllSeq(o1, combineAllSeq(o2, o3))
-      (OccurrenceAst.Expression.ArraySlice(b, i1, i2, tpe, loc), o4.increaseSizeByOne())
 
     case Expression.Ref(exp, tpe, loc) =>
       val (e, o) = visitExp(sym0, exp)

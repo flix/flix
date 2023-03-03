@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jakob Schneider Villumsen
+ * Copyright 2021 Jakob Schneider Villumsen, Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,130 +14,108 @@
  * limitations under the License.
  */
 
-pub enum Iterator[a: Type, r: Region] {
-    case Iterator(Iterator.Done[r], Iterator.Next[a, r])
+pub enum Iterator[a: Type, ef: Bool, r: Region] {
+    case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
-
-instance Newable[Iterator[a]] {
-    pub def new(r: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } = Iterator.new(r)
-}
-
-instance Scoped[Iterator[a]] {
-    pub def regionOf(_: Iterator[a, r]): Region[r] = unsafe_cast () as Region[r]
-}
-
-///
-/// Alias for `Foldable.iterator`.
-///
-pub def iterator(r: Region[r], t: t[a]): Iterator[a, r] \ Write(r) with Foldable[t] =
-    Foldable.iterator(r, t)
 
 namespace Iterator {
 
-    ///
-    /// The type of the done function.
-    ///
-    pub type alias Done[ef: Region] = Unit -> Bool \ ef
 
     ///
-    /// The type of the next function.
+    /// Represent the "steps" of an iterator.
     ///
-    pub type alias Next[a: Type, ef: Region] = Unit -> a \ ef
+    /// This is an expanded version of the `Option` type.
+    /// `Ans` is the answer at an intermediate stage of iteration.
+    /// `Done` signals that iteration is complete.
+    /// `Skip` is essentially an implementation detail. It allows us
+    /// to define `filter` and similar functions that "wither" Iterators
+    /// without recursively running through the Iterator.
+    ///
+    pub enum Step[a] {
+        case Ans(a)
+        case Skip
+        case Done
+    }
+
+    ///
+    /// Returns an iterator built with the stepper function `f`.
+    ///
+    pub def iterate(rc: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
+        let f1 = () -> match f() {
+            case Some(a) => Ans(a)
+            case None    => Done
+        };
+        let iterF = () -> unsafe_cast f1()  as _ \ { ef, r };
+        Iterator(rc, iterF)
 
     ///
     /// Returns an empty iterator.
     ///
-    pub def new(_: Region[r]): Iterator[a, r] \ { Read(r), Write(r) } =
-        let done = () -> unsafe_cast true as _ \ Read(r);
-        let next = () -> unsafe_cast bug!("Empty Iterator!") as _ \ Read(r);
-        unsafe_cast Iterator(done, next) as _ \ { Read(r), Write(r) }
+    pub def empty(rc: Region[r]): Iterator[a, r, r] =
+        let f = () -> unsafe_cast Done as _ \ r;
+        Iterator(rc, f)
 
     ///
     /// Returns an iterator containing only a single element, `x`.
     ///
-    pub def singleton(r: Region[r], x: a): Iterator[a, r] \ Write(r) =
-        let d = ref false @ r;
-        let done = () -> deref d;
-        let next = () -> {
-            if (done()) {
-                bug!("Empty Iterator!")
-            }
-            else {
-                d := true;
-                x
-            }
-        };
-        Iterator(done, next)
+    pub def singleton(rc: Region[r], x: a): Iterator[a, r, r] \ Write(r) =
+        repeat(rc, 1, x)
 
     ///
     /// Returns `Some(x)` if `iter` is not empty. Returns `None` otherwise.
     ///
     /// Consumes the head element of `iter`.
     ///
-    pub def next(iter: Iterator[a, r]): Option[a] \ Read(r) =
-        let Iterator(done, next) = iter;
-        if (done())
-            None
-        else
-            Some(next())
-
-    ///
-    /// Returns true if the iterator is empty.
-    ///
-    /// Does *not* consume any elements of the iterator.
-    ///
-    pub def isEmpty(iter: Iterator[a, r]): Bool \ Read(r) =
-        let Iterator(done, _) = iter;
-        done()
+    pub def next(iter: Iterator[a, ef, r]): Option[a] \ { ef, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop() = match iterF() {
+            case Ans(a) => Some(a)
+            case Skip   => loop()
+            case Done   => None
+        };
+        loop()
 
     ///
     /// Returns an iterator of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns an empty iterator if `b >= e`.
     ///
-    @Lazy
-    pub def range(r: Region[r], b: Int32, e: Int32): Iterator[Int32, r] \ Write(r) =
-        let i = ref b @ r;
-        let done = () -> deref i >= e;
-        let next = () -> {
-                let res = deref i;
-                if (res < e) {
-                    i := res + 1;
-                    res
-                }
-                else {
-                    bug!("Empty Iterator!")
-                }
+    pub def range(rc: Region[r], b: Int32, e: Int32): Iterator[Int32, r, r] \ Write(r) =
+        let pos = ref b @ rc;
+        if (e <= b)
+            empty(rc)
+        else {
+            let iterF = () -> match (deref pos) {
+                case i if i < e => pos := i+1; Ans(i)
+                case _          => Done
             };
-        Iterator(done, next)
+            Iterator(rc, iterF)
+        }
 
     ///
     /// Returns an iterator over an iterable with the element `x` repeated `n` times.
     ///
     /// Returns an empty iterator if `n < 0`.
     ///
-    @Lazy
-    pub def repeat(r: Region[r], n: Int32, x: a): Iterator[a, r] \ Write(r) =
-        let i = ref 0 @ r;
-        let done = () -> deref i >= n;
-        let next = () -> {
-              let j = deref i;
-              if (j < n) {
-                i := j + 1;
-                x
-              }
-              else {
-                bug!("Empty Iterator!")
-              }
-            };
-        Iterator(done, next)
+    pub def repeat(rc: Region[r], n: Int32, x: a): Iterator[a, r, r] \ Write(r) =
+        let ix = ref n @ rc;
+        let iterF = () -> {
+            let i = deref ix;
+            if (i < 1)
+                Done
+            else {
+                ix := i-1;
+                Ans(x)
+            }
+        };
+        Iterator(rc, iterF)
 
     ///
     /// Returns the sum of all elements in the iterator `iter`.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sum(iter: Iterator[Int32, r]): Int32 \ Read(r) =
+    pub def sum(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + x, 0, iter)
 
     ///
@@ -145,7 +123,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def sumWith(f: a -> Int32 \ ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
+    pub def sumWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
@@ -153,32 +131,37 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def product(iter: Iterator[Int32, r]): Int32 \ Read(r) =
-        if (isEmpty(iter))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, iter)
+    pub def product(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
+        foldLeft((acc, x) -> acc * x, 1, iter)
 
     ///
     /// Returns the product of all elements in the iterator `iter` according to the function `f`.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def productWith(f: a -> Int32 \ ef, iter: Iterator[a, r]): Int32 \ { ef, Read(r) } =
-        if (isEmpty(iter))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, iter)
+    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
+        foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
     /// Returns the contents of `iter` as an array.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toArray(r1: Region[r1], iter: Iterator[a, r2]): Array[a, r1] \ { Read(r2), Write(r1) } = region r0 {
-        let m = new MutList(r0);
+    pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, Read(r2), Write(r1) } = region rc1 {
+        let m = new MutList(rc1);
         forEach(a -> MutList.push!(a, m), iter);
-        MutList.toArray(r1, m)
+        MutList.toArray(rc, m)
+    }
+
+    ///
+    /// Returns the contents of `iter` as an array.
+    ///
+    /// Consumes the entire iterator.
+    ///
+    pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, Read(r) } = region rc {
+        let m = MutList.new(rc);
+        forEach(a -> MutList.push!(a, m), iter);
+        MutList.toVector(m)
     }
 
     ///
@@ -186,7 +169,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toList(iter: Iterator[a, r]): List[a] \ Read(r) =
+    pub def toList(iter: Iterator[a, ef, r]): List[a] \ { ef, Read(r) } =
         foldRight((a, acc) -> a :: acc, Nil, iter)
 
 
@@ -195,7 +178,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toChain(iter: Iterator[a, r]): Chain[a] \ Read(r) =
+    pub def toChain(iter: Iterator[a, ef, r]): Chain[a] \ { ef, Read(r) } =
         foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
 
     ///
@@ -203,100 +186,70 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMap(iter: Iterator[(a, b), r]): Map[a, b] \ Read(r) with Order[a] =
-        foldLeft((acc, ab) -> Map.insert(fst(ab), snd(ab), acc), Map.empty(), iter)
+    pub def toMap(iter: Iterator[(k, v), ef, r]): Map[k, v] \ { ef, Read(r) } with Order[k] =
+        foldLeft((acc, a) -> (match (k, v) -> Map.insert(k, v, acc))(a), Map.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a `Some(Nel)` if `iter` is not empty. Returns None otherwise.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toNel(iter: Iterator[a, r]): Option[Nel[a]] \ Read(r) = match toList(iter) {
-        case Nil     => None
-        case x :: xs => Some(Nel.Nel(x, xs))
-    }
+    pub def toNel(iter: Iterator[a, ef, r]): Option[Nel[a]] \ { ef, Read(r) } =
+        toList(iter) |> List.toNel
 
     ///
-    /// Returns the contents of `iter` as a nec.
+    /// Returns the contents of `iter` as a Nec.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toNec(iter: Iterator[a, r]): Option[Nec[a]] \ Read(r) =
-        let f = (x, acc) -> match acc {
-            case None      => Some(Nec.singleton(x))
-            case Some(nec) => Some(Nec.cons(x, nec))
-        };
-        foldRight(f, None, iter)
+    pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, Read(r) } = match next(iter) {
+        case Some(a) => foldLeft((acc, x) -> Nec.snoc(acc, x), Nec.singleton(a), iter) |> Some
+        case None    => None
+    }
 
     ///
     /// Returns the contents of `iter` as a MutDeque.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def toMutDeque(r1: Region[r1], iter: Iterator[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, Read(r2), Write(r1) } =
+        let d = new MutDeque(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
-    pub def toSet(iter: Iterator[a, r]): Set[a] \ Read(r) with Order[a] =
+    pub def toSet(iter: Iterator[a, ef, r]): Set[a] \ { ef, Read(r) } with Order[a] =
         foldLeft((acc, a) -> Set.insert(a, acc), Set.empty(), iter)
-
-    ///
-    /// Returns a list of every element in `iter` that satisfies the predicate `f`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def filter(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(Nil)
-            else
-                let x = next();
-                if (f(x)) loop(ks -> k(x :: ks)) else loop(k)
-        };
-        loop(identity)
-
-    ///
-    /// Returns a list with `f` applied to every element in `iter`.
-    ///
-    /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def map(f: a -> b \ ef, iter: Iterator[a, r]): List[b] \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(Nil)
-            else
-                let x = f(next());
-                loop(ks -> k(x :: ks))
-        };
-        loop(identity)
 
     ///
     /// Applies `f` to every element of `iter`.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEach(f: a -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = match iter {
-        case Iterator(done, _) if done() => ()
-        case Iterator(_, next)           => f(next()); forEach(f, iter)
-    }
+    pub def forEach(f: a -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop() = match iterF() {
+            case Skip   => loop()
+            case Ans(a) => f(a); loop()
+            case Done   => ()
+        };
+        loop()
 
     ///
     /// Applies `f` to every element of `iter` along with that element's index.
     ///
     /// Consumes the entire iterator.
     ///
-    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, iter: Iterator[a, r]): Unit \ { ef, Read(r) } = region r {
-        let ix = ref 0 @ r;
-        forEach(x -> {let i = deref ix; f(i, x); ix := i + 1}, iter)
-    }
+    pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop(i) = match iterF() {
+            case Skip   => loop(i)
+            case Ans(a) => f(i, a); loop(i+1)
+            case Done   => ()
+        };
+        loop(0)
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
@@ -306,68 +259,55 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def filterL(f: a -> Bool, iter: Iterator[a, r]): Iterator[a, r] \ { Read(r), Write(r) } =
-        let Iterator(done, next) = iter;
-
-        // Allocate a reference to hold the next element.
-        let cursor = ref None @ Scoped.regionOf(iter);
-
-        let done1 = () -> match deref cursor {
-            case None => match forward(f, done, next) {
-                case None    => true
-                case Some(x) =>
-                    // An element was found. Store it in the reference.
-                    cursor := Some(x);
-                    false
-            }
-            case Some(_) => false
+    pub def filter(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r] =
+        let Iterator(rc, iterF) = iter;
+        let step = x -> match x {
+            case Ans(a) => if (f(a)) Ans(a) else Skip
+            case Skip   => Skip
+            case Done   => Done
         };
-
-        let next1 = () -> match deref cursor {
-            case None    => bug!("Empty iterator")
-            case Some(x) =>
-                // An element is in the reference. Use it.
-                cursor := None;
-                x
-        };
-        Iterator(done1, next1)
-
-    ///
-    /// Fast forwards the given iterator until the next element that satisfies
-    /// the given predicate `f`. Returns it (if it exists).
-    ///
-    def forward(f: a -> Bool \ ef, done: Done[r], next: Next[a, r]): Option[a] \ { ef, Read(r) } =
-        if (done())
-            None
-        else
-            let e = next();
-            if (f(e)) Some(e) else forward(f, done, next)
+        let iterF1 = () -> step(iterF());
+        Iterator(rc, iterF1)
 
     ///
     /// Returns an iterator with every `f` lazily applied to each element in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    @Lazy
-    pub def mapL(f: a -> b, iter: Iterator[a, r]): Iterator[b, r] =
-        let Iterator(done, next) = iter;
-        let next1 = () -> f(next());
-        Iterator(done, next1)
+    pub def map(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
+        let Iterator(rc, iterF) = iter;
+        let step = x -> match x {
+            case Ans(a) => Ans(f(a))
+            case Skip   => Skip
+            case Done   => Done
+        };
+        let iterF1 = () -> {let x = iterF(); step(x)};
+        Iterator(rc, iterF1)
+
+    ///
+    /// Returns an iterator with every `f` lazily applied to each element in `iter`
+    /// together with its index.
+    ///
+    /// Does *not* consume any elements from the iterator.
+    ///
+    pub def mapWithIndex(f: (Int32, a) -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let ix = ref 0 @ rc;
+        let step = x -> match x {
+            case Ans(a) => { let i = deref ix; ix := i + 1; Ans(f(i, a)) }
+            case Skip   => Skip
+            case Done   => Done
+        };
+        let iterF1 = () -> {let x = iterF(); step(x)};
+        Iterator(rc, iterF1)
 
     ///
     /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    @Lazy
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, r]): Iterator[a, r] with Eq[a] =
-        let Iterator(done, next) = iter;
-        let next1 = () -> {
-            let el = next();
-            if (el == from.from) to.to else el
-        };
-        Iterator(done, next1)
+    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+        map(a -> if (a == from.from) to.to else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
@@ -376,13 +316,21 @@ namespace Iterator {
     ///
     /// The original iterators `iterA` and `iterB` should *not* be reused.
     ///
-    @Lazy
-    pub def append(iterA: Iterator[a, r1], iterB: Iterator[a, r2]): Iterator[a, r1 and r2] =
-        let Iterator(doneA, nextA) = iterA;
-        let Iterator(doneB, nextB) = iterB;
-        let doneAB = () -> doneA() and doneB();
-        let nextAB = () -> if (doneA()) nextB() else nextA();
-        Iterator(doneAB, nextAB)
+    pub def append(iter1: Iterator[a, ef1, r], iter2: Iterator[a, ef2, r]): Iterator[a, ef1 and ef2, r] =
+        let Iterator(rc, iter1F) = iter1;
+        let Iterator(_, iter2F) = iter2;
+        def loop2(x) = match x {
+            case Ans(a) => Ans(a)
+            case Skip   => loop2(iter2F())
+            case Done   => Done
+        };
+        def loop1(x) = match x {
+            case Ans(a) => Ans(a)
+            case Skip   => loop1(iter1F())
+            case Done   => loop2(iter2F())
+        };
+        let iter3F = () -> loop1(iter1F());
+        Iterator(rc, iter3F)
 
     ///
     /// Returns an iterator where the element at index `i` is `(a, b)` where
@@ -396,13 +344,8 @@ namespace Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    @Lazy
-    pub def zip(iterA: Iterator[a, r1], iterB: Iterator[b, r2]): Iterator[(a, b), r1 and r2] =
-        let Iterator(doneA, nextA) = iterA;
-        let Iterator(doneB, nextB) = iterB;
-        let doneAB = () -> doneA() or doneB();
-        let nextAB = () -> (nextA(), nextB());
-        Iterator(doneAB, nextAB)
+    pub def zip(iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[(a, b), r2 and ef1 and ef2, r1] =
+        zipWith((a, b) -> (a, b), iterA, iterB)
 
     ///
     /// Returns an iterator where the element at index `i` is `f(a, b)` where
@@ -416,25 +359,37 @@ namespace Iterator {
     ///
     /// An iterator should *never* be zipped with itself.
     ///
-    @Lazy
-    pub def zipWithL(f: (a, b) -> c, iterA: Iterator[a, r1], iterB: Iterator[b, r2]): Iterator[c, r1 and r2] =
-        let Iterator(done, next) = zip(iterA, iterB);
-        let next1 = () -> {
-            let (x, y) = next();
-            f(x, y)
+    pub def zipWith(f: (a, b) -> c \ ef3, iterA: Iterator[a, ef1, r1], iterB: Iterator[b, ef2, r2]): Iterator[c, r2 and ef1 and ef2 and ef3, r1] =
+        let Iterator(rc, iter1F) = iterA;
+        let Iterator(_,  iter2F) = iterB;
+        let step = (l, r) -> match (l, r) {
+            case (Ans(a), Ans(b)) => Ans(f(a, b))
+            case (Ans(a), Skip)   => zipWithGoRight(b -> f(a, b), iter2F)
+            case (Skip, Ans(b))   => zipWithGoLeft(iter1F, a -> f(a, b))
+            case (Skip, Skip)     => Skip
+            case (_, _)           => Done
+
         };
-        Iterator(done, next1)
+        let iter3F = () -> step(iter1F(), iter2F());
+        Iterator(rc, iter3F)
 
     ///
-    /// Returns a list where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `iterA` and `b` is the element at index `i` in `iterB`.
+    /// Helper function for `zipWith`.
     ///
-    /// Consumes the entire iterator.
+    def zipWithGoLeft(iter: Unit -> Step[a] \ ef1, f: a -> c \ ef2): Step[c] \ { ef1, ef2 } = match iter() {
+        case Ans(a) => Ans(f(a))
+        case Skip   => zipWithGoLeft(iter, f)
+        case Done   => Done
+    }
+
     ///
-    /// An iterator should *never* be zipped with itself.
+    /// Helper function for `zipWith`.
     ///
-    pub def zipWith(f: (a, b) -> c \ ef, iterA: Iterator[a, r1], iterB: Iterator[b, r2]): List[c] \ { ef, Read(r1, r2) } =
-        zip(iterA, iterB) |> map(match (x, y) -> f(x, y))
+    def zipWithGoRight(f: b -> c \ ef2, iter: Unit -> Step[b] \ ef1): Step[c] \ { ef1, ef2 } = match iter() {
+        case Ans(b) => Ans(f(b))
+        case Skip   => zipWithGoRight(f, iter)
+        case Done   => Done
+    }
 
     ///
     /// Returns an iterator where the element at index `i` is `(a, i)` where
@@ -444,21 +399,15 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def zipWithIndex(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
-        let Iterator(done, next) = iter;
-        let i = ref 0 @ Scoped.regionOf(iter);
-        let next1 = () -> {
-            let x = (deref i, next());
-            i := deref i + 1;
-            x
-        };
-        Iterator(done, next1)
+    pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef and r, r] \ Write(r) =
+        let Iterator(rc, _) = iter;
+        let ix = ref 0 @ rc;
+        map(x -> {let i = deref ix; ix:= i + 1; (i, x)}, iter)
 
     ///
     /// Alias for `zipWithIndex`.
     ///
-    pub def enumerator(iter: Iterator[a, r]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef and r, r] \ Write(r) =
         zipWithIndex(iter)
 
     ///
@@ -468,10 +417,14 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldLeft(f: (b, a) -> b \ ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } = match iter {
-        case Iterator(done, _) if done() => s
-        case Iterator(_, next)           => foldLeft(f, f(s, next()), iter)
-    }
+    pub def foldLeft(f: (b, a) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop(acc) = match iterF() {
+            case Skip   => loop(acc)
+            case Ans(a) => loop(f(acc, a))
+            case Done   => acc
+        };
+        loop(s)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from right to left.
@@ -480,18 +433,16 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRight(f: (a, b) -> b \ ef, s: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(s)
-            else {
-                let x = next();
-                loop(ks -> k(f(x, ks)))
-            }
+    pub def foldRight(f: (a, b) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop(k) = match iterF() {
+            case Skip   => loop(k)
+            case Ans(a) => loop(ks -> k(f(a, ks)))
+            case Done   => k(s)
+
         };
-        loop(upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                               // but the intermediate continuations are effect polymorphic
+        loop(upcast(identity))
+
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
     ///
@@ -500,16 +451,19 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, r]): b \ { ef, Read(r) } =
-        match iter {
-            case Iterator(done, _) if done() => z
-            case Iterator(_, next)           => f(next(), _ -> foldRightWithCont(f, z, iter))
-        }
+    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
+        let Iterator(_, iterF) = iter;
+        def loop() = match iterF() {
+            case Skip   => loop()
+            case Ans(a) => f(a, _ -> loop())
+            case Done   => z
+        };
+        loop()
 
     ///
     /// Returns the result of mapping each element and combining the results.
     ///
-    pub def foldMap(f: a -> b \ ef, iter: Iterator[a, r]): b \ { ef, Read(r) } with Monoid[b] =
+    pub def foldMap(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } with Monoid[b] =
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
@@ -521,12 +475,11 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def reduceLeft(f: (a, a) -> a \ ef, iter: Iterator[a, r]): Option[a] \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        if (done())
-            None
-        else
-            Some(foldLeft(f, next(), iter))
+    pub def reduceLeft(f: (a, a) -> a \ ef2, iter: Iterator[a, ef1, r]): Option[a] \ { ef1, ef2, Read(r) } =
+        match next(iter) {
+            case Some(x) => foldLeft(f, x, iter) |> Some
+            case None    => None
+        }
 
     ///
     /// Returns an iterator over the results of `f`.
@@ -535,26 +488,13 @@ namespace Iterator {
     ///
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
-    @Lazy
-    pub def unfoldWithOk(r: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, r and ef] \ Write(r) =
-        let cursor = ref None @ r;
-        let done = () -> match deref cursor {
-            case None    => match f() {
-                case Err(_) => true
-                case Ok(x)  =>
-                    cursor := Some(x);
-                    false
-            }
-            case Some(_) => false
+    pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
+        def loop() = match f() {
+            case Ok(a)  => Ans(a)
+            case Err(_) => Done
         };
-        let next = () ->
-        unsafe_cast match deref cursor {
-            case None    => bug!("Empty Iterator!")
-            case Some(x) =>
-                cursor := None;
-                x
-            } as _ \ {r, ef};
-        Iterator(done, next)
+        let iterF = () -> unsafe_cast loop() as _ \ {ef, r};
+        Iterator(rc, iterF)
 
     ///
     /// Returns `iter` without the first `n` elements.
@@ -566,18 +506,20 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def dropL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Read(r) =
-        if (n <= 0)
-            iter
-        else
-            let Iterator(done, next) = iter;
-            discard region r2 {
-                let i = ref (n - 1) @ r2; // Subtract 1 since `forward` consumes 1 element before applying `f`.
-                let f = _ -> if (deref i <= 0) true else { i := deref i - 1; false };
-                forward(f, done, next)
-            };
-            iter
+    pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let ix = ref n @ rc;
+        def loop() = {
+            let i = deref ix;
+            ix := i - 1;
+            match iterF() {
+                case Ans(a)  => if (i > 0) loop() else Ans(a)
+                case Skip    => loop()
+                case Done    => Done
+            }
+        };
+        let iter1F = () -> loop();
+        Iterator(rc, iter1F)
 
     ///
     /// Returns `iter` with the first `n` elements.
@@ -589,191 +531,170 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def takeL(n: Int32, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
-        let r = Scoped.regionOf(iter);
-        if (n < 0)
-            new Iterator(r)
-        else
-            let Iterator(done, next) = iter;
-            let i = ref 0 @ r;
-            let done1 = () -> done() or (deref i) >= n;
-            let next1 = () -> {
-                let x = next();
-                i := deref i + 1;
-                x
-            };
-            Iterator(done1, next1)
+    pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let ix = ref n @ rc;
+        def loop() = {
+            let i = deref ix;
+            if (i < 1)
+                Done
+            else
+                match iterF() {
+                    case Ans(a) => {ix := i-1; Ans(a)}
+                    case Skip   => Skip
+                    case Done   => Done
+                }
+        };
+        let iter1F = () -> loop();
+        Iterator(rc, iter1F)
 
     ///
     /// Returns the longest prefix of `iter` that satisfies the predicate `f`.
     ///
-    /// Consumes the entire iterator.
+    /// Does *not* consume any elements from the iterator.
     ///
-    pub def takeWhile(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        def loop(k) = {
-            if (done())
-                k(Nil)
-            else
-                let x = next();
-                if (f(x)) loop(ks -> k(x :: ks)) else k(Nil)
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    pub def takeWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r]=
+        let Iterator(rc, iterF) = iter;
+        def loop(x) = match x {
+            case Ans(a) => if (f(a)) Ans(a) else Done
+            case Skip   => loop(iterF())
+            case Done   => Done
         };
-        loop(identity)
+        let iter1F = () -> loop(iterF());
+        Iterator(rc, iter1F)
 
     ///
     /// Returns `iter` without the longest prefix that satisfies the predicate `f`.
     ///
-    /// Consumes the entire iterator.
+    /// Does *not* consume any elements from the iterator.
     ///
-    pub def dropWhile(f: a -> Bool \ ef, iter: Iterator[a, r]): List[a] \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        match forward(x -> not f(x), done, next) {
-            case None    => Nil
-            case Some(i) => i :: toList(iter)
-        }
+    /// The original iterator `iter` should *not* be reused.
+    ///
+    pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let start = ref true @ rc;
+        def loop() = match iterF() {
+            case Ans(a) =>
+                if (deref start) {
+                    if (f(a)) Skip else { start:= false; Ans(a) }
+                } else {
+                    Ans(a)
+                }
+            case Skip    => Skip
+            case Done    => Done
+        };
+        let iter1F = () -> loop();
+        Iterator(rc, iter1F)
 
     ///
     /// Returns the result of applying `f` to every element in `iter` and concatenating the results.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    @Lazy
-    pub def flatMap(f: a -> Iterator[b, r1] \ Write(r1), iter: Iterator[a, r2]): Iterator[b, r1 and r2] \ Write(r2) =
-        let Iterator(done, next) = iter;
-        let cursor = ref None @ Scoped.regionOf(iter);
-        let done1 = () -> match deref cursor {
-            case None     => match flatMapForward(f, done, next) {
-                case None     => true
-                case Some(it) =>
-                    cursor := Some(it);
-                    false
+    /// Currently `f` has to generate an iterator with region `r`.
+    ///
+    pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r and ef1 and ef2 and ef3, r] \ Write(r) =
+        let Iterator(rc, iterF) = ma;
+        let innerIter = ref polymorphicEmpty(rc) @ rc;
+        let inside = ref false @ rc;
+        def innerLoop() = {
+            let Iterator(_, innerF) = deref innerIter;
+            match innerF() {
+                case Ans(b) => Ans(b)
+                case Skip   => innerLoop()
+                case Done   => Done
             }
-            case Some(it) =>
-                let Iterator(d, _) = it;
-                if (d())
-                    match flatMapForward(f, done, next) {
-                        case None      => true
-                        case Some(it1) =>
-                            cursor := Some(it1);
-                            false
+        };
+        def outerLoop() = {
+            if (deref inside) {
+                match innerLoop() {
+                    case Done => {inside := false; outerLoop()}
+                    case ans  => ans
+                }
+            } else {
+                match iterF() {
+                    case Ans(a) => {
+                        inside := true;
+                        innerIter := f(a);
+                        outerLoop()
                     }
-                else
-                    false
+                    case Skip   => outerLoop()
+                    case Done   => Done
+                }
+            }
         };
-        let next1 = () -> match deref cursor {
-            case None     => bug!("Empty Iterator!")
-            case Some(it) =>
-                let Iterator(_, n) = it;
-                n()
-        };
-        Iterator(done1, next1)
+        let iter1F = () -> outerLoop();
+        Iterator(rc, iter1F)
 
     ///
-    /// Forwards the given iterator to the first non-empty iterator produced by `f`.
+    /// Helper for `flatMap`.
     ///
-    def flatMapForward(f: a -> Iterator[b, r1] \ ef, done: Done[r2], next: Next[a, r2]): Option[Iterator[b, r1]] \ { ef, Read(r1, r2) } =
-        if (done())
-            None
-        else
-            let Iterator(d, n) = f(next());
-            if (d()) flatMapForward(f, done, next) else Some(Iterator(d, n))
+    /// This is a cheat to get the initial inner iterator (inside the `innerIter` reference) to
+    /// typecheck and compile. Ideally we would use the public API function `empty` but its type
+    /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
+    ///
+    def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
+        let f = () -> unsafe_cast Done as _ \ ef;
+        Iterator(rc, f)
+
 
     ///
     /// Returns an iterator with `a` inserted between every of `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    @Lazy
-    pub def intersperse(x: a, iter: Iterator[a, r]): Iterator[a, r] \ Write(r) =
-        let Iterator(done, next) = iter;
-        let returnX = ref false @ Scoped.regionOf(iter);
-        let next1 = () -> {
-            if (deref returnX) {
-                returnX := false;
-                x
-            }
-            else {
-                returnX := true;
-                next()
-            }
-        };
-        Iterator(done, next1)
+    pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef and r, r] \ Write(r) =
+        let Iterator(rc, _) = iter;
+        let start = ref true @ rc;
+        let step = x ->
+            if (deref start) {
+                start := false;
+                singleton(rc, x)
+            } else {
+                cons(sep, singleton(rc, x))
+            };
+        flatMap(step, iter)
 
     ///
-    /// Returns the concatenation of the elements in `iterB` with the elements of `iterA` inserted between every two adjacent elements.
+    /// Returns the concatenation of the elements in `iter` with the elements of `sep` inserted between every two adjacent elements.
     ///
     /// That is, returns `b1 :: a1 ... an :: b2 :: ... bn-1 :: a1 :: ... :: an :: bn :: Nil`.
     ///
     /// Does *not* consume any elements from either iterator.
     ///
-    /// The original iterators `iterA` and `iterB` should not be reused.
+    /// The original iterators `sep` and `iter` should not be reused.
     ///
-    @Lazy
-    pub def intercalate(iterA: Iterator[a, r1], iterB: Iterator[Iterator[a, r2], r3]): Iterator[a, r1 and r2 and r3] \ Write(r1, r3) =
-        let Iterator(doneA, nextA) = iterA;
-        let Iterator(doneB, nextB) = iterB;
-        let r1 = Scoped.regionOf(iterA);
-        let xs = ref Nil @ r1;
-        let r3 = Scoped.regionOf(iterB);
-        let isReversed = ref false @ r1;
-        let nextAA = () -> {
-            let x = nextA();
-            xs := x :: deref xs;
-            x
-        };
-        let doneAA = () -> {
-            if (doneA()) {
-                if (deref isReversed)
-                    ()
-                else {
-                    xs := List.reverse(deref xs);
-                    isReversed := true
-                };
-                true
+    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef and r, r] \ Write(r) with Foldable[t] =
+        let Iterator(rc, _) = iter;
+        let start = ref true @ rc;
+        let sepL = Foldable.toList(sep);
+        let step = innerIter -> {
+            if (deref start) {
+                start := false;
+                innerIter
+            } else {
+                append(ofList(rc, sepL), innerIter)
             }
-            else
-                false
         };
-        let cursor = ref None @ r3;
-        let mkCursor = i -> { // Appends an iterator with the contents of `iterA`. Boolean formula: r1 and formula of i
-            if (deref isReversed)
-                // `iterA` has been consumed, so construct a new one from `xs`
-                cursor := Some(append(i, List.iterator(r1, deref xs)))
-            else
-                cursor := Some(append(i, Iterator(doneAA, nextAA)))
-        };
-        let done1 = () -> match deref cursor {
-            case None    => match forward(match Iterator(d, _) -> not d(), doneB, nextB) {
-                case None    => true
-                case Some(i) =>
-                    if (doneB())
-                        cursor := Some(append(i, new Iterator(r1))) // Has Boolean formula r2 since it is the last iterator of `iterB`.
-                    else                                                     // Has to be appended with an empty iterator to satisfy formula `r1 and formula of i` in `mkCursor`
-                        mkCursor(i);                                         // Same reason for appending with empty iterator below
-                    false
+        flatMap(step, iter)
+
+    ///
+    /// Helper for `intercalate`.
+    ///
+    /// Note - this is not the "best" return type. Ideally it should be `Iterator[a, r, r]` but
+    /// then `intercalate` fails.
+    ///
+    def ofList(rc: Region[r], xs: List[a]): Iterator[a, true, r] \ Write(r) =
+        let ls = ref xs @ rc;
+        let next = () -> {
+            match (deref ls) {
+                case Nil     => Done
+                case x :: rs => ls := rs; Ans(x)
             }
-            case Some(i) =>
-                let Iterator(d, _) = i;
-                if (d()) match forward(match Iterator(d1, _) -> not d1(), doneB, nextB) {
-                    case None     => true
-                    case Some(i1) =>
-                        if (doneB())
-                            cursor := Some(append(i1, new Iterator(r1)))
-                        else
-                            mkCursor(i1);
-                        false
-                }
-                else
-                    false
         };
-        let next1 = () -> match deref cursor {
-            case None    => bug!("Empty Iterator!")
-            case Some(i) =>
-                let Iterator(_, n) = i;
-                n()
-        };
-        Iterator(done1, next1)
+        Iterator(rc, next)
 
     ///
     /// Returns the concatenation of the string representation
@@ -781,7 +702,7 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def join(sep: String, iter: Iterator[a, r]): String \ Read(r) with ToString[a] =
+    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, Read(r) } with ToString[a] =
         joinWith(ToString.toString, sep, iter)
 
     ///
@@ -790,18 +711,17 @@ namespace Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def joinWith(f: a -> String \ ef, sep: String, iter: Iterator[a, r]): String \ { ef, Read(r) } =
-        let Iterator(done, next) = iter;
-        if (done())
-            ""
-        else
-            region r {
-                let sb = new StringBuilder(r);
-                let g = x -> { StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb) };
-                StringBuilder.append!(f(next()), sb); // Safe to call next, done was check above.
-                forEach(g, iter);
-                StringBuilder.toString(sb)
+    pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, Read(r) } = region rc {
+        let sb = new StringBuilder(rc);
+        match next(iter) {
+            case Some(a) => {
+                StringBuilder.append!(f(a), sb);
+                forEach(x -> {StringBuilder.append!(sep, sb); StringBuilder.append!(f(x), sb)}, iter)
             }
+            case None    => ()
+        };
+        StringBuilder.toString(sb)
+    }
 
     ///
     /// Returns an iterator with every element of the iterator `iter` that
@@ -811,96 +731,49 @@ namespace Iterator {
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def filterMapL(f: a -> Option[b], iter: Iterator[a, r]): Iterator[b, r] \ Write(r) =
-        let Iterator(done, next) = iter;
-
-        // Allocate a reference to hold the next element.
-        let cursor = ref None @ Scoped.regionOf(iter);
-
-        let done1 = () -> match deref cursor {
-            case None => match filterMapForward(f, done, next) {
-                case None    => true
-                case Some(x) =>
-                    // An element was found. Store it in the reference.
-                    cursor := Some(x);
-                    false
+    pub def filterMap(f: a -> Option[b] \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
+        let Iterator(rc, iterF) = iter;
+        let step = x -> match x {
+            case Ans(a) => match (f(a)) {
+                case Some(a1) => Ans(a1)
+                case None     => Skip
             }
-            case Some(_) => false
+            case Skip   => Skip
+            case Done   => Done
         };
-
-        let next1 = () -> match deref cursor {
-            case None    => bug!("Empty iterator")
-            case Some(x) =>
-                // An element is in the reference. Use it.
-                cursor := None;
-                x
-        };
-        Iterator(done1, next1)
+        let iterF1 = () -> step(iterF());
+        Iterator(rc, iterF1)
 
     ///
-    /// Fast forwards the given iterator until the next element that produces
-    /// a `Some` given function `f`. Returns it if it exists, or `None`.
-    ///
-    /// This implementation returns `f(x)` as opposed to `forward` which returns `x`.
-    ///
-    def filterMapForward(f: a -> Option[b] \ ef, done: Done[r], next: Next[a, r]): Option[b] \ { ef, Read(r) } =
-        if (done())
-            None
-        else
-            match f(next()) {
-                case None    => filterMapForward(f, done, next)
-                case Some(b) => Some(b)
-            }
-
-    ///
-    /// Returns `iter` without the prefix of elements that satisfy
-    /// the predicate `f` dropped.
+    /// Returns an iterator with the element `x` appended to the
+    /// front of iterator `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
     /// The original iterator `iter` should *not* be reused.
     ///
-    @Lazy
-    pub def dropWhileL(f: a -> Bool, iter: Iterator[a, r]): Iterator[a, r] \ { Read(r), Write(r) } =
-        let Iterator(done, next) = iter;
-        let r = Scoped.regionOf(iter);
-        let front = ref None @ r;
-        let forwarded = ref false @ r;
-        let done1 = () -> if (deref forwarded) done() else match forward(a -> not f(a), done, next) {
-            case None    => true
-            case Some(x) =>
-                front := Some(x);
-                forwarded := true;
-                false
+    pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ Write(r) =
+        let Iterator(rc, iterF) = iter;
+        let first = ref true @ rc;
+        let f = () ->  {
+            if (deref first) {
+                first := false;
+                Ans(x)
+            }
+            else
+                iterF()
         };
-        let next1 = () -> match deref front {
-            case None    => next()
-            case Some(x) =>
-                front := None;
-                x
-        };
-        Iterator(done1, next1)
+        let iter1F = () -> f();
+        Iterator(rc, iter1F)
 
     ///
-    /// Returns the contents of `iter` as a list.
+    /// Returns the concatenation of the nested iterators in `iter`.
     ///
-    /// Consumes the entire iterator.
+    /// Does *not* consume any elements from the iterator.
     ///
-    /// If any stage of the iterator is `Err(e)` then `Err(e)` is returned (first fail).
-    /// If the iterator has no errors then the result is wrapped with `Ok`.
+    /// The original iterator `iter` should *not* be reused.
     ///
-    pub def toResultList(iter: Iterator[Result[e, a], r]): Result[e, List[a]] \ Read(r) =
-        let Iterator(done, next) = iter;
-        def loop(fk, sk) = {
-            if (done())
-                sk(Nil)
-            else
-                match next() {
-                    case Ok(a)  => loop(fk, ks -> sk(a :: ks))
-                    case Err(e) => fk(e)
-                }
-        };
-        loop(e -> Err(e), ks -> Ok(ks))
+    pub def flatten(iter: Iterator[Iterator[a, ef1, r], ef2, r]): Iterator[a, r and ef1 and ef2, r] \ Write(r) =
+        flatMap(identity, iter)
 
 }

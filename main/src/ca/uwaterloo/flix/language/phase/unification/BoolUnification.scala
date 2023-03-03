@@ -32,9 +32,21 @@ object BoolUnification {
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+
+    //
+    // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.
+    //
+    if (flix.options.xnoboolunif){
+      return Substitution.empty.toOk
+    }
+
     //
     // Optimize common unification queries.
     //
+    if (flix.options.xprintboolunif) {
+      val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
+      println(s"$loc: $tpe1 =?= $tpe2")
+    }
 
     if (!flix.options.xnoboolspecialcases) {
 
@@ -145,7 +157,8 @@ object BoolUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])(implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
+  private def booleanUnification[F](tpe1: F, tpe2: F, renv: Set[Int])
+                                   (implicit flix: Flix, alg: BoolAlg[F]): Option[BoolSubstitution[F]] = {
     // The boolean expression we want to show is 0.
     val query = alg.mkXor(tpe1, tpe2)
 

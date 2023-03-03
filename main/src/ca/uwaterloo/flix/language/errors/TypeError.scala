@@ -31,7 +31,6 @@ sealed trait TypeError extends CompilationMessage {
 }
 
 object TypeError {
-  implicit val audience: Audience = Audience.External
 
   /**
     * Generalization Error.
@@ -776,6 +775,26 @@ object TypeError {
          |but $actual are provided here.
          |
          |${code(loc, s"expected $expected parameter(s) but found $actual")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error indicating that a hacky assumption was not fulfilled.
+    */
+  case class HackError(summary: String, loc: SourceLocation) extends TypeError {
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |$summary
+         |
+         |${code(loc, s"$summary")}
          |""".stripMargin
     }
 

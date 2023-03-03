@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Anna Blume Jakobsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,21 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import java.nio.file.Path
-
 sealed trait PackageError
 
 object PackageError {
+  case class VersionDoesNotExist(msg: String) extends PackageError
 
-  case class ManifestNotFound(path: Path) extends PackageError
+  case class InvalidProjectName(msg: String) extends PackageError
 
-  case class ManifestNotReadable(path: Path) extends PackageError
+  case class NoReleasesFound(msg: String) extends PackageError
 
-  case class MissingRequiredProperty(path: Path, msg: String) extends PackageError
+  case class ProjectNotFound(msg: String) extends PackageError
 
-  case class ManifestParseError(path: Path, msg: String) extends PackageError
+  case class JsonError(msg: String) extends PackageError
 
-  case class UnableToDownload( msg: String) extends PackageError
+  case class DownloadError(msg: String) extends PackageError
 
-  /// ...
+  case class CoursierError(msg: String) extends PackageError
 
 }

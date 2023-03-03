@@ -65,7 +65,6 @@ instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
-    override pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) = Set.iterator(r, s)
 }
 
 instance UnorderedFoldable[Set] {
@@ -91,11 +90,11 @@ instance Monoid[Set[a]] with Order[a] {
 instance CommutativeMonoid[Set[a]] with Order[a]
 
 instance Collectable[Set] {
-    pub def collect(iter: Iterator[a, r]): Set[a] \ r with Order[a] = Iterator.toSet(iter)
+    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
 }
 
 instance Iterable[Set] {
-    pub def iterator(rh: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) = Set.iterator(rh, s)
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
 namespace Set {
@@ -561,8 +560,8 @@ namespace Set {
     ///
     /// Returns the set `s` as a `MutSet`.
     ///
-    pub def toMutSet(r: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
-        MutSet.MutSet(ref s @ r)
+    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ Write(r) =
+        MutSet.MutSet(rc, ref s @ rc)
 
     ///
     /// Applies `f` to every element of `s`.
@@ -616,14 +615,14 @@ namespace Set {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(r: Region[r], s: Set[a]): Iterator[a, r] \ Write(r) =
+    pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) =
         let Set(t) = s;
-        RedBlackTree.iterator(r, t) |> Iterator.mapL(fst)
+        RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
     ///
     /// Returns an iterator over `s` zipped with the indices of the elements.
     ///
-    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r] \ Write(r) =
+    pub def enumerator(r: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ Write(r) =
         iterator(r, s) |> Iterator.zipWithIndex
 
     ///

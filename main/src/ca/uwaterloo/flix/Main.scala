@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.{Bootstrap, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
+import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 
@@ -90,6 +90,7 @@ object Main {
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
+      installDeps = cmdOpts.installDeps,
       output = cmdOpts.output.map(s => Paths.get(s)),
       target = Options.Default.target,
       test = Options.Default.test,
@@ -101,6 +102,8 @@ object Main {
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnobooltable = cmdOpts.xnobooltable,
+      xnoboolunif = cmdOpts.xnoboolunif,
+      xnoqmc = cmdOpts.xnoqmc,
       xnounittests = cmdOpts.xnounittests,
       xstatistics = cmdOpts.xstatistics,
       xstrictmono = cmdOpts.xstrictmono,
@@ -109,8 +112,9 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xvirtualthreads = cmdOpts.xvirtualthreads,
       xprintasts = cmdOpts.xprintasts,
-      xqmc = cmdOpts.xqmc,
+      xprintboolunif = cmdOpts.xprintboolunif,
       xflexibleregions = cmdOpts.xflexibleregions,
+      xsummary = cmdOpts.xsummary
     )
 
     // Don't use progress bar if benchmarking.
@@ -167,15 +171,19 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
-          val sourceProvider = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
-          val shell = new Shell(sourceProvider, options)
-          shell.loop()
-          System.exit(0)
-
-        case Command.Install(project) =>
-          val o = options.copy(progress = false)
-          val result = Packager.install(project, cwd, o)
-          System.exit(getCode(result))
+          if (cmdOpts.files.nonEmpty) {
+            println("The `repl' command cannot be used with a list of files.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val shell = new Shell(bootstrap, options)
+              shell.loop()
+              System.exit(0)
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Lsp(port) =>
           val o = options.copy(progress = false)
@@ -213,6 +221,7 @@ object Main {
                      documentor: Boolean = false,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
+                     installDeps: Boolean = true,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -231,6 +240,8 @@ object Main {
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnobooltable: Boolean = false,
+                     xnoboolunif: Boolean = false,
+                     xnoqmc: Boolean = false,
                      xnounittests: Boolean = false,
                      xstatistics: Boolean = false,
                      xstrictmono: Boolean = false,
@@ -239,8 +250,9 @@ object Main {
                      xnooptimizer: Boolean = false,
                      xvirtualthreads: Boolean = false,
                      xprintasts: Set[String] = Set.empty,
-                     xqmc: Boolean = false,
+                     xprintboolunif: Boolean = false,
                      xflexibleregions: Boolean = false,
+                     xsummary: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -269,8 +281,6 @@ object Main {
     case object Test extends Command
 
     case object Repl extends Command
-
-    case class Install(project: String) extends Command
 
     case class Lsp(port: Int) extends Command
 
@@ -312,12 +322,6 @@ object Main {
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
-
-      cmd("install").text("  installs the Flix package from the given GitHub <owner>/<repo>")
-        .children(
-          arg[String]("project").action((project, c) => c.copy(command = Command.Install(project)))
-            .required()
-        )
 
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
@@ -364,6 +368,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 
@@ -430,6 +437,10 @@ object Main {
       // xprint-asts
       opt[Seq[String]]("Xprint-asts").action((m, c) => c.copy(xprintasts = m.toSet))
 
+      // Xprint-bool-unif
+      opt[Unit]("Xprint-bool-unif").action((m, c) => c.copy(xprintboolunif = true)).
+        text("[experimental] prints boolean unification queries")
+
       //
       // Boolean unification flags.
       //
@@ -453,13 +464,21 @@ object Main {
       opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
         text("[experimental] disables Boolean minimization via tabling.")
 
+      // Xno-bool-unif
+      opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
+        text("[experimental] disables Boolean unification. (DO NOT USE).")
+
       // Xno-unit-tests
       opt[Unit]("Xno-unit-tests").action((_, c) => c.copy(xnounittests = true)).
         text("[experimental] excludes unit tests from performance benchmarks.")
 
-      // Xqmc
-      opt[Unit]("Xqmc").action((_, c) => c.copy(xqmc = true)).
-        text("[experimental] enables Quine McCluskey when using BDDs.")
+      // Xno-qmc
+      opt[Unit]("Xno-qmc").action((_, c) => c.copy(xnoqmc = true)).
+        text("[experimental] disables Quine McCluskey when using BDDs.")
+
+      // Xsummary
+      opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
+        text("[experimental] prints a summary of the compiled modules.")
 
       note("")
 

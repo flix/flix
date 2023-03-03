@@ -22,35 +22,29 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-import scala.collection.mutable
-
 object Finalize {
-
-  private type TopLevel = mutable.Map[Symbol.DefnSym, FinalAst.Def]
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Finalize") {
 
-    val m: TopLevel = mutable.Map.empty
-
     val defs = root.defs.map {
-      case (k, v) => k -> visitDef(v, m)
+      case (k, v) => k -> visitDef(v)
     }
 
     val enums = root.enums.map {
-      case (sym, enum) => sym -> visitEnum(enum, m)
+      case (sym, enum) => sym -> visitEnum(enum)
     }
 
-    FinalAst.Root(defs ++ m, enums, root.entryPoint, root.sources).toSuccess
+    FinalAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
   }
 
-  private def visitDef(def0: LiftedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
+  private def visitDef(def0: LiftedAst.Def)(implicit flix: Flix): FinalAst.Def = {
     val fs = def0.fparams.map(visitFormalParam)
-    val e = visitExp(def0.exp, m)
+    val e = visitExp(def0.exp)
     val tpe = visitType(def0.tpe)
     FinalAst.Def(def0.ann, def0.mod, def0.sym, fs, e, tpe, def0.loc)
   }
 
-  private def visitEnum(enum0: LiftedAst.Enum, m: TopLevel)(implicit flix: Flix): FinalAst.Enum = enum0 match {
+  private def visitEnum(enum0: LiftedAst.Enum)(implicit flix: Flix): FinalAst.Enum = enum0 match {
     case LiftedAst.Enum(ann, mod, sym, cases0, tpe0, loc) =>
       val cases = cases0.map {
         case (tag, LiftedAst.Case(enumSym, tagType, tagLoc)) =>
@@ -61,7 +55,7 @@ object Finalize {
       FinalAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
-  private def visitExp(exp0: LiftedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
+  private def visitExp(exp0: LiftedAst.Expression)(implicit flix: Flix): FinalAst.Expression = {
 
     def visit(e0: LiftedAst.Expression): FinalAst.Expression = e0 match {
       case LiftedAst.Expression.Cst(cst, tpe, loc) =>
@@ -155,6 +149,12 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Scope(sym, e, t, loc)
 
+      case LiftedAst.Expression.ScopeExit(exp1, exp2, tpe, _, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.ScopeExit(e1, e2, t, loc)
+
       case LiftedAst.Expression.Is(sym, exp, _, loc) =>
         val e1 = visit(exp)
         FinalAst.Expression.Is(sym, e1, loc)
@@ -228,13 +228,6 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.ArrayLength(b, t, loc)
 
-      case LiftedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = visit(base)
-        val i1 = visit(startIndex)
-        val i2 = visit(endIndex)
-        val t = visitType(tpe)
-        FinalAst.Expression.ArraySlice(b, i1, i2, t, loc)
-
       case LiftedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
@@ -304,7 +297,7 @@ object Finalize {
 
       case LiftedAst.Expression.NewObject(name, clazz, tpe, _, methods, loc) =>
         val t = visitType(tpe)
-        val ms = methods.map(visitJvmMethod(_, m))
+        val ms = methods.map(visitJvmMethod(_))
         FinalAst.Expression.NewObject(name, clazz, t, ms, loc)
 
       case LiftedAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
@@ -389,9 +382,9 @@ object Finalize {
 
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
-            case TypeConstructor.Sender => throw new InternalCompilerException("Unexpected Sender", tpe0.loc)
+            case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe0.loc)
 
-            case TypeConstructor.Receiver => throw new InternalCompilerException("Unexpected Receiver", tpe0.loc)
+            case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe0.loc)
 
             case TypeConstructor.Lazy => MonoType.Lazy(args.head)
 
@@ -404,6 +397,8 @@ object Finalize {
             case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
 
             case TypeConstructor.Array => MonoType.Array(args.head)
+
+            case TypeConstructor.Vector => MonoType.Array(args.head)
 
             case TypeConstructor.Ref => MonoType.Ref(args.head)
 
@@ -439,8 +434,7 @@ object Finalize {
 
             case TypeConstructor.All => MonoType.Unit
 
-            case TypeConstructor.CaseConstant(sym) => MonoType.Unit
-            case TypeConstructor.CaseEmpty(sym) => MonoType.Unit
+            case TypeConstructor.CaseSet(sym, enumSym) => MonoType.Unit
             case TypeConstructor.CaseComplement(sym) => MonoType.Unit
             case TypeConstructor.CaseIntersection(sym) => MonoType.Unit
             case TypeConstructor.CaseUnion(sym) => MonoType.Unit
@@ -466,10 +460,10 @@ object Finalize {
     visit(Type.eraseAliases(tpe0))
   }
 
-  private def visitJvmMethod(method: LiftedAst.JvmMethod, m: TopLevel)(implicit flix: Flix): FinalAst.JvmMethod = method match {
+  private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): FinalAst.JvmMethod = method match {
     case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       val f = fparams.map(visitFormalParam)
-      val c = visitExp(clo, m)
+      val c = visitExp(clo)
       val t = visitType(retTpe)
       FinalAst.JvmMethod(ident, f, c, t, loc)
   }
