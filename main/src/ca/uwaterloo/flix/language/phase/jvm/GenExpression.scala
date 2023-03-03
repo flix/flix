@@ -36,9 +36,6 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Cst(cst, tpe, loc) =>
-      compileConstant(visitor, cst, tpe, loc)
-
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
@@ -277,10 +274,6 @@ object GenExpression {
       // Store the closure locally (maybe not needed?)
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-
-    case Expression.Region(tpe, loc) =>
-      //!TODO: For now, just emit unit
-      compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
     case Expression.Scope(sym, exp, _, loc) =>
       // Adding source line number for debugging
@@ -521,6 +514,12 @@ object GenExpression {
       }
 
     case Expression.Intrinsic0(op, tpe, loc) => op match {
+      case IntrinsicOperator0.Cst(cst) =>
+        compileConstant(visitor, cst, tpe, loc)
+
+      case IntrinsicOperator0.Region =>
+        //!TODO: For now, just emit unit
+        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
       case IntrinsicOperator0.RecordEmpty =>
         // Adding source line number for debugging
@@ -1005,7 +1004,7 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expression.Region(_, _) =>
+          case Expression.Intrinsic0(IntrinsicOperator0.Region, tpe, loc) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)

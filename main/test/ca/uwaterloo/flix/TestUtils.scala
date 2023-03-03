@@ -32,7 +32,8 @@ trait TestUtils {
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
-  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = new Flix().setOptions(o).addSourceCode(s).compile()
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
+    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
 
   private def errorString(errors: Seq[CompilationMessage]): String = {
     errors.map(_.message(Formatter.NoFormatter)).mkString("\n\n")
