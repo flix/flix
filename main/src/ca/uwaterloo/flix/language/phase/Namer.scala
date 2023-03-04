@@ -764,9 +764,9 @@ object Namer {
         case (e1, e2, e3) => NamedAst.Expression.ArrayNew(e1, e2, e3, loc)
       }
 
-    case WeededAst.Expression.ArrayLoad(base, index, loc) =>
-      mapN(visitExp(base, ns0), visitExp(index, ns0)) {
-        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, loc)
+    case WeededAst.Expression.ArrayLoad(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+        case (e1, e2) => NamedAst.Expression.ArrayLoad(e1, e2, loc)
       }
 
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
