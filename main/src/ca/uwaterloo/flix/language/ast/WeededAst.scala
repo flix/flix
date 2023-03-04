@@ -119,7 +119,7 @@ object WeededAst {
 
     case class RestrictableChoose(star: Boolean, exp: WeededAst.Expression, rules: List[WeededAst.RestrictableChoiceRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Tuple(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Expression
 

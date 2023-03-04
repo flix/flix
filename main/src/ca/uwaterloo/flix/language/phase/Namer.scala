@@ -726,8 +726,8 @@ object Namer {
         case (es, rs) => NamedAst.Expression.RestrictableChoose(star, es, rs, loc)
       }
 
-    case WeededAst.Expression.Tuple(elms, loc) =>
-      traverse(elms)(e => visitExp(e, ns0)) map {
+    case WeededAst.Expression.Tuple(exps, loc) =>
+      traverse(exps)(e => visitExp(e, ns0)) map {
         case es => NamedAst.Expression.Tuple(es, loc)
       }
 
