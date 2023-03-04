@@ -145,11 +145,6 @@ object Request {
   case class ShowAst(requestId: String, phase: String) extends Request
 
   /**
-    * A request to get the ordered list of phases.
-    */
-  case class ListPhases(requestId: String) extends Request
-
-  /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
     */
   def parseAddUri(json: json4s.JValue): Result[Request, String] = {
@@ -380,12 +375,25 @@ object Request {
     } yield Request.SemanticTokens(id, uri)
   }
 
+  /**
+    * Tries to parse the given `json` value as a [[InlayHint]] request.
+    */
   def parseInlayHint(json: JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
       uri <- parseUri(json)
       range <- Range.parse(json \\ "range")
     } yield Request.InlayHint(id, uri, range)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[ShowAst]] request.
+    */
+  def parseShowAst(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+      phase <- parseString("phase", json)
+    } yield Request.ShowAst(id, phase)
   }
 
   /**
