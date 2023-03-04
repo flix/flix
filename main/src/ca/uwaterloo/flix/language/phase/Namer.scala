@@ -1121,10 +1121,10 @@ object Namer {
     * Names the given head predicate `head`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(pred, den, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(pred, den, exps, loc) =>
       for {
-        ts <- traverse(terms)(t => visitExp(t, ns0))
-      } yield NamedAst.Predicate.Head.Atom(pred, den, ts, loc)
+        es <- traverse(exps)(t => visitExp(t, ns0))
+      } yield NamedAst.Predicate.Head.Atom(pred, den, es, loc)
   }
 
   /**

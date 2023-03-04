@@ -284,7 +284,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
