@@ -872,16 +872,6 @@ object ParsedAst {
     case class RecordOperation(sp1: SourcePosition, ops: Seq[ParsedAst.RecordOp], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * New Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param qname the qualified name of the type.
-      * @param exp   the optional region expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class New(sp1: SourcePosition, qname: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Array Literal expression.
       *
       * @param sp1  the position of the first character in the `Array` keyword.
