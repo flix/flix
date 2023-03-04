@@ -45,6 +45,7 @@ object ErasedAst {
     // dont touch in #5434
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
 
+    // dont touch in #5434
     case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
     // dont touch in #5434
