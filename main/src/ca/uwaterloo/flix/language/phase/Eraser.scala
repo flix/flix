@@ -227,8 +227,9 @@ object Eraser {
       }
       ErasedAst.Expression.TryCatch(visitExp(exp), rules, tpe, loc)
 
-    case FinalAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeConstructor(constructor, args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.InvokeConstructor(constructor, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.InvokeConstructor(constructor)
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       ErasedAst.Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), tpe, loc)

@@ -79,8 +79,6 @@ object ErasedAst {
     // dont touch in #5434
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class InvokeMethod(method: Method, exp: ErasedAst.Expression, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
@@ -224,6 +222,8 @@ object ErasedAst {
     case object Tuple extends IntrinsicOperatorN
 
     case object ArrayLit extends IntrinsicOperatorN
+
+    case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOperatorN
 
   }
 

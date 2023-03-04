@@ -283,23 +283,6 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.InvokeConstructor(constructor, args, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      val descriptor = asm.Type.getConstructorDescriptor(constructor)
-      val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
-      // Create a new object of the declaration type
-      visitor.visitTypeInsn(NEW, declaration)
-      // Duplicate the reference since the first argument for a constructor call is the reference to the object
-      visitor.visitInsn(DUP)
-      // Retrieve the signature.
-      val signature = constructor.getParameterTypes
-
-      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
-
-      // Call the constructor
-      visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
-
     case Expression.InvokeMethod(method, exp, args, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -1024,6 +1007,24 @@ object GenExpression {
           // with the store instruction corresponding to the stored element
           visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
         }
+
+      case IntrinsicOperatorN.InvokeConstructor(constructor) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        val descriptor = asm.Type.getConstructorDescriptor(constructor)
+        val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+        // Create a new object of the declaration type
+        visitor.visitTypeInsn(NEW, declaration)
+        // Duplicate the reference since the first argument for a constructor call is the reference to the object
+        visitor.visitInsn(DUP)
+        // Retrieve the signature.
+        val signature = constructor.getParameterTypes
+
+        pushArgs(visitor, exps, signature, currentClass, lenv0, entryPoint)
+
+        // Call the constructor
+        visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
+
     }
 
     case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
