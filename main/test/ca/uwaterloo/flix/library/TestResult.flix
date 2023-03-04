@@ -520,6 +520,17 @@ namespace TestResult {
     def toOption02(): Bool = Result.toOption(Ok(1)) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
+    // toValidation                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    pub def toValidation01(): Bool =
+        Result.toValidation(Err(1): Result[Int32, Unit]) == Failure(Nec.singleton(1))
+
+    @test
+    pub def toValidation02(): Bool =
+        Result.toValidation(Ok("s"): Result[Unit, String]) == Success("s")
+
+    /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
