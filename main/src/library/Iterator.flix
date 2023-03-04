@@ -213,7 +213,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, Read(r2), Write(r1) } =
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 

@@ -1916,7 +1916,7 @@ namespace TestMutList {
     @test
     def toMutDeque01(): Bool = region r {
         let l = new MutList(r): MutList[Int32, _];
-        let d = new MutDeque(r): MutDeque[Int32, _];
+        let d = MutDeque.new(r): MutDeque[Int32, _];
 
         MutList.toMutDeque(r, l) `MutDeque.sameElements` d
     }
@@ -1928,7 +1928,7 @@ namespace TestMutList {
         let l = new MutList(r);
         List.forEach(x -> MutList.push!(x, l), xs);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
 
         MutList.toMutDeque(r, l) `MutDeque.sameElements` d
@@ -1941,7 +1941,7 @@ namespace TestMutList {
         let l = new MutList(r);
         List.forEach(x -> MutList.push!(x, l), xs);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
 
         MutList.toMutDeque(r, l) `MutDeque.sameElements` d
@@ -1954,7 +1954,7 @@ namespace TestMutList {
         let l = new MutList(r);
         List.forEach(x -> MutList.push!(x, l), xs);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         List.forEach(x -> MutDeque.pushBack(x, d), xs);
 
         MutList.toMutDeque(r, l) `MutDeque.sameElements` d

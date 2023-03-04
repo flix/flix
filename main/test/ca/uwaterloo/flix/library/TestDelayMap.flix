@@ -1698,7 +1698,7 @@ namespace TestDelayMap {
         let m: DelayMap[Int32, Int32] = Map#{} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(r, m);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1708,7 +1708,7 @@ namespace TestDelayMap {
         let m = Map#{1 => 2} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(r, m);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, 2), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1719,7 +1719,7 @@ namespace TestDelayMap {
         let m = Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(r, m);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((3, 4), d2);
         MutDeque.pushBack((5, 6), d2);
         MutDeque.pushFront((1, 2), d2);
@@ -1732,7 +1732,7 @@ namespace TestDelayMap {
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(r, m);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront((3, 'c'), d2);
         MutDeque.pushFront((2, 'b'), d2);
         MutDeque.pushFront((1, 'a'), d2);

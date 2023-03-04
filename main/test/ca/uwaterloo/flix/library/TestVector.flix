@@ -230,14 +230,14 @@ namespace TestVector {
     @test
     def toMutDeque01(): Bool = region rc {
         let v = Vector#{}: Vector[Int32];
-        let d = new MutDeque(rc): MutDeque[Int32, _];
+        let d = MutDeque.new(rc): MutDeque[Int32, _];
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let v = Vector#{1};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
@@ -245,7 +245,7 @@ namespace TestVector {
     @test
     def toMutDeque03(): Bool = region rc {
         let v = Vector#{1, 2, 3};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -255,7 +255,7 @@ namespace TestVector {
     @test
     def toMutDeque04(): Bool = region rc {
         let v = Vector#{1, 2, 3, 4, 5};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -267,7 +267,7 @@ namespace TestVector {
     @test
     def toMutDeque05(): Bool = region rc {
         let v = Vector#{'a', 'b', 'c'};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);

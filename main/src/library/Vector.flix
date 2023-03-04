@@ -265,7 +265,7 @@ namespace Vector {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ Write(r)   =
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -491,7 +491,7 @@ namespace Vector {
         let len = length(v);
         let arr = Array.new(rc, len);
         def loop(i, k) = {
-            if (i == len) 
+            if (i == len)
                 k(Applicative.point(arr))
             else {
                 let mx = get(i, v);
@@ -522,7 +522,7 @@ namespace Vector {
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
     ///
-    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] = 
+    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
         (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr

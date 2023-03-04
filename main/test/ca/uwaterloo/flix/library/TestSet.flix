@@ -1233,7 +1233,7 @@ def toMutDeque01(): Bool = region r {
     let s: Set[Int32] = Set#{};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
 
     d1 `MutDeque.sameElements` d2
 }
@@ -1243,7 +1243,7 @@ def toMutDeque02(): Bool = region r {
     let s = Set#{1};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(1, d2);
 
     d1 `MutDeque.sameElements` d2
@@ -1254,7 +1254,7 @@ def toMutDeque03(): Bool = region r {
     let s = Set#{1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(3, d2);
     MutDeque.pushBack(6, d2);
     MutDeque.pushFront(1, d2);
@@ -1267,7 +1267,7 @@ def toMutDeque04(): Bool = region r {
     let s = Set#{7, 1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushFront(7, d2);
     MutDeque.pushFront(6, d2);
     MutDeque.pushFront(3, d2);

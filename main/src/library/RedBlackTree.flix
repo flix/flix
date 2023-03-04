@@ -880,7 +880,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 

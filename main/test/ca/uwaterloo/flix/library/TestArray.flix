@@ -234,7 +234,7 @@ namespace TestArray {
     @test
     def toMutDeque01(): Bool = region r {
         let a = (Array#{} @ r): Array[Int32, _];
-        let d = new MutDeque(r): MutDeque[Int32, _];
+        let d = MutDeque.new(r): MutDeque[Int32, _];
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
@@ -243,7 +243,7 @@ namespace TestArray {
     def toMutDeque02(): Bool = region r {
         let a = (Array#{1} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(1, d);
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
@@ -253,7 +253,7 @@ namespace TestArray {
     def toMutDeque03(): Bool = region r {
         let a = (Array#{1, 2, 3} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -265,7 +265,7 @@ namespace TestArray {
     def toMutDeque04(): Bool = region r {
         let a = (Array#{1, 2, 3, 4, 5} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -279,7 +279,7 @@ namespace TestArray {
     def toMutDeque05(): Bool = region r {
         let a = (Array#{'a', 'b', 'c'} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);

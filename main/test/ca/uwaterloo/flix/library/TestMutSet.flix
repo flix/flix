@@ -569,7 +569,7 @@ namespace TestMutSet {
         let s: Set[Int32] = Set#{};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
 
-        let d2 = new MutDeque(rc);
+        let d2 = MutDeque.new(rc);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -579,7 +579,7 @@ namespace TestMutSet {
         let s = Set#{1};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
 
-        let d2 = new MutDeque(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -590,7 +590,7 @@ namespace TestMutSet {
         let s = Set#{1, 3, 6};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
 
-        let d2 = new MutDeque(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(3, d2);
         MutDeque.pushBack(6, d2);
         MutDeque.pushFront(1, d2);
@@ -603,7 +603,7 @@ namespace TestMutSet {
         let s = Set#{7, 1, 3, 6};
         let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
 
-        let d2 = new MutDeque(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(7, d2);
         MutDeque.pushFront(6, d2);
         MutDeque.pushFront(3, d2);

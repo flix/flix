@@ -220,7 +220,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutDeque`.
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
         d
 

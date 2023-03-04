@@ -26,7 +26,7 @@ namespace Reachable/Imperative {
             // define the reachable set
             let reachable = new MutSet(r);
             // explore graph depth first by task list
-            let taskList = new MutDeque(r);
+            let taskList = MutDeque.new(r);
             taskList |> MutDeque.pushFront(origin);
             def whileLoop() = {
                 MutDeque.popFront(taskList) |> Option.forEach(node -> {

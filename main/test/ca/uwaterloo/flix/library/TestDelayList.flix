@@ -905,7 +905,7 @@ namespace TestDelayList {
     	let l = ENil: DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -916,7 +916,7 @@ namespace TestDelayList {
     	let l = LList(lazy ENil): DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -927,7 +927,7 @@ namespace TestDelayList {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);

@@ -186,7 +186,7 @@ namespace Array {
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+        let d = MutDeque.new(r1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
