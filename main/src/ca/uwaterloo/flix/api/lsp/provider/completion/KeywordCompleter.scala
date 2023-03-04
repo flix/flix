@@ -65,7 +65,6 @@ object KeywordCompleter extends Completer {
       "let",
       "match",
       "mod",
-      "new",
       "not",
       "null",
       "opaque",
