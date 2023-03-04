@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -30,7 +30,7 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
-class Shell(sourceProvider: SourceProvider, options: Options) {
+class Shell(bootstrap: Bootstrap, options: Options) {
 
   /**
     * The mutable list of source code fragments.
@@ -46,11 +46,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     * The result of the most recent compilation
     */
   private var root: Option[Root] = None
-
-  /**
-    * The source files currently loaded.
-    */
-  private val sourceFiles = new SourceFiles(sourceProvider)
 
   /**
     * Is this the first compile
@@ -165,7 +160,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     case Command.Eval(s) => execEval(s)
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
     case Command.Unknown(s) => execUnknown(s)
-    case _ => sourceProvider.execute(cmd, options)
+    case _ => terminal.writer().println("Package commands are currently not available from the shell")
   }
 
   /**
@@ -174,7 +169,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def execReload()(implicit terminal: Terminal): Unit = {
 
     // Scan the disk to find changes, and add source to the flix object
-    sourceFiles.addSourcesAndPackages(flix)
+    bootstrap.reconfigureFlix(flix)
 
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()

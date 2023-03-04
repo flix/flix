@@ -58,7 +58,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
     flix.setOptions(options)
 
     // Add the given path.
-    flix.addSourcePath(path)
+    flix.addFlix(path)
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
@@ -71,7 +71,7 @@ class FlixSuite(incremental: Boolean) extends FunSuite {
       }
     } finally {
       // Remove the source path.
-      flix.remSourcePath(path)
+      flix.remFlix(path)
     }
   }
 
