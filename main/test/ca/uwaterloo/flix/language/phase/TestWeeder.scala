@@ -773,7 +773,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
   }
 
@@ -782,7 +782,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
   }
 
