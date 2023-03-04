@@ -522,13 +522,13 @@ namespace TestResult {
     /////////////////////////////////////////////////////////////////////////////
     // toValidation                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test 
+    @test
     pub def toValidation01(): Bool =
         Result.toValidation(Err(1): Result[Unit, Int32]) == Failure(Nec.singleton(1))
 
     @test
     pub def toValidation02(): Bool =
-        Result.toValidation(Ok("s"): Result[String, Unit]) == Success(Nec.singleton("s"))
+        Result.toValidation(Ok("s"): Result[String, Unit]) == Success("s")
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
