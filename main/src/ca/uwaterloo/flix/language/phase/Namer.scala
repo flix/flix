@@ -904,8 +904,8 @@ object Namer {
         e => NamedAst.Expression.Resume(e, loc)
       }
 
-    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
-      val argsVal = traverse(args)(visitExp(_, ns0))
+    case WeededAst.Expression.InvokeConstructor(className, exps, sig, loc) =>
+      val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       mapN(argsVal, sigVal) {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, loc)
