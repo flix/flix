@@ -139,7 +139,7 @@ object WeededAst {
 
     case class ArrayLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class VectorLit(exps: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
