@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for anonymous classes (created through NewObject)
@@ -53,14 +53,14 @@ object GenAnonymousClasses {
     val visitor = AsmOps.mkClassWriter()
 
     val superClass = if (obj.clazz.isInterface())
-        BackendObjType.JavaObject.jvmName.toInternalName
-      else
-        asm.Type.getInternalName(obj.clazz)
+      BackendObjType.JavaObject.jvmName.toInternalName
+    else
+      asm.Type.getInternalName(obj.clazz)
 
     val interfaces = if (obj.clazz.isInterface())
-        Array(asm.Type.getInternalName(obj.clazz))
-      else
-        Array[String]()
+      Array(asm.Type.getInternalName(obj.clazz))
+    else
+      Array[String]()
 
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass, interfaces)
