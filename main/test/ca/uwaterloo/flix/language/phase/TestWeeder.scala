@@ -822,7 +822,7 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalEmptyForFragment](result)
   }
 
-  test("IllegalEmptyForFragment.04") {
+  test("IllegalEmptyForFragment.05") {
     val input =
       """
         |def f(): Chain[String] = for () yield "a"
