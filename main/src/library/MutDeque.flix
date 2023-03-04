@@ -31,10 +31,6 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Region[r], Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-instance Newable[MutDeque[a]] {
-    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
-}
-
 namespace MutDeque {
 
     ///

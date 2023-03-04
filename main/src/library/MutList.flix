@@ -25,10 +25,6 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
-instance Newable[MutList[a]] {
-    pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
-}
-
 namespace MutList {
 
     ///

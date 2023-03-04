@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
@@ -155,7 +154,6 @@ class Flix {
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
-    "Newable.flix" -> LocalResource.get("/src/library/Newable.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),

@@ -21,10 +21,6 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(r)
-}
-
 namespace MutMap {
 
     ///

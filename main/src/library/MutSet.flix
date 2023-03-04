@@ -21,10 +21,6 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
-instance Newable[MutSet[t]] {
-    pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
-}
-
 namespace MutSet {
 
     ///
