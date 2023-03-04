@@ -18,7 +18,7 @@ namespace Reachable/Imperative {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         region r {
             // collect edge lists
-            let edgeMap = new MutMap(r);
+            let edgeMap = MutMap.new(r);
             foreach((start, end) <- Foldable.iterator(r, edges)) {
                 let startEdges = MutMap.getOrElsePut!(start, MutList.new(r), edgeMap);
                 MutList.push!(end, startEdges)

@@ -139,14 +139,14 @@ namespace Test/Exp/New {
     @test
     def testNewMutMap1Region04(): Unit =
         region r {
-            discard new MutMap(r): MutMap[Int32, String, r];
+            discard MutMap.new(r): MutMap[Int32, String, r];
             ()
         }
 
     @test
     def testNewMutMap1Region05(): Int32 =
         region r {
-            let m = new MutMap(r);
+            let m = MutMap.new(r);
             MutMap.put!(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
@@ -157,11 +157,11 @@ namespace Test/Exp/New {
     @test
     def testNewMutMap2RegionsFlat04(): Bool =
         let res1 = region r {
-            discard new MutMap(r): MutMap[Int32, String, r];
+            discard MutMap.new(r): MutMap[Int32, String, r];
             ()
         };
         let res2 = region r {
-            discard new MutMap(r): MutMap[String, Int32, r];
+            discard MutMap.new(r): MutMap[String, Int32, r];
             ()
         };
         res1 == () and res1 == res2
@@ -169,7 +169,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutMap2RegionsFlat05(): Bool =
         let res1 = region r {
-            let m = new MutMap(r);
+            let m = MutMap.new(r);
             MutMap.put!(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
@@ -177,7 +177,7 @@ namespace Test/Exp/New {
             }
         };
         let res2 = region r {
-            let m = new MutMap(r);
+            let m = MutMap.new(r);
             MutMap.put!(1, 1, m);
             match MutMap.get(1, m) {
                 case Some(1) => 1
@@ -190,7 +190,7 @@ namespace Test/Exp/New {
     def testNewMutMap2RegionsNested02(): Int32 =
         region r {
             region _ {
-                let m = new MutMap(r);
+                let m = MutMap.new(r);
                 MutMap.put!(1, 1, m);
                 match MutMap.get(1, m) {
                     case Some(1) => 1
@@ -203,7 +203,7 @@ namespace Test/Exp/New {
     def testNewMutMap2RegionsNested03(): Int32 =
         region _ {
             region r2 {
-                let m = new MutMap(r2);
+                let m = MutMap.new(r2);
                 MutMap.put!(1, 1, m);
                 match MutMap.get(1, m) {
                     case Some(1) => 1
@@ -216,8 +216,8 @@ namespace Test/Exp/New {
     def testNew2MutMaps2NestedRegions03(): Int32 =
         region r {
             region _ {
-                let m1 = new MutMap(r);
-                let m2 = new MutMap(r);
+                let m1 = MutMap.new(r);
+                let m2 = MutMap.new(r);
                 MutMap.put!(1, 1, m1);
                 MutMap.put!(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
@@ -231,8 +231,8 @@ namespace Test/Exp/New {
     def testNew2MutMaps2NestedRegions04(): Int32 =
         region r1 {
             region r2 {
-                let m1 = new MutMap(r1);
-                let m2 = new MutMap(r2);
+                let m1 = MutMap.new(r1);
+                let m2 = MutMap.new(r2);
                 MutMap.put!(1, 1, m1);
                 MutMap.put!(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
@@ -245,10 +245,10 @@ namespace Test/Exp/New {
     @test
     def testNew2MutMaps2NestedRegions05(): Int32 =
         region r1 {
-            let m1 = new MutMap(r1);
+            let m1 = MutMap.new(r1);
             MutMap.put!(1, 1, m1);
             region r2 {
-                let m2 = new MutMap(r2);
+                let m2 = MutMap.new(r2);
                 MutMap.put!(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2
@@ -260,10 +260,10 @@ namespace Test/Exp/New {
     @test
     def testNew2MutMaps2NestedRegions06(): Int32 =
         region r1 {
-            let m1 = new MutMap(r1);
+            let m1 = MutMap.new(r1);
             region r2 {
                 MutMap.put!(1, 1, m1);
-                let m2 = new MutMap(r2);
+                let m2 = MutMap.new(r2);
                 MutMap.put!(2, 2, m2);
                 match (MutMap.get(1, m1), MutMap.get(2, m2)) {
                     case (Some(1), Some(2)) => 1 + 2

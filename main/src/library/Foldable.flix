@@ -267,7 +267,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutMap`.
     ///
     pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
-        let m = new MutMap(r);
+        let m = MutMap.new(r);
         Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
         m
 

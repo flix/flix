@@ -500,12 +500,12 @@ namespace Fixpoint {
 
     def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
         region r {
-            let db = new MutMap(r);
+            let db = MutMap.new(r);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r), db);
                 MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
