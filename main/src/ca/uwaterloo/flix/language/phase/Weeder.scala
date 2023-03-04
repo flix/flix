@@ -922,35 +922,39 @@ object Weeder {
       //
       // Rewrites a for-loop to Monad.flatMap.
       //
+      val loc = mkSL(sp1, sp2).asSynthetic
 
-      val fqnFlatMap = "Monad.flatMap"
-      val fqnPoint = "Applicative.point"
-      val fqnZero = "MonadZero.empty"
-      val yieldExp = mapN(visitExp(exp, senv)) {
-        case e =>
-          val loc = mkSL(sp1, sp2).asSynthetic
-          mkApplyFqn(fqnPoint, List(e), loc)
-      }
+      if (frags.nonEmpty) {
+        val fqnFlatMap = "Monad.flatMap"
+        val fqnPoint = "Applicative.point"
+        val fqnZero = "MonadZero.empty"
+        val yieldExp = mapN(visitExp(exp, senv)) {
+          case e => mkApplyFqn(fqnPoint, List(e), loc)
+        }
 
-      foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
-          }
+        foldRight(frags)(yieldExp) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
+            mapN(visitPattern(pat), visitExp(exp1, senv)) {
+              case (p, e1) =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                val fparams = List(lambda, e1)
+                mkApplyFqn(fqnFlatMap, fparams, loc)
+            }
 
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) {
-            case e1 =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Cst(Ast.Constant.Unit, loc)), loc)
-              WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
-          }
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expression.Error(err)
+          case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
+            mapN(visitExp(exp1, senv)) {
+              case e1 =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Cst(Ast.Constant.Unit, loc)), loc)
+                WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
+            }
+        }.recoverOne {
+          case err: WeederError => WeededAst.Expression.Error(err)
+        }
+      } else {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
