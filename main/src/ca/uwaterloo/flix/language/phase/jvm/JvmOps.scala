@@ -691,8 +691,6 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.ArrayLit(exps, _, _) => visitExps(exps)
-
       case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
       case Expression.InvokeConstructor(_, exps, _, _) => visitExps(exps)

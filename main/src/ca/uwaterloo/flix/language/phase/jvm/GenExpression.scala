@@ -237,33 +237,6 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
-    case Expression.ArrayLit(elms, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // We push the 'length' of the array on top of stack
-      compileInt(visitor, elms.length, isLong = false)
-      // We get the inner type of the array
-      val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
-      // Instantiating a new array of type jvmType
-      jvmType match {
-        case ref: JvmType.Reference => // Happens if the inner type is an object type
-          visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
-        case _ => // Happens if the inner type is a primitive type
-          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
-      }
-      // For each element we generate code to store it into the array
-      for (i <- elms.indices) {
-        // Duplicates the 'array reference'
-        visitor.visitInsn(DUP)
-        // We push the 'index' of the current element on top of stack
-        compileInt(visitor, i, isLong = false)
-        // Evaluating the 'element' to be stored
-        compileExpression(elms(i), visitor, currentClass, lenv0, entryPoint)
-        // Stores the 'element' at the given 'index' in the 'array'
-        // with the store instruction corresponding to the stored element
-        visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
-      }
-
     case Expression.TryCatch(exp, rules, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
@@ -1025,7 +998,32 @@ object GenExpression {
         // Invoking the constructor
         visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-
+      case IntrinsicOperatorN.ArrayLit =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+        // We push the 'length' of the array on top of stack
+        compileInt(visitor, exps.length, isLong = false)
+        // We get the inner type of the array
+        val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        // Instantiating a new array of type jvmType
+        jvmType match {
+          case ref: JvmType.Reference => // Happens if the inner type is an object type
+            visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
+          case _ => // Happens if the inner type is a primitive type
+            visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+        }
+        // For each element we generate code to store it into the array
+        for (i <- exps.indices) {
+          // Duplicates the 'array reference'
+          visitor.visitInsn(DUP)
+          // We push the 'index' of the current element on top of stack
+          compileInt(visitor, i, isLong = false)
+          // Evaluating the 'element' to be stored
+          compileExpression(exps(i), visitor, currentClass, lenv0, entryPoint)
+          // Stores the 'element' at the given 'index' in the 'array'
+          // with the store instruction corresponding to the stored element
+          visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+        }
     }
 
     case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => op match {

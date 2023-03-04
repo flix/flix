@@ -184,8 +184,9 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperator1.RecordRestrict(field)
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.ArrayLit(elms, tpe, loc) =>
-      ErasedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
+    case FinalAst.Expression.ArrayLit(exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperatorN.ArrayLit
+      ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ArrayNew(exp1, exp2, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator2.ArrayNew
