@@ -693,8 +693,6 @@ object JvmOps {
 
       case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.InvokeStaticMethod(_, exps, _, _) => visitExps(exps)
-
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>

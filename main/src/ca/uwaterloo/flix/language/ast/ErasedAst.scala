@@ -79,8 +79,6 @@ object ErasedAst {
     // dont touch in #5434
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class InvokeStaticMethod(method: Method, args: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
 
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -222,6 +220,8 @@ object ErasedAst {
     case object ArrayLit extends IntrinsicOperatorN
 
     case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOperatorN
+
+    case class InvokeStaticMethod(method: Method) extends IntrinsicOperatorN
 
   }
 

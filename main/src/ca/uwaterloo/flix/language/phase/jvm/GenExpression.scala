@@ -283,23 +283,6 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.InvokeStaticMethod(method, args, _, loc) =>
-      addSourceLine(visitor, loc)
-      val signature = method.getParameterTypes
-      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
-      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-      val name = method.getName
-      val descriptor = asm.Type.getMethodDescriptor(method)
-      // Check if we are invoking an interface or class.
-      if (method.getDeclaringClass.isInterface) {
-        visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
-      } else {
-        visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
-      }
-      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-      }
-
     case Expression.NewObject(name, _, tpe, methods, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
@@ -995,6 +978,22 @@ object GenExpression {
         // Call the constructor
         visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
+      case IntrinsicOperatorN.InvokeStaticMethod(method) =>
+        addSourceLine(visitor, loc)
+        val signature = method.getParameterTypes
+        pushArgs(visitor, exps, signature, currentClass, lenv0, entryPoint)
+        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+        val name = method.getName
+        val descriptor = asm.Type.getMethodDescriptor(method)
+        // Check if we are invoking an interface or class.
+        if (method.getDeclaringClass.isInterface) {
+          visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, true)
+        } else {
+          visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+        }
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+          visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        }
     }
 
     case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
