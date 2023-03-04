@@ -330,6 +330,15 @@ namespace Result {
     }
 
     ///
+    /// Returns a `Success(v)` if `r` is `Ok(v)`. Otherwise returns a
+    /// `Failure(Nec.singleton(t))` if `r` is `Err(t)`.
+    ///
+    pub def toValidation(r: Result[e, t]): Validation[e, t] = match r {
+        case Ok(v) => Validation.Success(v)
+        case Err(t) => Validation.Failure(Nec.singleton(t))
+    }
+
+    ///
     /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
     ///
     pub def forEach(f: t -> Unit \ ef, r: Result[e, t]): Unit \ ef = match r {
