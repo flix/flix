@@ -137,7 +137,7 @@ object WeededAst {
 
     case class ArrayLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

@@ -774,9 +774,9 @@ object Namer {
         case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, loc)
       }
 
-    case WeededAst.Expression.ArrayLength(base, loc) =>
-      visitExp(base, ns0) map {
-        case b => NamedAst.Expression.ArrayLength(b, loc)
+    case WeededAst.Expression.ArrayLength(exp, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.ArrayLength(e, loc)
       }
 
     case WeededAst.Expression.VectorLit(exps, loc) =>
