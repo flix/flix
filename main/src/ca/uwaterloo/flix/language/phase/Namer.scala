@@ -666,12 +666,12 @@ object Namer {
     case WeededAst.Expression.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {
-        case WeededAst.MatchRule(pat, guard, body) =>
+        case WeededAst.MatchRule(pat, exp1, exp2) =>
           val p = visitPattern(pat)
-          val gVal = traverseOpt(guard)(visitExp(_, ns0))
-          val bVal = visitExp(body, ns0)
-          mapN(gVal, bVal) {
-            case (g, b) => NamedAst.MatchRule(p, g, b)
+          val e1Val = traverseOpt(exp1)(visitExp(_, ns0))
+          val e2Val = visitExp(exp2, ns0)
+          mapN(e1Val, e2Val) {
+            case (e1, e2) => NamedAst.MatchRule(p, e1, e2)
           }
       }
       mapN(expVal, rulesVal) {
