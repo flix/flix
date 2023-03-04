@@ -55,7 +55,7 @@ namespace DelayMap {
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         forEachWithIndex((i, k, v) -> {
