@@ -977,7 +977,7 @@ object Namer {
         case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, loc)
       }
 
-    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
+    case WeededAst.Expression.SelectChannel(rules, exp, loc) =>
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, chan, body) =>
           // make a fresh variable symbol for the local recursive variable.
@@ -987,7 +987,7 @@ object Namer {
           }
       }
 
-      val defaultVal = default match {
+      val defaultVal = exp match {
         case Some(exp) => visitExp(exp, ns0) map {
           case e => Some(e)
         }
