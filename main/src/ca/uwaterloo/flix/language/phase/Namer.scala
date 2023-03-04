@@ -924,8 +924,8 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
-    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
-      val argsVal = traverse(args)(visitExp(_, ns0))
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
+      val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(argsVal, sigVal, retVal) {

@@ -179,7 +179,7 @@ object WeededAst {
 
     case class InvokeMethod(className: String, methodName: String, exp: WeededAst.Expression, exps: List[WeededAst.Expression], sig: List[WeededAst.Type], retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class InvokeStaticMethod(className: String, methodName: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class InvokeStaticMethod(className: String, methodName: String, exps: List[WeededAst.Expression], sig: List[WeededAst.Type], retTpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class GetField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
