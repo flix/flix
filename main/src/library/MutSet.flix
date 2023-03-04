@@ -27,7 +27,7 @@ namespace MutSet {
     /// Returns a string representation of the given mutable set `s`.
     ///
     pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)

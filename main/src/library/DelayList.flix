@@ -132,7 +132,7 @@ namespace DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)

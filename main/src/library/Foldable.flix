@@ -365,7 +365,7 @@ pub class Foldable[t : Type -> Type] {
     pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

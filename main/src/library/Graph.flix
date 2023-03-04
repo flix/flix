@@ -475,7 +475,7 @@ namespace Graph {
     /// up to the caller.
     ///
     pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
@@ -491,7 +491,7 @@ namespace Graph {
     /// Other than that, DOT identifier validity is up to the caller.
     ///
     pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {

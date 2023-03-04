@@ -129,7 +129,7 @@ namespace Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let first = ref true @ rc;
 
         StringBuilder.appendString!("Vector#{", sb);
@@ -1452,7 +1452,7 @@ namespace Vector {
     pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

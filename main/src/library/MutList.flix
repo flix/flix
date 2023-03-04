@@ -37,7 +37,7 @@ namespace MutList {
     /// Returns a string representation of the given MutList `l`.
     ///
     pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = new StringBuilder(r2);
+        let sb = StringBuilder.new(r2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -791,7 +791,7 @@ namespace MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
-        let sb = new StringBuilder(r1);
+        let sb = StringBuilder.new(r1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)

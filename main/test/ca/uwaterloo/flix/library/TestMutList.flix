@@ -1616,7 +1616,7 @@ namespace TestMutList {
     @test
     def forEach01(): Bool = region r {
         let v = MutList.new(r);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == ""
@@ -1625,7 +1625,7 @@ namespace TestMutList {
     @test
     def forEach02(): Bool = region r {
         let v = MutList.range(r, 0, 5);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = x -> if (x `Int32.rem` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
@@ -1634,7 +1634,7 @@ namespace TestMutList {
     @test
     def forEach03(): Bool = region r {
         let v = MutList.range(r, 0, 2);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "FT"
@@ -1643,7 +1643,7 @@ namespace TestMutList {
     @test
     def forEach04(): Bool = region r {
         let v = MutList.range(r, 0, 2);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = x -> if (x < 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "FF"
@@ -1668,7 +1668,7 @@ namespace TestMutList {
     @test
     def forEachWithIndex02(): Bool = region r {
         let v = MutList.range(r, 1, 4);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = (i, x) -> if (x `Int32.rem` 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
@@ -1677,7 +1677,7 @@ namespace TestMutList {
     @test
     def forEachWithIndex03(): Bool = region r {
         let v = MutList.range(r, 0, 5);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let f = (_, x) -> if (x `Int32.rem` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"

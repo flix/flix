@@ -123,7 +123,7 @@ namespace Nel {
     ///
     pub def toString(l: Nel[a]): String with ToString[a] = region r {
         let Nel(x, xs) = l;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);

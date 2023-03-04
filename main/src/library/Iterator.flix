@@ -712,7 +712,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, Read(r) } = region rc {
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         match next(iter) {
             case Some(a) => {
                 StringBuilder.append!(f(a), sb);

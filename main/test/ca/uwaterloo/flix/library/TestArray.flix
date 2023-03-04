@@ -4613,7 +4613,7 @@ namespace TestArray {
     @test
     def forEach01(): Bool = region r {
         let a = (Array#{} @ r): Array[Int32, _];
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4622,7 +4622,7 @@ namespace TestArray {
     @test
     def forEach02(): Bool = region r {
         let a = Array#{0} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4631,7 +4631,7 @@ namespace TestArray {
     @test
     def forEach03(): Bool = region r {
         let a = Array#{1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
@@ -4640,7 +4640,7 @@ namespace TestArray {
     @test
     def forEach04(): Bool = region r {
         let a = Array#{0,1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4653,7 +4653,7 @@ namespace TestArray {
     @test
     def forEachWithIndex01(): Bool = region r {
         let a = (Array#{} @ r): Array[Float32, _];
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4662,7 +4662,7 @@ namespace TestArray {
     @test
     def forEachWithIndex02(): Bool = region r {
         let a = Array#{0.0} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4671,7 +4671,7 @@ namespace TestArray {
     @test
     def forEachWithIndex03(): Bool = region r {
         let a = Array#{0.0, 0.1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4680,7 +4680,7 @@ namespace TestArray {
     @test
     def forEachWithIndex04(): Bool = region r {
         let a = Array#{0.0, 0.1, 0.2} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
@@ -4689,7 +4689,7 @@ namespace TestArray {
     @test
     def forEachWithIndex05(): Bool = region r {
         let a = Array#{0.0, 0.1, 0.2, 0.3} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
