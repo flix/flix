@@ -283,36 +283,6 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.InvokeMethod(method, exp, args, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-
-      // Evaluate the receiver object.
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-      visitor.visitTypeInsn(CHECKCAST, thisType)
-
-      // Retrieve the signature.
-      val signature = method.getParameterTypes
-
-      pushArgs(visitor, args, signature, currentClass, lenv0, entryPoint)
-
-      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
-      val name = method.getName
-      val descriptor = asm.Type.getMethodDescriptor(method)
-
-      // Check if we are invoking an interface or class.
-      if (method.getDeclaringClass.isInterface) {
-        visitor.visitMethodInsn(INVOKEINTERFACE, declaration, name, descriptor, true)
-      } else {
-        visitor.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
-      }
-
-      // If the method is void, put a unit on top of the stack
-      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-      }
-
     case Expression.InvokeStaticMethod(method, args, _, loc) =>
       addSourceLine(visitor, loc)
       val signature = method.getParameterTypes
@@ -1077,6 +1047,35 @@ object GenExpression {
         // Return the closure
         visitor.visitInsn(ARETURN)
 
+      case IntrinsicOperator1N.InvokeMethod(method) =>
+        // Adding source line number for debugging
+        addSourceLine(visitor, loc)
+
+        // Evaluate the receiver object.
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+        visitor.visitTypeInsn(CHECKCAST, thisType)
+
+        // Retrieve the signature.
+        val signature = method.getParameterTypes
+
+        pushArgs(visitor, exps, signature, currentClass, lenv0, entryPoint)
+
+        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+        val name = method.getName
+        val descriptor = asm.Type.getMethodDescriptor(method)
+
+        // Check if we are invoking an interface or class.
+        if (method.getDeclaringClass.isInterface) {
+          visitor.visitMethodInsn(INVOKEINTERFACE, declaration, name, descriptor, true)
+        } else {
+          visitor.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
+        }
+
+        // If the method is void, put a unit on top of the stack
+        if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+          visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+        }
     }
 
   }

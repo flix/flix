@@ -231,8 +231,9 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperatorN.InvokeConstructor(constructor)
       ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
-    case FinalAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
-      ErasedAst.Expression.InvokeMethod(method, visitExp(exp), args.map(visitExp), tpe, loc)
+    case FinalAst.Expression.InvokeMethod(method, exp, exps, tpe, loc) =>
+      val op = ErasedAst.IntrinsicOperator1N.InvokeMethod(method)
+      ErasedAst.Expression.Intrinsic1N(op, visitExp(exp), exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       ErasedAst.Expression.InvokeStaticMethod(method, args.map(visitExp), tpe, loc)
