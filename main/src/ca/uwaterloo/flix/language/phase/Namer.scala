@@ -739,8 +739,8 @@ object Namer {
         case e => NamedAst.Expression.RecordSelect(e, field, loc)
       }
 
-    case WeededAst.Expression.RecordExtend(field, value, rest, loc) =>
-      mapN(visitExp(value, ns0), visitExp(rest, ns0)) {
+    case WeededAst.Expression.RecordExtend(field, exp1, exp2, loc) =>
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, loc)
       }
 
