@@ -1051,8 +1051,9 @@ object Weeder {
           val err = WeederError.IllegalForFragment(baseLoc)
           WeededAst.Expression.Error(err).toSoftFailure(err)
 
-        case None => // Unreachable case since parser rejects foreach () yield exp
-          throw InternalCompilerException("Unexpected empty ForEachYield loop", baseLoc)
+        case None =>
+          val err = WeederError.IllegalEmptyForFragment(baseLoc)
+          WeededAst.Expression.Error(err).toSoftFailure(err)
       }
     }
 
