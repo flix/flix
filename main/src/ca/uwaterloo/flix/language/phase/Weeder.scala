@@ -877,35 +877,40 @@ object Weeder {
       //
       // Rewrites a foreach loop to Iterator.forEach call.
       //
-
       val loc = mkSL(sp1, sp2)
-      val fqnForEach = "Iterator.forEach"
-      val fqnIterator = "Iterable.iterator"
-      val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-      val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
-      val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
+      if (frags.nonEmpty) {
+        val fqnForEach = "Iterator.forEach"
+        val fqnIterator = "Iterable.iterator"
+        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+        val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
+
+        val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
+            mapN(visitPattern(pat), visitExp(exp1, senv)) {
+              case (p, e1) =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
+                val fparams = List(lambda, iterable)
+                mkApplyFqn(fqnForEach, fparams, loc)
+            }
+
+          case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
+            mapN(visitExp(exp1, senv)) { e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
-              val fparams = List(lambda, iterable)
-              mkApplyFqn(fqnForEach, fparams, loc)
-          }
-
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) { e1 =>
-            val loc = mkSL(sp11, sp12).asSynthetic
-            WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
-          }
-      }
-
-      mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
-        .recoverOne {
-          case err: WeederError => WeededAst.Expression.Error(err)
+              WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
+            }
         }
+
+        mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
+          .recoverOne {
+            case err: WeederError => WeededAst.Expression.Error(err)
+          }
+      } else {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
+      }
 
     case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
       //
