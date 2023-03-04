@@ -731,7 +731,7 @@ namespace TestDelayList {
     @test
     def forEach01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -740,7 +740,7 @@ namespace TestDelayList {
     @test
     def forEach02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -749,7 +749,7 @@ namespace TestDelayList {
     @test
     def forEach03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -758,7 +758,7 @@ namespace TestDelayList {
     @test
     def forEach04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -767,7 +767,7 @@ namespace TestDelayList {
     @test
     def forEach05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -780,7 +780,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -789,7 +789,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -798,7 +798,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -807,7 +807,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -816,7 +816,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
@@ -905,7 +905,7 @@ namespace TestDelayList {
     	let l = ENil: DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -916,7 +916,7 @@ namespace TestDelayList {
     	let l = LList(lazy ENil): DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -927,7 +927,7 @@ namespace TestDelayList {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);

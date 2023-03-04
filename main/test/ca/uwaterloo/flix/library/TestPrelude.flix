@@ -125,14 +125,14 @@ def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: N
 
 @test
 def imperativePipe01(): Bool = region r {
-    let m: MutList[Int32, _] = new MutList(r);
+    let m: MutList[Int32, _] = MutList.new(r);
     let f = (x) -> MutList.push!(x, m);
     (4 !> f) == 4 and not MutList.isEmpty(m)
 }
 
 @test
 def imperativePipe02(): Bool = region r {
-    let m: MutList[Int32, _] = new MutList(r);
+    let m: MutList[Int32, _] = MutList.new(r);
     let f = (x) -> MutList.push!(x, m);
 
     let a = 4 !> f;
