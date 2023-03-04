@@ -821,4 +821,13 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEmptyForFragment](result)
   }
+
+  test("IllegalEmptyForFragment.04") {
+    val input =
+      """
+        |def f(): Chain[String] = for () yield "a"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
 }
