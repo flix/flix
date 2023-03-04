@@ -19,16 +19,25 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType}
+import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+
+import scala.collection.mutable
 
 object Eraser {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
+
+    //
+    // A mutable set to hold all type information about all closures in the AST.
+    //
+    implicit val ctx: Context = Context(mutable.Set.empty, mutable.Set.empty)
+
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    ErasedAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.closures.toSet, ctx.anonClasses.toSet).toSuccess
   }
 
   /**
@@ -49,7 +58,7 @@ object Eraser {
   /**
     * Translates the given definition `def0` to the ErasedAst.
     */
-  private def visitDef(def0: FinalAst.Def): ErasedAst.Def = {
+  private def visitDef(def0: FinalAst.Def)(implicit ctx: Context): ErasedAst.Def = {
     val formals = def0.formals.map(visitFormalParam)
     val exp = visitExp(def0.exp)
     ErasedAst.Def(def0.ann, def0.mod, def0.sym, formals, exp, def0.tpe, def0.loc)
@@ -64,15 +73,17 @@ object Eraser {
   /**
     * Translates the given expression `exp0` to the ErasedAst.
     */
-  private def visitExp(exp0: FinalAst.Expression): ErasedAst.Expression = exp0 match {
+  private def visitExp(exp0: FinalAst.Expression)(implicit ctx: Context): ErasedAst.Expression = exp0 match {
     case FinalAst.Expression.Cst(cst, tpe, loc) =>
-      ErasedAst.Expression.Cst(cst, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.Cst(cst)
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expression.Var(sym, tpe, loc)
 
-    case FinalAst.Expression.Closure(sym, exps, tpe, loc) =>
-      ErasedAst.Expression.Closure(sym, exps.map(visitExp), tpe, loc)
+    case FinalAst.Expression.Closure(sym, closureArgs, tpe, loc) =>
+      ctx.closures += ClosureInfo(sym, closureArgs.map(_.tpe), tpe)
+      ErasedAst.Expression.Closure(sym, closureArgs.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.ApplyClo(exp, exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1N.ApplyClo
@@ -126,7 +137,8 @@ object Eraser {
       ErasedAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
     case FinalAst.Expression.Region(tpe, loc) =>
-      ErasedAst.Expression.Region(tpe, loc)
+      val op = ErasedAst.IntrinsicOperator0.Region
+      ErasedAst.Expression.Intrinsic0(op, tpe, loc)
 
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
@@ -204,7 +216,8 @@ object Eraser {
       ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
-      ErasedAst.Expression.Cast(visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.Cast
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.TryCatch(exp, rules0, tpe, loc) =>
       val rules = rules0.map {
@@ -244,6 +257,7 @@ object Eraser {
           val f = fparams.map(visitFormalParam)
           ErasedAst.JvmMethod(ident, f, visitExp(clo), retTpe, loc)
       }
+      ctx.anonClasses += AnonClassInfo(name, clazz, tpe, methods, loc)
       ErasedAst.Expression.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
@@ -266,5 +280,7 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperator0.MatchError
       ErasedAst.Expression.Intrinsic0(op, tpe, loc)
   }
+
+  private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])
 
 }

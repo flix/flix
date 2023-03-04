@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -25,7 +26,9 @@ object ErasedAst {
   case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
                   enums: Map[Symbol.EnumSym, ErasedAst.Enum],
                   entryPoint: Option[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation])
+                  sources: Map[Source, SourceLocation],
+                  closures: Set[ClosureInfo],
+                  anonClasses: Set[AnonClassInfo])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
@@ -40,7 +43,6 @@ object ErasedAst {
   }
 
   object Expression {
-    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expression
 
     // dont touch in #5434
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -68,8 +70,6 @@ object ErasedAst {
     // dont touch in #5434
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Region(tpe: MonoType, loc: SourceLocation) extends Expression
-
     // dont touch in #5434
     case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
@@ -77,8 +77,6 @@ object ErasedAst {
     case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class ArrayLit(elms: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
-    case class Cast(exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
     // dont touch in #5434
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
@@ -109,6 +107,10 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
+    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
+
+    case object Region extends IntrinsicOperator0
+
     case object RecordEmpty extends IntrinsicOperator0
 
     case class GetStaticField(field: Field) extends IntrinsicOperator0
@@ -128,6 +130,8 @@ object ErasedAst {
     case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
     case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
+
+    case object Cast extends IntrinsicOperator1
 
     case class Index(idx: Int) extends IntrinsicOperator1
 

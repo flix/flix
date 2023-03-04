@@ -38,6 +38,8 @@ object MavenPackageManager {
     * Returns a list of paths to the downloadet .jars.
     */
   def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+    out.println("Resolving Maven dependencies...")
+
     val depStrings = getMavenDependencyStrings(manifest)
 
     val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
@@ -62,9 +64,10 @@ object MavenPackageManager {
             val depPath = libPath.resolve(filePrefix).resolve(moduleNamePath).resolve(versionString).resolve(fileName)
             resList.addOne(depPath)
 
-            out.println(s"Installing $moduleName")
+            out.println(s"  Adding `$moduleName' ($versionString).")
             f.addDependencies(dep)
         })
+        out.println("  Running Maven dependency resolver.")
         fetch.withCache(cache).run()
         resList.toList
       } catch {
