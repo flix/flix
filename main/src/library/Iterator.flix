@@ -148,7 +148,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, Read(r2), Write(r1) } = region rc1 {
-        let m = new MutList(rc1);
+        let m = MutList.new(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
     }

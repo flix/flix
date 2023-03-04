@@ -3,14 +3,14 @@ namespace Test/Exp/New {
     @test
     def testNewMutList1Region04(): Unit =
         region r {
-            discard new MutList(r): MutList[String, r];
+            discard MutList.new(r): MutList[String, r];
             ()
         }
 
     @test
     def testNewMutList1Region05(): Int32 =
         region r {
-            let l = new MutList(r);
+            let l = MutList.new(r);
             MutList.push!(1, l);
             match MutList.pop!(l) {
                 case Some(1) => 1
@@ -21,11 +21,11 @@ namespace Test/Exp/New {
     @test
     def testNewMutList2RegionsFlat04(): Bool =
         let res1 = region r {
-            discard new MutList(r): MutList[String, r];
+            discard MutList.new(r): MutList[String, r];
             ()
         };
         let res2 = region r {
-            discard new MutList(r): MutList[Int32, r];
+            discard MutList.new(r): MutList[Int32, r];
             ()
         };
         res1 == () and res1 == res2
@@ -33,7 +33,7 @@ namespace Test/Exp/New {
     @test
     def testNewMutList2RegionsFlat05(): Bool =
         let res1 = region r {
-            let l = new MutList(r);
+            let l = MutList.new(r);
             MutList.push!(1, l);
             match MutList.pop!(l) {
                 case Some(1) => 1
@@ -41,7 +41,7 @@ namespace Test/Exp/New {
             }
         };
         let res2 = region r {
-            let l = new MutList(r);
+            let l = MutList.new(r);
             MutList.push!(1, l);
             match MutList.pop!(l) {
                 case Some(1) => 1
@@ -54,7 +54,7 @@ namespace Test/Exp/New {
     def testNewMutList2RegionsNested02(): Int32 =
         region r {
             region _ {
-                let l = new MutList(r);
+                let l = MutList.new(r);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
                     case Some(1) => 1
@@ -67,7 +67,7 @@ namespace Test/Exp/New {
     def testNewMutList2RegionsNested03(): Int32 =
         region _ {
             region r2 {
-                let l = new MutList(r2);
+                let l = MutList.new(r2);
                 MutList.push!(1, l);
                 match MutList.pop!(l) {
                     case Some(1) => 1
@@ -80,8 +80,8 @@ namespace Test/Exp/New {
     def testNew2MutLists2NestedRegions03(): Int32 =
         region r {
             region _ {
-                let l1 = new MutList(r);
-                let l2 = new MutList(r);
+                let l1 = MutList.new(r);
+                let l2 = MutList.new(r);
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
@@ -95,8 +95,8 @@ namespace Test/Exp/New {
     def testNew2MutLists2NestedRegions04(): Int32 =
         region r1 {
             region r2 {
-                let l1 = new MutList(r1);
-                let l2 = new MutList(r2);
+                let l1 = MutList.new(r1);
+                let l2 = MutList.new(r2);
                 MutList.push!(1, l1);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
@@ -109,10 +109,10 @@ namespace Test/Exp/New {
     @test
     def testNew2MutLists2NestedRegions05(): Int32 =
         region r1 {
-            let l1 = new MutList(r1);
+            let l1 = MutList.new(r1);
             MutList.push!(1, l1);
             region r2 {
-                let l2 = new MutList(r2);
+                let l2 = MutList.new(r2);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
                     case (Some(1), Some(2)) => 1 + 2
@@ -124,10 +124,10 @@ namespace Test/Exp/New {
     @test
     def testNew2MutLists2NestedRegions06(): Int32 =
         region r1 {
-            let l1 = new MutList(r1);
+            let l1 = MutList.new(r1);
             region r2 {
                 MutList.push!(1, l1);
-                let l2 = new MutList(r2);
+                let l2 = MutList.new(r2);
                 MutList.push!(2, l2);
                 match (MutList.pop!(l1), MutList.pop!(l2)) {
                     case (Some(1), Some(2)) => 1 + 2

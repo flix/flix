@@ -148,7 +148,7 @@ namespace Concurrent/Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                new MutList(Static),
+                MutList.new(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),

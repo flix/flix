@@ -333,7 +333,7 @@ namespace Graph {
                                After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
-        let ml = new MutList(r);
+        let ml = MutList.new(r);
         // Extract nodes in fixed order.
         res |>
             List.sortBy(match (x, i) -> (i, x)) |>

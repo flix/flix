@@ -1340,7 +1340,7 @@ namespace Array {
     ///
     pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, Read(r1), Write(r2) } =
         let len = length(a);
-        let l = new MutList(r2);
+        let l = MutList.new(r2);
         def loop(i) = {
             if (i >= len)
                 ()

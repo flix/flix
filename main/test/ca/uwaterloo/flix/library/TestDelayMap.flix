@@ -159,8 +159,8 @@ namespace TestDelayMap {
     def count08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = new MutList(r);
-        discard DelayMap.count((k, _) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+        let a = MutList.new(r);
+        discard DelayMap.count((k, _) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
         MutList.toList(a) == range
     }
 
@@ -1856,8 +1856,8 @@ namespace TestDelayMap {
     def sumWith07(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = new MutList(r);
-        discard DelayMap.sumWith((k, _) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
+        let a = MutList.new(r);
+        discard DelayMap.sumWith((k, _) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
         MutList.toList(a) == range
     }
 
@@ -1967,8 +1967,8 @@ namespace TestDelayMap {
     def productWith07(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = new MutList(r);
-        discard DelayMap.productWith((k, _) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.new(r);
+        discard DelayMap.productWith((k, _) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 

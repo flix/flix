@@ -704,7 +704,7 @@ namespace Fixpoint {
     ///
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): List[t] \ ef = match d {
         case Datalog(_, cs) => region r {
-            let pFacts = new MutList(r);
+            let pFacts = MutList.new(r);
             List.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
@@ -717,7 +717,7 @@ namespace Fixpoint {
         }
         case Model(db) => region r {
             use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(r);
+            let pFacts = MutList.new(r);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo

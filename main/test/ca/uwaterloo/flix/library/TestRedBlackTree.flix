@@ -250,8 +250,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(r);
-        discard Map.mapWithKey((k, v) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = MutList.new(r);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 

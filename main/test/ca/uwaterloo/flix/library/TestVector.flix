@@ -4242,19 +4242,19 @@ namespace TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), new MutList(rc))
+        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), MutList.new(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let l = new MutList(rc);
+        let l = MutList.new(rc);
         MutList.push!(1, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let l = new MutList(rc);
+        let l = MutList.new(rc);
         MutList.push!(1, l);
         MutList.push!(2, l);
         MutList.push!(3, l);

@@ -358,7 +358,7 @@ namespace MutList {
     ///
     pub def map(r1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r1)
+            MutList.new(r1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -382,7 +382,7 @@ namespace MutList {
     ///
     pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r1)
+            MutList.new(r1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -635,7 +635,7 @@ namespace MutList {
     ///
     pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(r, a1, l1) = v;
-        let l = new MutList(r);
+        let l = MutList.new(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
         a1 := deref a2;

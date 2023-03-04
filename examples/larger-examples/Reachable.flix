@@ -20,7 +20,7 @@ namespace Reachable/Imperative {
             // collect edge lists
             let edgeMap = new MutMap(r);
             foreach((start, end) <- Foldable.iterator(r, edges)) {
-                let startEdges = MutMap.getOrElsePut!(start, new MutList(r), edgeMap);
+                let startEdges = MutMap.getOrElsePut!(start, MutList.new(r), edgeMap);
                 MutList.push!(end, startEdges)
             };
             // define the reachable set
@@ -33,7 +33,7 @@ namespace Reachable/Imperative {
                     // this node has now been reached
                     reachable |> MutSet.add!(node);
                     // add all non-reached end points to tasklist
-                    let endPoints = MutMap.getWithDefault(node, new MutList(r), edgeMap);
+                    let endPoints = MutMap.getWithDefault(node, MutList.new(r), edgeMap);
                     foreach(nextNode <- Iterable.iterator(endPoints)) {
                         let alreadyReached = MutSet.memberOf(nextNode, reachable);
                         if (not alreadyReached)

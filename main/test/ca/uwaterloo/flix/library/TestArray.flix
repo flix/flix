@@ -5990,19 +5990,19 @@ namespace TestArray {
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(r, (Array#{} @ r): Array[Int32, r]), new MutList(r))
+        MutList.sameElements(Array.toMutList(r, (Array#{} @ r): Array[Int32, r]), MutList.new(r))
     }
 
     @test
     def toMutList02(): Bool = region r {
-        let v = new MutList(r);
+        let v = MutList.new(r);
         MutList.push!(1, v);
         MutList.sameElements(Array.toMutList(r, Array#{1} @ r), v)
     }
 
     @test
     def toMutList03(): Bool = region r {
-        let v = new MutList(r);
+        let v = MutList.new(r);
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
