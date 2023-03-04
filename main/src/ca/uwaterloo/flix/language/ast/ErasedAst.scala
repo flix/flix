@@ -48,7 +48,7 @@ object ErasedAst {
 
     case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Unary(sop: SemanticOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 

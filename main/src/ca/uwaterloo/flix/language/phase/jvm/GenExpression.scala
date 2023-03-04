@@ -55,7 +55,7 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
       }
 
-    case Expression.Unary(sop, op, exp, _, _) =>
+    case Expression.Unary(sop, _, exp, _, _) =>
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -79,7 +79,7 @@ object GenExpression {
           visitor.visitLabel(condEnd)
         case _ =>
           // TODO: Ramin: Must not use `op`, should only use `sop`.
-          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
+          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
       }
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
@@ -1189,7 +1189,6 @@ object GenExpression {
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
                                entryPoint: Label,
-                               op: UnaryOperator,
                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
