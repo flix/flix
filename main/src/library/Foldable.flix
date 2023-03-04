@@ -241,7 +241,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ Write(r) with Order[a] =
-        let s = new MutSet(r);
+        let s = MutSet.new(r);
         Foldable.forEach(x -> MutSet.add!(x, s), t);
         s
 

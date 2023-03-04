@@ -24,7 +24,7 @@ namespace Reachable/Imperative {
                 MutList.push!(end, startEdges)
             };
             // define the reachable set
-            let reachable = new MutSet(r);
+            let reachable = MutSet.new(r);
             // explore graph depth first by task list
             let taskList = MutDeque.new(r);
             taskList |> MutDeque.pushFront(origin);
