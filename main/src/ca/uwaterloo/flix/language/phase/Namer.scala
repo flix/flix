@@ -979,11 +979,11 @@ object Namer {
 
     case WeededAst.Expression.SelectChannel(rules, exp, loc) =>
       val rulesVal = traverse(rules) {
-        case WeededAst.SelectChannelRule(ident, chan, body) =>
+        case WeededAst.SelectChannelRule(ident, exp1, exp2) =>
           // make a fresh variable symbol for the local recursive variable.
           val sym = Symbol.freshVarSym(ident, BoundBy.SelectRule)
-          mapN(visitExp(chan, ns0), visitExp(body, ns0)) {
-            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+          mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
+            case (e1, e2) => NamedAst.SelectChannelRule(sym, e1, e2)
           }
       }
 
