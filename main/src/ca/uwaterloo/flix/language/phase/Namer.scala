@@ -744,8 +744,8 @@ object Namer {
         case (v, r) => NamedAst.Expression.RecordExtend(field, v, r, loc)
       }
 
-    case WeededAst.Expression.RecordRestrict(field, rest, loc) =>
-      mapN(visitExp(rest, ns0)) {
+    case WeededAst.Expression.RecordRestrict(field, exp, loc) =>
+      mapN(visitExp(exp, ns0)) {
         case r => NamedAst.Expression.RecordRestrict(field, r, loc)
       }
 

@@ -127,7 +127,7 @@ object WeededAst {
 
     case class RecordExtend(field: Name.Field, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordRestrict(field: Name.Field, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordRestrict(field: Name.Field, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class New(qname: Name.QName, exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
