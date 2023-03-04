@@ -31,10 +31,6 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Region[r], Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-instance Newable[MutDeque[a]] {
-    pub def new(r: Region[r]): MutDeque[a, r] \ Write(r) = MutDeque.new(r)
-}
-
 namespace MutDeque {
 
     ///
@@ -66,7 +62,7 @@ namespace MutDeque {
     /// Returns a string representation of the given MutDeque `d`.
     ///
     pub def toString(d: MutDeque[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = new StringBuilder(r2);
+        let sb = StringBuilder.new(r2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -411,7 +407,7 @@ namespace MutDeque {
     pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r1);
+        let sb = StringBuilder.new(r1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

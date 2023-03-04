@@ -21,17 +21,13 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(r)
-}
-
 namespace MutMap {
 
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)

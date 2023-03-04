@@ -42,7 +42,7 @@ namespace Array {
     /// Returns a string representation of the given array `a`.
     ///
     pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = new StringBuilder(r2);
+        let sb = StringBuilder.new(r2);
         let first = ref true @ r2;
 
         StringBuilder.appendString!("Array#{", sb);
@@ -186,7 +186,7 @@ namespace Array {
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+        let d = MutDeque.new(r1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -1340,7 +1340,7 @@ namespace Array {
     ///
     pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, Read(r1), Write(r2) } =
         let len = length(a);
-        let l = new MutList(r2);
+        let l = MutList.new(r2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1473,7 +1473,7 @@ namespace Array {
     pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r1);
+        let sb = StringBuilder.new(r1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

@@ -19,10 +19,6 @@
 ///
 enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
-instance Newable[StringBuilder] {
-    pub def new(r: Region[r]): StringBuilder[r] \ Write(r) = StringBuilder.new(r)
-}
-
 namespace StringBuilder {
 
     ///

@@ -250,8 +250,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(r);
-        discard Map.mapWithKey((k, v) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = MutList.new(r);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 
@@ -816,7 +816,7 @@ namespace TestRedBlackTree {
         let t = RedBlackTree.empty(): RedBlackTree[Int32, Int32];
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -826,7 +826,7 @@ namespace TestRedBlackTree {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, 1), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -838,7 +838,7 @@ namespace TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((2, 2), d2);
         MutDeque.pushBack((3, 3), d2);
         MutDeque.pushBack((4, 4), d2);
@@ -853,7 +853,7 @@ namespace TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront((4, 'd'), d2);
         MutDeque.pushFront((3, 'c'), d2);
         MutDeque.pushFront((2, 'b'), d2);

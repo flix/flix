@@ -123,7 +123,7 @@ namespace Nel {
     ///
     pub def toString(l: Nel[a]): String with ToString[a] = region r {
         let Nel(x, xs) = l;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -566,7 +566,7 @@ namespace Nel {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

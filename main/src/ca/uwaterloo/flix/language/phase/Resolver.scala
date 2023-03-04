@@ -1143,23 +1143,6 @@ object Resolver {
             r => ResolvedAst.Expression.RecordRestrict(field, r, loc)
           }
 
-        case NamedAst.Expression.New(qname, exp, loc) =>
-          val erVal = traverseOpt(exp)(visitExp(_, env0, region))
-          mapN(erVal) {
-            er =>
-              ///
-              /// Translate [[new Foo(r)]] => Newable.new(r)
-              /// Translate [[new Foo()]]  => Newable.new(currentRegion)
-              ///
-              val sp1 = qname.sp1
-              val sp2 = qname.sp2
-              val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "Newable", sp2))
-              val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, "new", sp2))
-              val newExp = ResolvedAst.Expression.Sig(sigSym, loc)
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.Apply(newExp, List(reg), loc)
-          }
-
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
           val expsVal = traverse(exps)(visitExp(_, env0, region))
           val expVal = visitExp(exp, env0, region)

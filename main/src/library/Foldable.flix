@@ -211,7 +211,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
-        let l = new MutList(r2);
+        let l = MutList.new(r2);
         Foldable.forEach(a -> MutList.push!(a, l), t);
         MutList.toArray(r, l)
     }
@@ -220,7 +220,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutDeque`.
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
         d
 
@@ -241,7 +241,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ Write(r) with Order[a] =
-        let s = new MutSet(r);
+        let s = MutSet.new(r);
         Foldable.forEach(x -> MutSet.add!(x, s), t);
         s
 
@@ -267,7 +267,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutMap`.
     ///
     pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
-        let m = new MutMap(r);
+        let m = MutMap.new(r);
         Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
         m
 
@@ -365,7 +365,7 @@ pub class Foldable[t : Type -> Type] {
     pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

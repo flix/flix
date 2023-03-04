@@ -148,7 +148,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, Read(r2), Write(r1) } = region rc1 {
-        let m = new MutList(rc1);
+        let m = MutList.new(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
     }
@@ -213,7 +213,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, Read(r2), Write(r1) } =
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
@@ -712,7 +712,7 @@ namespace Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, Read(r) } = region rc {
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         match next(iter) {
             case Some(a) => {
                 StringBuilder.append!(f(a), sb);

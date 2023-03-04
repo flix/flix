@@ -1509,12 +1509,6 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
-      mapN(traverseOpt(exp)(visitExp(_, senv))) {
-        case e =>
-          WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
-      }
-
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
         case (es, e) => WeededAst.Expression.ArrayLit(es, e, mkSL(sp1, sp2))
@@ -3253,7 +3247,6 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

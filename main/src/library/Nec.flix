@@ -122,7 +122,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -756,7 +756,7 @@ namespace Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
