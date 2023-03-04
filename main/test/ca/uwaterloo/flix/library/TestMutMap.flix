@@ -28,7 +28,7 @@ namespace TestMutMap {
 
     @test
     def toString02(): Bool = region rc {
-        let m = MutList.new(rc);
+        let m = MutMap.new(rc);
         MutMap.put!(1, 101, m);
         MutMap.toString(m) == "MutMap#{1 => 101}"
     }
