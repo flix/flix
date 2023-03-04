@@ -549,11 +549,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ForFragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
-      "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
+      "(" ~ optWS ~ zeroOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
     def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
-      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
+      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ zeroOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
