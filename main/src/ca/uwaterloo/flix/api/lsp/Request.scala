@@ -394,7 +394,7 @@ object Request {
   def parseShowAst(json: json4s.JValue): Result[Request, String] = {
     for {
       id <- parseId(json)
-      phase <- Ok("Instances") // TODO: unfake this - where do i get the phase? what is the phase?
+      phase <- parseString("phase", json)
     } yield Request.ShowAst(id, phase)
   }
 
