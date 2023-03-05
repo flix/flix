@@ -1200,42 +1200,12 @@ object GenExpression {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
 
-      case SemanticOperator.Float32Op.Neg => visitor.visitInsn(FNEG)
+      case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
+           | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
+           | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, e.loc)
 
-      case SemanticOperator.Float64Op.Neg => visitor.visitInsn(DNEG)
-
-      case SemanticOperator.BigDecimalOp.Neg =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
-          AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
-
-      case SemanticOperator.Int8Op.Neg =>
-        visitor.visitInsn(INEG)
-        visitor.visitInsn(I2B)
-
-      case SemanticOperator.Int16Op.Neg =>
-        visitor.visitInsn(INEG)
-        visitor.visitInsn(I2S)
-
-      case SemanticOperator.Int32Op.Neg => visitor.visitInsn(INEG)
-
-      case SemanticOperator.Int64Op.Neg => visitor.visitInsn(LNEG)
-
-      case SemanticOperator.BigIntOp.Neg =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
-          AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
-
-      case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not =>
-        visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(IXOR)
-
-      case SemanticOperator.Int64Op.Not =>
-        visitor.visitInsn(ICONST_M1)
-        visitor.visitInsn(I2L)
-        visitor.visitInsn(LXOR)
-
-      case SemanticOperator.BigIntOp.Not =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
-          AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+      case Int8Op.Not | Int16Op.Not | Int32Op.Not
+           | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, e.loc)
 
       case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
     }
