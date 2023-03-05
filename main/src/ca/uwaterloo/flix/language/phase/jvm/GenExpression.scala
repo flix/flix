@@ -39,7 +39,7 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, loc) =>
+    case Expression.Unary(sop, exp, _, _) =>
 
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
