@@ -39,7 +39,7 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, _) =>
+    case Expression.Unary(sop, exp, _, loc) =>
 
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
@@ -62,9 +62,7 @@ object GenExpression {
           visitor.visitLabel(condElse)
           visitor.visitInsn(ICONST_0)
           visitor.visitLabel(condEnd)
-        case _ =>
-          // TODO: Ramin: Must not use `op`, should only use `sop`.
-          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
+        case _ => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
       }
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
@@ -1195,7 +1193,7 @@ object GenExpression {
     addSourceLine(visitor, e.loc)
 
     compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
-    op match {
+    SemanticOperatorOps.toUnaryOp(sop, e.loc) match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
         val condEnd = new Label()
