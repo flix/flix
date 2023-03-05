@@ -66,14 +66,8 @@ object GenExpression {
           compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
       }
 
-    case Expression.Binary(sop, exp1, exp2, _, loc) =>
+    case Expression.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
-      SemanticOperatorOps.toBinaryOp(sop, loc) match {
-        case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
-        case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
-        case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o)
-        case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
-      }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
@@ -1277,6 +1271,22 @@ object GenExpression {
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
+  private def compileBinaryExpr(exp1: Expression, exp2: Expression,
+                                currentClass: JvmType.Reference,
+                                visitor: MethodVisitor,
+                                lenv0: Map[Symbol.LabelSym, Label],
+                                entryPoint: Label,
+                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
+
+    // case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+    // case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+
+    case BoolOp.And | BoolOp.Or => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+
+    // case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+  }
+
+
   /*
    * Results are truncated (and sign extended), so that adding two IntN's will always return an IntN. Overflow can
    * occur. Note that in Java semantics, the result of an arithmetic operation is an Int32 (int) or an Int64 (long), and
@@ -1310,26 +1320,7 @@ object GenExpression {
                                     o: ArithmeticOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     if (o == BinaryOperator.Exponentiate) {
-      val (castToDouble, castFromDouble) = sop match {
-        case Float32Op.Exp => (F2D, D2F)
-        case Float64Op.Exp => (NOP, NOP) // already a double
-        case Int8Op.Exp | Int16Op.Exp | Int32Op.Exp => (I2D, D2I)
-        case Int64Op.Exp => (L2D, D2L)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-      }
-      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitInsn(castToDouble)
-      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitInsn(castToDouble)
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-        AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-      visitor.visitInsn(castFromDouble)
-      sop match {
-        case Int8Op.Exp => visitor.visitInsn(I2B)
-        case Int16Op.Exp => visitor.visitInsn(I2S)
-        case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
-        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
-      }
+      compileExponentiateExpr(e1, e2, currentClassType, visitor, jumpLabels, entryPoint, sop)
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1366,48 +1357,108 @@ object GenExpression {
     }
   }
 
+  private def compileExponentiateExpr(exp1: Expression, exp2: Expression, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator): Unit = {
+    val (castToDouble, castFromDouble) = sop match {
+      case Float32Op.Exp => (F2D, D2F)
+      case Float64Op.Exp => (NOP, NOP) // already a double
+      case Int8Op.Exp | Int16Op.Exp | Int32Op.Exp => (I2D, D2I)
+      case Int64Op.Exp => (L2D, D2L)
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
+    }
+    compileExpression(exp1, visitor, currentClassType, jumpLabels, entryPoint)
+    visitor.visitInsn(castToDouble)
+    compileExpression(exp2, visitor, currentClassType, jumpLabels, entryPoint)
+    visitor.visitInsn(castToDouble)
+    visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+      AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+    visitor.visitInsn(castFromDouble)
+    sop match {
+      case Int8Op.Exp => visitor.visitInsn(I2B)
+      case Int16Op.Exp => visitor.visitInsn(I2S)
+      case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
+    }
+  }
+
+
+  private def arithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Int = sop match {
+    case Float32Op.Add => ???
+    case Float32Op.Sub => ???
+    case Float32Op.Mul => ???
+    case Float32Op.Div => ???
+
+    case Float64Op.Add => ???
+    case Float64Op.Sub => ???
+    case Float64Op.Mul => ???
+    case Float64Op.Div => ???
+
+    case Int8Op.Add => ???
+    case Int8Op.Sub => ???
+    case Int8Op.Mul => ???
+    case Int8Op.Div => ???
+    case Int8Op.Rem => ???
+
+    case Int16Op.Add => ???
+    case Int16Op.Sub => ???
+    case Int16Op.Mul => ???
+    case Int16Op.Div => ???
+    case Int16Op.Rem => ???
+
+    case Int32Op.Add => ???
+    case Int32Op.Sub => ???
+    case Int32Op.Mul => ???
+    case Int32Op.Div => ???
+    case Int32Op.Rem => ???
+
+    case Int64Op.Add => ???
+    case Int64Op.Sub => ???
+    case Int64Op.Mul => ???
+    case Int64Op.Div => ???
+    case Int64Op.Rem => ???
+  }
+
   /*
-   * Ints, Floats, and Chars support all six comparison operations (LE, LT, GE, GT, EQ, NE), but Unit, Bools, Strings,
-   * Enums, Tuples, and Sets only support EQ and NE. Note that the generated code uses the negated condition, i.e.
-   * branch if the (source) condition is false.
-   *
-   * Some reference types (Unit and String) can use reference equality because of interning.
-   *
-   * Int8/16/32 and Char comparisons only need a single instruction (IF_ICMPyy, where yy is one of
-   * {LE, LT, GE, GT, EQ, NE}), which jumps if the yy condition is true, i.e. the (source) condition is false. All other
-   * types do a comparison first (LCMP, {F,D}CMP{G,L}), and then a branch (IFyy).
-   *
-   * Specifically, LCMP can be represented in pseudocode as:
-   *
-   *     if (v1 > v2)        1
-   *     else if (v1 == v2)  0
-   *     else if (v1 < v2)  -1
-   *
-   * Then the result is used in the IFyy comparison to determine which branch to take. So the pair of instructions
-   * for comparing longs (LCMP, IFyy) is similar to the single instruction for comparing ints (IF_ICMPyy).
-   *
-   * Float32/64 is similar, using xCMPz instead of LCMP, where x is one of {F,D} and z is one of {G,L}. z is necessary
-   * to handle the fact that a float can be NaN (which is unordered), and any comparison involving NaN must fail.
-   * xCMPG and xCMPL are the same, except for how they handle NaN. If either operand is NaN, xCMPG will push 1 onto the
-   * stack, while xCMPL will push -1. In pseudocode:
-   *
-   *     if (v1 > v2)        1
-   *     else if (v1 == v2)  0
-   *     else if (v1 < v2)  -1
-   *     else if (v1 is NaN || v2 is NaN)
-   *       if (xCMPG)       1
-   *       else if (xCMPL) -1
-   *
-   * For more information, see the following:
-   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-3.html#jvms-3.5
-   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_icmp_cond
-   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.lcmp
-   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.fcmp_op
-   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_cond
-   *
-   * BigInts are compared using the `compareTo` method.
-   * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
-   */
+     * Ints, Floats, and Chars support all six comparison operations (LE, LT, GE, GT, EQ, NE), but Unit, Bools, Strings,
+     * Enums, Tuples, and Sets only support EQ and NE. Note that the generated code uses the negated condition, i.e.
+     * branch if the (source) condition is false.
+     *
+     * Some reference types (Unit and String) can use reference equality because of interning.
+     *
+     * Int8/16/32 and Char comparisons only need a single instruction (IF_ICMPyy, where yy is one of
+     * {LE, LT, GE, GT, EQ, NE}), which jumps if the yy condition is true, i.e. the (source) condition is false. All other
+     * types do a comparison first (LCMP, {F,D}CMP{G,L}), and then a branch (IFyy).
+     *
+     * Specifically, LCMP can be represented in pseudocode as:
+     *
+     *     if (v1 > v2)        1
+     *     else if (v1 == v2)  0
+     *     else if (v1 < v2)  -1
+     *
+     * Then the result is used in the IFyy comparison to determine which branch to take. So the pair of instructions
+     * for comparing longs (LCMP, IFyy) is similar to the single instruction for comparing ints (IF_ICMPyy).
+     *
+     * Float32/64 is similar, using xCMPz instead of LCMP, where x is one of {F,D} and z is one of {G,L}. z is necessary
+     * to handle the fact that a float can be NaN (which is unordered), and any comparison involving NaN must fail.
+     * xCMPG and xCMPL are the same, except for how they handle NaN. If either operand is NaN, xCMPG will push 1 onto the
+     * stack, while xCMPL will push -1. In pseudocode:
+     *
+     *     if (v1 > v2)        1
+     *     else if (v1 == v2)  0
+     *     else if (v1 < v2)  -1
+     *     else if (v1 is NaN || v2 is NaN)
+     *       if (xCMPG)       1
+     *       else if (xCMPL) -1
+     *
+     * For more information, see the following:
+     * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-3.html#jvms-3.5
+     * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_icmp_cond
+     * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.lcmp
+     * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.fcmp_op
+     * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_cond
+     *
+     * BigInts are compared using the `compareTo` method.
+     * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
+     */
   private def compileComparisonExpr(e1: Expression,
                                     e2: Expression,
                                     currentClassType: JvmType.Reference,
@@ -1481,8 +1532,8 @@ object GenExpression {
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
-                                 o: LogicalOperator)(implicit root: Root, flix: Flix): Unit = o match {
-    case BinaryOperator.LogicalAnd =>
+                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
+    case BoolOp.And =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1494,7 +1545,7 @@ object GenExpression {
       visitor.visitLabel(andFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(andEnd)
-    case BinaryOperator.LogicalOr =>
+    case BoolOp.Or =>
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
