@@ -39,32 +39,7 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, op, exp, _, _) =>
-      sop match {
-        case SemanticOperator.ObjectOp.EqNull =>
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IFNULL, condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitLabel(condEnd)
-        case SemanticOperator.ObjectOp.NeqNull =>
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IFNULL, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case _ =>
-          // TODO: Ramin: Must not use `op`, should only use `sop`.
-          compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
-      }
+    case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Expression.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
@@ -1182,14 +1157,33 @@ object GenExpression {
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
                                entryPoint: Label,
-                               op: UnaryOperator,
                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
 
     compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
-    op match {
-      case UnaryOperator.LogicalNot =>
+    sop match {
+      case SemanticOperator.ObjectOp.EqNull =>
+        val condElse = new Label()
+        val condEnd = new Label()
+        visitor.visitJumpInsn(IFNULL, condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitLabel(condEnd)
+
+      case SemanticOperator.ObjectOp.NeqNull =>
+        val condElse = new Label()
+        val condEnd = new Label()
+        visitor.visitJumpInsn(IFNULL, condElse)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
+
+      case SemanticOperator.BoolOp.Not =>
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNE, condElse)
@@ -1198,9 +1192,15 @@ object GenExpression {
         visitor.visitLabel(condElse)
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
-      case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(visitor, sop, e.loc)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor, sop, e.loc)
+
+      case Float32Op.Neg | Float64Op.Neg | BigDecimalOp.Neg
+           | Int8Op.Neg | Int16Op.Neg | Int32Op.Neg
+           | Int64Op.Neg | BigIntOp.Neg => compileUnaryMinusExpr(visitor, sop, e.loc)
+
+      case Int8Op.Not | Int16Op.Not | Int32Op.Not
+           | Int64Op.Not | BigIntOp.Not => compileUnaryNegateExpr(visitor, sop, e.loc)
+
+      case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
     }
   }
 
