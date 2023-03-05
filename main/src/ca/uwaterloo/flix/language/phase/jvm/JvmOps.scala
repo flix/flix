@@ -669,7 +669,7 @@ object JvmOps {
 
       case Expression.Unary(_, _, exp, _, _) => visitExp(exp)
 
-      case Expression.Binary(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 

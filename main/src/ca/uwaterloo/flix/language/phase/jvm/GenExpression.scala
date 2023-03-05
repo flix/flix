@@ -66,10 +66,9 @@ object GenExpression {
           compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)
       }
 
-    case Expression.Binary(sop, op, exp1, exp2, _, _) =>
-      // TODO: Ramin: Must not use `op`, should only use `sop`.
+    case Expression.Binary(sop, exp1, exp2, _, loc) =>
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
-      op match {
+      SemanticOperatorOps.toBinaryOp(sop, loc) match {
         case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
         case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
         case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o)
