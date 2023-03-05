@@ -295,7 +295,10 @@ object Kinder {
     case ResolvedAst.Declaration.Effect(doc, ann, mod, sym, ops0, loc) =>
       val opsVal = traverse(ops0)(visitOp(_, taenv, root))
       mapN(opsVal) {
-        case ops => KindedAst.Effect(doc, ann, mod, sym, ops, loc)
+        case ops =>
+          // Introduce a (rigid) Boolean variable to represent the effect.
+          val rigidVar = Type.freshVar(Kind.Bool, loc, false, Ast.VarText.SourceText(sym.name))
+          KindedAst.Effect(doc, ann, mod, sym, rigidVar, ops, loc)
       }
   }
 

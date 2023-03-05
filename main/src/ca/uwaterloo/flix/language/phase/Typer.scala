@@ -192,7 +192,7 @@ object Typer {
     * Performs type inference and reassembly on the given effect `eff`.
     */
   private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): Validation[TypedAst.Effect, TypeError] = eff match {
-    case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case KindedAst.Effect(doc, ann, mod, sym, _, ops0, loc) =>
       val opsVal = traverse(ops0)(visitOp(_, root))
       mapN(opsVal) {
         case ops => TypedAst.Effect(doc, ann, mod, sym, ops, loc)
@@ -1517,6 +1517,7 @@ object Typer {
 
       case KindedAst.Expression.TryWith(exp, effUse, rules, tvar, loc) =>
         val effect = root.effects(effUse.sym)
+        val rigidVar = effect.rigidVar
         val ops = effect.ops.map(op => op.sym -> op).toMap
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
@@ -1553,18 +1554,38 @@ object Typer {
             }
         }
 
+        //
+        // Note: We use the following type rule to inject user-declared effects into the Boolean system:
+        // Given:
+        //
+        // try e with Console { def println(...) = ... }
+        //
+        // - We *require* that `e` must have effect `Console`.
+        // - We *require* that `e` must have no other effects.
+        // - In other words, e.pur === Console.
+        //
+        // - Once we allow multiple handlers then we can have multiple effects. Until then its not possible.
+        // - The effect of the overall expression is *pure* modulo any effects used in the handlers.
+        // - This means that if we do not want to handle an effect then we can re-raise it.
+        //
+        // - The above system is not the most ergonomic. For instance it does not really support "effect polymorphism",
+        // - but it does work and it is sound.
+
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         for {
           (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          _ <- rigidifyM(rigidVar)
+          _ <- expectTypeM(expected = rigidVar, actual = pur, loc)
           (tconstrss, _, purs, effs) <- traverseM(rules)(visitHandlerRule).map(unzip4)
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
-          resultPur = Type.mkAnd(pur :: purs, loc)
+          resultPur = Type.mkAnd(purs, loc)
           resultEff = Type.mkUnion(Type.mkDifference(eff, effType, loc) :: effs, loc)
         } yield (resultTconstrs, resultTpe, resultPur, resultEff)
 
       case KindedAst.Expression.Do(op, args, loc) =>
         val effect = root.effects(op.sym.eff)
+        val rigidVar = effect.rigidVar
         val operation = effect.ops.find(_.sym == op.sym)
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
         val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
@@ -1584,9 +1605,10 @@ object Typer {
           }
           for {
             (tconstrss, _, purs, effs) <- seqM(argM).map(unzip4)
+            _ <- rigidifyM(rigidVar)
             resultTconstrs = tconstrss.flatten
             resultTpe = operation.spec.tpe
-            resultPur = Type.mkAnd(operation.spec.pur :: purs, loc)
+            resultPur = Type.mkAnd(rigidVar :: purs, loc)
             resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
           } yield (resultTconstrs, resultTpe, resultPur, resultEff)
         }
