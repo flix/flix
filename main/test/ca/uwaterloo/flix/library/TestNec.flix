@@ -1102,7 +1102,7 @@ namespace TestNec {
         let c = singleton(1);
         let d1 = Nec.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1113,7 +1113,7 @@ namespace TestNec {
         let c = necOf2(1, 2);
         let d1 = Nec.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1125,7 +1125,7 @@ namespace TestNec {
         let c = necOf3('a', 'b', 'c');
         let d1 = Nec.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);

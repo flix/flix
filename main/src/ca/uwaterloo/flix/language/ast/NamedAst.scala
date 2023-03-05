@@ -142,8 +142,6 @@ object NamedAst {
 
     case class RecordRestrict(field: Name.Field, rest: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class New(qname: Name.QName, exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
-
     case class ArrayLit(exps: List[NamedAst.Expression], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

@@ -423,13 +423,4 @@ class TestParser extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
-
-  test("ParseError.ForEachYield.01") {
-    val input =
-      """
-        |def f(): List[Int32] = foreach () yield 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
 }

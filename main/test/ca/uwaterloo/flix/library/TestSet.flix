@@ -520,8 +520,8 @@ def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 def count08(): Bool = region r {
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = new MutList(r);
-    discard Set.count(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    let a = MutList.new(r);
+    discard Set.count(x -> { let b = MutList.new(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
 }
 
@@ -591,8 +591,8 @@ def count08(): Bool = region r {
     def sumWith08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = new MutList(r);
-        discard Set.sumWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.new(r);
+        discard Set.sumWith(k -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -658,8 +658,8 @@ def count08(): Bool = region r {
     def productWith08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = new MutList(r);
-        discard Set.productWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.new(r);
+        discard Set.productWith(k -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -1013,8 +1013,8 @@ def map15(): Bool = Set.map(x -> x `Int32.rem` 9, Set#{0, 5, 1, 10, 7, 19, 28, 2
 def map16(): Bool = region r {
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = new MutList(r);
-    discard Set.map(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    let a = MutList.new(r);
+    discard Set.map(x -> { let b = MutList.new(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
 }
 
@@ -1233,7 +1233,7 @@ def toMutDeque01(): Bool = region r {
     let s: Set[Int32] = Set#{};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
 
     d1 `MutDeque.sameElements` d2
 }
@@ -1243,7 +1243,7 @@ def toMutDeque02(): Bool = region r {
     let s = Set#{1};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(1, d2);
 
     d1 `MutDeque.sameElements` d2
@@ -1254,7 +1254,7 @@ def toMutDeque03(): Bool = region r {
     let s = Set#{1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(3, d2);
     MutDeque.pushBack(6, d2);
     MutDeque.pushFront(1, d2);
@@ -1267,7 +1267,7 @@ def toMutDeque04(): Bool = region r {
     let s = Set#{7, 1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushFront(7, d2);
     MutDeque.pushFront(6, d2);
     MutDeque.pushFront(3, d2);
@@ -1566,8 +1566,8 @@ def unfoldWithIter06(): Bool = region r {
     @test
     def minimumBy05(): Bool = region r {
         let s = List.range(0, 2000) |> List.toSet;
-        let a = new MutList(r);
-        discard Set.minimumBy((x, y) -> { let b = new MutList(r); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        let a = MutList.new(r);
+        discard Set.minimumBy((x, y) -> { let b = MutList.new(r); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

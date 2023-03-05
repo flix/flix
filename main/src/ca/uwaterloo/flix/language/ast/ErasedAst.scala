@@ -46,8 +46,6 @@ object ErasedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class Closure(sym: Symbol.DefnSym, closureArgs: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class Unary(sop: SemanticOperator, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Binary(sop: SemanticOperator, op: BinaryOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
@@ -197,6 +195,8 @@ object ErasedAst {
   sealed trait IntrinsicOperatorN
 
   object IntrinsicOperatorN {
+
+    case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 

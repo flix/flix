@@ -39,23 +39,8 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Closure(sym, exps, _, _) =>
-      // JvmType of the closure
-      val jvmType = JvmOps.getClosureClassType(sym)
-      // new closure instance
-      visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-      // Capturing free args
-      for ((arg, i) <- exps.zipWithIndex) {
-        val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitInsn(DUP)
-        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
-      }
+    case Expression.Unary(sop, exp, _, _) =>
 
-    case Expression.Unary(sop, _, exp, _, _) =>
       sop match {
         case SemanticOperator.ObjectOp.EqNull =>
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -857,6 +842,22 @@ object GenExpression {
     }
 
     case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
+
+      case IntrinsicOperatorN.Closure(sym) =>
+        // JvmType of the closure
+        val jvmType = JvmOps.getClosureClassType(sym)
+        // new closure instance
+        visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
+        // Duplicate
+        visitor.visitInsn(DUP)
+        visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+        // Capturing free args
+        for ((arg, i) <- exps.zipWithIndex) {
+          val erasedArgType = JvmOps.getErasedJvmType(arg.tpe)
+          visitor.visitInsn(DUP)
+          compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitFieldInsn(PUTFIELD, jvmType.name.toInternalName, s"clo$i", erasedArgType.toDescriptor)
+        }
 
       case IntrinsicOperatorN.ApplyDef(sym) =>
         // JvmType of Def
