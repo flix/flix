@@ -39,31 +39,7 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, _) =>
-
-      sop match {
-        case SemanticOperator.ObjectOp.EqNull =>
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IFNULL, condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitLabel(condEnd)
-        case SemanticOperator.ObjectOp.NeqNull =>
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IFNULL, condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitLabel(condEnd)
-        case _ => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
-      }
+    case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.
@@ -1193,8 +1169,28 @@ object GenExpression {
     addSourceLine(visitor, e.loc)
 
     compileExpression(e, visitor, currentClassType, jumpLabels, entryPoint)
-    SemanticOperatorOps.toUnaryOp(sop, e.loc) match {
-      case UnaryOperator.LogicalNot =>
+    sop match {
+      case SemanticOperator.ObjectOp.EqNull =>
+        val condElse = new Label()
+        val condEnd = new Label()
+        visitor.visitJumpInsn(IFNULL, condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitLabel(condEnd)
+
+      case SemanticOperator.ObjectOp.NeqNull =>
+        val condElse = new Label()
+        val condEnd = new Label()
+        visitor.visitJumpInsn(IFNULL, condElse)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
+
+      case SemanticOperator.BoolOp.Not =>
         val condElse = new Label()
         val condEnd = new Label()
         visitor.visitJumpInsn(IFNE, condElse)
@@ -1203,9 +1199,45 @@ object GenExpression {
         visitor.visitLabel(condElse)
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
-      case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(visitor, sop, e.loc)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor, sop, e.loc)
+
+      case SemanticOperator.Float32Op.Neg => visitor.visitInsn(FNEG)
+
+      case SemanticOperator.Float64Op.Neg => visitor.visitInsn(DNEG)
+
+      case SemanticOperator.BigDecimalOp.Neg =>
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "negate",
+          AsmOps.getMethodDescriptor(Nil, JvmType.BigDecimal), false)
+
+      case SemanticOperator.Int8Op.Neg =>
+        visitor.visitInsn(INEG)
+        visitor.visitInsn(I2B)
+
+      case SemanticOperator.Int16Op.Neg =>
+        visitor.visitInsn(INEG)
+        visitor.visitInsn(I2S)
+
+      case SemanticOperator.Int32Op.Neg => visitor.visitInsn(INEG)
+
+      case SemanticOperator.Int64Op.Neg => visitor.visitInsn(LNEG)
+
+      case SemanticOperator.BigIntOp.Neg =>
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "negate",
+          AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+
+      case SemanticOperator.Int8Op.Not | SemanticOperator.Int16Op.Not | SemanticOperator.Int32Op.Not =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(IXOR)
+
+      case SemanticOperator.Int64Op.Not =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(I2L)
+        visitor.visitInsn(LXOR)
+
+      case SemanticOperator.BigIntOp.Not =>
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "not",
+          AsmOps.getMethodDescriptor(Nil, JvmType.BigInteger), false)
+
+      case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", e.loc)
     }
   }
 
