@@ -655,48 +655,29 @@ object JvmOps {
       formalParamTypes ++ expressionTypes + defn.tpe
     }
 
+    def visitExps(exps: Iterable[Expression]): Set[MonoType] = {
+      exps.foldLeft(Set.empty[MonoType]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+    }
+
     /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Closure(_, closureArgs, _, _) => closureArgs.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.Unary(_, exp, _, _) => visitExp(exp)
 
-      case Expression.ApplyClo(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.Binary(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.ApplyDef(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.ApplyCloTail(exp, args, _, _) => args.foldLeft(visitExp(exp)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ApplyDefTail(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ApplySelfTail(_, _, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.Unary(_, _, exp, _, _) =>
-        visitExp(exp)
-
-      case Expression.Binary(_, _, exp1, exp2, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.Branch(exp, branches, _, _) => branches.foldLeft(visitExp(exp)) {
-        case (sacc, (_, e)) => sacc ++ visitExp(e)
-      }
+      case Expression.Branch(exp, branches, _, _) =>
+        val exps = branches.map {
+          case (_, e) => e
+        }
+        visitExp(exp) ++ visitExps(exps)
 
       case Expression.JumpTo(_, _, _) => Set.empty
 
@@ -708,30 +689,7 @@ object JvmOps {
 
       case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Tuple(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ArrayLit(elms, _, _) => elms.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.TryCatch(exp, rules, _, _) => rules.foldLeft(visitExp(exp)) {
-        case (sacc, CatchRule(_, _, body)) => sacc ++ visitExp(body)
-      }
-
-      case Expression.InvokeConstructor(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.InvokeMethod(_, exp, args, _, _) =>
-        args.foldLeft(visitExp(exp)) {
-          case (sacc, e) => sacc ++ visitExp(e)
-        }
-
-      case Expression.InvokeStaticMethod(_, args, _, _) => args.foldLeft(Set.empty[MonoType]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
+      case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
       case Expression.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
@@ -749,6 +707,10 @@ object JvmOps {
       case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
+
+      case Expression.IntrinsicN(_, exps, tpe, _) => visitExps(exps) + tpe
+
+      case Expression.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 

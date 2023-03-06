@@ -81,7 +81,7 @@ namespace MultiMap {
     /// Returns a string representation of `m`.
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
         Map.forEachWithIndex((i, k, v) -> {

@@ -749,11 +749,6 @@ object Namer {
         case r => NamedAst.Expression.RecordRestrict(field, r, loc)
       }
 
-    case WeededAst.Expression.New(qname, exp, loc) =>
-      mapN(traverseOpt(exp)(visitExp(_, ns0))) {
-        case e => NamedAst.Expression.New(qname, e, loc)
-      }
-
     case WeededAst.Expression.ArrayLit(exps, exp, loc) =>
       mapN(traverse(exps)(visitExp(_, ns0)), visitExp(exp, ns0)) {
         case (es, e) => NamedAst.Expression.ArrayLit(es, e, loc)

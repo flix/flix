@@ -750,7 +750,7 @@ namespace TestNel {
         let l = Nel(1, 2 :: Nil);
         let d1 = Nel.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -762,7 +762,7 @@ namespace TestNel {
         let l = Nel(3, 1 :: 2 :: Nil);
         let d1 = Nel.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushFront(3, d2);
@@ -775,7 +775,7 @@ namespace TestNel {
         let l = Nel('a', 'b' :: 'c' :: Nil);
         let d1 = Nel.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront('c', d2);
         MutDeque.pushFront('b', d2);
         MutDeque.pushFront('a', d2);

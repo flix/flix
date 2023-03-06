@@ -1483,7 +1483,7 @@ namespace TestChain {
         let c = Chain.empty(): Chain[Int32];
         let d1 = Chain.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1493,7 +1493,7 @@ namespace TestChain {
         let c = Chain.singleton(1);
         let d1 = Chain.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1504,7 +1504,7 @@ namespace TestChain {
         let c = List.toChain(1 :: 2 :: Nil);
         let d1 = Chain.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1516,7 +1516,7 @@ namespace TestChain {
         let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
         let d1 = Chain.toMutDeque(r, c);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);

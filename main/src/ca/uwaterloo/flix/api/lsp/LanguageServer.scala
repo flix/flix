@@ -188,6 +188,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
+      case JString("lsp/showAst") => Request.parseShowAst(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -316,9 +317,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
-
-    case Request.ListPhases(id) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ListPhasesProvider.phases.map(JString))
 
   }
 
