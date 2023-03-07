@@ -85,7 +85,11 @@ object CompletionProvider {
     //
     val completions = source.flatMap(getContext(_, uri, pos)) match {
       case None => Nil
-      case Some(context) => getCompletions()(context, flix, index, root.get, deltaContext) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+      case Some(context) =>
+        root match {
+          case Some(nonOptionRoot) => getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+          case None => Nil
+        }
     }
 
     ("status" -> "success") ~ ("result" -> CompletionList(isIncomplete = true, completions).toJSON)
