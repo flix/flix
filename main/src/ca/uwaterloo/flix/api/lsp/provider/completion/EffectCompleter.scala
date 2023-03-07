@@ -25,11 +25,7 @@ object EffectCompleter extends Completer {
   /**
     * Returns a List of Completion for effects.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[EffectCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[EffectCompletion] = {
     // Boost priority if there is `\` or `\ {` immediately before the word the user is typing
     val effSetPrefix = raw".*\\\s*\{?\s*\S*".r
 
@@ -44,10 +40,10 @@ object EffectCompleter extends Completer {
       Priority.low _
     }
 
-    root.get.effects.map {
+    root.effects.map {
       case (_, t) =>
         val name = t.sym.name
-        Completion.EffectCompletion(name, priority(name), Some(t.doc.text), context)
+        Completion.EffectCompletion(name, priority(name), Some(t.doc.text))
     }
   }
 }
