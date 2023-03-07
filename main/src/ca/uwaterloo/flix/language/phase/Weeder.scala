@@ -1791,14 +1791,14 @@ object Weeder {
         case err: WeederError => WeededAst.Expression.Error(err)
       }
 
-    case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
+    case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan, senv), visitExp(body, senv)) {
           case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
         }
       }
 
-      val defaultVal = default match {
+      val defaultVal = exp match {
         case Some(exp) => visitExp(exp, senv) map {
           case e => Some(e)
         }
