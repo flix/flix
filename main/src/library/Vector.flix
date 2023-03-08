@@ -498,7 +498,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -516,7 +516,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -542,7 +542,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///

@@ -30,7 +30,7 @@ pub eff NonDet
 ///
 /// The identity function.
 ///
-pub def identity(x: a): a = x
+pub def identity(x: a): a \ ef = unsafe_cast x as _ \ ef
 
 ///
 /// Returns the function `f` with input arguments swapped.

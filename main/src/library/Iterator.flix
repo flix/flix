@@ -441,7 +441,7 @@ namespace Iterator {
             case Done   => k(s)
 
         };
-        loop(upcast(identity))
+        loop(identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
