@@ -209,7 +209,7 @@ namespace Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, upcast(_ -> z))
+        case Ok(v)  => f(v, constant(z))
         case Err(_) => z
     }
 
@@ -289,7 +289,7 @@ namespace Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, upcast(s1 -> Ok(s1)))
+        loop(l, s1 -> unsafe_cast Ok(s1) as _ \ {ef})
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.

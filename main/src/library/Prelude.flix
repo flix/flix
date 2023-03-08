@@ -33,6 +33,11 @@ pub eff NonDet
 pub def identity(x: a): a \ ef = unsafe_cast x as _ \ ef
 
 ///
+/// The constant function.
+///
+pub def constant(x: a): b -> a \ ef = _ -> (unsafe_cast x as _ \ ef)
+
+///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
@@ -147,14 +152,6 @@ pub def bug!(m: String): a = unsafe_cast {
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
-
-///
-/// Casts a pure function to `ef`.
-///
-/// `upcast` is safe to use anywhere.
-///
-pub def upcast(f: a -> b): a -> b \ ef =
-    x -> unsafe_cast f(x) as _ \ ef
 
 ///
 /// Prints the argument unless it is ().

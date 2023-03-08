@@ -850,8 +850,8 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(() -> None)) // NB: Cast required because the identity continuation is pure,
-                                    // but the intermediate continuations are effect polymorphic.
+        loop(l, constant(None))
+
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
