@@ -127,8 +127,8 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1,2,3), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3,2,1), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1,2,3), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1,2,3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,3), DependencyKind.Development)))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -863,8 +863,8 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, 3), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, 3), DependencyKind.Development)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -1201,8 +1201,8 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = List(
                                  Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
                                  Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, 3), DependencyKind.Development)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -1787,7 +1787,7 @@ class TestManifestParser extends FunSuite {
   }
 
   //Dev-mvn-dependencies
-  test("Err.dev-mvn-dependencies.missing") {
+  test("Dev-mvn-dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -1814,8 +1814,8 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), DependencyKind.Production),
                                  Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, 3), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production)))(actual = {
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, 3), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, 0), DependencyKind.Production)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => Err(e)

@@ -15,13 +15,15 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, MavenDependency}
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
 import java.nio.file.Path
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.SetHasAsScala
 
 object ManifestParser {
 
@@ -196,69 +198,104 @@ object ManifestParser {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
-        val depsEntries = deps.entrySet()
-        val depsSet = mutable.Set.empty[Dependency]
-        depsEntries.forEach(entry => {
+        val depsEntries = deps.entrySet().asScala
+        traverse(depsEntries)(entry => {
           val depName = entry.getKey
           val depVer = entry.getValue
-          try {
-            toSemVer(depVer.asInstanceOf[String], p) match {
-              case Ok(version) => if (flixDep) {
-                depName.split(':') match {
-                  case Array(repo, rest) =>
-                    rest.split('/') match {
-                      case Array(username, projectName) =>
-                        if (repo == "github") {
-                          checkNameCharacters(username, p) match {
-                            case Ok(_) => //the name is fine, do nothing
-                            case Err(e) => return Err(e)
-                          }
-                          checkNameCharacters(projectName, p) match {
-                            case Ok(_) => //the name is fine, do nothing
-                            case Err(e) => return Err(e)
-                          }
-                          if (prodDep) {
-                            depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
-                          } else {
-                            depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Development))
-                          }
-                        } else {
-                          return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
-                        }
-                      case _ =>
-                        return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
-                    }
-                  case _ =>
-                    return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
-                }
-              } else {
-                depName.split(':') match {
-                  case Array(groupId, artifactId) =>
-                    checkNameCharacters(groupId, p) match {
-                      case Ok(_) => //the name is fine, do nothing
-                      case Err(e) => return Err(e)
-                    }
-                    checkNameCharacters(artifactId, p) match {
-                      case Ok(_) => //the name is fine, do nothing
-                      case Err(e) => return Err(e)
-                    }
-                    if (prodDep) {
-                      depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
-                    } else {
-                      depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
-                    }
-                  case _ =>
-                    return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
-                }
-              }
-              case Err(e) => return Err(e)
-            }
-          } catch {
-            case _: ClassCastException =>
-              return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+          if (flixDep) {
+            createFlixDep(depName, depVer, prodDep, p)
+          } else {
+            createMavenDep(depName, depVer, prodDep, p)
           }
         })
-        Ok(depsSet.toList)
+    }
+  }
+
+  private def getRepository(depName: String, p: Path): Result[Repository, ManifestError] = {
+    depName.split(':') match {
+      case Array(repo, _) =>
+        if (repo == "github") Ok(Repository.GitHub)
+        else Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+    }
+  }
+
+  private def getUsername(depName: String, p: Path): Result[String, ManifestError] = {
+    depName.split(':') match {
+      case Array(_, rest) => rest.split('/') match {
+        case Array(username, _) => checkNameCharacters(username, p)
+        case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+      }
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+    }
+  }
+
+  private def getProjectName(depName: String, p: Path): Result[String, ManifestError] = {
+    depName.split('/') match {
+      case Array(_, projectName) => checkNameCharacters(projectName, p)
+      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+    }
+  }
+
+  private def getGroupId(depName: String, p: Path): Result[String, ManifestError] = {
+    depName.split(':') match {
+      case Array(groupId, _) => checkNameCharacters(groupId, p)
+      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+    }
+  }
+
+  private def getArtifactId(depName: String, p: Path): Result[String, ManifestError] = {
+    depName.split(':') match {
+      case Array(_, artifactId) => checkNameCharacters(artifactId, p)
+      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+    }
+  }
+
+  def getFlixVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
+    try {
+      toSemVer(depVer.asInstanceOf[String], p)
+    } catch {
+      case _: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+    }
+  }
+
+  //TODO: Fix!!!
+  def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
+    try {
+      toSemVer(depVer.asInstanceOf[String], p)
+    } catch {
+      case _: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+    }
+  }
+
+  private def createMavenDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[MavenDependency, ManifestError] = {
+    for(
+      groupId <- getGroupId(depName, p);
+      artifactId <- getArtifactId(depName, p);
+      version <- getMavenVersion(depVer, p)
+    ) yield {
+      if(prodDep) {
+        Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production)
+      } else {
+        Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development)
+      }
+    }
+  }
+
+  private def createFlixDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[FlixDependency, ManifestError] = {
+    for (
+      repository <- getRepository(depName, p);
+      username <- getUsername(depName, p);
+      projectName <- getProjectName(depName, p);
+      version <- getFlixVersion(depVer, p)
+    ) yield {
+      if (prodDep) {
+        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Production)
+      } else {
+        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Development)
+      }
     }
   }
 
@@ -283,9 +320,9 @@ object ManifestParser {
   /**
     * Checks that a package name does not include any illegal characters.
     */
-  private def checkNameCharacters(name: String, p: Path): Result[Unit, ManifestError] = {
+  private def checkNameCharacters(name: String, p: Path): Result[String, ManifestError] = {
     if(name.matches("^[a-zA-Z0-9.-]+$"))
-      ().toOk
+      Ok(name)
     else
       Err(ManifestError.IllegalName(p, s"A dependency name cannot include any special characters: $name"))
   }
