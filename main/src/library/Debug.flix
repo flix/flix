@@ -99,7 +99,7 @@ namespace Debug {
                 import static java.util.Arrays.toString(Array[Int8, r]): String \ {};
                 toString(y)
             case y: Array[Int16, r] =>
-                import static java.util.Arrays.toString(Array[Int16, r]): String;
+                import static java.util.Arrays.toString(Array[Int16, r]): String \ {};
                 toString(y)
             case y: Array[Int32, _] =>
                 import static java.util.Arrays.toString(Array[Int32, r]): String;
