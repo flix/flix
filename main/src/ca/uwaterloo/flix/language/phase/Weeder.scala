@@ -847,99 +847,114 @@ object Weeder {
       //     Applicative.ap(Functor.map(x -> y -> exp, xs), ys)
       //
       val loc = mkSL(sp1, sp2).asSynthetic
-      val fqnAp = "Applicative.ap"
-      val fqnMap = "Functor.map"
-      val yieldExp = visitExp(exp, senv)
 
-      // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-      val lambda = foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
-          mapN(visitPattern(pat)) {
-            case p => mkLambdaMatch(sp11, p, acc, sp12)
-          }
-      }
+      if (frags.nonEmpty) {
+        val fqnAp = "Applicative.ap"
+        val fqnMap = "Functor.map"
+        val yieldExp = visitExp(exp, senv)
 
-      // Apply first fragment to Functor.map
-      val xs = visitExp(frags.head.exp, senv)
-      val baseExp = mapN(lambda, xs) {
-        case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
-      }
+        // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
+        val lambda = foldRight(frags)(yieldExp) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat, _, sp12), acc) =>
+            mapN(visitPattern(pat)) {
+              case p => mkLambdaMatch(sp11, p, acc, sp12)
+            }
+        }
 
-      // Apply rest of fragments to Applicative.ap
-      frags.tail.foldLeft(baseExp) {
-        case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
-          mapN(acc, visitExp(fexp, senv)) {
-            case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
-          }
+        // Apply first fragment to Functor.map
+        val xs = visitExp(frags.head.exp, senv)
+        val baseExp = mapN(lambda, xs) {
+          case (l, x) => mkApplyFqn(fqnMap, List(l, x), loc)
+        }
+
+        // Apply rest of fragments to Applicative.ap
+        frags.tail.foldLeft(baseExp) {
+          case (acc, ParsedAst.ForFragment.Generator(sp11, _, fexp, sp12)) =>
+            mapN(acc, visitExp(fexp, senv)) {
+              case (a, e) => mkApplyFqn(fqnAp, List(a, e), mkSL(sp11, sp12).asSynthetic)
+            }
+        }
+      } else {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
       //
       // Rewrites a foreach loop to Iterator.forEach call.
       //
-
       val loc = mkSL(sp1, sp2)
-      val fqnForEach = "Iterator.forEach"
-      val fqnIterator = "Iterable.iterator"
-      val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-      val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
 
-      val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
+      if (frags.nonEmpty) {
+        val fqnForEach = "Iterator.forEach"
+        val fqnIterator = "Iterable.iterator"
+        val regIdent = Name.Ident(sp1, "reg" + Flix.Delimiter + flix.genSym.freshId(), sp2)
+        val regVar = WeededAst.Expression.Ambiguous(Name.mkQName(regIdent), loc)
+
+        val foreachExp = foldRight(frags)(visitExp(exp, senv)) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
+            mapN(visitPattern(pat), visitExp(exp1, senv)) {
+              case (p, e1) =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
+                val fparams = List(lambda, iterable)
+                mkApplyFqn(fqnForEach, fparams, loc)
+            }
+
+          case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
+            mapN(visitExp(exp1, senv)) { e1 =>
               val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val iterable = mkApplyFqn(fqnIterator, List(regVar, e1), e1.loc)
-              val fparams = List(lambda, iterable)
-              mkApplyFqn(fqnForEach, fparams, loc)
-          }
-
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) { e1 =>
-            val loc = mkSL(sp11, sp12).asSynthetic
-            WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
-          }
-      }
-
-      mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
-        .recoverOne {
-          case err: WeederError => WeededAst.Expression.Error(err)
+              WeededAst.Expression.IfThenElse(e1, exp0, WeededAst.Expression.Cst(Ast.Constant.Unit, loc), loc)
+            }
         }
+
+        mapN(foreachExp)(WeededAst.Expression.Scope(regIdent, _, loc))
+          .recoverOne {
+            case err: WeederError => WeededAst.Expression.Error(err)
+          }
+      } else {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
+      }
 
     case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
       //
       // Rewrites a for-loop to Monad.flatMap.
       //
+      val loc = mkSL(sp1, sp2).asSynthetic
 
-      val fqnFlatMap = "Monad.flatMap"
-      val fqnPoint = "Applicative.point"
-      val fqnZero = "MonadZero.empty"
-      val yieldExp = mapN(visitExp(exp, senv)) {
-        case e =>
-          val loc = mkSL(sp1, sp2).asSynthetic
-          mkApplyFqn(fqnPoint, List(e), loc)
-      }
+      if (frags.nonEmpty) {
+        val fqnFlatMap = "Monad.flatMap"
+        val fqnPoint = "Applicative.point"
+        val fqnZero = "MonadZero.empty"
+        val yieldExp = mapN(visitExp(exp, senv)) {
+          case e => mkApplyFqn(fqnPoint, List(e), loc)
+        }
 
-      foldRight(frags)(yieldExp) {
-        case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
-          mapN(visitPattern(pat), visitExp(exp1, senv)) {
-            case (p, e1) =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
-              val fparams = List(lambda, e1)
-              mkApplyFqn(fqnFlatMap, fparams, loc)
-          }
+        foldRight(frags)(yieldExp) {
+          case (ParsedAst.ForFragment.Generator(sp11, pat, exp1, sp12), exp0) =>
+            mapN(visitPattern(pat), visitExp(exp1, senv)) {
+              case (p, e1) =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val lambda = mkLambdaMatch(sp11, p, exp0, sp12)
+                val fparams = List(lambda, e1)
+                mkApplyFqn(fqnFlatMap, fparams, loc)
+            }
 
-        case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
-          mapN(visitExp(exp1, senv)) {
-            case e1 =>
-              val loc = mkSL(sp11, sp12).asSynthetic
-              val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Cst(Ast.Constant.Unit, loc)), loc)
-              WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
-          }
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expression.Error(err)
+          case (ParsedAst.ForFragment.Guard(sp11, exp1, sp12), exp0) =>
+            mapN(visitExp(exp1, senv)) {
+              case e1 =>
+                val loc = mkSL(sp11, sp12).asSynthetic
+                val zero = mkApplyFqn(fqnZero, List(WeededAst.Expression.Cst(Ast.Constant.Unit, loc)), loc)
+                WeededAst.Expression.IfThenElse(e1, exp0, zero, loc)
+            }
+        }.recoverOne {
+          case err: WeederError => WeededAst.Expression.Error(err)
+        }
+      } else {
+        val err = WeederError.IllegalEmptyForFragment(loc)
+        WeededAst.Expression.Error(err).toSoftFailure(err)
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) => {
@@ -1040,8 +1055,9 @@ object Weeder {
           val err = WeederError.IllegalForFragment(baseLoc)
           WeededAst.Expression.Error(err).toSoftFailure(err)
 
-        case None => // Unreachable case since parser rejects foreach () yield exp
-          throw InternalCompilerException("Unexpected empty ForEachYield loop", baseLoc)
+        case None =>
+          val err = WeederError.IllegalEmptyForFragment(baseLoc)
+          WeededAst.Expression.Error(err).toSoftFailure(err)
       }
     }
 
@@ -1493,12 +1509,6 @@ object Weeder {
           }
       }
 
-    case ParsedAst.Expression.New(sp1, qname, exp, sp2) =>
-      mapN(traverseOpt(exp)(visitExp(_, senv))) {
-        case e =>
-          WeededAst.Expression.New(qname, e, mkSL(qname.sp1, qname.sp2))
-      }
-
     case ParsedAst.Expression.ArrayLit(sp1, exps, exp, sp2) =>
       mapN(traverse(exps)(visitExp(_, senv)), visitExp(exp, senv)) {
         case (es, e) => WeededAst.Expression.ArrayLit(es, e, mkSL(sp1, sp2))
@@ -1781,14 +1791,14 @@ object Weeder {
         case err: WeederError => WeededAst.Expression.Error(err)
       }
 
-    case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
+    case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan, senv), visitExp(body, senv)) {
           case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
         }
       }
 
-      val defaultVal = default match {
+      val defaultVal = exp match {
         case Some(exp) => visitExp(exp, senv) map {
           case e => Some(e)
         }
@@ -3237,7 +3247,6 @@ object Weeder {
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.New(sp1, _, _, _) => sp1
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

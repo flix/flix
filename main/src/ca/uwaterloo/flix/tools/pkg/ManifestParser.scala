@@ -85,16 +85,16 @@ object ManifestParser {
       authors <- getRequiredArrayProperty("package.authors", parser, p);
       authorsList <- convertTomlArrayToStringList(authors, p);
 
-      deps <- getRequiredTableProperty("dependencies", parser, p);
+      deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, prodDep = true, p);
 
-      devDeps <- getRequiredTableProperty("dev-dependencies", parser, p);
+      devDeps <- getOptionalTableProperty("dev-dependencies", parser, p);
       devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, p);
 
-      mvnDeps <- getRequiredTableProperty("mvn-dependencies", parser, p);
+      mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
       mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, p);
 
-      devMvnDeps <- getRequiredTableProperty("dev-mvn-dependencies", parser, p);
+      devMvnDeps <- getOptionalTableProperty("dev-mvn-dependencies", parser, p);
       devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
 
     ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
@@ -155,15 +155,12 @@ object ManifestParser {
     * and returns the Table or an error if the result
     * cannot be found.
     */
-  private def getRequiredTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlTable, ManifestError] = {
+  private def getOptionalTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlTable], ManifestError] = {
     try {
       val table = parser.getTable(propString)
-      if (table == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
-      }
-      Ok(table)
+      Ok(Option(table))
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+      case _: IllegalArgumentException => Ok(None)
       case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Table"))
     }
   }
@@ -195,70 +192,74 @@ object ManifestParser {
     * or MavenDependency and `prodDep` decides whether it is for production
     * or development. Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: TomlTable, flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
-    val depsEntries = deps.entrySet()
-    val depsSet = mutable.Set.empty[Dependency]
-    depsEntries.forEach(entry => {
-      val depName = entry.getKey
-      val depVer = entry.getValue
-      try {
-        toSemVer(depVer.asInstanceOf[String], p) match {
-          case Ok(version) => if (flixDep) {
-            depName.split(':') match {
-              case Array(repo, rest) =>
-                rest.split('/') match {
-                  case Array(username, projectName) =>
-                    if(repo == "github") {
-                      checkNameCharacters(username, p) match {
-                        case Ok(_) => //the name is fine, do nothing
-                        case Err(e) => return Err(e)
-                      }
-                      checkNameCharacters(projectName, p) match {
-                        case Ok(_) => //the name is fine, do nothing
-                        case Err(e) => return Err(e)
-                      }
-                      if (prodDep) {
-                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
-                      } else {
-                        depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Development))
-                      }
-                    } else {
-                      return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+    deps match {
+      case None => Ok(List.empty)
+      case Some(deps) =>
+        val depsEntries = deps.entrySet()
+        val depsSet = mutable.Set.empty[Dependency]
+        depsEntries.forEach(entry => {
+          val depName = entry.getKey
+          val depVer = entry.getValue
+          try {
+            toSemVer(depVer.asInstanceOf[String], p) match {
+              case Ok(version) => if (flixDep) {
+                depName.split(':') match {
+                  case Array(repo, rest) =>
+                    rest.split('/') match {
+                      case Array(username, projectName) =>
+                        if (repo == "github") {
+                          checkNameCharacters(username, p) match {
+                            case Ok(_) => //the name is fine, do nothing
+                            case Err(e) => return Err(e)
+                          }
+                          checkNameCharacters(projectName, p) match {
+                            case Ok(_) => //the name is fine, do nothing
+                            case Err(e) => return Err(e)
+                          }
+                          if (prodDep) {
+                            depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Production))
+                          } else {
+                            depsSet.add(Dependency.FlixDependency(Repository.GitHub, username, projectName, version, DependencyKind.Development))
+                          }
+                        } else {
+                          return Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
+                        }
+                      case _ =>
+                        return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
                     }
                   case _ =>
                     return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
                 }
-              case _ =>
-                return Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+              } else {
+                depName.split(':') match {
+                  case Array(groupId, artifactId) =>
+                    checkNameCharacters(groupId, p) match {
+                      case Ok(_) => //the name is fine, do nothing
+                      case Err(e) => return Err(e)
+                    }
+                    checkNameCharacters(artifactId, p) match {
+                      case Ok(_) => //the name is fine, do nothing
+                      case Err(e) => return Err(e)
+                    }
+                    if (prodDep) {
+                      depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
+                    } else {
+                      depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
+                    }
+                  case _ =>
+                    return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+                }
+              }
+              case Err(e) => return Err(e)
             }
-          } else {
-            depName.split(':') match {
-              case Array(groupId, artifactId) =>
-                checkNameCharacters(groupId, p) match {
-                  case Ok(_) => //the name is fine, do nothing
-                  case Err(e) => return Err(e)
-                }
-                checkNameCharacters(artifactId, p) match {
-                  case Ok(_) => //the name is fine, do nothing
-                  case Err(e) => return Err(e)
-                }
-                if (prodDep) {
-                  depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production))
-                } else {
-                  depsSet.add(Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development))
-                }
-              case _ =>
-                return Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
-            }
+          } catch {
+            case _: ClassCastException =>
+              return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
           }
-          case Err(e) => return Err(e)
-        }
-      } catch {
-        case _: ClassCastException =>
-          return Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
-      }
-    })
-    Ok(depsSet.toList)
+        })
+        Ok(depsSet.toList)
+    }
   }
 
   /**

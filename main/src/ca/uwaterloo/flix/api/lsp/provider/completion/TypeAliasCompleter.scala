@@ -25,16 +25,12 @@ object TypeAliasCompleter extends Completer {
   /**
     * Returns a List of Completion for alias types.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[TypeAliasCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    root.get.typeAliases.map {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeAliasCompletion] = {
+    root.typeAliases.map {
       case (_, t) =>
         val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
+        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
+        Completion.TypeAliasCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name))(context),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }
