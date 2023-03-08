@@ -95,12 +95,12 @@ namespace Debug {
             case y: Array[BigDecimal, _] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String;
                 unsafe_cast toString(unsafe_cast y as Array[##java.lang.Object, r]) as _ \ {}
-            case y: Array[Int8, _] =>
-                import static java.util.Arrays.toString(Array[Int8, r]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int8, r]) as _ \ {}
-            case y: Array[Int16, _] =>
+            case y: Array[Int8, r] =>
+                import static java.util.Arrays.toString(Array[Int8, r]): String \ {};
+                toString(y)
+            case y: Array[Int16, r] =>
                 import static java.util.Arrays.toString(Array[Int16, r]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int16, r]) as _ \ {}
+                toString(y)
             case y: Array[Int32, _] =>
                 import static java.util.Arrays.toString(Array[Int32, r]): String;
                 unsafe_cast toString(unsafe_cast y as Array[Int32, r]) as _ \ {}
