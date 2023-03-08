@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.Duration
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import java.io.{ByteArrayOutputStream, PrintStream, PrintWriter, StringWriter}
+import java.io.{ByteArrayOutputStream, OutputStream, PrintStream, PrintWriter, StringWriter}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.{Level, Logger}
 import scala.util.matching.Regex
@@ -215,6 +215,42 @@ object Tester {
   }
 
   /**
+    * A class which outputs to two different output streams
+    *
+    * Largely taken from org.apache.commons.io.output.TeeOutputStream
+    */
+  class TeeOutputStream(out: OutputStream, branch: OutputStream) extends PrintStream(out) {
+
+    override def write(b: Array[Byte]) = synchronized {
+      super.write(b)
+      branch.write(b)
+    }
+
+    override def write(b: Array[Byte], off: Int, len: Int) = synchronized {
+      super.write(b, off, len)
+      branch.write(b, off, len)
+    }
+
+    override def write(b: Int) = synchronized {
+      super.write(b)
+      branch.write(b)
+    }
+
+    override def flush() = synchronized {
+      super.flush()
+      branch.flush()
+    }
+
+    override def close() = synchronized {
+      try {
+        super.close()
+      } finally {
+        branch.close()
+      }
+    }
+  }
+
+  /**
     * A class used to redirect the standard out and standard error streams.
     */
   class ConsoleRedirection {
@@ -245,8 +281,8 @@ object Tester {
       oldStreamErr = System.err
 
       // Set the new streams.
-      System.setOut(streamOut)
-      System.setErr(streamErr)
+      System.setOut(new TeeOutputStream(streamOut, oldStreamOut))
+      System.setErr(new TeeOutputStream(streamErr, oldStreamErr))
     }
 
     /**
