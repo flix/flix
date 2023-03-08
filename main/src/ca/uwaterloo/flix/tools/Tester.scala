@@ -190,7 +190,7 @@ object Tester {
           result match {
             case java.lang.Boolean.FALSE =>
               // Case 1: Assertion Error.
-              queue.add(TestEvent.Failure(sym, "Assertion Error" :: Nil, Duration(elapsed)))
+              queue.add(TestEvent.Failure(sym, "Assertion Error" :: redirect.stdOut ++ redirect.stdErr, Duration(elapsed)))
 
             case _ =>
               if (redirect.stdErr.isEmpty) {
