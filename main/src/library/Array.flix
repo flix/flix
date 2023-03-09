@@ -195,7 +195,7 @@ namespace Array {
     ///
     pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
         let arr1 = copyOfRange(rc, 0, length(a), a);
-        unsafe_cast arr1 as Vector[a]
+        unsafe_cast arr1 as Vector[a]                   // Cast required to unsafely covert to Vector.
     }
 
     ///
@@ -1614,6 +1614,7 @@ namespace Array {
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
+        // All of the below casts are required to cast the type to `Array[a, ...]`.
         typematch a {
             case arr: Array[Unit, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;

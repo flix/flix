@@ -38,12 +38,4 @@ namespace Object {
     pub def toOption(x: a): Option[a] =
         if (isNull(x)) None else Some(x)
 
-    ///
-    /// Unsafely converts `x` to a string using Java's built-in toString.
-    ///
-    @Unsafe
-    pub def toString(x: a): String =
-        import static java.util.Objects.toString(##java.lang.Object): String \ {};
-        toString(unsafe_cast x as ##java.lang.Object)
-
 }
