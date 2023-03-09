@@ -17,7 +17,7 @@ namespace Debug {
     @Internal
     def escape(s: String): String = {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-        def replace(old: String, new: String, subject: String): String = jReplace(subject, unsafe_cast old as ##java.lang.CharSequence, unsafe_cast new as ##java.lang.CharSequence);
+        def replace(from: String, to: String, subject: String): String = jReplace(subject, upcast from, upcast to);
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
@@ -101,9 +101,9 @@ namespace Debug {
             case y: Array[Int16, r] =>
                 import static java.util.Arrays.toString(Array[Int16, r]): String \ {};
                 toString(y)
-            case y: Array[Int32, _] =>
-                import static java.util.Arrays.toString(Array[Int32, r]): String;
-                unsafe_cast toString(unsafe_cast y as Array[Int32, r]) as _ \ {}
+            case y: Array[Int32, r] =>
+                import static java.util.Arrays.toString(Array[Int32, r]): String \ {};
+                toString(y)
             case y: Array[Int64, _] =>
                 import static java.util.Arrays.toString(Array[Int64, r]): String;
                 unsafe_cast toString(unsafe_cast y as Array[Int64, r]) as _ \ {}
