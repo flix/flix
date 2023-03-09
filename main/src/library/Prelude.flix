@@ -121,7 +121,7 @@ def debug(x: a): a = $MASK$(Debug.debugWithPrefix("", x))
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+def debug!(x: a): a = $MASK$(Debug.debugWithPrefix("", x))
 
 ///
 /// Prints the stringified representation of `x`.
@@ -129,12 +129,12 @@ def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+def debug!!(x: a): a = $MASK$(Debug.debugWithPrefix("", x))
 
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = unsafe_cast {
+pub def bug!(m: String): a = $MASK$({
     import static get java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
     import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String \ {};
@@ -146,7 +146,7 @@ pub def bug!(m: String): a = unsafe_cast {
     prt(repeat("*", 80));
     prt("");
     ?panic
-} as _ \ {}
+})
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
@@ -159,7 +159,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 /// `upcast` is safe to use anywhere.
 ///
 pub def upcast(f: a -> b): a -> b \ ef =
-    x -> unsafe_cast f(x) as _ \ ef
+    x -> eupcast f(x)
 
 ///
 /// Prints the argument unless it is ().
