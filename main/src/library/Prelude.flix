@@ -113,7 +113,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+def debug(x: a): a = $MASK$(Debug.debugWithPrefix("", x))
 
 ///
 /// Prints the stringified representation of `x`.
