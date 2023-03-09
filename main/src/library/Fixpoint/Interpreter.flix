@@ -26,7 +26,7 @@ namespace Fixpoint {
         interpretWithDatabase(r, MutMap.new(r), stmt)
 
     def interpretWithDatabase(r: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v] =
-        unsafe_cast notifyPreInterpret(stmt) as _ \ r; // This casts away the impure effect of notify
+        $MASK$(notifyPreInterpret(stmt));
         evalStmt(r, db, stmt);
         db
 

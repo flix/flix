@@ -41,8 +41,8 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = unsafe_cast {
-        notifyPreSolve(d, stf);
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+        $MASK$(notifyPreSolve(d, stf));
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,9 +59,9 @@ namespace Fixpoint {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        notifyPostSolve(model);
+        $MASK$(notifyPostSolve(model));
         model
-    } as _ \ {} // This casts away the impure effect of notify
+    }
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
