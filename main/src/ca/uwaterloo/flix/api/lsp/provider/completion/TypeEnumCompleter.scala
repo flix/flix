@@ -25,16 +25,12 @@ object TypeEnumCompleter extends Completer {
   /**
     * Returns a List of Completion for enum types.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[TypeEnumCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
-    root.get.enums.collect {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeEnumCompletion] = {
+    root.enums.collect {
       case (_, t) if !t.ann.isInternal =>
         val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeEnumCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name)),
+        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
+        Completion.TypeEnumCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name))(context),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }

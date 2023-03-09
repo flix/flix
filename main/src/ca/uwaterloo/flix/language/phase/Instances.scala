@@ -34,7 +34,7 @@ object Instances {
     val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
     errs match {
       case Nil => ().toSuccess
-      case es => Validation.Failure(LazyList.from(es))
+      case es => Validation.SoftFailure((), LazyList.from(es))
     }
   }
 
