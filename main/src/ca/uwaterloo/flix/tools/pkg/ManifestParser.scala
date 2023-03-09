@@ -77,10 +77,10 @@ object ManifestParser {
       description <- getRequiredStringProperty("package.description", parser, p);
 
       version <- getRequiredStringProperty("package.version", parser, p);
-      versionSemVer <- toSemVer(version, p);
+      versionSemVer <- toFlixVer(version, p);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
-      flixSemVer <- toSemVer(flix, p);
+      flixSemVer <- toFlixVer(flix, p);
 
       license <- getOptionalStringProperty("package.license", parser, p);
 
@@ -171,19 +171,31 @@ object ManifestParser {
     * Converts a String `s` to a semantic version and returns
     * an error if the String is not of the correct format.
     */
-  private def toSemVer(s: String, p: Path): Result[SemVer, ManifestError] = {
-    val splitVersion = s.split('.')
-    if (splitVersion.length == 3) {
-      try {
-        val major = splitVersion.apply(0).toInt
-        val minor = splitVersion.apply(1).toInt
-        val patch = splitVersion.apply(2).toInt
-        Ok(SemVer(major, minor, patch))
-      } catch {
-        case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse version as three numbers"))
+  private def toFlixVer(s: String, p: Path): Result[SemVer, ManifestError] = {
+    try {
+      s.split('.') match {
+        case Array(major, minor, patch) =>
+          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
+        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Flix version should be formatted like so: 'x.x.x'"))
       }
-    } else {
-      Err(ManifestError.VersionHasWrongLength(p, "A version should be formatted like so: 'x.x.x'"))
+    } catch {
+      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse Flix version as three numbers"))
+    }
+  }
+
+  private def toMavenVer(s: String, p: Path): Result[SemVer, ManifestError] = {
+    try {
+      s.split('.') match {
+        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
+        case Array(major, minor, patch) =>
+          patch.split('-') match {
+            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
+            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
+          }
+        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'"))
+      }
+    } catch {
+      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse Maven version as numbers"))
     }
   }
 
@@ -253,17 +265,16 @@ object ManifestParser {
 
   def getFlixVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
-      toSemVer(depVer.asInstanceOf[String], p)
+      toFlixVer(depVer.asInstanceOf[String], p)
     } catch {
       case _: ClassCastException =>
         Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
     }
   }
 
-  //TODO: Fix!!!
   def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
-      toSemVer(depVer.asInstanceOf[String], p)
+      toMavenVer(depVer.asInstanceOf[String], p)
     } catch {
       case _: ClassCastException =>
         Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
