@@ -408,7 +408,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, s1 -> unsafe_cast Some(s1) as _ \ {ef})
+        loop(l, s1 -> eupcast Some(s1))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
