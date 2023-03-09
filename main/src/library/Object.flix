@@ -19,7 +19,6 @@ namespace Object {
     /// Returns `true` if the given value `x` is `null`.
     ///
     pub def isNull(x: a): Bool =
-        import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
         typematch x {
             case _: Bool => false
             case _: Char => false
@@ -29,7 +28,9 @@ namespace Object {
             case _: Int16 => false
             case _: Int32 => false
             case _: Int64 => false
-            case _: _ => isNull(unsafe_cast x as ##java.lang.Object)
+            case _: _ =>
+                import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
+                isNull(unsafe_cast x as ##java.lang.Object) // Required cast from `a` to `Object`.
         }
 
     ///
