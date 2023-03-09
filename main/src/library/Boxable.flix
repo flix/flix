@@ -132,8 +132,8 @@ namespace Boxable {
 
 instance Boxable[Unit] {
     pub override def box(x: Unit): Boxed = {
-        let value = unsafe_cast x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(unsafe_cast o1 as Unit, unsafe_cast o2 as Unit);
+        let value = upcast x;
+        let compare = (_, _) -> Comparison.EqualTo;
         Boxed.BoxedObject(value, compare)
     }
     pub override def unbox(_: Boxed): Unit = ()
