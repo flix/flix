@@ -21,10 +21,21 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
+import java.nio.file.{FileVisitResult, Files, Path, Paths, SimpleFileVisitor}
 import scala.collection.mutable
 
 object Bootstrap {
+
+  // TODO: Remove
+  def main(args: Array[String]): Unit = {
+    val path = Paths.get(".").resolve("examples").resolve("projects").resolve("project-with-deps")
+    val b = Bootstrap.bootstrap(path)(System.out) match {
+      case Ok(t) => t
+      case Err(e) => ???
+    }
+    val f = new Flix()
+    b.reconfigureFlix(f)
+  }
 
   /**
     * Returns the path to the library directory relative to the given path `p`.
@@ -135,11 +146,13 @@ class Bootstrap {
     }
 
     // 2. Check each dependency is available or download it.
-    FlixPackageManager.installAll(manifest, path) match {
-      case Ok(l) => flixPackagePaths = l
+    val extraMavenDeps = FlixPackageManager.installAll(manifest, path) match {
+      case Ok(l) =>
+        flixPackagePaths = l._1
+        l._2
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    MavenPackageManager.installAll(manifest, path) match {
+    MavenPackageManager.installAll(manifest, path, extraMavenDeps) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }

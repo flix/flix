@@ -40,7 +40,7 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
+        case Ok(l) => l._1.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })
@@ -77,8 +77,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
-                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
+        case Ok(l) => l._1.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
+                      l._1(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })
@@ -115,7 +115,7 @@ class TestFlixPackageManager extends FunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(manifest, path)(System.out) //installs the dependency
       FlixPackageManager.installAll(manifest, path)(System.out) match { //does nothing
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
+        case Ok(l) => l._1.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
         case Err(e) => e
       }
     })

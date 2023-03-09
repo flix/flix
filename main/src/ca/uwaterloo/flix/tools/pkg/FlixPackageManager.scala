@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 import ca.uwaterloo.flix.util.Result
+import org.apache.commons.io.FileUtils
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
@@ -27,21 +28,89 @@ import scala.util.Using
 
 object FlixPackageManager {
 
+  //TODO: return correctly
+  //TODO: functional style
+  //TODO: avoid code duplication?
+  //TODO: deal with errors
+
+  //TODO: test!
+  //TODO: comments
+  def findTransitiveDependencies(flixDepsManifest: List[FlixDependency], p: Path): Result[(List[FlixDependency], List[String]), PackageError] = {
+    val workingSet = collection.mutable.Set.empty[FlixDependency]
+    val finalSet = collection.mutable.Set.empty[FlixDependency]
+    val mavenSet = collection.mutable.Set.empty[String]
+
+    flixDepsManifest.foreach(dep => {workingSet.addOne(dep); finalSet.addOne(dep)})
+    val tempDir = Files.createTempDirectory(p, "")
+
+    while(workingSet.nonEmpty) {
+      val dep = workingSet.head
+      workingSet.remove(dep)
+
+      val proj = GitHub.parseProject(s"${dep.username}/${dep.projectName}") match {
+        case Ok(p) => p
+        case Err(e) => return Err(e)
+      }
+      val release = GitHub.getSpecificRelease(proj, dep.version) match {
+        case Ok(r) => r
+        case Err(e) => return Err(e)
+      }
+      val assets = release.assets.filter(_.name.endsWith(".toml"))
+      for (asset <- assets) {
+        val assetName = asset.name
+        val path = tempDir.resolve(s"${dep.username}-${dep.projectName}-$assetName")
+        try {
+          Using(GitHub.downloadAsset(asset)) {
+            stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
+          }
+        } catch {
+          case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
+        }
+        val manifest = ManifestParser.parse(path) match {
+          case Ok(m) => m
+          case Err(e) => ???
+        }
+        val newFlixDeps = findFlixDependencies(manifest)
+        workingSet.addAll(newFlixDeps.filter(d => !finalSet.contains(d)))
+        finalSet.addAll(newFlixDeps)
+
+        val newMavenDeps = MavenPackageManager.getMavenDependencyStrings(manifest)
+        mavenSet.addAll(newMavenDeps)
+      }
+    }
+
+    /*println("Working set: " + workingSet)
+    println("Final set: " + finalSet)
+    println("Maven set: " + mavenSet)*/
+
+    FileUtils.deleteDirectory(tempDir.toFile)
+
+    (finalSet.toList, mavenSet.toList).toOk
+  }
+
   /**
     * Installs all the Flix dependencies for a Manifest at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[(List[Path], List[String]), PackageError] = {
     out.println("Resolving Flix dependencies...")
 
-    val flixDeps = findFlixDependencies(manifest)
-    flixDeps.flatMap(dep => {
+    val flixDepsManifest = findFlixDependencies(manifest)
+
+    val allFlixAndMavenDeps = findTransitiveDependencies(flixDepsManifest, path) match {
+      case Ok(t) => t
+      case Err(e) => return Err(e)
+    }
+    val allFlixDeps = allFlixAndMavenDeps._1
+    val extraMavenDeps = allFlixAndMavenDeps._2
+
+    (allFlixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, path) match {
         case Ok(l) => l
         case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
-    }).toOk
+    }), extraMavenDeps).toOk
   }
 
   /**
