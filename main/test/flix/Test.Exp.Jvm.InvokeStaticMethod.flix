@@ -59,7 +59,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region r {
         import static java.util.Arrays.fill(Array[##java.lang.Object, r], ##java.lang.Object): Unit \ IO;
         let a = Array#{"this", "that"} @ r;
-        fill(unsafe_cast a as Array[##java.lang.Object, r], upcast "foo");
+        fill(unsafe_cast a as Array[##java.lang.Object, r], checked_cast("foo"));
         true
     }
 }
