@@ -45,7 +45,7 @@ namespace Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> unsafe_cast f1()  as _ \ { ef, r };
+        let iterF = () -> eupcast f1();
         Iterator(rc, iterF)
 
     ///
@@ -493,7 +493,7 @@ namespace Iterator {
             case Ok(a)  => Ans(a)
             case Err(_) => Done
         };
-        let iterF = () -> unsafe_cast loop() as _ \ {ef, r};
+        let iterF = () -> eupcast loop();
         Iterator(rc, iterF)
 
     ///

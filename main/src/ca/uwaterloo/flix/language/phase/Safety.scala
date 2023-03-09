@@ -522,6 +522,7 @@ object Safety {
     // TODO: Check Boolean entailment.
     (tpe1, tpe2) match {
       case (Type.Pure, _) => Nil
+      case (Type.Var(_, _), _) => Nil // TODO: Obviously unsound, has to check implication.
       case _ => UnsafeSupercast(exp.pur, pur, loc) :: Nil
     }
   }
