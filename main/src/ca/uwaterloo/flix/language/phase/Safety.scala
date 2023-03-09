@@ -519,6 +519,7 @@ object Safety {
   private def checkSupercastSafety(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.pur)
     val tpe2 = Type.eraseAliases(pur)
+    // TODO: Check Boolean entailment.
     (tpe1, tpe2) match {
       case (Type.Pure, _) => Nil
       case _ => UnsafeSupercast(exp.pur, pur, loc) :: Nil

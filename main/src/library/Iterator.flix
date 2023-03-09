@@ -52,7 +52,7 @@ namespace Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = () -> unsafe_cast Done as _ \ r;
+        let f = constant(Done);
         Iterator(rc, f)
 
     ///
@@ -636,7 +636,7 @@ namespace Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = () -> unsafe_cast Done as _ \ ef;
+        let f = constant(Done);
         Iterator(rc, f)
 
 

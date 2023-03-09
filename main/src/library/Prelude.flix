@@ -30,12 +30,12 @@ pub eff NonDet
 ///
 /// The identity function.
 ///
-pub def identity(x: a): a \ ef = unsafe_cast x as _ \ ef
+pub def identity(x: a): a \ ef = eupcast x
 
 ///
 /// The constant function.
 ///
-pub def constant(x: a): b -> a \ ef = _ -> (unsafe_cast x as _ \ ef)
+pub def constant(x: a): b -> a \ ef = _ -> (eupcast x)
 
 ///
 /// Returns the function `f` with input arguments swapped.
