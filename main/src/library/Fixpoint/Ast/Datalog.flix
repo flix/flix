@@ -20,14 +20,13 @@ namespace Fixpoint/Ast {
     use Fixpoint/PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
     use Fixpoint/SubstitutePredSym.substitute
-    use Fixpoint/Tuple.Tuple
     use Fixpoint/Shared.PredSym
     use Fixpoint/Ram.RamSym
 
     @Internal
     pub enum Datalog[v] {
         case Datalog(List[Constraint[v]], List[Constraint[v]])
-        case Model(Map[RamSym[v], Map[Tuple[v], v]])
+        case Model(Map[RamSym[v], Map[Vector[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
 
@@ -72,11 +71,11 @@ namespace Fixpoint/Ast {
                 let sb = StringBuilder.new(r);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
                     }, rel)
                     case Denotation.Latticenal(_) => Map.forEach((tuple, lat) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
                     }, rel)
                 }, db);

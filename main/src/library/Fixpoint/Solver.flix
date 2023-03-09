@@ -506,7 +506,7 @@ namespace Fixpoint {
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r), db);
-                MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
+                MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }
@@ -727,13 +727,13 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.forEach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
+                    Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.forEach((tuple, lat) -> {
-                        let it = Iterator.range(r, 0, Fixpoint/Tuple.length(tuple) + 1);
+                        let it = Iterator.range(r, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
-                            if (i < Fixpoint/Tuple.length(tuple))
-                                Fixpoint/Tuple.valueAt(tuple, i)
+                            if (i < Vector.length(tuple))
+                                Vector.get(i, tuple)
                             else
                                 lat
                         }) |> Iterator.toList;
