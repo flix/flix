@@ -756,18 +756,8 @@ namespace Fixpoint {
     }
 
     ///
-    /// Unsafely casts and prints the given Datalog program `d`.
+    /// Returns the given database `db` as a Datalog value.
     ///
-    @Internal @Unsafe
-    pub def unsafePrint(d: a): Unit \ IO =
-        println(unsafeCast(d))
-
-    ///
-    /// Unsafely casts the given value `d` to a Datalog program.
-    ///
-    @Internal @Unsafe
-    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v as Datalog[Boxed]
-
     def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
