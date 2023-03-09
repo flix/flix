@@ -426,6 +426,10 @@ object Safety {
     case (Type.True, _) => true
     case (Type.Var(_, _), Type.False) => true
 
+    case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
+
+    case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => true
+
     case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
       right.isAssignableFrom(left)
 

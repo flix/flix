@@ -2008,8 +2008,8 @@ object Typer {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Use(sym, e, loc)
 
-      // change null to Unit type
-      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) => TypedAst.Expression.Cst(Ast.Constant.Null, Type.Unit, loc)
+      case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
+        TypedAst.Expression.Cst(Ast.Constant.Null, Type.Null, loc)
 
       case KindedAst.Expression.Cst(cst, loc) => TypedAst.Expression.Cst(cst, constantType(cst), loc)
 
