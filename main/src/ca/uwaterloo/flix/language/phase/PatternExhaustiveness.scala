@@ -199,7 +199,7 @@ object PatternExhaustiveness {
       case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
       case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Upcast(exp, _, _) => visitExp(exp, root)
-      case Expression.Supercast(exp, _, _) => visitExp(exp, root)
+      case Expression.EffectUpcast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>

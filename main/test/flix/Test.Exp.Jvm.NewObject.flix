@@ -18,38 +18,38 @@ namespace Test/Exp/Jvm/NewObject {
   @test
   def testImplementInterface01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
-    let anon = super_cast implementSerializable();
+    let anon = upcast implementSerializable();
     toString(anon) |> String.startsWith(prefix = "Anon")
 
   @test
   def testImplementInterface02(): Bool \ IO =
     import java.lang.Object.hashCode(): Int32 \ {};
-    let anon = super_cast implementSerializable();
-    let anon2 = super_cast implementSerializable();
+    let anon = upcast implementSerializable();
+    let anon2 = upcast implementSerializable();
     hashCode(anon) != hashCode(anon2)
 
   @test
   def testImplementInterface03(): Bool \ IO =
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = super_cast implementSerializable();
-    let anon2 = super_cast implementSerializable();
+    let anon = upcast implementSerializable();
+    let anon2 = upcast implementSerializable();
     not equals(anon, anon2)
 
   @test
   def testImplementInterface04(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = super_cast implementSerializable();
-    let anon2 = super_cast implementSerializable();
-    equals(super_cast getClass(anon), super_cast getClass(anon2))
+    let anon = upcast implementSerializable();
+    let anon2 = upcast implementSerializable();
+    equals(upcast getClass(anon), upcast getClass(anon2))
 
   @test
   def testImplementInterface05(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = super_cast implementSerializable();
-    let anon2 = super_cast implementSerializableAgain();
-    not equals(super_cast getClass(anon), super_cast getClass(anon2))
+    let anon = upcast implementSerializable();
+    let anon2 = upcast implementSerializableAgain();
+    not equals(upcast getClass(anon), upcast getClass(anon2))
 
   @test
   def testVoidInterface01(): Bool \ IO =
@@ -231,7 +231,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: ##java.lang.Object): ##java.lang.Object =
         let str = unsafe_cast x as String;
-        super_cast "${str}, ${str}"
+        upcast "${str}, ${str}"
     };
     runTest(anon)
 
@@ -241,7 +241,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new TestGenericMethod {
       def testMethod(_this: TestGenericMethod, x: ##java.lang.Object): ##java.lang.Object =
         let str = unsafe_cast x as String;
-        super_cast "${str}, ${str}"
+        upcast "${str}, ${str}"
     };
     runTest(anon)
 
@@ -251,7 +251,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: Object): Object =
         let str = unsafe_cast x as String;
-        super_cast "${str}, ${str}"
+        upcast "${str}, ${str}"
     };
     runTest(anon)
 
@@ -286,7 +286,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new ##java.util.Comparator {
       def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
     };
-    compare(anon, super_cast "foo", super_cast "bar") == 0
+    compare(anon, upcast "foo", upcast "bar") == 0
 
   @test
   def testClassWithDefaultConstructor01(): Bool \ IO =

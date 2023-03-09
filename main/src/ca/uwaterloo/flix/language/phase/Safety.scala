@@ -236,9 +236,10 @@ object Safety {
 
       case Expression.Upcast(exp, tpe, loc) =>
         val errors = checkUpcastSafety(exp, tpe, renv, root, loc)
+        // TODO: Use checkSupercastSafety ?
         visit(exp) ++ errors
 
-      case Expression.Supercast(exp, tpe, loc) =>
+      case Expression.EffectUpcast(exp, tpe, _, _, loc) =>
         val errors = checkSupercastSafety(exp, tpe, loc)
         visit(exp) ++ errors
 
@@ -515,13 +516,13 @@ object Safety {
   /**
     * Returns a list of errors if the the supercast is invalid.
     */
-  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe)
-    val tpe2 = Type.eraseAliases(tpe)
-    if (isJavaSubtypeOf(tpe1, tpe2))
-      Nil
-    else
-      collectSupercastErrors(exp, tpe, loc)
+  private def checkSupercastSafety(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    val tpe1 = Type.eraseAliases(exp.pur)
+    val tpe2 = Type.eraseAliases(pur)
+    (tpe1, tpe2) match {
+      case (Type.Pure, _) => Nil
+      case _ => UnsafeSupercast(exp.pur, pur, loc) :: Nil
+    }
   }
 
   /**

@@ -779,7 +779,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Supercast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("super_cast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
+      SP ~ keyword("eupcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {

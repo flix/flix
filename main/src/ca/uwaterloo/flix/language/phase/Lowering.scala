@@ -589,7 +589,7 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Upcast(e, t, loc)
 
-    case TypedAst.Expression.Supercast(exp, tpe, loc) =>
+    case TypedAst.Expression.EffectUpcast(exp, tpe, _, _, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Supercast(e, t, loc)

@@ -427,7 +427,7 @@ object SemanticTokensProvider {
     case Expression.Upcast(exp, _, _) =>
       visitExp(exp)
 
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.EffectUpcast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Mask(exp, _, _, _, _) =>

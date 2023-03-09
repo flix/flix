@@ -318,7 +318,7 @@ object Indexer {
     case Expression.Upcast(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.EffectUpcast(exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Mask(exp, _, _, _, _) =>

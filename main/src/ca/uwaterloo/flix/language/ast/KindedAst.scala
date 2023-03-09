@@ -158,7 +158,7 @@ object KindedAst {
 
     case class Upcast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Supercast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class Supercast(exp: KindedAst.Expression, pur: Type.Var, eff: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
 

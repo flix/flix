@@ -737,7 +737,9 @@ object Kinder {
 
     case ResolvedAst.Expression.Supercast(exp, loc) =>
       mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-        KindedAst.Expression.Supercast(e, Type.freshVar(Kind.Star, loc), loc)
+        val pvar = Type.freshVar(Kind.Bool, loc)
+        val evar = Type.freshVar(Kind.Effect, loc)
+        KindedAst.Expression.Supercast(e, pvar, evar, loc)
       }
 
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>

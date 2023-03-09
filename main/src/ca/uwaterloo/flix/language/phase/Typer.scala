@@ -1484,13 +1484,10 @@ object Typer {
           (constrs, _, pur, eff) <- visitExp(exp)
         } yield (constrs, tvar, pur, eff)
 
-      case KindedAst.Expression.Supercast(exp, tvar, _) =>
-        // Ignore the type of exp since we later check substitute
-        // tvar for the type required by exp and check
-        // during Safety that this is actually legal.
+      case KindedAst.Expression.Supercast(exp, pvar, evar, _) =>
         for {
-          (constrs, _, pur, eff) <- visitExp(exp)
-        } yield (constrs, tvar, pur, eff)
+          (constrs, tpe, _, _) <- visitExp(exp)
+        } yield (constrs, tpe, pvar, evar)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -2327,9 +2324,11 @@ object Typer {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Upcast(e, subst0(tvar), loc)
 
-      case KindedAst.Expression.Supercast(exp, tvar, loc) =>
+      case KindedAst.Expression.Supercast(exp, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Supercast(e, subst0(tvar), loc)
+        val pur = subst0(pvar)
+        val eff = subst0(evar)
+        TypedAst.Expression.EffectUpcast(e, e.tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)

@@ -653,8 +653,8 @@ object Redundancy {
       else
         visitExp(exp, env0, rc)
 
-    case Expression.Supercast(exp, tpe, loc) =>
-      if (exp.tpe == tpe)
+    case Expression.EffectUpcast(exp, tpe, pur, eff, loc) =>
+      if (exp.pur == pur)
         visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
       else
         visitExp(exp, env0, rc)
