@@ -454,7 +454,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], r, r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], false, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -470,7 +470,7 @@ namespace File {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := unsafe_cast readLine(reader) as _ \ Read(r);
+                        line := readLine(reader);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
@@ -487,7 +487,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.singleton(r, Err(getMessage(ex)))
+                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
@@ -565,7 +565,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], r, r] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], false, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -575,14 +575,14 @@ namespace File {
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.new(r, chunkSize) @ r;
-                let numberRead = ref unsafe_cast read(stream, deref bytes) as _ \ Read(r) @ r;
+                let numberRead = ref read(stream, deref bytes) @ r;
                 let next = () -> {
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
                             bytes := Array.new(r, chunkSize);
                             let accRead = deref numberRead;
-                            numberRead := unsafe_cast read(stream, deref bytes) as _ \ Read(r);
+                            numberRead := read(stream, deref bytes);
                             Some(Ok(readBytesWithHelper(r, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: ##java.io.IOException => {
@@ -599,12 +599,10 @@ namespace File {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.singleton(r, Err(getMessage(ex)))
+                    Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
             }
-        } else if (chunkSize == 0) {
-            Iterator.empty(r)
         } else {
-            Iterator.singleton(r, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
+            Iterator.iterate(r, constant(Some(Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))))
         }
 
     ///
