@@ -414,7 +414,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], r, r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], false, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -429,7 +429,7 @@ namespace File {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := unsafe_cast readLine(reader) as _ \ Read(r);
+                        line := readLine(reader);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
@@ -446,7 +446,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.singleton(r, Err(getMessage(ex)))
+                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
