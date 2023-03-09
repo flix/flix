@@ -128,10 +128,6 @@ namespace IDE {
         let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = inject ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
-        let m = solve p, f1, f2;
-
-        Fixpoint.unsafePrint(m); // NB: Just for debugging.
-
         query p, f1, f2 select (n, d, l) from Results(n, d; l)
 
 }

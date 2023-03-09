@@ -111,6 +111,5 @@ def main(): Unit \ IO =
         // Entrypoint
         PathEdge("zero","smain","zero").
     };
-    let m = solve p;
-    Fixpoint.unsafePrint(m);
+    let _m = solve p;
     ()
