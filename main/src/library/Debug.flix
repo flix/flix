@@ -17,7 +17,7 @@ namespace Debug {
     @Internal
     def escape(s: String): String = {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-        def replace(from: String, to: String, subject: String): String = jReplace(subject, upcast from, upcast to);
+        def replace(from: String, to: String, subject: String): String = jReplace(subject, checked_cast(from), checked_cast(to));
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
@@ -47,7 +47,7 @@ namespace Debug {
                 toString(y)
             case y: BigDecimal =>
                 import java.math.BigDecimal.toString(): String \ {};
-                if (isNull(upcast y)) {
+                if (isNull(checked_cast(y))) {
                     "null"
                 } else {
                     toString(y) + "ff"
@@ -66,13 +66,13 @@ namespace Debug {
                 toString(y) + "i64"
             case y: BigInt =>
                 import java.math.BigInteger.toString(): String \ {};
-                if (isNull(upcast y)) {
+                if (isNull(checked_cast(y))) {
                     "null"
                 } else {
                     toString(y) + "ii"
                 }
             case s: String =>
-                if (isNull(upcast s)) {
+                if (isNull(checked_cast(s))) {
                     "null"
                 } else {
                     "\"" + escape(s) + "\""

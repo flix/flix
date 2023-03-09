@@ -258,7 +258,7 @@ namespace String {
         let _ = r; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
-            let m1 = matcher(p1, upcast s);
+            let m1 = matcher(p1, checked_cast(s));
             find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
@@ -729,7 +729,7 @@ namespace String {
     ///
     pub def replace(from: {from = String}, to: {to = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, upcast from.from, upcast to.to)
+        replace(s, checked_cast(from.from), checked_cast(to.to))
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.

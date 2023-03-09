@@ -45,7 +45,7 @@ namespace Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> eupcast f1();
+        let iterF = () -> checked_ecast(f1());
         Iterator(rc, iterF)
 
     ///
@@ -493,7 +493,7 @@ namespace Iterator {
             case Ok(a)  => Ans(a)
             case Err(_) => Done
         };
-        let iterF = () -> eupcast loop();
+        let iterF = () -> checked_ecast(loop());
         Iterator(rc, iterF)
 
     ///

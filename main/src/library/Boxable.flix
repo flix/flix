@@ -132,7 +132,7 @@ namespace Boxable {
 
 instance Boxable[Unit] {
     pub override def box(x: Unit): Boxed = {
-        let value = upcast x;
+        let value = checked_cast(x);
         let compare = (_, _) -> Comparison.EqualTo;
         Boxed.BoxedObject(value, compare)
     }

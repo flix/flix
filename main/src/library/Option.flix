@@ -408,7 +408,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, s1 -> eupcast Some(s1))
+        loop(l, s1 -> checked_ecast(Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.

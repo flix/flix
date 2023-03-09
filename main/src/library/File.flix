@@ -433,7 +433,7 @@ namespace File {
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := upcast null;
+                            line := checked_cast(null);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(getMessage(ex)))
                         }
@@ -474,7 +474,7 @@ namespace File {
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := upcast null;
+                            line := checked_cast(null);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(getMessage(ex)))
                         }
@@ -694,7 +694,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileWriter);
+            let printWriter = newPrintWriter(checked_cast(fileWriter));
 
             println(printWriter, "${data}");
             close(printWriter);
@@ -730,7 +730,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileWriter);
+            let printWriter = newPrintWriter(checked_cast(fileWriter));
 
             Foldable.forEach(line -> println(printWriter, line), data);
             close(printWriter);
@@ -767,7 +767,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let fileStream = newFileStream(javaFile);
-            let printWriter = newPrintWriter(upcast fileStream);
+            let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
@@ -805,7 +805,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileStream = newFileStream(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileStream);
+            let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
@@ -966,7 +966,7 @@ namespace File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, Array#{} @ r);
-            let javaIter = iterator(upcast javaStream);
+            let javaIter = iterator(checked_cast(javaStream));
 
             let iter = fromJavaIter(r, javaIter);
             Ok(Iterator.map(pathToString, iter))
@@ -1072,7 +1072,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
+            discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ r);
 
             Ok()
         } catch {
@@ -1163,7 +1163,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
+            discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ r);
 
             Ok()
         } catch {
