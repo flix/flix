@@ -77,9 +77,6 @@ namespace Debug {
                 } else {
                     "\"" + escape(s) + "\""
                 }
-            case y: Array[Unit, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
             case y: Array[Bool, r] =>
                 import static java.util.Arrays.toString(Array[Bool, r]): String \ {};
                 toString(y)
@@ -92,9 +89,6 @@ namespace Debug {
             case y: Array[Float64, r] =>
                 import static java.util.Arrays.toString(Array[Float64, r]): String \ {};
                 toString(y)
-            case y: Array[BigDecimal, r] =>
-                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
             case y: Array[Int8, r] =>
                 import static java.util.Arrays.toString(Array[Int8, r]): String \ {};
                 toString(y)
@@ -107,7 +101,13 @@ namespace Debug {
             case y: Array[Int64, r] =>
                 import static java.util.Arrays.toString(Array[Int64, r]): String \ {};
                 toString(y)
+            case y: Array[Unit, r] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
+                toString(unsafe_cast y as Array[##java.lang.Object, r])
             case y: Array[BigInt, r] =>
+                import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
+                toString(unsafe_cast y as Array[##java.lang.Object, r])
+            case y: Array[BigDecimal, r] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
                 toString(unsafe_cast y as Array[##java.lang.Object, r])
             case y: Array[String, r] =>
