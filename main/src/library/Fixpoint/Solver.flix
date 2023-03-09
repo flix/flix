@@ -113,7 +113,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = unsafe_cast {
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
@@ -131,7 +131,8 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as _ \ {}); // We add one because the counter starts at zero.
+                let nextId = unsafe_cast (newId() + 1i64) as _ \ {};  // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -141,15 +142,13 @@ namespace Fixpoint {
         let r = substitute(d, s);
 
         // Debugging
-        let _ = if (enableDebugging()) {
-            println(s);
-            println(d);
-            println(r)
-        } else ();
+        // println(s);
+        // println(d);
+        // println(r)
 
         // Return the result.
         r
-    } as _ \ {} // This casts away the impure effect of debugging
+    }
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -516,8 +515,8 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
+        // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
         factsOf(_ -> unsafe_cast () as v, p, d)
-
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
