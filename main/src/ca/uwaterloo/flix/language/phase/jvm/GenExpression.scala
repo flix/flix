@@ -42,7 +42,6 @@ object GenExpression {
     case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Expression.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-    // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
