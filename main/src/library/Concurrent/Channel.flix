@@ -172,11 +172,12 @@ namespace Concurrent/Channel {
     pub def close(c: Mpmc[a]): Unit \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
-        
-        if (deref size < 0)
-            bug!("Channel used after it's been closed")
-        else
-            size := -1;
+
+        match deref size {
+            case sz if sz < 0 => bug!("Channel used after it's been closed")
+            case sz if sz > 0 => bug!("Non-empty channel closed")
+            case _ => size := -1
+        };
         
         unlock(channelLock)
 
