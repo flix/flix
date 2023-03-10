@@ -42,7 +42,7 @@ object GenExpression {
     case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Expression.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-      // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
+    // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
@@ -1279,6 +1279,9 @@ object GenExpression {
                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
 
     // case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+    case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
+         Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp =>
+      compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     // case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
 
     case BoolOp.And | BoolOp.Or => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
@@ -1319,45 +1322,48 @@ object GenExpression {
                                     entryPoint: Label,
                                     o: ArithmeticOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    if (o == BinaryOperator.Exponentiate) {
-      compileExponentiateExpr(e1, e2, currentClassType, visitor, jumpLabels, entryPoint, sop)
-    } else {
-      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      val (intOp, longOp, floatOp, doubleOp, bigDecimalOp, bigIntOp) = o match {
-        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add", "add")
-        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract", "subtract")
-        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply", "multiply")
-        case BinaryOperator.Remainder => (IREM, LREM, FREM, DREM, "remainder", "remainder")
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide", "divide")
-        case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.", e1.loc)
-      }
-      sop match {
-        case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div => visitor.visitInsn(floatOp)
-        case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div => visitor.visitInsn(doubleOp)
-        case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, bigDecimalOp,
-            AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+    (primitiveArithmeticSemanticOperatorToOpcode(sop), complexArithmeticSemanticOperatorToOpcode(sop)) match {
+      case (Some(pop), _) => sop match {
+        case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div
+             | Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div =>
+          visitor.visitInsn(pop)
+
         case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
-          visitor.visitInsn(intOp)
+          visitor.visitInsn(pop)
           visitor.visitInsn(I2B)
+
         case Int16Op.Add | Int16Op.Sub | Int16Op.Mul | Int16Op.Div | Int16Op.Rem =>
-          visitor.visitInsn(intOp)
+          visitor.visitInsn(pop)
           visitor.visitInsn(I2S)
-        case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem => visitor.visitInsn(intOp)
-        case Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem => visitor.visitInsn(longOp)
+
+        case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem
+             | Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem =>
+          visitor.visitInsn(pop)
+
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+      }
+
+      case (_, Some(cop)) => sop match {
+        case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, cop,
+            AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
+
         case BigIntOp.Add | BigIntOp.Sub | BigIntOp.Mul | BigIntOp.Div | BigIntOp.Rem =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, bigIntOp,
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, cop,
             AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
+
         case StringOp.Concat =>
           visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
             AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
+
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
     }
   }
 
-  private def compileExponentiateExpr(exp1: Expression, exp2: Expression, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator): Unit = {
+  private def compileExponentiateExpr(exp1: Expression, exp2: Expression, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     val (castToDouble, castFromDouble) = sop match {
       case Float32Op.Exp => (F2D, D2F)
       case Float64Op.Exp => (NOP, NOP) // already a double
@@ -1381,40 +1387,45 @@ object GenExpression {
   }
 
 
-  private def arithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Int = sop match {
-    case Float32Op.Add => ???
-    case Float32Op.Sub => ???
-    case Float32Op.Mul => ???
-    case Float32Op.Div => ???
+  private def primitiveArithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Option[Int] = sop match {
+    case Float32Op.Add => Some(FADD)
+    case Float32Op.Sub => Some(FSUB)
+    case Float32Op.Mul => Some(FMUL)
+    case Float32Op.Div => Some(FDIV)
+    case Float64Op.Add => Some(DADD)
+    case Float64Op.Sub => Some(DSUB)
+    case Float64Op.Mul => Some(DMUL)
+    case Float64Op.Div => Some(DDIV)
+    case Int8Op.Add => Some(IADD)
+    case Int8Op.Sub => Some(ISUB)
+    case Int8Op.Mul => Some(IMUL)
+    case Int8Op.Div => Some(IDIV)
+    case Int8Op.Rem => Some(IREM)
+    case Int16Op.Add => Some(IADD)
+    case Int16Op.Sub => Some(ISUB)
+    case Int16Op.Mul => Some(IMUL)
+    case Int16Op.Div => Some(IDIV)
+    case Int16Op.Rem => Some(IREM)
+    case Int32Op.Add => Some(IADD)
+    case Int32Op.Sub => Some(ISUB)
+    case Int32Op.Mul => Some(IMUL)
+    case Int32Op.Div => Some(IDIV)
+    case Int32Op.Rem => Some(IREM)
+    case Int64Op.Add => Some(LADD)
+    case Int64Op.Sub => Some(LSUB)
+    case Int64Op.Mul => Some(LMUL)
+    case Int64Op.Div => Some(LDIV)
+    case Int64Op.Rem => Some(LREM)
+    case _ => None
+  }
 
-    case Float64Op.Add => ???
-    case Float64Op.Sub => ???
-    case Float64Op.Mul => ???
-    case Float64Op.Div => ???
-
-    case Int8Op.Add => ???
-    case Int8Op.Sub => ???
-    case Int8Op.Mul => ???
-    case Int8Op.Div => ???
-    case Int8Op.Rem => ???
-
-    case Int16Op.Add => ???
-    case Int16Op.Sub => ???
-    case Int16Op.Mul => ???
-    case Int16Op.Div => ???
-    case Int16Op.Rem => ???
-
-    case Int32Op.Add => ???
-    case Int32Op.Sub => ???
-    case Int32Op.Mul => ???
-    case Int32Op.Div => ???
-    case Int32Op.Rem => ???
-
-    case Int64Op.Add => ???
-    case Int64Op.Sub => ???
-    case Int64Op.Mul => ???
-    case Int64Op.Div => ???
-    case Int64Op.Rem => ???
+  def complexArithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Option[String] = sop match {
+    case BigDecimalOp.Add | BigIntOp.Add => Some("add")
+    case BigDecimalOp.Sub | BigIntOp.Sub => Some("subtract")
+    case BigDecimalOp.Mul | BigIntOp.Mul => Some("multiply")
+    case BigDecimalOp.Div | BigIntOp.Div => Some("divide")
+    case BigIntOp.Rem => Some("remainder")
+    case _ => None
   }
 
   /*
