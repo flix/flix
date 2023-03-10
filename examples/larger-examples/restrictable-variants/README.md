@@ -64,7 +64,7 @@ the requirements are:
 
 ### Locally
 1. Open VSCode.
-2. Choose `File -> Open Folder` and select the unzipped `variants.zip` folder.
+2. Choose `File -> Open Folder` and select the unzipped `demo.zip` folder.
 3. Open e.g. `src/colors.flix`.
 4. The Flix compiler should automatically start, using the jar in the project folder.
 
