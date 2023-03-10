@@ -578,10 +578,8 @@ object Lowering {
       // remove the 'of' wrapper
       visitExp(exp)
 
-    case TypedAst.Expression.CheckedCast(_, exp, tpe, _, _, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expression.Upcast(e, t, loc)
+    case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
+      visitExp(exp)
 
     case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
@@ -2003,10 +2001,6 @@ object Lowering {
     case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
-
-    case LoweredAst.Expression.Upcast(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Upcast(e, tpe, loc)
 
     case LoweredAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
