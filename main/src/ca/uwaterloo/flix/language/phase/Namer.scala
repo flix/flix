@@ -993,6 +993,11 @@ object Namer {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, loc)
       }
 
+    case WeededAst.Expression.CloseChannel(exp, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.CloseChannel(e, loc)
+      }
+
     case WeededAst.Expression.Spawn(exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>

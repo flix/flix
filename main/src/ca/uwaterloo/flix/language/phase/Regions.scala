@@ -268,6 +268,9 @@ object Regions {
     case Expression.Spawn(exp1, exp2, tpe, _, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
+    case Expression.CloseChannel(exp, tpe, _, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
+
     case Expression.Par(exp, loc) =>
       visitExp(exp) ++ checkType(exp.tpe, loc)
 

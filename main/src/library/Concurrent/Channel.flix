@@ -164,6 +164,23 @@ namespace Concurrent/Channel {
         (c, c)
 
     ///
+    /// Closes a channel
+    ///
+    /// We indicate that a channel is closed by setting `size` to a negative number
+    ///
+    @Internal
+    pub def close(c: Mpmc[a]): Unit \ IO =
+        let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = mpmcAdmin(c);
+        lock(channelLock);
+        
+        if (deref size < 0)
+            bug!("Channel used after it's been closed")
+        else
+            size := -1;
+        
+        unlock(channelLock)
+
+    ///
     /// Sends the element `e` on the channel `c`. This is blocking if the
     /// channel is full or unbuffered.
     ///
@@ -174,6 +191,9 @@ namespace Concurrent/Channel {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
         lock(channelLock);
+
+        if (deref size < 0) bug!("Channel used after it's been closed")
+        else ();
 
         // Block until the channel is not full
         awaitAvailableSpace(admin);
@@ -216,6 +236,9 @@ namespace Concurrent/Channel {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
         lock(channelLock);
+        
+        if (deref size < 0) bug!("Channel used after it's been closed")
+        else ();
 
         // Gets an element from the channel c which must be non-empty
         // and update the size.
@@ -298,6 +321,9 @@ namespace Concurrent/Channel {
     def getHelper(c: Mpmc[a]): a \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _, _) = admin;
+        
+        if (deref size < 0) bug!("Channel used after it's been closed")
+        else ();
 
         // Try to get the element (which could already be taken by someone
         // else) and update size.

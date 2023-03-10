@@ -197,6 +197,8 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], exp: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class CloseChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Spawn(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Par(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

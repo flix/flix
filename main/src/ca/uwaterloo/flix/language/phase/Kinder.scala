@@ -867,6 +867,12 @@ object Kinder {
         case (rules, default) => KindedAst.Expression.SelectChannel(rules, default, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.CloseChannel(exp0, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        exp => KindedAst.Expression.CloseChannel(exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.Spawn(exp1, exp2, loc) =>
       val e1Val = visitExp(exp1, kenv0, senv, taenv, henv0, root)
       val e2Val = visitExp(exp2, kenv0, senv, taenv, henv0, root)

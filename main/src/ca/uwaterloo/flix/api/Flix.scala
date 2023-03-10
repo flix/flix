@@ -119,6 +119,9 @@ class Flix {
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
 
+    // Closeable
+    "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
+
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
   )

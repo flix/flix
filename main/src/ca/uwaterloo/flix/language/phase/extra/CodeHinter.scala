@@ -292,6 +292,9 @@ object CodeHinter {
         case SelectChannelRule(_, chan, exp) => visitExp(chan) ++ visitExp(exp)
       } ++ default.map(visitExp).getOrElse(Nil)
 
+    case Expression.CloseChannel(exp, _, _, _, _) =>
+      visitExp(exp)
+
     case Expression.Spawn(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 

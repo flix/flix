@@ -510,6 +510,8 @@ object SemanticTokensProvider {
       val d = default.map(visitExp).getOrElse(Iterator.empty)
       rs ++ d
 
+    case Expression.CloseChannel(exp, _, _, _, _) => visitExp(exp)
+
     case Expression.Spawn(exp1, exp2, _, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Par(exp, _) => visitExp(exp)

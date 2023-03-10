@@ -60,6 +60,7 @@ object Lowering {
     lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.mpmcAdmin")
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.unsafeGetAndUnlock")
+    lazy val ChannelClose: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent/Channel.close")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -730,6 +731,11 @@ object Lowering {
       channels.foldRight[LoweredAst.Expression](matchExp) {
         case ((sym, c), e) => LoweredAst.Expression.Let(sym, Modifiers.Empty, c, e, t, pur, eff, loc)
       }
+
+    case TypedAst.Expression.CloseChannel(exp, tpe, pur, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      mkCloseChannel(e, t, pur, eff, loc)
 
     case TypedAst.Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1473,6 +1479,14 @@ object Lowering {
       case _ =>
         List()
     }
+  }
+
+  /**
+    * Make a channel close expression
+    */
+  private def mkCloseChannel(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation): LoweredAst.Expression = {
+    val closeChannel = LoweredAst.Expression.Def(Defs.ChannelClose, Type.mkImpureArrow(exp.tpe, Type.Unit, loc), loc)
+    LoweredAst.Expression.Apply(closeChannel, exp :: Nil, tpe, pur, eff, loc)
   }
 
   /**

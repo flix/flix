@@ -433,6 +433,11 @@ object Stratifier {
         case (rs, d) => Expression.SelectChannel(rs, d, tpe, pur, eff, loc)
       }
 
+    case Expression.CloseChannel(exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.CloseChannel(e, tpe, pur, eff, loc)
+      }
+
     case Expression.Spawn(exp1, exp2, tpe, pur, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (r, e) => Expression.Spawn(r, e, tpe, pur, eff, loc)
@@ -788,6 +793,9 @@ object Stratifier {
       rules.foldLeft(dg) {
         case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
       }
+
+    case Expression.CloseChannel(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
 
     case Expression.Spawn(exp1, exp2, _, _, _, _) =>
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)

@@ -1781,6 +1781,19 @@ object Typer {
           resultEff = Type.mkUnion(defaultEff :: ruleEffs, loc)
         } yield (resultCon, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.CloseChannel(exp, tvar, loc) =>
+        val regionVar = Type.freshVar(Kind.Bool, loc)
+        val elmVar = Type.freshVar(Kind.Star, loc)
+        val channelType = Type.mkReceiver(elmVar, regionVar, loc)
+
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          _ <- expectTypeM(expected = channelType, actual = tpe, exp.loc)
+          resultTyp = Type.mkUnit(loc)
+          resultPur = Type.mkAnd(pur, regionVar, loc)
+          resultEff = eff
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Bool, loc)
         val regionType = Type.mkRegion(regionVar, loc)
@@ -2464,6 +2477,12 @@ object Typer {
         val effs = (d.toList ::: rs.map(_.exp)).map(_.eff)
         val eff = Type.mkUnion(effs, loc)
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.CloseChannel(exp, tvar, loc) =>
+        val e = visitExp(exp, subst0)
+        val pur = Type.Impure
+        val eff = e.eff
+        TypedAst.Expression.CloseChannel(e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.Spawn(exp1, exp2, loc) =>
         val e1 = visitExp(exp1, subst0)

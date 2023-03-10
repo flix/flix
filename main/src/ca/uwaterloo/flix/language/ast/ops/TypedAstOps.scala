@@ -94,6 +94,7 @@ object TypedAstOps {
     case Expression.GetChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.PutChannel(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.SelectChannel(rules, default, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
+    case Expression.CloseChannel(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Spawn(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Par(exp, _) => sigSymsOf(exp)
     case Expression.ParYield(frags, exp, _, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
@@ -352,6 +353,9 @@ object TypedAstOps {
       rules.foldLeft(d) {
         case (acc, SelectChannelRule(sym, chan, exp)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
+
+    case Expression.CloseChannel(exp, _, _, _, _) =>
+      freeVars(exp)
 
     case Expression.Spawn(exp1, exp2, _, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)

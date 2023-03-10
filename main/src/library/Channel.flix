@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+instance Closeable[Receiver[t, r]] {
+    pub def close(receiver: Receiver[t, r]): Unit \ IO = 
+        unsafe_cast $CHANNEL_CLOSE$(receiver) as _ \ IO
+}
+
 namespace Channel {
     use Time.Duration
 
@@ -22,7 +27,9 @@ namespace Channel {
     ///
     pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ Write(r) =
         let m = if (n < 0) 0 else n;
-        $CHANNEL_NEW$(r, m)
+        let (sender, receiver) = $CHANNEL_NEW$(r, m);
+        Region.closeOnExit(receiver, r);
+        (sender, receiver)
         
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).

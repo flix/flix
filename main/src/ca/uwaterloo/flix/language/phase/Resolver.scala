@@ -1489,6 +1489,12 @@ object Resolver {
             case (rs, d) => ResolvedAst.Expression.SelectChannel(rs, d, loc)
           }
 
+        case NamedAst.Expression.CloseChannel(exp, loc) =>
+          val eVal = visitExp(exp, env0, region)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.CloseChannel(e, loc)
+          }
+
         case NamedAst.Expression.Spawn(exp1, exp2, loc) =>
           val e1Val = visitExp(exp1, env0, region)
           val e2Val = visitExp(exp2, env0, region)
