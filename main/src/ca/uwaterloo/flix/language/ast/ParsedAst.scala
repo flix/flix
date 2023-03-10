@@ -1011,7 +1011,7 @@ object ParsedAst {
       * @param exp the expression to mask.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class UncheckedMaskingCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Upcast Expression.

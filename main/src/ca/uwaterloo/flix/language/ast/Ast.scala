@@ -82,6 +82,25 @@ object Ast {
   }
 
   /**
+    * A common supertype for casts.
+    */
+  sealed trait Cast
+
+  object Cast {
+
+    /**
+      * Represents a checked type cast.
+      */
+    case object CheckedTypeCast extends Cast
+
+    /**
+      * Represents a checked effect cast.
+      */
+    case object CheckedEffectCast extends Cast
+
+  }
+
+  /**
     * A common supertype for constant values.
     */
   sealed trait Constant

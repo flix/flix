@@ -988,8 +988,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Mask: Rule1[ParsedAst.Expression.Mask] = rule {
-      SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Mask
+    def Mask: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
+      SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedMaskingCast
     }
 
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {

@@ -168,13 +168,11 @@ object NamedAst {
 
     case class Of(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
+    case class CheckedCast(cast: Ast.Cast, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Supercast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class UncheckedMaskingCast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 

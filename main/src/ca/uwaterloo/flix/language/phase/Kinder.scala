@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Denotation
+import ca.uwaterloo.flix.language.ast.Ast.{Cast, Denotation}
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
@@ -708,8 +708,22 @@ object Kinder {
         case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
+      cast match {
+        case Cast.CheckedTypeCast =>
+          mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
+            KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
+          }
 
-    case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
+        case Cast.CheckedEffectCast =>
+          mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
+            val pvar = Type.freshVar(Kind.Bool, loc)
+            val evar = Type.freshVar(Kind.Effect, loc)
+            KindedAst.Expression.Supercast(e, pvar, evar, loc)
+          }
+      }
+
+    case ResolvedAst.Expression.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
@@ -724,22 +738,10 @@ object Kinder {
           KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
-    case ResolvedAst.Expression.Mask(exp, loc) =>
+    case ResolvedAst.Expression.UncheckedMaskingCast(exp, loc) =>
       val eVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
       mapN(eVal) {
         case e => KindedAst.Expression.Mask(e, loc)
-      }
-
-    case ResolvedAst.Expression.Upcast(exp, loc) =>
-      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-        KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
-      }
-
-    case ResolvedAst.Expression.Supercast(exp, loc) =>
-      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-        val pvar = Type.freshVar(Kind.Bool, loc)
-        val evar = Type.freshVar(Kind.Effect, loc)
-        KindedAst.Expression.Supercast(e, pvar, evar, loc)
       }
 
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>

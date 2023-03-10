@@ -1245,7 +1245,12 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+        case NamedAst.Expression.CheckedCast(c, exp, loc) =>
+          mapN(visitExp(exp, env0, region)) {
+            case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
+          }
+
+        case NamedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(resolveType(t, Wildness.ForbidWild, env0, taenv, ns0, root))(x => Some(x))
@@ -1254,25 +1259,15 @@ object Resolver {
 
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
-            case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+            case (e, t, f) => ResolvedAst.Expression.UncheckedCast(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Mask(exp, loc) =>
+        case NamedAst.Expression.UncheckedMaskingCast(exp, loc) =>
           val eVal = visitExp(exp, env0, region)
           mapN(eVal) {
-            case e => ResolvedAst.Expression.Mask(e, loc)
-          }
-
-        case NamedAst.Expression.Upcast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Upcast(e, loc)
-          }
-
-        case NamedAst.Expression.Supercast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Supercast(e, loc)
+            case e => ResolvedAst.Expression.UncheckedMaskingCast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>

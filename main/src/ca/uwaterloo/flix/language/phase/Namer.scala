@@ -824,30 +824,25 @@ object Namer {
         case e => NamedAst.Expression.Of(qname, e, loc)
       }
 
-    case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+    case WeededAst.Expression.CheckedCast(c, exp, loc) =>
+      mapN(visitExp(exp, ns0)) {
+        case e => NamedAst.Expression.CheckedCast(c, e, loc)
+      }
+
+    case WeededAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
       val declaredEffVal = visitPurityAndEffect(declaredEff): Validation[NamedAst.PurityAndEffect, NameError]
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
-        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
+        case (e, t, f) => NamedAst.Expression.UncheckedCast(e, t, f, loc)
       }.recoverOne {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
-    case WeededAst.Expression.Mask(exp, loc) =>
+    case WeededAst.Expression.UncheckedMaskingCast(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Mask(e, loc)
-      }
-
-    case WeededAst.Expression.Upcast(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Upcast(e, loc)
-      }
-
-    case WeededAst.Expression.Supercast(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Supercast(e, loc)
+        case e => NamedAst.Expression.UncheckedMaskingCast(e, loc)
       }
 
     case WeededAst.Expression.Without(exp, eff, loc) =>
