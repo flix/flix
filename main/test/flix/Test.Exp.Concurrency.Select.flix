@@ -136,8 +136,8 @@ namespace Test/Exp/Concurrency/Select {
         }
     }
 
-    def mainx(): Int32 \ IO = {
-      let (_, rx) = Channel.buffered(Static, 1);
+    def mainx(): Int32 = region r {
+      let (_, rx) = Channel.buffered(r, 1);
       recvWithDefault(rx)
     }
 

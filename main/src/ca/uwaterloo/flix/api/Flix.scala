@@ -122,6 +122,9 @@ class Flix {
     // Closeable
     "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
 
+    // Region
+    "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
+
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
   )

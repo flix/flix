@@ -227,4 +227,22 @@ namespace Test/Exp/Concurrency/Buffered {
         spawn Channel.send(42, tx2) @ r;
         42 == Channel.recv(Channel.recv(rx1))
     }
+
+    @test
+    def testBufferedChannelUsedAfterClose01(): Bool \ IO = region rc1 {
+        let (tx1, rx1) = Channel.buffered(rc1, 1);
+        let (tx2, rx2) = Channel.buffered(rc1, 1);
+        spawn {
+            let tx3 = Channel.recv(rx1);
+            let _ = Channel.recv(rx2);
+            Channel.send((), tx3)
+        } @ rc1;
+        region rc2 {
+            let (tx3, _) = Channel.buffered(rc2, 1);
+            Channel.unsafeSend(tx3, tx1)
+        };
+        Channel.send((), tx2);
+        Thread.sleep(Time/Duration.fromSeconds(1));
+        true
+    }
 }

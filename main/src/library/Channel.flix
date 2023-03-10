@@ -28,7 +28,7 @@ namespace Channel {
     pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ Write(r) =
         let m = if (n < 0) 0 else n;
         let (sender, receiver) = $CHANNEL_NEW$(r, m);
-        Region.closeOnExit(receiver, r);
+        unsafe_cast Region.closeOnExit(receiver, r) as _ \ Write(r);
         (sender, receiver)
         
     ///
