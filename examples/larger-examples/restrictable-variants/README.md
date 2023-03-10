@@ -175,9 +175,3 @@ always be used for recursive tags. Note that `open Tag(x)` does not open the
 index if the inner tag is not open, which can be seen in the typing rules below.
 This means that `open Exp.Not(Exp.Cst(true))` has type `Exp[<Exp.Not, Exp.Cst>]`
 while `open Exp.Not(open Exp.Cst(true))` has type `Exp[s ++ <Exp.Not, Exp.Cst>]`.
-
-### Implementation Typing Rules
-
-These rules replace T-Tag and T-Open from the paper. Note again that these
-modifications are not required or change the expressiveness of the language and
-are merely slight changes to improve inference performance. 
