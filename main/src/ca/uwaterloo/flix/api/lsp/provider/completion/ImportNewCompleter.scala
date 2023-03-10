@@ -24,7 +24,7 @@ object ImportNewCompleter extends Completer {
   /**
     * Returns a List of Completion for importNew (java constructors).
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[ImportNewCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ImportNewCompletion] = {
     val regex = raw"\s*import\s+new\s+(.*)".r
     context.prefix match {
       case regex(clazz) => CompletionUtils.classFromString(clazz) match {
@@ -32,7 +32,7 @@ object ImportNewCompleter extends Completer {
           // Gets the name of the type excluding the package to use as a suggestion for the name of the constructor.
           val className = clazz.split('.').last
           clazzObject.getConstructors.map(constructor =>
-            Completion.ImportNewCompletion(constructor, clazz, Some(s"new$className"), context))
+            Completion.ImportNewCompletion(constructor, clazz, Some(s"new$className")))
         case None => Nil
       }
       case _ => Nil

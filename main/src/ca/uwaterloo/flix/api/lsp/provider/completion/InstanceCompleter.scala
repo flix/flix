@@ -25,8 +25,8 @@ object InstanceCompleter extends Completer {
   /**
     * Returns a List of Completion based on type classes.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[InstanceCompletion] = {
-    if (root.isEmpty || context.previousWord != "instance") {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[InstanceCompletion] = {
+    if (context.previousWord != "instance") {
       return Nil
     }
 
@@ -76,7 +76,7 @@ object InstanceCompleter extends Completer {
       s"    pub def ${sig.sym.name}($fparams): $retTpe$pur = ???"
     }
 
-    root.get.classes.map {
+    root.classes.map {
       case (_, clazz) =>
         val hole = "${1:t}"
         val classSym = clazz.sym
@@ -84,7 +84,7 @@ object InstanceCompleter extends Completer {
         val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
         val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
 
-        InstanceCompletion(clazz, completion, context)
+        InstanceCompletion(clazz, completion)
     }.toList
   }
 

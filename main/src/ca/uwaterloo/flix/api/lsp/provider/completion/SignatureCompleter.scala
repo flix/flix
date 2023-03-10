@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -25,18 +24,14 @@ object SignatureCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[SigCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[SigCompletion] = {
     val word = context.word
     val uri = context.uri
 
-    root.get.sigs.values.filter(matchesSig(_, word, uri))
+    root.sigs.values.filter(matchesSig(_, word, uri))
       .flatMap(decl =>
-        if (CompletionUtils.canApplySnippet(decl.spec.fparams))
-          Some(Completion.SigCompletion(decl, context, flix))
+        if (CompletionUtils.canApplySnippet(decl.spec.fparams)(context))
+          Some(Completion.SigCompletion(decl))
         else
           None
       )

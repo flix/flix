@@ -488,8 +488,8 @@ class Flix {
       afterStatistics <- Statistics.run(afterEntryPoint)
       _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
-      afterRegions <- Regions.run(afterStratifier)
-      afterPatMatch <- PatternExhaustiveness.run(afterRegions)
+      _ <- Regions.run(afterStratifier)
+      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
