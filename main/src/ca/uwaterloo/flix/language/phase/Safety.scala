@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{Cast, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
@@ -227,21 +227,23 @@ object Safety {
       case Expression.Of(_, exp, _, _, _, _) =>
         visit(exp)
 
-      case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
+      case Expression.CheckedCast(cast, exp, tpe, _, _, loc) =>
+        cast match {
+          case Cast.CheckedTypeCast =>
+            val errors = verifyTypeCast(exp, tpe, renv, root, loc)
+            visit(exp) ++ errors
+
+          case Cast.CheckedEffectCast =>
+            val errors = verifyEffectCast(exp, tpe, loc)
+            visit(exp) ++ errors
+        }
+
+      case e@Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
         val errors = checkCastSafety(e)
         visit(exp) ++ errors
 
-      case Expression.Mask(exp, _, _, _, _) =>
+      case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
         visit(exp)
-
-      case Expression.Upcast(exp, tpe, loc) =>
-        val errors = checkUpcastSafety(exp, tpe, renv, root, loc)
-        // TODO: Use checkSupercastSafety ?
-        visit(exp) ++ errors
-
-      case Expression.EffectUpcast(exp, tpe, _, _, loc) =>
-        val errors = checkSupercastSafety(exp, tpe, loc)
-        visit(exp) ++ errors
 
       case Expression.Without(exp, _, _, _, _, _) =>
         visit(exp)
@@ -360,7 +362,7 @@ object Safety {
     *
     * No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+  private def checkCastSafety(cast: Expression.UncheckedCast)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -508,7 +510,7 @@ object Safety {
   /**
     * Returns a list of errors if the the upcast is invalid.
     */
-  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyTypeCast(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
     if (isSubtypeOf(tpe1, tpe2, renv, root))
@@ -520,7 +522,7 @@ object Safety {
   /**
     * Returns a list of errors if the the supercast is invalid.
     */
-  private def checkSupercastSafety(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyEffectCast(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.pur)
     val tpe2 = Type.eraseAliases(pur)
     // TODO: Check Boolean entailment.

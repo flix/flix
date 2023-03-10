@@ -2310,7 +2310,7 @@ object Typer {
         val tpe = subst0(tvar)
         val pur = declaredPur.getOrElse(e.pur)
         val eff = declaredEff.getOrElse(e.eff)
-        TypedAst.Expression.Cast(e, dt, dp, de, tpe, pur, eff, loc)
+        TypedAst.Expression.UncheckedCast(e, dt, dp, de, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Mask(exp, loc) =>
         // We explicitly mark a `Mask` expression as Impure.
@@ -2318,17 +2318,17 @@ object Typer {
         val tpe = e.tpe
         val pur = Type.Impure
         val eff = e.eff
-        TypedAst.Expression.Mask(e, tpe, pur, eff, loc)
+        TypedAst.Expression.UncheckedMaskingCast(e, tpe, pur, eff, loc)
 
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Upcast(e, subst0(tvar), loc)
+        TypedAst.Expression.CheckedCast(Ast.Cast.CheckedTypeCast, e, subst0(tvar), e.pur, e.eff, loc)
 
       case KindedAst.Expression.Supercast(exp, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = subst0(pvar)
         val eff = subst0(evar)
-        TypedAst.Expression.EffectUpcast(e, e.tpe, pur, eff, loc)
+        TypedAst.Expression.CheckedCast(Ast.Cast.CheckedEffectCast, e, e.tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)

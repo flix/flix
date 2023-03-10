@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Cast
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -629,7 +630,7 @@ object Redundancy {
     case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
+    case Expression.UncheckedCast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
         // Don't capture redundant purity casts if there's also a set effect
         case (Some(pur), Some(eff)) =>
@@ -644,20 +645,22 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Upcast(exp, tpe, loc) =>
-      if (exp.tpe == tpe)
-        visitExp(exp, env0, rc) + RedundantUpcast(loc)
-      else
-        visitExp(exp, env0, rc)
-
-    case Expression.EffectUpcast(exp, tpe, pur, eff, loc) =>
-      if (exp.pur == pur)
-        visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
-      else
-        visitExp(exp, env0, rc)
+    case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
+      cast match {
+        case Cast.CheckedTypeCast =>
+          if (exp.tpe == tpe)
+            visitExp(exp, env0, rc) + RedundantUpcast(loc) // TODO: Rename
+          else
+            visitExp(exp, env0, rc)
+        case Cast.CheckedEffectCast =>
+          if (exp.pur == pur)
+            visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc) // TODO: Rename
+          else
+            visitExp(exp, env0, rc)
+      }
 
     case Expression.Without(exp, effUse, _, _, _, _) =>
       Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
@@ -1028,7 +1031,7 @@ object Redundancy {
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expression)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.Mask]
+    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.UncheckedMaskingCast]
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.

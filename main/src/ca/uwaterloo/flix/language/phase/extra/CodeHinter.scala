@@ -221,16 +221,15 @@ object CodeHinter {
     case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+      // TODO: Casts
+      visitExp(exp)
+
+    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, _, loc) =>
+      // TODO: Casts
       checkCast(tpe, pur, loc) ++ visitExp(exp)
 
-    case Expression.Mask(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.EffectUpcast(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
