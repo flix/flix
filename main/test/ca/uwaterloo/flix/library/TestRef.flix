@@ -49,6 +49,33 @@ mod TestRef {
         Assert.eq("A", Ref.get(Ref.get(Ref.new(rh, Ref.new(rh, "A")))))
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // put                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def put01(): Bool = region rh {
+        let rf = Ref.new(rh, 1);
+        Ref.put(2, rf);
+        Assert.eq(2, Ref.get(rf))
+    }
+
+    @test
+    def put02(): Bool = region rh {
+        let rf = Ref.new(rh, "a");
+        Ref.put("A", rf);
+        Assert.eq("A", Ref.get(rf))
+    }
+
+    @test
+    def put03(): Bool = region rh {
+        let rf = Ref.new(rh, Ref.new(rh, "a"));
+        Ref.put(Ref.new(rh, "A"), rf);
+        Assert.eq("A", Ref.get(Ref.get(rf)))
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////
     // transform                                                               //
     /////////////////////////////////////////////////////////////////////////////
