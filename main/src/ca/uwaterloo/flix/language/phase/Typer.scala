@@ -2322,13 +2322,13 @@ object Typer {
 
       case KindedAst.Expression.Upcast(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.CheckedCast(Ast.Cast.CheckedTypeCast, e, subst0(tvar), e.pur, e.eff, loc)
+        TypedAst.Expression.CheckedCast(Ast.CheckedCastType.TypeCast, e, subst0(tvar), e.pur, e.eff, loc)
 
       case KindedAst.Expression.Supercast(exp, pvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         val pur = subst0(pvar)
         val eff = subst0(evar)
-        TypedAst.Expression.CheckedCast(Ast.Cast.CheckedEffectCast, e, e.tpe, pur, eff, loc)
+        TypedAst.Expression.CheckedCast(Ast.CheckedCastType.EffectCast, e, e.tpe, pur, eff, loc)
 
       case KindedAst.Expression.Without(exp, effUse, loc) =>
         val e = visitExp(exp, subst0)

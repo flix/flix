@@ -1701,12 +1701,12 @@ object Weeder {
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.CheckedCast(Ast.Cast.CheckedTypeCast, e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.CheckedCast(Ast.CheckedCastType.TypeCast, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.CheckedEffectCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.CheckedCast(Ast.Cast.CheckedEffectCast, e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.CheckedCast(Ast.CheckedCastType.EffectCast, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.UncheckedCast(sp1, exp, declaredType, declaredEff, sp2) =>

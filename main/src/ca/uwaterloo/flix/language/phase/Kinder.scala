@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Cast, Denotation}
+import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
@@ -710,12 +710,12 @@ object Kinder {
 
     case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
       cast match {
-        case Cast.CheckedTypeCast =>
+        case CheckedCastType.TypeCast =>
           mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
             KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
           }
 
-        case Cast.CheckedEffectCast =>
+        case CheckedCastType.EffectCast =>
           mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
             val pvar = Type.freshVar(Kind.Bool, loc)
             val evar = Type.freshVar(Kind.Effect, loc)

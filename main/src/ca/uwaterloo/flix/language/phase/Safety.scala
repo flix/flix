@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Cast, Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
@@ -229,11 +229,11 @@ object Safety {
 
       case Expression.CheckedCast(cast, exp, tpe, _, _, loc) =>
         cast match {
-          case Cast.CheckedTypeCast =>
+          case CheckedCastType.TypeCast =>
             val errors = verifyTypeCast(exp, tpe, renv, root, loc)
             visit(exp) ++ errors
 
-          case Cast.CheckedEffectCast =>
+          case CheckedCastType.EffectCast =>
             val errors = verifyEffectCast(exp, tpe, loc)
             visit(exp) ++ errors
         }

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Cast
+import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -650,12 +650,12 @@ object Redundancy {
 
     case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
       cast match {
-        case Cast.CheckedTypeCast =>
+        case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
             visitExp(exp, env0, rc) + RedundantUpcast(loc) // TODO: Rename
           else
             visitExp(exp, env0, rc)
-        case Cast.CheckedEffectCast =>
+        case CheckedCastType.EffectCast =>
           if (exp.pur == pur)
             visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc) // TODO: Rename
           else
