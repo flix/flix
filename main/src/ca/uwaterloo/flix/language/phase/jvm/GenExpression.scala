@@ -1277,7 +1277,21 @@ object GenExpression {
                                 entryPoint: Label,
                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
 
-    // case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+    case Float32Op.Add | Float64Op.Add | BigDecimalOp.Add
+         | Int8Op.Add | Int16Op.Add | Int16Op.Add
+         | Int32Op.Add | Int64Op.Add | BigIntOp.Add
+         | Float32Op.Sub | Float64Op.Sub | BigDecimalOp.Sub
+         | Int8Op.Sub | Int16Op.Sub | Int16Op.Sub
+         | Int32Op.Sub | Int64Op.Sub | BigIntOp.Sub
+         | Float32Op.Mul | Float64Op.Mul | BigDecimalOp.Mul
+         | Int8Op.Mul | Int16Op.Mul | Int16Op.Mul
+         | Int32Op.Mul | Int64Op.Mul | BigIntOp.Mul
+         | Float32Op.Div | Float64Op.Div | BigDecimalOp.Div
+         | Int8Op.Div | Int16Op.Div | Int16Op.Div
+         | Int32Op.Div | Int64Op.Div | BigIntOp.Div
+         | Int8Op.Rem | Int16Op.Rem | Int16Op.Rem
+         | Int32Op.Rem | Int64Op.Rem
+         | BigIntOp.Rem => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
          Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp =>
       compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
@@ -1319,7 +1333,6 @@ object GenExpression {
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
-                                    o: ArithmeticOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
     compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
