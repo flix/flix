@@ -50,27 +50,27 @@ mod TestRef {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // put                                                                     //
+    // transform                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def put01(): Bool = region rh {
+    def transform01(): Bool = region rh {
         let rf = Ref.new(rh, 1);
         Ref.transform(x -> x + 1, rf);
         Assert.eq(2, Ref.get(rf))
     }
 
     @test
-    def put02(): Bool = region rh {
+    def transform02(): Bool = region rh {
         let rf = Ref.new(rh, "a");
         Ref.transform(_ -> "A", rf);
         Assert.eq("A", Ref.get(rf))
     }
 
     @test
-    def put03(): Bool = region rh {
+    def transform03(): Bool = region rh {
         let rf = Ref.new(rh, Ref.new(rh, "a"));
-        // Transform
+        Ref.transform(rf1 -> { Ref.transform(_ -> "A", rf1) ; rf1 }, rf);
         Assert.eq("A", Ref.get(Ref.get(rf)))
     }
 }
