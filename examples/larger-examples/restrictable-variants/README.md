@@ -61,17 +61,19 @@ the requirements are:
 1. Run the VM
 2. The VM automatically opens the Vscode project (`~/demo/`)
 3. Open e.g. `src/colors.flix`.
-4. The Flix compiler should automatically start, using the jar in the project folder.
+4. The Flix compiler should automatically start, using the jar in the project
+   folder. Highlighting should now appear.
 
 ### Locally
 1. Open VSCode.
 2. Choose `File -> Open Folder` and select the unzipped `demo.zip` folder.
 3. Open e.g. `src/colors.flix`.
-4. The Flix compiler should automatically start, using the jar in the project folder.
+4. The Flix compiler should automatically start, using the jar in the project
+   folder. Highlighting should now appear.
 
 ### Flix Version Message
 The extension with report that Flix version x.y.z. has started, but (obviously)
-this is not version x.y.z, but rather a custom built version of Flix for the
+this is not version x.y.z, but rather a custom-built version of Flix for the
 purpose of artifact evaluation.
 
 --------------------------------------------------------------------------------
