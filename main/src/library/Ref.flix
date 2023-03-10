@@ -16,16 +16,30 @@
 
 mod Ref {
 
+    ///
+    /// Returns a new reference to `x` in the region `rh`.
+    ///
     pub def new(rh: Region[r], x: a): Ref[a, r] \ Write(r) =
         ref x @ rh
 
+    ///
+    /// Returns the element referenced by `rf`.
+    ///
     pub def get(rf: Ref[a, r]): a \ Read(r) =
         deref rf
 
+    ///
+    /// Updates `rf` to reference `x`.
+    ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ Write(r) =
         rf := x
 
+    ///
+    /// Updates `rf` to reference `f` applied to the value referenced by `rf`.
+    ///
+    /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
+    ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { Read(r), Write(r), ef } =
-        rf := f(deref rf)
+        rf := f(Ref.get(rf))
 
 }
