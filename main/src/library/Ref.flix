@@ -14,8 +14,18 @@
  *  limitations under the License.
  */
 
-namespace Ref {
+mod Ref {
 
+    pub def new(rh: Region[r], x: a): Ref[a, r] \ Write(r) =
+        ref x @ rh
 
+    pub def get(rf: Ref[a, r]): a \ Read(r) =
+        deref rf
+
+    pub def put(x: a, rf: Ref[a, r]): Unit \ Write(r) =
+        rf := x
+
+    pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { Read(r), Write(r), ef } =
+        rf := f(deref rf)
 
 }
