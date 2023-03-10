@@ -51,6 +51,7 @@ the requirements are:
 - Java 11+ ([e.g. openjdk](https://jdk.java.net/java-se-ri/11))
 - [Vscode](https://code.visualstudio.com/download)
   - [Flix Extension](https://marketplace.visualstudio.com/items?itemName=flix.flix)
+- At least two CPU-cores (because of a bug in the Flix compiler)
 
 --------------------------------------------------------------------------------
 
