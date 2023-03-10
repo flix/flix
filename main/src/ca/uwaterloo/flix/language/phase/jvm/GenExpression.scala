@@ -1292,10 +1292,12 @@ object GenExpression {
          | Int8Op.Rem | Int16Op.Rem | Int16Op.Rem
          | Int32Op.Rem | Int64Op.Rem
          | BigIntOp.Rem => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+
     case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
          Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp =>
       compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-    // case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
+
+    case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
 
     case BoolOp.And | BoolOp.Or => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
@@ -1488,12 +1490,12 @@ object GenExpression {
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
-                                    o: ComparisonOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
     compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
     val condElse = new Label()
     val condEnd = new Label()
+    // TODO: Replace this with semanticComparisonOperatorToOpcode (see compileArithmeticExpression)
     val (intOp, floatOp, doubleOp, cmp) = o match {
       case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
       case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
@@ -1543,6 +1545,78 @@ object GenExpression {
     visitor.visitLabel(condElse)
     visitor.visitInsn(ICONST_0)
     visitor.visitLabel(condEnd)
+  }
+
+  def semanticComparisonOperatorToOpcode(sop: SemanticOperator): Option[(Int, Int)] = sop match {
+    case BoolOp.Eq => ???
+    case BoolOp.Neq => ???
+
+    case CharOp.Eq => ???
+    case CharOp.Neq => ???
+    case CharOp.Le => ???
+    case CharOp.Lt => ???
+    case CharOp.Gt => ???
+    case CharOp.Ge => ???
+
+    case Float32Op.Eq => ???
+    case Float32Op.Neq => ???
+    case Float32Op.Lt => ???
+    case Float32Op.Le => ???
+    case Float32Op.Gt => ???
+    case Float32Op.Ge => ???
+
+    case Float64Op.Eq => ???
+    case Float64Op.Neq => ???
+    case Float64Op.Lt => ???
+    case Float64Op.Le => ???
+    case Float64Op.Gt => ???
+    case Float64Op.Ge => ???
+
+    case BigDecimalOp.Eq => ???
+    case BigDecimalOp.Neq => ???
+    case BigDecimalOp.Lt => ???
+    case BigDecimalOp.Le => ???
+    case BigDecimalOp.Gt => ???
+    case BigDecimalOp.Ge => ???
+
+    case Int8Op.Eq => ???
+    case Int8Op.Neq => ???
+    case Int8Op.Lt => ???
+    case Int8Op.Le => ???
+    case Int8Op.Gt => ???
+    case Int8Op.Ge => ???
+
+    case Int16Op.Eq => ???
+    case Int16Op.Neq => ???
+    case Int16Op.Lt => ???
+    case Int16Op.Le => ???
+    case Int16Op.Gt => ???
+    case Int16Op.Ge => ???
+
+    case Int32Op.Eq => ???
+    case Int32Op.Neq => ???
+    case Int32Op.Lt => ???
+    case Int32Op.Le => ???
+    case Int32Op.Gt => ???
+    case Int32Op.Ge => ???
+
+    case Int64Op.Eq => ???
+    case Int64Op.Neq => ???
+    case Int64Op.Lt => ???
+    case Int64Op.Le => ???
+    case Int64Op.Gt => ???
+    case Int64Op.Ge => ???
+
+    case BigIntOp.Eq => ???
+    case BigIntOp.Neq => ???
+    case BigIntOp.Lt => ???
+    case BigIntOp.Le => ???
+    case BigIntOp.Gt => ???
+    case BigIntOp.Ge => ???
+
+    case StringOp.Eq => ???
+    case StringOp.Neq => ???
+
   }
 
   /*
