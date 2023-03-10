@@ -131,7 +131,7 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unsafe_cast (newId() + 1i64) as _ \ {};  // We add one because the counter starts at zero.
+                let nextId = unchecked_cast((newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
@@ -516,7 +516,7 @@ namespace Fixpoint {
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
         // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
-        factsOf(_ -> unsafe_cast () as v, p, d)
+        factsOf(_ -> unchecked_cast(() as v), p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.

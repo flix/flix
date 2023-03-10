@@ -30,7 +30,7 @@ namespace Object {
             case _: Int64 => false
             case _: _ =>
                 import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
-                isNull(unsafe_cast x as ##java.lang.Object) // Required cast from `a` to `Object`.
+                isNull(unchecked_cast(x as ##java.lang.Object))
         }
 
     ///

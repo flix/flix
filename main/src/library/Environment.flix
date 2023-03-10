@@ -136,10 +136,10 @@ namespace Environment {
         import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
         import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
         if (hasNext(iter))
-            let entry = unsafe_cast next(iter) as ##java.util.Map$Entry;    // Required unsafe cast.
-            let key = unsafe_cast getKey(entry) as String;                  // Required unsafe cast.
-            let value = unsafe_cast getValue(entry) as String;              // Required unsafe cast.
-            getEnvHelper(iter, Map.insert(key, value, m))
+            let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
+            let k = unchecked_cast(getKey(e) as String);
+            let v = unchecked_cast(getValue(e) as String);
+            getEnvHelper(iter, Map.insert(k, v, m))
         else
             m
 

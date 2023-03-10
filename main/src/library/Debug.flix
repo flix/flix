@@ -103,25 +103,25 @@ namespace Debug {
                 toString(y)
             case y: Array[Unit, r] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
+                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: Array[BigInt, r] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
+                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: Array[BigDecimal, r] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
+                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: Array[String, r] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
+                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: Array[Array[_, _], _] =>
                 import static java.util.Arrays.deepToString(Array[##java.lang.Object, r]): String \ {};
-                deepToString(unsafe_cast y as Array[##java.lang.Object, r])
+                deepToString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: Array[_, _] =>
                 import static java.util.Arrays.toString(Array[##java.lang.Object, r]): String \ {};
-                toString(unsafe_cast y as Array[##java.lang.Object, r])
+                toString(unchecked_cast(y as Array[##java.lang.Object, r]))
             case y: _ =>
                 import static java.util.Objects.toString(##java.lang.Object): String \ {};
-                toString(unsafe_cast y as ##java.lang.Object)
+                toString(unchecked_cast(y as ##java.lang.Object))
         }
     }
 

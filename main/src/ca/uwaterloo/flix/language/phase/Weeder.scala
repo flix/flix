@@ -1699,7 +1699,7 @@ object Weeder {
         case e => WeededAst.Expression.Of(name, e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Cast(sp1, exp, declaredType, declaredEff, sp2) =>
+    case ParsedAst.Expression.UncheckedCast(sp1, exp, declaredType, declaredEff, sp2) =>
       val t = declaredType.map(visitType)
       val f = visitPurityAndEffect(declaredEff)
       mapN(visitExp(exp, senv)) {
@@ -1711,12 +1711,12 @@ object Weeder {
         case e => WeededAst.Expression.Mask(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Upcast(sp1, exp, sp2) =>
+    case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Upcast(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Supercast(sp1, exp, sp2) =>
+    case ParsedAst.Expression.CheckedEffectCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Supercast(e, mkSL(sp1, sp2))
       }
@@ -3260,10 +3260,10 @@ object Weeder {
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Of(qname, _, _) => qname.sp1
-    case ParsedAst.Expression.Cast(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.UncheckedCast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Mask(sp1, _, _) => sp1
-    case ParsedAst.Expression.Upcast(sp1, _, _) => sp1
-    case ParsedAst.Expression.Supercast(sp1, _, _) => sp1
+    case ParsedAst.Expression.CheckedTypeCast(sp1, _, _) => sp1
+    case ParsedAst.Expression.CheckedEffectCast(sp1, _, _) => sp1
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Resume(sp1, _, _) => sp1

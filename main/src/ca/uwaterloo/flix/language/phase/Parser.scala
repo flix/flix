@@ -744,15 +744,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
-        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | ArrayLit | VectorLit | ListLit |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force | UncheckedCast |
+        CheckedTypeCast | CheckedEffectCast | Mask | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = {
+    def CheckedTypeCast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("checked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedTypeCast
+    }
+
+    def CheckedEffectCast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("checked_ecast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedEffectCast
+    }
+
+    def UncheckedCast: Rule1[ParsedAst.Expression] = {
       def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
         "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
       }
@@ -770,16 +778,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
+        SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
       }
-    }
-
-    def Upcast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("checked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Upcast
-    }
-
-    def Supercast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("checked_ecast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Supercast
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
