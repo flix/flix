@@ -1158,7 +1158,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.01") {
     val input =
       """
-        |pub def f(): Int32 = unsafe_cast 123 as _ \ IO
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1168,7 +1168,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 & Pure = unsafe_cast 123 as _ \ IO
+        |def f(): Int32 & Pure = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1542,7 +1542,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unsafe_cast 1 as _ & Impure }) yield x;
+        |     let _ = par (x <- { unchecked_cast(1 as _ & Impure) }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1553,7 +1553,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unsafe_cast 1 as _ \ Impure }) yield x;
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1564,7 +1564,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1; b <- { unsafe_cast 1 as _ \ Impure }) yield (a, b);
+        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ Impure) }) yield (a, b);
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
