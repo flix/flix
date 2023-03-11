@@ -1,8 +1,10 @@
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -144,7 +146,7 @@ object SafetyError {
     * @param to   the type being cast to, i.e. the declared type or effect of the cast.
     * @param loc  the source location of the cast.
     */
-  case class ImpossibleCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+  case class ImpossibleCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Impossible cast."
 
     override def message(formatter: Formatter): String = {
@@ -154,8 +156,8 @@ object SafetyError {
          |
          |${code(loc, "the cast occurs here.")}
          |
-         |Actual type:      ${formatIfJavaType(from)}
-         |Tried casting to: ${formatIfJavaType(to)}
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
 
@@ -169,7 +171,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCheckedTypeCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast"
 
     override def message(formatter: Formatter): String = {
@@ -179,8 +181,8 @@ object SafetyError {
          |
          |${code(loc, "illegal cast.")}
          |
-         |Cast From: $from
-         |Cast To:   $to
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
 
@@ -194,7 +196,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+  case class IllegalCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
@@ -204,8 +206,8 @@ object SafetyError {
          |
          |${code(loc, "illegal cast")}
          |
-         |Non-Java type:    $from
-         |Tried casting to: ${formatJavaType(to)}
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${formatJavaType(to)}
          |""".stripMargin
     }
 
@@ -219,7 +221,7 @@ object SafetyError {
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
@@ -229,8 +231,8 @@ object SafetyError {
          |
          |${code(loc, "illegal cast")}
          |
-         |Java type:        ${formatJavaType(from)}
-         |Tried casting to: $to
+         |From: ${formatJavaType(from)}
+         |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
 
@@ -240,11 +242,11 @@ object SafetyError {
   /**
     * An error raised to indicate a cast from a type variable to a type.
     *
-    * @param tvar the source type (the variable).
+    * @param from the source type (the variable).
     * @param to   the destination type.
     * @param loc  the source location of the cast.
     */
-  case class IllegalCastFromVar(tvar: Type, to: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastFromVar(from: Type.Var, to: Type, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
     override def message(formatter: Formatter): String = {
@@ -254,8 +256,8 @@ object SafetyError {
          |
          |${code(loc, "illegal cast")}
          |
-         |Type variable:    $tvar
-         |Tried casting to: ${formatIfJavaType(to)}
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
 
@@ -266,10 +268,10 @@ object SafetyError {
     * An error raised to indicate a cast from a type to a type variable.
     *
     * @param from the source type.
-    * @param tvar the destination type (the variable).
+    * @param to   the destination type (the variable).
     * @param loc  the source location of the cast.
     */
-  case class IllegalCastToVar(from: Type, tvar: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastToVar(from: Type, to: Type.Var, loc: SourceLocation)(implicit flix: Flix) extends SafetyError {
     override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
     override def message(formatter: Formatter): String = {
@@ -279,8 +281,8 @@ object SafetyError {
          |
          |${code(loc, "illegal checked cast.")}
          |
-         |Actual type:      ${formatIfJavaType(from)}
-         |Tried casting to: $tvar
+         |From: ${FormatType.formatType(from, None)}
+         |To  : ${FormatType.formatType(to, None)}
          |""".stripMargin
     }
 
@@ -373,15 +375,6 @@ object SafetyError {
       Type.getFlixType(t).toString
     else
       s"##${t.getName}"
-  }
-
-  /**
-    * Returns a formatted Java type if `t` is a Java type.
-    * Returns `t` as a string otherwise.
-    */
-  private def formatIfJavaType(t: Type): String = Type.eraseAliases(t).baseType match {
-    case Type.Cst(TypeConstructor.Native(clazz), _) => formatJavaType(clazz)
-    case _ => t.toString
   }
 
   /**

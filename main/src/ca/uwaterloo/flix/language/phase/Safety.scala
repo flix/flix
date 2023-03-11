@@ -386,12 +386,12 @@ object Safety {
         if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
       // Disallow casting a type variable.
-      case (Type.Var(_, _), _) =>
-        IllegalCastFromVar(from, to, loc) :: Nil
+      case (src@Type.Var(_, _), _) =>
+        IllegalCastFromVar(src, to, loc) :: Nil
 
       // Disallow casting a type variable (symmetric case)
-      case (_, Type.Var(_, _)) =>
-        IllegalCastToVar(from, to, loc) :: Nil
+      case (_, dst@Type.Var(_, _)) =>
+        IllegalCastToVar(from, dst, loc) :: Nil
 
       // Disallow casting a Java type to any other type.
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
