@@ -2020,9 +2020,10 @@ object Resolver {
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
-        // Multiple case matches. Error.
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
+//      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
+//        // Multiple case matches. Error.
+//        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
+      // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedTerm.Tag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
