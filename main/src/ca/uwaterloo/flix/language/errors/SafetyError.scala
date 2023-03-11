@@ -188,24 +188,24 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate use of supercast on a non-Java type.
+    * An error raised to indicate a cast from a non-Java type to a Java type.
     *
-    * @param nonJavaType the type that is **not** a Java type.
-    * @param javaType    the Java class.
-    * @param loc         the source location of the supercast.
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
     */
-  case class IllegalCastFromNonJava(nonJavaType: Type, javaType: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Unsafe supercast: Attempted to cast from a non-Java type to a Java type."
+  case class IllegalCastFromNonJava(from: Type, to: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Illegal checked cast: Attempt to cast a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following supercast tries to cast a non-Java to a Java type.
+         |>> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
          |
-         |${code(loc, "the supercast occurs here.")}
+         |${code(loc, "illegal cast")}
          |
-         |Non-Java type:    $nonJavaType
-         |Tried casting to: ${formatJavaType(javaType)}
+         |Non-Java type:    $from
+         |Tried casting to: ${formatJavaType(to)}
          |""".stripMargin
     }
 
@@ -213,24 +213,24 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate use of supercast to a non-Java type.
+    * An error raised to indicate a cast from a Java type to a non-Java type.
     *
-    * @param javaType    the Java class.
-    * @param nonJavaType the type that is **not** a Java type.
-    * @param loc         the source location of the supercast.
+    * @param from the source type.
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
     */
-  case class IllegalCastToNonJava(javaType: java.lang.Class[_], nonJavaType: Type, loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Unsafe supercast: Attempted to cast from a Java type to a non-Java type."
+  case class IllegalCastToNonJava(from: java.lang.Class[_], to: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Illegal checked cast: Attempt to cast a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following supercast attempts to cast a Java type to a non-Java type.
+         |>> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
          |
-         |${code(loc, "the supercast occurs here.")}
+         |${code(loc, "illegal cast")}
          |
-         |Java type:        ${formatJavaType(javaType)}
-         |Tried casting to: $nonJavaType
+         |Java type:        ${formatJavaType(from)}
+         |Tried casting to: $to
          |""".stripMargin
     }
 
@@ -238,73 +238,53 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate use of supercast from a type variable,
-    * i.e. the actual type is not known, possibly caused by
-    * supercasting a type to a type also being supercast.
+    * An error raised to indicate a cast from a type variable to a type.
     *
-    * @param tvar the type of the expression being supercast (in this case a type variable).
-    * @param to   the type being cast to, i.e. the type of the supercast expression itself.
-    * @param loc  the source location of the supercast.
+    * @param tvar the source type (the variable).
+    * @param to   the destination type.
+    * @param loc  the source location of the cast.
     */
   case class IllegalCastFromVar(tvar: Type, to: Type, loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Unsafe supercast: Attempted to cast from a type variable."
+    override def summary: String = "Illegal checked cast: Attempt to cast a type variable to a type."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following supercast attempts to cast from a type variable.
+         |>> Illegal checked cast: Attempt to cast a type variable to a type.
          |
-         |${code(loc, "the supercast occurs here.")}
+         |${code(loc, "illegal cast")}
          |
          |Type variable:    $tvar
          |Tried casting to: ${formatIfJavaType(to)}
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] =
-      Some({
-        s"""Did you try to supercast two types at the same time? e.g.
-           |
-           |  if (true) super_cast exp1 else super_cast exp2
-           |
-           |where exp1 and exp2 have Java types.
-           |""".stripMargin
-      })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
-    * An error raised to indicate use of supercast to a type variable,
-    * i.e. the expected type is not known, possibly caused by
-    * supercasting a type to a type also being supercast.
+    * An error raised to indicate a cast from a type to a type variable.
     *
-    * @param from the type of the expression being supercast.
-    * @param tvar the type being cast to, i.e. the type of the supercast expression itself (in this case a type variable).
-    * @param loc  the source location of the supercast.
+    * @param from the source type.
+    * @param tvar the destination type (the variable).
+    * @param loc  the source location of the cast.
     */
   case class IllegalCastToVar(from: Type, tvar: Type, loc: SourceLocation) extends SafetyError {
-    override def summary: String = "Unsafe supercast: Attempted to cast to a type variable."
+    override def summary: String = "Illegal checked cast: Attempt to cast a type to a type variable."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The following supercast attempts to cast to a type variable.
+         |>> Illegal checked cast: Attempt to cast a type to a type variable.
          |
-         |${code(loc, "the supercast occurs here.")}
+         |${code(loc, "illegal checked cast.")}
          |
          |Actual type:      ${formatIfJavaType(from)}
          |Tried casting to: $tvar
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] =
-      Some({
-        s"""Did you try to supercast two types at the same time? e.g.
-           |
-           |  if (true) super_cast exp1 else super_cast exp2
-           |
-           |where exp1 and exp2 have Java types.
-           |""".stripMargin
-      })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
