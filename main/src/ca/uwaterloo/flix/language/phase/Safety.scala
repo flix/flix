@@ -416,13 +416,14 @@ object Safety {
     * Returns a list of errors if the the supercast is invalid.
     */
   private def verifyEffectCast(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    // TODO: Check Boolean entailment.
+
     val tpe1 = Type.eraseAliases(exp.pur)
     val tpe2 = Type.eraseAliases(pur)
-    // TODO: Check Boolean entailment.
     (tpe1, tpe2) match {
       case (Type.Pure, _) => Nil
       case (Type.Var(_, _), _) => Nil // TODO: Obviously unsound, has to check implication.
-      case _ => UnsafeSupercast(exp.pur, pur, loc) :: Nil
+      case _ => IllegalCheckedEffectCast(exp.pur, pur, loc) :: Nil
     }
   }
 
@@ -440,16 +441,16 @@ object Safety {
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
 
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+        if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(exp.tpe, tpe, loc) :: Nil
 
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(exp.tpe, tpe, loc) :: Nil
 
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(exp.tpe, tpe, loc) :: Nil
 
       case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(exp.tpe, tpe, loc) :: Nil
 
       case (Type.Var(_, _), _) =>
         FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
@@ -463,7 +464,7 @@ object Safety {
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
         FromNonJavaTypeSupercast(exp.tpe, clazz, loc) :: Nil
 
-      case _ => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
+      case _ => IllegalCheckedEffectCast(exp.tpe, tpe, loc) :: Nil
 
     }
   }

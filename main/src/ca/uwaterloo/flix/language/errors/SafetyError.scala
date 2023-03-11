@@ -169,7 +169,32 @@ object SafetyError {
     * @param to   the type being cast to, i.e. the type of the supercast expression itself.
     * @param loc  the source location of the supercast.
     */
-  case class UnsafeSupercast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCheckedTypeCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
+    override def summary: String = "Unsafe supercast."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following supercast is unsafe and not allowed.
+         |
+         |${code(loc, "the supercast occurs here.")}
+         |
+         |Actual type:      $from
+         |Tried casting to: $to
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an invalid use of supercast.
+    *
+    * @param from the type of the expression being supercast.
+    * @param to   the type being cast to, i.e. the type of the supercast expression itself.
+    * @param loc  the source location of the supercast.
+    */
+  case class IllegalCheckedEffectCast(from: Type, to: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast."
 
     override def message(formatter: Formatter): String = {
