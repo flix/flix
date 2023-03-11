@@ -362,34 +362,46 @@ object Safety {
     */
   private def verifyCheckedTypeCast(from: Type, to: Type, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
-      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
 
+      // Allow casting Null to a Java type.
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => Nil
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
 
+      // Allow casting one Java type to another if there is a sub-type relationship.
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
+      // Similar, but for String.
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
+      // Similar, but for BigInt.
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
+      // Similar, but for BigDecimal.
       case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
+      // Disallow casting a type variable.
       case (Type.Var(_, _), _) =>
         IllegalCastFromVar(from, to, loc) :: Nil
 
+      // Disallow casting a type variable (symmetric case)
       case (_, Type.Var(_, _)) =>
         IllegalCastToVar(from, to, loc) :: Nil
 
+      // Disallow casting a Java type to any other type.
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
         IllegalCastToNonJava(clazz, to, loc) :: Nil
 
+      // Disallow casting a Java type to any other type (symmetric case).
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
         IllegalCastFromNonJava(from, clazz, loc) :: Nil
 
+      // Disallow all other casts.
       case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
     }
   }
@@ -410,9 +422,8 @@ object Safety {
   /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
-    * No primitive type can be cast to a reference type and vice-versa.
-    *
-    * No Bool type can be cast to a non-Bool type  and vice-versa.
+    * - No primitive type can be cast to a reference type and vice-versa.
+    * - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
   private def verifyUncheckedCast(cast: Expression.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
@@ -426,28 +437,27 @@ object Safety {
     }
 
     (tpe1, tpe2) match {
-
-      // Allow anything with type variables
+      // Allow casts where one side is a type variable.
       case (Type.Var(_, _), _) => Nil
       case (_, Some(Type.Var(_, _))) => Nil
 
-      // Allow anything with Java interop
+      // Allow casts between Java types.
       case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
       case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
 
-      // Boolean primitive to other primitives
+      // Disallow casting a Boolean to another primitive type.
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // Symmetric case
+      // Disallow casting a Boolean to another primitive type (symmetric case).
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // JVM Reference types and primitives
+      // Disallowing casting a non-primitive type to a primitive type.
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // Symmetric case
+      // Disallowing casting a non-primitive type to a primitive type (symmetric case).
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
