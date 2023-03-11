@@ -237,7 +237,7 @@ object Safety {
           case CheckedCastType.EffectCast =>
             val from = Type.eraseAliases(exp.pur)
             val to = Type.eraseAliases(pur)
-            val errors = verifyCheckedEffectCast(from, to, loc)
+            val errors = verifyCheckedEffectCast(from, to, renv, loc)
             visit(exp) ++ errors
         }
 
@@ -409,13 +409,17 @@ object Safety {
   /**
     * Checks if the given effect cast is legal.
     */
-  private def verifyCheckedEffectCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError.IllegalCheckedEffectCast] = {
-    // TODO: Check Boolean entailment.
-
+  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError.IllegalCheckedEffectCast] = {
     (from, to) match {
+      // Allow casts from pure to anything.
       case (Type.Pure, _) => Nil
-      case (Type.Var(_, _), _) => Nil // TODO: Obviously unsound, has to check implication.
-      case _ => IllegalCheckedEffectCast(from, to, loc) :: Nil
+
+      // Allow casts from a flexible variable to anything.
+      case (Type.Var(sym, _), _) => Nil // TODO: Soundness: Must require sym to be flexible.
+
+      case _ =>
+        println(s"$from ==> $to ($renv)")
+        IllegalCheckedEffectCast(from, to, loc) :: Nil
     }
   }
 
