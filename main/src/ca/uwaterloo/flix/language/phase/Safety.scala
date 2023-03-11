@@ -404,7 +404,7 @@ object Safety {
   }
 
   /**
-    * Returns a list of errors if the the upcast is invalid.
+    * Returns a list of errors if the the checked cast is invalid.
     */
   private def verifyTypeCast(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)

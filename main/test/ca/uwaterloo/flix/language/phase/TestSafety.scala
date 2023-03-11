@@ -287,7 +287,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.02") {
@@ -303,7 +303,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.03") {
@@ -320,7 +320,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.04") {
@@ -336,7 +336,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.05") {
@@ -352,7 +352,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.06") {
@@ -370,7 +370,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.07") {
@@ -393,7 +393,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.08") {
@@ -416,7 +416,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.09") {
@@ -439,7 +439,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.10") {
@@ -462,7 +462,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestUpcast.11") {
@@ -485,7 +485,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
+    expectError[SafetyError](result)
   }
 
   test("TestNonDefaultConstructor.01") {

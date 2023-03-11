@@ -1491,7 +1491,7 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.PossibleUpcast](result)
+    expectError[TypeError.PossibleCheckedTypeCast](result)
   }
 
   test("TestPar.01") {
