@@ -1083,7 +1083,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |namespace N {
         |    eff E
-        |    def foo(): Unit \ E = unsafe_cast ??? as _ \ E
+        |    def foo(): Unit \ E = unchecked_cast(??? as _ \ E)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
