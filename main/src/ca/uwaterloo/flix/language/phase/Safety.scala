@@ -9,7 +9,6 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation
 
 import java.math.BigInteger
@@ -230,7 +229,9 @@ object Safety {
       case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
-            val errors = verifyCheckedTypeCast(exp, tpe, renv, root, loc)
+            val from = Type.eraseAliases(exp.tpe)
+            val to = Type.eraseAliases(tpe)
+            val errors = verifyCheckedTypeCast(from, to, root, loc)
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
@@ -359,10 +360,7 @@ object Safety {
   /**
     * Returns a list of errors if the the checked cast is invalid.
     */
-  private def verifyCheckedTypeCast(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val from = Type.eraseAliases(exp.tpe)
-    val to = Type.eraseAliases(tpe)
-
+  private def verifyCheckedTypeCast(from: Type, to: Type, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
 
