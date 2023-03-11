@@ -227,14 +227,16 @@ object Safety {
       case Expression.Of(_, exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.CheckedCast(cast, exp, tpe, _, _, loc) =>
+      case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             val errors = verifyTypeCast(exp, tpe, renv, root, loc)
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
-            val errors = verifyEffectCast(exp, tpe, loc)
+            val from = Type.eraseAliases(exp.pur)
+            val to = Type.eraseAliases(pur)
+            val errors = verifyEffectCast(from, to, loc)
             visit(exp) ++ errors
         }
 
@@ -415,15 +417,13 @@ object Safety {
   /**
     * Returns a list of errors if the the supercast is invalid.
     */
-  private def verifyEffectCast(exp: Expression, pur: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyEffectCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     // TODO: Check Boolean entailment.
 
-    val tpe1 = Type.eraseAliases(exp.pur)
-    val tpe2 = Type.eraseAliases(pur)
-    (tpe1, tpe2) match {
+    (from, to) match {
       case (Type.Pure, _) => Nil
       case (Type.Var(_, _), _) => Nil // TODO: Obviously unsound, has to check implication.
-      case _ => IllegalCheckedEffectCast(exp.pur, pur, loc) :: Nil
+      case _ => IllegalCheckedEffectCast(from, to, loc) :: Nil
     }
   }
 
