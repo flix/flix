@@ -648,7 +648,7 @@ object Redundancy {
     case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
@@ -656,8 +656,8 @@ object Redundancy {
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
-          if (exp.pur == pur)
-            visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc) // TODO: Rename
+          if (exp.pur == pur && exp.eff == eff)
+            visitExp(exp, env0, rc) + RedundantEffectCast(loc)
           else
             visitExp(exp, env0, rc)
       }

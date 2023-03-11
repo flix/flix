@@ -20,8 +20,8 @@ import scala.annotation.tailrec
   *
   *  - Datalog constraints.
   *  - New object expressions.
-  *  - Upcast expressions.
-  *  - Supercast expressions.
+  *  - CheckedCast expressions.
+  *  - UncheckedCast expressions.
   *  - TypeMatch expressions.
   */
 object Safety {

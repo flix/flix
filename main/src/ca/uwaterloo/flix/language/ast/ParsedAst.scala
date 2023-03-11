@@ -1014,7 +1014,7 @@ object ParsedAst {
     case class UncheckedMaskingCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Upcast Expression.
+      * Checked Type Cast expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
@@ -1023,7 +1023,7 @@ object ParsedAst {
     case class CheckedTypeCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Supercast Expression.
+      * Checked Effect Cast expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
