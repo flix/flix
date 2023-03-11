@@ -639,7 +639,7 @@ object Redundancy {
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
             case ((Type.Var(pur1, _), Type.Var(pur2, _)), (Type.Var(eff1, _), Type.Var(eff2, _)))
               if pur1 == pur2 && eff1 == eff2 =>
-              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+              visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
         case _ => visitExp(exp, env0, rc)
@@ -652,12 +652,12 @@ object Redundancy {
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantUpcast(loc) // TODO: Rename
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc) // TODO: Rename
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
           if (exp.pur == pur && exp.eff == eff)
-            visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
           else
             visitExp(exp, env0, rc)
       }

@@ -907,7 +907,7 @@ class TestRedundancy extends FunSuite with TestUtils {
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantEffectCast](result)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
   test("RedundantTypeConstraint.Class.01") {
@@ -1193,7 +1193,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
   test("RedundantUpcast.02") {
@@ -1211,7 +1211,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
   test("RedundantUpcast.03") {
@@ -1230,7 +1230,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
   test("TestUpcast.04") {
@@ -1246,7 +1246,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
   test("TestUpcast.05") {
@@ -1264,7 +1264,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
 
@@ -1288,7 +1288,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.RedundantUpcast](result)
+    expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
   test("TestParYield.01") {

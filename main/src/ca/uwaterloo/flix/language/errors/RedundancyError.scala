@@ -553,17 +553,17 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an effect cast is redundant.
+    * An error raised to indicate that a checked type cast is redundant.
     *
-    * @param loc the source location of the cast.
+    * @param loc the source location of the redundant cast.
     */
-  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect cast. The expression already has the same effect."
+  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant checked cast. The expression already has the required type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant effect cast. The expression already has the same effect.
+         |>> Redundant checked cast. The expression already has the required type.
          |
          |${code(loc, "redundant cast.")}
          |
@@ -574,31 +574,26 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an upcast is redundant.
+    * An error raised to indicate that a checked effect cast is redundant.
     *
-    * @param loc the source location of the upcast.
+    * @param loc the source location of the cast.
     */
-  case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
-
-    def summary: String = "Redundant upcast. The expression already has the expected type and effect."
+  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression already has the required effect."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant upcast. The expression already has the expected type and effect.
+         |>> Redundant effect cast. The expression already has the required effect.
          |
-         |${code(loc, "redundant upcast.")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""If you try to upcast an expression that already has the same type, purity
-         |and effect as expected the upcast is redundant.
-         |""".stripMargin
-    })
-
+    def explain(formatter: Formatter): Option[String] = None
   }
+
 
   /**
     * An error raised to indicate a redundant type constraint.
