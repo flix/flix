@@ -566,7 +566,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.FromNonJavaTypeSupercast](result)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
   }
 
   test("TestSupercast.02") {
@@ -583,7 +583,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToNonJavaTypeSupercast](result)
+    expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
   test("TestSupercast.03") {
@@ -619,7 +619,7 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
+    expectError[SafetyError.IllegalCastToVar](result)
   }
 
   test("TestSupercast.05") {
@@ -636,13 +636,13 @@ class TestSafety extends FunSuite with TestUtils {
         |""".stripMargin
 
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
+    expectError[SafetyError.IllegalCastToVar](result)
   }
 
   test("TestSupercast.06") {
     val input = "def f(): ##java.lang.Object = super_cast \"hello\""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
+    expectError[SafetyError.IllegalCastToVar](result)
   }
 
   test("UnableToDeriveSendable.01") {

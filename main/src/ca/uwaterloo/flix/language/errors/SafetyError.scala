@@ -219,7 +219,7 @@ object SafetyError {
     * @param javaType    the Java class.
     * @param loc         the source location of the supercast.
     */
-  case class FromNonJavaTypeSupercast(nonJavaType: Type, javaType: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
+  case class IllegalCastFromNonJava(nonJavaType: Type, javaType: java.lang.Class[_], loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast: Attempted to cast from a non-Java type to a Java type."
 
     override def message(formatter: Formatter): String = {
@@ -244,7 +244,7 @@ object SafetyError {
     * @param nonJavaType the type that is **not** a Java type.
     * @param loc         the source location of the supercast.
     */
-  case class ToNonJavaTypeSupercast(javaType: java.lang.Class[_], nonJavaType: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastToNonJava(javaType: java.lang.Class[_], nonJavaType: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast: Attempted to cast from a Java type to a non-Java type."
 
     override def message(formatter: Formatter): String = {
@@ -271,7 +271,7 @@ object SafetyError {
     * @param to   the type being cast to, i.e. the type of the supercast expression itself.
     * @param loc  the source location of the supercast.
     */
-  case class FromTypeVariableSupercast(tvar: Type, to: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastFromVar(tvar: Type, to: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast: Attempted to cast from a type variable."
 
     override def message(formatter: Formatter): String = {
@@ -306,7 +306,7 @@ object SafetyError {
     * @param tvar the type being cast to, i.e. the type of the supercast expression itself (in this case a type variable).
     * @param loc  the source location of the supercast.
     */
-  case class ToTypeVariableSupercast(from: Type, tvar: Type, loc: SourceLocation) extends SafetyError {
+  case class IllegalCastToVar(from: Type, tvar: Type, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Unsafe supercast: Attempted to cast to a type variable."
 
     override def message(formatter: Formatter): String = {

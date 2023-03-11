@@ -379,16 +379,16 @@ object Safety {
         if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
       case (Type.Var(_, _), _) =>
-        FromTypeVariableSupercast(from, to, loc) :: Nil
+        IllegalCastFromVar(from, to, loc) :: Nil
 
       case (_, Type.Var(_, _)) =>
-        ToTypeVariableSupercast(from, to, loc) :: Nil
+        IllegalCastToVar(from, to, loc) :: Nil
 
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        ToNonJavaTypeSupercast(clazz, to, loc) :: Nil
+        IllegalCastToNonJava(clazz, to, loc) :: Nil
 
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        FromNonJavaTypeSupercast(from, clazz, loc) :: Nil
+        IllegalCastFromNonJava(from, clazz, loc) :: Nil
 
       case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
     }
