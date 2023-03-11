@@ -6,13 +6,13 @@ namespace Test/Exp/Closable {
     instance Closeable[MyCloseable[r]] {
         pub def close(x: MyCloseable[r]): Unit \ IO =
             let MyCloseable(closed) = x;
-            unsafe_cast closed := true as _ \ IO
+            checked_ecast(closed := true)
     }
 
     instance Closeable[MyCloseable2[r]] {
         pub def close(x: MyCloseable2[r]): Unit \ IO =
             let MyCloseable2(closed1, closed2) = x;
-            unsafe_cast closed2 := deref closed1 as _ \ IO
+            checked_ecast(closed2 := deref closed1)
     }
 
     @Test
