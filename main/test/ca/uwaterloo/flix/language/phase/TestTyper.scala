@@ -1040,10 +1040,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        relational_choose x {
-        |            case Absent     => unsafe_cast 1 as _ \ IO
+        |            case Absent     => 1
         |        };
         |        relational_choose x {
-        |            case Present(_) => unsafe_cast 2 as _ \ IO
+        |            case Present(_) => 2
         |        }
         |    };
         |    f(Absent)
@@ -1064,10 +1064,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        relational_choose x {
-        |            case Absent     => unsafe_cast 1 as _ \ IO
+        |            case Absent     => 2
         |        };
         |        relational_choose x {
-        |            case Present(_) => unsafe_cast 2 as _ \ IO
+        |            case Present(_) => 2
         |        }
         |    };
         |    f(Present(123))
