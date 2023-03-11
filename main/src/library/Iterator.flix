@@ -42,8 +42,8 @@ namespace Iterator {
     ///
     pub def iterate(rc: Region[r], f: Unit -> Option[a] \ ef): Iterator[a, ef, r] =
         let f1 = () -> match f() {
-            case Some(a) => Ans(a)
-            case None    => Done
+            case Some(a) => Step.Ans(a)
+            case None    => Step.Done
         };
         let iterF = () -> checked_ecast(f1());
         Iterator(rc, iterF)
@@ -52,7 +52,7 @@ namespace Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = constant(Done);
+        let f = constant(Step.Done);
         Iterator(rc, f)
 
     ///
@@ -69,9 +69,9 @@ namespace Iterator {
     pub def next(iter: Iterator[a, ef, r]): Option[a] \ { ef, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
-            case Ans(a) => Some(a)
-            case Skip   => loop()
-            case Done   => None
+            case Step.Ans(a) => Some(a)
+            case Step.Skip   => loop()
+            case Step.Done   => None
         };
         loop()
 
@@ -87,7 +87,7 @@ namespace Iterator {
         else {
             let iterF = () -> match (deref pos) {
                 case i if i < e => pos := i+1; Ans(i)
-                case _          => Done
+                case _          => Step.Done
             };
             Iterator(rc, iterF)
         }
@@ -102,10 +102,10 @@ namespace Iterator {
         let iterF = () -> {
             let i = deref ix;
             if (i < 1)
-                Done
+                Step.Done
             else {
                 ix := i-1;
-                Ans(x)
+                Step.Ans(x)
             }
         };
         Iterator(rc, iterF)
@@ -231,9 +231,9 @@ namespace Iterator {
     pub def forEach(f: a -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
-            case Skip   => loop()
-            case Ans(a) => f(a); loop()
-            case Done   => ()
+            case Step.Skip   => loop()
+            case Step.Ans(a) => f(a); loop()
+            case Step.Done   => ()
         };
         loop()
 
@@ -245,9 +245,9 @@ namespace Iterator {
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef2, iter: Iterator[a, ef1, r]): Unit \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(i) = match iterF() {
-            case Skip   => loop(i)
-            case Ans(a) => f(i, a); loop(i+1)
-            case Done   => ()
+            case Step.Skip   => loop(i)
+            case Step.Ans(a) => f(i, a); loop(i+1)
+            case Step.Done   => ()
         };
         loop(0)
 
@@ -262,9 +262,9 @@ namespace Iterator {
     pub def filter(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
-            case Ans(a) => if (f(a)) Ans(a) else Skip
-            case Skip   => Skip
-            case Done   => Done
+            case Step.Ans(a) => if (f(a)) Step.Ans(a) else Step.Skip
+            case Step.Skip   => Step.Skip
+            case Step.Done   => Step.Done
         };
         let iterF1 = () -> step(iterF());
         Iterator(rc, iterF1)
@@ -277,9 +277,9 @@ namespace Iterator {
     pub def map(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
-            case Ans(a) => Ans(f(a))
-            case Skip   => Skip
-            case Done   => Done
+            case Step.Ans(a) => Step.Ans(f(a))
+            case Step.Skip   => Step.Skip
+            case Step.Done   => Step.Done
         };
         let iterF1 = () -> {let x = iterF(); step(x)};
         Iterator(rc, iterF1)
@@ -294,9 +294,9 @@ namespace Iterator {
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
-            case Ans(a) => { let i = deref ix; ix := i + 1; Ans(f(i, a)) }
-            case Skip   => Skip
-            case Done   => Done
+            case Step.Ans(a) => { let i = deref ix; ix := i + 1; Step.Ans(f(i, a)) }
+            case Step.Skip   => Step.Skip
+            case Step.Done   => Step.Done
         };
         let iterF1 = () -> {let x = iterF(); step(x)};
         Iterator(rc, iterF1)
@@ -320,14 +320,14 @@ namespace Iterator {
         let Iterator(rc, iter1F) = iter1;
         let Iterator(_, iter2F) = iter2;
         def loop2(x) = match x {
-            case Ans(a) => Ans(a)
-            case Skip   => loop2(iter2F())
-            case Done   => Done
+            case Step.Ans(a) => Step.Ans(a)
+            case Step.Skip   => loop2(iter2F())
+            case Step.Done   => Step.Done
         };
         def loop1(x) = match x {
-            case Ans(a) => Ans(a)
-            case Skip   => loop1(iter1F())
-            case Done   => loop2(iter2F())
+            case Step.Ans(a) => Step.Ans(a)
+            case Step.Skip   => loop1(iter1F())
+            case Step.Done   => loop2(iter2F())
         };
         let iter3F = () -> loop1(iter1F());
         Iterator(rc, iter3F)
@@ -363,11 +363,11 @@ namespace Iterator {
         let Iterator(rc, iter1F) = iterA;
         let Iterator(_,  iter2F) = iterB;
         let step = (l, r) -> match (l, r) {
-            case (Ans(a), Ans(b)) => Ans(f(a, b))
-            case (Ans(a), Skip)   => zipWithGoRight(b -> f(a, b), iter2F)
-            case (Skip, Ans(b))   => zipWithGoLeft(iter1F, a -> f(a, b))
-            case (Skip, Skip)     => Skip
-            case (_, _)           => Done
+            case (Step.Ans(a), Step.Ans(b)) => Step.Ans(f(a, b))
+            case (Step.Ans(a), Step.Skip)   => zipWithGoRight(b -> f(a, b), iter2F)
+            case (Step.Skip, Step.Ans(b))   => zipWithGoLeft(iter1F, a -> f(a, b))
+            case (Step.Skip, Step.Skip)     => Step.Skip
+            case (_, _)           => Step.Done
 
         };
         let iter3F = () -> step(iter1F(), iter2F());
@@ -377,18 +377,18 @@ namespace Iterator {
     /// Helper function for `zipWith`.
     ///
     def zipWithGoLeft(iter: Unit -> Step[a] \ ef1, f: a -> c \ ef2): Step[c] \ { ef1, ef2 } = match iter() {
-        case Ans(a) => Ans(f(a))
-        case Skip   => zipWithGoLeft(iter, f)
-        case Done   => Done
+        case Step.Ans(a) => Step.Ans(f(a))
+        case Step.Skip   => zipWithGoLeft(iter, f)
+        case Step.Done   => Step.Done
     }
 
     ///
     /// Helper function for `zipWith`.
     ///
     def zipWithGoRight(f: b -> c \ ef2, iter: Unit -> Step[b] \ ef1): Step[c] \ { ef1, ef2 } = match iter() {
-        case Ans(b) => Ans(f(b))
-        case Skip   => zipWithGoRight(f, iter)
-        case Done   => Done
+        case Step.Ans(b) => Step.Ans(f(b))
+        case Step.Skip   => zipWithGoRight(f, iter)
+        case Step.Done   => Step.Done
     }
 
     ///
@@ -420,9 +420,9 @@ namespace Iterator {
     pub def foldLeft(f: (b, a) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(acc) = match iterF() {
-            case Skip   => loop(acc)
-            case Ans(a) => loop(f(acc, a))
-            case Done   => acc
+            case Step.Skip   => loop(acc)
+            case Step.Ans(a) => loop(f(acc, a))
+            case Step.Done   => acc
         };
         loop(s)
 
@@ -436,9 +436,9 @@ namespace Iterator {
     pub def foldRight(f: (a, b) -> b \ ef2, s: b, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop(k) = match iterF() {
-            case Skip   => loop(k)
-            case Ans(a) => loop(ks -> k(f(a, ks)))
-            case Done   => k(s)
+            case Step.Skip   => loop(k)
+            case Step.Ans(a) => loop(ks -> k(f(a, ks)))
+            case Step.Done   => k(s)
 
         };
         loop(identity)
@@ -454,9 +454,9 @@ namespace Iterator {
     pub def foldRightWithCont(f: (a, Unit -> b \ { ef, Read(r) }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, Read(r) } =
         let Iterator(_, iterF) = iter;
         def loop() = match iterF() {
-            case Skip   => loop()
-            case Ans(a) => f(a, _ -> loop())
-            case Done   => z
+            case Step.Skip   => loop()
+            case Step.Ans(a) => f(a, _ -> loop())
+            case Step.Done   => z
         };
         loop()
 
@@ -490,8 +490,8 @@ namespace Iterator {
     ///
     pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
         def loop() = match f() {
-            case Ok(a)  => Ans(a)
-            case Err(_) => Done
+            case Ok(a)  => Step.Ans(a)
+            case Err(_) => Step.Done
         };
         let iterF = () -> checked_ecast(loop());
         Iterator(rc, iterF)
@@ -513,9 +513,9 @@ namespace Iterator {
             let i = deref ix;
             ix := i - 1;
             match iterF() {
-                case Ans(a)  => if (i > 0) loop() else Ans(a)
-                case Skip    => loop()
-                case Done    => Done
+                case Step.Ans(a)  => if (i > 0) loop() else Step.Ans(a)
+                case Step.Skip    => loop()
+                case Step.Done    => Step.Done
             }
         };
         let iter1F = () -> loop();
@@ -537,12 +537,12 @@ namespace Iterator {
         def loop() = {
             let i = deref ix;
             if (i < 1)
-                Done
+                Step.Done
             else
                 match iterF() {
-                    case Ans(a) => {ix := i-1; Ans(a)}
-                    case Skip   => Skip
-                    case Done   => Done
+                    case Step.Ans(a) => {ix := i-1; Step.Ans(a)}
+                    case Step.Skip   => Step.Skip
+                    case Step.Done   => Step.Done
                 }
         };
         let iter1F = () -> loop();
@@ -558,9 +558,9 @@ namespace Iterator {
     pub def takeWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, ef1 and ef2, r]=
         let Iterator(rc, iterF) = iter;
         def loop(x) = match x {
-            case Ans(a) => if (f(a)) Ans(a) else Done
-            case Skip   => loop(iterF())
-            case Done   => Done
+            case Step.Ans(a) => if (f(a)) Step.Ans(a) else Step.Done
+            case Step.Skip   => loop(iterF())
+            case Step.Done   => Step.Done
         };
         let iter1F = () -> loop(iterF());
         Iterator(rc, iter1F)
@@ -576,14 +576,14 @@ namespace Iterator {
         let Iterator(rc, iterF) = iter;
         let start = ref true @ rc;
         def loop() = match iterF() {
-            case Ans(a) =>
+            case Step.Ans(a) =>
                 if (deref start) {
-                    if (f(a)) Skip else { start:= false; Ans(a) }
+                    if (f(a)) Step.Skip else { start:= false; Step.Ans(a) }
                 } else {
-                    Ans(a)
+                    Step.Ans(a)
                 }
-            case Skip    => Skip
-            case Done    => Done
+            case Step.Skip    => Step.Skip
+            case Step.Done    => Step.Done
         };
         let iter1F = () -> loop();
         Iterator(rc, iter1F)
@@ -602,26 +602,26 @@ namespace Iterator {
         def innerLoop() = {
             let Iterator(_, innerF) = deref innerIter;
             match innerF() {
-                case Ans(b) => Ans(b)
-                case Skip   => innerLoop()
-                case Done   => Done
+                case Step.Ans(b) => Step.Ans(b)
+                case Step.Skip   => innerLoop()
+                case Step.Done   => Step.Done
             }
         };
         def outerLoop() = {
             if (deref inside) {
                 match innerLoop() {
-                    case Done => {inside := false; outerLoop()}
+                    case Step.Done => {inside := false; outerLoop()}
                     case ans  => ans
                 }
             } else {
                 match iterF() {
-                    case Ans(a) => {
+                    case Step.Ans(a) => {
                         inside := true;
                         innerIter := f(a);
                         outerLoop()
                     }
-                    case Skip   => outerLoop()
-                    case Done   => Done
+                    case Step.Skip   => outerLoop()
+                    case Step.Done   => Step.Done
                 }
             }
         };
@@ -636,7 +636,7 @@ namespace Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = constant(Done);
+        let f = constant(Step.Done);
         Iterator(rc, f)
 
 
@@ -690,8 +690,8 @@ namespace Iterator {
         let ls = ref xs @ rc;
         let next = () -> {
             match (deref ls) {
-                case Nil     => Done
-                case x :: rs => ls := rs; Ans(x)
+                case Nil     => Step.Done
+                case x :: rs => ls := rs; Step.Ans(x)
             }
         };
         Iterator(rc, next)
@@ -734,12 +734,12 @@ namespace Iterator {
     pub def filterMap(f: a -> Option[b] \ ef2, iter: Iterator[a, ef1, r]): Iterator[b, ef1 and ef2, r] =
         let Iterator(rc, iterF) = iter;
         let step = x -> match x {
-            case Ans(a) => match (f(a)) {
-                case Some(a1) => Ans(a1)
-                case None     => Skip
+            case Step.Ans(a) => match (f(a)) {
+                case Some(a1) => Step.Ans(a1)
+                case None     => Step.Skip
             }
-            case Skip   => Skip
-            case Done   => Done
+            case Step.Skip   => Step.Skip
+            case Step.Done   => Step.Done
         };
         let iterF1 = () -> step(iterF());
         Iterator(rc, iterF1)
@@ -758,7 +758,7 @@ namespace Iterator {
         let f = () ->  {
             if (deref first) {
                 first := false;
-                Ans(x)
+                Step.Ans(x)
             }
             else
                 iterF()
