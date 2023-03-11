@@ -358,7 +358,7 @@ object Safety {
   }
 
   /**
-    * Returns a list of errors if the the checked cast is invalid.
+    * Checks if the given type cast is legal.
     */
   private def verifyCheckedTypeCast(from: Type, to: Type, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
@@ -395,7 +395,7 @@ object Safety {
   }
 
   /**
-    * Returns a list of errors if the the supercast is invalid.
+    * Checks if the given effect cast is legal.
     */
   private def verifyCheckedEffectCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError.IllegalCheckedEffectCast] = {
     // TODO: Check Boolean entailment.
@@ -408,8 +408,7 @@ object Safety {
   }
 
   /**
-    * Performs basic checks on the type cast `cast`. Returns a list of safety errors if there are
-    * any impossible casts.
+    * Checks if there are any impossible casts, i.e. casts that always fail.
     *
     * No primitive type can be cast to a reference type and vice-versa.
     *
