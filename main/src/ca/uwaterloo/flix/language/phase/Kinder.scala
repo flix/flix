@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast.Kind.WildCaseSet
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.KindError
@@ -709,18 +709,12 @@ object Kinder {
       }
 
     case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
-      cast match {
-        case CheckedCastType.TypeCast =>
-          mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-            KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
-          }
-
-        case CheckedCastType.EffectCast =>
-          mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-            val pvar = Type.freshVar(Kind.Bool, loc)
-            val evar = Type.freshVar(Kind.Effect, loc)
-            KindedAst.Expression.Supercast(e, pvar, evar, loc)
-          }
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
+        case e =>
+          val tvar = Type.freshVar(Kind.Star, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc)
+          val evar = Type.freshVar(Kind.Effect, loc)
+          KindedAst.Expression.CheckedCast(cast, e, tvar, pvar, evar, loc)
       }
 
     case ResolvedAst.Expression.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
@@ -729,7 +723,7 @@ object Kinder {
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
-          KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -741,7 +735,7 @@ object Kinder {
     case ResolvedAst.Expression.UncheckedMaskingCast(exp, loc) =>
       val eVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
       mapN(eVal) {
-        case e => KindedAst.Expression.Mask(e, loc)
+        case e => KindedAst.Expression.UncheckedMaskingCast(e, loc)
       }
 
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>
