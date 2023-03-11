@@ -2304,11 +2304,17 @@ object Typer {
         TypedAst.Expression.Of(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        val tpe = subst0(tvar)
-        val pur = subst0(pvar)
-        val eff = subst0(evar)
-        TypedAst.Expression.CheckedCast(cast, e, tpe, pur, eff, loc)
+        cast match {
+          case CheckedCastType.TypeCast =>
+            val e = visitExp(exp, subst0)
+            val tpe = subst0(tvar)
+            TypedAst.Expression.CheckedCast(cast, e, tpe, e.pur, e.eff, loc)
+          case CheckedCastType.EffectCast =>
+            val e = visitExp(exp, subst0)
+            val pur = subst0(pvar)
+            val eff = subst0(evar)
+            TypedAst.Expression.CheckedCast(cast, e, e.tpe, pur, eff, loc)
+        }
 
       case KindedAst.Expression.UncheckedCast(KindedAst.Expression.Cst(Ast.Constant.Null, _), _, _, _, tvar, loc) =>
         val t = subst0(tvar)
