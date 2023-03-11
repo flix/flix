@@ -404,119 +404,12 @@ object Safety {
   }
 
   /**
-    * Checks that `tpe1` is a subtype of `tpe2`.
-    *
-    * `tpe1` is a subtype of `tpe2` if:
-    *
-    * (a) `tpe1` has the exact same flix type as `tpe2`
-    *
-    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
-    *
-    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
-    *
-    * AND
-    *
-    * the purity of the expression is being cast from `pure` -> `ef` -> `impure`.
-    *
-    * OR
-    *
-    * the effect set of the expression is a subset of the effect set being cast to.
-    *
-    */
-  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv, root: Root)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.Empty, _) => true
-    case (Type.True, _) => true
-    case (Type.Var(_, _), Type.False) => true
-
-    case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => true
-
-    case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => true
-
-    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(left)
-
-    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.lang.String])
-
-    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.math.BigInteger])
-
-    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.math.BigDecimal])
-
-    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
-      // purities
-      val pur1 = tpe1.arrowPurityType
-      val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubtypeOf(pur1, pur2, renv, root)
-
-      // set effects
-      // The rule for effect sets is:
-      // S1 < S2 <==> exists S3 . S1 U S3 == S2
-      val loc = tpe1.loc.asSynthetic
-      val s1 = tpe1.arrowEffectType
-      val s2 = tpe2.arrowEffectType
-      val s3 = Type.freshVar(Kind.Effect, loc)
-      val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
-
-      // check that parameters are supertypes
-      val args1 = tpe1.arrowArgTypes
-      val args2 = tpe2.arrowArgTypes
-      val superTypeArgs = args1.zip(args2).forall {
-        case (t1, t2) =>
-          isSubtypeOf(t2, t1, renv, root)
-      }
-
-      // check that result is a subtype
-      val expectedResTpe = tpe1.arrowResultType
-      val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv, root)
-
-      subTypePurity && isEffSubset && superTypeArgs && subTypeResult
-
-    case _ => tpe1 == tpe2
-
-  }
-
-  /**
-    * Returns true if `tpe1` and `tpe2` are both Java types
-    * and `tpe1` is a subtype of `tpe2`.
-    * Note that `tpe1` is also allowed to be a Flix string
-    * or BigInt/BigDecimal while `tpe2` is a supertype of this.
-    */
-  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(left)) true else false
-
-    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.lang.String])) true else false
-
-    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigInteger])) true else false
-
-    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) true else false
-
-    case (Type.Var(_, _), _) | (_, Type.Var(_, _)) =>
-      false
-
-    case (Type.Cst(TypeConstructor.Native(_), _), _) | (_, Type.Cst(TypeConstructor.Native(_), _)) =>
-      false
-
-    case _ => false
-  }
-
-  /**
     * Returns a list of errors if the the upcast is invalid.
     */
   private def verifyTypeCast(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(exp.tpe)
     val tpe2 = Type.eraseAliases(tpe)
-    if (isSubtypeOf(tpe1, tpe2, renv, root))
-      Nil
-    else
-      UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
+    collectSupercastErrors(exp, tpe, loc)
   }
 
   /**
@@ -541,6 +434,10 @@ object Safety {
     val tpe2 = Type.eraseAliases(tpe)
 
     (tpe1.baseType, tpe2.baseType) match {
+
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
+
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
 
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(left)) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
