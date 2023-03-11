@@ -409,18 +409,9 @@ object Safety {
   /**
     * Checks if the given effect cast is legal.
     */
-  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError.IllegalCheckedEffectCast] = {
-    (from, to) match {
-      // Allow casts from pure to anything.
-      case (Type.Pure, _) => Nil
-
-      // Allow casts from a flexible variable to anything.
-      case (Type.Var(sym, _), _) => Nil // TODO: Soundness: Must require sym to be flexible.
-
-      case _ =>
-        println(s"$from ==> $to ($renv)")
-        IllegalCheckedEffectCast(from, to, loc) :: Nil
-    }
+  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    // Effect casts are -- by construction in the Typer -- safe.
+    Nil
   }
 
   /**

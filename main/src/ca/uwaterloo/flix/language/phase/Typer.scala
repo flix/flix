@@ -1464,7 +1464,7 @@ object Typer {
 
       case of@KindedAst.Expression.Of(_, _, _, _) => RestrictableChooseInference.inferOf(of, root)
 
-      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, _) =>
+      case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
             for {
@@ -1474,9 +1474,11 @@ object Typer {
 
           case CheckedCastType.EffectCast =>
             for {
-              // Ignore the inferred purity and effect of exp.
-              (constrs, tpe, _, _) <- visitExp(exp)
-            } yield (constrs, tpe, pvar, evar)
+              // We simply union the purity and effect with a fresh variable.
+              (constrs, tpe, pur, eff) <- visitExp(exp)
+              resultPur = Type.mkAnd(pur, pvar, loc)
+              resultEff = Type.mkUnion(eff, evar, loc)
+            } yield (constrs, tpe, resultPur, resultEff)
         }
 
       case KindedAst.Expression.UncheckedCast(exp, declaredTyp, declaredPur, declaredEff, tvar, loc) =>
@@ -2311,8 +2313,8 @@ object Typer {
             TypedAst.Expression.CheckedCast(cast, e, tpe, e.pur, e.eff, loc)
           case CheckedCastType.EffectCast =>
             val e = visitExp(exp, subst0)
-            val pur = subst0(pvar)
-            val eff = subst0(evar)
+            val pur = Type.mkAnd(e.pur, subst0(pvar), loc)
+            val eff = Type.mkUnion(e.eff, subst0(evar), loc)
             TypedAst.Expression.CheckedCast(cast, e, e.tpe, pur, eff, loc)
         }
 
