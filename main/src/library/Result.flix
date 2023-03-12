@@ -449,7 +449,7 @@ namespace Result {
     /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def guard(f: Unit -> a \ ef): Result[String, a] \ ef =
+    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
         try {
             Ok(f())
         } catch {

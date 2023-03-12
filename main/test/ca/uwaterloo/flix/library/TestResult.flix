@@ -861,16 +861,16 @@ namespace TestResult {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // guard                                                                   //
+    // tryCatch                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def guard01(): Bool = Result.guard(_ -> 1 / 1) == Ok(1)
+    def tryCatch01(): Bool = Result.tryCatch(_ -> 1 / 1) == Ok(1)
 
     @test
-    def guard02(): Bool = region rc {
+    def tryCatch02(): Bool = region rc {
         let arr = Array#{0} @ rc;
-        Result.guard(_ -> Array.get(10, arr)) |> Result.isErr
+        Result.tryCatch(_ -> Array.get(10, arr)) |> Result.isErr
     }
 
 }
