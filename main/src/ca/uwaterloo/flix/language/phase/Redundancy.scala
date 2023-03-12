@@ -630,6 +630,20 @@ object Redundancy {
     case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
+      cast match {
+        case CheckedCastType.TypeCast =>
+          if (exp.tpe == tpe)
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
+          else
+            visitExp(exp, env0, rc)
+        case CheckedCastType.EffectCast =>
+          if (exp.pur == pur && exp.eff == eff)
+            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
+          else
+            visitExp(exp, env0, rc)
+      }
+
     case Expression.UncheckedCast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
         // Don't capture redundant purity casts if there's also a set effect
@@ -647,20 +661,6 @@ object Redundancy {
 
     case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
-
-    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
-      cast match {
-        case CheckedCastType.TypeCast =>
-          if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
-          else
-            visitExp(exp, env0, rc)
-        case CheckedCastType.EffectCast =>
-          if (exp.pur == pur && exp.eff == eff)
-            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
-          else
-            visitExp(exp, env0, rc)
-      }
 
     case Expression.Without(exp, effUse, _, _, _, _) =>
       Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
