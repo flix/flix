@@ -1276,8 +1276,8 @@ class TestRedundancy extends FunSuite with TestUtils {
         |pub eff C
         |
         |def f(): Unit =
-        |    let f = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
+        |    let f = () -> unchecked_cast(() as _ \ { A, B, C });
+        |    let g = () -> unchecked_cast(() as _ \ { A, B, C });
         |    let _ =
         |        if (true)
         |            checked_cast(f)
