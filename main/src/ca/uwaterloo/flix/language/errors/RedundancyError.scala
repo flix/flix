@@ -558,12 +558,12 @@ object RedundancyError {
     * @param loc the source location of the redundant cast.
     */
   case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant checked cast. The expression already has the required type."
+    def summary: String = "Redundant type cast. The expression already has the required type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant checked cast. The expression already has the required type.
+         |>> Redundant type cast. The expression already has the required type.
          |
          |${code(loc, "redundant cast.")}
          |
