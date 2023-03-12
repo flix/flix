@@ -2571,11 +2571,14 @@ object Resolver {
       case Resolution.Declaration(enum: NamedAst.Declaration.Enum) =>
         // Case 2: found an enum
         TypeLookupResult.Enum(enum)
+      case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) =>
+        // Case 3: found a restrictable enum
+        TypeLookupResult.RestrictableEnum(enum)
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
-        // Case 3: found an effect
+        // Case 4: found an effect
         TypeLookupResult.Effect(effect)
       case Resolution.JavaClass(clazz) =>
-        // Case 4: found a Java class
+        // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
     }.getOrElse(TypeLookupResult.NotFound)
   }
