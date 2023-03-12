@@ -42,7 +42,7 @@ namespace Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
-        $MASK$(notifyPreSolve(d, stf));
+        masked_cast(notifyPreSolve(d, stf));
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,7 +59,7 @@ namespace Fixpoint {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        $MASK$(notifyPostSolve(model));
+        masked_cast(notifyPostSolve(model));
         model
     }
 
