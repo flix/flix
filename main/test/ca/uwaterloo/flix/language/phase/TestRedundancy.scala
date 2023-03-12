@@ -1158,7 +1158,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |}
         |
         |def f(): Int32 \ IO =
-        |    unsafe_cast A as _ \ IO;
+        |    unchecked_cast(A as _ \ IO);
         |    123
         |
         |""".stripMargin
@@ -1171,7 +1171,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 \ IO =
-        |    unsafe_cast (x -> x + 123) as _ \ IO;
+        |    unchecked_cast((x -> x + 123) as _ \ IO);
         |    123
         |
         |""".stripMargin
@@ -1180,13 +1180,13 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.MustUse](result)
   }
 
-  test("RedundantUpcast.01") {
+  test("RedundantCheckedTypeCast.01") {
     val input =
       """
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            upcast x -> x + 1
+        |            checked_cast(x -> x + 1)
         |        else
         |            x -> x + 1;
         |    ()
@@ -1196,13 +1196,13 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantUpcast.02") {
+  test("RedundantCheckedTypeCast.02") {
     val input =
       """
         |def f(): Unit & Impure =
         |    let _ =
         |        if (true)
-        |            upcast x -> x + 1
+        |            checked_cast(x -> x + 1)
         |        else {
         |            println(1);
         |            x -> x + 1
@@ -1214,13 +1214,13 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("RedundantUpcast.03") {
+  test("RedundantCheckedTypeCast.03") {
     val input =
       """
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            upcast ()
+        |            checked_cast(())
         |        else
         |            region r {
         |                let _ = $ARRAY_NEW$(r, 8, 8);
@@ -1233,13 +1233,13 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("TestUpcast.04") {
+  test("RedundantCheckedTypeCast.04") {
     val input =
       """
         |def f(): Unit =
         |    let _ =
         |        if (true)
-        |            upcast (1, "a")
+        |            checked_cast((1, "a"))
         |        else
         |            (1, "a");
         |    ()
@@ -1249,7 +1249,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
   }
 
-  test("TestUpcast.05") {
+  test("RedundantCheckedTypeCast.05") {
     val input =
       """
         |def f(): Unit & Impure =
@@ -1257,7 +1257,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
         |    let _ =
         |        if (true)
-        |            upcast (newObject(), newObject())
+        |            checked_cast((newObject(), newObject()))
         |        else
         |            (newObject(), newObject());
         |    ()
@@ -1268,7 +1268,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
 
-  test("TestUpcast.06") {
+  test("RedundantCheckedTypeCast.06") {
     val input =
       """
         |pub eff A
@@ -1280,7 +1280,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    let g = () -> unsafe_cast () as _ \ { A, B, C };
         |    let _ =
         |        if (true)
-        |            upcast f
+        |            checked_cast(f)
         |        else
         |            g;
         |    ()
