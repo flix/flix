@@ -860,4 +860,17 @@ namespace TestResult {
         Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // tryCatch                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tryCatch01(): Bool = Result.tryCatch(_ -> 1 / 1) == Ok(1)
+
+    @test
+    def tryCatch02(): Bool = region rc {
+        let arr = Array#{0} @ rc;
+        Result.tryCatch(_ -> Array.get(10, arr)) |> Result.isErr
+    }
+
 }
