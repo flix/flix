@@ -18,38 +18,38 @@ namespace Test/Exp/Jvm/NewObject {
   @test
   def testImplementInterface01(): Bool \ IO =
     import java.lang.Object.toString(): String \ {};
-    let anon = upcast implementSerializable();
+    let anon = checked_cast(implementSerializable());
     toString(anon) |> String.startsWith(prefix = "Anon")
 
   @test
   def testImplementInterface02(): Bool \ IO =
     import java.lang.Object.hashCode(): Int32 \ {};
-    let anon = upcast implementSerializable();
-    let anon2 = upcast implementSerializable();
+    let anon = checked_cast(implementSerializable());
+    let anon2 = checked_cast(implementSerializable());
     hashCode(anon) != hashCode(anon2)
 
   @test
   def testImplementInterface03(): Bool \ IO =
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = upcast implementSerializable();
-    let anon2 = upcast implementSerializable();
+    let anon = checked_cast(implementSerializable());
+    let anon2 = checked_cast(implementSerializable());
     not equals(anon, anon2)
 
   @test
   def testImplementInterface04(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = upcast implementSerializable();
-    let anon2 = upcast implementSerializable();
-    equals(upcast getClass(anon), upcast getClass(anon2))
+    let anon = checked_cast(implementSerializable());
+    let anon2 = checked_cast(implementSerializable());
+    equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
 
   @test
   def testImplementInterface05(): Bool \ IO =
     import java.lang.Object.getClass(): ##java.lang.Class \ {};
     import java.lang.Object.equals(##java.lang.Object): Bool \ {};
-    let anon = upcast implementSerializable();
-    let anon2 = upcast implementSerializableAgain();
-    not equals(upcast getClass(anon), upcast getClass(anon2))
+    let anon = checked_cast(implementSerializable());
+    let anon2 = checked_cast(implementSerializableAgain());
+    not equals(checked_cast(getClass(anon)), checked_cast(getClass(anon2)))
 
   @test
   def testVoidInterface01(): Bool \ IO =
@@ -230,8 +230,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: ##java.lang.Object): ##java.lang.Object =
-        let str = unsafe_cast x as String;
-        upcast "${str}, ${str}"
+        let str = unchecked_cast(x as String);
+        checked_cast("${str}, ${str}")
     };
     runTest(anon)
 
@@ -240,8 +240,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericMethod.runTest(TestGenericMethod): Bool;
     let anon = new TestGenericMethod {
       def testMethod(_this: TestGenericMethod, x: ##java.lang.Object): ##java.lang.Object =
-        let str = unsafe_cast x as String;
-        upcast "${str}, ${str}"
+        let str = unchecked_cast(x as String);
+        checked_cast("${str}, ${str}")
     };
     runTest(anon)
 
@@ -250,8 +250,8 @@ namespace Test/Exp/Jvm/NewObject {
     import static dev.flix.test.TestGenericInterface.runTest(TestGenericInterface): Bool;
     let anon = new TestGenericInterface {
       def testMethod(_this: TestGenericInterface, x: Object): Object =
-        let str = unsafe_cast x as String;
-        upcast "${str}, ${str}"
+        let str = unchecked_cast(x as String);
+        checked_cast("${str}, ${str}")
     };
     runTest(anon)
 
@@ -286,7 +286,7 @@ namespace Test/Exp/Jvm/NewObject {
     let anon = new ##java.util.Comparator {
       def compare(_this: ##java.util.Comparator, _t: ##java.lang.Object, _u: ##java.lang.Object): Int32 = 0
     };
-    compare(anon, upcast "foo", upcast "bar") == 0
+    compare(anon, checked_cast("foo"), checked_cast("bar")) == 0
 
   @test
   def testClassWithDefaultConstructor01(): Bool \ IO =
