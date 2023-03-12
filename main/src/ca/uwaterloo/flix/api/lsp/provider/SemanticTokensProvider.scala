@@ -421,16 +421,13 @@ object SemanticTokensProvider {
     case Expression.Of(sym, exp, _, _, _, _) =>
       visitExp(exp) // TODO RESTR-VARS visit sym
 
-    case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.UncheckedCast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, eff, _, _, _, _) =>

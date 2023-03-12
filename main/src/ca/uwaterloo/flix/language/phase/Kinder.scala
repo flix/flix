@@ -708,14 +708,22 @@ object Kinder {
         case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
+      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
+        case e =>
+          val tvar = Type.freshVar(Kind.Star, loc)
+          val pvar = Type.freshVar(Kind.Bool, loc)
+          val evar = Type.freshVar(Kind.Effect, loc)
+          KindedAst.Expression.CheckedCast(cast, e, tvar, pvar, evar, loc)
+      }
 
-    case ResolvedAst.Expression.Cast(exp0, declaredType0, declaredEff0, loc) =>
+    case ResolvedAst.Expression.UncheckedCast(exp0, declaredType0, declaredEff0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       val declaredTypeVal = traverseOpt(declaredType0)(visitType(_, Kind.Star, kenv0, senv, taenv, root))
       val declaredPurAndEffVal = visitOptionalPurityAndEffect(declaredEff0, kenv0, senv, taenv, root)
       mapN(expVal, declaredTypeVal, declaredPurAndEffVal) {
         case (exp, declaredType, (declaredPur, declaredEff)) =>
-          KindedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+          KindedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
@@ -724,20 +732,10 @@ object Kinder {
           KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
-    case ResolvedAst.Expression.Mask(exp, loc) =>
+    case ResolvedAst.Expression.UncheckedMaskingCast(exp, loc) =>
       val eVal = visitExp(exp, kenv0, senv, taenv, henv0, root)
       mapN(eVal) {
-        case e => KindedAst.Expression.Mask(e, loc)
-      }
-
-    case ResolvedAst.Expression.Upcast(exp, loc) =>
-      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-        KindedAst.Expression.Upcast(e, Type.freshVar(Kind.Star, loc), loc)
-      }
-
-    case ResolvedAst.Expression.Supercast(exp, loc) =>
-      mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) { e =>
-        KindedAst.Expression.Supercast(e, Type.freshVar(Kind.Star, loc), loc)
+        case e => KindedAst.Expression.UncheckedMaskingCast(e, loc)
       }
 
     case ResolvedAst.Expression.Without(exp0, eff, loc) =>

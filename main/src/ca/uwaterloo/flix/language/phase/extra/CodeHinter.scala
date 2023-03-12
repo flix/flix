@@ -221,16 +221,13 @@ object CodeHinter {
     case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
-      checkCast(tpe, pur, loc) ++ visitExp(exp)
-
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, _, loc) =>
       visitExp(exp)
 
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -484,16 +481,6 @@ object CodeHinter {
       CodeHint.Lazy(loc) :: Nil
     } else {
       Nil
-    }
-  }
-
-  /**
-    * Checks whether a cast to the given `tpe` and `eff` is an unsafe purity cast.
-    */
-  private def checkCast(tpe: Type, eff: Type, loc: SourceLocation): List[CodeHint] = {
-    eff.typeConstructor match {
-      case Some(TypeConstructor.True) => CodeHint.UnsafePurityCast(eff.loc) :: Nil
-      case _ => Nil
     }
   }
 

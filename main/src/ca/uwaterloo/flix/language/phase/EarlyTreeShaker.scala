@@ -245,12 +245,6 @@ object EarlyTreeShaker {
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
-      visitExp(exp)
-
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 

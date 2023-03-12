@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -629,7 +630,21 @@ object Redundancy {
     case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Cast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
+      cast match {
+        case CheckedCastType.TypeCast =>
+          if (exp.tpe == tpe)
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
+          else
+            visitExp(exp, env0, rc)
+        case CheckedCastType.EffectCast =>
+          if (exp.pur == pur && exp.eff == eff)
+            visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
+          else
+            visitExp(exp, env0, rc)
+      }
+
+    case Expression.UncheckedCast(exp, _, declaredPur, declaredEff, _, _, _, loc) =>
       (declaredPur, declaredEff) match {
         // Don't capture redundant purity casts if there's also a set effect
         case (Some(pur), Some(eff)) =>
@@ -638,26 +653,14 @@ object Redundancy {
               visitExp(exp, env0, rc) + RedundantPurityCast(loc)
             case ((Type.Var(pur1, _), Type.Var(pur2, _)), (Type.Var(eff1, _), Type.Var(eff2, _)))
               if pur1 == pur2 && eff1 == eff2 =>
-              visitExp(exp, env0, rc) + RedundantEffectCast(loc)
+              visitExp(exp, env0, rc) + RedundantCheckedEffectCast(loc)
             case _ => visitExp(exp, env0, rc)
           }
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
-
-    case Expression.Upcast(exp, tpe, loc) =>
-      if (exp.tpe == tpe)
-        visitExp(exp, env0, rc) + RedundantUpcast(loc)
-      else
-        visitExp(exp, env0, rc)
-
-    case Expression.Supercast(exp, tpe, loc) =>
-      if (exp.tpe == tpe)
-        visitExp(exp, env0, rc) + RedundantSupercast(tpe, loc)
-      else
-        visitExp(exp, env0, rc)
 
     case Expression.Without(exp, effUse, _, _, _, _) =>
       Used.of(effUse.sym) ++ visitExp(exp, env0, rc)
@@ -1028,7 +1031,7 @@ object Redundancy {
     * Returns `true` if the expression must be used.
     */
   private def isMustUse(exp: Expression)(implicit root: Root): Boolean =
-    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.Mask]
+    isMustUseType(exp.tpe) && !exp.isInstanceOf[Expression.UncheckedMaskingCast]
 
   /**
     * Returns `true` if the given type `tpe` is marked as `@MustUse` or is intrinsically `@MustUse`.

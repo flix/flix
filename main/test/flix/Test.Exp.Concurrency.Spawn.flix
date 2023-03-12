@@ -59,7 +59,7 @@ namespace Test/Exp/Concurrency/Spawn {
         try {
             region r {
                 spawn {
-                    spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+                    spawn { String.concat(checked_cast(null), "foo") } @ r
                 } @ r;
                 Thread.sleep(Time/Duration.fromSeconds(1));
                 false
@@ -74,7 +74,7 @@ namespace Test/Exp/Concurrency/Spawn {
         spawn {
             spawn {
                 try {
-                    String.concat(unsafe_cast null as String, "foo")
+                    String.concat(checked_cast(null), "foo")
                 } catch {
                     case _: ##java.lang.NullPointerException => ""
                 }

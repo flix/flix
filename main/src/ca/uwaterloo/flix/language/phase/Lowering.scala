@@ -578,23 +578,16 @@ object Lowering {
       // remove the 'of' wrapper
       visitExp(exp)
 
-    case TypedAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = visitExp(exp)
       val dt = declaredType.map(visitType)
       val t = visitType(tpe)
       LoweredAst.Expression.Cast(e, dt, declaredPur, declaredEff, t, pur, eff, loc)
 
-    case TypedAst.Expression.Upcast(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expression.Upcast(e, t, loc)
-
-    case TypedAst.Expression.Supercast(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expression.Supercast(e, t, loc)
-
-    case TypedAst.Expression.Mask(exp, _, _, _, _) =>
+    case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case TypedAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
@@ -2008,14 +2001,6 @@ object Lowering {
     case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
-
-    case LoweredAst.Expression.Upcast(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Upcast(e, tpe, loc)
-
-    case LoweredAst.Expression.Supercast(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Supercast(e, tpe, loc)
 
     case LoweredAst.Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)

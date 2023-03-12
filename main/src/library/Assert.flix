@@ -20,7 +20,7 @@ namespace Assert {
     ///
     /// Aborts execution if the two values are un-equal.
     ///
-    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = unsafe_cast {
+    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = masked_cast({
         if (expected == actual)
             true
         else {
@@ -31,6 +31,6 @@ namespace Assert {
             println("");
             ?assertEq
         }
-    } as _ \ {}
+    })
 
 }

@@ -41,8 +41,8 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = unsafe_cast {
-        notifyPreSolve(d, stf);
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+        masked_cast(notifyPreSolve(d, stf));
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,9 +59,9 @@ namespace Fixpoint {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        notifyPostSolve(model);
+        masked_cast(notifyPostSolve(model));
         model
-    } as _ \ {} // This casts away the impure effect of notify
+    }
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -113,7 +113,7 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = unsafe_cast {
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
         use Fixpoint/PredSymsOf.predSymsOf;
         use Fixpoint/SubstitutePredSym.substitute;
 
@@ -131,7 +131,8 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as _ \ {}); // We add one because the counter starts at zero.
+                let nextId = unchecked_cast((newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -141,15 +142,13 @@ namespace Fixpoint {
         let r = substitute(d, s);
 
         // Debugging
-        let _ = if (enableDebugging()) {
-            println(s);
-            println(d);
-            println(r)
-        } else ();
+        // println(s);
+        // println(d);
+        // println(r)
 
         // Return the result.
         r
-    } as _ \ {} // This casts away the impure effect of debugging
+    }
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -506,7 +505,7 @@ namespace Fixpoint {
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r), db);
-                MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
+                MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }
@@ -516,8 +515,8 @@ namespace Fixpoint {
     ///
     @Internal
     pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
-        factsOf(_ -> unsafe_cast () as v, p, d)
-
+        // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
+        factsOf(_ -> unchecked_cast(() as v), p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
@@ -727,13 +726,13 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.forEach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
+                    Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.forEach((tuple, lat) -> {
-                        let it = Iterator.range(r, 0, Fixpoint/Tuple.length(tuple) + 1);
+                        let it = Iterator.range(r, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
-                            if (i < Fixpoint/Tuple.length(tuple))
-                                Fixpoint/Tuple.valueAt(tuple, i)
+                            if (i < Vector.length(tuple))
+                                Vector.get(i, tuple)
                             else
                                 lat
                         }) |> Iterator.toList;
@@ -756,18 +755,8 @@ namespace Fixpoint {
     }
 
     ///
-    /// Unsafely casts and prints the given Datalog program `d`.
+    /// Returns the given database `db` as a Datalog value.
     ///
-    @Internal @Unsafe
-    pub def unsafePrint(d: a): Unit \ IO =
-        println(unsafeCast(d))
-
-    ///
-    /// Unsafely casts the given value `d` to a Datalog program.
-    ///
-    @Internal @Unsafe
-    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v as Datalog[Boxed]
-
     def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>
