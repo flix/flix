@@ -652,7 +652,7 @@ object Redundancy {
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
-            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc) // TODO: Rename
+            visitExp(exp, env0, rc) + RedundantCheckedTypeCast(loc)
           else
             visitExp(exp, env0, rc)
         case CheckedCastType.EffectCast =>
