@@ -881,7 +881,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantPurityCast.01") {
     val input =
       s"""
-         |pub def f(): Int32 = unsafe_cast 123 as _ & Pure
+         |pub def f(): Int32 = unchecked_cast(123 as _ & Pure)
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -893,7 +893,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       raw"""
            |pub def f(): Array[Int32, false] \ IO =
            |  let x = Array#{1, 2, 3} @ Static;
-           |  unsafe_cast x as _ & Pure
+           |  unchecked_cast(x as _ & Pure)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -903,7 +903,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("RedundantEffectCast.01") {
     val input =
       raw"""
-           |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast g(123) as _ \ ef
+           |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(g(123) as _ \ ef)
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
