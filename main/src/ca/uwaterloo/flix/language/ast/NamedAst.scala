@@ -157,7 +157,7 @@ object NamedAst {
 
     case class VectorLength(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class Ref(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 

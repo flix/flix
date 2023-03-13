@@ -767,7 +767,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), traverseOpt(exp2)(visitExp(_, ns0))) {
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expression.Ref(e1, e2, loc)
       }
