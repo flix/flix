@@ -3339,16 +3339,17 @@ object Resolver {
       // Case 1: The region is explicitly given.
       result
     case None =>
-      // Case 2: The region is absent. Either use the current region or the global region.
-      currentRegion match {
-        case Some(sym) =>
-          // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.loc)
-        case None =>
-          // Case 2.2: Use the global region.
-          val tpe = Type.mkRegion(Type.False, loc)
-          ResolvedAst.Expression.Region(tpe, loc)
-      }
+      throw InternalCompilerException("unexpected implicit region", loc)
+//      // Case 2: The region is absent. Either use the current region or the global region.
+//      currentRegion match {
+//        case Some(sym) =>
+//          // Case 2.1: Use the current region.
+//          ResolvedAst.Expression.Var(sym, sym.loc)
+//        case None =>
+//          // Case 2.2: Use the global region.
+//          val tpe = Type.mkRegion(Type.False, loc)
+//          ResolvedAst.Expression.Region(tpe, loc)
+//      }
   }
 
   /**
