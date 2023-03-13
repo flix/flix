@@ -119,6 +119,8 @@ instance Iterable[Chain] {
 }
 
 namespace Chain {
+    use ViewLeft.{NoneLeft, SomeLeft}
+    use ViewRight.{NoneRight, SomeRight}
 
     ///
     /// A datatype for pattern matching on a chain (traversing left-to-right).

@@ -1158,7 +1158,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |}
         |
         |def f(): Int32 \ IO =
-        |    unchecked_cast(A as _ \ IO);
+        |    unchecked_cast(A.A as _ \ IO);
         |    123
         |
         |""".stripMargin
