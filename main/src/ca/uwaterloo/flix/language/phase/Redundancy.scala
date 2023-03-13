@@ -1097,7 +1097,7 @@ object Redundancy {
         if (Name.isWild(name))
           Used.empty
         else
-          Used.empty + ShadowedVar(name, shadowing = loc, shadowed = shadowed)
+          Used.empty + ShadowedName(name, shadowing = loc, shadowed = shadowed)
     }
 
   /**

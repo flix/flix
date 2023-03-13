@@ -67,7 +67,7 @@ object RedundancyError {
     * @param shadowed the shadowed name.
     * @param shadowing the shadowing name.
     */
-  case class ShadowedVar(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
     def summary: String = "Shadowed name."
 
     def message(formatter: Formatter): String = {
@@ -77,7 +77,7 @@ object RedundancyError {
          |
          |${code(shadowing, "shadowing name.")}
          |
-         |The shadowed variable was declared here:
+         |The shadowed name was declared here:
          |
          |${code(shadowed, "shadowed name.")}
          |

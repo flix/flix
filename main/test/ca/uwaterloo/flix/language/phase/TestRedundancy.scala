@@ -96,7 +96,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Def.02") {
@@ -109,7 +109,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Let.01") {
@@ -122,7 +122,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Let.02") {
@@ -136,7 +136,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Lambda.01") {
@@ -149,7 +149,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Lambda.02") {
@@ -164,7 +164,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Lambda.03") {
@@ -179,7 +179,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Match.01") {
@@ -193,7 +193,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Match.02") {
@@ -207,7 +207,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Match.03") {
@@ -222,7 +222,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Match.04") {
@@ -237,7 +237,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Select.01") {
@@ -252,7 +252,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Select.02") {
@@ -270,7 +270,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.Region.01") {
@@ -287,7 +287,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("ShadowedVar.NewObject.01") {
@@ -301,7 +301,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |   }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("UnusedEnumSym.01") {
@@ -1299,7 +1299,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    par (g <- 5) yield g
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("TestParYield.02") {
@@ -1309,7 +1309,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    par (a <- 5; a <- 1) yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("TestParYield.03") {
@@ -1320,7 +1320,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    par (a <- 5) yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("TestParYield.04") {
@@ -1330,7 +1330,7 @@ class TestRedundancy extends FunSuite with TestUtils {
         |    par (a <- 5) yield { let a = 4; a }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.ShadowedVar](result)
+    expectError[RedundancyError.ShadowedName](result)
   }
 
   test("TestParYield.05") {
