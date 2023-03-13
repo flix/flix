@@ -2584,65 +2584,6 @@ object Resolver {
   }
 
   /**
-    * Looks up the ambiguous type.
-    */
-  private def lookupTypeOld(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
-
-    /**
-      * Looks up the type in the given namespace.
-      */
-    def lookupInNamespace(ns: Name.NName): TypeLookupResult = {
-      val symbolsInNamespace = root.symbols.getOrElse(ns, Map.empty)
-      symbolsInNamespace.getOrElse(qname.ident.name, Nil).collectFirst {
-        case alias: NamedAst.Declaration.TypeAlias =>
-          // Case 2: found a type alias
-          TypeLookupResult.TypeAlias(alias)
-        case enum: NamedAst.Declaration.Enum =>
-          // Case 3: found an enum
-          TypeLookupResult.Enum(enum)
-        case enum: NamedAst.Declaration.RestrictableEnum =>
-          // Case 4: found a restrictable enum
-          TypeLookupResult.RestrictableEnum(enum)
-        case effect: NamedAst.Declaration.Effect =>
-          // Case 5: found an effect
-          TypeLookupResult.Effect(effect)
-      }.getOrElse(TypeLookupResult.NotFound)
-    }
-
-    def lookupInUseEnv(name: String): TypeLookupResult = env(name).collectFirst {
-      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
-        // Case 1: found a type alias
-        TypeLookupResult.TypeAlias(alias)
-      case Resolution.Declaration(enum: NamedAst.Declaration.Enum) =>
-        // Case 2: found an enum
-        TypeLookupResult.Enum(enum)
-      case Resolution.Declaration(enum: NamedAst.Declaration.RestrictableEnum) =>
-        // Case 3: found a restrictable enum
-        TypeLookupResult.RestrictableEnum(enum)
-      case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
-        // Case 4: found an effect
-        TypeLookupResult.Effect(effect)
-      case Resolution.JavaClass(clazz) =>
-        // Case 5: found a Java class
-        TypeLookupResult.JavaClass(clazz)
-    }.getOrElse(TypeLookupResult.NotFound)
-
-    if (qname.isUnqualified) {
-      // Case 1. The name is unqualified. Look it up in the use environment.
-      lookupInUseEnv(qname.ident.name).orElse {
-        // Case 1: The name is unqualified. Lookup in the current namespace.
-        lookupInNamespace(ns0).orElse {
-          // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-          lookupInNamespace(Name.RootNS)
-        }
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      lookupInNamespace(qname.namespace)
-    }
-  }
-
-  /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
