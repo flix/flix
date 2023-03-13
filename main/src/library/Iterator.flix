@@ -19,6 +19,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 }
 
 namespace Iterator {
+    use Step.{Ans, Skip, Done}
 
 
     ///

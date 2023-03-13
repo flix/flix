@@ -1,4 +1,6 @@
-namespace Test/Exp/Closable {
+namespace Test/Exp/Closeable {
+    use MyCloseable.MyCloseable
+    use MyCloseable2.MyCloseable2
 
     enum MyCloseable[r: Region](Ref[Bool, r])
     enum MyCloseable2[r: Region](Ref[Bool, r], Ref[Bool, r])

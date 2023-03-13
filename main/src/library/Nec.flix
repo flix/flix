@@ -140,6 +140,8 @@ instance Iterable[Nec] {
 }
 
 namespace Nec {
+    use ViewLeft.{OneLeft, SomeLeft}
+    use ViewRight.{OneRight, SomeRight}
 
     use Functor.{<$>}
     use Applicative.{<*>}
