@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -325,7 +325,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check if the formal parameter is shadowing.
-      val shadowedVar = shadowing(fparam.sym, env0)
+      val shadowedVar = shadowing(fparam.sym.text, fparam.sym.loc, env0)
 
       // Check if the lambda parameter symbol is dead.
       if (deadVarSym(fparam.sym, innerUsed))
@@ -355,7 +355,7 @@ object Redundancy {
       val innerUsed2 = visitExp(exp2, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
@@ -374,7 +374,7 @@ object Redundancy {
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp1 + exp2.
       if (deadVarSym(sym, used))
@@ -393,7 +393,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp.
       if (deadVarSym(sym, innerUsed))
@@ -750,7 +750,7 @@ object Redundancy {
           val env1 = env0 + sym
 
           // Check for shadowing.
-          val shadowedVar = shadowing(sym, env0)
+          val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
           // Visit the channel and body expressions.
           val chanUsed = visitExp(chan, env1, rc)
@@ -856,7 +856,7 @@ object Redundancy {
     * Returns the symbols that the free variables shadow in env0.
     */
   private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
-    freeVars.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+    freeVars.map(sym => shadowing(sym.text, sym.loc, env0)).foldLeft(Used.empty)(_ ++ _)
   }
 
   /**
@@ -1089,15 +1089,15 @@ object Redundancy {
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
-  private def shadowing(sym: Symbol.VarSym, env: Env): Used =
-    env.varSyms.get(sym.text) match {
+  private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
+    env.varSyms.get(name) match {
       case None =>
         Used.empty
-      case Some(shadowingVar) =>
-        if (sym.isWild)
+      case Some(shadowed) =>
+        if (Name.isWild(name))
           Used.empty
         else
-          Used.empty + ShadowedVar(shadowingVar, sym)
+          Used.empty + ShadowedVar(name, shadowing = loc, shadowed = shadowed)
     }
 
   /**
@@ -1173,12 +1173,12 @@ object Redundancy {
   /**
     * Represents an environment.
     */
-  private case class Env(varSyms: Map[String, Symbol.VarSym]) {
+  private case class Env(varSyms: Map[String, SourceLocation]) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
     def +(sym: Symbol.VarSym): Env = {
-      copy(varSyms = varSyms + (sym.text -> sym))
+      copy(varSyms = varSyms + (sym.text -> sym.loc))
     }
 
     /**
