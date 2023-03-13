@@ -791,38 +791,6 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns the product of all keys in the tree `t`.
-    ///
-    pub def productKeys(t: RedBlackTree[Int32, v]): Int32 =
-        productWith((k, _) -> k, t)
-
-    ///
-    /// Returns the product of all values in the tree `t`.
-    ///
-    pub def productValues(t: RedBlackTree[k, Int32]): Int32 =
-        productWith((_, v) -> v, t)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the tree `t`
-    /// according to the function `f`.
-    ///
-    pub def productWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef =
-        def loop(tt) = match tt {
-            case Leaf                => 1
-            case DoubleBlackLeaf     => 1
-            case Node(_, a, k, v, b) =>
-                let x = loop(a);
-                let y = f(k, v);
-                let z = loop(b);
-                x * y * z
-        };
-        match t {
-            case Leaf            => 1
-            case DoubleBlackLeaf => 1
-            case _               => loop(t)
-        }
-
-    ///
     /// Returns the product of all key-value pairs `k => v` in the tree `t`
     /// according to the function `f`.
     ///

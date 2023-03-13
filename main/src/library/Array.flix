@@ -877,24 +877,6 @@ namespace Array {
         foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///
-    /// Returns the product of all elements in the array `a`.
-    ///
-    pub def product(a: Array[Int32, r]): Int32 \ Read(r) =
-        if (isEmpty(a))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, a)
-
-    ///
-    /// Returns the product of all elements in the array `a` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, a: Array[a, r]): Int32 \ { ef, Read(r) } =
-        if (isEmpty(a))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, a)
-
-    ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     pub def flatten(r1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { Read(r), Write(r1) } =

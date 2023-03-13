@@ -528,56 +528,6 @@ namespace TestNel {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Nel.product(Nel(1, Nil)) == 1
-
-    @test
-    def product02(): Bool =
-        Nel.product(Nel(1, 2 :: 3 :: Nil)) == 6
-
-    @test
-    def product03(): Bool =
-        Nel.product(Nel(1, 2 :: 3 :: -3 :: Nil)) == -18
-
-    @test
-    def product04(): Bool =
-        Nel.product(Nel(-1, -2 :: -3 :: -4 :: Nil)) == 24
-
-    @test
-    def product05(): Bool =
-        Nel.product(Nel(10, -10 :: Nil)) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Nel.productWith(x -> x + 1, Nel(1, Nil)) == 2
-
-    @test
-    def productWith02(): Bool =
-        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == 24
-
-    @test
-    def productWith03(): Bool =
-        Nel.productWith(x -> x + 1, Nel(1, 2 :: 3 :: -3 :: Nil)) == -48
-
-    @test
-    def productWith04(): Bool =
-        Nel.productWith(x -> x + 1, Nel(-2, -3 :: -4 :: -5 :: Nil)) == 24
-
-    @test
-    def productWith05(): Bool =
-        Nel.productWith(x -> x + 1, Nel(10, -10 :: Nil)) == -99
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
