@@ -1050,7 +1050,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.format.04") {
@@ -1080,7 +1080,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.numbers.01") {
@@ -1328,7 +1328,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.format.04") {
@@ -1347,7 +1347,7 @@ class TestManifestParser extends FunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |
         |[dev-dependencies]
-        |"github:fuzzer:fuzzer" = "1.2.3"
+        |"github:fuzzer-fuzzer" = "1.2.3"
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
@@ -1358,7 +1358,7 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.numbers.01") {

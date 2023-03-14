@@ -170,6 +170,7 @@ object ManifestParser {
   /**
     * Converts a String `s` to a semantic version and returns
     * an error if the String is not of the correct format.
+    * The only allowed format is "x.x.x"
     */
   private def toFlixVer(s: String, p: Path): Result[SemVer, ManifestError] = {
     try {
@@ -180,22 +181,6 @@ object ManifestParser {
       }
     } catch {
       case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse Flix version as three numbers"))
-    }
-  }
-
-  private def toMavenVer(s: String, p: Path): Result[SemVer, ManifestError] = {
-    try {
-      s.split('.') match {
-        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
-        case Array(major, minor, patch) =>
-          patch.split('-') match {
-            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
-            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
-          }
-        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'"))
-      }
-    } catch {
-      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse Maven version as numbers"))
     }
   }
 
@@ -223,32 +208,52 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Retrieves the repository for a Flix dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
   private def getRepository(depName: String, p: Path): Result[Repository, ManifestError] = {
     depName.split(':') match {
       case Array(repo, _) =>
         if (repo == "github") Ok(Repository.GitHub)
         else Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
     }
   }
 
+  /**
+    * Retrieves the username for a Flix dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
   private def getUsername(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split(':') match {
       case Array(_, rest) => rest.split('/') match {
         case Array(username, _) => checkNameCharacters(username, p)
-        case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+        case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
       }
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'host:username/projectname'"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
     }
   }
 
+  /**
+    * Retrieves the project name for a Flix dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
   private def getProjectName(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split('/') match {
       case Array(_, projectName) => checkNameCharacters(projectName, p)
-      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
     }
   }
 
+  /**
+    * Retrieves the group id for a Maven dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
   private def getGroupId(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split(':') match {
       case Array(groupId, _) => checkNameCharacters(groupId, p)
@@ -256,6 +261,11 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Retrieves the artifact id for a Maven dependency
+    * and returns an error if it is not formatted correctly
+    * or has characters that are not allowed.
+    */
   private def getArtifactId(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split(':') match {
       case Array(_, artifactId) => checkNameCharacters(artifactId, p)
@@ -263,6 +273,10 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Converts `depVer` to a String and then to a semantic version
+    * and returns an error if `depVer` is not of the correct format.
+    */
   def getFlixVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
       toFlixVer(depVer.asInstanceOf[String], p)
@@ -272,15 +286,37 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Converts `depVer` to a String and then to a semantic version
+    * and returns an error if `depVer` is not of the correct format.
+    * Allowed formats are "x.x", "x.x.x" and "x.x.x-x"
+    */
   def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
-      toMavenVer(depVer.asInstanceOf[String], p)
+      depVer.asInstanceOf[String].split('.') match {
+        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
+        case Array(major, minor, patch) =>
+          patch.split('-') match {
+            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
+            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
+          }
+        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'"))
+      }
     } catch {
       case _: ClassCastException =>
         Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+      case _: NumberFormatException =>
+        Err(ManifestError.VersionNumberWrong(p, "Could not parse Maven version as numbers"))
     }
   }
 
+  /**
+    * Creates a MavenDependency.
+    * Group id and artifact id are given by `depName`.
+    * The version is given by `depVer`.
+    * `prodDep` decides whether it is a production or development dependency.
+    * `p` is for reporting errors.
+    */
   private def createMavenDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[MavenDependency, ManifestError] = {
     for(
       groupId <- getGroupId(depName, p);
@@ -295,6 +331,13 @@ object ManifestParser {
     }
   }
 
+  /**
+    * Creates a FlixDependency.
+    * Repository, username and project name are given by `depName`.
+    * The version is given by `depVer`.
+    * `prodDep` decides whether it is a production or development dependency.
+    * `p` is for reporting errors.
+    */
   private def createFlixDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[FlixDependency, ManifestError] = {
     for (
       repository <- getRepository(depName, p);
