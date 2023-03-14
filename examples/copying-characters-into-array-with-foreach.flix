@@ -34,7 +34,7 @@ def main(): Unit \ IO = region r {
             else
                 ()
             }, String.enumerator(r, s));
-        println(xs);
+        println(Array.toString(xs));
 
         Iterator.forEachWithIndex((i, x) -> {
             if (i < Array.length(xs))
@@ -42,7 +42,7 @@ def main(): Unit \ IO = region r {
             else
                 ()
             }, String.iterator(r, s));
-        println(xs)
+        println(Array.toString(xs))
 
 
 }

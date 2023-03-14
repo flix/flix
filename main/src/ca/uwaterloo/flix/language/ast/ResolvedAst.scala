@@ -168,13 +168,11 @@ object ResolvedAst {
 
     case class Of(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
+    case class CheckedCast(cast: Ast.CheckedCastType, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Mask(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class UncheckedCast(exp: ResolvedAst.Expression, declaredType: Option[UnkindedType], declaredEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Upcast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Supercast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class UncheckedMaskingCast(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Without(exp: ResolvedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends ResolvedAst.Expression
 

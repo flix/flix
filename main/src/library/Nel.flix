@@ -282,7 +282,7 @@ namespace Nel {
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
+            case Nel(f1, rs)  => loop(f1, rs, identity)
         }
 
     ///
@@ -402,7 +402,7 @@ namespace Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, ks -> unsafe_cast ks as _ & (ef1 and ef2) \ (ef1_ + ef2_))
+        loop(x :: xs, identity)
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.

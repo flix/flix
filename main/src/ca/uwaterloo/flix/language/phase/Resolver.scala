@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -57,9 +57,34 @@ object Resolver {
   private val Object = classOf[AnyRef]
 
   /**
+    * The set of cases that are used by default in the namespace.
+    */
+  private val DefaultCases = Map(
+    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
+    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
+
+    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
+    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
+
+    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
+
+    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
+    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
+  )
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+
+
+    // Get the default uses.
+    // Skip over anything we can't find
+    // in order to support LibMin/LibNix
+    val defaultUses: ListMap[String, Resolution] = ListMap(MapOps.mapValues(DefaultCases) {
+      case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration)
+    })
 
     val usesVal = root.uses.map {
       case (ns, uses0) =>
@@ -69,10 +94,10 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(root)) {
+    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = traverse(root.units.values)(visitUnit(_, taenv, root))
+        val unitsVal = traverse(root.units.values)(visitUnit(_, taenv, defaultUses, root))
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
@@ -116,7 +141,6 @@ object Resolver {
     case enum: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
-    // TODO NS-REFACTOR this will be added once Cases become proper symbols
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
@@ -126,9 +150,9 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the root.
     */
-  private def semiResolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+  private def semiResolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
-      case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, root)) {
+      case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, defaultUses, root)) {
         case aliases => aliases.foldLeft(acc) {
           case (innerAcc, alias) => innerAcc + (alias.sym -> alias)
         }
@@ -139,12 +163,12 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the unit.
     */
-  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
+  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
             case ns: NamedAst.Declaration.Namespace => ns
           }
@@ -152,7 +176,7 @@ object Resolver {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
           val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, env, Name.RootNS, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, root))
+          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
           mapN(aliasesVal, nsVal) {
             case (aliases, ns) => aliases ::: ns.flatten
           }
@@ -162,13 +186,13 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the namespace.
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, loc) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
             case ns: NamedAst.Declaration.Namespace => ns
           }
@@ -176,7 +200,7 @@ object Resolver {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
           val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, env, ns, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, root))
+          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
           mapN(aliasesVal, nsVal) {
             case (aliases, ns) => aliases ::: ns.flatten
           }
@@ -208,8 +232,8 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    flatMapN(semiResolveTypeAliases(root)) {
+  def resolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+    flatMapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
         flatMapN(findResolutionOrder(semiResolved.values)) {
           case orderedSyms =>
@@ -288,13 +312,13 @@ object Resolver {
   /**
     * Performs name resolution on the compilation unit.
     */
-  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
+  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, Name.RootNS, root))
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
+          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, Name.RootNS, defaultUses, root))
           mapN(declsVal) {
             case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
@@ -304,7 +328,7 @@ object Resolver {
   /**
     * Performs name resolution on the declaration.
     */
-  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
+  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
@@ -313,8 +337,8 @@ object Resolver {
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           // reset the env
-          val env = mkUseEnv(usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, root))
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
+          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, defaultUses, root))
           mapN(declsVal) {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
@@ -1245,7 +1269,12 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+        case NamedAst.Expression.CheckedCast(c, exp, loc) =>
+          mapN(visitExp(exp, env0, region)) {
+            case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
+          }
+
+        case NamedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(resolveType(t, Wildness.ForbidWild, env0, taenv, ns0, root))(x => Some(x))
@@ -1254,25 +1283,15 @@ object Resolver {
 
           val eVal = visitExp(exp, env0, region)
           mapN(eVal, declaredTypVal, declaredEffVal) {
-            case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+            case (e, t, f) => ResolvedAst.Expression.UncheckedCast(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Mask(exp, loc) =>
+        case NamedAst.Expression.UncheckedMaskingCast(exp, loc) =>
           val eVal = visitExp(exp, env0, region)
           mapN(eVal) {
-            case e => ResolvedAst.Expression.Mask(e, loc)
-          }
-
-        case NamedAst.Expression.Upcast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Upcast(e, loc)
-          }
-
-        case NamedAst.Expression.Supercast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Supercast(e, loc)
+            case e => ResolvedAst.Expression.UncheckedMaskingCast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -2001,15 +2020,16 @@ object Resolver {
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
+//      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
+//        // Multiple case matches. Error.
+//        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
+      // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
+      case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedTerm.Tag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
-      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
-        // Multiple case matches. Error.
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
       case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
     }
@@ -2059,11 +2079,7 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
       // Case 1: Exactly one match. Success.
-      case caze :: Nil => caze.toSuccess
-      // Case 2: Multiple matches. Error
-      case cazes =>
-        val locs = cazes.map(_.sym.loc).sorted
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+      case caze :: _ => caze.toSuccess
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2543,33 +2559,12 @@ object Resolver {
     case object NotFound extends TypeLookupResult
   }
 
+
   /**
     * Looks up the ambiguous type.
     */
   private def lookupType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
-
-    /**
-      * Looks up the type in the given namespace.
-      */
-    def lookupInNamespace(ns: Name.NName): TypeLookupResult = {
-      val symbolsInNamespace = root.symbols.getOrElse(ns, Map.empty)
-      symbolsInNamespace.getOrElse(qname.ident.name, Nil).collectFirst {
-        case alias: NamedAst.Declaration.TypeAlias =>
-          // Case 2: found a type alias
-          TypeLookupResult.TypeAlias(alias)
-        case enum: NamedAst.Declaration.Enum =>
-          // Case 3: found an enum
-          TypeLookupResult.Enum(enum)
-        case enum: NamedAst.Declaration.RestrictableEnum =>
-          // Case 4: found a restrictable enum
-          TypeLookupResult.RestrictableEnum(enum)
-        case effect: NamedAst.Declaration.Effect =>
-          // Case 5: found an effect
-          TypeLookupResult.Effect(effect)
-      }.getOrElse(TypeLookupResult.NotFound)
-    }
-
-    def lookupInUseEnv(name: String): TypeLookupResult = env(name).collectFirst {
+    tryLookupName(qname, allowCase = false, env, ns0, root).collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         // Case 1: found a type alias
         TypeLookupResult.TypeAlias(alias)
@@ -2586,20 +2581,6 @@ object Resolver {
         // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
     }.getOrElse(TypeLookupResult.NotFound)
-
-    if (qname.isUnqualified) {
-      // Case 1. The name is unqualified. Look it up in the use environment.
-      lookupInUseEnv(qname.ident.name).orElse {
-        // Case 1: The name is unqualified. Lookup in the current namespace.
-        lookupInNamespace(ns0).orElse {
-          // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-          lookupInNamespace(Name.RootNS)
-        }
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      lookupInNamespace(qname.namespace)
-    }
   }
 
   /**
@@ -2608,10 +2589,9 @@ object Resolver {
   private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
     val symOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
 
-    symOpt match {
-      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) :: Nil => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-      case _ => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
-    }
+    symOpt.collectFirst {
+      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
   }
 
   /**
@@ -2620,10 +2600,9 @@ object Resolver {
   private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
     val symOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
 
-    symOpt match {
-      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) :: Nil => getEffectIfAccessible(eff, ns0, qname.loc)
-      case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
-    }
+    symOpt.collectFirst {
+      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => getEffectIfAccessible(eff, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure)
   }
 
   /**
@@ -2660,36 +2639,30 @@ object Resolver {
     */
   private def tryLookupName(qname: Name.QName, allowCase: Boolean, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
     if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Try in the use environment.
-      env(qname.ident.name) match {
-        // Case 1.1: It's not in the env.
-        case Nil =>
-          // First check the local namespace
-          // Collect both normal symbols in this env, and nested cases
-          val localDecls = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-          val localCases = if (allowCase) { // TODO NS-REFACTOR don't need this after changing case env into auto-uses
-            root.cases.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-          } else {
-            Nil
-          }
+      // Case 1: Unqualified name.
 
-          localDecls ::: localCases match {
-            // Case 1.1.1: Nothing local. Check the root env
-            case Nil =>
-              val rootDecls = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-              val rootCases = if (allowCase) { // TODO NS-REFACTOR don't need this after changing case env into auto-uses
-                root.cases.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-              } else {
-                Nil
-              }
-              rootDecls ::: rootCases
-            // Case 1.1.2: There are locals. Use them.
-            case locals => locals
-          }
+      // Gather names according to priority:
+      // 1st priority: imported names
+      val envNames = env(qname.ident.name)
 
-        // Case 1.2 It is in the env, return the results
-        case l => l
+      // 2nd priority: names in the current namespace
+      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+
+      // 3rd priority: the name of the current namespace
+      val currentNamespace = {
+        if (ns0.idents.lastOption.contains(qname.ident)) {
+          // Case 1.1.1.1: We are referring to the current namespace. Use that.
+          root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
+        } else {
+          Nil
+        }
       }
+
+      // 4th priority: names in the root namespace
+      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+
+      envNames ::: localNames ::: currentNamespace ::: rootNames
+
     } else {
       // Case 2. Qualified name. Look it up directly.
       tryLookupQualifiedName(qname, env, ns0, root).getOrElse(Nil).map(Resolution.Declaration)
@@ -3437,13 +3410,6 @@ object Resolver {
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }
-  }
-
-  /**
-    * Creates a use environment from the given uses and imports.
-    */
-  private def mkUseEnv(usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = {
-    appendAllUseEnv(ListMap.empty, usesAndImports, root)
   }
 
   /**

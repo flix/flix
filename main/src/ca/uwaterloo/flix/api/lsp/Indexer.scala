@@ -309,19 +309,16 @@ object Indexer {
     case Expression.Of(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0) // TODO RESTR-VARS index sym
 
-    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, _, _, _, loc) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
+    case Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, _, _, _, loc) =>
       val dt = declaredType.map(visitType).getOrElse(Index.empty)
       val dp = declaredPur.map(visitType).getOrElse(Index.empty)
       val de = declaredEff.map(visitType).getOrElse(Index.empty)
       visitExp(exp) ++ dt ++ dp ++ de ++ Index.occurrenceOf(exp0)
 
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Supercast(exp, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, effUse, _, _, _, _) =>

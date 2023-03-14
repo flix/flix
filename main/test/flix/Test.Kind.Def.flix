@@ -51,11 +51,11 @@ namespace Test/Kind/Def {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool(): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def bool(): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def enum_(x: EBool[ef]): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def enum_(x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
         namespace Exp {
@@ -97,7 +97,7 @@ namespace Test/Kind/Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unsafe_cast ??? as _ \ ef
+            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unchecked_cast(??? as _ \ ef)
         }
 
         namespace Enum {
@@ -120,11 +120,11 @@ namespace Test/Kind/Def {
         namespace Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool[ef: Bool](): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def bool[ef: Bool](): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def func[ef: Bool](x: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def func[ef: Bool](x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
         namespace Exp {
