@@ -315,6 +315,7 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.Use(_, alias, exp, _) =>
+      val env = env0 + ()
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -1090,7 +1091,7 @@ object Redundancy {
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
   private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
-    env.varSyms.get(name) match {
+    env.name.get(name) match {
       case None =>
         Used.empty
       case Some(shadowed) =>
@@ -1171,14 +1172,14 @@ object Redundancy {
   }
 
   /**
-    * Represents an environment.
+    * Represents a name environment.
     */
-  private case class Env(varSyms: Map[String, SourceLocation]) {
+  private case class Env(name: Map[String, SourceLocation]) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
     def +(sym: Symbol.VarSym): Env = {
-      copy(varSyms = varSyms + (sym.text -> sym.loc))
+      copy(name = name + (sym.text -> sym.loc))
     }
 
     /**
@@ -1186,6 +1187,13 @@ object Redundancy {
       */
     def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(this) {
       case (acc, sym) => acc + sym
+    }
+
+    /**
+      * Updates `this` environment with a new `name`.
+      */
+    def +(name: String, loc: SourceLocation): Env = {
+      copy(name = name + (name -> loc))
     }
   }
 
