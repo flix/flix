@@ -314,7 +314,7 @@ object Redundancy {
     case Expression.OpenAs(_, exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, alias, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>

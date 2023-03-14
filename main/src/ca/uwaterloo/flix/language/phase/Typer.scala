@@ -530,7 +530,7 @@ object Typer {
 
       case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
 
-      case KindedAst.Expression.Use(_, exp, _) => visitExp(exp)
+      case KindedAst.Expression.Use(_, alias, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
         liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
@@ -2011,9 +2011,9 @@ object Typer {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.OpenAs(sym, e, subst0(tvar), loc)
 
-      case KindedAst.Expression.Use(sym, exp, loc) =>
+      case KindedAst.Expression.Use(sym, alias, exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Use(sym, e, loc)
+        TypedAst.Expression.Use(sym, alias, e, loc)
 
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
         TypedAst.Expression.Cst(Ast.Constant.Null, Type.Null, loc)
