@@ -97,7 +97,7 @@ object CodeHinter {
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
 
-    case Expression.Use(_, exp, _) => visitExp(exp)
+    case Expression.Use(_, _, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
 

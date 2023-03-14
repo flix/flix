@@ -121,7 +121,7 @@ object TypedAst {
       def eff: Type = exp.eff
     }
 
-    case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Use(sym: Symbol, alias: Name.Ident, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = exp.tpe
 
       def pur: Type = exp.pur
