@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.errors.{RedundancyError, TypeError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -790,6 +790,29 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     compile(input, Options.TestWithLibNix).get
+  }
+
+  test("UnusedVarSym.PreviousError.01") {
+    val input =
+      """
+        |pub def f(): Int32 =
+        |    let x = 123;
+        |    "hello"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+    rejectError[RedundancyError](result)
+  }
+
+  test("UnusedVarSym.PreviousError.02") {
+    val input =
+      """
+        |pub def f(x: Int32): Int32 =
+        |    "hello"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+    rejectError[RedundancyError](result)
   }
 
   test("UselessExpression.01") {

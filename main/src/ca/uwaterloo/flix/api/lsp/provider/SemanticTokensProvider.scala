@@ -290,7 +290,7 @@ object SemanticTokensProvider {
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
 
-    case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
+    case Expression.Use(_, _, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
 
