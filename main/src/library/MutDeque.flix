@@ -116,21 +116,6 @@ namespace MutDeque {
         foldLeft((acc, x) -> f(x) + acc, 0, d)
 
     ///
-    /// Returns the product of all elements in the deque `d`.
-    ///
-    pub def product(d: MutDeque[Int32, r]): Int32 \ Read(r) =
-        productWith(identity, d)
-
-    ///
-    /// Returns the product of all elements in the deque `d` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, d: MutDeque[a, r]): Int32 \ { ef, Read(r) } =
-        if (isEmpty(d))
-            1
-        else
-            foldLeft((acc, x) -> f(x) * acc, 1, d)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `d` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.

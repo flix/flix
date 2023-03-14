@@ -904,24 +904,6 @@ namespace Vector {
         foldLeft((acc, x) -> acc + f(x), 0, v)
 
     ///
-    /// Returns the product of all elements in the vector `v`.
-    ///
-    pub def product(v: Vector[Int32]): Int32 =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, v)
-
-    ///
-    /// Returns the product of all elements in the vector `v` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, v)
-
-    ///
     /// Returns the concatenation of all the vectors in the vector `vs`.
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {

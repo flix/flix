@@ -261,24 +261,6 @@ namespace DelayList {
         Foldable.sumWith(f ,l)
 
     ///
-    /// Returns the product of all elements in the DelayList `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def product(l: DelayList[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l` according to the function `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def productWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
-
-    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
