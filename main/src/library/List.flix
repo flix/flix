@@ -689,18 +689,6 @@ namespace List {
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
 
     ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(l: List[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, l: List[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
-
-    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     pub def flatten(l: List[List[a]]): List[a] =

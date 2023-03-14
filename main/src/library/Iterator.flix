@@ -128,22 +128,6 @@ namespace Iterator {
         foldLeft((acc, x) -> acc + f(x), 0, iter)
 
     ///
-    /// Returns the product of all elements in the iterator `iter`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def product(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
-        foldLeft((acc, x) -> acc * x, 1, iter)
-
-    ///
-    /// Returns the product of all elements in the iterator `iter` according to the function `f`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
-        foldLeft((acc, x) -> acc * f(x), 1, iter)
-
-    ///
     /// Returns the contents of `iter` as an array.
     ///
     /// Consumes the entire iterator.

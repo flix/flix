@@ -268,18 +268,6 @@ namespace Option {
         Foldable.sumWith(f, o)
 
     ///
-    /// Returns `v` if `o` is `Some(v)` else `0`.
-    ///
-    pub def product(o: Option[Int32]): Int32 =
-        Foldable.product(o)
-
-    ///
-    /// Returns `f(v)` if `o` is `Some(v)` else `0`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, o: Option[a]): Int32 \ ef =
-        Foldable.productWith(f, o)
-
-    ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.

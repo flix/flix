@@ -375,7 +375,7 @@ object Lowering {
     case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
       visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
 
-    case TypedAst.Expression.Use(_, exp, _) =>
+    case TypedAst.Expression.Use(_, _, exp, _) =>
       visitExp(exp)
 
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>

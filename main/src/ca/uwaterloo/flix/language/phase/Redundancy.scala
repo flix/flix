@@ -103,9 +103,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes.
+    // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty)
+    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -127,9 +127,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes.
+    // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty)
+    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -314,7 +314,7 @@ object Redundancy {
     case Expression.OpenAs(_, exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, alias, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -812,7 +812,7 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.Error(_, _, _, _) =>
-      Used.empty
+      Used.empty.withErrorNode
 
   }
 
@@ -1194,7 +1194,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -1253,6 +1253,7 @@ object Redundancy {
                           varSyms: Set[Symbol.VarSym],
                           effectSyms: Set[Symbol.EffectSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
+                          hasErrorNode: Boolean,
                           errors: Set[RedundancyError]) {
 
     /**
@@ -1275,6 +1276,7 @@ object Redundancy {
           this.varSyms ++ that.varSyms,
           this.effectSyms ++ that.effectSyms,
           this.occurrencesOf ++ that.occurrencesOf,
+          this.hasErrorNode || that.hasErrorNode,
           this.errors ++ that.errors
         )
       }
@@ -1309,6 +1311,11 @@ object Redundancy {
       case e: RedundancyError.UnusedVarSym => false
       case _ => true
     })
+
+    /**
+      * Returns `this` with an error node.
+      */
+    def withErrorNode: Used = copy(hasErrorNode = true)
 
     /**
       * Returns Successful(a) unless `this` contains errors.
