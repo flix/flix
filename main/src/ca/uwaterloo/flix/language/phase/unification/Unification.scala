@@ -223,7 +223,7 @@ object Unification {
       case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
         (baseType1.typeConstructor, baseType2.typeConstructor) match {
           case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
-            TypeError.PossibleUpcast(expected, actual, renv, loc)
+            TypeError.PossibleCheckedTypeCast(expected, actual, renv, loc)
           case _ =>
             TypeError.UnexpectedType(baseType1, baseType2, renv, baseType2.loc)
         }

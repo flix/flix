@@ -196,10 +196,9 @@ object PatternExhaustiveness {
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Of(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
-      case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Upcast(exp, _, _) => visitExp(exp, root)
-      case Expression.Supercast(exp, _, _) => visitExp(exp, root)
+      case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedMaskingCast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>

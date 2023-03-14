@@ -315,21 +315,18 @@ object Stratifier {
         case e => Expression.Of(sym, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, pur, eff, loc))
+
+    case Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+        case e => Expression.UncheckedCast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
 
-    case Expression.Mask(exp, tpe, pur, eff, loc) =>
+    case Expression.UncheckedMaskingCast(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Mask(e, tpe, pur, eff, loc)
+        case e => Expression.UncheckedMaskingCast(e, tpe, pur, eff, loc)
       }
-
-    case Expression.Upcast(exp, tpe, loc) =>
-      mapN(visitExp(exp))(Expression.Upcast(_, tpe, loc))
-
-    case Expression.Supercast(exp, tpe, loc) =>
-      mapN(visitExp(exp))(Expression.Supercast(_, tpe, loc))
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -707,16 +704,13 @@ object Stratifier {
     case Expression.Of(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Upcast(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>

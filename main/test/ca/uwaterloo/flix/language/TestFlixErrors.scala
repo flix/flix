@@ -54,7 +54,7 @@ class TestFlixErrors extends FunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.01") {
-     val input = 
+     val input =
       """
         |def main(): Unit \ IO = region r {
         |    spawn { bug!("Something bad happened") } @ r;
@@ -66,10 +66,10 @@ class TestFlixErrors extends FunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.02") {
-     val input = 
+     val input =
       """
         |def main(): Unit \ IO = region r {
-        |    spawn { 
+        |    spawn {
         |        spawn { bug!("Something bad happened")  } @ r
         |    } @ r;
         |    Thread.sleep(Time/Duration.fromSeconds(1))
@@ -80,11 +80,11 @@ class TestFlixErrors extends FunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.03") {
-     val input = 
+     val input =
       """
         |def main(): Unit \ IO = region r {
-        |    spawn { 
-        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+        |    spawn {
+        |        spawn { String.concat(checked_cast(null), "foo") } @ r
         |    } @ r;
         |    Thread.sleep(Time/Duration.fromSeconds(1))
         |}
@@ -94,12 +94,12 @@ class TestFlixErrors extends FunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.04") {
-     val input = 
+     val input =
       """
         |def main(): Unit \ IO = region r {
         |    let (_tx, rx) = Channel.unbuffered(r);
-        |    spawn { 
-        |        spawn { String.concat(unsafe_cast null as String, "foo") } @ r
+        |    spawn {
+        |        spawn { String.concat(checked_cast(null), "foo") } @ r
         |    } @ r;
         |    discard Channel.recv(rx)
         |}

@@ -11,7 +11,7 @@ namespace Test/Import {
     import new java.lang.StringBuffer(String): StringBuffer as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): ASeqOfChars;
     let sb = newStringBuffer("Hello world");
-    let subStr = unsafe_cast subSequence(sb, 6, 11) as String;
+    let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
     Assert.eq(subStr, "world")
 
   @test
@@ -19,7 +19,7 @@ namespace Test/Import {
     import new java.lang.StringBuffer(String): RenamedBuffer2 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
     let sb = newStringBuffer("Hello world");
-    let subStr = unsafe_cast subSequence(sb, 6, 11) as String;
+    let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
     Assert.eq(subStr, "world")
 }
 
@@ -33,7 +33,7 @@ namespace Test/Import {
     import new java.lang.StringBuffer(String): RenamedBuffer1 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
     let sb = newStringBuffer("Hello world");
-    let subStr = unsafe_cast subSequence(sb, 6, 11) as String;
+    let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
     Assert.eq(subStr, "world")
 
   @test

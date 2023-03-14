@@ -994,7 +994,25 @@ object ParsedAst {
     case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Cast Expression.
+      * Checked Type Cast expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class CheckedTypeCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Checked Effect Cast expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class CheckedEffectCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Unchecked Cast Expression.
       *
       * @param sp1       the position of the first character in the expression.
       * @param exp       the expression.
@@ -1002,34 +1020,16 @@ object ParsedAst {
       * @param purAndEff the optional purity and effect.
       * @param sp2       the position of the last character in the expression.
       */
-    case class Cast(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+    case class UncheckedCast(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Mask expression
+      * Unchecked Masking Cast expression
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression to mask.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Upcast Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Upcast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Supercast Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Supercast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class UncheckedMaskingCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Without Expression.

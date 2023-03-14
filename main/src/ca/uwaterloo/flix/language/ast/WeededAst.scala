@@ -155,13 +155,11 @@ object WeededAst {
 
     case class Of(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
+    case class CheckedCast(cast: Ast.CheckedCastType, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Mask(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class UncheckedCast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Upcast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Supercast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class UncheckedMaskingCast(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Without(exp: WeededAst.Expression, eff: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 

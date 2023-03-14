@@ -43,12 +43,12 @@ object Namer {
 
     flatMapN(unitsVal) {
       case units =>
-        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty, Map.empty)) {
+        val tableVal = fold(units.values, SymbolTable(Map.empty, Map.empty, Map.empty)) {
           case (table, unit) => tableUnit(unit, table)
         }
 
         mapN(tableVal) {
-          case SymbolTable(symbols0, instances0, cases0, uses0) =>
+          case SymbolTable(symbols0, instances0, uses0) =>
             // TODO NS-REFACTOR remove use of NName
             val symbols = symbols0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v.m
@@ -59,10 +59,7 @@ object Namer {
             val uses = uses0.map {
               case (k, v) => Name.mkUnlocatedNName(k) -> v
             }
-            val cases = cases0.map {
-              case (k, v) => Name.mkUnlocatedNName(k) -> v
-            }
-            NamedAst.Root(symbols, instances, cases, uses, units, program.entryPoint, locations, program.names)
+            NamedAst.Root(symbols, instances, uses, units, program.entryPoint, locations, program.names)
         }
     }
   }
@@ -175,7 +172,7 @@ object Namer {
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case caze@NamedAst.Declaration.Case(sym, _, _) =>
-      addCaseToTable(table0, sym.namespace, sym.name, caze).toSuccess
+      tryAddToTable(table0, sym.namespace, sym.name, caze)
 
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       // TODO RESTR-VARS add to case table?
@@ -196,56 +193,36 @@ object Namer {
     * Adds the given declaration to the table.
     */
   private def addDeclToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): SymbolTable = table match {
-    case SymbolTable(symbols0, instances, cases, uses) =>
+    case SymbolTable(symbols0, instances, uses) =>
       val oldMap = symbols0.getOrElse(ns, ListMap.empty)
       val newMap = oldMap + (name -> decl)
       val symbols = symbols0 + (ns -> newMap)
-      SymbolTable(symbols, instances, cases, uses)
+      SymbolTable(symbols, instances, uses)
   }
 
   /**
     * Adds the given instance to the table.
     */
   private def addInstanceToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Instance): SymbolTable = table match {
-    case SymbolTable(symbols, instances0, cases, uses) =>
+    case SymbolTable(symbols, instances0, uses) =>
       val oldMap = instances0.getOrElse(ns, Map.empty)
       val newMap = oldMap.updatedWith(name) {
         case None => Some(List(decl))
         case Some(insts) => Some(decl :: insts)
       }
       val instances = instances0 + (ns -> newMap)
-      SymbolTable(symbols, instances, cases, uses)
+      SymbolTable(symbols, instances, uses)
   }
 
   /**
     * Adds the given uses to the table.
     */
   private def addUsesToTable(table: SymbolTable, ns: List[String], usesAndImports: List[NamedAst.UseOrImport]): SymbolTable = table match {
-    case SymbolTable(symbols, instances, cases, uses0) =>
+    case SymbolTable(symbols, instances, uses0) =>
       val oldList = uses0.getOrElse(ns, Nil)
       val newList = usesAndImports ::: oldList
       val uses = uses0 + (ns -> newList)
-      SymbolTable(symbols, instances, cases, uses)
-  }
-
-  /**
-    * Adds the given case to the table.
-    */
-  private def addCaseToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration.Case): SymbolTable = table match {
-    case SymbolTable(symbols0, instances, cases0, uses) =>
-      val oldSymMap = symbols0.getOrElse(ns, ListMap.empty)
-      val newSymMap = oldSymMap + (name -> decl)
-      val symbols = symbols0 + (ns -> newSymMap)
-
-      // The case map contains cases in the enum's declaring namespace
-      val oldCaseMap = cases0.getOrElse(ns.init, Map.empty)
-      val newCaseMap = oldCaseMap.updatedWith(name) {
-        case None => Some(List(decl))
-        case Some(cases) => Some(decl :: cases)
-      }
-      val cases = cases0 + (ns.init -> newCaseMap)
-
-      SymbolTable(symbols, instances, cases, uses)
+      SymbolTable(symbols, instances, uses)
   }
 
   /**
@@ -824,30 +801,25 @@ object Namer {
         case e => NamedAst.Expression.Of(qname, e, loc)
       }
 
-    case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+    case WeededAst.Expression.CheckedCast(c, exp, loc) =>
+      mapN(visitExp(exp, ns0)) {
+        case e => NamedAst.Expression.CheckedCast(c, e, loc)
+      }
+
+    case WeededAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val expVal = visitExp(exp, ns0)
       val declaredTypVal = traverseOpt(declaredType)(visitType)
       val declaredEffVal = visitPurityAndEffect(declaredEff): Validation[NamedAst.PurityAndEffect, NameError]
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
-        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
+        case (e, t, f) => NamedAst.Expression.UncheckedCast(e, t, f, loc)
       }.recoverOne {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
-    case WeededAst.Expression.Mask(exp, loc) =>
+    case WeededAst.Expression.UncheckedMaskingCast(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Mask(e, loc)
-      }
-
-    case WeededAst.Expression.Upcast(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Upcast(e, loc)
-      }
-
-    case WeededAst.Expression.Supercast(exp, loc) =>
-      mapN(visitExp(exp, ns0)) {
-        case e => NamedAst.Expression.Supercast(e, loc)
+        case e => NamedAst.Expression.UncheckedMaskingCast(e, loc)
       }
 
     case WeededAst.Expression.Without(exp, eff, loc) =>
@@ -1604,5 +1576,5 @@ object Namer {
   /**
     * A structure holding the symbols and instances in the program.
     */
-  case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], cases: Map[List[String], Map[String, List[NamedAst.Declaration.Case]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
+  case class SymbolTable(symbols: Map[List[String], ListMap[String, NamedAst.Declaration]], instances: Map[List[String], Map[String, List[NamedAst.Declaration.Instance]]], uses: Map[List[String], List[NamedAst.UseOrImport]])
 }

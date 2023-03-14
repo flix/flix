@@ -152,13 +152,11 @@ object KindedAst {
 
     case class Of(sym: Ast.RestrictableCaseSymUse, exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Cast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class CheckedCast(cast: Ast.CheckedCastType, exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Mask(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
+    case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Upcast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Supercast(exp: KindedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
+    case class UncheckedMaskingCast(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Expression
 
     case class Without(exp: KindedAst.Expression, eff: Ast.EffectSymUse, loc: SourceLocation) extends KindedAst.Expression
 

@@ -19,6 +19,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 }
 
 namespace Iterator {
+    use Step.{Ans, Skip, Done}
 
 
     ///
@@ -45,14 +46,14 @@ namespace Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> unsafe_cast f1()  as _ \ { ef, r };
+        let iterF = () -> checked_ecast(f1());
         Iterator(rc, iterF)
 
     ///
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = () -> unsafe_cast Done as _ \ r;
+        let f = constant(Done);
         Iterator(rc, f)
 
     ///
@@ -441,7 +442,7 @@ namespace Iterator {
             case Done   => k(s)
 
         };
-        loop(upcast(identity))
+        loop(identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -493,7 +494,7 @@ namespace Iterator {
             case Ok(a)  => Ans(a)
             case Err(_) => Done
         };
-        let iterF = () -> unsafe_cast loop() as _ \ {ef, r};
+        let iterF = () -> checked_ecast(loop());
         Iterator(rc, iterF)
 
     ///
@@ -636,7 +637,7 @@ namespace Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = () -> unsafe_cast Done as _ \ ef;
+        let f = constant(Done);
         Iterator(rc, f)
 
 
