@@ -932,7 +932,7 @@ object Resolver {
                   }
                   mapN(visitExp(exp, env, region)) {
                     // TODO NS-REFACTOR: multiple uses here
-                    case e => ResolvedAst.Expression.Use(getSym(decls.head), e, loc)
+                    case e => ResolvedAst.Expression.Use(getSym(decls.head), alias, e, loc)
                   }.recoverOne {
                     case err: ResolutionError => ResolvedAst.Expression.Error(err)
                   }

@@ -36,7 +36,7 @@ object TypedAstOps {
     case Expression.Hole(_, _, _) => Set.empty
     case Expression.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.OpenAs(_, exp, _, _) => sigSymsOf(exp)
-    case Expression.Use(_, exp, _) => sigSymsOf(exp)
+    case Expression.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expression.Unary(_, exp, _, _, _, _) => sigSymsOf(exp)
@@ -141,7 +141,7 @@ object TypedAstOps {
     case Expression.OpenAs(_, exp, _, _) =>
       freeVars(exp)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, _, exp, _) =>
       freeVars(exp)
 
     case Expression.Lambda(fparam, exp, _, _) =>
