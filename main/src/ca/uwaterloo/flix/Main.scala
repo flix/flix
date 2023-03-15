@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.{Bootstrap, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
+import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 
@@ -171,10 +171,19 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Repl =>
-          val sourceProvider = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
-          val shell = new Shell(sourceProvider, options)
-          shell.loop()
-          System.exit(0)
+          if (cmdOpts.files.nonEmpty) {
+            println("The `repl' command cannot be used with a list of files.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val shell = new Shell(bootstrap, options)
+              shell.loop()
+              System.exit(0)
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Lsp(port) =>
           val o = options.copy(progress = false)

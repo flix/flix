@@ -160,24 +160,6 @@ namespace Result {
         foldLeft((acc, x) -> acc + f(x), 0, r)
 
     ///
-    /// Returns `v` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def product(r: Result[e, Int32]): Int32 =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, r)
-
-    ///
-    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def productWith(f: t -> Int32 \ ef, r: Result[e, t]): Int32 \ ef =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, r)
-
-    ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
@@ -209,7 +191,7 @@ namespace Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, upcast(_ -> z))
+        case Ok(v)  => f(v, constant(z))
         case Err(_) => z
     }
 
@@ -289,7 +271,7 @@ namespace Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, upcast(s1 -> Ok(s1)))
+        loop(l, s1 -> checked_ecast(Ok(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
@@ -327,6 +309,15 @@ namespace Result {
     pub def toOption(r: Result[e, t]): Option[t] = match r {
         case Ok(v)  => Some(v)
         case Err(_) => None
+    }
+
+    ///
+    /// Returns a `Success(v)` if `r` is `Ok(v)`. Otherwise returns a
+    /// `Failure(Nec.singleton(t))` if `r` is `Err(t)`.
+    ///
+    pub def toValidation(r: Result[e, t]): Validation[e, t] = match r {
+        case Ok(v) => Validation.Success(v)
+        case Err(t) => Validation.Failure(Nec.singleton(t))
     }
 
     ///
@@ -437,14 +428,14 @@ namespace Result {
     ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
     ///
-    /// If `f` throws a Java `RuntimeException`, `Err(e)` is returned
+    /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def try(f: Unit -> a \ ef): Result[String, a] \ ef =
+    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.RuntimeException =>
+            case e: ##java.lang.Exception =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Err(getMessage(e))
         }

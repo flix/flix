@@ -58,20 +58,16 @@ object TypeBuiltinCompleter extends Completer {
   /**
     * Returns a List of Completion for builtin types.
     */
-  override def getCompletions(implicit context: CompletionContext,  flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[TypeBuiltinCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeBuiltinCompletion] = {
     val builtinTypes = BuiltinTypeNames.map { name =>
       val internalPriority = Priority.high _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
+      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
     val lowPriorityBuiltinTypes = LowPriorityBuiltinTypeNames.map { name =>
       val internalPriority = Priority.low _
-      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name)), TextEdit(context.range, name),
+      Completion.TypeBuiltinCompletion(name, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context), TextEdit(context.range, name),
         InsertTextFormat.PlainText)
     }
 
@@ -80,7 +76,7 @@ object TypeBuiltinCompleter extends Completer {
         val internalPriority = Priority.boost _
         val fmtTparams = tparams.zipWithIndex.map { case (name, idx) => s"$${${idx + 1}:$name}" }.mkString(", ")
         val finalName = s"$name[${tparams.mkString(", ")}]"
-        Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name)),
+        Completion.TypeBuiltinCompletion(finalName, TypeCompleter.priorityBoostForTypes(internalPriority(name))(context),
           TextEdit(context.range, s"$name[$fmtTparams]"), insertTextFormat = InsertTextFormat.Snippet)
     }
 

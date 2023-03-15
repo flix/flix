@@ -24,7 +24,7 @@ object KeywordCompleter extends Completer {
   /**
     * Returns a List of Completion for keywords.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[KeywordCompletion] =
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[KeywordCompletion] =
   // NB: Please keep the list alphabetically sorted.
     List(
       "@Deprecated",
@@ -93,5 +93,5 @@ object KeywordCompleter extends Completer {
       "with",
       "without",
       "yield"
-    ) map (name => Completion.KeywordCompletion(name, context))
+    ) map (name => Completion.KeywordCompletion(name))
 }

@@ -341,7 +341,7 @@ namespace Test/Exp/Foreach {
 
     @test
     def testForeach41(): Bool = region r {
-        let l = new MutList(r);
+        let l = MutList.new(r);
         foreach (i <- List.range(0, 10)) {
             MutList.push!(i, l)
         };
@@ -353,7 +353,7 @@ namespace Test/Exp/Foreach {
 
     @test
     def testForeach42(): Bool = region r {
-        let l = new MutList(r);
+        let l = MutList.new(r);
         foreach (i <- List.range(0, 10)) {
             MutList.push!(i, l)
         };

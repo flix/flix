@@ -16,13 +16,13 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority, convertJavaClassToFlixType}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.{CompletionItem, CompletionItemKind, InsertTextFormat, TextEdit}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.fmt.FormatType
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType}
 import ca.uwaterloo.flix.language.ast.Symbol.{EnumSym, TypeAliasSym}
 
-import java.lang.reflect.{Constructor, Executable, Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 /**
   * A common super-type for auto-completions.
@@ -31,14 +31,14 @@ sealed trait Completion {
   /**
     * Returns a LSP completion item for `this`.
     */
-  def toCompletionItem: CompletionItem = this match {
-    case Completion.KeywordCompletion(name, context) =>
+  def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
+    case Completion.KeywordCompletion(name) =>
       CompletionItem(label = name, sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
-    case Completion.FieldCompletion(name, context) =>
+    case Completion.FieldCompletion(name) =>
       CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Variable)
-    case Completion.PredicateCompletion(name, priority, context) =>
+    case Completion.PredicateCompletion(name, priority) =>
       CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Variable)
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
@@ -50,60 +50,96 @@ sealed trait Completion {
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${aliasSym.name}$nameSuffix", sortText = priority, textEdit = textEdit,
         documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
-    case Completion.EffectCompletion(name, priority, documentation, context) =>
+    case Completion.EffectCompletion(name, priority, documentation) =>
       CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name),
         documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
       CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
         insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
-    case Completion.ImportNewCompletion(constructor, clazz, aliasSuggestion, context) =>
-      val (label, priority, textEdit) = getExecutableCompletionInfo(constructor, clazz, aliasSuggestion, context)
+    case Completion.ImportNewCompletion(constructor, clazz, aliasSuggestion) =>
+      val (label, priority, textEdit) = CompletionUtils.getExecutableCompletionInfo(constructor, clazz, aliasSuggestion, context)
       CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
-    case Completion.ImportMethodCompletion(method, clazz, context) =>
-      val (label, priority, textEdit) = getExecutableCompletionInfo(method, clazz, None, context)
+    case Completion.ImportMethodCompletion(method, clazz) =>
+      val (label, priority, textEdit) = CompletionUtils.getExecutableCompletionInfo(method, clazz, None, context)
       CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
-    case Completion.ImportFieldCompletion(field, clazz, isGet, context) =>
-      val ret = if (isGet) convertJavaClassToFlixType(field.getType) else "Unit"
+    case Completion.ImportFieldCompletion(field, clazz, isGet) =>
+      val ret = if (isGet) CompletionUtils.convertJavaClassToFlixType(field.getType) else "Unit"
       val asSuggestion = if (isGet) s"get${field.getName}" else s"set${field.getName}"
       val label = s"$clazz.${field.getName}: $ret"
       val textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};")
       CompletionItem(label = label, sortText = Priority.high(label), textEdit = textEdit, documentation = None,
         insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Field)
-    case Completion.ClassCompletion(name, context) =>
+    case Completion.ClassCompletion(name) =>
       CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, name),
         documentation = None, insertTextFormat = InsertTextFormat.PlainText, kind = CompletionItemKind.Class)
-    case Completion.SnippetCompletion(name, snippet, documentation, context) =>
+    case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name, sortText = Priority.snippet(name), textEdit = TextEdit(context.range, snippet),
         documentation = Some(documentation), insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Snippet)
-    case Completion.VarCompletion(sym, tpe, context, flix) =>
+    case Completion.VarCompletion(sym, tpe) =>
       CompletionItem(label = sym.text, sortText = Priority.local(sym.text), textEdit = TextEdit(context.range, sym.text),
         detail = Some(FormatType.formatType(tpe)(flix)), kind = CompletionItemKind.Variable)
+    case Completion.DefCompletion(decl) =>
+      val name = decl.sym.toString
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.normal(name),
+        filterText = Some(CompletionUtils.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Function)
+    case Completion.SigCompletion(decl) =>
+      val name = decl.sym.toString
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.normal(name),
+        filterText = Some(CompletionUtils.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface)
+    case Completion.OpCompletion(decl) =>
+      // NB: priority is high because only an op can come after `do`
+      val name = decl.sym.toString
+      val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
+      CompletionItem(label = CompletionUtils.getLabelForNameAndSpec(decl.sym.toString, decl.spec)(flix),
+        sortText = Priority.high(name),
+        filterText = Some(CompletionUtils.getFilterTextForName(name)),
+        textEdit = TextEdit(context.range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Interface)
+    case Completion.MatchCompletion(sym, completion, priority) =>
+      val label = s"match $sym"
+      CompletionItem(label = label,
+        sortText = priority(label),
+        textEdit = TextEdit(context.range, completion),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
+    case Completion.InstanceCompletion(clazz, completion) =>
+      val classSym = clazz.sym
+      CompletionItem(label = s"$classSym[...]",
+        sortText = Priority.high(classSym.toString),
+        textEdit = TextEdit(context.range, completion),
+        detail = Some(InstanceCompleter.fmtClass(clazz)),
+        documentation = Some(clazz.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
+    case Completion.UseCompletion(name, kind) =>
+      CompletionItem(
+        label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        kind = kind)
   }
 
-  /**
-    * returns a triple from a java executable (method/constructor) instance, providing information the make the specific completion.
-    * clazz is the clazz in string form used for the completion.
-    * aliasSuggestion is used to suggest an alias for the function if applicable.
-    */
-  private def getExecutableCompletionInfo(exec: Executable, clazz: String, aliasSuggestion: Option[String], context: CompletionContext): (String, String, TextEdit) = {
-    val typesString = exec.getParameters.map(param => convertJavaClassToFlixType(param.getType)).mkString("(", ", ", ")")
-    val finalAliasSuggestion = aliasSuggestion match {
-      case Some(aliasSuggestion) => s" as $${0:$aliasSuggestion}"
-      case None => ""
-    }
-    // Get the name of the function if it is not a constructor.
-    val name = if (exec.isInstanceOf[Constructor[_ <: Object]]) "" else s".${exec.getName}"
-    // So for constructors we do not have a return type method but we know it is the declaring class.
-    val returnType = exec match {
-      case method: Method => method.getReturnType
-      case _ => exec.getDeclaringClass
-    }
-    val label = s"$clazz$name$typesString"
-    val replace = s"$clazz$name$typesString: ${convertJavaClassToFlixType(returnType)} \\ IO$finalAliasSuggestion;"
-    (label, Priority.high(s"${exec.getParameterCount}$label"), TextEdit(context.range, replace))
-  }
 }
 
 object Completion {
@@ -113,14 +149,14 @@ object Completion {
     *
     * @param name the name of the keyword.
     */
-  case class KeywordCompletion(name: String, context: CompletionContext) extends Completion
+  case class KeywordCompletion(name: String) extends Completion
 
   /**
     * Represents a field completion.
     *
     * @param name the name of the field.
     */
-  case class FieldCompletion(name: String, context: CompletionContext) extends Completion
+  case class FieldCompletion(name: String) extends Completion
 
 
   /**
@@ -129,7 +165,7 @@ object Completion {
     * @param name     the name of the predicate.
     * @param priority the priority of the predicate.
     */
-  case class PredicateCompletion(name: String, priority: String, context: CompletionContext) extends Completion
+  case class PredicateCompletion(name: String, priority: String) extends Completion
 
   /**
     * Represents a type completion for builtin
@@ -173,8 +209,7 @@ object Completion {
     * @param priority      the priority of the effect.
     * @param documentation a human-readable string that represents a doc-comment.
     */
-  case class EffectCompletion(name: String, priority: String, documentation: Option[String],
-                              context: CompletionContext) extends Completion
+  case class EffectCompletion(name: String, priority: String, documentation: Option[String]) extends Completion
 
   /**
     * Represents a With completion
@@ -196,7 +231,7 @@ object Completion {
     * @param clazz            clazz is the clazz in string form.
     * @param aliasSuggestion  an alias for the function.
     */
-  case class ImportNewCompletion(constructor: Constructor[_], clazz: String, aliasSuggestion: Option[String], context: CompletionContext) extends Completion
+  case class ImportNewCompletion(constructor: Constructor[_], clazz: String, aliasSuggestion: Option[String]) extends Completion
 
   /**
     * Represents an importMethod completion (java methods)
@@ -204,7 +239,7 @@ object Completion {
     * @param method  the method.
     * @param clazz   clazz is the clazz in string form.
     */
-  case class ImportMethodCompletion(method: Method, clazz: String, context: CompletionContext) extends Completion
+  case class ImportMethodCompletion(method: Method, clazz: String) extends Completion
 
 
   /**
@@ -214,14 +249,14 @@ object Completion {
     * @param clazz clazz is the clazz in string form.
     * @param isGet determines whether is it a set or get.
     */
-  case class ImportFieldCompletion(field: Field, clazz: String, isGet: Boolean, context: CompletionContext) extends Completion
+  case class ImportFieldCompletion(field: Field, clazz: String, isGet: Boolean) extends Completion
 
   /**
     * Represents a Class completion (java packages/classes)
     *
     * @param name the name of the class.
     */
-  case class ClassCompletion(name: String, context: CompletionContext) extends Completion
+  case class ClassCompletion(name: String) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -230,7 +265,7 @@ object Completion {
     * @param snippet        the snippet for TextEdit.
     * @param documentation  a human-readable string that represents a doc-comment.
     */
-  case class SnippetCompletion(name: String, snippet: String, documentation: String, context: CompletionContext) extends Completion
+  case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Var completion
@@ -238,7 +273,52 @@ object Completion {
     * @param sym      the Var symbol.
     * @param tpe      the type for FormatType to provide a human-readable string with additional information
     *                 about the symbol.
-    * @param flix     Implicit parameter for FormatType.formatType(...)
     */
-  case class VarCompletion(sym: Symbol.VarSym, tpe: Type, context: CompletionContext, flix: Flix) extends Completion
+  case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
+
+  /**
+    * Represents a Def completion
+    *
+    * @param decl the def decl.
+    */
+  case class DefCompletion(decl: TypedAst.Def) extends Completion
+
+  /**
+    * Represents a Signature completion
+    *
+    * @param decl the signature decl.
+    */
+  case class SigCompletion(decl: TypedAst.Sig) extends Completion
+
+  /**
+    * Represents a Op completion
+    *
+    * @param decl the op decl.
+    */
+  case class OpCompletion(decl: TypedAst.Op) extends Completion
+
+  /**
+    * Represents an exhaustive Match completion
+    *
+    * @param sym        the match sym (it's name).
+    * @param completion the completion string (used as information for TextEdit).
+    * @param priority   the priority of the completion.
+    */
+  case class MatchCompletion(sym: String, completion: String, priority: String => String) extends Completion
+
+  /**
+    * Represents an Instance completion (based on type classes)
+    *
+    * @param clazz      the clazz.
+    * @param completion the completion string (used as information for TextEdit).
+    */
+  case class InstanceCompletion(clazz: TypedAst.Class, completion: String) extends Completion
+
+  /**
+    * Represents an Use completion.
+    *
+    * @param name the name of the use completion.
+    * @param kind the kind of completion.
+    */
+  case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
 }

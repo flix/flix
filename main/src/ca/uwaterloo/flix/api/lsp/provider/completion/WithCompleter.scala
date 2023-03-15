@@ -26,11 +26,7 @@ object WithCompleter extends Completer {
   /**
     * Returns a List of Completion based on with type class constraints.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[WithCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[WithCompletion] = {
     /*
      * When used with `enum`, `with` needs to be treated differently: we should only show derivable
      * type classes, and we shouldn't include the type parameter
@@ -44,7 +40,7 @@ object WithCompleter extends Completer {
 
     if (enumPattern matches context.prefix) {
       for {
-        (_, clazz) <- root.get.classes
+        (_, clazz) <- root.classes
         sym = clazz.sym
         if Resolver.DerivableSyms.contains(sym)
         name = sym.toString
@@ -54,7 +50,7 @@ object WithCompleter extends Completer {
           Some(clazz.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
-      root.get.classes.map {
+      root.classes.map {
         case (_, clazz) =>
           val name = clazz.sym.toString
           val hole = "${1:t}"
