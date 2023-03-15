@@ -119,7 +119,6 @@ object Bootstrap {
       bootstrap.folderMode(path).map(_ => bootstrap)
     }
   }
-
 }
 
 class Bootstrap {
@@ -146,12 +145,12 @@ class Bootstrap {
     }
 
     // 2. Check each dependency is available or download it.
-    val extraMavenDeps = FlixPackageManager.installAll(manifest, path) match {
-      case Ok(l) =>
-        flixPackagePaths = l._1
-        l._2
+    FlixPackageManager.installAll(manifest, path) match {
+      case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
+
+    val extraMavenDeps = FlixPackageManager.mavenSet.toList
     MavenPackageManager.installAll(manifest, path, extraMavenDeps) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
