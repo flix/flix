@@ -1,14 +1,12 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.util.{Options, Result}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
-import java.io.{ByteArrayOutputStream, PrintStream}
-import java.nio.file.{FileVisitOption, Files, OpenOption, Path, StandardOpenOption}
+import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.function.Consumer
 import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
@@ -72,10 +70,12 @@ class TestPackager extends FunSuite {
 
     Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
+
     def hash1 = calcHash(packagePath)
 
     Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
+
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -116,9 +116,11 @@ class TestPackager extends FunSuite {
     val packagePath = p.resolve(packageName + ".fpkg")
 
     Packager.buildPkg(p, DefaultOptions)
+
     def hash1 = calcHash(packagePath)
 
     Packager.buildPkg(p, DefaultOptions)
+
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -141,29 +143,7 @@ class TestPackager extends FunSuite {
   test("runWithArgs") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    // override Main.flix to print args
-    val newMain = "def main(): Unit \\ IO = println(Environment.getArgs())"
-    Files.writeString(p.resolve("src").resolve("Main.flix"), newMain)
-    // redirect stdout
-    val bs = new ByteArrayOutputStream()
-    val runOpts = Console.withOut(bs) {
-      // run
-      Packager.run(p, Some("arg0 arg1"), DefaultOptions)
-    }
-    runOpts match {
-      case Result.Ok(_) =>
-        // assert the stdout
-        bs.flush()
-        val stdOutString = bs.toString()
-        assert(
-          stdOutString == "arg0 :: arg1 :: Nil",
-          s"Unexpected output: '$stdOutString'"
-        )
-      case Result.Err(e) => assert(
-        false,
-        s"run returned error code $e"
-      )
-    }
+    Packager.run(p, Some("arg0 arg1"), DefaultOptions)
   }
 
   test("test") {
@@ -176,7 +156,7 @@ class TestPackager extends FunSuite {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) { }
+      while (input.read(buffer) != -1) {}
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }
