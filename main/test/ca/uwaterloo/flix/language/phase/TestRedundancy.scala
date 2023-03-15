@@ -87,7 +87,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
-  test("ShadowedVar.Def.01") {
+  test("ShadowedName.Def.01") {
     val input =
       """
         |def f(x: Int32): Int32 =
@@ -99,7 +99,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Def.02") {
+  test("ShadowedName.Def.02") {
     val input =
       """
         |def f(x: Int32): Int32 =
@@ -112,7 +112,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Let.01") {
+  test("ShadowedName.Let.01") {
     val input =
       """
         |def f(): Int32 =
@@ -125,7 +125,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Let.02") {
+  test("ShadowedName.Let.02") {
     val input =
       """
         |def f(): Int32 =
@@ -139,7 +139,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Lambda.01") {
+  test("ShadowedName.Lambda.01") {
     val input =
       """
         |def f(): Int32 =
@@ -152,7 +152,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Lambda.02") {
+  test("ShadowedName.Lambda.02") {
     val input =
       """
         |def f(): Int32 =
@@ -167,7 +167,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Lambda.03") {
+  test("ShadowedName.Lambda.03") {
     val input =
       """
         |def f(): Int32 =
@@ -182,7 +182,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Match.01") {
+  test("ShadowedName.Match.01") {
     val input =
       """
         |def f(): Int32 =
@@ -196,7 +196,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Match.02") {
+  test("ShadowedName.Match.02") {
     val input =
       """
         |def f(): Int32 =
@@ -210,7 +210,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Match.03") {
+  test("ShadowedName.Match.03") {
     val input =
       """
         |def f(): (Int32, Int32) =
@@ -225,7 +225,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Match.04") {
+  test("ShadowedName.Match.04") {
     val input =
       """
         |def f(): (Int32, Int32) =
@@ -240,7 +240,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Select.01") {
+  test("ShadowedName.Select.01") {
     val input =
       """
         |def f(): (Int32, Int32) =
@@ -255,7 +255,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Select.02") {
+  test("ShadowedName.Select.02") {
     val input =
       """
         |def f(): Int32 = region r {
@@ -273,7 +273,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Region.01") {
+  test("ShadowedName.Region.01") {
     val input =
       """
         |def f(): Unit = {
@@ -290,7 +290,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.NewObject.01") {
+  test("ShadowedName.NewObject.01") {
     val input =
       """
         |def f(): ##java.lang.Comparable \ IO =
@@ -304,7 +304,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.01") {
+  test("ShadowedName.Use.01") {
     val input =
       s"""
          |mod Foo {
@@ -321,7 +321,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.02") {
+  test("ShadowedName.Use.02") {
     val input =
       s"""
          |mod Foo {
@@ -341,7 +341,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.03") {
+  test("ShadowedName.Use.03") {
     val input =
       s"""
          |def foo(): Bool =
@@ -362,7 +362,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.04") {
+  ignore("ShadowedName.Use.04") {
     val input =
       s"""
          |use A.f
@@ -384,7 +384,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.05") {
+  ignore("ShadowedName.Use.05") {
     val input =
       s"""
          |use A.f
@@ -405,7 +405,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.06") {
+  test("ShadowedName.Use.06") {
     val input =
       s"""
          |def foo(): Bool =
@@ -420,7 +420,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.07") {
+  test("ShadowedName.Use.07") {
     val input =
       s"""
          |namespace T {
@@ -443,7 +443,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.08") {
+  ignore("ShadowedName.Use.08") {
     val input =
       s"""
          |namespace T {
@@ -466,7 +466,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.09") {
+  ignore("ShadowedName.Use.09") {
     val input =
       s"""
          |namespace T {
@@ -484,7 +484,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.10") {
+  ignore("ShadowedName.Use.10") {
     val input =
       s"""
          |namespace T {
@@ -506,7 +506,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.11") {
+  test("ShadowedName.Use.11") {
     val input =
       s"""
          |def foo(): Bool =
@@ -531,7 +531,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.12") {
+  ignore("ShadowedName.Use.12") {
     val input =
       s"""
          |use A.Color
@@ -557,7 +557,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.13") {
+  ignore("ShadowedName.Use.13") {
     val input =
       s"""
          |namespace T {
@@ -583,7 +583,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.14") {
+  test("ShadowedName.Use.14") {
     val input =
       s"""
          |def foo(): Bool =
@@ -608,7 +608,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.15") {
+  ignore("ShadowedName.Use.15") {
     val input =
       s"""
          |use A.Color.Red
@@ -633,7 +633,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.16") {
+  ignore("ShadowedName.Use.16") {
     val input =
       s"""
          |
@@ -658,7 +658,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
-  test("ShadowedVar.Use.17") {
+  test("ShadowedName.Use.17") {
     val input =
       s"""
          |def foo(): Bool =
@@ -678,7 +678,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.18") {
+  ignore("ShadowedName.Use.18") {
     val input =
       s"""
          |namespace T {
@@ -710,7 +710,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.19") {
+  ignore("ShadowedName.Use.19") {
     val input =
       s"""
          |namespace T {
@@ -737,7 +737,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   }
 
   // TODO NS-REFACTOR redundancy on top-level uses
-  ignore("ShadowedVar.Use.20") {
+  ignore("ShadowedName.Use.20") {
     val input =
       s"""
          |namespace T {
