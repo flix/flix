@@ -25,11 +25,7 @@ object MatchCompleter extends Completer {
   /**
     * Returns a List of Completion for match.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[MatchCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[MatchCompletion] = {
     val matchPattern = raw".*\s*ma?t?c?h?\s?.*".r
 
     if (!(matchPattern matches context.prefix)) {
@@ -39,8 +35,8 @@ object MatchCompleter extends Completer {
     val wordPattern = "ma?t?c?h?".r
     val currentWordIsMatch = wordPattern matches context.word
 
-    root.get.enums.foldLeft[List[MatchCompletion]](Nil)((acc, enm) => {
-      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch) match {
+    root.enums.foldLeft[List[MatchCompletion]](Nil)((acc, enm) => {
+      if (enm._2.cases.size >= 2) matchCompletion(enm._2, currentWordIsMatch)(context) match {
         case Some(v) => v :: acc
         case None => acc
       }
@@ -74,6 +70,6 @@ object MatchCompleter extends Completer {
         }
         (acc + "    case " + str + "\n", k)
     })
-    Some(MatchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}", priority, context))
+    Some(MatchCompletion(enm.sym.name, s"$includeMatch$${1:???} {\n$completion}", priority))
   }
 }

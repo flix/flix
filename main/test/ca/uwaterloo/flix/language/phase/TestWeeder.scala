@@ -773,7 +773,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
   }
 
@@ -782,7 +782,52 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.01") {
+    val input =
+      """
+        |def f(): List[Int32] = foreach () 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.02") {
+    val input =
+      """
+        |def f(): List[Int32] = foreach () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.03") {
+    val input =
+      """
+        |def f(): List[Int32] = forM () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.04") {
+    val input =
+      """
+        |def f(): List[Int32] = forA () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.05") {
+    val input =
+      """
+        |def f(): Chain[String] = for () yield "a"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
   }
 }

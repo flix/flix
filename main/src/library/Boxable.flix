@@ -23,8 +23,8 @@ pub class Boxable[a] with Order[a] {
     /// Boxes the given `x`.
     ///
     pub def box(x: a): Boxed = {
-        let value = unsafe_cast x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(unsafe_cast o1 as a, unsafe_cast o2 as a);
+        let value = unchecked_cast(x as ##java.lang.Object);
+        let compare = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
         Boxed.BoxedObject(value, compare)
     }
 
@@ -32,7 +32,7 @@ pub class Boxable[a] with Order[a] {
     /// Unboxes the given `x`.
     ///
     pub def unbox(x: Boxed): a = match x {
-        case Boxed.BoxedObject(v, _) => unsafe_cast v as a
+        case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
         case _                       => ?bug
     }
 
@@ -132,8 +132,8 @@ namespace Boxable {
 
 instance Boxable[Unit] {
     pub override def box(x: Unit): Boxed = {
-        let value = unsafe_cast x as ##java.lang.Object;
-        let compare = (o1, o2) -> Order.compare(unsafe_cast o1 as Unit, unsafe_cast o2 as Unit);
+        let value = checked_cast(x);
+        let compare = (_, _) -> Comparison.EqualTo;
         Boxed.BoxedObject(value, compare)
     }
     pub override def unbox(_: Boxed): Unit = ()

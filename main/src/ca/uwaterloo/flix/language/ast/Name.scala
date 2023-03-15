@@ -74,6 +74,11 @@ object Name {
   }
 
   /**
+    * Returns true if the given string represents a wildcard name.
+    */
+  def isWild(name: String): Boolean = name.startsWith("_")
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

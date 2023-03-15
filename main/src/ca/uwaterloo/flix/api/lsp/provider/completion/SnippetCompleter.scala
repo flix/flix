@@ -24,7 +24,7 @@ object SnippetCompleter extends Completer {
   /**
     * Returns a List of Completion for snippet.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[SnippetCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[SnippetCompletion] = {
     List(
       // NB: Please keep the list alphabetically sorted.
       ("main",
@@ -33,6 +33,6 @@ object SnippetCompleter extends Completer {
       ("query",
         "query ${1:db} select ${2:cols} from ${3:preds} ${4:where ${5:cond}}",
         "snippet for query")
-    ) map { case (name, snippet, documentation) => Completion.SnippetCompletion(name, snippet, documentation, context)}
+    ) map { case (name, snippet, documentation) => Completion.SnippetCompletion(name, snippet, documentation)}
   }
 }

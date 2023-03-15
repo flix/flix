@@ -26,11 +26,7 @@ object UseCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[UseCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[UseCompletion] = {
     val regex = raw"\s*use\s+(.*)".r
 
     context.prefix match {
@@ -85,17 +81,16 @@ object UseCompleter extends Completer {
     * Gets completions for a sub namespace of a prefix namespace
     * I.e if you have namespace A.B.C.D, then if prefix is A.B it will return a completion for A.B.C
     */
-  private def nsCompletionsAfterPrefix(prefix: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    val nss = root.get.defs.keySet.map(_.namespace) ++
-      root.get.enums.keySet.map(_.namespace) ++
-      root.get.classes.keySet.map(_.namespace) ++
-      root.get.typeAliases.keySet.map(_.namespace)
+  private def nsCompletionsAfterPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    val nss = root.defs.keySet.map(_.namespace) ++
+      root.enums.keySet.map(_.namespace) ++
+      root.classes.keySet.map(_.namespace) ++
+      root.typeAliases.keySet.map(_.namespace)
 
     nss.flatMap(ns => getFirstAfterGivenPrefix(ns, prefix))
       .map(nextNs => {
         val name = prefix.appended(nextNs).mkString(".")
-        UseCompletion(name, CompletionItemKind.Module, context)
+        UseCompletion(name, CompletionItemKind.Module)
       })
   }
 
@@ -114,7 +109,7 @@ object UseCompleter extends Completer {
   /**
     * Gets completions for all items in a namespace
     */
-  private def getItemUseCompletions(ns: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
+  private def getItemUseCompletions(ns: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
     getEnumUseCompletions(ns) ++
       getClassUseCompletions(ns) ++
       getDefUseCompletions(ns) ++
@@ -124,51 +119,46 @@ object UseCompleter extends Completer {
   /**
     * Gets completions for enums in a given namespace
     */
-  private def getEnumUseCompletions(ns: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.enums.filter { case (_, emn) => emn.mod.isPublic }
+  private def getEnumUseCompletions(ns: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.enums.filter { case (_, emn) => emn.mod.isPublic }
       .keySet.filter(_.namespace == ns)
-      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Enum, context))
+      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Enum))
   }
 
   /**
     * Gets completions for classes in a given namespace
     */
-  private def getClassUseCompletions(ns: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.classes.filter { case (_, clazz) => clazz.mod.isPublic }
+  private def getClassUseCompletions(ns: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.classes.filter { case (_, clazz) => clazz.mod.isPublic }
       .keySet.filter(_.namespace == ns)
-      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Interface, context))
+      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Interface))
   }
 
   /**
     * Gets completions for functions in a given namespace
     */
-  private def getDefUseCompletions(ns: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.defs.filter { case (_, df) => df.spec.mod.isPublic }
+  private def getDefUseCompletions(ns: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.defs.filter { case (_, df) => df.spec.mod.isPublic }
       .keySet.filter(_.namespace == ns)
-      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Function, context))
+      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Function))
   }
 
   /**
     * Gets completion for type aliases in a given namespace
     */
-  private def getTypeUseCompletions(ns: List[String])(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.typeAliases.filter { case (_, tpe) => tpe.mod.isPublic }
+  private def getTypeUseCompletions(ns: List[String])(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.typeAliases.filter { case (_, tpe) => tpe.mod.isPublic }
       .keySet.filter(_.namespace == ns)
-      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Struct, context))
+      .map(sym => UseCompletion(s"${nsToStringDot(ns)}${sym.name}", CompletionItemKind.Struct))
   }
 
   /**
     * Gets completions for enum tags
     */
-  private def getEnumTagCompletions(ns: List[String], enmName: String)(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.enums.filter { case (sym, _) => sym.name == enmName && sym.namespace == ns }
+  private def getEnumTagCompletions(ns: List[String], enmName: String)(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.enums.filter { case (sym, _) => sym.name == enmName && sym.namespace == ns }
       .flatMap { case (sym, emn) => emn.cases.map {
-        case (casSym, _) => UseCompletion(s"${nsToStringDot(ns)}${sym.name}.${casSym.name}", CompletionItemKind.EnumMember, context)
+        case (casSym, _) => UseCompletion(s"${nsToStringDot(ns)}${sym.name}.${casSym.name}", CompletionItemKind.EnumMember)
       }
       }
   }
@@ -176,11 +166,10 @@ object UseCompleter extends Completer {
   /**
     * Gets completions for class sigs
     */
-  private def getClassSigCompletions(ns: List[String], className: String)(implicit context: CompletionContext, root: Option[TypedAst.Root]): Iterable[UseCompletion] = {
-    if (root.isEmpty) return Nil
-    root.get.classes.filter { case (sym, _) => sym.name == className && sym.namespace == ns }
+  private def getClassSigCompletions(ns: List[String], className: String)(implicit root: TypedAst.Root): Iterable[UseCompletion] = {
+    root.classes.filter { case (sym, _) => sym.name == className && sym.namespace == ns }
       .flatMap { case (sym, clazz) => clazz.signatures
-        .map(sig => UseCompletion(s"${nsToStringDot(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember, context))
+        .map(sig => UseCompletion(s"${nsToStringDot(ns)}${sym.name}.${sig.sym.name}", CompletionItemKind.EnumMember))
       }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Lukas Rønn
+ * Copyright 2022 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.util.collection
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.TypedAst
+object MapOps {
 
-/**
-  * A common super-type for completers.
-  */
-trait Completer {
   /**
-    * Returns a List of Completion for completer.
+    * Applies `f` to each of the values in the given map.
+    *
+    * Replaces the deprecated [[Map.mapValues]].
     */
-  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion]
+  def mapValues[K, V1, V2](m: Map[K, V1])(f: V1 => V2): Map[K, V2] = {
+    m.map {
+      case (k, v) => (k, f(v))
+    }
+  }
 }

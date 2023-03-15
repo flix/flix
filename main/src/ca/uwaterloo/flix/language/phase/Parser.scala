@@ -549,11 +549,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ForFragments: Rule1[Seq[ParsedAst.ForFragment]] = rule {
-      "(" ~ optWS ~ oneOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
+      "(" ~ optWS ~ zeroOrMore(ForFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")"
     }
 
     def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
-      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ oneOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
+      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ zeroOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
@@ -744,15 +744,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
-        SelectChannel | Spawn | ParYield | Par | Lazy | Force | Cast |
-        Upcast | Supercast | Mask | Intrinsic | New | ArrayLit | VectorLit | ListLit |
+        SelectChannel | Spawn | ParYield | Par | Lazy | Force |
+        CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
         FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = {
+    def CheckedTypeCast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("checked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedTypeCast
+    }
+
+    def CheckedEffectCast: Rule1[ParsedAst.Expression] = rule {
+      SP ~ keyword("checked_ecast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.CheckedEffectCast
+    }
+
+    def UncheckedCast: Rule1[ParsedAst.Expression] = {
       def PurAndEffOnly: Rule2[Option[ParsedAst.Type], ParsedAst.PurityAndEffect] = rule {
         "_" ~ optWS ~ &("&" | "\\") ~ push(None) ~ PurityAndEffect
       }
@@ -770,16 +778,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ keyword("unsafe_cast") ~ WS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ SP ~> ParsedAst.Expression.Cast
+        SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndPurity ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
       }
     }
 
-    def Upcast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("upcast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Upcast
-    }
-
-    def Supercast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("super_cast") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Supercast
+    def UncheckedMaskingCast: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
+      SP ~ keyword("masked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedMaskingCast
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -988,10 +992,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Mask: Rule1[ParsedAst.Expression.Mask] = rule {
-      SP ~ keyword("$MASK$") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Mask
-    }
-
     def Discard: Rule1[ParsedAst.Expression.Discard] = rule {
       SP ~ keyword("discard") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Discard
     }
@@ -1117,10 +1117,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ "{" ~ optWS ~ oneOrMore(RecordOp).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "|" ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordOperation
       }
-    }
-
-    def New: Rule1[ParsedAst.Expression] = rule {
-      keyword("new") ~ WS ~ SP ~ Names.QName ~ optWS ~ "(" ~ optWS ~ optional(Expression) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.New
     }
 
     def FAppend: Rule1[ParsedAst.Expression] = rule {

@@ -23,17 +23,13 @@ object VarCompleter extends Completer {
   /**
     * Returns a List of Completion for var.
     */
-  override def getCompletions(implicit context: CompletionContext, flix: Flix, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[VarCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[VarCompletion] = {
     ///
     /// Find all local variables in the current uri with a given range.
     ///
     val iter = index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
-      case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe, context, flix)
-      case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.sym, fparam.tpe, context, flix)
+      case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe)
+      case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.sym, fparam.tpe)
     }
 
     iter.toList

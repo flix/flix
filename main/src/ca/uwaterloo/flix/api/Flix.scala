@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
@@ -122,6 +121,9 @@ class Flix {
 
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
+
+    // References
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
 
   /**
@@ -155,7 +157,6 @@ class Flix {
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
-    "Newable.flix" -> LocalResource.get("/src/library/Newable.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
@@ -243,8 +244,6 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
-
-    "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
@@ -490,8 +489,8 @@ class Flix {
       afterStatistics <- Statistics.run(afterEntryPoint)
       _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
-      afterRegions <- Regions.run(afterStratifier)
-      afterPatMatch <- PatternExhaustiveness.run(afterRegions)
+      _ <- Regions.run(afterStratifier)
+      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
