@@ -341,6 +341,422 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedName](result)
   }
 
+  test("ShadowedVar.Use.03") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.f;
+         |    use B.f;
+         |    f() == f()
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.04") {
+    val input =
+      s"""
+         |use A.f
+         |use B.f
+         |
+         |def foo(): Bool =
+         |    f() == f()
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.05") {
+    val input =
+      s"""
+         |use A.f
+         |
+         |def foo(): Bool =
+         |    use B.f;
+         |    f() == f()
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ShadowedVar.Use.06") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.{f => g, f => g};
+         |    g() == g()
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ShadowedVar.Use.07") {
+    val input =
+      s"""
+         |namespace T {
+         |    def foo(): Bool =
+         |        use A.f;
+         |        use B.f;
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.08") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.f
+         |    use B.f
+         |    def foo(): Bool =
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.09") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.{f => g, f => g}
+         |    def foo(): Bool =
+         |        g() == g()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.10") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.f
+         |    def foo(): Bool =
+         |        use B.f;
+         |        f() == f()
+         |}
+         |
+         |namespace A {
+         |    pub def f(): Int32 = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int32 = 1
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ShadowedVar.Use.11") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.Color;
+         |    use B.Color;
+         |    true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.12") {
+    val input =
+      s"""
+         |use A.Color
+         |use B.Color
+         |
+         |def foo(): Bool = true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.13") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color
+         |    use B.Color
+         |    def foo(): Bool =
+         |        true
+         |}
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ShadowedVar.Use.14") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.Color.Red;
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    pub enum Color with Eq {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    pub enum Color with Eq {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.15") {
+    val input =
+      s"""
+         |use A.Color.Red
+         |use B.Color.Red
+         |def foo(): Bool =
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.16") {
+    val input =
+      s"""
+         |
+         |use A.Color.Red
+         |def foo(): Bool =
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ShadowedVar.Use.17") {
+    val input =
+      s"""
+         |def foo(): Bool =
+         |    use A.Color.{Red => R};
+         |    use A.Color.{Blu => R};
+         |    R == R
+         |
+         |namespace A {
+         |    pub enum Color with Eq {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.18") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color.Red
+         |    use B.Color.Red
+         |    def foo(): Bool =
+         |        Red == Red
+         |}
+         |
+         |def foo(): Bool =
+         |    use A.Color.Red;
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.19") {
+    val input =
+      s"""
+         |namespace T {
+         |    use A.Color.Red
+         |    def foo(): Bool =
+         |        use B.Color.Red;
+         |        Red == Red
+         |}
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  // TODO NS-REFACTOR redundancy on top-level uses
+  ignore("ShadowedVar.Use.20") {
+    val input =
+      s"""
+         |namespace T {
+         |    use B.Color.{Red => R}
+         |    use B.Color.{Blu => R}
+         |    def foo(): Bool =
+         |        R == R
+         |}
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
