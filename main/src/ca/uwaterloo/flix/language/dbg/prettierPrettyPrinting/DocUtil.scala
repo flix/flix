@@ -170,12 +170,12 @@ object DocUtil {
       * let x<: t> =
       *   e
       */
-    def letf(v: Doc, tpe: Option[Doc], body: Doc)(implicit i: Indent): Doc = {
-      let(text("let") <+> ascf(v, tpe) <+> text("="), body)
+    def letf(v: Doc, tpe: Option[Doc], value: Doc, body: Doc)(implicit i: Indent): Doc = {
+      let(text("let") <+> ascf(v, tpe) <+> text("=") <+> value, body)
     }
 
-    def letrecf(v: Doc, tpe: Option[Doc], body: Doc)(implicit i: Indent): Doc = {
-      let(text("letrec") <+> ascf(v, tpe) <+> text("="), body)
+    def letrecf(v: Doc, tpe: Option[Doc], value: Doc, body: Doc)(implicit i: Indent): Doc = {
+      let(text("letrec") <+> ascf(v, tpe) <+> text("=") <+> value, body)
     }
 
     /**

@@ -39,7 +39,7 @@ object ErasedAstPrinter {
       defn.sym.toString,
       defn.formals.map(doc),
       returnTypeDoc(defn.tpe),
-      doc(defn.exp, paren = false, inBlock = true)
+      doc(defn.exp, paren = false)
     )
   }
 
@@ -49,17 +49,50 @@ object ErasedAstPrinter {
 
   def doc(sym: VarSym): Doc = text(sym.toString) <> text("%") <> text(sym.getStackOffset.toString)
 
-  sealed trait Position
-
-  def doc(exp: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+  def doc(exp: Expression, paren: Boolean = true)(implicit i: Indent): Doc = {
     def par(d: Doc): Doc = if (paren) parens(d) else d
 
     exp match {
+      case Expression.Var(sym, _, _) =>
+        val output = doc(sym)
+        output
+      case Expression.Unary(sop, exp, _, _) =>
+        val output = OperatorPrinter.doc(sop) <> doc(exp)
+        par(output)
+      case Expression.Binary(sop, _, exp1, exp2, _, _) =>
+        val output = doc(exp1) <+> OperatorPrinter.doc(sop) <+> doc(exp2)
+        par(output)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+        val output = itef(
+          doc(exp1, paren = false),
+          doc(exp2, paren = false),
+          doc(exp3, paren = false)
+        )
+        par(output)
+      case Expression.Branch(exp, branches, tpe, loc) => text("unknown")
+      case Expression.JumpTo(sym, tpe, loc) => text("unknown")
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        val output = letf(doc(sym), Some(MonoTypePrinter.doc(tpe)), doc(exp1, paren = false), doc(exp2))
+        output
+      case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, _) =>
+        val output = letrecf(doc(varSym), Some(MonoTypePrinter.doc(tpe)), doc(exp1, paren = false), doc(exp2))
+        output
+      case Expression.Scope(sym, exp, tpe, loc) => text("unknown")
+      case Expression.ScopeExit(exp1, exp2, tpe, loc) => text("unknown")
+      case Expression.TryCatch(exp, rules, tpe, loc) => text("unknown")
+      case Expression.NewObject(name, clazz, tpe, methods, loc) => text("unknown")
+      case Expression.Intrinsic0(op, tpe, loc) => text("unknown")
+      case Expression.Intrinsic1(op, exp, tpe, loc) => text("unknown")
+      case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => text("unknown")
+      case Expression.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => text("unknown")
+      case Expression.IntrinsicN(op, exps, tpe, loc) => text("unknown")
+      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => text("unknown")
+    }
+
+
+//    exp match {
 //      case Expression.Cst(cst, _, _) =>
 //        val output = ConstantPrinter.doc(cst)
-//        output
-//      case Expression.Var(sym, _, _) =>
-//        val output = doc(sym)
 //        output
 //      case Expression.Closure(sym, closureArgs, _, _) =>
 //        val output = applyf(doc(sym) <> metaText("buildclo"), closureArgs.map(doc(_)))
@@ -79,28 +112,11 @@ object ErasedAstPrinter {
 //      case Expression.ApplySelfTail(sym, _, actuals, _, _) =>
 //        val output = applyf(doc(sym) <> metaText("selftail"), actuals.map(a => doc(a, paren = false)))
 //        par(output)
-//      case Expression.Unary(_, op, exp, _, _) =>
-//        val output = OperatorPrinter.doc(op) <> doc(exp)
-//        par(output)
-//      case Expression.Binary(_, op, exp1, exp2, _, _) =>
-//        val output = doc(exp1) <+> OperatorPrinter.doc(op) <+> doc(exp2)
-//        par(output)
-//      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-//        val output = itef(doc(exp1, paren = false), doc(exp2, paren = false, inBlock = true), doc(exp3, paren = false, inBlock = true))
-//        par(output)
 //      case Expression.Branch(exp, branches, tpe, loc) =>
 //        val output = metaText("Branch")
 //        output
 //      case Expression.JumpTo(sym, tpe, loc) =>
 //        val output = metaText("JumpTo")
-//        output
-//      case e@Expression.Let(_, _, _, _, _) =>
-//        val es = collectLetBlock(e, Nil)
-//        val output = if (inBlock) seqf(es) else seqBlockf(es)
-//        output
-//      case e@Expression.LetRec(_, _, _, _, _, _, _) =>
-//        val es = collectLetBlock(e, Nil)
-//        val output = if (inBlock) seqf(es) else seqBlockf(es)
 //        output
 //      case Expression.Region(_, _) =>
 //        val output = metaText("Region")
@@ -202,19 +218,8 @@ object ErasedAstPrinter {
 //      case Expression.UnboxChar(exp, _) => text("unbox") <+> doc(exp)
 //      case Expression.UnboxFloat32(exp, _) => text("unbox") <+> doc(exp)
 //      case Expression.UnboxFloat64(exp, _) => text("unbox") <+> doc(exp)
-      case _ => text("unknown")
-    }
-  }
-
-  @tailrec
-  def collectLetBlock(e: Expression, acc: List[Doc])(implicit i: Indent): List[Doc] = e match {
-    case Expression.Let(sym, exp1, exp2, _, _) =>
-      val let = letf(doc(sym), None, doc(exp1, paren = false))
-      collectLetBlock(exp2, let :: acc)
-    case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) =>
-      val let = letrecf(doc(varSym), None, doc(exp1, paren = false))
-      collectLetBlock(exp2, let :: acc)
-    case other => (doc(other, paren = false) :: acc).reverse
+//      case _ => text("unknown")
+//    }
   }
 
   def returnTypeDoc(tpe: MonoType)(implicit i: Indent): Doc = tpe match {

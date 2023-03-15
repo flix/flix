@@ -60,7 +60,7 @@ object Doc {
 
   def indentationLevel(i: Int): Indent = Indentation(i)
 
-  def deconstruct(d: Doc): Doc = d match {
+  def deconstruct(d: Doc)(implicit indent: Indent): Doc = d match {
     case Nil => Nil
     case Cons(d1, d2) => Cons(deconstruct(d1), deconstruct(d2))
     case Text(s) => Text(s)
@@ -68,7 +68,9 @@ object Doc {
     case Break(s) => Break(s)
     case Group(d) => Group(deconstruct(d))
     // fancy
-    case l: Let => DocUtil.groupVSep(";", l.collect(immutable.Nil))
+    case l: Let =>
+      val binders = l.collect(immutable.Nil).map(deconstruct)
+      group(DocUtil.bracket("{", DocUtil.sep(text(";") <> breakWith(" "), binders), "}"))
   }
 
   def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
@@ -160,7 +162,8 @@ object Doc {
     case (_, _, _: Let) :: _ => ???
   }
 
-  def pretty(w: Int, d: Doc): String = sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
+  def pretty(w: Int, d: Doc)(implicit i: Indent): String =
+    sdocToString(format(w, 0, List((0, MBreak, deconstruct(d))), x => x))
 
   // aux
 
