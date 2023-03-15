@@ -424,10 +424,10 @@ object Kinder {
           KindedAst.Expression.OpenAs(sym, exp, tvar, loc)
       }
 
-    case ResolvedAst.Expression.Use(sym, exp0, loc) =>
+    case ResolvedAst.Expression.Use(sym, alias, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        case exp => KindedAst.Expression.Use(sym, exp, loc)
+        case exp => KindedAst.Expression.Use(sym, alias, exp, loc)
       }
 
     case ResolvedAst.Expression.Cst(cst, loc) => KindedAst.Expression.Cst(cst, loc).toSuccess

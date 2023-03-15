@@ -391,31 +391,6 @@ namespace Set {
         }
 
     ///
-    /// Returns the product of all elements in the set `s`.
-    ///
-    pub def product(s: Set[Int32]): Int32 =
-        Foldable.product(s)
-
-    ///
-    /// Returns the product of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
-        let Set(t) = s;
-        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
-        typematch f {
-            case g: a -> Int32 \ {} =>
-                if (useParallelEvaluation(s))
-                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t)
-                else
-                    pw()
-            case _: a -> Int32 \ ef => pw()
-            case _: _ => pw()
-        }
-
-    ///
     /// Returns the union of the elements in `s`.
     ///
     pub def flatten(s: Set[Set[a]]): Set[a] with Order[a] =

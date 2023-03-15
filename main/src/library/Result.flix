@@ -160,24 +160,6 @@ namespace Result {
         foldLeft((acc, x) -> acc + f(x), 0, r)
 
     ///
-    /// Returns `v` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def product(r: Result[e, Int32]): Int32 =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, r)
-
-    ///
-    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def productWith(f: t -> Int32 \ ef, r: Result[e, t]): Int32 \ ef =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, r)
-
-    ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
