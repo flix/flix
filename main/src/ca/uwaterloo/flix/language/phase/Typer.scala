@@ -285,14 +285,14 @@ object Typer {
     * Infers the type of the given definition `defn0`.
     */
   private def typeCheckDecl(spec0: KindedAst.Spec, exp0: KindedAst.Expression, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], loc: SourceLocation)(implicit flix: Flix): Validation[(TypedAst.Spec, TypedAst.Impl), TypeError] = spec0 match {
-    case KindedAst.Spec(_, _, _, _, fparams0, sc, _, _, _, _, _) =>
+    case KindedAst.Spec(_, _, _, _, fparams0, sc, tpe, pur, eff, _, _) =>
 
       ///
       /// Infer the type of the expression `exp0`.
       ///
       val result = for {
-        (inferredConstrs, inferredTyp, inferredPur, inferredEff) <- inferExp(exp0, root)
-      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, inferredEff, inferredTyp, loc)) // TODO use eff
+        (inferredConstrs, inferredTyp, inferredPur, inferredEff) <- inferExpectedExp(exp0, tpe, pur, eff, root)
+      } yield (inferredConstrs, Type.mkUncurriedArrowWithEffect(fparams0.map(_.tpe), inferredPur, inferredEff, inferredTyp, loc))
 
 
       // Add the assumed constraints to the declared scheme
@@ -1974,6 +1974,19 @@ object Typer {
     }
 
     visitExp(exp0)
+  }
+
+  /**
+    * Infers the type and effect of the expression, and checks that they match the expected type and effect.
+    */
+  private def inferExpectedExp(exp: KindedAst.Expression, tpe0: Type, pur0: Type, eff0: Type, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = {
+    for {
+      (tconstrs, tpe, pur, eff) <- inferExp(exp, root)
+      _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
+      // TODO Currently disabled due to region issues. See issue #5603
+//      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
+//      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+    } yield (tconstrs, tpe, pur, eff)
   }
 
   private def mkList(t: Type, loc: SourceLocation): Type =
