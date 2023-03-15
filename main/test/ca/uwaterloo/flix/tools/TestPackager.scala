@@ -70,12 +70,10 @@ class TestPackager extends FunSuite {
 
     Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
-
     def hash1 = calcHash(packagePath)
 
     Packager.build(p, DefaultOptions)
     Packager.buildJar(p, DefaultOptions)
-
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -116,11 +114,9 @@ class TestPackager extends FunSuite {
     val packagePath = p.resolve(packageName + ".fpkg")
 
     Packager.buildPkg(p, DefaultOptions)
-
     def hash1 = calcHash(packagePath)
 
     Packager.buildPkg(p, DefaultOptions)
-
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -156,7 +152,7 @@ class TestPackager extends FunSuite {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) {}
+      while (input.read(buffer) != -1) { }
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }
