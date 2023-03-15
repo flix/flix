@@ -1810,7 +1810,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    case Color.Blue => Color.Blue
         |}
         |""".stripMargin
-    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 
   test("TestCaseSetAnnotation.03") {
@@ -1839,6 +1839,6 @@ class TestTyper extends FunSuite with TestUtils {
         |// Wrong minus parsing
         |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
         |""".stripMargin
-    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 }
