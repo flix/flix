@@ -1983,8 +1983,9 @@ object Typer {
     for {
       (tconstrs, tpe, pur, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
-      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
-      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      // TODO Currently disabled due to region issues. See issue #5603
+//      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
+//      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, pur, eff)
   }
 
