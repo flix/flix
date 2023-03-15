@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CheckedCastType
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
@@ -103,9 +103,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes.
+    // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty)
+    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -127,9 +127,9 @@ object Redundancy {
       unusedFormalParams ++
       unusedTypeParams).copy(varSyms = Set.empty)
 
-    // Check if the expression contains holes.
+    // Check if the expression contains holes or errors.
     // If it does, we discard all unused local variable errors.
-    if (usedAll.holeSyms.isEmpty)
+    if (usedAll.holeSyms.isEmpty && !usedAll.hasErrorNode)
       usedAll
     else
       usedAll.withoutUnusedVars
@@ -314,7 +314,7 @@ object Redundancy {
     case Expression.OpenAs(_, exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, alias, exp, _) =>
       visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -325,7 +325,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check if the formal parameter is shadowing.
-      val shadowedVar = shadowing(fparam.sym, env0)
+      val shadowedVar = shadowing(fparam.sym.text, fparam.sym.loc, env0)
 
       // Check if the lambda parameter symbol is dead.
       if (deadVarSym(fparam.sym, innerUsed))
@@ -355,7 +355,7 @@ object Redundancy {
       val innerUsed2 = visitExp(exp2, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
@@ -374,7 +374,7 @@ object Redundancy {
       val used = innerUsed1 ++ innerUsed2
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp1 + exp2.
       if (deadVarSym(sym, used))
@@ -393,7 +393,7 @@ object Redundancy {
       val innerUsed = visitExp(exp, env1, rc)
 
       // Check for shadowing.
-      val shadowedVar = shadowing(sym, env0)
+      val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
       // Check if the let-bound variable symbol is dead in exp.
       if (deadVarSym(sym, innerUsed))
@@ -750,7 +750,7 @@ object Redundancy {
           val env1 = env0 + sym
 
           // Check for shadowing.
-          val shadowedVar = shadowing(sym, env0)
+          val shadowedVar = shadowing(sym.text, sym.loc, env0)
 
           // Visit the channel and body expressions.
           val chanUsed = visitExp(chan, env1, rc)
@@ -812,7 +812,7 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.Error(_, _, _, _) =>
-      Used.empty
+      Used.empty.withErrorNode
 
   }
 
@@ -856,7 +856,7 @@ object Redundancy {
     * Returns the symbols that the free variables shadow in env0.
     */
   private def findShadowedVarSyms(freeVars: Set[Symbol.VarSym], env0: Env): Used = {
-    freeVars.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+    freeVars.map(sym => shadowing(sym.text, sym.loc, env0)).foldLeft(Used.empty)(_ ++ _)
   }
 
   /**
@@ -1089,15 +1089,15 @@ object Redundancy {
   /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
-  private def shadowing(sym: Symbol.VarSym, env: Env): Used =
-    env.varSyms.get(sym.text) match {
+  private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
+    env.varSyms.get(name) match {
       case None =>
         Used.empty
-      case Some(shadowingVar) =>
-        if (sym.isWild)
+      case Some(shadowed) =>
+        if (Name.isWild(name))
           Used.empty
         else
-          Used.empty + ShadowedVar(shadowingVar, sym)
+          Used.empty + ShadowedName(name, shadowing = loc, shadowed = shadowed)
     }
 
   /**
@@ -1173,12 +1173,12 @@ object Redundancy {
   /**
     * Represents an environment.
     */
-  private case class Env(varSyms: Map[String, Symbol.VarSym]) {
+  private case class Env(varSyms: Map[String, SourceLocation]) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
     def +(sym: Symbol.VarSym): Env = {
-      copy(varSyms = varSyms + (sym.text -> sym))
+      copy(varSyms = varSyms + (sym.text -> sym.loc))
     }
 
     /**
@@ -1194,7 +1194,7 @@ object Redundancy {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, ListMap.empty, hasErrorNode = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -1253,6 +1253,7 @@ object Redundancy {
                           varSyms: Set[Symbol.VarSym],
                           effectSyms: Set[Symbol.EffectSym],
                           occurrencesOf: ListMap[Symbol.VarSym, SourceLocation],
+                          hasErrorNode: Boolean,
                           errors: Set[RedundancyError]) {
 
     /**
@@ -1275,6 +1276,7 @@ object Redundancy {
           this.varSyms ++ that.varSyms,
           this.effectSyms ++ that.effectSyms,
           this.occurrencesOf ++ that.occurrencesOf,
+          this.hasErrorNode || that.hasErrorNode,
           this.errors ++ that.errors
         )
       }
@@ -1309,6 +1311,11 @@ object Redundancy {
       case e: RedundancyError.UnusedVarSym => false
       case _ => true
     })
+
+    /**
+      * Returns `this` with an error node.
+      */
+    def withErrorNode: Used = copy(hasErrorNode = true)
 
     /**
       * Returns Successful(a) unless `this` contains errors.

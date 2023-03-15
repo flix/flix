@@ -62,31 +62,31 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a variable has been shadowed.
+    * An error raised to indicate that a name has been shadowed.
     *
-    * @param sym1 the shadowed variable.
-    * @param sym2 the shadowing variable.
+    * @param shadowed the shadowed name.
+    * @param shadowing the shadowing name.
     */
-  case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
-    def summary: String = "Shadowed variable."
+  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+    def summary: String = "Shadowed name."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Shadowed variable '${red(sym1.text)}'.
+         |>> Shadowed name '${red(name)}'.
          |
-         |${code(sym2.loc, "shadowing variable.")}
+         |${code(shadowing, "shadowing name.")}
          |
-         |The shadowed variable was declared here:
+         |The shadowed name was declared here:
          |
-         |${code(sym1.loc, "shadowed variable.")}
+         |${code(shadowed, "shadowed name.")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
 
-    def loc: SourceLocation = sym1.loc min sym2.loc
+    def loc: SourceLocation = shadowed min shadowing
   }
 
   /**

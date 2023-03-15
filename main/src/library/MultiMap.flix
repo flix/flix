@@ -429,29 +429,6 @@ namespace MultiMap {
         Map.sumWith(outer, m1)
 
     ///
-    /// Returns the product of all keys in the MultiMap `m`.
-    ///
-    pub def productKeys(m: MultiMap[Int32, v]): Int32 =
-        productWith((k, _) -> k, m)
-
-    ///
-    /// Returns the product of all values in the MultiMap `m`.
-    ///
-    pub def productValues(m: MultiMap[k, Int32]): Int32 =
-        productWith((_, v) -> v, m)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the MultiMap `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
-        let MultiMap(m1) = m;
-        let outer = (k, vs) -> Set.productWith(v -> f(k, v), vs);
-        Map.productWith(outer, m1)
-
-    ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
     ///
     /// Returns `false` if `m` is the empty MultiMap.

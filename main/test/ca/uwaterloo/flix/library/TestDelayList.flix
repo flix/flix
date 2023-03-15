@@ -1048,64 +1048,6 @@ namespace TestDelayList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        List.toDelayList(Nil) |> DelayList.product == 1
-
-    @test
-    def product02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.product == 1
-
-    @test
-    def product03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.product == 6
-
-    @test
-    def product04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.product == -18
-
-    @test
-    def product05(): Bool =
-        List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.product == 24
-
-    @test
-    def product06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.product == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        List.toDelayList(Nil) |> DelayList.productWith(x -> x + 1) == 1
-
-    @test
-    def productWith02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.productWith(x -> x + 1) == 2
-
-    @test
-    def productWith03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.productWith(x -> x + 1) == -48
-
-    @test
-    def productWith05(): Bool =
-        List.toDelayList(-2 :: -3 :: -4 :: -5 :: Nil) |> DelayList.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.productWith(x -> x + 1) == -99
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

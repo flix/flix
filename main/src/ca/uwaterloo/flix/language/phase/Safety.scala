@@ -105,7 +105,7 @@ object Safety {
       case Expression.OpenAs(_, exp, _, _) =>
         visit(exp)
 
-      case Expression.Use(_, exp, _) =>
+      case Expression.Use(_, _, exp, _) =>
         visit(exp)
 
       case Expression.Lambda(_, exp, _, _) =>
