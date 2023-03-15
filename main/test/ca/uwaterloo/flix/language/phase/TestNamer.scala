@@ -23,36 +23,6 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("AmbiguousVarOrUse.01") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    f(123)
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("AmbiguousVarOrUse.02") {
-    val input =
-      s"""
-         |def foo(): Bool =
-         |    use Foo.f;
-         |    let f = _ -> true;
-         |    use Foo.g;
-         |    let g = _ -> true;
-         |    f(g(123))
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.AmbiguousVarOrUse](result)
-  }
-
   test("DuplicateLowerName.01") {
     val input =
       s"""

@@ -315,8 +315,17 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.Use(_, alias, exp, _) =>
-      val env = env0 + ()
-      visitExp(exp, env0, rc) // TODO NS-REFACTOR check for unused syms
+      // Check if the alias is shadowing
+      val shadowedName = shadowing(alias.name, alias.loc, env0)
+
+      // Add the name to the environment
+      val env = env0 + (alias.name -> alias.loc)
+
+      // Visit the expression with the extended environment
+      val innerUsed = visitExp(exp, env, rc)
+
+     // TODO NS-REFACTOR check for unused syms
+      innerUsed ++ shadowedName
 
     case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
@@ -1091,7 +1100,7 @@ object Redundancy {
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
   private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
-    env.name.get(name) match {
+    env.names.get(name) match {
       case None =>
         Used.empty
       case Some(shadowed) =>
@@ -1174,12 +1183,12 @@ object Redundancy {
   /**
     * Represents a name environment.
     */
-  private case class Env(name: Map[String, SourceLocation]) {
+  private case class Env(names: Map[String, SourceLocation]) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
     def +(sym: Symbol.VarSym): Env = {
-      copy(name = name + (sym.text -> sym.loc))
+      copy(names = names + (sym.text -> sym.loc))
     }
 
     /**
@@ -1192,8 +1201,8 @@ object Redundancy {
     /**
       * Updates `this` environment with a new `name`.
       */
-    def +(name: String, loc: SourceLocation): Env = {
-      copy(name = name + (name -> loc))
+    def +(nameAndLoc: (String, SourceLocation)): Env = {
+      copy(names = names + nameAndLoc)
     }
   }
 

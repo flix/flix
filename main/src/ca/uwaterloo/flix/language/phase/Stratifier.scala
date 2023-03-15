@@ -117,7 +117,10 @@ object Stratifier {
         case e => Expression.OpenAs(sym, e, tpe, loc)
       }
 
-    case Expression.Use(_, _, exp, _) => visitExp(exp)
+    case Expression.Use(sym, alias, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Use(sym, alias, e, loc)
+      }
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
