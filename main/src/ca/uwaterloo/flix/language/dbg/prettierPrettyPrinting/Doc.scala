@@ -39,6 +39,17 @@ object Doc {
 
   private case class Group(d: Doc) extends Doc
 
+  // fancy constructors
+
+  private case class Let(d1: Doc, d2: Doc) extends Doc {
+    def collect(acc: List[Doc]): List[Doc] = {
+      d2 match {
+        case l: Let => l.collect(d1 :: acc)
+        case other => (other :: d1 :: acc).reverse
+      }
+    }
+  }
+
   sealed trait Indent
 
   private case class Indentation(i: Int) extends Indent
@@ -49,6 +60,16 @@ object Doc {
 
   def indentationLevel(i: Int): Indent = Indentation(i)
 
+  def deconstruct(d: Doc): Doc = d match {
+    case Nil => Nil
+    case Cons(d1, d2) => Cons(deconstruct(d1), deconstruct(d2))
+    case Text(s) => Text(s)
+    case Nest(i, d) => Nest(i, deconstruct(d))
+    case Break(s) => Break(s)
+    case Group(d) => Group(deconstruct(d))
+    // fancy
+    case l: Let => DocUtil.groupVSep(";", l.collect(immutable.Nil))
+  }
 
   def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
 
@@ -65,6 +86,10 @@ object Doc {
   def breakWith(s: String): Doc = Break(s)
 
   def group(d: Doc): Doc = Group(d)
+
+  def let(d1: Doc, d2: Doc): Doc = Let(d1, d2)
+
+  // SDoc
 
   private sealed trait SDoc
 
@@ -90,7 +115,9 @@ object Doc {
   }
 
   private sealed trait Mode
+
   private case object MFlat extends Mode
+
   private case object MBreak extends Mode
 
   @tailrec
@@ -100,11 +127,12 @@ object Doc {
     case (i, m, Nil) :: z => fits(w, z)
     case (i, m, Cons(x, y)) :: z =>
       fits(w, (i, m, x) :: (i, m, y) :: z)
-    case (i, m, Nest(j, x)) :: z => fits(w, (i+j, m, x) :: z)
+    case (i, m, Nest(j, x)) :: z => fits(w, (i + j, m, x) :: z)
     case (i, m, Text(s)) :: z => fits(w - s.length, z)
     case (i, MFlat, Break(s)) :: z => fits(w - s.length, z)
     case (i, MBreak, Break(_)) :: z => true // impossible
     case (i, m, Group(x)) :: z => fits(w, (i, MFlat, x) :: z)
+    case (_, _, _: Let) :: _ => ???
   }
 
   @tailrec
@@ -116,7 +144,7 @@ object Doc {
     case (i, m, Cons(x, y)) :: z =>
       format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
     case (i, m, Nest(j, x)) :: z =>
-      format(w, k, (i+j, m, x) :: z, cont)
+      format(w, k, (i + j, m, x) :: z, cont)
     case (i, m, Text(s)) :: z =>
       format(w, k + s.length, z, v1 => cont(SText(s, v1)))
     case (i, MFlat, Break(s)) :: z =>
@@ -124,11 +152,12 @@ object Doc {
     case (i, MBreak, Break(s)) :: z =>
       format(w, i, z, v1 => cont(SLine(i, v1)))
     case (i, m, Group(x)) :: z =>
-      if (fits(w-k, (i, MFlat, x) :: z)) {
+      if (fits(w - k, (i, MFlat, x) :: z)) {
         format(w, k, (i, MFlat, x) :: z, cont)
       } else {
         format(w, k, (i, MBreak, x) :: z, cont)
       }
+    case (_, _, _: Let) :: _ => ???
   }
 
   def pretty(w: Int, d: Doc): String = sdocToString(format(w, 0, List((0, MBreak, d)), x => x))
