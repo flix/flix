@@ -35,39 +35,6 @@ object NameError {
   sealed trait TypeNameError extends NameError
 
   /**
-    * An error raised to indicate that the given `name` is ambiguous.
-    *
-    * @param name the ambiguous name.
-    * @param loc  the location of the ambiguous name.
-    * @param loc1 the location of the var.
-    * @param loc2 the location of the use.
-    */
-  case class AmbiguousVarOrUse(name: String, loc: SourceLocation, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Ambiguous name: '$name'. The name may refer to both a variable and a use of a name."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Ambiguous name '${red(name)}'. The name may refer to both a variable and a use of a name.
-         |
-         |${code(loc, "ambiguous name.")}
-         |
-         |The relevant declarations are:
-         |
-         |${code(loc1, "the 'var' was declared here.")}
-         |
-         |${code(loc2, "the 'use' was declared here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      """Flix is not able to determine if the name refers to a local variable or to a
-        |name that has been brought into scope with a use declaration.
-        |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate that the given def `name` is defined multiple times.
     *
     * @param name the name.
