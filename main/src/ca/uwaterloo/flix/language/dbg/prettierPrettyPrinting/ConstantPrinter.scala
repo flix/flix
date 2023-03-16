@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language.st
 
 object ConstantPrinter {
 
-  def doc(cst: Ast.Constant)(implicit i: Indent): Doc = cst match {
+  def doc(cst: Ast.Constant): Doc = cst match {
     case Constant.Unit => text("()")
     case Constant.Null => text("null")
     case Constant.Bool(lit) => text(lit.toString)

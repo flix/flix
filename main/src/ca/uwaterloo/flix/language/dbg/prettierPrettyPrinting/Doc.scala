@@ -39,17 +39,6 @@ object Doc {
 
   private case class Group(d: Doc) extends Doc
 
-  // fancy constructors
-
-  private case class Let(d1: Doc, d2: Doc) extends Doc {
-    def collect(acc: List[Doc]): List[Doc] = {
-      d2 match {
-        case l: Let => l.collect(d1 :: acc)
-        case other => (other :: d1 :: acc).reverse
-      }
-    }
-  }
-
   sealed trait Indent
 
   private case class Indentation(i: Int) extends Indent
@@ -67,10 +56,6 @@ object Doc {
     case Nest(i, d) => Nest(i, deconstruct(d))
     case Break(s) => Break(s)
     case Group(d) => Group(deconstruct(d))
-    // fancy
-    case l: Let =>
-      val binders = l.collect(immutable.Nil).map(deconstruct)
-      group(DocUtil.bracket("{", DocUtil.sep(text(";") <> breakWith(" "), binders), "}"))
   }
 
   def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
@@ -88,8 +73,6 @@ object Doc {
   def breakWith(s: String): Doc = Break(s)
 
   def group(d: Doc): Doc = Group(d)
-
-  def let(d1: Doc, d2: Doc): Doc = Let(d1, d2)
 
   // SDoc
 
@@ -134,7 +117,6 @@ object Doc {
     case (i, MFlat, Break(s)) :: z => fits(w - s.length, z)
     case (i, MBreak, Break(_)) :: z => true // impossible
     case (i, m, Group(x)) :: z => fits(w, (i, MFlat, x) :: z)
-    case (_, _, _: Let) :: _ => ???
   }
 
   @tailrec
@@ -159,7 +141,6 @@ object Doc {
       } else {
         format(w, k, (i, MBreak, x) :: z, cont)
       }
-    case (_, _, _: Let) :: _ => ???
   }
 
   def pretty(w: Int, d: Doc)(implicit i: Indent): String =

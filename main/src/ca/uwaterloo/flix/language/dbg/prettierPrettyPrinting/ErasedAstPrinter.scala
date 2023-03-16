@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast.Symbol._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.OperatorPrinter
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.{ErasedPrinter, OperatorPrinter}
 
 import scala.annotation.tailrec
 
@@ -51,51 +51,10 @@ object ErasedAstPrinter {
   def doc(sym: VarSym): Doc = text(sym.toString) <> text("%") <> text(sym.getStackOffset.toString)
 
   def doc(exp: Expression, paren: Boolean = true)(implicit i: Indent): Doc = {
-    def par(d: Doc): Doc = if (paren) parens(d) else d
-
-    exp match {
-      case Expression.Var(sym, _, _) =>
-        val output = doc(sym)
-        output
-      case Expression.Unary(sop, exp, _, _) =>
-        ???
-      case Expression.Binary(sop, _, exp1, exp2, _, _) =>
-        ???
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        val output = itef(
-          doc(exp1, paren = false),
-          doc(exp2, paren = false),
-          doc(exp3, paren = false)
-        )
-        par(output)
-      case Expression.Branch(exp, branches, tpe, loc) => text("unknown")
-      case Expression.JumpTo(sym, tpe, loc) => text("unknown")
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        val output = letf(doc(sym), Some(MonoTypePrinter.doc(tpe)), doc(exp1, paren = false), doc(exp2))
-        output
-      case Expression.LetRec(varSym, _, _, exp1, exp2, tpe, _) =>
-        val output = letrecf(doc(varSym), Some(MonoTypePrinter.doc(tpe)), doc(exp1, paren = false), doc(exp2))
-        output
-      case Expression.Scope(sym, exp, tpe, loc) => text("unknown")
-      case Expression.ScopeExit(exp1, exp2, tpe, loc) => text("unknown")
-      case Expression.TryCatch(exp, rules, tpe, loc) => text("unknown")
-      case Expression.NewObject(name, clazz, tpe, methods, loc) => text("unknown")
-      case Expression.Intrinsic0(op, tpe, loc) => text("unknown")
-      case Expression.Intrinsic1(op, exp, tpe, loc) => text("unknown")
-      case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => text("unknown")
-      case Expression.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => text("unknown")
-      case Expression.IntrinsicN(op, exps, tpe, loc) => text("unknown")
-      case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => text("unknown")
-    }
+    DocAstFormatter.format(ErasedPrinter.print(exp))
 
 
 //    exp match {
-//      case Expression.Cst(cst, _, _) =>
-//        val output = ConstantPrinter.doc(cst)
-//        output
-//      case Expression.Closure(sym, closureArgs, _, _) =>
-//        val output = applyf(doc(sym) <> metaText("buildclo"), closureArgs.map(doc(_)))
-//        output
 //      case Expression.ApplyClo(exp, args, _, _) =>
 //        val output = applyf(doc(exp) <> metaText("clo"), args.map(a => doc(a, paren = false)))
 //        par(output)
@@ -117,16 +76,7 @@ object ErasedAstPrinter {
 //      case Expression.JumpTo(sym, tpe, loc) =>
 //        val output = metaText("JumpTo")
 //        output
-//      case Expression.Region(_, _) =>
-//        val output = metaText("Region")
-//        output
-//      case Expression.Scope(sym, exp, _, _) =>
-//        val output = scopef(text(sym.toString), doc(exp, paren = false, inBlock = true))
-//        par(output)
 //      case Expression.Is(sym, exp, loc) => metaText("Is")
-//      case Expression.Tag(sym, exp, tpe, loc) =>
-//        val output = applyf(doc(sym), List(doc(exp)))
-//        output
 //      case Expression.Untag(sym, exp, tpe, loc) => metaText("Untag")
 //      case Expression.Index(base, offset, _, _) =>
 //        val output = tupleIndexf(doc(base), offset)
@@ -164,17 +114,8 @@ object ErasedAstPrinter {
 //      case Expression.ArrayStore(base, index, elm, tpe, loc) => metaText("ArrayStore")
 //      case Expression.ArrayLength(base, tpe, loc) => metaText("ArrayLength")
 //      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => metaText("ArraySlice")
-//      case Expression.Ref(exp, _, _) =>
-//        val output = par(text("ref") <+> doc(exp))
-//        par(output)
-//      case Expression.Deref(exp, _, _) =>
-//        val output = par(text("deref") <+> doc(exp))
-//        par(output)
 //      case Expression.Assign(exp1, exp2, _, _) =>
 //        val output = assignf(doc(exp1), doc(exp2))
-//        par(output)
-//      case Expression.Cast(exp, tpe, _) =>
-//        val output = castf(doc(exp, paren = false), MonoTypePrinter.doc(tpe))
 //        par(output)
 //      case Expression.TryCatch(exp, rules, tpe, loc) => metaText("TryCatch")
 //      case Expression.InvokeConstructor(constructor, args, tpe, loc) => metaText("InvokeConstructor")
@@ -192,31 +133,6 @@ object ErasedAstPrinter {
 //      case Expression.Spawn(exp1, exp2, _, _) =>
 //        val output = spawnf(doc(exp1, paren = false), doc(exp2))
 //        par(output)
-//      case Expression.Lazy(exp, _, _) =>
-//        val output = text("lazy") <+> doc(exp)
-//        par(output)
-//      case Expression.Force(exp, _, _) =>
-//        val output = text("force") <+> doc(exp)
-//        par(output)
-//      case Expression.HoleError(sym, _, _) =>
-//        doc(sym)
-//      case Expression.MatchError(_, _) => metaText("MatchError")
-//      case Expression.BoxBool(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxInt8(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxInt16(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxInt32(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxInt64(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxChar(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxFloat32(exp, _) => text("box") <+> doc(exp)
-//      case Expression.BoxFloat64(exp, _) => text("box") <+> doc(exp)
-//      case Expression.UnboxBool(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxInt8(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxInt16(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxInt32(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxInt64(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxChar(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxFloat32(exp, _) => text("unbox") <+> doc(exp)
-//      case Expression.UnboxFloat64(exp, _) => text("unbox") <+> doc(exp)
 //      case _ => text("unknown")
 //    }
   }

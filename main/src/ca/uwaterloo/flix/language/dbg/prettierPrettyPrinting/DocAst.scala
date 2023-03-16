@@ -1,6 +1,8 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+
+import java.lang.reflect.{Field, Method}
 
 sealed trait DocAst
 
@@ -9,8 +11,10 @@ object DocAst {
   /** A [[DocAst]] atom that doesn't need parenthesis */
   sealed trait Atom extends DocAst
 
-  /** `<sym>` */
-  case class Var(sym: Symbol.VarSym) extends Atom
+  /** A [[DocAst]] that sometimes need parenthesis */
+  sealed trait Composite extends DocAst
+
+  sealed trait LetBinder extends Atom
 
   /** inserted string printed as-is (assumed not to require parenthesis) */
   case class AsIs(s: String) extends Atom
@@ -20,19 +24,23 @@ object DocAst {
 
   case object RecordEmpty extends Atom
 
-  case class HoleError(sym: Symbol.HoleSym) extends Atom
-
-  /** `<sym>%<offset>` */
-  case class VarWithOffset(sym: Symbol.VarSym) extends Atom
+  /** `(<word> <d>)` */
+  case class Keyword(word: String, d: DocAst) extends Composite
 
   /** `(<op><d>)` */
-  case class Unary(op: String, d: DocAst) extends DocAst
+  case class Unary(op: String, d: DocAst) extends Composite
 
   /** `(<d1> <op> <d2>)` */
-  case class Binary(d1: DocAst, op: String, d2: DocAst) extends DocAst
+  case class Binary(d1: DocAst, op: String, d2: DocAst) extends Composite
 
   /** `if (<cond>) <thn> else <els>` */
-  case class IfThenElse(cond: DocAst, thn: DocAst, els: DocAst) extends DocAst
+  case class IfThenElse(cond: DocAst, thn: DocAst, els: DocAst) extends Composite
+
+  /** `<d1>.<d2>` */
+  case class Dot(d1: DocAst, d2: DocAst) extends Composite
+
+  /** `<d1>.,<d2>` */
+  case class DoubleDot(d1: DocAst, d2: DocAst) extends Composite
 
   /**
     * `let <v>: <tpe> = <bind>; <body>`
@@ -41,16 +49,86 @@ object DocAst {
     *
     * `let <v> = <bind>; <body>`
     */
-  case class Let(v: Symbol.VarSym, tpe: Option[DocAst], bind: DocAst, body: DocAst) extends DocAst
+  case class Let(v: DocAst, tpe: Option[DocAst], bind: DocAst, body: DocAst) extends LetBinder
+
+  case class LetRec(v: DocAst, tpe: Option[DocAst], bind: DocAst, body: DocAst) extends LetBinder
+
+  case class Scope(v: DocAst, d: DocAst) extends Atom
+
+  case class App(f: DocAst, args: List[DocAst]) extends Atom
 
   /** `<v>: <tpe>` */
-  case class Ascription(v: DocAst, tpe: DocAst) extends DocAst
+  case class Ascription(v: DocAst, tpe: DocAst) extends Composite
+
+  case class Cast(d: DocAst, tpe: DocAst) extends Composite
+
+  case class ArrayLit(ds: List[DocAst]) extends Atom
 
   // constants
+  /** `<sym>` */
+  def Var(sym: Symbol.VarSym): DocAst =
+    AsIs(sym.toString)
 
+  /** `<sym>_<offset>` */
+  def VarWithOffset(sym: Symbol.VarSym): DocAst =
+    AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+
+  /** `?<sym>` */
+  def HoleError(sym: Symbol.HoleSym): DocAst =
+    AsIs(sym.toString)
+
+  /** `region` */
   val Region: DocAst = Meta("region")
 
+  /** `Meta(match error)` */
   val MatchError: DocAst = Meta("match error")
+
+  /** `<sym>(<arg0>, <arg1>, ..., <argn>)` */
+  def Tag(sym: Symbol.CaseSym, args: List[DocAst]): DocAst = {
+    val tag = AsIs(sym.toString)
+    if (args.isEmpty) tag else App(tag, args)
+  }
+
+  def Ref(d: DocAst): DocAst =
+    Keyword("ref", d)
+
+  def Deref(d: DocAst): DocAst =
+    Keyword("deref", d)
+
+  def Lazy(d: DocAst): DocAst =
+    Keyword("lazy", d)
+
+  def Force(d: DocAst): DocAst =
+    Keyword("force", d)
+
+  def Box(d: DocAst): DocAst =
+    Keyword("box", d)
+
+  def Unbox(d: DocAst): DocAst =
+    Keyword("unbox", d)
+
+  def Tuple(ds: List[DocAst]): DocAst =
+    App(AsIs(""), ds)
+
+  def ClosureLifted(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst =
+    App(AsIs(sym.toString), ds)
+
+  def Cst(cst: Ast.Constant): DocAst =
+    AsIs(Printers.ConstantPrinter.print(cst))
+
+  def AppClo(d: DocAst, ds: List[DocAst]): DocAst =
+    App(d, ds)
+
+  def AppCloTail(d: DocAst, ds: List[DocAst]): DocAst =
+    App(d, ds)
+
+  def JavaInvokeMethod(m: Method, d: DocAst, ds: List[DocAst]): DocAst =
+    DoubleDot(d, App(AsIs(m.getName), ds))
+
+  def JavaGetStaticField(f: Field): DocAst = {
+    val className = "##" + f.getDeclaringClass.getName
+    Dot(AsIs(className), AsIs(f.getName))
+  }
 
 }
 

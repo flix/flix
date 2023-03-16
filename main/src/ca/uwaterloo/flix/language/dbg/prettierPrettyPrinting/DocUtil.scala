@@ -66,22 +66,22 @@ object DocUtil {
       * {a = b, c = d, e = f< | rest>}
       *
       * {
-      *   a = b, c = d, e = f< | rest>
+      * a = b, c = d, e = f< | rest>
       * }
       *
       * {
-      *   a = b,
-      *   c = d,
-      *   e = f<
-      *   | rest>
+      * a = b,
+      * c = d,
+      * e = f<
+      * | rest>
       * }
       *
       * {
-      *   a = b,
-      *   c =
-      *     d,
-      *   e = f<
-      *   | rest>
+      * a = b,
+      * c =
+      * d,
+      * e = f<
+      * | rest>
       * }
       */
     def recordExtendf(fields: List[(Doc, Doc)], rest: Option[Doc])(implicit i: Indent): Doc = {
@@ -145,22 +145,21 @@ object DocUtil {
       * def f(x: t, x: t): t = e
       *
       * def f(x: t, x: t): t =
-      *   e
+      * e
       *
       * def f(
-      *   x: t,
-      *   x: t
+      * x: t,
+      * x: t
       * ): t =
-      *   e
+      * e
       */
     def defnf(name: String, args: List[Doc], resType: Doc, body: Doc)(implicit i: Indent): Doc = {
       group(
         group(
           text("def") <+>
-          text(name) <> bracket("(", sep(text(",") <> breakWith(" "), args), ")") <>
-          text(":") <+> resType <+> text("=")
-        ) <+\>>
-          body
+            text(name) <> bracket("(", sep(text(",") <> breakWith(" "), args), ")") <>
+            text(":") <+> resType <+> text("=")
+        ) <+> bracket("{", body, "}")
       )
     }
 
@@ -168,23 +167,25 @@ object DocUtil {
       * let x<: t> = e
       *
       * let x<: t> =
-      *   e
+      * e
       */
     def letf(v: Doc, tpe: Option[Doc], value: Doc, body: Doc)(implicit i: Indent): Doc = {
-      let(text("let") <+> ascf(v, tpe) <+> text("=") <+> value, body)
+      //let(text("let") <+> ascf(v, tpe) <+> text("=") <+> value, body)
+      ???
     }
 
     def letrecf(v: Doc, tpe: Option[Doc], value: Doc, body: Doc)(implicit i: Indent): Doc = {
-      let(text("letrec") <+> ascf(v, tpe) <+> text("=") <+> value, body)
+      //      let(text("letrec") <+> ascf(v, tpe) <+> text("=") <+> value, body)
+      ???
     }
 
     /**
       * {a; b; c}
       *
       * {
-      *   a;
-      *   b;
-      *   c
+      * a;
+      * b;
+      * c
       * }
       */
     def seqBlockf(l: List[Doc])(implicit i: Indent): Doc = {
@@ -206,17 +207,17 @@ object DocUtil {
       * if (cond) {thn} else {els}
       *
       * if (cond) {
-      *   thn
+      * thn
       * } else {
-      *   els
+      * els
       * }
       *
       * if (
-      *   cond
+      * cond
       * ) {
-      *   thn
+      * thn
       * } else {
-      *   els
+      * els
       * }
       */
     def itef(cond: Doc, thn: Doc, els: Doc)(implicit i: Indent): Doc = {
@@ -238,7 +239,7 @@ object DocUtil {
     def recordSelectf(exp: Doc, field: Doc): Doc =
       exp <> text(".") <> field
 
-    def stringf(s: String)(implicit i: Indent): Doc =
+    def stringf(s: String): Doc =
       text("\"") <> text(s) <> text("\"")
 
     def arrayListf(elms: List[Doc])(implicit i: Indent): Doc =
