@@ -118,13 +118,6 @@ object ErasedAstPrinter {
 //        val output = assignf(doc(exp1), doc(exp2))
 //        par(output)
 //      case Expression.TryCatch(exp, rules, tpe, loc) => metaText("TryCatch")
-//      case Expression.InvokeConstructor(constructor, args, tpe, loc) => metaText("InvokeConstructor")
-//      case Expression.InvokeMethod(method, exp, args, _, _) =>
-//        val output = applyJavaf(method, doc(exp), args.map(doc(_, paren = false)))
-//        par(output)
-//      case Expression.InvokeStaticMethod(method, args, _, _) =>
-//        val output = applyStaticJavaf(method, args.map(doc(_, paren = false)))
-//        output
 //      case Expression.GetField(field, exp, tpe, loc) => metaText("GetField")
 //      case Expression.PutField(field, exp1, exp2, tpe, loc) => metaText("PutField")
 //      case Expression.GetStaticField(field, tpe, loc) => metaText("GetStaticField")

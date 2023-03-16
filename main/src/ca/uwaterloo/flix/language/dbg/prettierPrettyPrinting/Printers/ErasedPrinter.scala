@@ -1,37 +1,38 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
 
 import ca.uwaterloo.flix.language.ast.ErasedAst
+import ca.uwaterloo.flix.language.ast.ErasedAst.Expression._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 
 object ErasedPrinter {
 
   def print(e: ErasedAst.Expression): DocAst = e match {
-    case Expression.Var(sym, _, _) =>
+    case Var(sym, _, _) =>
       DocAst.VarWithOffset(sym)
-    case Expression.Unary(sop, exp, _, _) =>
+    case Unary(sop, exp, _, _) =>
       DocAst.Unary(OperatorPrinter.print(sop), print(exp))
-    case Expression.Binary(sop, _, exp1, exp2, _, _) =>
+    case Binary(sop, _, exp1, exp2, _, _) =>
       DocAst.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+    case IfThenElse(exp1, exp2, exp3, _, _) =>
       DocAst.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Expression.Branch(exp, branches, tpe, loc) =>
+    case Branch(exp, branches, tpe, loc) =>
       DocAst.Meta("branch")
-    case Expression.JumpTo(sym, tpe, loc) =>
+    case JumpTo(sym, tpe, loc) =>
       DocAst.Meta("jumpto")
-    case Expression.Let(sym, exp1, exp2, _, _) =>
+    case Let(sym, exp1, exp2, _, _) =>
       DocAst.Let(DocAst.VarWithOffset(sym), None, print(exp1), print(exp2))
-    case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) =>
+    case LetRec(varSym, _, _, exp1, exp2, _, _) =>
       DocAst.LetRec(DocAst.VarWithOffset(varSym), None, print(exp1), print(exp2))
-    case Expression.Scope(sym, exp, _, _) =>
+    case Scope(sym, exp, _, _) =>
       DocAst.Scope(DocAst.VarWithOffset(sym), print(exp))
-    case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
+    case ScopeExit(exp1, exp2, tpe, loc) =>
       DocAst.Meta("scopeexit")
-    case Expression.TryCatch(exp, rules, tpe, loc) =>
+    case TryCatch(exp, rules, tpe, loc) =>
       DocAst.Meta("trycatch")
-    case Expression.NewObject(name, clazz, tpe, methods, loc) =>
+    case NewObject(name, clazz, tpe, methods, loc) =>
       DocAst.Meta("newObject")
-    case Expression.Intrinsic0(op, _, _) => op match {
+    case Intrinsic0(op, _, _) => op match {
       case IntrinsicOperator0.Cst(cst) =>
         DocAst.Cst(cst)
       case IntrinsicOperator0.Region =>
@@ -45,7 +46,9 @@ object ErasedPrinter {
       case IntrinsicOperator0.MatchError =>
         DocAst.MatchError
     }
-    case Expression.Intrinsic1(op, exp, _, _) =>
+    case Intrinsic1(IntrinsicOperator1.Tag(sym), IntrinsicN(IntrinsicOperatorN.Tuple, exps, _, _), _, _) =>
+      DocAst.Tag(sym, exps.map(print))
+    case Intrinsic1(op, exp, _, _) =>
       val d = print(exp)
       op match {
         case IntrinsicOperator1.Is(sym) => DocAst.Meta("unknown")
@@ -60,7 +63,8 @@ object ErasedPrinter {
         case IntrinsicOperator1.ArrayLength => DocAst.Meta("unknown")
         case IntrinsicOperator1.Lazy => DocAst.Lazy(d)
         case IntrinsicOperator1.Force => DocAst.Force(d)
-        case IntrinsicOperator1.GetField(field) => DocAst.Meta("unknown")
+        case IntrinsicOperator1.GetField(field) =>
+          DocAst.JavaGetField(field, d)
         case IntrinsicOperator1.PutStaticField(field) => DocAst.Meta("unknown")
         case IntrinsicOperator1.BoxBool => DocAst.Box(d)
         case IntrinsicOperator1.BoxInt8 => DocAst.Box(d)
@@ -79,7 +83,7 @@ object ErasedPrinter {
         case IntrinsicOperator1.UnboxFloat32 => DocAst.Unbox(d)
         case IntrinsicOperator1.UnboxFloat64 => DocAst.Unbox(d)
       }
-    case Expression.Intrinsic2(op, exp1, exp2, _, _) =>
+    case Intrinsic2(op, exp1, exp2, _, _) =>
       val d1 = print(exp1)
       val d2 = print(exp2)
       op match {
@@ -90,29 +94,34 @@ object ErasedPrinter {
         case IntrinsicOperator2.Spawn => DocAst.Meta("Spawn")
         case IntrinsicOperator2.PutField(field) => DocAst.Meta("PutField")
       }
-    case Expression.Intrinsic3(op, exp1, exp2, exp3, _, _) =>
+    case Intrinsic3(op, exp1, exp2, exp3, _, _) =>
       val d1 = print(exp1)
       val d2 = print(exp2)
       val d3 = print(exp3)
       op match {
         case IntrinsicOperator3.ArrayStore => DocAst.Meta("ArrayStore")
       }
-    case Expression.IntrinsicN(op, exps, _, _) =>
+    case IntrinsicN(op, exps, _, _) =>
       val ds = exps.map(print)
       op match {
         case IntrinsicOperatorN.Closure(sym) =>
           DocAst.ClosureLifted(sym, ds)
-        case IntrinsicOperatorN.ApplyDef(sym) => DocAst.Meta("applyDef")
-        case IntrinsicOperatorN.ApplyDefTail(sym) => DocAst.Meta("applyDefTail")
-        case IntrinsicOperatorN.ApplySelfTail(sym, formals) => DocAst.Meta("applySelfTail")
+        case IntrinsicOperatorN.ApplyDef(sym) =>
+          DocAst.App(sym, ds)
+        case IntrinsicOperatorN.ApplyDefTail(sym) =>
+          DocAst.AppDefTail(sym, ds)
+        case IntrinsicOperatorN.ApplySelfTail(sym, _) =>
+          DocAst.AppSelfTail(sym, ds)
         case IntrinsicOperatorN.Tuple =>
           DocAst.Tuple(ds)
         case IntrinsicOperatorN.ArrayLit =>
           DocAst.ArrayLit(ds)
-        case IntrinsicOperatorN.InvokeConstructor(constructor) => DocAst.Meta("InvokeConstructor")
-        case IntrinsicOperatorN.InvokeStaticMethod(method) => DocAst.Meta("InvokeStaticMethod")
+        case IntrinsicOperatorN.InvokeConstructor(constructor) =>
+          DocAst.JavaInvokeConstructor(constructor, ds)
+        case IntrinsicOperatorN.InvokeStaticMethod(method) =>
+          DocAst.JavaInvokeStaticMethod(method, ds)
       }
-    case Expression.Intrinsic1N(op, exp, exps, _, _) =>
+    case Intrinsic1N(op, exp, exps, _, _) =>
       val d = print(exp)
       val ds = exps.map(print)
       op match {

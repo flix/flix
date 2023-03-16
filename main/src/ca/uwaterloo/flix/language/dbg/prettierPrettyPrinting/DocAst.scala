@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 sealed trait DocAst
 
@@ -37,10 +37,10 @@ object DocAst {
   case class IfThenElse(cond: DocAst, thn: DocAst, els: DocAst) extends Composite
 
   /** `<d1>.<d2>` */
-  case class Dot(d1: DocAst, d2: DocAst) extends Composite
+  case class Dot(d1: DocAst, d2: DocAst) extends Atom
 
   /** `<d1>.,<d2>` */
-  case class DoubleDot(d1: DocAst, d2: DocAst) extends Composite
+  case class DoubleDot(d1: DocAst, d2: DocAst) extends Atom
 
   /**
     * `let <v>: <tpe> = <bind>; <body>`
@@ -110,8 +110,10 @@ object DocAst {
   def Tuple(ds: List[DocAst]): DocAst =
     App(AsIs(""), ds)
 
-  def ClosureLifted(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst =
-    App(AsIs(sym.toString), ds)
+  def ClosureLifted(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst = {
+    val defName = AsIs(sym.toString)
+    if (ds.isEmpty) defName else App(defName, ds)
+  }
 
   def Cst(cst: Ast.Constant): DocAst =
     AsIs(Printers.ConstantPrinter.print(cst))
@@ -122,13 +124,35 @@ object DocAst {
   def AppCloTail(d: DocAst, ds: List[DocAst]): DocAst =
     App(d, ds)
 
+  def AppDefTail(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst =
+    App(AsIs(sym.toString), ds)
+
+  def AppSelfTail(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst =
+    App(AsIs(sym.toString), ds)
+
+  def App(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst =
+    App(AsIs(sym.toString), ds)
+
   def JavaInvokeMethod(m: Method, d: DocAst, ds: List[DocAst]): DocAst =
-    DoubleDot(d, App(AsIs(m.getName), ds))
+    App(DoubleDot(d, AsIs(m.getName)), ds)
+
+  def JavaInvokeStaticMethod(m: Method, ds: List[DocAst]): DocAst = {
+    val className = "##" + m.getDeclaringClass.getName
+    App(Dot(AsIs(className), AsIs(m.getName)), ds)
+  }
 
   def JavaGetStaticField(f: Field): DocAst = {
     val className = "##" + f.getDeclaringClass.getName
     Dot(AsIs(className), AsIs(f.getName))
   }
+
+  def JavaInvokeConstructor(c: Constructor[_], ds: List[DocAst]): DocAst = {
+    val className = "##" + c.getDeclaringClass.getName
+    App(AsIs(className), ds)
+  }
+
+  def JavaGetField(f: Field, d: DocAst): DocAst =
+    DoubleDot(d, AsIs(f.getName))
 
 }
 
