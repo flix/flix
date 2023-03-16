@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language.{parens, scopef}
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.bracket
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.{bracket, commaSep}
 
 import scala.annotation.tailrec
 
@@ -33,6 +33,15 @@ object DocAstFormatter {
             text("else") <+>
             bracket("{", aux(els, paren = false, inBlock = true), "}")
         )
+      case DocAst.Branch(d, branches) =>
+        text("branching") <+> group(bracket("{",
+          aux(d, paren = false, inBlock = true)
+          , "}") <+> text("with") <+> bracket("{",
+          commaSep(
+            branches.toList.map { case (sym, dd) =>
+              text("label") <+> text(sym.toString) <> text(":") <+\>> aux(dd, paren = false)
+            })
+          , "}"))
       case DocAst.Dot(d1, d2) =>
         aux(d1) <> text(".") <> aux(d2)
       case DocAst.DoubleDot(d1, d2) =>

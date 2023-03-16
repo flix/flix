@@ -17,7 +17,7 @@ object ErasedPrinter {
     case IfThenElse(exp1, exp2, exp3, _, _) =>
       DocAst.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, tpe, loc) =>
-      DocAst.Meta("branch")
+      DocAst.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, tpe, loc) =>
       DocAst.Meta("jumpto")
     case Let(sym, exp1, exp2, _, _) =>

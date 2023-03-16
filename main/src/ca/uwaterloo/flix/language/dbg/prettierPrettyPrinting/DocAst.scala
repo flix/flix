@@ -36,6 +36,8 @@ object DocAst {
   /** `if (<cond>) <thn> else <els>` */
   case class IfThenElse(cond: DocAst, thn: DocAst, els: DocAst) extends Composite
 
+  case class Branch(d: DocAst, branches: Map[Symbol.LabelSym, DocAst]) extends Atom
+
   /** `<d1>.<d2>` */
   case class Dot(d1: DocAst, d2: DocAst) extends Atom
 
