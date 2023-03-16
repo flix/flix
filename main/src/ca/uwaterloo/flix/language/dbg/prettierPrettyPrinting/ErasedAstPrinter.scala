@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.Symbol._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.OperatorPrinter
 
 import scala.annotation.tailrec
 
@@ -57,11 +58,9 @@ object ErasedAstPrinter {
         val output = doc(sym)
         output
       case Expression.Unary(sop, exp, _, _) =>
-        val output = OperatorPrinter.doc(sop) <> doc(exp)
-        par(output)
+        ???
       case Expression.Binary(sop, _, exp1, exp2, _, _) =>
-        val output = doc(exp1) <+> OperatorPrinter.doc(sop) <+> doc(exp2)
-        par(output)
+        ???
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
         val output = itef(
           doc(exp1, paren = false),
