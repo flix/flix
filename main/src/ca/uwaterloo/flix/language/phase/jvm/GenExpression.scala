@@ -1401,6 +1401,7 @@ object GenExpression {
 
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
     }
   }
 
@@ -1655,6 +1656,7 @@ object GenExpression {
       visitor.visitLabel(orFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(orEnd)
+    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
   }
 
   /*
