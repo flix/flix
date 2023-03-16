@@ -17,6 +17,7 @@
 namespace TestResult {
 
     use Hash.hash
+    use Validation.{Success, Failure}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -236,34 +237,6 @@ namespace TestResult {
 
     @test
     def sumWith03(): Bool = Result.sumWith(x -> x + 1, Ok(-2)) == -1
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool = Result.product(Err(false)) == 1
-
-    @test
-    def product02(): Bool = Result.product(Ok(1)) == 1
-
-    @test
-    def product03(): Bool = Result.product(Ok(-2)) == -2
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool = Result.productWith(x -> x + 1, Err(false)) == 1
-
-    @test
-    def productWith02(): Bool = Result.productWith(x -> x + 1, Ok(1)) == 2
-
-    @test
-    def productWith03(): Bool = Result.productWith(x -> x + 1, Ok(-2)) == -1
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -858,6 +831,19 @@ namespace TestResult {
     @test
     def iterator03(): Bool = region r {
         Ok(1 :: 2 :: 3 :: Nil) |> Result.iterator(r) |> Iterator.toList == (1 :: 2 :: 3 :: Nil) :: Nil
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tryCatch                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tryCatch01(): Bool = Result.tryCatch(_ -> 1 / 1) == Ok(1)
+
+    @test
+    def tryCatch02(): Bool = region rc {
+        let arr = Array#{0} @ rc;
+        Result.tryCatch(_ -> Array.get(10, arr)) |> Result.isErr
     }
 
 }

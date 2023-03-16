@@ -30,7 +30,15 @@ object SemVer {
 /**
   * A semantic version number.
   */
-case class SemVer(major: Int, minor: Int, patch: Int) {
-  override def toString: String = s"$major.$minor.$patch"
+case class SemVer(major: Int, minor: Int, patch: Option[Int], build: Option[String]) {
+  override def toString: String = patch match {
+    case None => s"$major.$minor"
+    case Some(patch) => build match {
+      case None => s"$major.$minor.$patch"
+      case Some(build) => s"$major.$minor.$patch-$build"
+    }
+
+  }
+
 
 }

@@ -121,6 +121,9 @@ class Flix {
 
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
+
+    // References
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
 
   /**
@@ -241,8 +244,6 @@ class Flix {
     "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
-
-    "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),

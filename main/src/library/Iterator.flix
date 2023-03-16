@@ -19,6 +19,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
 }
 
 namespace Iterator {
+    use Step.{Ans, Skip, Done}
 
 
     ///
@@ -45,14 +46,14 @@ namespace Iterator {
             case Some(a) => Ans(a)
             case None    => Done
         };
-        let iterF = () -> unsafe_cast f1()  as _ \ { ef, r };
+        let iterF = () -> checked_ecast(f1());
         Iterator(rc, iterF)
 
     ///
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = () -> unsafe_cast Done as _ \ r;
+        let f = constant(Done);
         Iterator(rc, f)
 
     ///
@@ -125,22 +126,6 @@ namespace Iterator {
     ///
     pub def sumWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, iter)
-
-    ///
-    /// Returns the product of all elements in the iterator `iter`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def product(iter: Iterator[Int32, ef, r]): Int32 \ { ef, Read(r) } =
-        foldLeft((acc, x) -> acc * x, 1, iter)
-
-    ///
-    /// Returns the product of all elements in the iterator `iter` according to the function `f`.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def productWith(f: a -> Int32 \ ef2, iter: Iterator[a, ef1, r]): Int32 \ { ef1, ef2, Read(r) } =
-        foldLeft((acc, x) -> acc * f(x), 1, iter)
 
     ///
     /// Returns the contents of `iter` as an array.
@@ -441,7 +426,7 @@ namespace Iterator {
             case Done   => k(s)
 
         };
-        loop(upcast(identity))
+        loop(identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
@@ -489,12 +474,8 @@ namespace Iterator {
     /// If `f` returns `Err(e)`, then the iterator is depleted.
     ///
     pub def unfoldWithOk(rc: Region[r], f: Unit -> Result[e, a] \ ef): Iterator[a, ef, r] =
-        def loop() = match f() {
-            case Ok(a)  => Ans(a)
-            case Err(_) => Done
-        };
-        let iterF = () -> unsafe_cast loop() as _ \ {ef, r};
-        Iterator(rc, iterF)
+        let iterF = () -> Result.toOption(f());
+        Iterator.iterate(rc, iterF)
 
     ///
     /// Returns `iter` without the first `n` elements.
@@ -636,7 +617,7 @@ namespace Iterator {
     /// is not general enough at the use-site when `innerIter` is re-assigned within `outerLoop`.
     ///
     def polymorphicEmpty(rc: Region[r]): Iterator[a, ef, r] =
-        let f = () -> unsafe_cast Done as _ \ ef;
+        let f = constant(Done);
         Iterator(rc, f)
 
 

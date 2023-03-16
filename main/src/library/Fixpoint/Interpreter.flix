@@ -18,16 +18,15 @@ namespace Fixpoint {
 
     use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
     use Fixpoint/Ast.Denotation
-    use Fixpoint/Tuple.Tuple
 
-    type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Tuple[v], v, r], r]
-    type alias SearchEnv[v: Type, r: Region] = (Array[Tuple[v], r], Array[v, r])
+    type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
+    type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
 
     def interpret(r: Region[r], stmt: RamStmt[v]): Database[v, r] \ Write(r) with Order[v] =
         interpretWithDatabase(r, MutMap.new(r), stmt)
 
     def interpretWithDatabase(r: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ { Read(r), Write(r) } with Order[v] =
-        unsafe_cast notifyPreInterpret(stmt) as _ \ r; // This casts away the impure effect of notify
+        masked_cast(notifyPreInterpret(stmt));
         evalStmt(r, db, stmt);
         db
 
@@ -59,7 +58,7 @@ namespace Fixpoint {
     def allocEnv(r: Region[r], depth: Int32, relOp: RelOp[v]): SearchEnv[v, r] \ Write(r) = match relOp {
         case RelOp.Search(_, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
-        case RelOp.Project(_) => (Array.repeat(r, depth, Fixpoint/Tuple.new(Nil)), Array.new(r, depth))
+        case RelOp.Project(_) => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
     }
 
@@ -83,14 +82,14 @@ namespace Fixpoint {
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
+                        let tuple = List.toVector(List.map(evalTerm(env), terms));
                         MutMap.put!(tuple, Reflect.default(), rel)
                     case Denotation.Latticenal(bot, leq, lub, _) =>
                         // assume that length(terms) > 0
                         let len = List.length(terms);
                         let keyList = terms |> List.map(evalTerm(env));
                         let (relKeys, latValList) = List.splitAt(len-1, keyList);
-                        let key = Fixpoint/Tuple.new(relKeys);
+                        let key = List.toVector(relKeys);
                         let latVal = match List.head(latValList) {
                             case None => bug!("Found predicate without terms")
                             case Some(k) => k
@@ -107,10 +106,10 @@ namespace Fixpoint {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Tuple[v]): Comparison \ Read(r) with Order[v] =
+    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ Read(r) with Order[v] =
         match query {
             case Nil => Comparison.EqualTo
-            case (j, t) :: tl => match Fixpoint/Tuple.valueAt(tuple, j) <=> evalTerm(env, t) {
+            case (j, t) :: tl => match Vector.get(j, tuple) <=> evalTerm(env, t) {
                 case Comparison.EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
@@ -124,12 +123,12 @@ namespace Fixpoint {
                 let rel = MutMap.getWithDefault(ramSym, MutMap.new(r1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
-                        let tuple = Fixpoint/Tuple.new(List.map(evalTerm(env), terms));
+                        let tuple = List.toVector(List.map(evalTerm(env), terms));
                         not MutMap.memberOf(tuple, rel)
                     case Denotation.Latticenal(bot, leq, _, _) =>
                         let len = List.length(terms);
                         let (keyTerms, latTermList) = terms |> List.map(evalTerm(env)) |> List.splitAt(len - 1);
-                        let key = Fixpoint/Tuple.new(keyTerms);
+                        let key = List.toVector(keyTerms);
                         let latTerm = match List.head(latTermList) {
                             case None => bug!("Found predicate without terms")
                             case Some(hd) => hd
@@ -173,7 +172,7 @@ namespace Fixpoint {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            Fixpoint/Tuple.valueAt(Array.get(i, tupleEnv), index)
+            Vector.get(index, Array.get(i, tupleEnv))
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
             Array.get(i, latEnv)

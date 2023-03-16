@@ -457,56 +457,6 @@ namespace TestReducible {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Reducible.product(Nel.Nel(1, Nil)) == 1
-
-    @test
-    def product02(): Bool =
-        Reducible.product(Nel.Nel(1, 2 :: 3 :: Nil)) == 6
-
-    @test
-    def product03(): Bool =
-        Reducible.product(Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == -18
-
-    @test
-    def product04(): Bool =
-        Reducible.product(Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)) == 24
-
-    @test
-    def product05(): Bool =
-        Reducible.product(Nel.Nel(10, -10 :: Nil)) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Reducible.productWith(x -> x + 1, Nel.Nel(1, Nil)) == 2
-
-    @test
-    def productWith02(): Bool =
-        Reducible.productWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: Nil)) == 24
-
-    @test
-    def productWith03(): Bool =
-        Reducible.productWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == -48
-
-    @test
-    def productWith04(): Bool =
-        Reducible.productWith(x -> x + 1, Nel.Nel(-2, -3 :: -4 :: -5 :: Nil)) == 24
-
-    @test
-    def productWith05(): Bool =
-        Reducible.productWith(x -> x + 1, Nel.Nel(10, -10 :: Nil)) == -99
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

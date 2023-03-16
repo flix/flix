@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization}
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -67,7 +67,7 @@ object Regions {
     case Expression.OpenAs(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Use(_, exp, loc) => visitExp(exp)
+    case Expression.Use(_, _, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -192,16 +192,13 @@ object Regions {
     case Expression.Of(_, exp, _, _, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Cast(exp, _, _, _, tpe, _, _, loc) =>
+    case Expression.CheckedCast(_, exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Mask(exp, _, _, tpe, loc) =>
+    case Expression.UncheckedCast(exp, _, _, _, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Upcast(exp, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expression.Supercast(exp, tpe, loc) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expression.Without(exp, _, tpe, _, _, loc) =>
