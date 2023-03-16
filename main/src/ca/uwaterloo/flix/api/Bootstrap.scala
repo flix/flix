@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, Manifest}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
@@ -25,17 +25,6 @@ import java.nio.file.{FileVisitResult, Files, Path, Paths, SimpleFileVisitor}
 import scala.collection.mutable
 
 object Bootstrap {
-
-  // TODO: Remove
-  def main(args: Array[String]): Unit = {
-    val path = Paths.get(".").resolve("examples").resolve("projects").resolve("project-with-deps")
-    val b = Bootstrap.bootstrap(path)(System.out) match {
-      case Ok(t) => t
-      case Err(e) => ???
-    }
-    val f = new Flix()
-    b.reconfigureFlix(f)
-  }
 
   /**
     * Returns the path to the library directory relative to the given path `p`.
@@ -145,13 +134,15 @@ class Bootstrap {
     }
 
     // 2. Check each dependency is available or download it.
-    FlixPackageManager.installAll(manifest, path) match {
+    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, path) match {
+      case Ok(l) => l
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+    }
+    FlixPackageManager.installAll(manifests, path) match {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-
-    val extraMavenDeps = FlixPackageManager.mavenSet.toList
-    MavenPackageManager.installAll(manifest, path, extraMavenDeps) match {
+    MavenPackageManager.installAll(manifests, path) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
@@ -162,7 +153,6 @@ class Bootstrap {
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(path), "flix")
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(path), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
-
     ().toOk
   }
 

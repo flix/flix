@@ -37,10 +37,10 @@ object MavenPackageManager {
     * dependencies using coursier in the /lib/cache folder of `path`.
     * Returns a list of paths to the downloadet .jars.
     */
-  def installAll(manifest: Manifest, path: Path, extraDeps: List[String])(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Maven dependencies...")
 
-    val depStrings = getMavenDependencyStrings(manifest) ++ extraDeps
+    val depStrings = manifests.flatMap(manifest => getMavenDependencyStrings(manifest))
 
     val libPath = Bootstrap.getLibraryDirectory(path).resolve("cache")
     val cacheString = libPath.toString
