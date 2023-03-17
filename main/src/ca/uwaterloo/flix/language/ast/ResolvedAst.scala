@@ -37,7 +37,6 @@ object ResolvedAst {
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  // TODO use ResolvedAst.Law for laws
   case class CompilationUnit(usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
   sealed trait Declaration
@@ -45,13 +44,15 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Law], loc: SourceLocation) extends Declaration
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression]) extends Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: ResolvedAst.Spec, exp: ResolvedAst.Expression) extends Declaration
+
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.LawSym, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation) extends ResolvedAst.Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: ResolvedAst.TypeParams, derives: List[Ast.Derivation], cases: List[ResolvedAst.Declaration.Case], loc: SourceLocation) extends Declaration
 

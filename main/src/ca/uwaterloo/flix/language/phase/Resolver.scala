@@ -433,7 +433,7 @@ object Resolver {
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-          val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
+          val lawsVal = traverse(laws0)(resolveLaw(_, Some(tconstr), env, taenv, ns0, root))
           mapN(sigsListVal, superClassesVal, lawsVal) {
             case (sigsList, superClasses, laws) =>
               val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
@@ -525,6 +525,29 @@ object Resolver {
                 case (tpe, purAndEff, tconstrs) =>
                   // add the inherited type constraint to the the list
                   ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
+              }
+          }
+      }
+  }
+
+  // TODO docs (also check other visitors)
+  def resolveLaw(l0: NamedAst.Declaration.Law, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Law, ResolutionError] = l0 match {
+    case NamedAst.Declaration.Law(doc, ann, mod, sym, tparams0, fparams0, exp0, tconstrs0, loc) =>
+      val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
+      flatMapN(tparamsVal) {
+        case tparams =>
+          val env1 = env0 ++ mkTypeParamEnv(tparams.tparams)
+          val fparamsVal = resolveFormalParams(fparams0, env1, taenv, ns0, root)
+          flatMapN(fparamsVal) {
+            case fparams =>
+              val env = env1 ++ mkFormalParamEnv(fparams)
+              val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+              val expVal = Expressions.resolve(exp0, env, taenv, ns0, root)
+
+              mapN(tconstrsVal, expVal) {
+                case (tconstrs, exp) =>
+                  // add the inherited type constraint to the the list
+                  ResolvedAst.Declaration.Law(doc, ann, mod, sym, tparams, fparams, exp, tconstr.toList ::: tconstrs, loc)
               }
           }
       }

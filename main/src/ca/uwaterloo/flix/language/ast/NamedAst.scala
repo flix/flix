@@ -31,7 +31,6 @@ object NamedAst {
                   names: MultiMap[List[String], String])
 
   case class CompilationUnit(usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation)
-  // TODO change laws to NamedAst.Law
 
   sealed trait Declaration
 
@@ -39,13 +38,15 @@ object NamedAst {
 
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Law], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
     case class Def(sym: Symbol.DefnSym, spec: NamedAst.Spec, exp: NamedAst.Expression) extends NamedAst.Declaration
+
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.LawSym, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tconstrs: List[NamedAst.TypeConstraint],loc: SourceLocation) extends NamedAst.Declaration
 
     case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: NamedAst.TypeParams, derives: List[Name.QName], cases: List[NamedAst.Declaration.Case], loc: SourceLocation) extends NamedAst.Declaration
 

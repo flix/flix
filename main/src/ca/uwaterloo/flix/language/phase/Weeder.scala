@@ -240,7 +240,7 @@ object Weeder {
   /**
     * Performs weeding on the given law declaration `d0`.
     */
-  private def visitLaw(d0: ParsedAst.Declaration.Law)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
+  private def visitLaw(d0: ParsedAst.Declaration.Law)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Law], WeederError] = d0 match {
     case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
@@ -253,10 +253,7 @@ object Weeder {
 
       mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
         case (ann, mod, _, tparams, fs, exp, tconstrs) =>
-          val ts = fs.map(_.tpe.get)
-          val purAndEff = WeededAst.PurityAndEffect(None, None)
-          val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Law(doc, ann, mod, ident, tparams, fs, exp, tconstrs, mkSL(sp1, sp2)))
       }
   }
 

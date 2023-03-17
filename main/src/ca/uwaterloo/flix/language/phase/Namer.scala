@@ -391,7 +391,7 @@ object Namer {
 
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
-      val lawsVal = traverse(laws0)(visitDef(_, ns0))
+      val lawsVal = traverse(laws0)(visitLaw(_, ns0))
 
       mapN(superClassesVal, sigsVal, lawsVal) {
         case (superClasses, sigs, laws) =>
@@ -486,6 +486,31 @@ object Namer {
               val sym = Symbol.mkDefnSym(ns0, ident)
               val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
+          }
+      }
+  }
+
+  private def visitLaw(decl0: WeededAst.Declaration.Law, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Law, NameError] = decl0 match {
+    case WeededAst.Declaration.Law(doc, ann, mod0, ident, tparams0, fparams0, exp, tconstrs0, loc) =>
+      // TODO make getTypeParamsFromFormalParams take an option
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, WeededAst.Type.Unit(SourceLocation.Unknown), WeededAst.PurityAndEffect(None, None))
+
+      // First visit all the top-level information
+      val mod = visitModifiers(mod0, ns0)
+      val fparamsVal = getFormalParams(fparams0)
+      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+
+      flatMapN(fparamsVal, tconstrsVal) {
+        case (fparams, tconstrs) =>
+
+          // Then visit the parts depending on the parameters
+          val expVal = visitExp(exp, ns0)
+
+          mapN(expVal) {
+            case e =>
+
+              val sym = Symbol.mkLawSym(ns0, ident)
+              NamedAst.Declaration.Law(doc, ann, mod, sym, tparams, fparams, e, tconstrs, loc)
           }
       }
   }
