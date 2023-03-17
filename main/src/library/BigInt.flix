@@ -202,7 +202,7 @@ namespace BigInt {
         forM (
             f32min <- Float32.tryToBigInt(Float32.minValue());
             f32max <- Float32.tryToBigInt(Float32.maxValue());
-            if x < f32min or x > f32max
+            if f32min <= x and x <= f32max
         ) yield d
 
     ///
@@ -223,7 +223,7 @@ namespace BigInt {
         forM (
             f64min <- Float64.tryToBigInt(Float64.minValue());
             f64max <- Float64.tryToBigInt(Float64.maxValue());
-            if x < f64min or x > f64max
+            if f64min <= x and x <= f64max
         ) yield d
 
     ///
