@@ -17,10 +17,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, sequence, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, sequence, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -59,6 +59,7 @@ object Deriver {
       lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
+      lazy val functorSym = PredefinedClasses.lookupClassSym("Functor", root)
       sequence(derives.map {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
@@ -66,6 +67,7 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
+        case Ast.Derivation(sym, loc) if sym == functorSym => mkFunctorInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym", SourceLocation.Unknown)
       })
   }
@@ -784,6 +786,189 @@ object Deriver {
   }
 
   /**
+    * Creates a Functor instance for the given enum.
+    *
+    * {{{
+    * enum E[a, b] with Functor {
+    *   case C1
+    *   case C2(b)
+    *   case C3(b, F[a, b])
+    * }
+    * }}}
+    *
+    * yields
+    *
+    * {{{
+    * instance Functor[E[a]] {
+    *   pub def map(f: b -> c, x: E[a, b]): E[a, c] = match x {
+    *     case C1 => C1
+    *     case C2(x0) => C2(f(b))
+    *     case C3(x0, x1) => C3(f(x0), Functor.map(f, x1))
+    *   }
+    * }
+    * }}}
+    *
+    * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
+    */
+  private def mkFunctorInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
+    case KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe0, _) =>
+      val tpeVal = tpe0 match {
+        case Type.Apply(base, _, _) => base.toSuccess
+        case _ => ??? // TODO Derivation error: functor needs param
+      }
+
+      mapN(tpeVal) {
+        case tpe =>
+          val functorClassSym = PredefinedClasses.lookupClassSym("Functor", root)
+          val mapDefSym = Symbol.mkDefnSym("Functor.map")
+
+          val paramF = Symbol.freshVarSym("f", BoundBy.FormalParam, loc)
+          val paramX = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
+          val exp = mkMapImpl(enum0, paramF, paramX, loc, root)
+          val spec = mkMapSpec(enum0, paramF, paramX, loc, root)
+
+          val defn = KindedAst.Def(mapDefSym, spec, exp)
+
+          KindedAst.Instance(
+            doc = Ast.Doc(Nil, loc),
+            ann = Ast.Annotations.Empty,
+            mod = Ast.Modifiers.Empty,
+            clazz = Ast.ClassSymUse(functorClassSym, loc),
+            tpe = tpe,
+            tconstrs = Nil,
+            defs = List(defn),
+            ns = Name.RootNS,
+            loc = loc
+          )
+      }
+  }
+
+  /**
+    * Creates the map implementation for the given enum, where `paramF` and `paramX` are the parameters to the function.
+    */
+  private def mkMapImpl(enum0: KindedAst.Enum, paramF: Symbol.VarSym, paramX: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expression = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, _, _) =>
+      // create a match rule for each case
+      val matchRules = cases.values.map {
+        case caze => mkMapMatchRule(caze, tparams.last.sym, paramF, loc, root)
+      }
+
+      // group the match rules in an expression
+      KindedAst.Expression.Match(
+        mkVarExpr(paramX, loc),
+        matchRules.toList,
+        loc
+      )
+  }
+
+  /**
+    * Creates a map match rule for the given enum case.
+    */
+  private def mkMapMatchRule(caze: KindedAst.Case, mappedType: Symbol.KindedTypeVarSym, paramF: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
+    case KindedAst.Case(sym, tpe, _, _) =>
+      val mapSigSym = PredefinedClasses.lookupSigSym("Functor", "map", root)
+
+      // get a pattern corresponding to this case, e.g.
+      // `case C2(x0, x1)`
+      val (pat, varSyms) = mkPattern(sym, tpe, "x", loc)
+
+      // handle each pattern element according to its type
+      val elems = unpackType(tpe).zip(varSyms).map {
+        // Case 1: It matches the var we are mapping over. Call `f` on it.
+        case (Type.Var(tvar, _), varSym) if tvar == mappedType =>
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Var(paramF, loc),
+            List(mkVarExpr(varSym, loc)),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Effect, loc),
+            loc
+          )
+        // Case 2: It contains the var we are mapping over. Call `map(f)` on it.
+        case (t, varSym) if t.typeVars.map(_.sym).contains(mappedType) =>
+          KindedAst.Expression.Apply(
+            KindedAst.Expression.Sig(mapSigSym, Type.freshVar(Kind.Star, loc), loc),
+            List(
+              mkVarExpr(paramF, loc),
+              mkVarExpr(varSym, loc)
+            ),
+            Type.freshVar(Kind.Star, loc),
+            Type.freshVar(Kind.Bool, loc),
+            Type.freshVar(Kind.Effect, loc),
+            loc
+          )
+        // Case 3: It does not contain the var we are mapping over. Leave it alone.
+        case (_, varSym) => mkVarExpr(varSym, loc)
+      }
+
+      // Reapply the case constructor
+      val exp = KindedAst.Expression.Tag(
+        Ast.CaseSymUse(sym, loc),
+        packExp(elems, loc),
+        Type.freshVar(Kind.Star, loc),
+        loc
+      )
+
+      KindedAst.MatchRule(pat, None, exp)
+  }
+
+  /**
+    * Creates the map spec for the given enum, where `paramF` and `paramX` are the parameters to the function.
+    */
+  private def mkMapSpec(enum0: KindedAst.Enum, paramF: Symbol.VarSym, paramX: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
+    case KindedAst.Enum(_, _, _, _, tparams0, _, _, tpe, _) =>
+      val functorClassSym = PredefinedClasses.lookupClassSym("Functor", root)
+
+      val (baseTpe, fromTpe) = tpe match {
+        case Type.Apply(tpe1, tpe2, _) => (tpe1, tpe2)
+        case _ => throw InternalCompilerException("unexpected type", loc)
+      }
+
+      val toTpe = Type.freshVar(Kind.Star, loc)
+
+      val pur = Type.freshVar(Kind.Bool, loc)
+      val eff = Type.freshVar(Kind.Effect, loc)
+      val resultTpe = Type.Apply(baseTpe, toTpe, loc)
+
+      val fTpe = Type.mkArrowWithEffect(fromTpe, pur, eff, toTpe, loc)
+
+      val xTpe = tpe
+
+      val addedTparams = List(
+        KindedAst.TypeParam(Name.Ident(SourcePosition.Unknown, "a", SourcePosition.Unknown), toTpe.sym, loc),
+        KindedAst.TypeParam(Name.Ident(SourcePosition.Unknown, "p", SourcePosition.Unknown), pur.sym, loc),
+        KindedAst.TypeParam(Name.Ident(SourcePosition.Unknown, "e", SourcePosition.Unknown), eff.sym, loc)
+      ) // TODO real SPs
+      val tparams = tparams0 ::: addedTparams
+
+      KindedAst.Spec(
+        doc = Ast.Doc(Nil, loc),
+        ann = Ast.Annotations.Empty,
+        mod = Ast.Modifiers.Empty,
+        tparams = tparams,
+        fparams = List(
+          KindedAst.FormalParam(paramF, Ast.Modifiers.Empty, fTpe, Ast.TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(paramX, Ast.Modifiers.Empty, xTpe, Ast.TypeSource.Ascribed, loc)),
+        sc = Scheme(
+          tparams.map(_.sym),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(functorClassSym, loc), baseTpe, loc)),
+          Type.mkUncurriedArrowWithEffect(
+            List(fTpe, xTpe),
+            pur,
+            eff,
+            resultTpe,
+            loc
+          )
+        ),
+        tpe = resultTpe,
+        pur = pur,
+        eff = eff,
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(functorClassSym, loc), tpe, loc)),
+        loc = loc
+      )
+  }
+
+  /**
     * Creates type constraints for the given type parameters.
     * Filters out non-star type parameters and wild type parameters.
     */
@@ -825,17 +1010,31 @@ object Deriver {
     * A Tuple unpacks to its member types.
     * Anything else unpacks to the singleton list of itself.
     */
-  private def unpack(tpe: Type): List[Type] = tpe.typeConstructor match {
+  private def unpackType(tpe: Type): List[Type] = tpe.typeConstructor match {
     case Some(TypeConstructor.Unit) => Nil
     case Some(TypeConstructor.Tuple(_)) => tpe.typeArguments
     case _ => List(tpe)
   }
 
   /**
+    * Packs the expressions into an aggregate expression.
+    * An empty list packs to the unit value.
+    * A singleton list unpacks to itself.
+    * Anything else unpacks to a tuple.
+    */
+  private def packExp(exps: List[KindedAst.Expression], loc: SourceLocation): KindedAst.Expression = {
+    exps match {
+      case Nil => KindedAst.Expression.Cst(Ast.Constant.Unit, loc)
+      case e :: Nil => e
+      case es => KindedAst.Expression.Tuple(es, loc)
+    }
+  }
+
+  /**
     * Creates a pattern corresponding to the given tag type.
     */
   private def mkPattern(sym: Symbol.CaseSym, tpe: Type, varPrefix: String, loc: SourceLocation)(implicit flix: Flix): (KindedAst.Pattern, List[Symbol.VarSym]) = {
-    unpack(tpe) match {
+    unpackType(tpe) match {
       case Nil => (KindedAst.Pattern.Tag(Ast.CaseSymUse(sym, loc), KindedAst.Pattern.Cst(Ast.Constant.Unit, loc), Type.freshVar(Kind.Star, loc), loc), Nil)
       case _ :: Nil =>
         val varSym = Symbol.freshVarSym(s"${varPrefix}0", BoundBy.Pattern, loc)
