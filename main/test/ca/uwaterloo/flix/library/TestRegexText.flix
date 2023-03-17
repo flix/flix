@@ -53,4 +53,14 @@ mod TestRegexText {
     def replace03(): Bool =
         Result.map(patt -> Regex/Text.replace(from = patt, to = "_", "ABC"),
             Regex/Pattern.compile("\\p{Blank}+")) == Ok("ABC")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // endsWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def endsWith01(): Bool =
+        Result.map(patt -> Regex/Text.endsWith(suffix = patt, "A B C"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(true)
+
 }
