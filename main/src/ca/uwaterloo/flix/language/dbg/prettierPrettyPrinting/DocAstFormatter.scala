@@ -49,6 +49,8 @@ object DocAstFormatter {
       case DocAst.RecordEmpty =>
         text("{}")
       case re: DocAst.RecordExtend =>
+        // { a0 = v0, ... ak = vk} syntax if restOpt is empty
+        // { +a0 = v0, ..., +ak = vk | rest} otherwise
         val (exs, restOpt) = collectRecordExtends(re)
         recordExtendf(
           exs.map { case DocAst.RecordExtend(field, value, _) =>

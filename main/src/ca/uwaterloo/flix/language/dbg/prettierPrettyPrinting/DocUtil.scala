@@ -85,7 +85,11 @@ object DocUtil {
       * }
       */
     def recordExtendf(fields: List[(Doc, Doc)], rest: Option[Doc])(implicit i: Indent): Doc = {
-      val f = fields.map { case (x, y) => groupBreakIndent(x +: text("="), y) }
+      val prefix = rest match {
+        case Some(_) => text("+")
+        case None => text("")
+      }
+      val f = fields.map { case (x, y) => groupBreakIndent(prefix :: x +: text("="), y) }
       val restPart = rest match {
         case Some(value) => text(" |") +: value
         case None => empty
