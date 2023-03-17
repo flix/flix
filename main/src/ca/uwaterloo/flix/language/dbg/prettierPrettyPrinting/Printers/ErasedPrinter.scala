@@ -48,8 +48,8 @@ object ErasedPrinter {
       DocAst.Scope(DocAst.VarWithOffset(sym), print(exp))
     case ScopeExit(exp1, exp2, tpe, loc) =>
       DocAst.Meta("scopeexit")
-    case TryCatch(exp, rules, tpe, loc) =>
-      DocAst.Meta("trycatch")
+    case TryCatch(exp, rules, _, _) =>
+      DocAst.TryCatch(print(exp), rules.map(r => (r.sym, r.clazz, print(r.exp))))
     case NewObject(name, clazz, tpe, methods, loc) =>
       DocAst.Meta("newObject")
     case Intrinsic0(op, _, _) => op match {
@@ -84,7 +84,8 @@ object ErasedPrinter {
         case IntrinsicOperator1.RecordRestrict(field) => DocAst.Meta("RecordRestrict")
         case IntrinsicOperator1.Ref => DocAst.Ref(d)
         case IntrinsicOperator1.Deref => DocAst.Deref(d)
-        case IntrinsicOperator1.ArrayLength => DocAst.Meta("ArrayLength")
+        case IntrinsicOperator1.ArrayLength =>
+          DocAst.ArrayLength(d)
         case IntrinsicOperator1.Lazy => DocAst.Lazy(d)
         case IntrinsicOperator1.Force => DocAst.Force(d)
         case IntrinsicOperator1.GetField(field) =>
@@ -113,9 +114,12 @@ object ErasedPrinter {
       op match {
         case IntrinsicOperator2.RecordExtend(field) =>
           DocAst.RecordExtend(field, d1, d2)
-        case IntrinsicOperator2.Assign => DocAst.Meta("Assign")
-        case IntrinsicOperator2.ArrayNew => DocAst.Meta("ArrayNew")
-        case IntrinsicOperator2.ArrayLoad => DocAst.Meta("ArrayLoad")
+        case IntrinsicOperator2.Assign =>
+          DocAst.Assign(d1, d2)
+        case IntrinsicOperator2.ArrayNew =>
+          DocAst.ArrayNew(d1, d2)
+        case IntrinsicOperator2.ArrayLoad =>
+          DocAst.ArrayLoad(d1, d2)
         case IntrinsicOperator2.Spawn => DocAst.Meta("Spawn")
         case IntrinsicOperator2.PutField(field) => DocAst.Meta("PutField")
       }
@@ -124,7 +128,8 @@ object ErasedPrinter {
       val d2 = print(exp2)
       val d3 = print(exp3)
       op match {
-        case IntrinsicOperator3.ArrayStore => DocAst.Meta("ArrayStore")
+        case IntrinsicOperator3.ArrayStore =>
+          DocAst.ArrayStore(d1, d2, d3)
       }
     case IntrinsicN(op, exps, _, _) =>
       val ds = exps.map(print)

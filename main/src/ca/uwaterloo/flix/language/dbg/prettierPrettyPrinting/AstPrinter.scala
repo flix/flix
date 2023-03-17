@@ -41,7 +41,7 @@ object AstPrinter {
 
       implicit val i: Indent = INDENT
       val docAst = DocAstFormatter.format(ast)
-      val str = Doc.pretty(WIDTH, docAst)
+      val str = docAst.map(Doc.pretty(WIDTH, _)).mkString("\n\n")
       Files.write(filePath, str.getBytes)
     }
   }

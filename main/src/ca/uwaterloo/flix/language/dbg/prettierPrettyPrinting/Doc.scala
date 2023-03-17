@@ -8,23 +8,13 @@ sealed trait Doc
 object Doc {
 
   implicit class DocOps(d: Doc) {
-    def <>(d: Doc): Doc = Doc.<>(this.d, d)
+    def ::(d: Doc): Doc = Doc.::(d, this.d)
 
-    def <+>(d: Doc): Doc = Doc.<+>(this.d, d)
+    def +:(d: Doc): Doc = Doc.+:(d, this.d)
 
-    def <+\>(d: Doc): Doc = Doc.<+\>(this.d, d)
+    def +\:(d: Doc): Doc = Doc.+\:(d, this.d)
 
-    def <\>(d: Doc): Doc = Doc.<\>(this.d, d)
-
-    def <+\?>(d: Doc): Doc = Doc.<+\?>(this.d, d)
-
-    def <\?>(d: Doc): Doc = Doc.<\?>(this.d, d)
-
-    def <\?>>(d: Doc)(implicit i: Indent): Doc = Doc.<\?>>(this.d, d)
-
-    def <+\?>>(d: Doc)(implicit i: Indent): Doc = Doc.<+\?>>(this.d, d)
-
-    def <+\>>(d: Doc)(implicit i: Indent): Doc = Doc.<+\>>(this.d, d)
+    def \:(d: Doc): Doc = Doc.\:(d, this.d)
   }
 
   private case object Nil extends Doc
@@ -60,7 +50,7 @@ object Doc {
 
   def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
 
-  def <>(d1: Doc, d2: Doc): Doc = concat(d1, d2)
+  def ::(d1: Doc, d2: Doc): Doc = concat(d1, d2)
 
   def empty: Doc = Nil
 
@@ -148,21 +138,15 @@ object Doc {
 
   // aux
 
-  def <+>(d1: Doc, d2: Doc): Doc = d1 <> text(" ") <> d2
+  def +:(d1: Doc, d2: Doc): Doc = d1 :: text(" ") :: d2
 
-  def <+\>(d1: Doc, d2: Doc): Doc = d1 <> breakWith(" ") <> d2
+  def +\:(d1: Doc, d2: Doc): Doc = d1 :: breakWith(" ") :: d2
 
-  def <\>(d1: Doc, d2: Doc): Doc = d1 <> breakWith("") <> d2
+  def \:(d1: Doc, d2: Doc): Doc = d1 :: breakWith("") :: d2
 
-  def <+\?>(d1: Doc, d2: Doc): Doc = d1 <> group(breakWith(" ")) <> d2
+  def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 :: group(nest(breakWith(" ") :: d2))
 
-  def <\?>(d1: Doc, d2: Doc): Doc = d1 <> group(breakWith("")) <> d2
-
-  def <\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith("") <> d2))
-
-  def <+\?>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> group(nest(breakWith(" ") <> d2))
-
-  def <+\>>(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 <> nest(breakWith(" ") <> d2)
+  def breakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 :: nest(breakWith(" ") :: d2)
 
 }
 

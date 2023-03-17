@@ -22,6 +22,12 @@ object DocAst {
 
   sealed trait LetBinder extends Atom
 
+  case object Unit extends Atom
+
+  case class Tuple(elms: List[DocAst]) extends Atom
+
+  case class Tag(sym: Symbol.CaseSym, args: List[DocAst]) extends Atom
+
   /** inserted string printed as-is (assumed not to require parenthesis) */
   case class AsIs(s: String) extends Atom
 
@@ -52,6 +58,8 @@ object DocAst {
   /** `<d1>.,<d2>` */
   case class DoubleDot(d1: DocAst, d2: DocAst) extends Atom
 
+  case class TryCatch(d: DocAst, rules: List[(Symbol.VarSym, Class[_], DocAst)]) extends Atom
+
   /**
     * `let <v>: <tpe> = <bind>; <body>`
     *
@@ -67,12 +75,14 @@ object DocAst {
 
   case class App(f: DocAst, args: List[DocAst]) extends Atom
 
+  case class SquareApp(f: DocAst, args: List[DocAst]) extends Atom
+
+  case class Assign(d1: DocAst, d2: DocAst) extends Composite
+
   /** `<v>: <tpe>` */
   case class Ascription(v: DocAst, tpe: Type) extends Composite
 
   case class Cast(d: DocAst, tpe: Type) extends Composite
-
-  case class ArrayLit(ds: List[DocAst]) extends Atom
 
   // constants
 
@@ -96,11 +106,6 @@ object DocAst {
   val MatchError: DocAst =
     AsIs("?matchError")
 
-  /** `<sym>(<arg0>, <arg1>, ..., <argn>)` */
-  def Tag(sym: Symbol.CaseSym, args: List[DocAst]): DocAst = {
-    App(AsIs(sym.toString), args)
-  }
-
   def Untag(sym: Symbol.CaseSym, d: DocAst): DocAst =
     Keyword("untag", d)
 
@@ -112,6 +117,21 @@ object DocAst {
 
   def Deref(d: DocAst): DocAst =
     Keyword("deref", d)
+
+  def ArrayNew(d1: DocAst, d2: DocAst): DocAst =
+    SquareApp(AsIs(""), List(Binary(d1, ";", d2)))
+
+  def ArrayLit(ds: List[DocAst]): DocAst =
+    SquareApp(AsIs(""), ds)
+
+  def ArrayLength(d: DocAst): DocAst =
+    DoubleDot(d, AsIs("length"))
+
+  def ArrayLoad(d1: DocAst, d2: DocAst): DocAst =
+    SquareApp(d1, List(d2))
+
+  def ArrayStore(d1: DocAst, d2: DocAst, d3: DocAst): DocAst =
+    Assign(SquareApp(d1, List(d2)), d3)
 
   def Lazy(d: DocAst): DocAst =
     Keyword("lazy", d)
@@ -125,9 +145,6 @@ object DocAst {
   def Unbox(d: DocAst): DocAst =
     Keyword("unbox", d)
 
-  def Tuple(ds: List[DocAst]): DocAst =
-    App(AsIs(""), ds)
-
   def Index(idx: Int, d: DocAst): DocAst =
     Dot(d, AsIs(s"_$idx"))
 
@@ -137,7 +154,7 @@ object DocAst {
   }
 
   def Cst(cst: Ast.Constant): DocAst =
-    AsIs(Printers.ConstantPrinter.print(cst))
+    Printers.ConstantPrinter.print(cst)
 
   def AppClo(d: DocAst, ds: List[DocAst]): DocAst =
     App(d, ds)
