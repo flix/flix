@@ -22,6 +22,8 @@ object DocAst {
 
   sealed trait LetBinder extends Atom
 
+  case class InRegion(d1: DocAst, d2: DocAst) extends Composite
+
   case object Unit extends Atom
 
   case class Tuple(elms: List[DocAst]) extends Atom
@@ -153,6 +155,9 @@ object DocAst {
     if (ds.isEmpty) defName else App(defName, ds)
   }
 
+  def Spawn(d1: DocAst, d2: DocAst): DocAst =
+    InRegion(Keyword("spawn", d1), d2)
+
   def Cst(cst: Ast.Constant): DocAst =
     Printers.ConstantPrinter.print(cst)
 
@@ -191,6 +196,12 @@ object DocAst {
 
   def JavaGetField(f: Field, d: DocAst): DocAst =
     DoubleDot(d, AsIs(f.getName))
+
+  def JavaPutField(f: Field, d1: DocAst, d2: DocAst): DocAst =
+    Assign(DoubleDot(d1, AsIs(f.getName)), d2)
+
+  def JavaPutStaticField(f: Field, d: DocAst): DocAst =
+    Assign(Dot(AsIs("##" + f.getDeclaringClass), AsIs(f.getName)), d)
 
   def JumpTo(sym: Symbol.LabelSym): DocAst =
     Keyword("goto", AsIs(sym.toString))

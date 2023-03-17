@@ -28,6 +28,8 @@ object DocAstFormatter {
 
   private def aux(d: DocAst, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
+      case DocAst.InRegion(d1, d2) =>
+        aux(d1) +: text("@") +: aux(d2)
       case DocAst.Unit =>
         text("()")
       case DocAst.Tuple(elms) =>
