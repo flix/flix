@@ -19,7 +19,7 @@ object AstPrinter {
     * Prints the given Ast to `build/ast/<phase>.flixir` if
     * `flix.options.xprintasts` contains the phase name.
     */
-  def printAst(phase: => String, ast:  => String)(implicit flix: Flix): Unit = {
+  def printAst(phase: => String, ast: => DocAst.Program)(implicit flix: Flix): Unit = {
     val phaseName = phase
     if (flix.options.xprintasts.contains(phaseName)) {
       val buildAstsPath = Path.of("./build/asts/").toAbsolutePath
@@ -39,7 +39,10 @@ object AstPrinter {
         }
       }
 
-      Files.write(filePath, ast.getBytes)
+      implicit val i: Indent = INDENT
+      val docAst = DocAstFormatter.format(ast)
+      val str = Doc.pretty(WIDTH, docAst)
+      Files.write(filePath, str.getBytes)
     }
   }
 

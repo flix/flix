@@ -8,6 +8,12 @@ sealed trait DocAst
 
 object DocAst {
 
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Ascription], resType: Type, body: DocAst)
+
+  case class Program(defs: List[Def])
+
+  // expressions
+
   /** A [[DocAst]] atom that doesn't need parenthesis */
   sealed trait Atom extends DocAst
 

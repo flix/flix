@@ -3,14 +3,30 @@ package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Type
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.{bracket, commaSep, groupVSep}
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.{bracket, commaSep, fold, groupVSep}
 
 import scala.annotation.tailrec
 
 object DocAstFormatter {
 
-  def format(d: DocAst, indent: Int = 4): Doc =
-    aux(d, paren = false, inBlock = true)(indentationLevel(indent))
+  def format(p: DocAst.Program)(implicit i: Indent): Doc = {
+    implicit val i: Indent = indentationLevel(4)
+    val defs: List[Doc] = p.defs.sortBy(_.sym.toString).map {
+      case DocAst.Def(_, _, sym, parameters, resType, body) =>
+        defnf(
+          sym.toString,
+          parameters.map(format(_)),
+          formatType(resType, paren = false),
+          format(body)
+        )
+    }
+    group(fold({ case (d1, d2) =>
+      (d1 <> breakWith("") <> breakWith("")) <> d2
+    }, defs))
+  }
+
+  def format(d: DocAst)(implicit i: Indent): Doc =
+    aux(d, paren = false, inBlock = true)
 
   private def aux(d: DocAst, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
@@ -64,7 +80,7 @@ object DocAstFormatter {
       case DocAst.App(f, args) =>
         DocUtil.Language.applyf(aux(f), args.map(aux(_, paren = false)))
       case DocAst.Ascription(v, tpe) =>
-        aux(v) <> text(":") <+> formatType(tpe)
+        aux(v) <> text(":") <+> formatType(tpe, paren = false)
       case DocAst.Cast(d, tpe) =>
         DocUtil.Language.castf(aux(d, paren = false), formatType(tpe))
       case DocAst.ArrayLit(ds) =>

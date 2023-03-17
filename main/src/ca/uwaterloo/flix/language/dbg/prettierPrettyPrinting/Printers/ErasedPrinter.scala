@@ -7,6 +7,26 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 
 object ErasedPrinter {
 
+  def print(root: ErasedAst.Root): DocAst.Program = {
+    val defs = root.defs.values.map{
+      case ErasedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
+        DocAst.Def(
+          ann,
+          mod,
+          sym,
+          formals.map(printFormalParam),
+          MonoTypePrinter.print(tpe),
+          print(exp)
+        )
+    }.toList
+    DocAst.Program(defs)
+  }
+
+  private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Ascription = {
+    val ErasedAst.FormalParam(sym, tpe) = fp
+    DocAst.Ascription(DocAst.VarWithOffset(sym), MonoTypePrinter.print(tpe))
+  }
+
   def print(e: ErasedAst.Expression): DocAst = e match {
     case Var(sym, _, _) =>
       DocAst.VarWithOffset(sym)
