@@ -16,12 +16,13 @@
 
 namespace Fixpoint {
 
-    use Fixpoint/Shared.PredSym
 
     ///
     /// A type class for types that contain predicate symbols.
     ///
     pub class PredSymsOf[t] {
+        use Fixpoint/Shared.PredSym
+
         pub def predSymsOf(x: t): Set[PredSym]
     }
 }

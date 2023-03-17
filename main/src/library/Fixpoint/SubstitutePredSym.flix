@@ -16,12 +16,12 @@
 
 namespace Fixpoint {
 
-    use Fixpoint/Shared.PredSym
-
     ///
     /// A type class for types with predicate symbols that can be substituted.
     ///
     pub class SubstitutePredSym[t] {
+        use Fixpoint/Shared.PredSym
+
         pub def substitute(x: t, s: Map[PredSym, PredSym]): t
     }
 

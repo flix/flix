@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-use Bool.{==>, <==>}
-
 ///
 /// A type class for types with a total order.
 ///
 pub lawful class Order[a] with Eq[a] {
+    use Bool.{==>, <==>}
 
     ///
     /// Returns `Comparison.LessThan` if `x` < `y`, `Equal` if `x` == `y` or `Comparison.GreaterThan` `if `x` > `y`.
