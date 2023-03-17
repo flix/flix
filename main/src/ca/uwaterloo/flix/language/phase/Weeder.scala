@@ -1693,12 +1693,6 @@ object Weeder {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Of(name, exp, sp2) =>
-      val sp1 = name.sp1
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.Of(name, e, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.CheckedCast(Ast.CheckedCastType.TypeCast, e, mkSL(sp1, sp2))

@@ -1260,15 +1260,6 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Of(qname, exp, loc) =>
-          val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
-          val eVal = visitExp(exp, env0, region)
-          mapN(tagVal, eVal) {
-            case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expression.Error(err)
-          }
-
         case NamedAst.Expression.CheckedCast(c, exp, loc) =>
           mapN(visitExp(exp, env0, region)) {
             case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
