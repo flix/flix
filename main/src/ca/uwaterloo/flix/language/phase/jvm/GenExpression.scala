@@ -1291,11 +1291,10 @@ object GenExpression {
          | Int32Op.Div | Int64Op.Div | BigIntOp.Div
          | Int8Op.Rem | Int16Op.Rem | Int16Op.Rem
          | Int32Op.Rem | Int64Op.Rem
-         | BigIntOp.Rem => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+         | BigIntOp.Rem | StringOp.Concat => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
-         Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp =>
-      compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+         Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp => compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
     case BoolOp.Eq | CharOp.Eq
          | Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
@@ -1326,9 +1325,18 @@ object GenExpression {
 
     case BoolOp.And | BoolOp.Or => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
-    // case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, o, sop)
-    case _ => ???
+    case Int8Op.And | Int16Op.And | Int32Op.And
+         | Int64Op.And | BigIntOp.And
+         | Int8Op.Or | Int16Op.Or | Int32Op.Or
+         | Int64Op.Or | BigIntOp.Or
+         | Int8Op.Xor | Int16Op.Xor | Int32Op.Xor
+         | Int64Op.Xor | BigIntOp.Xor
+         | Int8Op.Shl | Int16Op.Shl | Int32Op.Shl
+         | Int64Op.Shl | BigIntOp.Shl
+         | Int8Op.Shr | Int16Op.Shr | Int32Op.Shr
+         | Int64Op.Shr | BigIntOp.Shr => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
+    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
   }
 
 
@@ -1365,38 +1373,38 @@ object GenExpression {
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
     compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-    (primitiveArithmeticSemanticOperatorToOpcode(sop), complexArithmeticSemanticOperatorToOpcode(sop)) match {
-      case (Some(pop), _) => sop match {
+    (semanticOperatorArithmeticToOpcode(sop), semanticOperatorArithmeticToMethod(sop)) match {
+      case (Some(op), _) => sop match {
         case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div
              | Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div =>
-          visitor.visitInsn(pop)
+          visitor.visitInsn(op)
 
         case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
-          visitor.visitInsn(pop)
+          visitor.visitInsn(op)
           visitor.visitInsn(I2B)
 
         case Int16Op.Add | Int16Op.Sub | Int16Op.Mul | Int16Op.Div | Int16Op.Rem =>
-          visitor.visitInsn(pop)
+          visitor.visitInsn(op)
           visitor.visitInsn(I2S)
 
         case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem
              | Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem =>
-          visitor.visitInsn(pop)
+          visitor.visitInsn(op)
 
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
       }
 
-      case (_, Some(cop)) => sop match {
+      case (_, Some(op)) => sop match {
         case BigDecimalOp.Add | BigDecimalOp.Sub | BigDecimalOp.Mul | BigDecimalOp.Div =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, cop,
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, op,
             AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
 
         case BigIntOp.Add | BigIntOp.Sub | BigIntOp.Mul | BigIntOp.Div | BigIntOp.Rem =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, cop,
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, op,
             AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
 
         case StringOp.Concat =>
-          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat",
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, op,
             AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
 
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
@@ -1429,7 +1437,7 @@ object GenExpression {
   }
 
 
-  private def primitiveArithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Option[Int] = sop match {
+  private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
     case Float32Op.Add => Some(FADD)
     case Float32Op.Sub => Some(FSUB)
     case Float32Op.Mul => Some(FMUL)
@@ -1461,12 +1469,13 @@ object GenExpression {
     case _ => None
   }
 
-  def complexArithmeticSemanticOperatorToOpcode(sop: SemanticOperator): Option[String] = sop match {
+  private def semanticOperatorArithmeticToMethod(sop: SemanticOperator): Option[String] = sop match {
     case BigDecimalOp.Add | BigIntOp.Add => Some("add")
     case BigDecimalOp.Sub | BigIntOp.Sub => Some("subtract")
     case BigDecimalOp.Mul | BigIntOp.Mul => Some("multiply")
     case BigDecimalOp.Div | BigIntOp.Div => Some("divide")
     case BigIntOp.Rem => Some("remainder")
+    case StringOp.Concat => Some("concat")
     case _ => None
   }
 
@@ -1523,7 +1532,7 @@ object GenExpression {
     compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
     val condElse = new Label()
     val condEnd = new Label()
-    semanticComparisonOperatorToOpcode(sop) match {
+    semanticOperatorCopmarisonToOpcode(sop) match {
       case Some((op, cmp)) => sop match {
         case StringOp.Eq | StringOp.Neq =>
           // String can be compared using Object's `equal` method
@@ -1573,42 +1582,33 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  def semanticComparisonOperatorToOpcode(sop: SemanticOperator): Option[(Int, Int)] = sop match {
+  private def semanticOperatorCopmarisonToOpcode(sop: SemanticOperator): Option[(Int, Int)] = sop match {
     case BoolOp.Eq => Some(IF_ICMPNE, IFNE)
     case BoolOp.Neq => Some(IF_ICMPEQ, IFEQ)
-
     case Float32Op.Eq => Some(FCMPG, IFNE)
     case Float32Op.Neq => Some(FCMPG, IFEQ)
     case Float32Op.Lt => Some(FCMPG, IFGE)
     case Float32Op.Le => Some(FCMPG, IFGT)
     case Float32Op.Gt => Some(FCMPL, IFLE)
     case Float32Op.Ge => Some(FCMPL, IFLT)
-
     case Float64Op.Eq => Some(DCMPG, IFNE)
     case Float64Op.Neq => Some(DCMPG, IFEQ)
     case Float64Op.Lt => Some(DCMPG, IFGE)
     case Float64Op.Le => Some(DCMPG, IFGT)
     case Float64Op.Gt => Some(DCMPL, IFLE)
     case Float64Op.Ge => Some(DCMPL, IFLT)
-
     case CharOp.Eq | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
          | BigDecimalOp.Eq | BigIntOp.Eq | StringOp.Eq => Some(IF_ICMPNE, IFNE)
-
     case CharOp.Neq | Int8Op.Neq | Int16Op.Neq | Int32Op.Neq
          | BigDecimalOp.Neq | BigIntOp.Neq | StringOp.Neq => Some(IF_ICMPEQ, IFEQ)
-
     case CharOp.Lt | Int8Op.Lt | Int16Op.Lt | Int32Op.Lt
          | BigDecimalOp.Lt | BigIntOp.Lt => Some(IF_ICMPGE, IFGE)
-
     case CharOp.Le | Int8Op.Le | Int16Op.Le | Int32Op.Le
          | BigDecimalOp.Le | BigIntOp.Le => Some(IF_ICMPGT, IFGT)
-
     case CharOp.Gt | Int8Op.Gt | Int16Op.Gt | Int32Op.Gt
          | BigDecimalOp.Gt | BigIntOp.Gt => Some(IF_ICMPLE, IFLE)
-
     case CharOp.Ge | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
          | BigDecimalOp.Ge | BigIntOp.Ge => Some(IF_ICMPLT, IFLT)
-
     case Int64Op.Eq => Some(LCMP, IFNE)
     case Int64Op.Neq => Some(LCMP, IFEQ)
     case Int64Op.Lt => Some(LCMP, IFGE)
@@ -1708,31 +1708,53 @@ object GenExpression {
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
-                                 o: BitwiseOperator,
                                  sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
     compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-    val (intOp, longOp, bigintOp) = o match {
-      case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
-      case BinaryOperator.BitwiseOr => (IOR, LOR, "or")
-      case BinaryOperator.BitwiseXor => (IXOR, LXOR, "xor")
-      case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL, "shiftLeft")
-      case BinaryOperator.BitwiseRightShift => (ISHR, LSHR, "shiftRight")
-    }
-    sop match {
-      case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
-        visitor.visitInsn(intOp)
-        if (intOp == ISHL) visitor.visitInsn(I2B)
-      case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
-        visitor.visitInsn(intOp)
-        if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr => visitor.visitInsn(intOp)
-      case Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(longOp)
-      case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
-          bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
+    (semanticOperatorBitwiseToOpcode(sop), semanticOperatorBitwiseToMethod(sop)) match {
+      case (Some(op), _) =>
+        sop match {
+          case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
+            visitor.visitInsn(op)
+            if (op == ISHL) visitor.visitInsn(I2B)
+          case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
+            visitor.visitInsn(op)
+            if (op == ISHL) visitor.visitInsn(I2S)
+          case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr
+               | Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(op)
+          case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+        }
+      case (_, Some(op)) => sop match {
+        case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+            op, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+      }
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
     }
+  }
+
+  private def semanticOperatorBitwiseToOpcode(sop: SemanticOperator): Option[Int] = sop match {
+    case Int8Op.And | Int16Op.And | Int32Op.And => Some(IAND)
+    case Int64Op.And => Some(LAND)
+    case Int8Op.Or | Int16Op.Or | Int32Op.Or => Some(IOR)
+    case Int64Op.Or => Some(LOR)
+    case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor => Some(IXOR)
+    case Int64Op.Xor => Some(LXOR)
+    case Int8Op.Shl | Int16Op.Shl | Int32Op.Shl => Some(ISHL)
+    case Int64Op.Shl => Some(LSHL)
+    case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr => Some(ISHR)
+    case Int64Op.Shr => Some(LSHR)
+    case _ => None
+  }
+
+  private def semanticOperatorBitwiseToMethod(sop: SemanticOperator): Option[String] = sop match {
+    case BigIntOp.And => Some("and")
+    case BigIntOp.Or => Some("or")
+    case BigIntOp.Xor => Some("xor")
+    case BigIntOp.Shl => Some("shiftLeft")
+    case BigIntOp.Shr => Some("shiftRight")
+    case _ => None
   }
 
   /**
