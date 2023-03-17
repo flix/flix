@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
-import ca.uwaterloo.flix.language.phase.Lowering
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -41,7 +40,7 @@ object TypedAst {
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypedAst.TypeParam, superClasses: List[Ast.TypeConstraint], usesAndImports: List[Ast.UseOrImport], signatures: List[TypedAst.Sig], laws: List[TypedAst.Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[TypedAst.Def], ns: Name.NName, loc: SourceLocation)
 
@@ -209,7 +208,9 @@ object TypedAst {
 
     case class VectorLength(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def pur: Type = exp.pur
+
       def eff: Type = exp.eff
+
       def tpe: Type = Type.Int32
     }
 

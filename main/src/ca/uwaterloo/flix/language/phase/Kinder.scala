@@ -249,7 +249,7 @@ object Kinder {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Declaration.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, usesAndImports, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val tparamsVal = visitTypeParam(tparam0, kenv, Map.empty)
@@ -263,7 +263,7 @@ object Kinder {
           }
           val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
           mapN(sigsVal, lawsVal) {
-            case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+            case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, usesAndImports, sigs.toMap, laws, loc)
           }
 
       }

@@ -138,13 +138,13 @@ object Typer {
     * Reassembles a single class.
     */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
+    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, usesAndImports, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
       mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, usesAndImports, sigs, laws, loc))
       }
   }
 

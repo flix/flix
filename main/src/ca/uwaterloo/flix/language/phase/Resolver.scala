@@ -445,7 +445,7 @@ object Resolver {
               mapN(sigsListVal, superClassesVal, lawsVal) {
                 case (sigsList, superClasses, laws) =>
                   val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-                  ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+                  ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, usesAndImports, sigs, laws, loc)
               }
           }
       }

@@ -303,7 +303,7 @@ object Lowering {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
+    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, _, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val signatures = signatures0.map(sig => sigs(sig.sym))

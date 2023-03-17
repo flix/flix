@@ -45,7 +45,7 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], usesAndImports: List[Ast.UseOrImport], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
