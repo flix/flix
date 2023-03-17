@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language.{parens, scopef}
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.{bracket, commaSep}
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Type
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.{bracket, commaSep, groupVSep}
 
 import scala.annotation.tailrec
 
@@ -19,6 +20,14 @@ object DocAstFormatter {
         text("<[") <> text(s) <> text("]>")
       case DocAst.RecordEmpty =>
         text("{}")
+      case re: DocAst.RecordExtend =>
+        val (exs, restOpt) = collectRecordExtends(re)
+        recordExtendf(
+          exs.map { case DocAst.RecordExtend(field, value, _) =>
+            (text(field.name), aux(value, paren = false))
+          },
+          restOpt.map(aux(_, paren = false))
+        )
       case DocAst.Keyword(word, d) =>
         text(word) <+> aux(d)
       case DocAst.Unary(op, d) =>
@@ -37,9 +46,9 @@ object DocAstFormatter {
         text("branching") <+> group(bracket("{",
           aux(d, paren = false, inBlock = true)
           , "}") <+> text("with") <+> bracket("{",
-          commaSep(
+          groupVSep("",
             branches.toList.map { case (sym, dd) =>
-              text("label") <+> text(sym.toString) <> text(":") <+\>> aux(dd, paren = false)
+              text("label") <+> text(sym.toString) <> text(":") <+\>> aux(dd, paren = false, inBlock = true)
             })
           , "}"))
       case DocAst.Dot(d1, d2) =>
@@ -55,11 +64,11 @@ object DocAstFormatter {
       case DocAst.App(f, args) =>
         DocUtil.Language.applyf(aux(f), args.map(aux(_, paren = false)))
       case DocAst.Ascription(v, tpe) =>
-        aux(v) <> text(":") <+> aux(tpe, paren = false)
+        aux(v) <> text(":") <+> formatType(tpe)
       case DocAst.Cast(d, tpe) =>
-        DocUtil.Language.castf(aux(d, paren = false), aux(tpe, paren = false))
+        DocUtil.Language.castf(aux(d, paren = false), formatType(tpe))
       case DocAst.ArrayLit(ds) =>
-        text("Array#") <> group(bracket("{", DocUtil.commaSep(ds.map(aux(_, paren = false))), "}"))
+        text("Array#") <> group(bracket("{", commaSep(ds.map(aux(_, paren = false))), "}"))
     }
     d match {
       case _: DocAst.Composite if paren => parens(doc)
@@ -83,8 +92,8 @@ object DocAstFormatter {
     else group(DocUtil.bracket("{", delimitedBinders, "}"))
   }
 
-  private def formatAscription(tpe: Option[DocAst])(implicit i: Indent): Doc =
-    tpe.map(t => text(":") <+> aux(t, paren = false)).getOrElse(empty)
+  private def formatAscription(tpe: Option[DocAst.Type])(implicit i: Indent): Doc =
+    tpe.map(t => text(":") <+> formatType(t)).getOrElse(empty)
 
   private def collectLetBlock(d: DocAst): (List[DocAst.LetBinder], DocAst) = {
     @tailrec
@@ -99,6 +108,68 @@ object DocAstFormatter {
     }
 
     chase(d, List())
+  }
+
+  private def collectRecordExtends(d: DocAst)(implicit i: Indent): (List[DocAst.RecordExtend], Option[DocAst]) = {
+    @tailrec
+    def chase(d0: DocAst, acc: List[DocAst.RecordExtend]): (List[DocAst.RecordExtend], Option[DocAst]) = {
+      d0 match {
+        case re@DocAst.RecordExtend(_, _, rest) =>
+          chase(rest, re :: acc)
+        case DocAst.RecordEmpty =>
+          (acc.reverse, None)
+        case other =>
+          (acc.reverse, Some(other))
+      }
+    }
+
+    chase(d, List())
+  }
+
+  // types
+
+  private def formatType(tpe: DocAst.Type, paren: Boolean = true)(implicit i: Indent): Doc = {
+    val d = tpe match {
+      case Type.AsIs(s) =>
+        text(s)
+      case Type.App(obj, args) =>
+        text(obj) <> bracket("[", commaSep(args.map(formatType(_, paren = false))), "]")
+      case Type.Tuple(elms) =>
+        tuplef(elms.map(formatType(_, paren = false)))
+      case Type.Arrow(args, res) =>
+        // todo: collect
+        // todo: maybe not tuple formatting?
+        arrowf(args.map(formatType(_)), formatType(res))
+      case Type.RecordEmpty =>
+        text("{}")
+      case re: Type.RecordExtend =>
+        val (fields, rest) = collectRecordType(re)
+        DocUtil.Language.recordExtendf(
+          fields.map { case Type.RecordExtend(field, value, _) => (text(field), formatType(value, paren = false)) },
+          rest.map(formatType(_, paren = false))
+        )
+      case Type.SchemaEmpty => text("unknown")
+      case Type.SchemaExtend(name, tpe, rest) => text("unknown")
+    }
+    tpe match {
+      case _: Type.Composite if paren => parens(d)
+      case _: Type.Composite | _: Type.Atom => d
+    }
+  }
+
+  private def collectRecordType(tpe: Type): (List[Type.RecordExtend], Option[Type]) = {
+    def chase(tpe0: Type, acc: List[Type.RecordExtend]): (List[Type.RecordExtend], Option[Type]) = {
+      tpe0 match {
+        case re@Type.RecordExtend(_, _, rest) =>
+          chase(rest, re :: acc)
+        case Type.RecordEmpty =>
+          (acc.reverse, None)
+        case other =>
+          (acc.reverse, Some(other))
+      }
+    }
+
+    chase(tpe, List())
   }
 
 }

@@ -46,11 +46,7 @@ object ErasedPrinter {
       case IntrinsicOperator0.MatchError =>
         DocAst.MatchError
     }
-    case Intrinsic1(IntrinsicOperator1.Tag(sym), IntrinsicN(IntrinsicOperatorN.Tuple, exps, _, _), _, _) =>
-      DocAst.Tag(sym, exps.map(print))
-    case Intrinsic1(IntrinsicOperator1.Tag(sym), Intrinsic0(IntrinsicOperator0.Cst(Ast.Constant.Unit), _, _), _, _) =>
-      DocAst.Tag(sym, Nil)
-    case Intrinsic1(op, exp, _, _) =>
+    case Intrinsic1(op, exp, tpe, _) =>
       val d = print(exp)
       op match {
         case IntrinsicOperator1.Is(sym) =>
@@ -59,10 +55,12 @@ object ErasedPrinter {
           DocAst.Tag(sym, List(d))
         case IntrinsicOperator1.Untag(sym) =>
           DocAst.Untag(sym, d)
-        case IntrinsicOperator1.Cast => DocAst.Cast(d, DocAst.Meta("unknown type"))
+        case IntrinsicOperator1.Cast =>
+          DocAst.Cast(d, MonoTypePrinter.print(tpe))
         case IntrinsicOperator1.Index(idx) =>
           DocAst.Index(idx, d)
-        case IntrinsicOperator1.RecordSelect(field) => DocAst.Meta("RecordSelect")
+        case IntrinsicOperator1.RecordSelect(field) =>
+          DocAst.RecordSelect(field, d)
         case IntrinsicOperator1.RecordRestrict(field) => DocAst.Meta("RecordRestrict")
         case IntrinsicOperator1.Ref => DocAst.Ref(d)
         case IntrinsicOperator1.Deref => DocAst.Deref(d)
@@ -93,7 +91,8 @@ object ErasedPrinter {
       val d1 = print(exp1)
       val d2 = print(exp2)
       op match {
-        case IntrinsicOperator2.RecordExtend(field) => DocAst.Meta("RecordExtend")
+        case IntrinsicOperator2.RecordExtend(field) =>
+          DocAst.RecordExtend(field, d1, d2)
         case IntrinsicOperator2.Assign => DocAst.Meta("Assign")
         case IntrinsicOperator2.ArrayNew => DocAst.Meta("ArrayNew")
         case IntrinsicOperator2.ArrayLoad => DocAst.Meta("ArrayLoad")

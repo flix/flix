@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocUtil.Language._
 
 import scala.annotation.tailrec
 
-object MonoTypePrinter {
+object MonoTypePrinterrrr {
 
   def doc(tpe: MonoType)(implicit i: Indent): Doc = {
     def tapp(tpeS: Doc, args: List[MonoType]): Doc =
