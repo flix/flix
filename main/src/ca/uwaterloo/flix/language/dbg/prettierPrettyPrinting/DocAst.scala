@@ -80,16 +80,24 @@ object DocAst {
     AsIs(sym.toString)
 
   /** `region` */
-  val Region: DocAst = Meta("region")
+  val Region: DocAst =
+    Meta("region")
 
   /** `Meta(match error)` */
-  val MatchError: DocAst = Meta("match error")
+  val MatchError: DocAst =
+    AsIs("?matchError")
 
   /** `<sym>(<arg0>, <arg1>, ..., <argn>)` */
   def Tag(sym: Symbol.CaseSym, args: List[DocAst]): DocAst = {
     val tag = AsIs(sym.toString)
     if (args.isEmpty) tag else App(tag, args)
   }
+
+  def Untag(sym: Symbol.CaseSym, d: DocAst): DocAst =
+    Keyword("untag", d)
+
+  def IsTag(sym: Symbol.CaseSym, d: DocAst): DocAst =
+    Binary(d, "is", AsIs(sym.toString))
 
   def Ref(d: DocAst): DocAst =
     Keyword("ref", d)
@@ -111,6 +119,9 @@ object DocAst {
 
   def Tuple(ds: List[DocAst]): DocAst =
     App(AsIs(""), ds)
+
+  def Index(idx: Int, d: DocAst): DocAst =
+    Dot(d, AsIs(s"_$idx"))
 
   def ClosureLifted(sym: Symbol.DefnSym, ds: List[DocAst]): DocAst = {
     val defName = AsIs(sym.toString)
@@ -155,6 +166,9 @@ object DocAst {
 
   def JavaGetField(f: Field, d: DocAst): DocAst =
     DoubleDot(d, AsIs(f.getName))
+
+  def JumpTo(sym: Symbol.LabelSym): DocAst =
+    Keyword("goto", AsIs(sym.toString))
 
 }
 

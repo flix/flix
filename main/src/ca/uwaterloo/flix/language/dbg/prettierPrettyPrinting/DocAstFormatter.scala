@@ -28,7 +28,7 @@ object DocAstFormatter {
       case DocAst.IfThenElse(cond, thn, els) =>
         group(
           text("if") <+>
-            group(bracket("(", aux(cond), ")")) <+>
+            group(bracket("(", aux(cond, paren = false), ")")) <+>
             bracket("{", aux(thn, paren = false, inBlock = true), "}") <+>
             text("else") <+>
             bracket("{", aux(els, paren = false, inBlock = true), "}")

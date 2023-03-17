@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
 
-import ca.uwaterloo.flix.language.ast.ErasedAst
+import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
@@ -16,10 +16,10 @@ object ErasedPrinter {
       DocAst.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) =>
       DocAst.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, tpe, loc) =>
+    case Branch(exp, branches, _, _) =>
       DocAst.Branch(print(exp), branches.view.mapValues(print).toMap)
-    case JumpTo(sym, tpe, loc) =>
-      DocAst.Meta("jumpto")
+    case JumpTo(sym, _, _) =>
+      DocAst.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _) =>
       DocAst.Let(DocAst.VarWithOffset(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) =>
@@ -48,24 +48,30 @@ object ErasedPrinter {
     }
     case Intrinsic1(IntrinsicOperator1.Tag(sym), IntrinsicN(IntrinsicOperatorN.Tuple, exps, _, _), _, _) =>
       DocAst.Tag(sym, exps.map(print))
+    case Intrinsic1(IntrinsicOperator1.Tag(sym), Intrinsic0(IntrinsicOperator0.Cst(Ast.Constant.Unit), _, _), _, _) =>
+      DocAst.Tag(sym, Nil)
     case Intrinsic1(op, exp, _, _) =>
       val d = print(exp)
       op match {
-        case IntrinsicOperator1.Is(sym) => DocAst.Meta("unknown")
-        case IntrinsicOperator1.Tag(sym) => DocAst.Tag(sym, List(d))
-        case IntrinsicOperator1.Untag(sym) => DocAst.Meta("unknown")
-        case IntrinsicOperator1.Cast => DocAst.Cast(d, DocAst.Meta("unknown"))
-        case IntrinsicOperator1.Index(idx) => DocAst.Meta("unknown")
-        case IntrinsicOperator1.RecordSelect(field) => DocAst.Meta("unknown")
-        case IntrinsicOperator1.RecordRestrict(field) => DocAst.Meta("unknown")
+        case IntrinsicOperator1.Is(sym) =>
+          DocAst.IsTag(sym, d)
+        case IntrinsicOperator1.Tag(sym) =>
+          DocAst.Tag(sym, List(d))
+        case IntrinsicOperator1.Untag(sym) =>
+          DocAst.Untag(sym, d)
+        case IntrinsicOperator1.Cast => DocAst.Cast(d, DocAst.Meta("unknown type"))
+        case IntrinsicOperator1.Index(idx) =>
+          DocAst.Index(idx, d)
+        case IntrinsicOperator1.RecordSelect(field) => DocAst.Meta("RecordSelect")
+        case IntrinsicOperator1.RecordRestrict(field) => DocAst.Meta("RecordRestrict")
         case IntrinsicOperator1.Ref => DocAst.Ref(d)
         case IntrinsicOperator1.Deref => DocAst.Deref(d)
-        case IntrinsicOperator1.ArrayLength => DocAst.Meta("unknown")
+        case IntrinsicOperator1.ArrayLength => DocAst.Meta("ArrayLength")
         case IntrinsicOperator1.Lazy => DocAst.Lazy(d)
         case IntrinsicOperator1.Force => DocAst.Force(d)
         case IntrinsicOperator1.GetField(field) =>
           DocAst.JavaGetField(field, d)
-        case IntrinsicOperator1.PutStaticField(field) => DocAst.Meta("unknown")
+        case IntrinsicOperator1.PutStaticField(field) => DocAst.Meta("PutStaticField")
         case IntrinsicOperator1.BoxBool => DocAst.Box(d)
         case IntrinsicOperator1.BoxInt8 => DocAst.Box(d)
         case IntrinsicOperator1.BoxInt16 => DocAst.Box(d)
