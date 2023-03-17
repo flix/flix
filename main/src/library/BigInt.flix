@@ -195,17 +195,15 @@ namespace BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let xd = newBigDecimal(x);
         let d = floatValue(xd);
-        let* f32min = Float32.tryToBigInt(Float32.minValue());
-        let* f32max = Float32.tryToBigInt(Float32.maxValue());
-        if (x < f32min or x > f32max)
-            None
-        else
-            Some(d)
+        forM (
+            f32min <- Float32.tryToBigInt(Float32.minValue());
+            f32max <- Float32.tryToBigInt(Float32.maxValue());
+            if x < f32min or x > f32max
+        ) yield d
 
     ///
     /// Convert `x` to an `Option[Float64]`.
@@ -218,18 +216,15 @@ namespace BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let xd = newBigDecimal(x);
         let d = doubleValue(xd);
-        let* f64min = Float64.tryToBigInt(Float64.minValue());
-        let* f64max = Float64.tryToBigInt(Float64.maxValue());
-        if (x < f64min or x > f64max)
-            None
-        else
-            Some(d)
-
+        forM (
+            f64min <- Float64.tryToBigInt(Float64.minValue());
+            f64max <- Float64.tryToBigInt(Float64.maxValue());
+            if x < f64min or x > f64max
+        ) yield d
 
     ///
     /// Convert `x` to an `BigDecimal`.
@@ -320,15 +315,17 @@ namespace BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
-            let* f32min = Float32.tryToBigInt(minimum);
-            let* f32max = Float32.tryToBigInt(maximum);
-            let x1 = clamp(x, f32min, f32max);
-            let xd = newBigDecimal(x1);
-            Some(floatValue(xd))
+            forM (
+                f32min <- Float32.tryToBigInt(minimum);
+                f32max <- Float32.tryToBigInt(maximum)
+            ) yield {
+                let x1 = clamp(x, f32min, f32max);
+                let xd = newBigDecimal(x1);
+                floatValue(xd)
+            }
         };
         match step() {
             case None => Float32.nan()
@@ -341,15 +338,17 @@ namespace BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
-            let* f64min = Float64.tryToBigInt(minimum);
-            let* f64max = Float64.tryToBigInt(maximum);
-            let x1 = clamp(x, f64min, f64max);
-            let xd = newBigDecimal(x1);
-            Some(doubleValue(xd))
+            forM (
+                f64min <- Float64.tryToBigInt(minimum);
+                f64max <- Float64.tryToBigInt(maximum)
+            ) yield {
+                let x1 = clamp(x, f64min, f64max);
+                let xd = newBigDecimal(x1);
+                doubleValue(xd)
+            }
         };
         match step() {
             case None => Float64.nan()

@@ -20,7 +20,6 @@ def main(): Unit \ IO =
 /// Example: longestPalindromeSequence("abammabba") == Some(1, 6)
 ///
 def longestPalindromeSequence(s: String): Option[(Int32, Int32)] = {
-    use Option.flatMap;
     let length = String.length(s);
     // Check the char equality of `s` with index `i` and `j`.
     // Out of bounds returns false.
@@ -43,7 +42,9 @@ def longestPalindromeSequence(s: String): Option[(Int32, Int32)] = {
     };
     let solution = solve p <+> indices;
     // Find the option of the maximum palindrome length
-    let* maxLength = query solution select l from LongestPalindrome(_, _; l) |> List.maximum;
-    // Select the first interval with a maximum length
-    query solution select (b, e) from LongestPalindrome(b,e;maxLength) |> List.head
+    forM (
+        maxLength <- query solution select l from LongestPalindrome(_, _; l) |> List.maximum
+    ) yield
+        // Select the first interval with a maximum length
+        query solution select (b, e) from LongestPalindrome(b,e;maxLength) |> List.head
 }

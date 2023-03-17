@@ -114,14 +114,14 @@ namespace Console {
     pub def hex(hexCode: String, s: a): String with ToString[a] =
         let text = ToString.toString(s);
         let hexOpt: Option[String] = {
-            use Option.flatMap;
-            let* hex = String.stripPrefix(substr = "#", hexCode);
-            if (String.length(hex) == 6) {
-                let* r = String.sliceLeft(end = 2, hex) |> stringToHex;
-                let* g = String.slice(start = 2, end = 4, hex) |> stringToHex;
-                let* b = String.slice(start = 4, end = 6, hex) |> stringToHex;
-                Some(rgb((r, g, b), text, isFg = true))
-            } else Option.None
+            forM (
+                hex <- String.stripPrefix(substr = "#", hexCode);
+                r <- String.sliceLeft(end = 2, hex) |> stringToHex;
+                g <- String.slice(start = 2, end = 4, hex) |> stringToHex;
+                b <- String.slice(start = 4, end = 6, hex) |> stringToHex;
+                if String.length(hex) == 6
+            ) yield
+                rgb((r, g, b), text, isFg = true)
         };
         hexOpt |> Option.getWithDefault(text)
 
