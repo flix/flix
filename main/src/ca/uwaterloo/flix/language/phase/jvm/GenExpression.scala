@@ -39,8 +39,6 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
-
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
@@ -287,6 +285,9 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Unary(sop) =>
+        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
       case IntrinsicOperator1.Is(sym) =>
         // Adding source line number for debugging
