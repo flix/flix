@@ -568,36 +568,36 @@ def toInt3211(): Bool = Char.toInt32('Â') == 0x00C2         // A-circumflex (up
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def fromInt3201(): Bool = Char.fromInt32(0x0061) == 'a'
+def fromInt3201(): Bool = Char.fromInt32(0x0061) == Some('a')
 
 @test
-def fromInt3202(): Bool = Char.fromInt32(0x0041) == 'A'
+def fromInt3202(): Bool = Char.fromInt32(0x0041) == Some('A')
 
 @test
-def fromInt3203(): Bool = Char.fromInt32(0x0020) == ' '
+def fromInt3203(): Bool = Char.fromInt32(0x0020) == Some(' ')
 
 @test
-def fromInt3204(): Bool = Char.fromInt32(0x002B) == '+'
+def fromInt3204(): Bool = Char.fromInt32(0x002B) == Some('+')
 
 @test
-def fromInt3205(): Bool = Char.fromInt32(0x0030) == '0'
+def fromInt3205(): Bool = Char.fromInt32(0x0030) == Some('0')
 
 @test
-def fromInt3206(): Bool = Char.fromInt32(0x0039) == '9'
+def fromInt3206(): Bool = Char.fromInt32(0x0039) == Some('9')
 
 @test
-def fromInt3207(): Bool = Char.fromInt32(0x2020) == '†'         // dagger
+def fromInt3207(): Bool = Char.fromInt32(0x2020) == Some('†')         // dagger
 
 @test
-def fromInt3208(): Bool = Char.fromInt32(0x00FE) == '\u00FE'    // lower-case thorn
+def fromInt3208(): Bool = Char.fromInt32(0x00FE) == Some('\u00FE')    // lower-case thorn
 
 @test
-def fromInt3209(): Bool = Char.fromInt32(0x00B1) == '\u00B1'    // plus-minus sign
+def fromInt3209(): Bool = Char.fromInt32(0x00B1) == Some('\u00B1')    // plus-minus sign
 
 @test
-def fromInt3210(): Bool = Char.fromInt32(0x00E2) == 'â'         // a-circumflex (lower case)
+def fromInt3210(): Bool = Char.fromInt32(0x00E2) == Some('â')         // a-circumflex (lower case)
 
 @test
-def fromInt3211(): Bool = Char.fromInt32(0x00C2) == 'Â'         // A-circumflex (upper-case)
+def fromInt3211(): Bool = Char.fromInt32(0x00C2) == Some('Â')         // A-circumflex (upper-case)
 
 }
