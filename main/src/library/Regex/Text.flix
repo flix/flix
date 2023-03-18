@@ -72,16 +72,25 @@ namespace Regex/Text {
     pub def endsWith(suffix: {suffix = Pattern}, s: String): Bool = region rc {
         match Regex/Internal/Matcher.lastSubmatch(rc, suffix.suffix, s, Regex/Internal/Matcher.range) {
             case Err(_)  => false
-            case Ok(rng) => String.length(s) - 1 == rng.end
+            case Ok(rng) => String.length(s) == rng.end
         }
     }
 
+    ///
+    /// Returns `Some(suffix)` of string `s` if its prefix matches `substr`.
+    ///
+    pub def stripPrefix(substr: {substr = Pattern}, s: String): Option[String] = region rc {
+        match Regex/Internal/Matcher.firstSubmatch(rc, substr.substr, s, Regex/Internal/Matcher.range) {
+            case Err(_) => None
+            case Ok(r)  => if (r.start == 0) Some(String.dropLeft(r.end, s)) else None
+        }
+    }
 
     // stripSuffix
     pub def stripSuffix(substr: {substr = Pattern}, s: String): Option[String] = region rc {
         match Regex/Internal/Matcher.lastSubmatch(rc, substr.substr, s, Regex/Internal/Matcher.range) {
             case Err(_) => None
-            case Ok(r)  => if (r.end == String.length(s) - 1) Some(String.takeLeft(r.start, s)) else None
+            case Ok(r)  => if (r.end == String.length(s)) Some(String.takeLeft(r.start, s)) else None
         }
     }
 

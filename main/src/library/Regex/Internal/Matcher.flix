@@ -70,6 +70,12 @@ namespace Regex/Internal/Matcher {
             find(m1, pos)
         }) |> Result.getWithDefault(false)
 
+
+    ///
+    /// Attempt to find the last match.
+    /// Returns `true` and moves the mather to the start of the last match
+    /// if there are one-or-more matches otherwise returns `false`.
+    ///
     pub def findLast!(m: Matcher[r]): Bool \ Write(r) =
         def loop(lastPos) = {
             match find!(m) {
