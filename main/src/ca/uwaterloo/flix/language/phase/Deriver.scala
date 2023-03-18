@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, sequence, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, sequence, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -808,13 +808,14 @@ object Deriver {
     * }
     * }}}
     *
-    * The instance is empty: we check for immutability by checking for the absence of region kinded type parameters.
+    * The derived instance applies `f` to any elements of type `a`,
+    * and maps `f` over elements of types containing `a`.
     */
   private def mkFunctorInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe0, _) =>
       val tpeVal = tpe0 match {
         case Type.Apply(base, _, _) => base.toSuccess
-        case _ => ??? // TODO Derivation error: functor needs param
+        case _ => DerivationError.IllegalFunctorShape(enum0.sym, enum0.sym.loc).toFailure
       }
 
       mapN(tpeVal) {

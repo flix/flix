@@ -17,10 +17,40 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.Formatter
 
 /**
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
   val kind: String = "Derivation Error"
+}
+
+object DerivationError {
+
+  /**
+    * An error indicating an illegal functor shape.
+    *
+    * @param enum the symbol of the enum.
+    * @param loc  the location where the error occurred.
+    */
+  case class IllegalFunctorShape(enum: Symbol.EnumSym, loc: SourceLocation) extends DerivationError {
+    override def summary: String = "Illegal functor shape"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal functor shape.
+         |
+         |${code(loc, s"illegal functor shape for enum ${enum.name}")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} a Functor must have at least one type parameter."
+    })
+  }
 }
