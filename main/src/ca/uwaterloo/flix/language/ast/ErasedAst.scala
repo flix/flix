@@ -60,8 +60,6 @@ object ErasedAst {
 
     case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
 
-    case class ScopeExit(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
-
     case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
@@ -179,6 +177,8 @@ object ErasedAst {
     case object ArrayLoad extends IntrinsicOperator2
 
     case object Spawn extends IntrinsicOperator2
+
+    case object ScopeExit extends IntrinsicOperator2
 
     case class PutField(field: Field) extends IntrinsicOperator2
 
