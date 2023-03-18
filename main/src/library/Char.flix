@@ -120,8 +120,10 @@ namespace Char {
     ///
     /// Returns the character `c` as an Int32.
     ///
-    pub def toInt32(c: Char): Int32 =
-        unchecked_cast(c as Int32)
+    pub def toInt32(c: Char): Int32 = region rh {
+        import static java.lang.Character.codePointAt(Array[Char, rh], Int32): Int32 \ Read(rh);
+        codePointAt(Array.repeat(rh, 1, c), 0)
+    }
 
     ///
     /// Returns the respective character for the int `i`.
