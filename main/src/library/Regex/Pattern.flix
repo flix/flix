@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-
-
-
-
 namespace Regex {
 
     use Regex.Pattern
     use Regex.Pattern.{Pattern}
 
     ///
-    /// Represents a compiled Pattern.
+    /// Represents a compiled regular expression.
     ///
     pub enum Pattern(##java.util.regex.Pattern)
 
@@ -51,6 +47,9 @@ namespace Regex/Pattern {
         UnicodeCase, UnicodeCharacterClass, UnixLines
     }
 
+    ///
+    /// Represents a flag controlling the compilation of regular expression.
+    ///
     pub enum Flag with Eq, Order, ToString {
         case CanonEq
         case CaseInsenstive
@@ -66,7 +65,8 @@ namespace Regex/Pattern {
     ///
     /// Returns the int value of `flag`.
     ///
-    /// Rexeg Pattern Flags predate `Enum` in Java so they are represented as an `int`.
+    /// Regex Pattern Flags predate `Enum` in Java so they are represented as an `Int32`
+    /// and can be summed to make a bit mask.
     ///
     def toInt(flag: Flag): Int32 =
         import static get java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
@@ -91,13 +91,13 @@ namespace Regex/Pattern {
         }
 
     ///
-    /// Sum a list of Flags.
+    /// Sum a list of flags to an `Int32` bit mask.
     ///
-    def sumFlags(flags: List[Flag]): Int32 =
-        List.foldLeft((ac,e) -> ac + toInt(e), 0, flags)
+    def sumFlags(flags: Set[Flag]): Int32 =
+        Set.foldLeft((ac,e) -> ac + toInt(e), 0, flags)
 
     ///
-    /// Decompose an Int32 representing a set of flags into a list.
+    /// Decompose an Int32 representing bit masks into a list of flags.
     ///
     def listFlags(x: Int32): List[Flag] =
         let check = y -> {
@@ -113,6 +113,9 @@ namespace Regex/Pattern {
     ///
     /// Returns `Err` if the regex is ill-formed and cannot be compiled.
     ///
+    /// The syntax of regular expressions is the same as Java, see the JDK Javadocs
+    /// of the class `util.regex.Pattern` for reference.
+    ///
     pub def compile(regex: String): Result[String, Pattern] =
         Result.tryCatch(_ -> {
             import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
@@ -125,7 +128,7 @@ namespace Regex/Pattern {
     ///
     /// Returns `Err` if the regex is ill-formed and cannot be compiled.
     ///
-    pub def compileWithFlags(regex: String, flags: List[Flag]): Result[String, Pattern] =
+    pub def compileWithFlags(regex: String, flags: Set[Flag]): Result[String, Pattern] =
         Result.tryCatch(_ -> {
             import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
             Pattern(compile(regex, sumFlags(flags)))
@@ -136,14 +139,16 @@ namespace Regex/Pattern {
     /// Return the unmatchable pattern - a pattern that will not match any input.
     ///
     pub def unmatchable(): Pattern =
-        import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
         try {
+            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
             Pattern(compile("^\\b$"))
         } catch {
-            case _: ##java.lang.Exception => bug!("Regex/Pattern.unmatchable")
+            case _: ##java.lang.Exception => unreachable!()
         }
 
-
+    ///
+    /// Return the regular expression that matches the the literal string `s`.
+    ///
     pub def quote(s: String): String =
         import static java.util.regex.Pattern.quote(String): String \ {};
         quote(s)

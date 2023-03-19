@@ -24,6 +24,30 @@ mod TestRegexPattern {
     def toString01(): Bool =
         ToString.toString(Regex/Pattern.unmatchable()) != ""
 
+    /////////////////////////////////////////////////////////////////////////////
+    // compile                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
 
+    @test
+    def compile01(): Bool =
+        Regex/Pattern.compile("\\p{Alpha}+") |> Result.isOk
+
+    @test
+    def compile02(): Bool =
+        Regex/Pattern.compile("\\p{Alpha+") |> Result.isErr
+
+    /////////////////////////////////////////////////////////////////////////////
+    // compileWithFlags                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def compileWithFlags01(): Bool =
+        use Regex/Pattern/Flag.{CaseInsenstive};
+        Regex/Pattern.compileWithFlags("\\p{Alpha}+", Set#{CaseInsenstive}) |> Result.isOk
+
+    @test
+    def compileWithFlags02(): Bool =
+        use Regex/Pattern/Flag.{CaseInsenstive};
+        Regex/Pattern.compileWithFlags("\\p{Alpha+", Set#{CaseInsenstive}) |> Result.isErr
 
 }

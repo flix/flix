@@ -72,9 +72,15 @@ namespace Regex/Internal/Matcher {
 
 
     ///
-    /// Attempt to find the last match.
-    /// Returns `true` and moves the mather to the start of the last match
-    /// if there are one-or-more matches otherwise returns `false`.
+    /// Attempt to find the last match by iterating through the input string.
+    ///
+    /// Returns `true` and moves the matcher to the start of the last match if there are
+    /// one-or-more matches otherwise returns `false`.
+    ///
+    /// The internal state of the matcher is updated.
+    ///
+    /// Note - there are no primitive Java functions for right-to-left scanning provided
+    /// by Java's JDK so the performance of `findLast!` is disadvantaged compared to `find!`.
     ///
     pub def findLast!(m: Matcher[r]): Bool \ Write(r) =
         def loop(lastPos) = {
@@ -94,7 +100,6 @@ namespace Regex/Internal/Matcher {
             }
         }
 
-
     ///
     /// Set the bounds of the matcher's region.
     ///
@@ -107,7 +112,7 @@ namespace Regex/Internal/Matcher {
 
 
     ///
-    /// Return the start position of the matcher `m`.
+    /// Return the start position of the current match of Matcher `m`.
     ///
     pub def start(m: Matcher[r]): Result[String, Int32] \ Read(r) =
         Result.tryCatch(_ -> {
@@ -117,7 +122,7 @@ namespace Regex/Internal/Matcher {
         })
 
     ///
-    /// Return the end position of the matcher `m`.
+    /// Return the end position of the current match of Matcher `m`.
     ///
     pub def end(m: Matcher[r]): Result[String, Int32] \ Read(r) =
         Result.tryCatch(_ -> {
@@ -145,11 +150,15 @@ namespace Regex/Internal/Matcher {
             group(m1)
         })
 
-
+    ///
+    /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.
+    ///
     pub type alias MatchQuery[a: Type, r: Region] = Matcher[r] -> Result[String, a] \ Read(r)
 
     ///
-    /// Returns the last result matched by the pattern `p` on the input `s`.
+    /// Returns the first result found by applying the query `asks` to `m` going from left to right.
+    ///
+    /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
     pub def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
         if (findFrom!(0, m))
@@ -159,7 +168,9 @@ namespace Regex/Internal/Matcher {
 
 
     ///
-    /// Returns the last result matched by the pattern `p` on the input `s`.
+    /// Returns the last result found by applying the query `asks` to `m` going from left to right.
+    ///
+    /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
     pub def lastSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
         if (findLast!(m))
@@ -168,9 +179,12 @@ namespace Regex/Internal/Matcher {
             Err("No match")
 
     ///
-    /// Attempt to find the last match.
-    /// Returns `true` and moves the matcher to the start of the last match
-    /// if there are one-or-more matches otherwise returns `false`.
+    /// Fold on all the submatches going from left to right.
+    ///
+    /// If the query `asks` fails further processing is stopped and `Err(_)` is returned.
+    ///
+    /// `f` is applied to the result of applying the query `asks` and the folds accumulating value.
+    /// The initial accumulating value is `x`.
     ///
     pub def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { Read(r), Write(r), ef } =
         def loop(acc) = {
