@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-
+///
+/// The Matcher type and its module are consider considered internal.
+/// The API is expected to change significantly.
+///
 
 
 

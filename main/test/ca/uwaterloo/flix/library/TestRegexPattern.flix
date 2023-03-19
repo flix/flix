@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestRegexPattern {
+namespace TestRegexPattern {
 
     /////////////////////////////////////////////////////////////////////////////
     // ToString.toString                                                       //
@@ -104,11 +104,11 @@ mod TestRegexPattern {
     @test
     def flags03(): Bool =
         use Regex/Pattern/Flag.{CaseInsenstive};
-        Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive}) == Ok(Set#{CaseInsenstive})
+        Result.map(Regex/Pattern.flags, Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive})) == Ok(Set#{CaseInsenstive})
 
     @test
     def flags04(): Bool =
-        use Regex/Pattern/Flag.{CaseInsenstive};
-        Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive, Multiline}) == Ok(Set#{CaseInsenstive, Multiline})
+        use Regex/Pattern/Flag.{CaseInsenstive, Multiline};
+        Result.map(Regex/Pattern.flags, Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive, Multiline})) == Ok(Set#{CaseInsenstive, Multiline})
 
 }

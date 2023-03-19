@@ -73,7 +73,7 @@ namespace Regex/Text {
     ///
     /// Count the occurrences of `substr` in string `s`.
     ///
-    pub def countMatches(substr: {substr = Pattern}, s: String): Int32 = region rc {
+    pub def countSubmatches(substr: {substr = Pattern}, s: String): Int32 = region rc {
         let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.foldSubmatches((acc, _) -> acc + 1, 0, Regex/Internal/Matcher.start, m) {
             case Ok(n)  => n
@@ -144,7 +144,9 @@ namespace Regex/Text {
         }
     }
 
-    // stripSuffix
+    ///
+    /// Returns `Some(prefix)` of string `s` if its suffix matches `substr`.
+    ///
     pub def stripSuffix(substr: {substr = Pattern}, s: String): Option[String] = region rc {
         let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.range, m) {

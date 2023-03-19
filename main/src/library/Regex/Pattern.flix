@@ -164,11 +164,11 @@ namespace Regex/Pattern {
     ///
     /// Return the flags used to build this pattern.
     ///
-    pub def flags(patt: Pattern): List[Flag] =
+    pub def flags(patt: Pattern): Set[Flag] =
         import java.util.regex.Pattern.flags(): Int32 \ {};
         let Pattern(p1) = patt;
         let i = flags(p1);
-        listFlags(i)
+        listFlags(i) |> List.toSet
 
 
 }
