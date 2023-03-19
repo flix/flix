@@ -94,6 +94,18 @@ namespace Regex/Internal/Matcher {
             }
         }
 
+
+    ///
+    /// Set the bounds of the matcher's region.
+    ///
+    pub def setBounds!(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ Write(r) =
+        Result.tryCatch(_ -> {
+            import java.util.regex.Matcher.region(Int32, Int32): ##java.util.regex.Matcher \ r as region1;
+            let Matcher(m1) = m;
+            discard region1(m1, start.start, end.end)
+        })
+
+
     ///
     /// Return the start position of the matcher `m`.
     ///
@@ -139,8 +151,7 @@ namespace Regex/Internal/Matcher {
     ///
     /// Returns the last result matched by the pattern `p` on the input `s`.
     ///
-    pub def firstSubmatch(rc: Region[r], p: Pattern, s: String, asks: MatchQuery[a, r]): Result[String, a] \ { Read(r), Write(r) } =
-        let m = new(rc, p, s);
+    pub def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
         if (findFrom!(0, m))
             asks(m)
         else
@@ -150,12 +161,27 @@ namespace Regex/Internal/Matcher {
     ///
     /// Returns the last result matched by the pattern `p` on the input `s`.
     ///
-    pub def lastSubmatch(rc: Region[r], p: Pattern, s: String, asks: MatchQuery[a, r]): Result[String, a] \ { Read(r), Write(r) } =
-        let m = new(rc, p, s);
+    pub def lastSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
         if (findLast!(m))
             asks(m)
         else
             Err("No match")
 
+    ///
+    /// Attempt to find the last match.
+    /// Returns `true` and moves the matcher to the start of the last match
+    /// if there are one-or-more matches otherwise returns `false`.
+    ///
+    pub def foldSubmatches(f: (b, a) -> b \ ef, x: b, asks: MatchQuery[a, r], m: Matcher[r]): Result[String, b] \ { Read(r), Write(r), ef } =
+        def loop(acc) = {
+            match find!(m) {
+                case true  => match asks(m) {
+                    case Ok(a)    => loop(f(acc, a))
+                    case Err(msg) => Err(msg)
+                }
+                case false => Ok(acc)
+            }
+        };
+        loop(x)
 
 }
