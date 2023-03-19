@@ -1494,7 +1494,7 @@ def unfoldWithIter01(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == ""
 }
@@ -1508,7 +1508,7 @@ def unfoldWithIter02(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "a"
 }
@@ -1522,7 +1522,7 @@ def unfoldWithIter03(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "ab"
 }
@@ -1536,7 +1536,7 @@ def unfoldWithIter04(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "abcdefghij"
 }
@@ -1550,7 +1550,7 @@ def unfoldWithIter05(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "fghij"
 }
@@ -1564,7 +1564,7 @@ def unfoldWithIter06(): Bool = region r {
         else {
             let c = Char.fromInt32(deref x + 97);
             x := deref x + 2;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "acegi"
 }
@@ -1617,11 +1617,14 @@ def unfoldStringWithIter01(): Bool = region r {
         if (true)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == ""
 }
@@ -1633,11 +1636,14 @@ def unfoldStringWithIter02(): Bool = region r {
         if (deref x > 0)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == "Aa."
 }
@@ -1649,11 +1655,14 @@ def unfoldStringWithIter03(): Bool = region r {
         if (deref x > 1)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == "Aa.Bb."
 }
@@ -1665,11 +1674,14 @@ def unfoldStringWithIter04(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
 }
@@ -1681,11 +1693,14 @@ def unfoldStringWithIter05(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
 }
@@ -1697,11 +1712,14 @@ def unfoldStringWithIter06(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
-            let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
+            let s =
+                forM (
+                    c1 <- Char.fromInt32(deref x + 65);
+                    c2 <- Char.fromInt32(deref x + 97)
+                ) yield
+                    List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 2;
-            Some(s)
+            s
         };
     String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."
 }
