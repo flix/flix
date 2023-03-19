@@ -509,4 +509,151 @@ namespace TestRegexText {
         Result.map(patt -> Regex/Text.stripSuffix(substr = patt, "AA BBB CCCC"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some("AA BBB "))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfFirst                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfFirst01(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, ""),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirst02(): Bool =
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirst03(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "a"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirst04(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "__"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirst05(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirst06(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "_b"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+
+    @test
+    def indexOfFirst07(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirst08(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "ab_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirst09(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirst(substr = patt, "_bc"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLast                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfLast01(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, ""),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLast02(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLast03(): Bool =
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "a"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfLast04(): Bool =
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "__"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLast05(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "a_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfLast06(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "_b"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+
+    @test
+    def indexOfLast07(): Bool =
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "aa"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfLast08(): Bool =
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}{2}")) == Ok(Some(0))
+
+    @test
+    def indexOfLast09(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLast(substr = patt, "abcd"),
+            Regex/Pattern.compile("\\p{Alpha}{2}")) == Ok(Some(2))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfFirstWithOffset                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+/*
+    @test
+    def indexOfFirstWithOffset01(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, ""),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirstWithOffset02(): Bool =
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirstWithOffset03(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "a"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirstWithOffset04(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "__"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfFirstWithOffset05(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirstWithOffset06(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_b"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+
+    @test
+    def indexOfFirstWithOffset07(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirstWithOffset08(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfFirstWithOffset09(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_bc"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+*/
 }

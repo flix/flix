@@ -158,29 +158,29 @@ namespace Regex/Text {
     ///
     /// Return the index of the first occurence of `patt` in `s` from the left.
     ///
-    /// If `patt` is not present in `s` return None.
+    /// If the pattern `substr` is not present in `s` return None.
     ///
-    /// If `patt` is the empty string return None.
-    ///
-    pub def indexOfLeft(patt: Pattern, s: String): Option[Int32] = region rc {
-        let m = Regex/Internal/Matcher.new(rc, patt, s);
+    pub def indexOfFirst(substr: {substr = Pattern}, s: String): Option[Int32] = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.start, m) |> Result.toOption
     }
 
     ///
-    /// Find index of rightmost match.
+    /// Return the index of the last occurence of `patt` in `s` starting from the left.
     ///
-    pub def indexOfRight(patt: Pattern, s: String): Option[Int32] = region rc {
-        let m = Regex/Internal/Matcher.new(rc, patt, s);
+    /// If the pattern `substr` is not present in `s` return None.
+    ///
+    pub def indexOfLast(substr: {substr = Pattern}, s: String): Option[Int32] = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.start, m) |> Result.toOption
     }
 
     ///
-    /// This is `indexOfLeft` with a start offset.
+    /// This is `indexOfFirst` with a start offset.
     ///
-    /// Returns `None` if `substr` is the empty string.
+    /// If the pattern `substr` is not present in `s` return None.
     ///
-    pub def indexOfLeftWithOffset(substr: {substr = Pattern}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
+    pub def indexOfFirstWithOffset(substr: {substr = Pattern}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
         let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.setBounds!(start = offset.offset, end = String.length(s), m) {
             case Ok()   => Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.start, m) |> Result.toOption
@@ -189,11 +189,11 @@ namespace Regex/Text {
     }
 
     ///
-    /// This is `indexOfRight` with a start offset.
+    /// This is `indexOfLast` with a start offset.
     ///
-    /// Returns `None` if `substr` is the empty string.
+    /// If the pattern `substr` is not present in `s` return None.
     ///
-    pub def indexOfRightWithOffset(substr: {substr = Pattern}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
+    pub def indexOfLastWithOffset(substr: {substr = Pattern}, offset: {offset = Int32}, s: String): Option[Int32] = region rc {
         let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.setBounds!(start = offset.offset, end = String.length(s), m) {
             case Ok()   => Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.start, m) |> Result.toOption
@@ -205,7 +205,7 @@ namespace Regex/Text {
     /// Find the first instance of `patt` in string `s`, return a pair of the
     /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
     ///
-    pub def breakOnLeft(patt: Pattern, s: String): (String, String) = region rc {
+    pub def breakOnFirst(patt: Pattern, s: String): (String, String) = region rc {
         let m = Regex/Internal/Matcher.new(rc, patt, s);
         match Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
@@ -213,7 +213,7 @@ namespace Regex/Text {
         }
     }
 
-    pub def breakAfterLeft(patt: Pattern, s: String): (String, String) = region rc {
+    pub def breakAfterFirst(patt: Pattern, s: String): (String, String) = region rc {
         let m = Regex/Internal/Matcher.new(rc, patt, s);
         match Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
@@ -225,7 +225,7 @@ namespace Regex/Text {
     /// Find the last instance of `patt` in string `s`, return a pair of the
     /// initial string including `substr` and suffix from `substr`.
     ///
-    pub def breakOnRight(patt: Pattern, s: String): (String, String) = region rc {
+    pub def breakOnLast(patt: Pattern, s: String): (String, String) = region rc {
         let m = Regex/Internal/Matcher.new(rc, patt, s);
         match Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
@@ -237,7 +237,7 @@ namespace Regex/Text {
     /// Find the last instance of `substr` in string `s`, return a pair of the
     /// initial string including `substr` and suffix from `substr`.
     ///
-    pub def breakBeforeRight(p: Pattern, s: String): (String, String) = region rc {
+    pub def breakBeforeLast(p: Pattern, s: String): (String, String) = region rc {
         let m = Regex/Internal/Matcher.new(rc, p, s);
         match Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")

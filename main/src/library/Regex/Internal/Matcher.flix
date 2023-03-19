@@ -98,7 +98,7 @@ namespace Regex/Internal/Matcher {
                 let pos = start(m);
                 match loop(pos) {
                     case Err(_)          => false
-                    case Ok(startOfLast) => findFrom!(startOfLast - 1, m)
+                    case Ok(startOfLast) => findFrom!(startOfLast, m)
                 }
             }
         }
