@@ -50,4 +50,65 @@ mod TestRegexPattern {
         use Regex/Pattern/Flag.{CaseInsenstive};
         Regex/Pattern.compileWithFlags("\\p{Alpha+", Set#{CaseInsenstive}) |> Result.isErr
 
+
+    @test
+    def compileWithFlags03(): Bool =
+        use Regex/Pattern/Flag.{CaseInsenstive, Multiline};
+        Regex/Pattern.compileWithFlags("\\p{Alpha}+", Set#{CaseInsenstive, Multiline}) |> Result.isOk
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unmatchable                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def unmatchable01(): Bool =
+        Regex/Pattern.unmatchable() |> Regex/Pattern.pattern == "^\\b$"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // quote                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def quote01(): Bool =
+        Regex/Pattern.quote("ab") == "\\Qab\\E"
+
+    @test
+    def quote02(): Bool =
+        Regex/Pattern.quote("a*b") == "\\Qa*b\\E"
+
+    /////////////////////////////////////////////////////////////////////////////
+    // pattern                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def pattern01(): Bool =
+        Result.map(Regex/Pattern.pattern, Regex/Pattern.compile("a*b")) == Ok("a*b")
+
+    @test
+    def pattern02(): Bool =
+        Result.map(Regex/Pattern.pattern, Regex/Pattern.compile("\\p{Blank}+")) == Ok("\\p{Blank}+")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flags                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @test
+    def flags01(): Bool =
+        Result.map(Regex/Pattern.flags, Regex/Pattern.compile("\\p{Blank}+")) == Ok(Set#{})
+
+    @test
+    def flags02(): Bool =
+        Result.map(Regex/Pattern.flags, Regex/Pattern.compileWithFlags("\\p{Blank}+", Set#{})) == Ok(Set#{})
+
+    @test
+    def flags03(): Bool =
+        use Regex/Pattern/Flag.{CaseInsenstive};
+        Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive}) == Ok(Set#{CaseInsenstive})
+
+    @test
+    def flags04(): Bool =
+        use Regex/Pattern/Flag.{CaseInsenstive};
+        Regex/Pattern.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive, Multiline}) == Ok(Set#{CaseInsenstive, Multiline})
+
 }
