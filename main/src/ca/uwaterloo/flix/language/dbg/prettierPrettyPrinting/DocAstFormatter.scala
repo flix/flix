@@ -11,16 +11,28 @@ object DocAstFormatter {
 
   def format(p: DocAst.Program)(implicit i: Indent): List[Doc] = {
     implicit val i: Indent = indentationLevel(4)
-    val defs = p.defs.sortBy(_.sym.toString).map {
+    val DocAst.Program(enums0, defs0) = p
+    val enums = enums0.map{
+      case DocAst.Enum(_, _, sym, cases) =>
+        val d = group(text("enum") +: text(sym.toString) +: bracket("{",
+          DocUtil.sep(breakWith(" "), cases.map{
+            case DocAst.Case(sym) => text("case") +: text(sym.toString) :: text("(...)")
+          }),
+        "}"))
+        ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
+    }
+    val defs = defs0.map{
       case DocAst.Def(_, _, sym, parameters, resType, body) =>
-        defnf(
+        val d = defnf(
           sym.toString,
           parameters.map(format(_)),
           formatType(resType, paren = false),
           format(body)
         )
+        ((sym.namespace: Seq[String], sym.name), d)
     }
-    defs
+    import scala.math.Ordering.Implicits.seqOrdering
+    (enums ++ defs).sortBy(_._1).map(_._2)
   }
 
   def format(d: DocAst)(implicit i: Indent): Doc =
@@ -113,7 +125,7 @@ object DocAstFormatter {
             text("catch") +:
             bracket("{", rs, "}")
         )
-      case DocAst.NewObject(name, clazz, tpe, methods) =>
+      case DocAst.NewObject(_, clazz, _, methods) =>
         group(text("new") +: text("##" + clazz.getName) +: bracket("{",
           DocUtil.sep(breakWith(" "), methods.map(formatJvmMethod)),
           "}"))

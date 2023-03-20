@@ -8,6 +8,13 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 object ErasedPrinter {
 
   def print(root: ErasedAst.Root): DocAst.Program = {
+    val enums = root.enums.values.map{
+      case ErasedAst.Enum(ann, mod, sym, cases0, _, _) =>
+        val cases = cases0.values.map{
+          case ErasedAst.Case(sym, _, _) => DocAst.Case(sym)
+        }.toList
+        DocAst.Enum(ann, mod, sym, cases)
+    }.toList
     val defs = root.defs.values.map{
       case ErasedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
         DocAst.Def(
@@ -19,7 +26,7 @@ object ErasedPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(defs)
+    DocAst.Program(enums, defs)
   }
 
   private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Ascription = {

@@ -10,7 +10,11 @@ object DocAst {
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Ascription], resType: Type, body: DocAst)
 
-  case class Program(defs: List[Def])
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: List[Case])
+
+  case class Case(sym: Symbol.CaseSym)
+
+  case class Program(enums: List[Enum], defs: List[Def])
 
   // expressions
 
