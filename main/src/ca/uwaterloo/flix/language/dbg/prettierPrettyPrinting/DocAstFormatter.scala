@@ -12,16 +12,16 @@ object DocAstFormatter {
   def format(p: DocAst.Program)(implicit i: Indent): List[Doc] = {
     implicit val i: Indent = indentationLevel(4)
     val DocAst.Program(enums0, defs0) = p
-    val enums = enums0.map{
+    val enums = enums0.map {
       case DocAst.Enum(_, _, sym, cases) =>
         val d = group(text("enum") +: text(sym.toString) +: bracket("{",
-          DocUtil.sep(breakWith(" "), cases.map{
+          sep(breakWith(" "), cases.map {
             case DocAst.Case(sym) => text("case") +: text(sym.toString) :: text("(...)")
           }),
-        "}"))
+          "}"))
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
-    val defs = defs0.map{
+    val defs = defs0.map {
       case DocAst.Def(_, _, sym, parameters, resType, body) =>
         val d = defnf(
           sym.toString,
@@ -99,7 +99,7 @@ object DocAstFormatter {
       case l: DocAst.LetRec =>
         formatLetBlock(l, inBlock)
       case DocAst.Scope(v, d) =>
-        scopef(aux(v), aux(d, paren = false, inBlock = true))
+        text("region") +: aux(v) +: group(bracket("{", aux(d, paren = false, inBlock = true), "}"))
       case DocAst.App(f, args) =>
         DocUtil.Language.applyf(aux(f), args.map(aux(_, paren = false)))
       case DocAst.SquareApp(f, args) =>
@@ -127,7 +127,7 @@ object DocAstFormatter {
         )
       case DocAst.NewObject(_, clazz, _, methods) =>
         group(text("new") +: text("##" + clazz.getName) +: bracket("{",
-          DocUtil.sep(breakWith(" "), methods.map(formatJvmMethod)),
+          sep(breakWith(" "), methods.map(formatJvmMethod)),
           "}"))
     }
     d match {
@@ -156,7 +156,7 @@ object DocAstFormatter {
       case DocAst.LetRec(v, tpe, bind, _) =>
         text("letrec") +: aux(v) :: formatAscription(tpe) +: text("=") +: aux(bind, paren = false)
     }
-    val delimitedBinders = DocUtil.sep(
+    val delimitedBinders = sep(
       text(";") :: breakWith(" "),
       formattedBinders :+ aux(body, paren = false)
     )
@@ -175,11 +175,11 @@ object DocAstFormatter {
     restOpt match {
       case Some(rest) =>
         group(bracket("{",
-          DocUtil.sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: aux(rest, paren = false)
+          sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: aux(rest, paren = false)
           , "}"))
       case None =>
         group(bracket("{",
-          DocUtil.sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: text("{}")
+          sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: text("{}")
           , "}"))
     }
   }
@@ -238,15 +238,25 @@ object DocAstFormatter {
         val formattedArgs = curriedArgs.map(ts =>
           selectiveTuplef(ts.map(formatType(_, paren = false)))
         )
-        group(nest(DocUtil.sep(text(" ->") :: breakWith(" "), formattedArgs)))
+        group(nest(sep(text(" ->") :: breakWith(" "), formattedArgs :+ formatType(res))))
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
-        val (fields, rest) = collectRecordType(re)
-        DocUtil.Language.recordExtendf(
-          fields.map { case Type.RecordExtend(field, value, _) => (text(field), formatType(value, paren = false)) },
-          rest.map(formatType(_, paren = false))
-        )
+        val (fields, restOpt) = collectRecordType(re)
+        val exsf = fields.map {
+          case Type.RecordExtend(field, value, _) =>
+            text(field) +: text("=") +: formatType(value, paren = false)
+        }
+        restOpt match {
+          case Some(rest) =>
+            group(bracket("{",
+              sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: formatType(rest, paren = false)
+              , "}"))
+          case None =>
+            group(bracket("{",
+              sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: text("{}")
+              , "}"))
+        }
       case Type.SchemaEmpty => text("unknown")
       case Type.SchemaExtend(name, tpe, rest) => text("unknown")
     }

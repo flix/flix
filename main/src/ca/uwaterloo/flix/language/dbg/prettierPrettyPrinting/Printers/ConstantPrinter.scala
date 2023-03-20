@@ -5,6 +5,9 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 
 object ConstantPrinter {
 
+  /**
+    * Returns the [[DocAst]] representation of `cst`.
+    */
   def print(cst: Constant): DocAst = cst match {
     case Constant.Unit => DocAst.Unit
     case Constant.Null => DocAst.AsIs("null")

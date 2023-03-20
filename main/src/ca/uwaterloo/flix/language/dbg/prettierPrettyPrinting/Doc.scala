@@ -148,5 +148,14 @@ object Doc {
 
   def breakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 :: nest(breakWith(" ") :: d2)
 
+  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+    case immutable.Nil => empty
+    case x :: immutable.Nil => x
+    case x :: xs => f(x, fold(f, xs))
+  }
+
+  def sep(sep: Doc, d: List[Doc]): Doc =
+    fold(_ :: sep :: _, d)
+
 }
 

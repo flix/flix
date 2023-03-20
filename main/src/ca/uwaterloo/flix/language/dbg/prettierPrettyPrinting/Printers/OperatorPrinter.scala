@@ -5,235 +5,213 @@ import ca.uwaterloo.flix.language.ast._
 
 object OperatorPrinter {
 
-  private val eq: String = "=="
-  private val neq: String = "!="
-  private val not: String = "!"
-  private val neg: String = "-"
-  private val plus: String = "+"
-  private val minus: String = "-"
-  private val lt: String = "<"
-  private val le: String = "<="
-  private val gt: String = ">"
-  private val ge: String = ">="
-  private val and: String = "and"
-  private val or: String = "or"
-  private val mul: String = "*"
-  private val div: String = "/"
-  private val exp: String = "**"
-  private val xor: String = "xor"
-  private val rem: String = "rem"
+  private val and = "and"
+  private val div = "/"
+  private val eq = "=="
+  private val exp = "**"
+  private val ge = ">="
+  private val gt = ">"
+  private val le = "<="
+  private val lt = "<"
+  private val minus = "-"
+  private val mul = "*"
+  private val neg = "-"
+  private val neq = "!="
+  private val not = "!"
+  private val or = "or"
+  private val plus = "+"
+  private val rem = "rem"
+  private val shl = "shl"
+  private val shr = "shr"
+  private val xor = "xor"
 
+  /**
+    * Returns the string representation of `uo`.
+    */
   def print(uo: UnaryOperator): String = uo match {
     case UnaryOperator.LogicalNot => not
     case UnaryOperator.Plus => plus
     case UnaryOperator.Minus => minus
-    case UnaryOperator.BitwiseNegate => "~"
+    case UnaryOperator.BitwiseNegate => "b_" + neg
   }
 
+  /**
+    * Returns the string representation of `bo`.
+    */
   def print(bo: BinaryOperator): String = bo match {
-    case operator: ArithmeticOperator => operator match {
-      case BinaryOperator.Plus => plus
-      case BinaryOperator.Minus => minus
-      case BinaryOperator.Times => mul
-      case BinaryOperator.Divide => div
-      case BinaryOperator.Remainder => rem
-      case BinaryOperator.Exponentiate => exp
-    }
-    case operator: ComparisonOperator => operator match {
-      case operator: EqualityOperator => operator match {
-        case BinaryOperator.Equal => eq
-        case BinaryOperator.NotEqual => neq
-        case BinaryOperator.Spaceship => "<=>"
-      }
-      case BinaryOperator.Less => lt
-      case BinaryOperator.LessEqual => le
-      case BinaryOperator.Greater => gt
-      case BinaryOperator.GreaterEqual => ge
-    }
-    case operator: LogicalOperator => operator match {
-      case BinaryOperator.LogicalAnd => and
-      case BinaryOperator.LogicalOr => or
-    }
-    case operator: BitwiseOperator => operator match {
-      case BinaryOperator.BitwiseAnd => "b_and"
-      case BinaryOperator.BitwiseOr => "b_or"
-      case BinaryOperator.BitwiseXor => "b_xor"
-      case BinaryOperator.BitwiseLeftShift => "b_shl"
-      case BinaryOperator.BitwiseRightShift => "b_shr"
-    }
+    case BinaryOperator.Plus => plus
+    case BinaryOperator.Minus => minus
+    case BinaryOperator.Times => mul
+    case BinaryOperator.Divide => div
+    case BinaryOperator.Remainder => rem
+    case BinaryOperator.Exponentiate => exp
+    case BinaryOperator.Equal => eq
+    case BinaryOperator.NotEqual => neq
+    case BinaryOperator.Spaceship => "<=>"
+    case BinaryOperator.Less => lt
+    case BinaryOperator.LessEqual => le
+    case BinaryOperator.Greater => gt
+    case BinaryOperator.GreaterEqual => ge
+    case BinaryOperator.LogicalAnd => and
+    case BinaryOperator.LogicalOr => or
+    case BinaryOperator.BitwiseAnd => "b_" + and
+    case BinaryOperator.BitwiseOr => "b_" + or
+    case BinaryOperator.BitwiseXor => "b_" + xor
+    case BinaryOperator.BitwiseLeftShift => "b_" + shl
+    case BinaryOperator.BitwiseRightShift => "b_" + shr
   }
 
+  /**
+    * Returns the string representation of `so`.
+    */
   def print(so: SemanticOperator): String = so match {
-    case op: SemanticOperator.BoolOp => op match {
-      case BoolOp.Not => not
-      case BoolOp.And => and
-      case BoolOp.Or => or
-      case BoolOp.Eq => eq
-      case BoolOp.Neq => neq
-    }
-    case op: SemanticOperator.CharOp => op match {
-      case CharOp.Eq => eq
-      case CharOp.Neq => neq
-      case CharOp.Lt => lt
-      case CharOp.Le => le
-      case CharOp.Gt => gt
-      case CharOp.Ge => ge
-    }
-    case op: SemanticOperator.Float32Op => op match {
-      case Float32Op.Add => plus
-      case Float32Op.Sub => minus
-      case Float32Op.Mul => mul
-      case Float32Op.Div => div
-      case Float32Op.Exp => exp
-      case Float32Op.Eq => eq
-      case Float32Op.Neq => neq
-      case Float32Op.Lt => lt
-      case Float32Op.Le => le
-      case Float32Op.Gt => gt
-      case Float32Op.Ge => ge
-    }
-    case op: SemanticOperator.Float64Op => op match {
-      case Float32Op.Neg => neg
-      case Float64Op.Neg => neg
-      case Float64Op.Add => plus
-      case Float64Op.Sub => minus
-      case Float64Op.Mul => mul
-      case Float64Op.Div => div
-      case Float64Op.Exp => exp
-      case Float64Op.Eq => eq
-      case Float64Op.Neq => neq
-      case Float64Op.Lt => lt
-      case Float64Op.Le => le
-      case Float64Op.Gt => gt
-      case Float64Op.Ge => ge
-    }
-    case op: SemanticOperator.BigDecimalOp => op match {
-      case BigDecimalOp.Neg => neg
-      case BigDecimalOp.Add => plus
-      case BigDecimalOp.Sub => minus
-      case BigDecimalOp.Mul => mul
-      case BigDecimalOp.Div => div
-      case BigDecimalOp.Exp => exp
-      case BigDecimalOp.Eq => eq
-      case BigDecimalOp.Neq => neq
-      case BigDecimalOp.Lt => lt
-      case BigDecimalOp.Le => le
-      case BigDecimalOp.Gt => gt
-      case BigDecimalOp.Ge => ge
-    }
-    case op: SemanticOperator.Int8Op => op match {
-      case Int8Op.Neg => neg
-      case Int8Op.Not => not
-      case Int8Op.Add => plus
-      case Int8Op.Sub => minus
-      case Int8Op.Mul => mul
-      case Int8Op.Div => div
-      case Int8Op.Rem => rem
-      case Int8Op.Exp => exp
-      case Int8Op.And => and
-      case Int8Op.Or => or
-      case Int8Op.Xor => xor
-      case Int8Op.Shl => "shl"
-      case Int8Op.Shr => "shr"
-      case Int8Op.Eq => eq
-      case Int8Op.Neq => neq
-      case Int8Op.Lt => lt
-      case Int8Op.Le => le
-      case Int8Op.Gt => gt
-      case Int8Op.Ge => ge
-    }
-    case op: SemanticOperator.Int16Op => op match {
-      case Int16Op.Neg => neg
-      case Int16Op.Not => not
-      case Int16Op.Add => plus
-      case Int16Op.Sub => minus
-      case Int16Op.Mul => mul
-      case Int16Op.Div => div
-      case Int16Op.Rem => rem
-      case Int16Op.Exp => exp
-      case Int16Op.And => and
-      case Int16Op.Or => or
-      case Int16Op.Xor => xor
-      case Int16Op.Shl => "shl"
-      case Int16Op.Shr => "shr"
-      case Int16Op.Eq => eq
-      case Int16Op.Neq => neq
-      case Int16Op.Lt => lt
-      case Int16Op.Le => le
-      case Int16Op.Gt => gt
-      case Int16Op.Ge => ge
-    }
-    case op: SemanticOperator.Int32Op => op match {
-      case Int32Op.Neg => neg
-      case Int32Op.Not => not
-      case Int32Op.Add => plus
-      case Int32Op.Sub => minus
-      case Int32Op.Mul => mul
-      case Int32Op.Div => div
-      case Int32Op.Rem => rem
-      case Int32Op.Exp => exp
-      case Int32Op.And => and
-      case Int32Op.Or => or
-      case Int32Op.Xor => xor
-      case Int32Op.Shl => "shl"
-      case Int32Op.Shr => "shr"
-      case Int32Op.Eq => eq
-      case Int32Op.Neq => neq
-      case Int32Op.Lt => lt
-      case Int32Op.Le => le
-      case Int32Op.Gt => gt
-      case Int32Op.Ge => ge
-    }
-    case op: SemanticOperator.Int64Op => op match {
-      case Int64Op.Neg => neg
-      case Int64Op.Not => not
-      case Int64Op.Add => plus
-      case Int64Op.Sub => minus
-      case Int64Op.Mul => mul
-      case Int64Op.Div => div
-      case Int64Op.Rem => rem
-      case Int64Op.Exp => exp
-      case Int64Op.And => plus
-      case Int64Op.Or => or
-      case Int64Op.Xor => xor
-      case Int64Op.Shl => "shl"
-      case Int64Op.Shr => "shr"
-      case Int64Op.Eq => eq
-      case Int64Op.Neq => neq
-      case Int64Op.Lt => lt
-      case Int64Op.Le => le
-      case Int64Op.Gt => gt
-      case Int64Op.Ge => ge
-      case BigIntOp.Not => not
-    }
-    case op: SemanticOperator.BigIntOp => op match {
-      case BigIntOp.Neg => not
-      case BigIntOp.Add => plus
-      case BigIntOp.Sub => minus
-      case BigIntOp.Mul => mul
-      case BigIntOp.Div => div
-      case BigIntOp.Rem => rem
-      case BigIntOp.Exp => exp
-      case BigIntOp.And => and
-      case BigIntOp.Or => or
-      case BigIntOp.Xor => xor
-      case BigIntOp.Shl => "shl"
-      case BigIntOp.Shr => "shr"
-      case BigIntOp.Eq => eq
-      case BigIntOp.Neq => neq
-      case BigIntOp.Lt => lt
-      case BigIntOp.Le => le
-      case BigIntOp.Gt => gt
-      case BigIntOp.Ge => ge
-    }
-    case op: SemanticOperator.ObjectOp => op match {
-      case ObjectOp.EqNull => "null == "
-      case ObjectOp.NeqNull => "null != "
-    }
-    case op: SemanticOperator.StringOp => op match {
-      case StringOp.Concat => plus
-      case StringOp.Eq => eq
-      case StringOp.Neq => neq
-    }
+    case BoolOp.Not |
+         Int8Op.Not |
+         Int16Op.Not |
+         Int32Op.Not |
+         Int64Op.Not |
+         BigIntOp.Not => not
+    case BoolOp.And |
+         Int8Op.And |
+         Int16Op.And |
+         Int32Op.And |
+         BigIntOp.And => and
+    case BoolOp.Or |
+         Int8Op.Or |
+         Int16Op.Or |
+         Int32Op.Or |
+         Int64Op.Or |
+         BigIntOp.Or => or
+    case BoolOp.Eq |
+         Float32Op.Eq |
+         CharOp.Eq |
+         Float64Op.Eq |
+         BigDecimalOp.Eq |
+         Int8Op.Eq |
+         Int16Op.Eq |
+         Int32Op.Eq |
+         Int64Op.Eq |
+         BigIntOp.Eq |
+         StringOp.Eq => eq
+    case BoolOp.Neq |
+         CharOp.Neq |
+         Float32Op.Neq |
+         Float64Op.Neq |
+         BigDecimalOp.Neq |
+         Int8Op.Neq |
+         Int16Op.Neq |
+         Int32Op.Neq |
+         Int64Op.Neq |
+         BigIntOp.Neq |
+         StringOp.Neq => neq
+    case CharOp.Lt |
+         Float32Op.Lt |
+         Float64Op.Lt |
+         BigDecimalOp.Lt |
+         Int8Op.Lt |
+         Int16Op.Lt |
+         Int32Op.Lt |
+         Int64Op.Lt |
+         BigIntOp.Lt => lt
+    case CharOp.Le |
+         Float32Op.Le |
+         Float64Op.Le |
+         BigDecimalOp.Le |
+         Int8Op.Le |
+         Int16Op.Le |
+         Int32Op.Le |
+         Int64Op.Le |
+         BigIntOp.Le => le
+    case CharOp.Gt |
+         Float32Op.Gt |
+         Float64Op.Gt |
+         BigDecimalOp.Gt |
+         Int8Op.Gt |
+         Int16Op.Gt |
+         Int32Op.Gt |
+         Int64Op.Gt |
+         BigIntOp.Gt => gt
+    case CharOp.Ge |
+         Float32Op.Ge |
+         Float64Op.Ge |
+         BigDecimalOp.Ge |
+         Int8Op.Ge |
+         Int16Op.Ge |
+         Int32Op.Ge |
+         Int64Op.Ge |
+         BigIntOp.Ge => ge
+    case Float32Op.Add |
+         Float64Op.Add |
+         BigDecimalOp.Add |
+         Int8Op.Add |
+         Int16Op.Add |
+         Int32Op.Add |
+         Int64Op.Add |
+         Int64Op.And |
+         BigIntOp.Add |
+         StringOp.Concat => plus
+    case Float32Op.Sub |
+         Float64Op.Sub |
+         BigDecimalOp.Sub |
+         Int8Op.Sub |
+         Int16Op.Sub |
+         Int32Op.Sub |
+         Int64Op.Sub |
+         BigIntOp.Sub => minus
+    case Float32Op.Mul |
+         Float64Op.Mul |
+         BigDecimalOp.Mul |
+         Int8Op.Mul |
+         Int16Op.Mul |
+         Int32Op.Mul |
+         Int64Op.Mul |
+         BigIntOp.Mul => mul
+    case Float32Op.Div |
+         Float64Op.Div |
+         BigDecimalOp.Div |
+         Int8Op.Div |
+         Int16Op.Div |
+         Int32Op.Div |
+         Int64Op.Div |
+         BigIntOp.Div => div
+    case Float32Op.Exp |
+         Float64Op.Exp |
+         BigDecimalOp.Exp |
+         Int8Op.Exp |
+         Int16Op.Exp |
+         Int32Op.Exp |
+         Int64Op.Exp |
+         BigIntOp.Exp => exp
+    case Float32Op.Neg |
+         Float64Op.Neg |
+         BigDecimalOp.Neg |
+         Int8Op.Neg |
+         Int16Op.Neg |
+         Int32Op.Neg |
+         Int64Op.Neg |
+         BigIntOp.Neg => neg
+    case Int8Op.Rem |
+         Int16Op.Rem |
+         Int32Op.Rem |
+         Int64Op.Rem |
+         BigIntOp.Rem => rem
+    case Int8Op.Xor |
+         Int16Op.Xor |
+         Int32Op.Xor |
+         Int64Op.Xor |
+         BigIntOp.Xor => xor
+    case Int8Op.Shl |
+         Int16Op.Shl |
+         Int32Op.Shl |
+         Int64Op.Shl |
+         BigIntOp.Shl => shl
+    case Int8Op.Shr |
+         Int16Op.Shr |
+         Int32Op.Shr |
+         Int64Op.Shr |
+         BigIntOp.Shr => shr
+    case ObjectOp.EqNull => "null == "
+    case ObjectOp.NeqNull => "null != "
   }
+
 }
