@@ -8,12 +8,22 @@ sealed trait Doc
 object Doc {
 
   implicit class DocOps(d: Doc) {
+    /**
+      * Concatenates two docs.
+      */
     def ::(d: Doc): Doc = Doc.::(d, this.d)
 
+    /**
+      * Concatenates two docs with a space.
+      */
     def +:(d: Doc): Doc = Doc.+:(d, this.d)
 
+    /**
+      * Concatenates two docs with a space _or_ an ungrouped newline.
+      */
     def +\:(d: Doc): Doc = Doc.+\:(d, this.d)
 
+    /** Concatenates two docs with an ungrouped optional newline. */
     def \:(d: Doc): Doc = Doc.\:(d, this.d)
   }
 
@@ -209,12 +219,10 @@ object Doc {
     d1 :: group(nest(breakWith(" ") :: d2))
 
   /**
-    * Concatenates two docs with a space _or_ an ungrouped optional newline with
-    * indentation.
-    * `d2` is included in the indentation
+    * Prefix `d` with a space, or an indented newline if space is needed.
     */
-  def breakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
-    d1 :: nest(breakWith(" ") :: d2)
+  def breakIndent(d: Doc)(implicit i: Indent): Doc =
+    nest(breakWith(" ") :: d)
 
   /**
     * Right fold of `d` with `f`.
@@ -231,5 +239,109 @@ object Doc {
   def sep(sep: Doc, d: List[Doc]): Doc =
     fold(_ :: sep :: _, d)
 
-}
+  /**
+    * Insert a comma with an ungrouped optional newline.
+    */
+  def commaSep(d: List[Doc]): Doc =
+    sep(text(",") :: breakWith(" "), d)
 
+  /**
+    * Insert a semicolon with an ungrouped optional newline.
+    */
+  def semiSep(d: List[Doc]): Doc =
+    sep(text(";") :: breakWith(" "), d)
+
+  /**
+    * Insert a space _or_ an ungrouped optional newline.
+    */
+  def spaceSep(d: List[Doc]): Doc =
+    sep(breakWith(" "), d)
+
+  /**
+    * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
+    */
+  def enclose(l: String, x: Doc, r: String)(implicit i: Indent): Doc = {
+    text(l) :: nest(breakWith("") :: x) \: text(r)
+  }
+
+  /**
+    * Enclose `x` with `(..)` with grouped newlines inside.
+    */
+  def parens(x: Doc)(implicit i: Indent): Doc =
+    group(enclose("(", x, ")"))
+
+  /**
+    * Enclose `x` with `{..}` with grouped newlines inside.
+    */
+  def curly(x: Doc)(implicit i: Indent): Doc =
+    group(enclose("{", x, "}"))
+
+  /**
+    * Enclose `x` with `{..}` with ungrouped newlines inside.
+    */
+  def curlyOpen(x: Doc)(implicit i: Indent): Doc =
+    enclose("{", x, "}")
+
+  /**
+    * Formats `xs` as a curly tuple.
+    * {{{
+    *   {}
+    *   {x}
+    *   {x, y, z}
+    * }}}
+    */
+  def curly(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+    case immutable.Nil => text("{}")
+    case immutable.::(d, immutable.Nil) => group(curly(d))
+    case _ => group(curly(commaSep(xs)))
+  }
+
+  /**
+    * Enclose `x` with `[..]` with grouped newlines inside.
+    */
+  def square(x: Doc)(implicit i: Indent): Doc =
+    group(enclose("[", x, "]"))
+
+  /**
+    * Formats `xs` as a square tuple.
+    * {{{
+    *   []
+    *   [x]
+    *   [x, y, z]
+    * }}}
+    */
+  def square(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+    case immutable.Nil => text("[]")
+    case immutable.::(d, immutable.Nil) => group(square(d))
+    case _ => group(square(commaSep(xs)))
+  }
+
+  /**
+    * Formats `xs` as a tuple.
+    * {{{
+    *   ()
+    *   (x)
+    *   (x, y, z)
+    * }}}
+    */
+  def tuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+    case immutable.Nil => text("()")
+    case immutable.::(d, immutable.Nil) => group(parens(d))
+    case _ => group(parens(commaSep(xs)))
+  }
+
+  /**
+    * Formats `xs` as a tuple unless its a singleton.
+    * {{{
+    *   ()
+    *   x
+    *   (x, y, z)
+    * }}}
+    */
+  def tuplish(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+    case immutable.Nil => text("()")
+    case immutable.::(d, immutable.Nil) => d
+    case _ => group(parens(commaSep(xs)))
+  }
+
+}
