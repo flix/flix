@@ -426,7 +426,7 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, _, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, signatures, laws0, loc) =>
       val tparamVal = Params.resolveTparam(tparam0, env0, ns0, root)
       flatMapN(tparamVal) {
         case tparam =>
@@ -434,6 +434,7 @@ object Resolver {
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val assocsVal = traverse(assocs0)(resolveAssocTypeSig)
           val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
           mapN(sigsListVal, superClassesVal, lawsVal) {
@@ -612,6 +613,25 @@ object Resolver {
       mapN(specVal) {
         spec => ResolvedAst.Declaration.Op(sym, spec)
       }
+  }
+
+  /**
+    * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
+    */
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeSig, ResolutionError] = s0 match {
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams0, kind0, loc) =>
+      val tparamsVal = resolveTypeParams(tparams0, env, ns0, root)
+      val kindVal = resolveKind(kind0, env, ns0, root)
+      mapN(tparamsVal, kindVal) {
+        case (tparams, kind) => ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc)
+      }
+  }
+
+  private def resolveAssocTypeDef(s0: NamedAst.Declaration.AssocTypeDef, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = s0 match {
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+      // For now we don't add any tvars from the args. We should have gotten those directly from the instance
+      val sym = ???
+      ???
   }
 
   /**
