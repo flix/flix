@@ -164,7 +164,7 @@ namespace Regex/Internal/Matcher {
     /// If the query `asks` or no match is found `Err(_)` is returned.
     ///
     pub def firstSubmatch(asks: MatchQuery[a, r], m: Matcher[r]): Result[String, a] \ { Read(r), Write(r) } =
-        if (findFrom!(0, m))
+        if (find!(m))
             asks(m)
         else
             Err("No match")

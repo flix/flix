@@ -610,50 +610,129 @@ namespace TestRegexText {
     /////////////////////////////////////////////////////////////////////////////
     // indexOfFirstWithOffset                                                   //
     /////////////////////////////////////////////////////////////////////////////
-/*
+
     @test
     def indexOfFirstWithOffset01(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, ""),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, ""),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
 
     @test
-    def indexOfFirstWithOffset02(): Bool =
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_"),
+    def indexOfFirstWithOffset02(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, "_"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
 
     @test
     def indexOfFirstWithOffset03(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "a"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, "a"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
 
     @test
     def indexOfFirstWithOffset04(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "__"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 1, "a"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
 
     @test
     def indexOfFirstWithOffset05(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, "ab"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
 
     @test
     def indexOfFirstWithOffset06(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_b"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 1, "aa"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
 
     @test
     def indexOfFirstWithOffset07(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab"),
-            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, "_b"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
 
     @test
     def indexOfFirstWithOffset08(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "ab_"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 0, "ab ab"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
 
     @test
     def indexOfFirstWithOffset09(): Bool = 
-        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, "_bc"),
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 1, "ab ab"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
-*/
+
+    @test
+    def indexOfFirstWithOffset10(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 2, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    @test
+    def indexOfFirstWithOffset11(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfFirstWithOffset(substr = patt, offset = 3, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indexOfLastWithOffset                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def indexOfLastWithOffset01(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 0, ""),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLastWithOffset02(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 0, "_"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+    
+    @test
+    def indexOfLastWithOffset03(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 0, "a"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(0))
+
+    @test
+    def indexOfLastWithOffset04(): Bool = 
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 1, "a"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLastWithOffset05(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 1, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(1))
+
+    @test
+    def indexOfLastWithOffset06(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 2, "aa"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLastWithOffset07(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 3, "ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLastWithOffset08(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 3, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    @test
+    def indexOfLastWithOffset09(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset= 2, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    @test
+    def indexOfLastWithOffset10(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 1, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    @test
+    def indexOfLastWithOffset11(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 0, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(Some(3))
+
+    @test
+    def indexOfLastWithOffset12(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = -1, "ab ab"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    @test
+    def indexOfLastWithOffset13(): Bool =  
+        Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 2, "ab __"),
+            Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
 }
