@@ -154,7 +154,7 @@ object DocAstFormatter {
   }
 
   private def formatLetBlock(d: DocAst.LetBinder, inBlock: Boolean)(implicit i: Indent): Doc = {
-    val (binders, body) = collectLetBlock(d)
+    val (binders, body) = collectLetBinders(d)
     val bodyf = aux(body, paren = false)
     val bindersf = binders.map {
       case DocAst.Let(v, tpe, bind, _) =>
@@ -190,7 +190,7 @@ object DocAstFormatter {
   private def formatAscription(tpe: Option[DocAst.Type])(implicit i: Indent): Doc =
     tpe.map(t => text(":") +: formatType(t)).getOrElse(empty)
 
-  private def collectLetBlock(d: DocAst): (List[DocAst.LetBinder], DocAst) = {
+  private def collectLetBinders(d: DocAst): (List[DocAst.LetBinder], DocAst) = {
     @tailrec
     def chase(d0: DocAst, acc: List[DocAst.LetBinder]): (List[DocAst.LetBinder], DocAst) = {
       d0 match {
@@ -240,7 +240,7 @@ object DocAstFormatter {
       case Type.Tuple(elms) =>
         tuple(elms.map(formatType(_, paren = false)))
       case arrow@Type.Arrow(_, _) =>
-        val (curriedArgs, res) = collectArrowType(arrow)
+        val (curriedArgs, res) = collectArrowTypes(arrow)
         // todo: maybe not tuple formatting?
         val formattedArgs = curriedArgs.map(ts => {
           tuplish(ts.map(formatType(_, paren = ts.lengthIs == 1)))
@@ -249,7 +249,7 @@ object DocAstFormatter {
       case Type.RecordEmpty =>
         text("{}")
       case re: Type.RecordExtend =>
-        val (fields, restOpt) = collectRecordType(re)
+        val (fields, restOpt) = collectRecordTypes(re)
         val exsf = fields.map {
           case Type.RecordExtend(field, value, _) =>
             text(field) +: text("=") +: formatType(value, paren = false)
@@ -270,7 +270,11 @@ object DocAstFormatter {
     }
   }
 
-  private def collectArrowType(tpe: Type): (List[List[Type]], Type) = {
+  /**
+    * Collects a sequence of [[Type.Arrow]] into a shallow list of their
+    * arguments and the final return type.
+    */
+  private def collectArrowTypes(tpe: Type): (List[List[Type]], Type) = {
     @tailrec
     def chase(tpe0: Type, acc: List[List[Type]]): (List[List[Type]], Type) = {
       tpe0 match {
@@ -282,7 +286,11 @@ object DocAstFormatter {
     chase(tpe, List())
   }
 
-  private def collectRecordType(tpe: Type): (List[Type.RecordExtend], Option[Type]) = {
+  /**
+    * Collects a sequence of [[Type.RecordExtend]] into a shallow list. The tail
+    * is [[None]] if the sequence ends with a [[Type.RecordEmpty]].
+    */
+  private def collectRecordTypes(tpe: Type): (List[Type.RecordExtend], Option[Type]) = {
     @tailrec
     def chase(tpe0: Type, acc: List[Type.RecordExtend]): (List[Type.RecordExtend], Option[Type]) = {
       tpe0 match {
