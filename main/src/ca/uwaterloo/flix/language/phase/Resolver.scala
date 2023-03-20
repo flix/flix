@@ -343,9 +343,9 @@ object Resolver {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
       }
-    case clazz@NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
+    case clazz@NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
       resolveClass(clazz, env0, taenv, ns0, root)
-    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
       resolveInstance(inst, env0, taenv, ns0, root)
     case defn@NamedAst.Declaration.Def(sym, spec, exp) =>
       resolveDef(defn, None, env0, taenv, ns0, root)
@@ -361,6 +361,8 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
   }
 
   /**
@@ -424,15 +426,15 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, _, signatures, laws0, loc) =>
       val tparamVal = Params.resolveTparam(tparam0, env0, ns0, root)
       flatMapN(tparamVal) {
         case tparam =>
           val env = env0 ++ mkTypeParamEnv(List(tparam))
-          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
           mapN(sigsListVal, superClassesVal, lawsVal) {
             case (sigsList, superClasses, laws) =>
@@ -446,7 +448,7 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, _, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -2688,7 +2690,7 @@ object Resolver {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
@@ -2697,7 +2699,7 @@ object Resolver {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
@@ -3325,17 +3327,19 @@ object Resolver {
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => sym
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 
   /**
@@ -3350,6 +3354,7 @@ object Resolver {
     case sym: Symbol.ClassSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.AssocTypeSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
