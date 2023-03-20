@@ -1,21 +1,24 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
 
-import ca.uwaterloo.flix.language.ast.{Ast, ErasedAst}
+import ca.uwaterloo.flix.language.ast.ErasedAst
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 
 object ErasedPrinter {
 
+  /**
+    * Returns the [[DocAst.Program]] representation of `root`.
+    */
   def print(root: ErasedAst.Root): DocAst.Program = {
-    val enums = root.enums.values.map{
+    val enums = root.enums.values.map {
       case ErasedAst.Enum(ann, mod, sym, cases0, _, _) =>
-        val cases = cases0.values.map{
+        val cases = cases0.values.map {
           case ErasedAst.Case(sym, _, _) => DocAst.Case(sym)
         }.toList
         DocAst.Enum(ann, mod, sym, cases)
     }.toList
-    val defs = root.defs.values.map{
+    val defs = root.defs.values.map {
       case ErasedAst.Def(ann, mod, sym, formals, exp, tpe, _) =>
         DocAst.Def(
           ann,
@@ -29,11 +32,9 @@ object ErasedPrinter {
     DocAst.Program(enums, defs)
   }
 
-  private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Ascription = {
-    val ErasedAst.FormalParam(sym, tpe) = fp
-    DocAst.Ascription(DocAst.VarWithOffset(sym), MonoTypePrinter.print(tpe))
-  }
-
+  /**
+    * Returns the [[DocAst]] representation of `e`.
+    */
   def print(e: ErasedAst.Expression): DocAst = e match {
     case Var(sym, _, _) => DocAst.VarWithOffset(sym)
     case Unary(sop, exp, _, _) => DocAst.Unary(OperatorPrinter.print(sop), print(exp))
@@ -47,9 +48,10 @@ object ErasedPrinter {
     case ScopeExit(exp1, exp2, _, _) => DocAst.ScopeExit(print(exp1), print(exp2))
     case TryCatch(exp, rules, _, _) => DocAst.TryCatch(print(exp), rules.map(r => (r.sym, r.clazz, print(r.exp))))
     case NewObject(name, clazz, tpe, methods, _) =>
-      DocAst.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map{
+      DocAst.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
-          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))})
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+      })
     case Intrinsic0(op, _, _) => op match {
       case IntrinsicOperator0.Cst(cst) => DocAst.Cst(cst)
       case IntrinsicOperator0.Region => DocAst.Region
@@ -131,4 +133,13 @@ object ErasedPrinter {
         case IntrinsicOperator1N.InvokeMethod(method) => DocAst.JavaInvokeMethod(method, d, ds)
       }
   }
+
+  /**
+    * Returns the [[DocAst.Ascription]] representation of `fp`.
+    */
+  private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Ascription = {
+    val ErasedAst.FormalParam(sym, tpe) = fp
+    DocAst.Ascription(DocAst.VarWithOffset(sym), MonoTypePrinter.print(tpe))
+  }
+
 }

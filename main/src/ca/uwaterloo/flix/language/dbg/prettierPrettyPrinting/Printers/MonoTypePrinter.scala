@@ -5,6 +5,9 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Type
 
 object MonoTypePrinter {
 
+  /**
+    * Returns the [[Type]] representation of `tpe`.
+    */
   def print(tpe: MonoType): Type = tpe match {
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool

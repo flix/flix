@@ -48,24 +48,43 @@ object Doc {
     case Group(d) => Group(deconstruct(d))
   }
 
-  def concat(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
+  /**
+    * Concatenates two docs.
+    */
+  def ::(d1: Doc, d2: Doc): Doc = Cons(d1, d2)
 
-  def ::(d1: Doc, d2: Doc): Doc = concat(d1, d2)
-
+  /**
+    * The empty document.
+    */
   def empty: Doc = Nil
 
+  /**
+    * The document of the string `s`.
+    * This string must not contain newlines!
+    */
   def text(s: String): Doc = Text(s)
 
-  def nest(x: Doc)(implicit i: Indent): Doc = Nest(indentI(i), x)
+  /**
+    * _If_ newlines are printed in `d` they will have another level of
+    * indentation.
+    */
+  def nest(d: Doc)(implicit i: Indent): Doc = Nest(indentI(i), d)
 
-  def break: Doc = Break(" ")
-
+  /**
+    * Inserts the string `s` is space is available, otherwise a newline is used.
+    */
   def breakWith(s: String): Doc = Break(s)
 
+  /**
+    * Groups all newlines in `d`. Inner groups can only use newlines if outer
+    * groups have, and all newlines in this group will be triggered together.
+    */
   def group(d: Doc): Doc = Group(d)
 
-  // SDoc
-
+  /**
+    * This data exists as a simpler format that [[Doc]] is translated into
+    * before computing a string.
+    */
   private sealed trait SDoc
 
   private case object SNil extends SDoc
@@ -75,6 +94,9 @@ object Doc {
   private case class SLine(i: Int, d: SDoc) extends SDoc
 
 
+  /**
+    * Returns the string representation of `d`.
+    */
   private def sdocToString(d: SDoc): String = {
     val sb = new mutable.StringBuilder()
 
@@ -89,43 +111,59 @@ object Doc {
     sb.toString
   }
 
+  /**
+    * [[Mode]] is used to keep track of the context while computing the layout
+    * of a [[Doc]].
+    */
   private sealed trait Mode
 
   private case object MFlat extends Mode
 
   private case object MBreak extends Mode
 
+  /**
+    * Returns true if the next element in `l` fits the available space `w`.
+    *
+    * @param w available width
+    */
   @tailrec
   private def fits(w: Int, l: List[(Int, Mode, Doc)]): Boolean = l match {
     case _ if w < 0 => false
     case immutable.Nil => true
-    case (i, m, Nil) :: z => fits(w, z)
+    case (_, _, Nil) :: z => fits(w, z)
     case (i, m, Cons(x, y)) :: z =>
       fits(w, (i, m, x) :: (i, m, y) :: z)
     case (i, m, Nest(j, x)) :: z => fits(w, (i + j, m, x) :: z)
-    case (i, m, Text(s)) :: z => fits(w - s.length, z)
-    case (i, MFlat, Break(s)) :: z => fits(w - s.length, z)
-    case (i, MBreak, Break(_)) :: z => true // impossible
-    case (i, m, Group(x)) :: z => fits(w, (i, MFlat, x) :: z)
+    case (_, _, Text(s)) :: z => fits(w - s.length, z)
+    case (_, MFlat, Break(s)) :: z => fits(w - s.length, z)
+    case (_, MBreak, Break(_)) :: _ => true // impossible
+    case (i, _, Group(x)) :: z => fits(w, (i, MFlat, x) :: z)
   }
 
+  /**
+    * Returns the [[SDoc]] layout of `l` with the maximum width `w` and used
+    * space `k`.
+    *
+    * @param w maximum width
+    * @param k used width
+    */
   @tailrec
   private def format(w: Int, k: Int, l: List[(Int, Mode, Doc)], cont: SDoc => SDoc): SDoc = l match {
     case immutable.Nil =>
       cont(SNil)
-    case (i, m, Nil) :: z =>
+    case (_, _, Nil) :: z =>
       format(w, k, z, cont)
     case (i, m, Cons(x, y)) :: z =>
       format(w, k, (i, m, x) :: (i, m, y) :: z, cont)
     case (i, m, Nest(j, x)) :: z =>
       format(w, k, (i + j, m, x) :: z, cont)
-    case (i, m, Text(s)) :: z =>
+    case (_, _, Text(s)) :: z =>
       format(w, k + s.length, z, v1 => cont(SText(s, v1)))
-    case (i, MFlat, Break(s)) :: z =>
+    case (_, MFlat, Break(s)) :: z =>
       format(w, k + s.length, z, v1 => cont(SText(s, v1)))
-    case (i, MBreak, Break(s)) :: z =>
+    case (i, MBreak, Break(_)) :: z =>
       format(w, i, z, v1 => cont(SLine(i, v1)))
-    case (i, m, Group(x)) :: z =>
+    case (i, _, Group(x)) :: z =>
       if (fits(w - k, (i, MFlat, x) :: z)) {
         format(w, k, (i, MFlat, x) :: z, cont)
       } else {
@@ -133,27 +171,63 @@ object Doc {
       }
   }
 
+  /**
+    * Prints the [[Doc]] `d` with maximum width `w` given an implicit
+    * indentation level `i`.
+    *
+    * @param w maximum width
+    * @param d the document to print
+    * @param i the width of each indentation level
+    */
   def pretty(w: Int, d: Doc)(implicit i: Indent): String =
     sdocToString(format(w, 0, List((0, MBreak, deconstruct(d))), x => x))
 
   // aux
 
-  def +:(d1: Doc, d2: Doc): Doc = d1 :: text(" ") :: d2
+  /**
+    * Concatenates two docs with a space.
+    */
+  def +:(d1: Doc, d2: Doc): Doc =
+    d1 :: text(" ") :: d2
 
-  def +\:(d1: Doc, d2: Doc): Doc = d1 :: breakWith(" ") :: d2
+  /**
+    * Concatenates two docs with a space _or_ an ungrouped newline.
+    */
+  def +\:(d1: Doc, d2: Doc): Doc =
+    d1 :: breakWith(" ") :: d2
 
-  def \:(d1: Doc, d2: Doc): Doc = d1 :: breakWith("") :: d2
+  /** Concatenates two docs with an ungrouped optional newline. */
+  def \:(d1: Doc, d2: Doc): Doc =
+    d1 :: breakWith("") :: d2
 
-  def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 :: group(nest(breakWith(" ") :: d2))
+  /**
+    * Concatenates two docs with a space _or_ a grouped optional newline with
+    * indentation.
+    * `d2` is included in the group.
+    */
+  def groupBreakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
+    d1 :: group(nest(breakWith(" ") :: d2))
 
-  def breakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc = d1 :: nest(breakWith(" ") :: d2)
+  /**
+    * Concatenates two docs with a space _or_ an ungrouped optional newline with
+    * indentation.
+    * `d2` is included in the indentation
+    */
+  def breakIndent(d1: Doc, d2: Doc)(implicit i: Indent): Doc =
+    d1 :: nest(breakWith(" ") :: d2)
 
+  /**
+    * Right fold of `d` with `f`.
+    */
   def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
     case immutable.Nil => empty
     case x :: immutable.Nil => x
     case x :: xs => f(x, fold(f, xs))
   }
 
+  /**
+    * Inserts the separator between elements of `d`.
+    */
   def sep(sep: Doc, d: List[Doc]): Doc =
     fold(_ :: sep :: _, d)
 
