@@ -350,4 +350,6 @@ object Doc {
     case _ => tuple(xs)
   }
 
+  def meta(s: String): String = "<[" + s + "]>"
+
 }

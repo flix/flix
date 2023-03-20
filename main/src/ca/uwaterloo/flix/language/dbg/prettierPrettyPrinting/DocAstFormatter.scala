@@ -21,8 +21,13 @@ object DocAstFormatter {
         val d = text("enum") +: text(sym.toString) +: curly(delimitedCases)
         ((sym.namespace :+ sym.name: Seq[String], sym.name), d)
     }
+    // remember that the def type includes the arguments
     val defs = defs0.map {
-      case DocAst.Def(_, _, sym, parameters, resType, body) =>
+      case DocAst.Def(_, _, sym, parameters, resType0, body) =>
+        val resType = resType0 match {
+          case Type.Arrow(_, res) => res
+          case _ => Type.AsIs(meta("no return type"))
+        }
         val name = sym.toString
         val args = parameters.map(aux(_, paren = false))
         val resTypef = formatType(resType, paren = false)
@@ -58,7 +63,7 @@ object DocAstFormatter {
       case DocAst.AsIs(s) =>
         text(s)
       case DocAst.Meta(s) =>
-        text("<[") :: text(s) :: text("]>")
+        text(meta(s))
       case DocAst.RecordEmpty =>
         text("{}")
       case re: DocAst.RecordExtend =>
