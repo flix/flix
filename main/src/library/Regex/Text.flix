@@ -15,7 +15,16 @@
  */
 
 ///
-/// Alternative implementations of functions from `String.flix` that use regular expressions
+/// Alternative implementations of functions from `String.flix` that use regular expressions.
+///
+/// Note - for regex matching all scanning is left-to-right and "chunked" by the matcher.
+/// This differs from String.flix where scanning is character at a time and can be left-to-right
+/// or right-to-left. Hence this module provides analogue but not exactly equivalent of functions:
+/// e.g.
+/// > String.indexOfLeft ~> Regex/Text.indexOfFirst
+/// > String.indexOfRight ~> Regex/Text.indexOfLast
+/// > String.breakOnLeft ~> Regex/Text.breakOnFirst
+/// > String.breakOnRight ~> Regex/Text.breakOnLast
 ///
 
 namespace Regex/Text {
@@ -202,19 +211,23 @@ namespace Regex/Text {
     }
 
     ///
-    /// Find the first instance of `patt` in string `s`, return a pair of the
+    /// Find the first instance of pattern `substr` in string `s`, return a pair of the
     /// prefix of string `s` up to `sub` and the rest of string `s` including `sub`.
     ///
-    pub def breakOnFirst(patt: Pattern, s: String): (String, String) = region rc {
-        let m = Regex/Internal/Matcher.new(rc, patt, s);
+    pub def breakOnFirst(substr: {substr = Pattern}, s: String): (String, String) = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
             case Ok(r)  => (String.sliceLeft(end = r.start, s), String.sliceRight(start = r.start, s))
         }
     }
 
-    pub def breakAfterFirst(patt: Pattern, s: String): (String, String) = region rc {
-        let m = Regex/Internal/Matcher.new(rc, patt, s);
+    ///
+    /// Find the first instance of pattern `substr` in string `s`, return a pair of the
+    /// prefix of string `s` up to and including `sub` and the rest of string `s` after `sub`.
+    ///
+    pub def breakAfterFirst(substr: {substr = Pattern}, s: String): (String, String) = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.firstSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
             case Ok(r)  => (String.sliceLeft(end = r.end, s), String.sliceRight(start = r.end, s))
@@ -225,8 +238,8 @@ namespace Regex/Text {
     /// Find the last instance of `patt` in string `s`, return a pair of the
     /// initial string including `substr` and suffix from `substr`.
     ///
-    pub def breakOnLast(patt: Pattern, s: String): (String, String) = region rc {
-        let m = Regex/Internal/Matcher.new(rc, patt, s);
+    pub def breakOnLast(substr: {substr = Pattern}, s: String): (String, String) = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
             case Ok(r)  => (String.sliceLeft(end = r.end, s), String.sliceRight(start = r.end, s))
@@ -237,13 +250,12 @@ namespace Regex/Text {
     /// Find the last instance of `substr` in string `s`, return a pair of the
     /// initial string including `substr` and suffix from `substr`.
     ///
-    pub def breakBeforeLast(p: Pattern, s: String): (String, String) = region rc {
-        let m = Regex/Internal/Matcher.new(rc, p, s);
+    pub def breakBeforeLast(substr: {substr = Pattern}, s: String): (String, String) = region rc {
+        let m = Regex/Internal/Matcher.new(rc, substr.substr, s);
         match Regex/Internal/Matcher.lastSubmatch(Regex/Internal/Matcher.range, m) {
             case Err(_) => (s, "")
             case Ok(r)  => (String.sliceLeft(end = r.start, s), String.sliceRight(start = r.start, s))
         }
     }
-
 
 }

@@ -731,8 +731,184 @@ namespace TestRegexText {
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
 
     @test
-    def indexOfLastWithOffset13(): Bool =  
+    def indexOfLastWithOffset13(): Bool =
         Result.map(patt -> Regex/Text.indexOfLastWithOffset(substr = patt, offset = 2, "ab __"),
             Regex/Pattern.compile("\\p{Alpha}+")) == Ok(None)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // breakOnFirst                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def breakOnFirst01(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, ""),
+            Regex/Pattern.compile(":{2}")) == Ok(("", ""))
+
+    @test
+    def breakOnFirst02(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakOnFirst03(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("", "::"))
+
+    @test
+    def breakOnFirst04(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "::aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("", "::aaa"))
+
+    @test
+    def breakOnFirst05(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "aaa:"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa:", ""))
+
+    @test
+    def breakOnFirst06(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "aaa::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", "::"))
+
+    @test
+    def breakOnFirst07(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "aaa::bbb"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", "::bbb"))
+
+    @test
+    def breakOnFirst08(): Bool =
+        Result.map(patt -> Regex/Text.breakOnFirst(substr = patt, "aaa::bbb::ccc"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", "::bbb::ccc"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // breakAfterFirst                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def breakAfterFirst01(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, ""),
+            Regex/Pattern.compile(":{2}")) == Ok(("", ""))
+
+    @test
+    def breakAfterFirst02(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakAfterFirst03(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("::", ""))
+
+    @test
+    def breakAfterFirst04(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "::aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("::", "aaa"))
+
+    @test
+    def breakAfterFirst05(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "aaa:"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa:", ""))
+
+    @test
+    def breakAfterFirst06(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "aaa::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::", ""))
+
+    @test
+    def breakAfterFirst07(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "aaa::bbb"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::", "bbb"))
+
+    @test
+    def breakAfterFirst08(): Bool =
+        Result.map(patt -> Regex/Text.breakAfterFirst(substr = patt, "aaa::bbb::ccc"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::", "bbb::ccc"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // breakOnLast                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def breakOnLast01(): Bool =
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, ""),
+            Regex/Pattern.compile(":{2}")) == Ok(("", ""))
+
+    @test
+    def breakOnLast02(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakOnLast03(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("::", ""))
+
+    @test
+    def breakOnLast04(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakOnLast05(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa:"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa:", ""))
+
+    @test
+    def breakOnLast06(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::", ""))
+
+    @test
+    def breakOnLast07(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa::bbb"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::", "bbb"))
+
+    @test
+    def breakOnLast08(): Bool = 
+        Result.map(patt -> Regex/Text.breakOnLast(substr = patt, "aaa::bbb::ccc"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::bbb::", "ccc"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // breakBeforeLast                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def breakBeforeLast01(): Bool =
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, ""),
+            Regex/Pattern.compile(":{2}")) == Ok(("", ""))
+
+    @test
+    def breakBeforeLast02(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakBeforeLast03(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("", "::"))
+
+    @test
+    def breakBeforeLast04(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", ""))
+
+    @test
+    def breakBeforeLast05(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa:"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa:", ""))
+
+    @test
+    def breakBeforeLast06(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa::"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", "::"))
+
+    @test
+    def breakBeforeLast07(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa::bbb"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa", "::bbb"))
+
+    @test
+    def breakBeforeLast08(): Bool = 
+        Result.map(patt -> Regex/Text.breakBeforeLast(substr = patt, "aaa::bbb::ccc"),
+            Regex/Pattern.compile(":{2}")) == Ok(("aaa::bbb", "::ccc"))
 
 }
