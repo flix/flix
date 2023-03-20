@@ -12,7 +12,7 @@ object ConstantPrinter {
     case Constant.Unit => DocAst.Unit
     case Constant.Null => DocAst.AsIs("null")
     case Constant.Bool(lit) => DocAst.AsIs(lit.toString)
-    case Constant.Char(lit) => DocAst.AsIs(lit.toString)
+    case Constant.Char(lit) => DocAst.AsIs("'''" + lit.toString + "'''")
     case Constant.Float32(lit) => DocAst.AsIs(s"${lit}f32")
     case Constant.Float64(lit) => DocAst.AsIs(s"${lit}f64")
     case Constant.BigDecimal(lit) => DocAst.AsIs(s"${lit}ff")

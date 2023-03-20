@@ -98,7 +98,7 @@ object DocAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[Ascription], clo: DocAst, tpe: Type)
 
-  // constants
+  case class Native(clazz: Class[_]) extends Atom
 
   /** `<sym>` */
   def Var(sym: Symbol.VarSym): DocAst =
@@ -199,18 +199,15 @@ object DocAst {
     App(DoubleDot(d, AsIs(m.getName)), ds)
 
   def JavaInvokeStaticMethod(m: Method, ds: List[DocAst]): DocAst = {
-    val className = "##" + m.getDeclaringClass.getName
-    App(Dot(AsIs(className), AsIs(m.getName)), ds)
+    App(Dot(Native(m.getDeclaringClass), AsIs(m.getName)), ds)
   }
 
   def JavaGetStaticField(f: Field): DocAst = {
-    val className = "##" + f.getDeclaringClass.getName
-    Dot(AsIs(className), AsIs(f.getName))
+    Dot(Native(f.getDeclaringClass), AsIs(f.getName))
   }
 
   def JavaInvokeConstructor(c: Constructor[_], ds: List[DocAst]): DocAst = {
-    val className = "##" + c.getDeclaringClass.getName
-    App(AsIs(className), ds)
+    App(Native(c.getDeclaringClass), ds)
   }
 
   def JavaGetField(f: Field, d: DocAst): DocAst =
@@ -220,7 +217,7 @@ object DocAst {
     Assign(DoubleDot(d1, AsIs(f.getName)), d2)
 
   def JavaPutStaticField(f: Field, d: DocAst): DocAst =
-    Assign(Dot(AsIs("##" + f.getDeclaringClass), AsIs(f.getName)), d)
+    Assign(Dot(Native(f.getDeclaringClass), AsIs(f.getName)), d)
 
   def JumpTo(sym: Symbol.LabelSym): DocAst =
     Keyword("goto", AsIs(sym.toString))
@@ -254,6 +251,8 @@ object DocAst {
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
 
+    case class Native(clazz: Class[_]) extends Atom
+
     val Bool: Type = AsIs("Bool")
 
     val Char: Type = AsIs("Char")
@@ -285,8 +284,6 @@ object DocAst {
     def Ref(t: Type): Type = App("Ref", List(t))
 
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
-
-    def Native(clazz: Class[_]): Type = AsIs("##" + clazz.getName)
 
     def Var(id: Int): Type = AsIs(s"var$id")
   }

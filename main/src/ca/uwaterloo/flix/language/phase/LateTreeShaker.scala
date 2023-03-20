@@ -53,6 +53,8 @@ object LateTreeShaker {
 
     // Reassemble the AST.
     root.copy(defs = newDefs).toSuccess
+
+    root.toSuccess
   }
 
   /**

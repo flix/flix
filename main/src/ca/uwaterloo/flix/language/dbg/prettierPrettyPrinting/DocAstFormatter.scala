@@ -86,7 +86,7 @@ object DocAstFormatter {
           text("label") +: text(sym.toString) :: text(":") +: breakIndent(labelf)
         }
         group(
-          text("branching") +: curly(branchHead) +:
+          text("branching") +: curlyOpen(branchHead) +:
             text("with") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
       case DocAst.Dot(d1, d2) =>
@@ -114,7 +114,7 @@ object DocAstFormatter {
           case Left(d2) => aux(d2, paren = false)
           case Right(tpe) => formatType(tpe, paren = false)
         }
-        text(word1) +: aux(d1, paren = false) +: text(word2) +: d2Part
+        group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: d2Part)
       case DocAst.TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
@@ -127,11 +127,12 @@ object DocAstFormatter {
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
         )
-
       case DocAst.NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
           semiSepOpt(methods.map(formatJvmMethod))
         ))
+      case DocAst.Native(clazz) =>
+        formatJavaClass(clazz)
     }
     d match {
       case _: DocAst.Composite if paren => parens(doc)
@@ -282,6 +283,8 @@ object DocAstFormatter {
           case None =>
             text("#") :: curly(predicatesf)
         }
+      case Type.Native(clazz) =>
+        formatJavaClass(clazz)
     }
     tpe match {
       case _: Type.Composite if paren => parens(d)
