@@ -252,10 +252,10 @@ object Doc {
     sep(text(";") :: breakWith(" "), d)
 
   /**
-    * Insert a space _or_ an ungrouped optional newline.
+    * Insert a semicolon and a space _or_ an ungrouped newline.
     */
-  def spaceSep(d: List[Doc]): Doc =
-    sep(breakWith(" "), d)
+  def semiSepOpt(d: List[Doc]): Doc =
+    sep(breakWith("; "), d)
 
   /**
     * Enclose `x` with `l` and `r` with ungrouped newlines inside `l` and `r`.
@@ -269,6 +269,12 @@ object Doc {
     */
   def parens(x: Doc)(implicit i: Indent): Doc =
     group(enclose("(", x, ")"))
+
+  /**
+    * Enclose `x` with `(..)` with ungrouped newlines inside.
+    */
+  def parensOpen(x: Doc)(implicit i: Indent): Doc =
+    enclose("(", x, ")")
 
   /**
     * Enclose `x` with `{..}` with grouped newlines inside.
@@ -341,7 +347,7 @@ object Doc {
   def tuplish(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("()")
     case immutable.::(d, immutable.Nil) => d
-    case _ => group(parens(commaSep(xs)))
+    case _ => tuple(xs)
   }
 
 }

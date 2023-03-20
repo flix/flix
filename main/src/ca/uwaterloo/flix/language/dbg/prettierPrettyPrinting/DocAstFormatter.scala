@@ -14,7 +14,7 @@ object DocAstFormatter {
     val DocAst.Program(enums0, defs0) = p
     val enums = enums0.map {
       case DocAst.Enum(_, _, sym, cases) =>
-        val delimitedCases = spaceSep(cases.map {
+        val delimitedCases = semiSepOpt(cases.map {
           case DocAst.Case(sym) =>
             text("case") +: text(sym.toString) :: text("(?)")
         })
@@ -28,11 +28,8 @@ object DocAstFormatter {
         val resTypef = formatType(resType, paren = false)
         val bodyf = format(body)
         val d = group(
-          group(
-            text("def") +:
-              text(name) :: enclose("(", sep(text(",") :: breakWith(" "), args), ")") ::
-              text(":") +: resTypef +: text("=")
-          ) +: enclose("{", bodyf, "}")
+          text("def") +: text(name) :: tuple(args) ::
+            text(":") +: group(resTypef +: text("=") :: breakWith(" ")) :: curlyOpen(bodyf)
         )
         ((sym.namespace: Seq[String], sym.name), d)
     }
@@ -78,8 +75,9 @@ object DocAstFormatter {
         val condf = aux(cond, paren = false, inBlock = true)
         val thnf = aux(thn, paren = false, inBlock = true)
         val elsf = aux(els, paren = false, inBlock = true)
-        text("if") +: parens(condf) +: group(
-          curlyOpen(thnf) +: text("else") +: curlyOpen(elsf)
+        group(
+          text("if") +: parens(condf) +:
+            curlyOpen(thnf) +: text("else") +: curlyOpen(elsf)
         )
       case DocAst.Branch(d, branches) =>
         val branchHead = aux(d, paren = false, inBlock = true)
@@ -89,7 +87,7 @@ object DocAstFormatter {
         }
         group(
           text("branching") +: curly(branchHead) +:
-            text("with") +: curly(spaceSep(delimitedBranches))
+            text("with") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
       case DocAst.Dot(d1, d2) =>
         aux(d1) :: text(".") :: aux(d2)
@@ -118,7 +116,7 @@ object DocAstFormatter {
         }
         text(word1) +: aux(d1, paren = false) +: text(word2) +: d2Part
       case DocAst.TryCatch(d, rules) =>
-        val rs = spaceSep(rules.map {
+        val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
             text("case") +: text(sym.toString) :: text(":") +:
@@ -132,7 +130,7 @@ object DocAstFormatter {
 
       case DocAst.NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
-          spaceSep(methods.map(formatJvmMethod))
+          semiSepOpt(methods.map(formatJvmMethod))
         ))
     }
     d match {
@@ -244,9 +242,9 @@ object DocAstFormatter {
       case arrow@Type.Arrow(_, _) =>
         val (curriedArgs, res) = collectArrowType(arrow)
         // todo: maybe not tuple formatting?
-        val formattedArgs = curriedArgs.map(ts =>
-          tuplish(ts.map(formatType(_, paren = false)))
-        )
+        val formattedArgs = curriedArgs.map(ts => {
+          tuplish(ts.map(formatType(_, paren = ts.lengthIs == 1)))
+        })
         group(nest(sep(text(" ->") :: breakWith(" "), formattedArgs :+ formatType(res))))
       case Type.RecordEmpty =>
         text("{}")
