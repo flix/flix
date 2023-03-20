@@ -236,6 +236,8 @@ object DocAst {
 
     sealed trait Composite extends Type
 
+    case object Unit extends Atom
+
     case class AsIs(s: String) extends Atom
 
     case class App(obj: String, args: List[Type]) extends Atom
@@ -251,8 +253,6 @@ object DocAst {
     case object SchemaEmpty extends Atom
 
     case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Atom
-
-    val Unit: Type = AsIs("Unit")
 
     val Bool: Type = AsIs("Bool")
 

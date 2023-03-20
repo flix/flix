@@ -231,6 +231,8 @@ object DocAstFormatter {
     */
   private def formatType(tpe: DocAst.Type, paren: Boolean = true)(implicit i: Indent): Doc = {
     val d = tpe match {
+      case Type.Unit =>
+        text("Unit")
       case Type.AsIs(s) =>
         text(s)
       case Type.App(obj, Nil) =>
@@ -261,8 +263,25 @@ object DocAstFormatter {
           case None =>
             curly(exsf)
         }
-      case Type.SchemaEmpty => text("unknown")
-      case Type.SchemaExtend(name, tpe, rest) => text("unknown")
+      case Type.SchemaEmpty =>
+        text("#{}")
+      case se@Type.SchemaExtend(_, _, _) =>
+        val (predicates, restOpt) = collectSchemaTypes(se)
+        val predicatesf = predicates.map {
+          case Type.SchemaExtend(name, Type.Tuple(elms), _) =>
+            text(name) :: tuple(elms.map(formatType(_, paren = false)))
+          case Type.SchemaExtend(name, Type.Unit, _) =>
+            text(name)
+          case Type.SchemaExtend(name, otherType, _) =>
+            text(name) :: parens(formatType(otherType, paren = false))
+        }
+        restOpt match {
+          case Some(rest) =>
+            val restf = formatType(rest, paren = false)
+            text("#") :: curly(commaSep(predicatesf) +: text("|") +\: restf)
+          case None =>
+            text("#") :: curly(predicatesf)
+        }
     }
     tpe match {
       case _: Type.Composite if paren => parens(d)
@@ -297,6 +316,26 @@ object DocAstFormatter {
         case re@Type.RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
         case Type.RecordEmpty =>
+          (acc.reverse, None)
+        case other =>
+          (acc.reverse, Some(other))
+      }
+    }
+
+    chase(tpe, List())
+  }
+
+  /**
+    * Collects a sequence of [[Type.SchemaExtend]] into a shallow list. The tail
+    * is [[None]] if the sequence ends with a [[Type.SchemaEmpty]].
+    */
+  private def collectSchemaTypes(tpe: Type): (List[Type.SchemaExtend], Option[Type]) = {
+    @tailrec
+    def chase(tpe0: Type, acc: List[Type.SchemaExtend]): (List[Type.SchemaExtend], Option[Type]) = {
+      tpe0 match {
+        case se@Type.SchemaExtend(_, _, rest) =>
+          chase(rest, se :: acc)
+        case Type.SchemaEmpty =>
           (acc.reverse, None)
         case other =>
           (acc.reverse, Some(other))
