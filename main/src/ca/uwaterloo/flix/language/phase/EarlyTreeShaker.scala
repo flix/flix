@@ -59,7 +59,6 @@ object EarlyTreeShaker {
 
     // Reassemble the AST.
     root.copy(defs = reachableDefs).toSuccess
-    root.toSuccess
   }
 
   /**
