@@ -175,6 +175,32 @@ object ParsedAst {
     case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
+      * Associated Type Signature Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the type.
+      * @param tparams the type parameters of the type.
+      * @param kind    the kind of the type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: ParsedAst.Kind, sp2: SourcePosition)
+
+    /**
+      * Associated Type Declaration.
+      *
+      * @param doc   the optional comment associated with the declaration.
+      * @param mod   the associated modifiers.
+      * @param sp1   the position of the first character in the declaration.
+      * @param ident the name of the type.
+      * @param args  the arguments of the type.
+      * @param tpe   the type of the type.
+      * @param sp2   the position of the last character in the declaration.
+      */
+    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
+
+    /**
       * Relation Declaration.
       *
       * @param doc     the optional comment associated with the definition.
@@ -210,24 +236,26 @@ object ParsedAst {
       * @param ident        the name of the definition.
       * @param tparam       the type parameter.
       * @param superClasses the super classes of the class.
+      * @param assocs       the associated types
       * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeSig], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param ann   the annotations associated with the declaration.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param clazz the name of the class.
-      * @param tpe   the type of the instance.
-      * @param defs  the definitions of the instance.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc    the optional comment associated with the declaration.
+      * @param ann    the annotations associated with the declaration.
+      * @param mod    the associated modifiers.
+      * @param sp1    the position of the first character in the declaration.
+      * @param clazz  the name of the class.
+      * @param tpe    the type of the instance.
+      * @param assocs the associated types
+      * @param defs   the definitions of the instance.
+      * @param sp2    the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeDef], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.

@@ -384,7 +384,7 @@ object Namer {
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, _, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
@@ -403,7 +403,7 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, _, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
       val tpeVal = visitType(tpe0)
