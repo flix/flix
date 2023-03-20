@@ -16,8 +16,6 @@ object DocAst {
 
   case class Program(enums: List[Enum], defs: List[Def])
 
-  // expressions
-
   /** A [[DocAst]] atom that doesn't need parenthesis */
   sealed trait Atom extends DocAst
 
@@ -116,7 +114,6 @@ object DocAst {
   val Region: DocAst =
     Meta("region")
 
-  /** `Meta(match error)` */
   val MatchError: DocAst =
     AsIs("?matchError")
 
