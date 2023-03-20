@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{ErasedAst, FinalAst, MonoType}
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.AstPrinter
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.ErasedPrinter
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.ErasedAstPrinter
 import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -45,7 +45,7 @@ object Eraser {
     res.map(erasedRoot => {
       AstPrinter.printAst(
         this.getClass.getSimpleName.dropRight(1),
-        ErasedPrinter.print(erasedRoot)
+        ErasedAstPrinter.print(erasedRoot)
       )
     })
 

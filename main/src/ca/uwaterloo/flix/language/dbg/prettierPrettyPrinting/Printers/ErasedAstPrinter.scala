@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.ErasedAst.Expression._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
 
-object ErasedPrinter {
+object ErasedAstPrinter {
 
   /**
     * Returns the [[DocAst.Program]] representation of `root`.
