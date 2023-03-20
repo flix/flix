@@ -49,15 +49,9 @@ object DocAstFormatter {
       case DocAst.RecordEmpty =>
         text("{}")
       case re: DocAst.RecordExtend =>
-        // { a0 = v0, ... ak = vk} syntax if restOpt is empty
-        // { +a0 = v0, ..., +ak = vk | rest} otherwise
-        val (exs, restOpt) = collectRecordExtends(re)
-        recordExtendf(
-          exs.map { case DocAst.RecordExtend(field, value, _) =>
-            (text(field.name), aux(value, paren = false))
-          },
-          restOpt.map(aux(_, paren = false))
-        )
+        formatRecordBlock(re)
+      case rr: DocAst.RecordRestrict =>
+        formatRecordBlock(rr)
       case DocAst.Keyword(word, d) =>
         text(word) +: aux(d)
       case DocAst.Unary(op, d) =>
@@ -102,10 +96,14 @@ object DocAstFormatter {
         aux(d1) +: text(":=") +: aux(d2)
       case DocAst.Ascription(v, tpe) =>
         aux(v) :: text(":") +: formatType(tpe, paren = false)
-      case DocAst.Cast(d, tpe) =>
-        DocUtil.Language.castf(aux(d, paren = false), formatType(tpe))
+      case DocAst.DoubleKeyword(word1, d1, word2, d2E) =>
+        val d2Part = d2E match {
+          case Left(d2) => aux(d2, paren = false)
+          case Right(tpe) => formatType(tpe, paren = false)
+        }
+        text(word1) +: aux(d1, paren = false) +: text(word2) +: d2Part
       case DocAst.TryCatch(d, rules) =>
-        val rs = groupVSep("", rules.map{
+        val rs = groupVSep("", rules.map {
           case (sym, clazz, ruled) =>
             text("case") +: text(sym.toString) :: text(":") +: text("##" + clazz.getName) +:
               text("=>") +\: aux(ruled, paren = false, inBlock = true)
@@ -115,11 +113,27 @@ object DocAstFormatter {
             text("catch") +:
             bracket("{", rs, "}")
         )
+      case DocAst.NewObject(name, clazz, tpe, methods) =>
+        group(text("new") +: text("##" + clazz.getName) +: bracket("{",
+          DocUtil.sep(breakWith(" "), methods.map(formatJvmMethod)),
+          "}"))
     }
     d match {
       case _: DocAst.Composite if paren => parens(doc)
       case _: DocAst.Composite | _: DocAst.Atom => doc
     }
+  }
+
+  private def formatJvmMethod(m: DocAst.JvmMethod)(implicit i: Indent): Doc = {
+    val DocAst.JvmMethod(ident, fparams, clo, _) = m
+    group(
+      text("def") +: text(ident.name) +:
+        bracket("(",
+          commaSep(fparams.map(aux(_, paren = false))),
+          ")"
+        ) +: text("=") +\:
+        aux(clo, paren = false, inBlock = true)
+    )
   }
 
   private def formatLetBlock(d: DocAst.LetBinder, inBlock: Boolean)(implicit i: Indent): Doc = {
@@ -136,6 +150,26 @@ object DocAstFormatter {
     )
     if (inBlock) group(delimitedBinders)
     else group(DocUtil.bracket("{", delimitedBinders, "}"))
+  }
+
+  private def formatRecordBlock(d: DocAst.RecordOp)(implicit i: Indent): Doc = {
+    val (exs, restOpt) = collectRecordOps(d)
+    val exsf = exs.map {
+      case DocAst.RecordExtend(field, value, _) =>
+        text("+" + field.toString) +: text("=") +: aux(value, paren = false)
+      case DocAst.RecordRestrict(field, _) =>
+        text("-" + field.toString)
+    }
+    restOpt match {
+      case Some(rest) =>
+        group(bracket("{",
+          DocUtil.sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: aux(rest, paren = false)
+          , "}"))
+      case None =>
+        group(bracket("{",
+          DocUtil.sep(text(",") :: breakWith(" "), exsf) +: text("|") +\: text("{}")
+          , "}"))
+    }
   }
 
   private def formatAscription(tpe: Option[DocAst.Type])(implicit i: Indent): Doc =
@@ -156,11 +190,13 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordExtends(d: DocAst)(implicit i: Indent): (List[DocAst.RecordExtend], Option[DocAst]) = {
+  private def collectRecordOps(d: DocAst)(implicit i: Indent): (List[DocAst.RecordOp], Option[DocAst]) = {
     @tailrec
-    def chase(d0: DocAst, acc: List[DocAst.RecordExtend]): (List[DocAst.RecordExtend], Option[DocAst]) = {
+    def chase(d0: DocAst, acc: List[DocAst.RecordOp]): (List[DocAst.RecordOp], Option[DocAst]) = {
       d0 match {
         case re@DocAst.RecordExtend(_, _, rest) =>
+          chase(rest, re :: acc)
+        case re@DocAst.RecordRestrict(_, rest) =>
           chase(rest, re :: acc)
         case DocAst.RecordEmpty =>
           (acc.reverse, None)

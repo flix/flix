@@ -37,9 +37,12 @@ object ErasedPrinter {
     case Let(sym, exp1, exp2, _, _) => DocAst.Let(DocAst.VarWithOffset(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.LetRec(DocAst.VarWithOffset(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Scope(DocAst.VarWithOffset(sym), print(exp))
-    case ScopeExit(exp1, exp2, tpe, loc) => DocAst.Meta("scopeexit")
+    case ScopeExit(exp1, exp2, _, _) => DocAst.ScopeExit(print(exp1), print(exp2))
     case TryCatch(exp, rules, _, _) => DocAst.TryCatch(print(exp), rules.map(r => (r.sym, r.clazz, print(r.exp))))
-    case NewObject(name, clazz, tpe, methods, loc) => DocAst.Meta("newObject")
+    case NewObject(name, clazz, tpe, methods, _) =>
+      DocAst.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map{
+        case JvmMethod(ident, fparams, clo, retTpe, _) =>
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))})
     case Intrinsic0(op, _, _) => op match {
       case IntrinsicOperator0.Cst(cst) => DocAst.Cst(cst)
       case IntrinsicOperator0.Region => DocAst.Region
@@ -57,7 +60,7 @@ object ErasedPrinter {
         case IntrinsicOperator1.Cast => DocAst.Cast(d, MonoTypePrinter.print(tpe))
         case IntrinsicOperator1.Index(idx) => DocAst.Index(idx, d)
         case IntrinsicOperator1.RecordSelect(field) => DocAst.RecordSelect(field, d)
-        case IntrinsicOperator1.RecordRestrict(field) => DocAst.Meta("RecordRestrict")
+        case IntrinsicOperator1.RecordRestrict(field) => DocAst.RecordRestrict(field, d)
         case IntrinsicOperator1.Ref => DocAst.Ref(d)
         case IntrinsicOperator1.Deref => DocAst.Deref(d)
         case IntrinsicOperator1.ArrayLength => DocAst.ArrayLength(d)

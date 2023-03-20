@@ -22,6 +22,8 @@ object DocAst {
 
   sealed trait LetBinder extends Atom
 
+  sealed trait RecordOp extends Atom
+
   case class InRegion(d1: DocAst, d2: DocAst) extends Composite
 
   case object Unit extends Atom
@@ -38,10 +40,14 @@ object DocAst {
 
   case object RecordEmpty extends Atom
 
-  case class RecordExtend(field: Name.Field, value: DocAst, rest: DocAst) extends Atom
+  case class RecordExtend(field: Name.Field, value: DocAst, rest: DocAst) extends RecordOp
+
+  case class RecordRestrict(field: Name.Field, value: DocAst) extends RecordOp
 
   /** `(<word> <d>)` */
   case class Keyword(word: String, d: DocAst) extends Composite
+
+  case class DoubleKeyword(word1: String, d1: DocAst, word2: String, d2: Either[DocAst, Type]) extends Composite
 
   /** `(<op><d>)` */
   case class Unary(op: String, d: DocAst) extends Composite
@@ -84,7 +90,9 @@ object DocAst {
   /** `<v>: <tpe>` */
   case class Ascription(v: DocAst, tpe: Type) extends Composite
 
-  case class Cast(d: DocAst, tpe: Type) extends Composite
+  case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
+
+  case class JvmMethod(ident: Name.Ident, fparams: List[Ascription], clo: DocAst, tpe: Type)
 
   // constants
 
@@ -157,6 +165,13 @@ object DocAst {
 
   def Spawn(d1: DocAst, d2: DocAst): DocAst =
     InRegion(Keyword("spawn", d1), d2)
+
+  def ScopeExit(d1: DocAst, d2: DocAst): DocAst = {
+    DoubleKeyword("add_closer", d1, "to", Left(d2))
+  }
+
+  def Cast(d: DocAst, tpe: Type): DocAst =
+    DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
 
   def Cst(cst: Ast.Constant): DocAst =
     Printers.ConstantPrinter.print(cst)
