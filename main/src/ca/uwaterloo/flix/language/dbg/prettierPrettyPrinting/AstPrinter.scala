@@ -25,7 +25,7 @@ object AstPrinter {
     implicit val i: Indent = Doc.indentationLevel(indent)
     val phaseName = phase
     if (flix.options.xprintasts.contains(phaseName)) {
-      val buildAstsPath = Path.of("./build/asts/").toAbsolutePath
+      val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
       val filePath = buildAstsPath.resolve(s"$phaseName.$IREXTENSION")
       Files.createDirectories(buildAstsPath)
 
