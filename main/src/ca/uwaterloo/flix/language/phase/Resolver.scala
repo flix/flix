@@ -434,13 +434,13 @@ object Resolver {
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
-          val assocsVal = traverse(assocs0)(resolveAssocTypeSig)
+          val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
           val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-          mapN(sigsListVal, superClassesVal, lawsVal) {
-            case (sigsList, superClasses, laws) =>
+          mapN(superClassesVal, assocsVal, sigsListVal, lawsVal) {
+            case (superClasses, assocs, sigsList, laws) =>
               val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-              ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+              ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
           }
       }
   }
@@ -449,7 +449,7 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, _, defs0, ns, loc) =>
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -458,14 +458,15 @@ object Resolver {
           val clazzVal = lookupClassForImplementation(clazz0, env, ns0, root)
           val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
-          flatMapN(clazzVal, tpeVal, tconstrsVal) {
-            case (clazz, tpe, tconstrs) =>
+          val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, env, taenv, ns0, root))
+          flatMapN(clazzVal, tpeVal, tconstrsVal, assocsVal) {
+            case (clazz, tpe, tconstrs, assocs) =>
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal) {
                 case defs =>
                   val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
-                  ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+                  ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
           }
       }
@@ -627,11 +628,17 @@ object Resolver {
       }
   }
 
-  private def resolveAssocTypeDef(s0: NamedAst.Declaration.AssocTypeDef, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = s0 match {
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+  /**
+    * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    */
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
       // For now we don't add any tvars from the args. We should have gotten those directly from the instance
-      val sym = ???
-      ???
+      val argsVal = traverse(args0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
+      mapN(argsVal, tpeVal) {
+        case (args, tpe) => ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
+      }
   }
 
   /**
