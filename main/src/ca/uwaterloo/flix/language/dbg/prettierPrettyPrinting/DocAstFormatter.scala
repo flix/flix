@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Type
 
 import scala.annotation.tailrec
+import scala.collection.immutable
 
 object DocAstFormatter {
 
@@ -249,10 +250,14 @@ object DocAstFormatter {
         tuple(elms.map(formatType(_, paren = false)))
       case arrow@Type.Arrow(_, _) =>
         val (curriedArgs, res) = collectArrowTypes(arrow)
-        // todo: maybe not tuple formatting?
-        val formattedArgs = curriedArgs.map(ts => {
-          tuplish(ts.map(formatType(_, paren = ts.lengthIs == 1)))
-        })
+        val formattedArgs = curriedArgs.map {
+          case ts@(Type.Tuple(_) :: Nil) =>
+            tuple(ts.map(formatType(_, paren = false)))
+          case ts@(_ :: Nil) =>
+            tuplish(ts.map(formatType(_, paren = true)))
+          case ts =>
+            tuplish(ts.map(formatType(_, paren = false)))
+        }
         group(nest(sep(text(" ->") :: breakWith(" "), formattedArgs :+ formatType(res))))
       case Type.RecordEmpty =>
         text("{}")
