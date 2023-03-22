@@ -249,7 +249,7 @@ object Kinder {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Declaration.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, sigs0, laws0, loc) =>
+    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) => // TODO ASSOC-TYPES
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val tparamsVal = visitTypeParam(tparam0, kenv, Map.empty)
@@ -273,7 +273,7 @@ object Kinder {
     * Performs kinding on the given instance.
     */
   private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
-    case ResolvedAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, defs0, ns, loc) =>
+    case ResolvedAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, ns, loc) => // TODO ASSOC-TYPES
       val kind = getClassKind(root.classes(clazz.sym))
 
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
