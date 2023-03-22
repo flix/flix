@@ -249,13 +249,14 @@ object Kinder {
     * Performs kinding on the given type class.
     */
   private def visitClass(clazz: ResolvedAst.Declaration.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) => // TODO ASSOC-TYPES
+    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val tparamsVal = visitTypeParam(tparam0, kenv, Map.empty)
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, kenv, Map.empty, taenv, root))
-      flatMapN(tparamsVal, superClassesVal) {
-        case (tparams, superClasses) =>
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, Map.empty))
+      flatMapN(tparamsVal, superClassesVal, assocsVal) {
+        case (tparams, superClasses, assocs) =>
           // tparams will always be a singleton
           val tparam = tparams.head
           val sigsVal = traverse(sigs0) {
@@ -263,7 +264,7 @@ object Kinder {
           }
           val lawsVal = traverse(laws0)(visitDef(_, kenv, taenv, root))
           mapN(sigsVal, lawsVal) {
-            case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs.toMap, laws, loc)
+            case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs.toMap, laws, loc)
           }
 
       }
@@ -273,7 +274,7 @@ object Kinder {
     * Performs kinding on the given instance.
     */
   private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
-    case ResolvedAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, ns, loc) => // TODO ASSOC-TYPES
+    case ResolvedAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val kind = getClassKind(root.classes(clazz.sym))
 
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
@@ -281,9 +282,10 @@ object Kinder {
         kenv =>
           val tpeVal = visitType(tpe0, kind, kenv, Map.empty, taenv, root)
           val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, Map.empty, taenv, root))
+          val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kenv, Map.empty, taenv, root))
           val defsVal = traverse(defs0)(visitDef(_, kenv, taenv, root))
-          mapN(tpeVal, tconstrsVal, defsVal) {
-            case (tpe, tconstrs, defs) => KindedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc)
+          mapN(tpeVal, tconstrsVal, assocsVal, defsVal) {
+            case (tpe, tconstrs, assocs, defs) => KindedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc)
           }
       }
   }
@@ -388,6 +390,31 @@ object Kinder {
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, eff, tpe, tpe.loc)
           val sc = Scheme(allQuantifiers, tconstrs, base)
           KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given associated type signature under the given kind environment.
+    */
+  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssociatedTypeSig, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[KindedAst.AssociatedTypeSig, KindError] = s0 match {
+    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams0, kind, loc) =>
+      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, senv)).map(_.flatten)
+
+      mapN(tparamsVal) {
+        case tparams => KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc)
+      }
+  }
+
+  /**
+    * Performs kinding on the given associated type definition under the given kind environment.
+    */
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssociatedTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssociatedTypeDef, KindError] = d0 match {
+    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, args0, tpe0, loc) =>
+      val argsVal = traverse(args0)(visitType(_, Kind.Wild, kenv, senv, taenv, root)) // TODO ASSOC-TYPES use expected from signature
+      val tpeVal = visitType(tpe0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
+
+      mapN(argsVal, tpeVal) {
+        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
       }
   }
 
