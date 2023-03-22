@@ -78,7 +78,7 @@ object FlixPackageManager {
                     stream => Files.copy(stream, path, StandardCopyOption.REPLACE_EXISTING)
                   }
                 } catch {
-                  case _: IOException => return Err(PackageError.DownloadError(s"Error occurred while downloading $assetName"))
+                  case _: IOException => return Err(PackageError.DownloadError(asset))
                 }
                 out.println(s"OK.")
               } else {

@@ -41,7 +41,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = "hello-world")(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.name
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -50,7 +50,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = "A simple program")(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.description
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -59,7 +59,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = SemVer(0, 1, Some(0), None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.version
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -68,7 +68,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = SemVer(0, 33, Some(0), None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.flix
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -77,7 +77,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = Some("Apache-2.0"))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.license
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -111,7 +111,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = None)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.license
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     )
   }
@@ -120,7 +120,7 @@ class TestManifestParser extends FunSuite {
     assertResult(expected = List("John Doe <john@example.com>"))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.authors
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -134,7 +134,7 @@ class TestManifestParser extends FunSuite {
                                  Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
-        case Err(e) => Err(e)
+        case Err(e) => e.message(f)
       }
     })
   }

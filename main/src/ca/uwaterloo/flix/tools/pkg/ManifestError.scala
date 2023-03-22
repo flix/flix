@@ -76,7 +76,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""
          | "A Maven dependency should be formatted like so: 'group:artifact'".
-         | Instead found: $depName.
+         | Instead found: ${f.red(depName)}.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -85,7 +85,7 @@ object ManifestError {
     override def message(f: Formatter): String =
       s"""
          | "A Flix dependency should be formatted like so: 'repository:username/projectname'".
-         | Instead found: $depName.
+         | Instead found: ${f.red(depName)}.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
