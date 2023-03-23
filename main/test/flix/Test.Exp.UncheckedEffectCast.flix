@@ -16,9 +16,13 @@
 
  mod Test/Exp/UncheckedEffectCast {
 
+    pub eff E
+
     enum A[a](a)
 
-    def f(x: a): a \ IO = unchecked_cast(x as _ \IO)
+    def f(x: a): a \ IO = unchecked_cast(x as _ \ IO)
+
+    def g(x: a): a \ E = unchecked_cast(x as _ \ E)
 
     @test
     def testUncheckedEffectCast01(): Unit \ IO = unchecked_cast(() as _ \ IO)
@@ -110,13 +114,13 @@
     @test
     def testUncheckedEffectCast28(): (a -> a) \ IO = unchecked_cast(x -> x as _ \ IO)
 
-    pub eff E
-
     @test
     def testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
 
     @test
     def testUncheckedEffectCast30(): (a -> a) \ E = unchecked_cast(x -> x as _ \ E)
+
+    // Unsafe casts
 
     @test
     def testUncheckedEffectCast31(): Unit =
@@ -142,6 +146,58 @@
     def testUncheckedEffectCast36(): Float64 =
         unchecked_cast(f(123.4f64) as _ \ {})
 
-    // Add more
+    @test
+    def testUncheckedEffectCast37(): Int8 =
+        unchecked_cast(f(64i8) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast38(): Int16 =
+        unchecked_cast(f(64i16) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast39(): Int32 =
+        unchecked_cast(f(64i32) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast40(): Int64 =
+        unchecked_cast(f(64i64) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast41(): BigInt =
+        unchecked_cast(f(64ii) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast42(): String =
+        unchecked_cast(f("ABC") as _ \ {})
+
+    @test
+    def testUncheckedEffectCast43(): Unit = region rh {
+        let _ = unchecked_cast(f($ARRAY_NEW$(rh, 'A', 8)) as _ \ {});
+        ()
+    }
+
+    @test
+    def testUncheckedEffectCast44(): Unit = region rh {
+        let _ = unchecked_cast(f($ARRAY_NEW$(rh, Some(42), 8)) as _ \ {});
+        ()
+    }
+
+    @test
+    def testUncheckedEffectCast45(): (Char, Int32, Bool) = unchecked_cast(f(('a', 42, false)) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast46(): A[String] = unchecked_cast(f(A.A("ABC")) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast47(): (a -> a) = x -> unchecked_cast(f(x) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast48(): (a -> a) = unchecked_cast(f(x -> x) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast49(): (a -> a) = x -> unchecked_cast(g(x) as _ \ {})
+
+    @test
+    def testUncheckedEffectCast50(): (a -> a) = unchecked_cast(g(x -> x) as _ \ {})
 
 }
