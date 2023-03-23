@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.FunSuite
 
 import java.nio.file.{Files, Path}
@@ -25,20 +26,32 @@ class TestPackager extends FunSuite {
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.check(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.check(b, DefaultOptions)
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.build(b, DefaultOptions)
   }
 
   test("build-jar") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.build(b, DefaultOptions)
+    Packager.buildJar(b, DefaultOptions)
 
     val packageName = p.getFileName.toString
     val jarPath = p.resolve(packageName + ".jar")
@@ -49,8 +62,12 @@ class TestPackager extends FunSuite {
   test("build-jar generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.build(b, DefaultOptions)
+    Packager.buildJar(b, DefaultOptions)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".jar")
@@ -68,12 +85,16 @@ class TestPackager extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".jar")
 
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.build(b, DefaultOptions)
+    Packager.buildJar(b, DefaultOptions)
     def hash1 = calcHash(packagePath)
 
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    Packager.build(b, DefaultOptions)
+    Packager.buildJar(b, DefaultOptions)
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -84,7 +105,12 @@ class TestPackager extends FunSuite {
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.buildPkg(p, DefaultOptions)
+
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.buildPkg(b, DefaultOptions)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".fpkg")
@@ -95,7 +121,12 @@ class TestPackager extends FunSuite {
   test("build-pkg generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.buildPkg(p, DefaultOptions)
+
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.buildPkg(b, DefaultOptions)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".fpkg")
@@ -113,10 +144,14 @@ class TestPackager extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".fpkg")
 
-    Packager.buildPkg(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.buildPkg(b, DefaultOptions)
     def hash1 = calcHash(packagePath)
 
-    Packager.buildPkg(p, DefaultOptions)
+    Packager.buildPkg(b, DefaultOptions)
     def hash2 = calcHash(packagePath)
 
     assert(
@@ -127,19 +162,31 @@ class TestPackager extends FunSuite {
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.benchmark(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.benchmark(b, DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.run(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.run(b, DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
-    Packager.test(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p)(System.out) match {
+      case Result.Ok(bootstrap) => bootstrap
+      case Result.Err(e) => fail(e.toString)
+    }
+    Packager.test(b, DefaultOptions)
   }
 
   def calcHash(p: Path): String = {

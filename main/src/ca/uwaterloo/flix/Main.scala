@@ -141,34 +141,76 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Check =>
-          val result = Packager.check(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.check(bootstrap, options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Build =>
-          val result = Packager.build(cwd, options, loadClasses = false)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.build(bootstrap, options, loadClasses = false)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.BuildJar =>
-          val result = Packager.buildJar(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.buildJar(bootstrap, options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.BuildPkg =>
-          val result = Packager.buildPkg(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.buildPkg(bootstrap, options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Run =>
-          val result = Packager.run(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.run(bootstrap, options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          val result = Packager.benchmark(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.benchmark(bootstrap, o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          val result = Packager.test(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = Packager.test(bootstrap, o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e)
+              System.exit(1)
+          }
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {

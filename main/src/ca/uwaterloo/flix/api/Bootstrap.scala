@@ -42,6 +42,11 @@ object Bootstrap {
   def getTestDirectory(p: Path): Path = p.resolve("./test/").normalize()
 
   /**
+    * Returns the path to the build directory relative to the given path `p`.
+    */
+  def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
+
+  /**
     * Returns the path to the Manifest file relative to the given path `p`.
     */
   def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
@@ -98,7 +103,7 @@ object Bootstrap {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
-    val bootstrap = new Bootstrap()
+    val bootstrap = new Bootstrap(path)
     val tomlPath = Bootstrap.getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println("Found `flix.toml'. Checking dependencies...")
@@ -111,7 +116,7 @@ object Bootstrap {
 
 }
 
-class Bootstrap {
+class Bootstrap(val path: Path) {
 
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
