@@ -21,6 +21,14 @@ import scala.collection.{immutable, mutable}
 
 sealed trait Doc
 
+/**
+  * Concept is from Philip Wadler's paper: "A prettier printer" (1998?) which
+  * contains a lazy language implementation.
+  *
+  * This non-lazy language implementation is from Christian Lindig's paper:
+  * "Strictly Pretty" (2000).
+  *
+  */
 object Doc {
 
   implicit class DocOps(d: Doc) {
