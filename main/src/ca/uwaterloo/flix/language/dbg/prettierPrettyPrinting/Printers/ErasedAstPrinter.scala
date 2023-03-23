@@ -68,86 +68,12 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.Expression.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
-    case Intrinsic0(op, _, _) => op match {
-      case IntrinsicOperator0.Cst(cst) => DocAst.Expression.Cst(cst)
-      case IntrinsicOperator0.Region => DocAst.Expression.Region
-      case IntrinsicOperator0.RecordEmpty => DocAst.Expression.RecordEmpty
-      case IntrinsicOperator0.GetStaticField(field) => DocAst.Expression.JavaGetStaticField(field)
-      case IntrinsicOperator0.HoleError(sym) => DocAst.Expression.HoleError(sym)
-      case IntrinsicOperator0.MatchError => DocAst.Expression.MatchError
-    }
-    case Intrinsic1(op, exp, tpe, _) =>
-      val d = print(exp)
-      op match {
-        case IntrinsicOperator1.Is(sym) => DocAst.Expression.IsTag(sym, d)
-        case IntrinsicOperator1.Tag(sym) => DocAst.Expression.Tag(sym, List(d))
-        case IntrinsicOperator1.Untag(sym) => DocAst.Expression.Untag(sym, d)
-        case IntrinsicOperator1.Cast => DocAst.Expression.Cast(d, MonoTypePrinter.print(tpe))
-        case IntrinsicOperator1.Index(idx) => DocAst.Expression.Index(idx, d)
-        case IntrinsicOperator1.RecordSelect(field) => DocAst.Expression.RecordSelect(field, d)
-        case IntrinsicOperator1.RecordRestrict(field) => DocAst.Expression.RecordRestrict(field, d)
-        case IntrinsicOperator1.Ref => DocAst.Expression.Ref(d)
-        case IntrinsicOperator1.Deref => DocAst.Expression.Deref(d)
-        case IntrinsicOperator1.ArrayLength => DocAst.Expression.ArrayLength(d)
-        case IntrinsicOperator1.Lazy => DocAst.Expression.Lazy(d)
-        case IntrinsicOperator1.Force => DocAst.Expression.Force(d)
-        case IntrinsicOperator1.GetField(field) => DocAst.Expression.JavaGetField(field, d)
-        case IntrinsicOperator1.PutStaticField(field) => DocAst.Expression.JavaPutStaticField(field, d)
-        case IntrinsicOperator1.BoxBool => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxInt8 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxInt16 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxInt32 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxInt64 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxChar => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxFloat32 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.BoxFloat64 => DocAst.Expression.Box(d)
-        case IntrinsicOperator1.UnboxBool => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxInt8 => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxInt16 => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxInt32 => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxInt64 => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxChar => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxFloat32 => DocAst.Expression.Unbox(d)
-        case IntrinsicOperator1.UnboxFloat64 => DocAst.Expression.Unbox(d)
-      }
-    case Intrinsic2(op, exp1, exp2, _, _) =>
-      val d1 = print(exp1)
-      val d2 = print(exp2)
-      op match {
-        case IntrinsicOperator2.RecordExtend(field) => DocAst.Expression.RecordExtend(field, d1, d2)
-        case IntrinsicOperator2.Assign => DocAst.Expression.Assign(d1, d2)
-        case IntrinsicOperator2.ArrayNew => DocAst.Expression.ArrayNew(d1, d2)
-        case IntrinsicOperator2.ArrayLoad => DocAst.Expression.ArrayLoad(d1, d2)
-        case IntrinsicOperator2.Spawn => DocAst.Expression.Spawn(d1, d2)
-        case IntrinsicOperator2.PutField(field) => DocAst.Expression.JavaPutField(field, d1, d2)
-      }
-    case Intrinsic3(op, exp1, exp2, exp3, _, _) =>
-      val d1 = print(exp1)
-      val d2 = print(exp2)
-      val d3 = print(exp3)
-      op match {
-        case IntrinsicOperator3.ArrayStore => DocAst.Expression.ArrayStore(d1, d2, d3)
-      }
-    case IntrinsicN(op, exps, _, _) =>
-      val ds = exps.map(print)
-      op match {
-        case IntrinsicOperatorN.Closure(sym) => DocAst.Expression.ClosureLifted(sym, ds)
-        case IntrinsicOperatorN.ApplyDef(sym) => DocAst.Expression.App(sym, ds)
-        case IntrinsicOperatorN.ApplyDefTail(sym) => DocAst.Expression.AppDefTail(sym, ds)
-        case IntrinsicOperatorN.ApplySelfTail(sym, _) => DocAst.Expression.AppSelfTail(sym, ds)
-        case IntrinsicOperatorN.Tuple => DocAst.Expression.Tuple(ds)
-        case IntrinsicOperatorN.ArrayLit => DocAst.Expression.ArrayLit(ds)
-        case IntrinsicOperatorN.InvokeConstructor(constructor) => DocAst.Expression.JavaInvokeConstructor(constructor, ds)
-        case IntrinsicOperatorN.InvokeStaticMethod(method) => DocAst.Expression.JavaInvokeStaticMethod(method, ds)
-      }
-    case Intrinsic1N(op, exp, exps, _, _) =>
-      val d = print(exp)
-      val ds = exps.map(print)
-      op match {
-        case IntrinsicOperator1N.ApplyClo => DocAst.Expression.AppClo(d, ds)
-        case IntrinsicOperator1N.ApplyCloTail => DocAst.Expression.AppCloTail(d, ds)
-        case IntrinsicOperator1N.InvokeMethod(method) => DocAst.Expression.JavaInvokeMethod(method, d, ds)
-      }
+    case Intrinsic0(op, _, _) => IntrinsicOperatorPrinter.print(op)
+    case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
+    case Intrinsic2(op, exp1, exp2, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2))
+    case Intrinsic3(op, exp1, exp2, exp3, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2), print(exp3))
+    case IntrinsicN(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
+    case Intrinsic1N(op, exp, exps, _, _) => IntrinsicOperatorPrinter.print(op, print(exp), exps.map(print))
   }
 
   /**
