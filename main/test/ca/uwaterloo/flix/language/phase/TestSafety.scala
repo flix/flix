@@ -467,6 +467,58 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
+  test("IllegalCheckedTypeCast.04") {
+    val input =
+      """
+        |def f(): (Bool -> Bool) =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCastFromNonJava.01") {
+    val input =
+      """
+        |def f(): ##java.lang.Object =
+        |    checked_cast(10i64)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.02") {
+    val input =
+      """
+        |def f(): ##java.lang.Boolean =
+        |    checked_cast(true)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.03") {
+    val input =
+      """
+        |def f(): ##java.lang.StringBuilder =
+        |    checked_cast(false)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
+  test("IllegalCastFromNonJava.04") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): ##java.lang.Boolean =
+        |    checked_cast(Boolean.Boolean(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromNonJava](result)
+  }
+
   test("IllegalCastToNonJava.01") {
     // java.lang.String is equal to String in Flix.
     val input =
@@ -513,6 +565,30 @@ class TestSafety extends FunSuite with TestUtils {
   }
 
   test("IllegalCastToNonJava.05") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): Boolean \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.06") {
+    val input =
+      """
+        |enum Boolean(Bool)
+        |def f(): Boolean \ Impure =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    Boolean.Boolean(checked_cast(valueOf(true)))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.07") {
     val input =
       """
         |def f(): String \ Impure =
