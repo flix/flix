@@ -27,7 +27,6 @@ object DocAstFormatter {
   def format(p: Program)(implicit i: Indent): List[Doc] = {
     import scala.math.Ordering.Implicits.seqOrdering
 
-    implicit val i: Indent = indentationLevel(4)
     val Program(enums0, defs0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, cases) =>
