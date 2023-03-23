@@ -18,10 +18,11 @@ object AstPrinter {
     * Prints `ast` to `build/ast/<phase>.<AstPrinter.IREXTENSION>` if
     * `flix.options.xprintasts` contains `phase`.
     *
+    * @param ast    call-by-name to avoid premature computation
     * @param width  the maximum width of the output, default 80
     * @param indent the indentation width of each indentation level, default 4
     */
-  def printAst(phase: => String, ast: => DocAst.Program, width: Int = 80, indent: Int = 4)(implicit flix: Flix): Unit = {
+  def printAst(phase: String, ast: => DocAst.Program, width: Int = 80, indent: Int = 4)(implicit flix: Flix): Unit = {
     implicit val i: Indent = Doc.indentationLevel(indent)
     val phaseName = phase
     if (flix.options.xprintasts.contains(phaseName)) {
