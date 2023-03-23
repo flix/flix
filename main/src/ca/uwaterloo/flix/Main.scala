@@ -137,13 +137,13 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Init =>
-          val result = Packager.init(cwd, options)
+          val result = Bootstrap.init(cwd, options)
           System.exit(getCode(result))
 
         case Command.Check =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.check(bootstrap, options)
+              val result = bootstrap.check(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -153,7 +153,7 @@ object Main {
         case Command.Build =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.build(bootstrap, options, loadClasses = false)
+              val result = bootstrap.build(options, loadClasses = false)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -163,7 +163,7 @@ object Main {
         case Command.BuildJar =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.buildJar(bootstrap, options)
+              val result = bootstrap.buildJar(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -173,7 +173,7 @@ object Main {
         case Command.BuildPkg =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.buildPkg(bootstrap, options)
+              val result = bootstrap.buildPkg(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -183,7 +183,7 @@ object Main {
         case Command.Run =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.run(bootstrap, options)
+              val result = bootstrap.run(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -194,7 +194,7 @@ object Main {
           val o = options.copy(progress = false)
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.benchmark(bootstrap, o)
+              val result = bootstrap.benchmark(o)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)
@@ -205,7 +205,7 @@ object Main {
           val o = options.copy(progress = false)
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = Packager.test(bootstrap, o)
+              val result = bootstrap.test(o)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e)

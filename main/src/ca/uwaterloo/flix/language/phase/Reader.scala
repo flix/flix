@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
-import ca.uwaterloo.flix.tools.Packager
 import ca.uwaterloo.flix.util.{StreamOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -73,7 +72,7 @@ object Reader {
     */
   def unpack(p: Path)(implicit flix: Flix): List[Source] = {
     // Check that the path is a flix package.
-    if (!Packager.isPkgFile(p))
+    if (!Bootstrap.isPkgFile(p))
       throw new RuntimeException(s"The path '$p' is not a flix package.")
 
     // Open the zip file.
