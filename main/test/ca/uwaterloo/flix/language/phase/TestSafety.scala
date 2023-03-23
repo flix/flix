@@ -478,6 +478,16 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
+  test("IllegalCheckedTypeCast.05") {
+    val input =
+      """
+        |def f(): String -> String =
+        |    checked_cast(x -> x)
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
   test("IllegalCastFromNonJava.01") {
     val input =
       """
@@ -597,6 +607,28 @@ class TestSafety extends FunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastFromVar.01") {
+    val input =
+      """
+        |def f(): String =
+        |    g("ABC")
+        |
+        |def g(x: a): a = checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromVar](result)
+  }
+
+  test("IllegalCastFromVar.02") {
+    val input =
+      """
+        |def f(x: a): String =
+        |    checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastFromVar](result)
   }
 
 }
