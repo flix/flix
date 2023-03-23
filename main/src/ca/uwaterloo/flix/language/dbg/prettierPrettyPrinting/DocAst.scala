@@ -66,37 +66,26 @@ object DocAst {
 
     case class RecordRestrict(field: Name.Field, value: Expression) extends RecordOp
 
-    /** `(<word> <d>)` */
     case class Keyword(word: String, d: Expression) extends Composite
 
     case class DoubleKeyword(word1: String, d1: Expression, word2: String, d2: Either[Expression, Type]) extends Composite
 
-    /** `(<op><d>)` */
     case class Unary(op: String, d: Expression) extends Composite
 
-    /** `(<d1> <op> <d2>)` */
     case class Binary(d1: Expression, op: String, d2: Expression) extends Composite
 
-    /** `if (<cond>) <thn> else <els>` */
     case class IfThenElse(cond: Expression, thn: Expression, els: Expression) extends Composite
 
     case class Branch(d: Expression, branches: Map[Symbol.LabelSym, Expression]) extends Atom
 
-    /** `<d1>.<d2>` */
+    /** e.g. `r.x` */
     case class Dot(d1: Expression, d2: Expression) extends Atom
 
-    /** `<d1>.,<d2>` */
+    /** e.g. `r..toString()`. It is used for java "dots" */
     case class DoubleDot(d1: Expression, d2: Expression) extends Atom
 
     case class TryCatch(d: Expression, rules: List[(Symbol.VarSym, Class[_], Expression)]) extends Atom
 
-    /**
-      * `let <v>: <tpe> = <bind>; <body>`
-      *
-      * or
-      *
-      * `let <v> = <bind>; <body>`
-      */
     case class Let(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
 
     case class LetRec(v: Expression, tpe: Option[Type], bind: Expression, body: Expression) extends LetBinder
@@ -109,7 +98,6 @@ object DocAst {
 
     case class Assign(d1: Expression, d2: Expression) extends Composite
 
-    /** `<v>: <tpe>` */
     case class Ascription(v: Expression, tpe: Type) extends Composite
 
     case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
@@ -118,19 +106,17 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
-    /** `<sym>` */
     def Var(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString)
 
-    /** `<sym>_<offset>` */
+    /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString + "_" + sym.getStackOffset.toString)
 
-    /** `?<sym>` */
     def HoleError(sym: Symbol.HoleSym): Expression =
       AsIs(sym.toString)
 
-    /** `region` */
+    /** the region value */
     val Region: Expression =
       Meta("region")
 
