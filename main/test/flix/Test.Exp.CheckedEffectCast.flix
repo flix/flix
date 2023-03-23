@@ -116,4 +116,4 @@
     @test
     def testCheckedEffectCast30(): (a -> a) \ E = checked_ecast(x -> x)
 
- }
+}
