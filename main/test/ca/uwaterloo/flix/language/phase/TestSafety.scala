@@ -445,6 +445,28 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCheckedTypeCast](result)
   }
 
+  test("IllegalCheckedTypeCast.02") {
+    val input =
+      """
+        |def f(): ##java.lang.Boolean \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
+  test("IllegalCheckedTypeCast.03") {
+    val input =
+      """
+        |def f(): ##java.lang.Double \ Impure =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedTypeCast](result)
+  }
+
   test("IllegalCastToNonJava.01") {
     // java.lang.String is equal to String in Flix.
     val input =
