@@ -17,22 +17,22 @@
 package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
 
 import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Doc._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Type
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst._
 
 import scala.annotation.tailrec
-import scala.collection.immutable
 
 object DocAstFormatter {
 
-  def format(p: DocAst.Program)(implicit i: Indent): List[Doc] = {
+  def format(p: Program)(implicit i: Indent): List[Doc] = {
     import scala.math.Ordering.Implicits.seqOrdering
 
     implicit val i: Indent = indentationLevel(4)
-    val DocAst.Program(enums0, defs0) = p
+    val Program(enums0, defs0) = p
     val enums = enums0.map {
-      case DocAst.Enum(_, _, sym, cases) =>
+      case Enum(_, _, sym, cases) =>
         val delimitedCases = semiSepOpt(cases.map {
-          case DocAst.Case(sym) =>
+          case Case(sym) =>
             text("case") +: text(sym.toString) :: text("(?)")
         })
         val d = text("enum") +: text(sym.toString) +: curly(delimitedCases)
@@ -40,7 +40,7 @@ object DocAstFormatter {
     }
     // remember that the def type includes the arguments
     val defs = defs0.map {
-      case DocAst.Def(_, _, sym, parameters, resType0, body) =>
+      case Def(_, _, sym, parameters, resType0, body) =>
         val resType = resType0 match {
           case Type.Arrow(_, res) => res
           case _ => Type.AsIs(meta("no return type"))
@@ -58,42 +58,42 @@ object DocAstFormatter {
     (enums ++ defs).sortBy(_._1).map(_._2)
   }
 
-  def format(d: DocAst)(implicit i: Indent): Doc =
+  def format(d: Expression)(implicit i: Indent): Doc =
     aux(d, paren = false, inBlock = true)
 
-  private def aux(d: DocAst, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+  private def aux(d: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
-      case DocAst.InRegion(d1, d2) =>
+      case InRegion(d1, d2) =>
         aux(d1) +: text("@") +: aux(d2)
-      case DocAst.Unit =>
+      case Unit =>
         text("()")
-      case DocAst.Tuple(elms) =>
+      case Tuple(elms) =>
         tuple(elms.map(aux(_, paren = false)))
-      case DocAst.Tag(sym, Nil) =>
+      case Tag(sym, Nil) =>
         text(sym.toString)
-      case DocAst.Tag(sym, List(DocAst.Unit)) =>
+      case Tag(sym, List(Unit)) =>
         text(sym.toString)
-      case DocAst.Tag(sym, List(DocAst.Tuple(args))) =>
+      case Tag(sym, List(Tuple(args))) =>
         text(sym.toString) :: tuple(args.map(aux(_, paren = false)))
-      case DocAst.Tag(sym, args) =>
+      case Tag(sym, args) =>
         text(sym.toString) :: tuple(args.map(aux(_, paren = false)))
-      case DocAst.AsIs(s) =>
+      case AsIs(s) =>
         text(s)
-      case DocAst.Meta(s) =>
+      case Meta(s) =>
         text(meta(s))
-      case DocAst.RecordEmpty =>
+      case RecordEmpty =>
         text("{}")
-      case re: DocAst.RecordExtend =>
+      case re: RecordExtend =>
         formatRecordBlock(re)
-      case rr: DocAst.RecordRestrict =>
+      case rr: RecordRestrict =>
         formatRecordBlock(rr)
-      case DocAst.Keyword(word, d) =>
+      case Keyword(word, d) =>
         text(word) +: aux(d)
-      case DocAst.Unary(op, d) =>
+      case Unary(op, d) =>
         text(op) :: aux(d)
-      case DocAst.Binary(d1, op, d2) =>
+      case Binary(d1, op, d2) =>
         aux(d1) +: text(op) +: aux(d2)
-      case DocAst.IfThenElse(cond, thn, els) =>
+      case IfThenElse(cond, thn, els) =>
         val condf = aux(cond, paren = false, inBlock = true)
         val thnf = aux(thn, paren = false, inBlock = true)
         val elsf = aux(els, paren = false, inBlock = true)
@@ -101,7 +101,7 @@ object DocAstFormatter {
           text("if") +: parens(condf) +:
             curlyOpen(thnf) +: text("else") +: curlyOpen(elsf)
         )
-      case DocAst.Branch(d, branches) =>
+      case Branch(d, branches) =>
         val branchHead = aux(d, paren = false, inBlock = true)
         val delimitedBranches = branches.toList.map { case (sym, dd) =>
           val labelf = aux(dd, paren = false, inBlock = true)
@@ -111,33 +111,33 @@ object DocAstFormatter {
           text("branching") +: curlyOpen(branchHead) +:
             text("with") +: curlyOpen(semiSepOpt(delimitedBranches))
         )
-      case DocAst.Dot(d1, d2) =>
+      case Dot(d1, d2) =>
         aux(d1) :: text(".") :: aux(d2)
-      case DocAst.DoubleDot(d1, d2) =>
+      case DoubleDot(d1, d2) =>
         aux(d1) :: text("..") :: aux(d2)
-      case l: DocAst.Let =>
+      case l: Let =>
         formatLetBlock(l, inBlock)
-      case l: DocAst.LetRec =>
+      case l: LetRec =>
         formatLetBlock(l, inBlock)
-      case DocAst.Scope(v, d) =>
+      case Scope(v, d) =>
         val bodyf = aux(d, paren = false, inBlock = true)
         val regionf = aux(v)
         text("region") +: regionf +: curly(bodyf)
-      case DocAst.App(f, args) =>
+      case App(f, args) =>
         aux(f) :: tuple(args.map(aux(_, paren = false)))
-      case DocAst.SquareApp(f, args) =>
+      case SquareApp(f, args) =>
         aux(f) :: square(args.map(aux(_, paren = false)))
-      case DocAst.Assign(d1, d2) =>
+      case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
-      case DocAst.Ascription(v, tpe) =>
+      case Ascription(v, tpe) =>
         aux(v) :: text(":") +: formatType(tpe, paren = false)
-      case DocAst.DoubleKeyword(word1, d1, word2, d2E) =>
+      case DoubleKeyword(word1, d1, word2, d2E) =>
         val d2Part = d2E match {
           case Left(d2) => aux(d2, paren = false)
           case Right(tpe) => formatType(tpe, paren = false)
         }
         group(text(word1) +: aux(d1, paren = false) +\: text(word2) +: d2Part)
-      case DocAst.TryCatch(d, rules) =>
+      case TryCatch(d, rules) =>
         val rs = semiSepOpt(rules.map {
           case (sym, clazz, rule) =>
             val rulef = aux(rule, paren = false, inBlock = true)
@@ -149,24 +149,24 @@ object DocAstFormatter {
           text("try") +: curly(bodyf) +:
             text("catch") +: curly(rs)
         )
-      case DocAst.NewObject(_, clazz, _, methods) =>
+      case NewObject(_, clazz, _, methods) =>
         group(text("new") +: formatJavaClass(clazz) +: curly(
           semiSepOpt(methods.map(formatJvmMethod))
         ))
-      case DocAst.Native(clazz) =>
+      case Native(clazz) =>
         formatJavaClass(clazz)
     }
     d match {
-      case _: DocAst.Composite if paren => parens(doc)
-      case _: DocAst.Composite | _: DocAst.Atom => doc
+      case _: Composite if paren => parens(doc)
+      case _: Composite | _: Atom => doc
     }
   }
 
   private def formatJavaClass(clazz: Class[_]): Doc =
     text("##" + clazz.toString)
 
-  private def formatJvmMethod(m: DocAst.JvmMethod)(implicit i: Indent): Doc = {
-    val DocAst.JvmMethod(ident, fparams, clo, _) = m
+  private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
+    val JvmMethod(ident, fparams, clo, _) = m
     val fparamsf = fparams.map(aux(_, paren = false))
     val clof = aux(clo, paren = false, inBlock = true)
     group(
@@ -176,14 +176,14 @@ object DocAstFormatter {
     )
   }
 
-  private def formatLetBlock(d: DocAst.LetBinder, inBlock: Boolean)(implicit i: Indent): Doc = {
+  private def formatLetBlock(d: LetBinder, inBlock: Boolean)(implicit i: Indent): Doc = {
     val (binders, body) = collectLetBinders(d)
     val bodyf = aux(body, paren = false)
     val bindersf = binders.map {
-      case DocAst.Let(v, tpe, bind, _) =>
+      case Let(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("let") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
-      case DocAst.LetRec(v, tpe, bind, _) =>
+      case LetRec(v, tpe, bind, _) =>
         val bindf = aux(bind, paren = false)
         text("letrec") +: aux(v) :: formatAscription(tpe) +: text("=") +: bindf
     }
@@ -192,13 +192,13 @@ object DocAstFormatter {
     else curly(delimitedBinders)
   }
 
-  private def formatRecordBlock(d: DocAst.RecordOp)(implicit i: Indent): Doc = {
+  private def formatRecordBlock(d: RecordOp)(implicit i: Indent): Doc = {
     val (exs, restOpt) = collectRecordOps(d)
     val exsf = exs.map {
-      case DocAst.RecordExtend(field, value, _) =>
+      case RecordExtend(field, value, _) =>
         val valuef = aux(value, paren = false)
         text("+" + field.toString) +: text("=") +: valuef
-      case DocAst.RecordRestrict(field, _) =>
+      case RecordRestrict(field, _) =>
         text("-" + field.toString)
     }
     restOpt match {
@@ -210,16 +210,16 @@ object DocAstFormatter {
     }
   }
 
-  private def formatAscription(tpe: Option[DocAst.Type])(implicit i: Indent): Doc =
+  private def formatAscription(tpe: Option[Type])(implicit i: Indent): Doc =
     tpe.map(t => text(":") +: formatType(t)).getOrElse(empty)
 
-  private def collectLetBinders(d: DocAst): (List[DocAst.LetBinder], DocAst) = {
+  private def collectLetBinders(d: Expression): (List[LetBinder], Expression) = {
     @tailrec
-    def chase(d0: DocAst, acc: List[DocAst.LetBinder]): (List[DocAst.LetBinder], DocAst) = {
+    def chase(d0: Expression, acc: List[LetBinder]): (List[LetBinder], Expression) = {
       d0 match {
-        case l@DocAst.Let(_, _, _, body) =>
+        case l@Let(_, _, _, body) =>
           chase(body, l :: acc)
-        case l@DocAst.LetRec(_, _, _, body) =>
+        case l@LetRec(_, _, _, body) =>
           chase(body, l :: acc)
         case other => (acc.reverse, other)
       }
@@ -228,15 +228,15 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordOps(d: DocAst)(implicit i: Indent): (List[DocAst.RecordOp], Option[DocAst]) = {
+  private def collectRecordOps(d: Expression)(implicit i: Indent): (List[RecordOp], Option[Expression]) = {
     @tailrec
-    def chase(d0: DocAst, acc: List[DocAst.RecordOp]): (List[DocAst.RecordOp], Option[DocAst]) = {
+    def chase(d0: Expression, acc: List[RecordOp]): (List[RecordOp], Option[Expression]) = {
       d0 match {
-        case re@DocAst.RecordExtend(_, _, rest) =>
+        case re@RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)
-        case re@DocAst.RecordRestrict(_, rest) =>
+        case re@RecordRestrict(_, rest) =>
           chase(rest, re :: acc)
-        case DocAst.RecordEmpty =>
+        case RecordEmpty =>
           (acc.reverse, None)
         case other =>
           (acc.reverse, Some(other))
@@ -252,7 +252,7 @@ object DocAstFormatter {
     * @param paren if true, a parenthesis will be added, unless `tpe` is an
     *              atom.
     */
-  private def formatType(tpe: DocAst.Type, paren: Boolean = true)(implicit i: Indent): Doc = {
+  private def formatType(tpe: Type, paren: Boolean = true)(implicit i: Indent): Doc = {
     val d = tpe match {
       case Type.Unit =>
         text("Unit")

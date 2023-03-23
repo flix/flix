@@ -48,80 +48,80 @@ object FinalAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst]] representation of `e`.
+    * Returns the [[DocAst.Expression]] representation of `e`.
     */
-  def print(e: FinalAst.Expression): DocAst = e match {
-    case Expression.Cst(cst, _, _) => DocAst.Cst(cst)
-    case Expression.Var(sym, _, _) => DocAst.Var(sym)
-    case Expression.Closure(sym, closureArgs, _, _) => DocAst.ClosureLifted(sym, closureArgs.map(print))
-    case Expression.ApplyClo(exp, args, _, _) => DocAst.AppClo(print(exp), args.map(print))
-    case Expression.ApplyDef(sym, args, _, _) => DocAst.App(sym, args.map(print))
-    case Expression.ApplyCloTail(exp, args, _, _) => DocAst.AppCloTail(print(exp), args.map(print))
-    case Expression.ApplyDefTail(sym, args, _, _) => DocAst.AppDefTail(sym, args.map(print))
-    case Expression.ApplySelfTail(sym, _, actuals, _, _) => DocAst.AppSelfTail(sym, actuals.map(print))
-    case Expression.Unary(sop, _, exp, _, _) => DocAst.Unary(OperatorPrinter.print(sop), print(exp))
-    case Expression.Binary(sop, _, exp1, exp2, _, _) => DocAst.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _) => DocAst.IfThenElse(print(exp1), print(exp2), print(exp3))
+  def print(e: FinalAst.Expression): DocAst.Expression = e match {
+    case Expression.Cst(cst, _, _) => DocAst.Expression.Cst(cst)
+    case Expression.Var(sym, _, _) => DocAst.Expression.Var(sym)
+    case Expression.Closure(sym, closureArgs, _, _) => DocAst.Expression.ClosureLifted(sym, closureArgs.map(print))
+    case Expression.ApplyClo(exp, args, _, _) => DocAst.Expression.AppClo(print(exp), args.map(print))
+    case Expression.ApplyDef(sym, args, _, _) => DocAst.Expression.App(sym, args.map(print))
+    case Expression.ApplyCloTail(exp, args, _, _) => DocAst.Expression.AppCloTail(print(exp), args.map(print))
+    case Expression.ApplyDefTail(sym, args, _, _) => DocAst.Expression.AppDefTail(sym, args.map(print))
+    case Expression.ApplySelfTail(sym, _, actuals, _, _) => DocAst.Expression.AppSelfTail(sym, actuals.map(print))
+    case Expression.Unary(sop, _, exp, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
+    case Expression.Binary(sop, _, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expression.Branch(exp, branches, _, _) =>
       val bs = branches.map {
         case (bsym, bexp) => (bsym, print(bexp))
       }
-      DocAst.Branch(print(exp), bs)
-    case Expression.JumpTo(sym, _, _) => DocAst.JumpTo(sym)
-    case Expression.Let(sym, exp1, exp2, _, _) => DocAst.Let(DocAst.Var(sym), None, print(exp1), print(exp2))
-    case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.LetRec(DocAst.Var(varSym), None, print(exp1), print(exp2))
-    case Expression.Region(_, _) => DocAst.Region
-    case Expression.Scope(sym, exp, _, _) => DocAst.Scope(DocAst.Var(sym), print(exp))
-    case Expression.ScopeExit(exp1, exp2, _, _) => DocAst.ScopeExit(print(exp1), print(exp2))
-    case Expression.Is(sym, exp, _) => DocAst.IsTag(sym, print(exp))
-    case Expression.Tag(sym, exp, _, _) => DocAst.Tag(sym, List(print(exp)))
-    case Expression.Untag(sym, exp, _, _) => DocAst.Untag(sym, print(exp))
-    case Expression.Index(base, offset, _, _) => DocAst.Index(offset, print(base))
-    case Expression.Tuple(elms, _, _) => DocAst.Tuple(elms.map(print))
-    case Expression.RecordEmpty(_, _) => DocAst.RecordEmpty
-    case Expression.RecordSelect(exp, field, _, _) => DocAst.RecordSelect(field, print(exp))
-    case Expression.RecordExtend(field, value, rest, _, _) => DocAst.RecordExtend(field, print(value), print(rest))
-    case Expression.RecordRestrict(field, rest, _, _) => DocAst.RecordRestrict(field, print(rest))
-    case Expression.ArrayLit(elms, _, _) => DocAst.ArrayLit(elms.map(print))
-    case Expression.ArrayNew(elm, len, _, _) => DocAst.ArrayNew(print(elm), print(len))
-    case Expression.ArrayLoad(base, index, _, _) => DocAst.ArrayLoad(print(base), print(index))
-    case Expression.ArrayStore(base, index, elm, _, _) => DocAst.ArrayStore(print(base), print(index), print(elm))
-    case Expression.ArrayLength(base, _, _) => DocAst.ArrayLength(print(base))
-    case Expression.Ref(exp, _, _) => DocAst.Ref(print(exp))
-    case Expression.Deref(exp, _, _) => DocAst.Deref(print(exp))
-    case Expression.Assign(exp1, exp2, _, _) => DocAst.Assign(print(exp1), print(exp2))
-    case Expression.Cast(exp, tpe, _) => DocAst.Cast(print(exp), MonoTypePrinter.print(tpe))
+      DocAst.Expression.Branch(print(exp), bs)
+    case Expression.JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
+    case Expression.Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(DocAst.Expression.Var(sym), None, print(exp1), print(exp2))
+    case Expression.LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(DocAst.Expression.Var(varSym), None, print(exp1), print(exp2))
+    case Expression.Region(_, _) => DocAst.Expression.Region
+    case Expression.Scope(sym, exp, _, _) => DocAst.Expression.Scope(DocAst.Expression.Var(sym), print(exp))
+    case Expression.ScopeExit(exp1, exp2, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
+    case Expression.Is(sym, exp, _) => DocAst.Expression.IsTag(sym, print(exp))
+    case Expression.Tag(sym, exp, _, _) => DocAst.Expression.Tag(sym, List(print(exp)))
+    case Expression.Untag(sym, exp, _, _) => DocAst.Expression.Untag(sym, print(exp))
+    case Expression.Index(base, offset, _, _) => DocAst.Expression.Index(offset, print(base))
+    case Expression.Tuple(elms, _, _) => DocAst.Expression.Tuple(elms.map(print))
+    case Expression.RecordEmpty(_, _) => DocAst.Expression.RecordEmpty
+    case Expression.RecordSelect(exp, field, _, _) => DocAst.Expression.RecordSelect(field, print(exp))
+    case Expression.RecordExtend(field, value, rest, _, _) => DocAst.Expression.RecordExtend(field, print(value), print(rest))
+    case Expression.RecordRestrict(field, rest, _, _) => DocAst.Expression.RecordRestrict(field, print(rest))
+    case Expression.ArrayLit(elms, _, _) => DocAst.Expression.ArrayLit(elms.map(print))
+    case Expression.ArrayNew(elm, len, _, _) => DocAst.Expression.ArrayNew(print(elm), print(len))
+    case Expression.ArrayLoad(base, index, _, _) => DocAst.Expression.ArrayLoad(print(base), print(index))
+    case Expression.ArrayStore(base, index, elm, _, _) => DocAst.Expression.ArrayStore(print(base), print(index), print(elm))
+    case Expression.ArrayLength(base, _, _) => DocAst.Expression.ArrayLength(print(base))
+    case Expression.Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
+    case Expression.Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
+    case Expression.Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
+    case Expression.Cast(exp, tpe, _) => DocAst.Expression.Cast(print(exp), MonoTypePrinter.print(tpe))
     case Expression.TryCatch(exp, rules, _, _) =>
       val rs = rules.map {
         case FinalAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
       }
-      DocAst.TryCatch(print(exp), rs)
-    case Expression.InvokeConstructor(constructor, args, _, _) => DocAst.JavaInvokeConstructor(constructor, args.map(print))
-    case Expression.InvokeMethod(method, exp, args, _, _) => DocAst.JavaInvokeMethod(method, print(exp), args.map(print))
-    case Expression.InvokeStaticMethod(method, args, _, _) => DocAst.JavaInvokeStaticMethod(method, args.map(print))
-    case Expression.GetField(field, exp, _, _) => DocAst.JavaGetField(field, print(exp))
-    case Expression.PutField(field, exp1, exp2, _, _) => DocAst.JavaPutField(field, print(exp1), print(exp2))
-    case Expression.GetStaticField(field, _, _) => DocAst.JavaGetStaticField(field)
-    case Expression.PutStaticField(field, exp, _, _) => DocAst.JavaPutStaticField(field, print(exp))
+      DocAst.Expression.TryCatch(print(exp), rs)
+    case Expression.InvokeConstructor(constructor, args, _, _) => DocAst.Expression.JavaInvokeConstructor(constructor, args.map(print))
+    case Expression.InvokeMethod(method, exp, args, _, _) => DocAst.Expression.JavaInvokeMethod(method, print(exp), args.map(print))
+    case Expression.InvokeStaticMethod(method, args, _, _) => DocAst.Expression.JavaInvokeStaticMethod(method, args.map(print))
+    case Expression.GetField(field, exp, _, _) => DocAst.Expression.JavaGetField(field, print(exp))
+    case Expression.PutField(field, exp1, exp2, _, _) => DocAst.Expression.JavaPutField(field, print(exp1), print(exp2))
+    case Expression.GetStaticField(field, _, _) => DocAst.Expression.JavaGetStaticField(field)
+    case Expression.PutStaticField(field, exp, _, _) => DocAst.Expression.JavaPutStaticField(field, print(exp))
     case Expression.NewObject(name, clazz, tpe, methods, _) =>
       val ms = methods.map{
         case FinalAst.JvmMethod(ident, fparams, clo, retTpe, _) =>
-          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+          DocAst.Expression.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       }
-      DocAst.NewObject(name, clazz, MonoTypePrinter.print(tpe), ms)
-    case Expression.Spawn(exp1, exp2, _, _) => DocAst.Spawn(print(exp1), print(exp2))
-    case Expression.Lazy(exp, _, _) => DocAst.Lazy(print(exp))
-    case Expression.Force(exp, _, _) => DocAst.Force(print(exp))
-    case Expression.HoleError(sym, _, _) => DocAst.HoleError(sym)
-    case Expression.MatchError(_, _) => DocAst.MatchError
+      DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), ms)
+    case Expression.Spawn(exp1, exp2, _, _) => DocAst.Expression.Spawn(print(exp1), print(exp2))
+    case Expression.Lazy(exp, _, _) => DocAst.Expression.Lazy(print(exp))
+    case Expression.Force(exp, _, _) => DocAst.Expression.Force(print(exp))
+    case Expression.HoleError(sym, _, _) => DocAst.Expression.HoleError(sym)
+    case Expression.MatchError(_, _) => DocAst.Expression.MatchError
   }
 
   /**
-    * Returns the [[DocAst.Ascription]] representation of `fp`.
+    * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
-  private def printFormalParam(fp: FinalAst.FormalParam): DocAst.Ascription = {
+  private def printFormalParam(fp: FinalAst.FormalParam): DocAst.Expression.Ascription = {
     val FinalAst.FormalParam(sym, tpe) = fp
-    DocAst.Ascription(DocAst.VarWithOffset(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expression.Ascription(DocAst.Expression.VarWithOffset(sym), MonoTypePrinter.print(tpe))
   }
 
 }
