@@ -254,6 +254,7 @@ object Resolver {
     case _: UnkindedType.Var => Nil
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
+    case _: UnkindedType.UnappliedAssocType => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -2194,6 +2195,7 @@ object Resolver {
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
+            case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
             case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
           }
       }
@@ -2206,6 +2208,7 @@ object Resolver {
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
+          case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
           case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         }
 
@@ -2411,6 +2414,11 @@ object Resolver {
           }
         }
 
+      case UnkindedType.UnappliedAssocType(sym, loc) =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc) // TODO ASSOC-TYPES change to proper applied assoc type
+        }
+
       case _: UnkindedType.Var =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -2543,6 +2551,7 @@ object Resolver {
       case res: TypeLookupResult.TypeAlias => res
       case res: TypeLookupResult.Effect => res
       case res: TypeLookupResult.JavaClass => res
+      case res: TypeLookupResult.AssocType => res
       case TypeLookupResult.NotFound => other
     }
   }
@@ -2574,6 +2583,11 @@ object Resolver {
     case class JavaClass(clazz: Class[_]) extends TypeLookupResult
 
     /**
+      * The result is an associated type constructor.
+      */
+    case class AssocType(assoc: NamedAst.Declaration.AssocTypeSig) extends TypeLookupResult
+
+    /**
       * The type cannot be found.
       */
     case object NotFound extends TypeLookupResult
@@ -2597,6 +2611,9 @@ object Resolver {
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
         // Case 4: found an effect
         TypeLookupResult.Effect(effect)
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
+        // Case 5: found an associated type
+        TypeLookupResult.AssocType(assoc)
       case Resolution.JavaClass(clazz) =>
         // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
@@ -3032,6 +3049,31 @@ object Resolver {
   }
 
   /**
+    * Successfully returns the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An associated type is accessible from a namespace `ns0` if:
+    *
+    * (a) its class is marked public, or
+    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+   assoc0.toSuccess  // TODO ASSOC-TYPES check class accessibility
+  }
+
+  /**
+    * Successfully returns the type of the given associtated type `assoc0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
+    getAssocTypeIfAccessible(assoc0, ns0, loc) map {
+      assoc => mkUnappliedAssocType(assoc0.sym, loc)
+    }
+  }
+
+  /**
     * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
@@ -3321,6 +3363,7 @@ object Resolver {
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
+      case t: UnkindedType.UnappliedAssocType => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
     }
   }
@@ -3350,6 +3393,11 @@ object Resolver {
     * Construct the type alias type constructor for the given symbol `sym` with the given kind `k`.
     */
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
+
+  /**
+    * Construct the associated type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAssocType(sym, loc)
 
   /**
     * Gets the proper symbol from the given named symbol.
