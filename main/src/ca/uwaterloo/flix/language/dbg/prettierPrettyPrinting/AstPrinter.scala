@@ -41,8 +41,6 @@ object AstPrinter {
     * `flix.options.xprintasts` contains `phase`.
     *
     * @param ast    call-by-name to avoid premature computation
-    * @param width  the maximum width of the output, default 80
-    * @param indent the indentation width of each indentation level, default 4
     */
   def printAst(phase: String, ast: => DocAst.Program)(implicit flix: Flix): Unit = {
     implicit val i: Indent = Doc.indentationLevel(INDENT)
