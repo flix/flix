@@ -25,6 +25,12 @@ import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
+  /** default indentation width of 4 spaces */
+  private val INDENT = 4
+
+  /** default maximum output width of 80 chars */
+  private val WIDTH = 80
+
   /**
     * The extension of intermediate flix files.
     */
@@ -38,8 +44,8 @@ object AstPrinter {
     * @param width  the maximum width of the output, default 80
     * @param indent the indentation width of each indentation level, default 4
     */
-  def printAst(phase: String, ast: => DocAst.Program, width: Int = 80, indent: Int = 4)(implicit flix: Flix): Unit = {
-    implicit val i: Indent = Doc.indentationLevel(indent)
+  def printAst(phase: String, ast: => DocAst.Program)(implicit flix: Flix): Unit = {
+    implicit val i: Indent = Doc.indentationLevel(INDENT)
     val phaseName = phase
     if (flix.options.xprintasts.contains(phaseName)) {
       val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
@@ -60,7 +66,7 @@ object AstPrinter {
       }
 
       val docAst = DocAstFormatter.format(ast)
-      val str = docAst.map(Doc.pretty(width, _)).mkString("\n\n")
+      val str = docAst.map(Doc.pretty(WIDTH, _)).mkString("\n\n")
       Files.write(filePath, str.getBytes)
     }
   }
