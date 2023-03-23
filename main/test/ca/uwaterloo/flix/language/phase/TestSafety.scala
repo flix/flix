@@ -479,4 +479,48 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCastToNonJava](result)
   }
 
+  test("IllegalCastToNonJava.02") {
+    val input =
+      """
+        |def f(): String \ Impure =
+        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    checked_cast(mkObj())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.03") {
+    val input =
+      """
+        |def f(): Bool \ Impure =
+        |    import static java.lang.Boolean.valueOf(Bool): ##java.lang.Boolean;
+        |    checked_cast(valueOf(true))
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.04") {
+    val input =
+      """
+        |def f(): Bool \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
+  test("IllegalCastToNonJava.05") {
+    val input =
+      """
+        |def f(): String \ Impure =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    checked_cast(newSb())
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToNonJava](result)
+  }
+
 }
