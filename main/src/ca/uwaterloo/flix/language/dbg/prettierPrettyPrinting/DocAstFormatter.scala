@@ -126,7 +126,7 @@ object DocAstFormatter {
       case App(f, args) =>
         aux(f) :: tuple(args.map(aux(_, paren = false)))
       case SquareApp(f, args) =>
-        aux(f) :: square(args.map(aux(_, paren = false)))
+        aux(f) :: squareTuple(args.map(aux(_, paren = false)))
       case Assign(d1, d2) =>
         aux(d1) +: text(":=") +: aux(d2)
       case Ascription(v, tpe) =>
@@ -261,7 +261,7 @@ object DocAstFormatter {
       case Type.App(obj, Nil) =>
         text(obj)
       case Type.App(obj, args) =>
-        text(obj) :: square(args.map(formatType(_, paren = false)))
+        text(obj) :: squareTuple(args.map(formatType(_, paren = false)))
       case Type.Tuple(elms) =>
         tuple(elms.map(formatType(_, paren = false)))
       case arrow@Type.Arrow(_, _) =>
@@ -288,7 +288,7 @@ object DocAstFormatter {
             val restf = formatType(rest, paren = false)
             curly(commaSep(exsf) +: text("|") +\: restf)
           case None =>
-            curly(exsf)
+            curlyTuple(exsf)
         }
       case Type.SchemaEmpty =>
         text("#{}")
@@ -307,7 +307,7 @@ object DocAstFormatter {
             val restf = formatType(rest, paren = false)
             text("#") :: curly(commaSep(predicatesf) +: text("|") +\: restf)
           case None =>
-            text("#") :: curly(predicatesf)
+            text("#") :: curlyTuple(predicatesf)
         }
       case Type.Native(clazz) =>
         formatJavaClass(clazz)

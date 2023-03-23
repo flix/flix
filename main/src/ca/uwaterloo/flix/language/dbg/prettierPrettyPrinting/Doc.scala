@@ -312,7 +312,7 @@ object Doc {
     *   {x, y, z}
     * }}}
     */
-  def curly(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+  def curlyTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("{}")
     case immutable.::(d, immutable.Nil) => group(curly(d))
     case _ => group(curly(commaSep(xs)))
@@ -332,7 +332,7 @@ object Doc {
     *   [x, y, z]
     * }}}
     */
-  def square(xs: List[Doc])(implicit i: Indent): Doc = xs match {
+  def squareTuple(xs: List[Doc])(implicit i: Indent): Doc = xs match {
     case immutable.Nil => text("[]")
     case immutable.::(d, immutable.Nil) => group(square(d))
     case _ => group(square(commaSep(xs)))
