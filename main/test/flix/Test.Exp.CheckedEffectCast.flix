@@ -16,6 +16,8 @@
 
  mod Test/Exp/CheckedEffectCast {
 
+    enum A[a](a)
+
     @test
     def testCheckedEffectCast01(): Unit \ IO = checked_ecast(())
 
@@ -48,5 +50,70 @@
 
     @test
     def testCheckedEffectCast11(): Float64 \ IO = checked_ecast(123.4f64)
+
+    @test
+    def testCheckedEffectCast12(): Int8 \ IO = checked_ecast(0i8)
+
+    @test
+    def testCheckedEffectCast13(): Int8 \ IO = checked_ecast(64i8)
+
+    @test
+    def testCheckedEffectCast14(): Int16 \ IO = checked_ecast(0i16)
+
+    @test
+    def testCheckedEffectCast15(): Int16 \ IO = checked_ecast(64i16)
+
+    @test
+    def testCheckedEffectCast16(): Int32 \ IO = checked_ecast(0i32)
+
+    @test
+    def testCheckedEffectCast17(): Int32 \ IO = checked_ecast(64i32)
+
+    @test
+    def testCheckedEffectCast18(): Int64 \ IO = checked_ecast(0i64)
+
+    @test
+    def testCheckedEffectCast19(): Int64 \ IO = checked_ecast(64i64)
+
+    @test
+    def testCheckedEffectCast20(): BigInt \ IO = checked_ecast(0ii)
+
+    @test
+    def testCheckedEffectCast21(): BigInt \ IO = checked_ecast(64ii)
+
+    @test
+    def testCheckedEffectCast22(): String \ IO = checked_ecast("ABC")
+
+    @test
+    def testCheckedEffectCast23(): Unit \ IO = region rh {
+        discard checked_ecast($ARRAY_NEW$(rh, 'A', 8));
+        ()
+    }
+
+    @test
+    def testCheckedEffectCast24(): Unit \ IO = region rh {
+        discard checked_ecast($ARRAY_NEW$(rh, Some(42), 8));
+        ()
+    }
+
+    @test
+    def testCheckedEffectCast25(): (Char, Int32, Bool) \ IO = checked_ecast(('a', 42, false))
+
+    @test
+    def testCheckedEffectCast26(): A[String] \ IO = checked_ecast(A.A("ABC"))
+
+    @test
+    def testCheckedEffectCast27(): (a -> a \ IO) = x -> checked_ecast(x)
+
+    @test
+    def testCheckedEffectCast28(): (a -> a) \ IO = checked_ecast(x -> x)
+
+    pub eff E
+
+    @test
+    def testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
+
+    @test
+    def testCheckedEffectCast30(): (a -> a) \ E = checked_ecast(x -> x)
 
  }
