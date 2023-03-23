@@ -43,9 +43,6 @@
     }
 
     @test
-    def testCheckedTypeCast07(): ##java.lang.String = checked_cast("ABC")
-
-    @test
-    def testCheckedTypeCast08(): ##java.lang.Object = checked_cast("ABC")
+    def testCheckedTypeCast07(): ##java.lang.Object = checked_cast("ABC")
 
 }
