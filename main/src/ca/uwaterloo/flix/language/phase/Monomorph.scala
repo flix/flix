@@ -792,7 +792,7 @@ object Monomorph {
       // TODO ASSOC-TYPES should lazy map
       // TODO ASSOC-TYPES make prettier
       val (inst, subst) = root.instances(sym.sym.clazz).map {
-        case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, defs, ns, loc) =>
+        case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
           (i, Unification.unifyTypes(tpe, args.head, RigidityEnv.empty)) // TODO ASSOC-TYPES args should be arg
       }.collectFirst {
         case (inst, Result.Ok(subst)) => (inst, subst)
