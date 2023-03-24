@@ -1255,8 +1255,11 @@ object Kinder {
           unify(k0, expectedKind) match {
             case Some(kind) =>
               val innerExpectedKind = getClassKind(clazz)
-              val args = traverse(args0)(visitType(_, innerExpectedKind, kenv, senv, taenv, root))
-              ??? // TODO ASSOC-TYPES define Type.AssocType
+              val argsVal = traverse(args0)(visitType(_, innerExpectedKind, kenv, senv, taenv, root))
+              mapN(argsVal) {
+                case args => Type.AssocType(cst, args, kind, loc)
+              }
+            case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc).toFailure
           }
       }
 

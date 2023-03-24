@@ -598,6 +598,10 @@ object SemanticTokensProvider {
     case Type.Alias(cst, args, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
+
+    case Type.AssocType(cst, args, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+      Iterator(t) ++ args.flatMap(visitType).iterator
   }
 
   /**

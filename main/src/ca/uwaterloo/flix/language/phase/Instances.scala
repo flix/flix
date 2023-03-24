@@ -121,6 +121,7 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
+        case Type.AssocType(assoc, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc) // TODO ASSOC-TYPES real error
       }
     }
 
@@ -148,6 +149,7 @@ object Instances {
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(generifyBools), kind, loc)
     }
 
     /**

@@ -787,6 +787,9 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
+    case Type.AssocType(sym, args, kind, loc) =>
+      val as = args.map(eraseType)
+      Type.AssocType(sym, as, kind, loc)
   }
 
 }

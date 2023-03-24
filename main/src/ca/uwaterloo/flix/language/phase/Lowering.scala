@@ -906,6 +906,7 @@ object Lowering {
 
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
+      case Type.AssocType(cst, args, kind, loc) => throw InternalCompilerException("unexpected associated type", loc)
     }
 
     if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
