@@ -1625,6 +1625,17 @@ object Kinder {
         }
       }
 
+    case UnkindedType.AssocType(cst, args, loc) =>
+      val clazz = root.classes(cst.sym.clazz)
+      val kind = getClassKind(clazz)
+
+      // TODO ASSOC-TYPES folding here but should only be one arg
+      fold(args, KindEnv.empty) {
+        case (acc, arg) => flatMapN(inferType(arg, kind, kenv0, taenv, root)) {
+          kenv => acc ++ kenv
+        }
+      }
+
     case UnkindedType.Arrow(purAndEff, _, _) =>
       val purAndEffKenvVal = inferPurityAndEffect(purAndEff, kenv0, taenv, root)
       val argKenvVal = fold(tpe.typeArguments, KindEnv.empty) {
