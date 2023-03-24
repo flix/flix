@@ -797,10 +797,9 @@ object Monomorph {
       }.collectFirst {
         case (inst, Result.Ok(subst)) => (inst, subst)
       }.get
-      // TODO ASSOC-TYPES continue here
 
-      val as = args.map(eraseType)
-      Type.AssocType(sym, as, kind, loc)
+      val assoc = inst.assocs.find(_.ident.name == sym.sym.name).get
+      subst(assoc.tpe)
   }
 
 }
