@@ -1229,6 +1229,7 @@ object Kinder {
         case Some(kind) => visitType(t, kind, kenv, senv, taenv, root)
         case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k, loc).toFailure
       }
+
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv(cst.sym) match {
         case KindedAst.TypeAlias(_, _, _, tparams, tpe, _) =>
@@ -1241,6 +1242,21 @@ object Kinder {
               case Some(_) => Type.Alias(cst, args, t, loc).toSuccess
               case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = t.kind, loc).toFailure
             }
+          }
+      }
+
+    case UnkindedType.AssocType(cst, args0, loc) =>
+      val clazz = root.classes(cst.sym.clazz)
+      // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
+      clazz.assocs.find(_.sym == cst.sym).get match {
+        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams, k0, loc) =>
+          // TODO ASSOC-TYPES for now assuming just one type parameter
+          // check that the assoc type kind matches the expected
+          unify(k0, expectedKind) match {
+            case Some(kind) =>
+              val innerExpectedKind = getClassKind(clazz)
+              val args = traverse(args0)(visitType(_, innerExpectedKind, kenv, senv, taenv, root))
+              ??? // TODO ASSOC-TYPES define Type.AssocType
           }
       }
 

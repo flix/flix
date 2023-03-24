@@ -2415,8 +2415,12 @@ object Resolver {
         }
 
       case UnkindedType.UnappliedAssocType(sym, loc) =>
+        // TODO ASSOC-TYPES for now just assuming that it is applied to exactly the right number
+        // TODO ASSOC-TYPES should check params number like for aliases
         traverse(targs)(finishResolveType(_, taenv)) map {
-          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc) // TODO ASSOC-TYPES change to proper applied assoc type
+          resolvedArgs =>
+            val cst = Ast.AssocTypeConstructor(sym, loc)
+            UnkindedType.AssocType(cst, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.Var =>
@@ -3059,7 +3063,7 @@ object Resolver {
     * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
   private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
-   assoc0.toSuccess  // TODO ASSOC-TYPES check class accessibility
+    assoc0.toSuccess // TODO ASSOC-TYPES check class accessibility
   }
 
   /**
