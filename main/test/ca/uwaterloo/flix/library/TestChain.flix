@@ -682,64 +682,6 @@ namespace TestChain {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        List.toChain(Nil) |> Chain.product == 1
-
-    @test
-    def product02(): Bool =
-        List.toChain(1 :: Nil) |> Chain.product == 1
-
-    @test
-    def product03(): Bool =
-        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.product == 6
-
-    @test
-    def product04(): Bool =
-        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.product == -18
-
-    @test
-    def product05(): Bool =
-        List.toChain(-1 :: -2 :: -3 :: -4 :: Nil) |> Chain.product == 24
-
-    @test
-    def product06(): Bool =
-        List.toChain(10 :: -10 :: Nil) |> Chain.product == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        List.toChain(Nil) |> Chain.productWith(x -> x + 1) == 1
-
-    @test
-    def productWith02(): Bool =
-        List.toChain(1 :: Nil) |> Chain.productWith(x -> x + 1) == 2
-
-    @test
-    def productWith03(): Bool =
-        List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith04(): Bool =
-        List.toChain(1 :: 2 :: 3 :: -3 :: Nil) |> Chain.productWith(x -> x + 1) == -48
-
-    @test
-    def productWith05(): Bool =
-        List.toChain(-2 :: -3 :: -4 :: -5 :: Nil) |> Chain.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith06(): Bool =
-        List.toChain(10 :: -10 :: Nil) |> Chain.productWith(x -> x + 1) == -99
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

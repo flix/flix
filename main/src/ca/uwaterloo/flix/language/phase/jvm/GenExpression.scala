@@ -39,8 +39,6 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
-
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
@@ -180,22 +178,6 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
-    case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
-      // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-      // Compile the expression representing the region
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-      // Call the Region's `runOnExit` method
-      visitor.visitInsn(SWAP)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
-
-      // Put a Unit value on the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
     case Expression.TryCatch(exp, rules, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
@@ -287,6 +269,9 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Unary(sop) =>
+        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
       case IntrinsicOperator1.Is(sym) =>
         // Adding source line number for debugging
@@ -777,6 +762,22 @@ object GenExpression {
             // Call the Region's `spawn` method
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
         }
+
+        // Put a Unit value on the stack
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+      case IntrinsicOperator2.ScopeExit =>
+        // Compile the expression, putting a function implementing the Runnable interface on the stack
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+        // Compile the expression representing the region
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
+
+        // Call the Region's `runOnExit` method
+        visitor.visitInsn(SWAP)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
 
         // Put a Unit value on the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)

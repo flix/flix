@@ -1963,63 +1963,6 @@ namespace TestVector {
         Vector.count(i -> i > 3, Vector#{6, 7}) == 2
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Vector.product(Vector#{}) == 1
-
-    @test
-    def product02(): Bool =
-        Vector.product(Vector#{1}) == 1
-
-    @test
-    def product03(): Bool =
-        Vector.product(Vector#{1, 2, 3}) == 6
-
-    @test
-    def product04(): Bool =
-        Vector.product(Vector#{1, 2, 3, -3}) == -18
-
-    @test
-    def product05(): Bool =
-        Vector.product(Vector#{-1, -2, -3, -4}) == 24
-
-    @test
-    def product06(): Bool =
-        Vector.product(Vector#{10, -10}) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{}) == 1
-
-    @test
-    def productWith02(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1}) == 2
-
-    @test
-    def productWith03(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1, 2, 3}) == 24
-
-    @test
-    def productWith04(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1, 2, 3, -3}) == -48
-
-    @test
-    def productWith05(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{-2, -3, -4, -5}) == 24
-
-    @test
-    def productWith06(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{10, -10}) == -99
-
-    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

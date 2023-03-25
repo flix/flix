@@ -985,15 +985,6 @@ object ParsedAst {
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Of Expression.
-      *
-      * @param name the tag of the expression.
-      * @param exp  the expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Checked Type Cast expression.
       *
       * @param sp1 the position of the first character in the expression.

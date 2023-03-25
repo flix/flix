@@ -501,18 +501,6 @@ namespace Nec {
         Foldable.sumWith(f, c)
 
     ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(c: Nec[Int32]): Int32 =
-        Foldable.product(c)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, c: Nec[a]): Int32 \ ef =
-        Foldable.productWith(f, c)
-
-    ///
     /// Returns the concatenation of the elements in `c`.
     ///
     pub def flatten(c: Nec[Nec[a]]): Nec[a] = match viewLeft(c) {

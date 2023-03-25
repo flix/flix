@@ -632,39 +632,6 @@ namespace Map {
         }
 
     ///
-    /// Returns the product of all keys in the map `m`.
-    ///
-    pub def productKeys(m: Map[Int32, v]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productKeys(t)
-
-    ///
-    /// Returns the product of all values in the map `m`.
-    ///
-    pub def productValues(m: Map[k, Int32]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productValues(t)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
-        let Map(t) = m;
-        def pw() = RedBlackTree.productWith(f, t);
-        typematch f {
-            case g: (k, v) -> Int32 \ {} =>
-                if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, g, t)
-                else
-                    pw()
-            case _: (k, v) -> Int32 \ ef => pw()
-            case _: _ => unreachable!()
-        }
-
-    ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
     ///
     /// Returns `false` if `m` is the empty map.

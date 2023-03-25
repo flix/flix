@@ -375,7 +375,7 @@ object Lowering {
     case TypedAst.Expression.OpenAs(sym, exp, tpe, loc) =>
       visitExp(exp) // TODO RESTR-VARS maybe add to loweredAST
 
-    case TypedAst.Expression.Use(_, exp, _) =>
+    case TypedAst.Expression.Use(_, _, exp, _) =>
       visitExp(exp)
 
     case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
@@ -573,10 +573,6 @@ object Lowering {
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
-
-    case TypedAst.Expression.Of(_, exp, _, _, _, _) =>
-      // remove the 'of' wrapper
-      visitExp(exp)
 
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)

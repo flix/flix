@@ -522,7 +522,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Of
+    Expressions.Assign
   }
 
   def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
@@ -566,10 +566,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
-    }
-
-    def Of: Rule1[ParsedAst.Expression] = rule {
-      (Names.QName ~ WS ~ keyword("of") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Of) | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {

@@ -146,18 +146,6 @@ pub class Reducible[t: Type -> Type] {
         Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
 
     ///
-    /// Returns the product of all elements in `t`.
-    ///
-    pub def product(t: t[Int32]): Int32 =
-        Reducible.foldLeft((acc, a) -> a * acc, 1, t)
-
-    ///
-    /// Returns the product of all elements in `t` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
-        Reducible.foldLeft((acc, a) -> f(a) * acc, 1, t)
-
-    ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
     pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ ef =

@@ -88,7 +88,7 @@ object Statistics {
       case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
-      case Expression.Use(_, exp, _) => visitExp(exp)
+      case Expression.Use(_, _, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, pur, eff, loc) => visitExp(exp)
@@ -124,7 +124,6 @@ object Statistics {
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp)
       case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp)
       case Expression.UncheckedCast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.UncheckedMaskingCast(exp, tpe, pur, eff, loc) => visitExp(exp)

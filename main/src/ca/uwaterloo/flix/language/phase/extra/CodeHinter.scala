@@ -97,7 +97,7 @@ object CodeHinter {
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
 
-    case Expression.Use(_, exp, _) => visitExp(exp)
+    case Expression.Use(_, _, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
 
@@ -216,9 +216,6 @@ object CodeHinter {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Of(_, exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.CheckedCast(_, exp, _, _, _, _) =>

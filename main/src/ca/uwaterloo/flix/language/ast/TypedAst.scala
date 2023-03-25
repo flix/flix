@@ -121,7 +121,7 @@ object TypedAst {
       def eff: Type = exp.eff
     }
 
-    case class Use(sym: Symbol, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Use(sym: Symbol, alias: Name.Ident, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = exp.tpe
 
       def pur: Type = exp.pur
@@ -220,8 +220,6 @@ object TypedAst {
     case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ascribe(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class Of(sym: Ast.RestrictableCaseSymUse, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

@@ -258,34 +258,6 @@ def count03(): Bool = Option.count(i -> i == 2, Some(2)) == 1
     def sumWith03(): Bool = Option.sumWith(x -> x + 1, Some(-2)) == -1
 
 
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool = Option.product(None) == 1
-
-    @test
-    def product02(): Bool = Option.product(Some(1)) == 1
-
-    @test
-    def product03(): Bool = Option.product(Some(-2)) == -2
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool = Option.productWith(x -> x + 1, None) == 1
-
-    @test
-    def productWith02(): Bool = Option.productWith(x -> x + 1, Some(1)) == 2
-
-    @test
-    def productWith03(): Bool = Option.productWith(x -> x + 1, Some(-2)) == -1
-
-
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
 /////////////////////////////////////////////////////////////////////////////

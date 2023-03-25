@@ -961,4 +961,33 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param fromName the original name
+    * @param toName   the alias
+    * @param loc      the location where the error occurred
+    */
+  case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
+    def summary: String = s"The case of '${fromName}' does not match the case of '${toName}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched alias case.
+         |
+         |${code(loc, "The case of '${fromName}' does not match the case of '${toName}'.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""An alias must match the case of the name it replaces.
+         |
+         |If a name is lowercase, the alias must be lowercase.
+         |If a name is uppercase, the alias must be uppercase.
+         |""".stripMargin
+    })
+  }
 }

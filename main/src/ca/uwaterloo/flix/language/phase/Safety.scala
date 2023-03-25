@@ -105,7 +105,7 @@ object Safety {
       case Expression.OpenAs(_, exp, _, _) =>
         visit(exp)
 
-      case Expression.Use(_, exp, _) =>
+      case Expression.Use(_, _, exp, _) =>
         visit(exp)
 
       case Expression.Lambda(_, exp, _, _) =>
@@ -221,9 +221,6 @@ object Safety {
         visit(exp1) ++ visit(exp2)
 
       case Expression.Ascribe(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expression.Of(_, exp, _, _, _, _) =>
         visit(exp)
 
       case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>

@@ -58,24 +58,6 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
 
     ///
-    /// Returns the product of all elements in `t`.
-    ///
-    pub def product(t: t[Int32]): Int32 =
-        if (Foldable.isEmpty(t))
-            1
-        else
-            Foldable.foldLeft((acc, x) -> acc * x, 1, t)
-
-    ///
-    /// Returns the product of all elements in `t` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
-        if (Foldable.isEmpty(t))
-            1
-        else
-            Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
-
-    ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
     /// Returns `false` if `t` is empty.

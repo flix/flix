@@ -67,7 +67,7 @@ object Regions {
     case Expression.OpenAs(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Use(_, exp, loc) => visitExp(exp)
+    case Expression.Use(_, _, exp, loc) => visitExp(exp)
 
     case Expression.Lambda(_, exp, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
@@ -187,9 +187,6 @@ object Regions {
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expression.Ascribe(exp, tpe, _, _, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
-    case Expression.Of(_, exp, _, _, tpe, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expression.CheckedCast(_, exp, tpe, _, _, loc) =>

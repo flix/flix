@@ -424,10 +424,10 @@ object Kinder {
           KindedAst.Expression.OpenAs(sym, exp, tvar, loc)
       }
 
-    case ResolvedAst.Expression.Use(sym, exp0, loc) =>
+    case ResolvedAst.Expression.Use(sym, alias, exp0, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        case exp => KindedAst.Expression.Use(sym, exp, loc)
+        case exp => KindedAst.Expression.Use(sym, alias, exp, loc)
       }
 
     case ResolvedAst.Expression.Cst(cst, loc) => KindedAst.Expression.Cst(cst, loc).toSuccess
@@ -700,12 +700,6 @@ object Kinder {
           val pvar = Type.freshVar(Kind.Bool, loc.asSynthetic)
           val evar = Type.freshVar(Kind.Effect, loc.asSynthetic)
           KindedAst.Expression.Error(err, tvar, pvar, evar)
-      }
-
-    case ResolvedAst.Expression.Of(sym, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
     case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>

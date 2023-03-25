@@ -39,7 +39,7 @@ class TestMavenPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      MavenPackageManager.installAll(manifest, path)(System.out) match {
+      MavenPackageManager.installAll(List(manifest), path)(System.out) match {
         case Ok(l) => l.head.endsWith(s"cache${s}https${s}repo1.maven.org${s}maven2${s}org${s}junit${s}jupiter${s}junit-jupiter-api${s}5.9.2${s}junit-jupiter-api-5.9.2.jar") &&
                       l(1).endsWith(s"cache${s}https${s}repo1.maven.org${s}maven2${s}org${s}opentest4j${s}opentest4j${s}1.2.0${s}opentest4j-1.2.0.jar") &&
                       l(2).endsWith(s"cache${s}https${s}repo1.maven.org${s}maven2${s}org${s}junit${s}platform${s}junit-platform-commons${s}1.9.2${s}junit-platform-commons-1.9.2.jar") &&
@@ -78,7 +78,7 @@ class TestMavenPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      MavenPackageManager.installAll(manifest, path)(System.out)
+      MavenPackageManager.installAll(List(manifest), path)(System.out)
     })
   }
 

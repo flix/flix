@@ -91,7 +91,7 @@ object ResolvedAst {
     // TODO RESTR-VARS should be Ast.RestrictableEnumSymUse for LSP
     case class OpenAs(sym: Symbol.RestrictableEnumSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Use(sym: Symbol, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Use(sym: Symbol, alias: Name.Ident, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -165,8 +165,6 @@ object ResolvedAst {
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ascribe(exp: ResolvedAst.Expression, expectedType: Option[UnkindedType], expectedEff: UnkindedType.PurityAndEffect, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Of(sym: Ast.RestrictableCaseSymUse, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
