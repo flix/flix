@@ -418,9 +418,6 @@ object SemanticTokensProvider {
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Of(sym, exp, _, _, _, _) =>
-      visitExp(exp) // TODO RESTR-VARS visit sym
-
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
