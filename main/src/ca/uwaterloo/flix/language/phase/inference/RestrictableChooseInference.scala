@@ -248,36 +248,6 @@ object RestrictableChooseInference {
   }
 
   /**
-    * Performs type inference on the given `of` expression.
-    */
-  def inferOf(exp0: KindedAst.Expression.Of, root: KindedAst.Root)(implicit flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = exp0 match {
-    case KindedAst.Expression.Of(symUse, exp, tvar, loc) =>
-
-      // Must check that the type of the expression cannot return anything but our symbol
-
-      val enumSym = symUse.sym.enumSym
-      val enum = root.restrictableEnums(enumSym)
-
-      val caseType = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), symUse.loc)
-
-      val (enumType, indexVar, _) = instantiatedEnumType(enumSym, enum, loc.asSynthetic)
-
-      for {
-        // infer the inner expression type
-        (constrs, tpe, pur, eff) <- Typer.inferExp(exp, root)
-
-        // set the expected type to (...)[TheCase]
-        _ <- unifyTypeM(indexVar, caseType, loc)
-
-        // check that the expression type matches the expected type
-        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
-
-        // unify with the tvar
-        _ <- unifyTypeM(tvar, tpe, loc)
-      } yield (constrs, tpe, pur, eff)
-  }
-
-  /**
     * Performs type inference on the given OpenAs expression.
     *
     * `OpenAs X e` requires that `e` have the type X[s] for some s
