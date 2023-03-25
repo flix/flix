@@ -555,14 +555,6 @@ class Bootstrap(val projectPath: Path) {
     * Builds a flix package for the project.
     */
   def buildPkg(o: Options): Result[Unit, Int] = {
-    //
-    // We require that a Flix package has a specific structure.
-    //
-    checkProjectPath(projectPath) match {
-      case Validation.Success(_) => ()
-      case failure => throw new RuntimeException(s"Missing files or directories: ${failure.errors.mkString(", ")}")
-    }
-
     // The path to the fpkg file.
     val pkgFile = Bootstrap.getPkgFile(projectPath)
 
@@ -589,27 +581,6 @@ class Bootstrap(val projectPath: Path) {
       case Failure(e) =>
         println(e.getMessage)
         Err(1)
-    }
-  }
-
-  /**
-    * Returns a Validation containing the list of missing paths in case the path is not a project path.
-    */
-  //TODO: delete?
-  private def checkProjectPath(p: Path): Validation[Unit, Path] = {
-    val required = List(
-      Bootstrap.getSourceDirectory(p),
-      Bootstrap.getTestDirectory(p),
-      Bootstrap.getLicenseFile(p),
-      Bootstrap.getReadmeFile(p)
-    )
-    Validation.traverseX(required) {
-      case path =>
-        if (Files.exists(path)) {
-          ().toSuccess
-        } else {
-          path.toFailure
-        }
     }
   }
 }

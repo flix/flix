@@ -26,30 +26,21 @@ class TestBootstrap extends FunSuite {
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.check(DefaultOptions)
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
   }
 
   test("build-jar") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
 
@@ -62,10 +53,7 @@ class TestBootstrap extends FunSuite {
   test("build-jar generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
 
@@ -85,10 +73,7 @@ class TestBootstrap extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".jar")
 
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
     def hash1 = calcHash(packagePath)
@@ -106,10 +91,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
 
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -122,10 +104,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
 
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -144,10 +123,7 @@ class TestBootstrap extends FunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".fpkg")
 
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
     def hash1 = calcHash(packagePath)
 
@@ -162,30 +138,21 @@ class TestBootstrap extends FunSuite {
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.benchmark(DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.run(DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
-    val b = Bootstrap.bootstrap(p)(System.out) match {
-      case Result.Ok(bootstrap) => bootstrap
-      case Result.Err(e) => fail(e.toString)
-    }
+    val b = Bootstrap.bootstrap(p)(System.out).get
     b.test(DefaultOptions)
   }
 

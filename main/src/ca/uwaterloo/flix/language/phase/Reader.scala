@@ -70,7 +70,7 @@ object Reader {
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
     */
-  def unpack(p: Path)(implicit flix: Flix): List[Source] = {
+  private def unpack(p: Path)(implicit flix: Flix): List[Source] = {
     // Check that the path is a flix package.
     if (!Bootstrap.isPkgFile(p))
       throw new RuntimeException(s"The path '$p' is not a flix package.")
