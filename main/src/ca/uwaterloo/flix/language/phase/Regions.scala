@@ -189,9 +189,6 @@ object Regions {
     case Expression.Ascribe(exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Of(_, exp, _, _, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
     case Expression.CheckedCast(_, exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
