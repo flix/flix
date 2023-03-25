@@ -830,4 +830,35 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEmptyForFragment](result)
   }
+
+  test("IllegalUseAlias.01") {
+    val input =
+      """
+        |mod M {
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{foo => Foo}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUseAlias](result)
+  }
+
+  test("IllegalUseAlias.02") {
+    val input =
+      """
+        |mod M {
+        |    enum Enum1
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{Enum1 => enum1}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUseAlias](result)
+  }
 }
