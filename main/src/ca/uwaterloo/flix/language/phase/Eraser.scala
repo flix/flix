@@ -110,7 +110,8 @@ object Eraser {
       ErasedAst.Expression.IntrinsicN(op, exps.map(visitExp), tpe, loc)
 
     case FinalAst.Expression.Unary(sop, _, exp, tpe, loc) =>
-      ErasedAst.Expression.Unary(sop, visitExp(exp), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator1.Unary(sop)
+      ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       ErasedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
@@ -145,9 +146,8 @@ object Eraser {
       ErasedAst.Expression.Scope(sym, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.ScopeExit(exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      ErasedAst.Expression.ScopeExit(e1, e2, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator2.ScopeExit
+      ErasedAst.Expression.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.Is(sym, exp, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Is(sym)
