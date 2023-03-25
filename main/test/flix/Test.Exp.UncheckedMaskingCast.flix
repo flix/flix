@@ -4,7 +4,7 @@ namespace Test/Exp/UncheckedMaskingCast {
     def testMask01(): Bool = masked_cast(true)
 
     @test
-    def testMask02(): Bool = masked_cast(deref (ref true))
+    def testMask02(): Bool = masked_cast(deref (ref true @ Static))
 
     @test
     def testMask03(): Bool = region rh {

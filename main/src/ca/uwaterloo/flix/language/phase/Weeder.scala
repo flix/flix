@@ -1681,7 +1681,7 @@ object Weeder {
     case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
       val exp1Val = visitExp(exp1, senv)
-      val exp2Val = traverseOpt(exp2)(visitExp(_, senv))
+      val exp2Val = visitExp(exp2, senv)
       mapN(exp1Val, exp2Val) {
         case (e1, e2) => WeededAst.Expression.Ref(e1, e2, loc)
       }
