@@ -72,10 +72,10 @@ object MavenPackageManager {
         resList.toList
       } catch {
         case e: Exception =>
-          out.println(e)
+          out.println(e.getMessage)
           //Shortens the error message to just give the name of the dependency
           val message = e.getMessage.replaceAll("[^a-zA-Z0-9:. ]", "/").split('/').apply(0)
-          return Err(PackageError.CoursierError(s"Error in downloading Maven dependency: $message"))
+          return Err(PackageError.CoursierError(message))
       }
       l.toOk
     }

@@ -15,23 +15,76 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait PackageError
+import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
+import ca.uwaterloo.flix.util.Formatter
+
+import java.net.URL
+
+sealed trait PackageError {
+  /**
+    * Returns a human-readable and formatted string representation of this error.
+    */
+  def message(f: Formatter): String
+}
 
 object PackageError {
-  case class VersionDoesNotExist(msg: String) extends PackageError
+  case class VersionDoesNotExist(version: SemVer, project: Project) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}
+         |""".stripMargin
+  }
 
-  case class InvalidProjectName(msg: String) extends PackageError
+  case class InvalidProjectName(projectString: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | A GitHub project should be formatted like so: 'owner/repository'.
+         | Instead found: ${f.red(projectString)}.
+         |""".stripMargin
+  }
 
-  case class NoReleasesFound(msg: String) extends PackageError
+  case class NoReleasesFound(project: Project) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | No releases found for project ${f.bold(project.toString)}.
+         |""".stripMargin
+  }
 
-  case class ProjectNotFound(msg: String) extends PackageError
+  case class ProjectNotFound(url: URL, project: Project) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | An I/O error occurred while trying to read the following url:
+         | ${f.cyan(url.toString)}
+         | Project: ${f.bold(project.toString)}
+         |""".stripMargin
+  }
 
-  case class JsonError(msg: String) extends PackageError
+  case class JsonError(json: String, project: Project) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | An error occurred while trying to parse the following as JSON:
+         | ${f.cyan(json)}
+         | Project: ${f.bold(project.toString)}
+         |""".stripMargin
+  }
 
-  case class DownloadError(msg: String) extends PackageError
+  case class DownloadError(asset: Asset) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | A download error occurred while downloading ${f.bold(asset.name)}
+         |""".stripMargin
+  }
 
-  case class CoursierError(msg: String) extends PackageError
+  case class CoursierError(errorMsg: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | An error occurred with Coursier:
+         | $errorMsg
+         |""".stripMargin
+  }
 
-  case class ManifestParseError(e: ManifestError) extends PackageError
+  case class ManifestParseError(e: ManifestError) extends PackageError {
+    override def message(f: Formatter): String = e.message(f)
+  }
 
 }

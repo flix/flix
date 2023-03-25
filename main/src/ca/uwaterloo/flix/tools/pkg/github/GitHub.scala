@@ -53,13 +53,17 @@ object GitHub {
     */
   def getReleases(project: Project): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
-    val releaseJsons = try {
+    val json = try {
       val stream = url.openStream()
-      val json = StreamOps.readAll(stream)
+      StreamOps.readAll(stream)
+    } catch {
+      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+    }
+    val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
     } catch {
-      case _: IOException => return Err(PackageError.ProjectNotFound(s"Could not open stream to $url"))
-      case _: ClassCastException => return Err(PackageError.JsonError(s"Could not parse $url as JSON array"))
+
+      case _: ClassCastException => return Err(PackageError.JsonError(json, project))
     }
     Ok(releaseJsons.arr.map(parseRelease))
   }
@@ -79,7 +83,7 @@ object GitHub {
     getReleases(project).flatMap {
       releases =>
         releases.maxByOption(_.version) match {
-          case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
+          case None => Err(PackageError.NoReleasesFound(project))
           case Some(latest) => Ok(latest)
         }
     }
@@ -92,7 +96,7 @@ object GitHub {
     getReleases(project).flatMap {
       releases =>
         releases.find(r => r.version == version) match {
-          case None => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+          case None => Err(PackageError.VersionDoesNotExist(version, project))
           case Some(release) => Ok(release)
         }
     }
