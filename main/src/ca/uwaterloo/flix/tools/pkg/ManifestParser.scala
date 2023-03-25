@@ -111,12 +111,12 @@ object ManifestParser {
     try {
       val prop = parser.getString(propString)
       if (prop == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+        return Err(ManifestError.MissingRequiredProperty(p, propString))
       }
       Ok(prop)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type String"))
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
     }
   }
 
@@ -130,7 +130,7 @@ object ManifestParser {
       Ok(Option(prop))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type String"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
     }
   }
 
@@ -143,12 +143,12 @@ object ManifestParser {
     try {
       val array = parser.getArray(propString)
       if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
+        return Err(ManifestError.MissingRequiredProperty(p, propString))
       }
       Ok(array)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, s"'$propString' is missing"))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Array"))
+      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array"))
     }
   }
 
@@ -163,7 +163,7 @@ object ManifestParser {
       Ok(Option(table))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, s"'$propString' should have type Table"))
+      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table"))
     }
   }
 
@@ -177,10 +177,10 @@ object ManifestParser {
       s.split('.') match {
         case Array(major, minor, patch) =>
           Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
-        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Flix version should be formatted like so: 'x.x.x'"))
+        case _ => Err(ManifestError.FlixVersionHasWrongLength(p, s))
       }
     } catch {
-      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, "Could not parse Flix version as three numbers"))
+      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s))
     }
   }
 
@@ -217,8 +217,8 @@ object ManifestParser {
     depName.split(':') match {
       case Array(repo, _) =>
         if (repo == "github") Ok(Repository.GitHub)
-        else Err(ManifestError.UnsupportedRepository(p, s"The repository $repo is not supported"))
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
+        else Err(ManifestError.UnsupportedRepository(p, repo))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, depName))
     }
   }
 
@@ -231,9 +231,9 @@ object ManifestParser {
     depName.split(':') match {
       case Array(_, rest) => rest.split('/') match {
         case Array(username, _) => checkNameCharacters(username, p)
-        case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
+        case _ => Err(ManifestError.FlixDependencyFormatError(p, depName))
       }
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, depName))
     }
   }
 
@@ -245,7 +245,7 @@ object ManifestParser {
   private def getProjectName(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split('/') match {
       case Array(_, projectName) => checkNameCharacters(projectName, p)
-      case _ => Err(ManifestError.FlixDependencyFormatError(p, "A Flix dependency should be formatted like so: 'repository:username/projectname'"))
+      case _ => Err(ManifestError.FlixDependencyFormatError(p, depName))
     }
   }
 
@@ -257,7 +257,7 @@ object ManifestParser {
   private def getGroupId(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split(':') match {
       case Array(groupId, _) => checkNameCharacters(groupId, p)
-      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+      case _ => Err(ManifestError.MavenDependencyFormatError(p, depName))
     }
   }
 
@@ -269,7 +269,7 @@ object ManifestParser {
   private def getArtifactId(depName: String, p: Path): Result[String, ManifestError] = {
     depName.split(':') match {
       case Array(_, artifactId) => checkNameCharacters(artifactId, p)
-      case _ => Err(ManifestError.MavenDependencyFormatError(p, "A Maven dependency should be formatted like so: 'group:artifact'"))
+      case _ => Err(ManifestError.MavenDependencyFormatError(p, depName))
     }
   }
 
@@ -282,7 +282,7 @@ object ManifestParser {
       toFlixVer(depVer.asInstanceOf[String], p)
     } catch {
       case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+        Err(ManifestError.DependencyFormatError(p, depVer))
     }
   }
 
@@ -293,20 +293,21 @@ object ManifestParser {
     */
   def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
-      depVer.asInstanceOf[String].split('.') match {
+      val version = depVer.asInstanceOf[String]
+      version.split('.') match {
         case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
         case Array(major, minor, patch) =>
           patch.split('-') match {
             case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
             case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
           }
-        case _ => Err(ManifestError.VersionHasWrongLength(p, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'"))
+        case _ => Err(ManifestError.MavenVersionHasWrongLength(p, version))
       }
     } catch {
       case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, "A value in a dependency table should be of type String"))
+        Err(ManifestError.DependencyFormatError(p, depVer))
       case _: NumberFormatException =>
-        Err(ManifestError.VersionNumberWrong(p, "Could not parse Maven version as numbers"))
+        Err(ManifestError.VersionNumberWrong(p, depVer.asInstanceOf[String]))
     }
   }
 
@@ -365,7 +366,7 @@ object ManifestParser {
         stringSet.add(s)
       } catch {
         case _: TomlInvalidTypeException =>
-          return Err(ManifestError.AuthorNameError(p, "All author names should be of type String"))
+          return Err(ManifestError.AuthorNameError(p))
       }
     }
     Ok(stringSet.toList)
@@ -375,10 +376,10 @@ object ManifestParser {
     * Checks that a package name does not include any illegal characters.
     */
   private def checkNameCharacters(name: String, p: Path): Result[String, ManifestError] = {
-    if(name.matches("^[a-zA-Z0-9.-]+$"))
+    if(name.matches("^[a-zA-Z0-9._-]+$"))
       Ok(name)
     else
-      Err(ManifestError.IllegalName(p, s"A dependency name cannot include any special characters: $name"))
+      Err(ManifestError.IllegalName(p, name))
   }
 
 }

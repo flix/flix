@@ -1,14 +1,18 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageError}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageError, SemVer}
+import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.FunSuite
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.net.URL
+import java.nio.file.Files
 
 class TestFlixPackageManager extends FunSuite {
   val s: String = File.separator
+  val f: Formatter = Formatter.NoFormatter
 
   test("Install missing dependency.01") {
     assertResult(expected = true)(actual = {
@@ -41,7 +45,7 @@ class TestFlixPackageManager extends FunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) match {
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
-        case Err(e) => e
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -141,7 +145,7 @@ class TestFlixPackageManager extends FunSuite {
       FlixPackageManager.installAll(List(manifest1, manifest2), path)(System.out) match {
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
                       l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
-        case Err(e) => e
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -178,7 +182,7 @@ class TestFlixPackageManager extends FunSuite {
       FlixPackageManager.installAll(List(manifest), path)(System.out) //installs the dependency
       FlixPackageManager.installAll(List(manifest), path)(System.out) match { //does nothing
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
-        case Err(e) => e
+        case Err(e) => e.message(f)
       }
     })
   }
@@ -220,7 +224,7 @@ class TestFlixPackageManager extends FunSuite {
   }
 
   test("Give error for missing dependency") {
-    assertResult(expected = Err(PackageError.ProjectNotFound("Could not open stream to https://api.github.com/repos/AnnaBlume99/helloworld/releases")))(actual = {
+    assertResult(expected = PackageError.ProjectNotFound(new URL("https://api.github.com/repos/AnnaBlume99/helloworld/releases"), Project("AnnaBlume99", "helloworld")).message(f))(actual = {
       val toml = {
         """
           |[package]
@@ -248,12 +252,15 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(List(manifest), path)(System.out)
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
+        case Ok(l) => l
+        case Err(e) => e.message(f)
+      }
     })
   }
 
   test("Give error for missing version") {
-    assertResult(expected = Err(PackageError.VersionDoesNotExist("Version 0.0.1 of project magnus-madsen/helloworld does not exist")))(actual = {
+    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, Some(1), None), Project("magnus-madsen", "helloworld")).message(f))(actual = {
       val toml = {
         """
           |[package]
@@ -281,7 +288,10 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(List(manifest), path)(System.out)
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
+        case Ok(l) => l
+        case Err(e) => e.message(f)
+      }
     })
   }
 
