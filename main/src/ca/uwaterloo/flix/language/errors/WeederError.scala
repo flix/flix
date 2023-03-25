@@ -932,4 +932,62 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that a loop does not contain any fragments.
+    *
+    * @param loc the location of the for-loop with no fragments.
+    */
+  case class IllegalEmptyForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A loop must iterate over some collection."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop does not iterate over any collection.
+         |
+         |${code(loc, "Loop does not iterate over any collection.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must contain a collection comprehension.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param fromName the original name
+    * @param toName   the alias
+    * @param loc      the location where the error occurred
+    */
+  case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
+    def summary: String = s"The case of '${fromName}' does not match the case of '${toName}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched alias case.
+         |
+         |${code(loc, "The case of '${fromName}' does not match the case of '${toName}'.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""An alias must match the case of the name it replaces.
+         |
+         |If a name is lowercase, the alias must be lowercase.
+         |If a name is uppercase, the alias must be uppercase.
+         |""".stripMargin
+    })
+  }
 }

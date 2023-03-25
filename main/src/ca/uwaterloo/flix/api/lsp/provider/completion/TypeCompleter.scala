@@ -15,47 +15,30 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeCompletion
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 
 object TypeCompleter extends Completer {
 
   /**
-    * Returns a List of Completion for types (enums and aliases).
+    * Returns a List of Completion for types (enums, aliases and builtin).
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], deltaContext: DeltaContext): Iterable[TypeCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    TypeEnumCompleter.getCompletions(context) ++ TypeAliasCompleter.getCompletions(context) ++ TypeBuiltinCompleter.getCompletions(context)
+  }
 
-    def getInternalPriority(loc: SourceLocation, ns: List[String]): String => String = {
-      if (loc.source.name == context.uri)
-        Priority.boost
-      else if (ns.isEmpty)
-        Priority.normal
-      else
-        Priority.low
-    }
-
-    val enums = root.get.enums.collect {
-      case (_, t) if !t.ann.isInternal =>
-        val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
-    }
-
-    val aliases = root.get.typeAliases.map {
-      case (_, t) =>
-        val name = t.sym.name
-        val internalPriority = getInternalPriority(t.loc, t.sym.namespace)
-        Completion.TypeCompletion(s"$name${formatTParams(t.tparams)}", priorityBoostForTypes(internalPriority(name)),
-          TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
-    }
-
-    enums ++ aliases
+  /**
+    * Get the internal priority from the TypedAst SourceLocation and namespace
+    */
+  def getInternalPriority(loc: SourceLocation, ns: List[String])(implicit context: CompletionContext): String => String = {
+    if (loc.source.name == context.uri)
+      Priority.boost
+    else if (ns.isEmpty)
+      Priority.normal
+    else
+      Priority.low
   }
 
   /**
@@ -73,7 +56,7 @@ object TypeCompleter extends Completer {
     * Format type params in the right form to be inserted as a snippet
     * e.g. "[${1:a}, ${2:b}, ${3:c}]"
     */
-  private def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
+  def formatTParamsSnippet(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
       case _ => tparams.zipWithIndex.map {
@@ -86,7 +69,7 @@ object TypeCompleter extends Completer {
     * Format type params in the right form to be displayed in the list of completions
     * e.g. "[a, b, c]"
     */
-  private def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
+  def formatTParams(tparams: List[TypedAst.TypeParam]): String = {
     tparams match {
       case Nil => ""
       case _ => tparams.map(_.name).mkString("[", ", ", "]")

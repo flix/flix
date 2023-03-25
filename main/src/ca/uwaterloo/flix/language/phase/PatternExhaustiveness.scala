@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pattern, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
@@ -103,17 +103,18 @@ object PatternExhaustiveness {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, NonExhaustiveMatchError] = flix.phase("PatternExhaustiveness") {
-    val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
-    val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
-    // Only need to check sigs with implementations
-    val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
+    flix.phase("PatternExhaustiveness") {
+      val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
+      val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
+      // Only need to check sigs with implementations
+      val sigsErrs = root.sigs.values.flatMap(_.impl).flatMap(visitImpl(_, root))
 
-    (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
-      case Nil => ().toSuccess
-      case errs => Validation.Failure(LazyList.from(errs))
+      (defErrs ++ instanceDefErrs ++ sigsErrs).toList match {
+        case Nil => Validation.Success(root)
+        case errs => Validation.SoftFailure(root, LazyList.from(errs))
+      }
     }
-  }
 
   /**
     * Check that all patterns in an implementation are exhaustive
@@ -140,7 +141,7 @@ object PatternExhaustiveness {
       case Expression.Hole(_, _, _) => Nil
       case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.OpenAs(_, exp, _, _) => visitExp(exp, root)
-      case Expression.Use(_, exp, _) => visitExp(exp, root)
+      case Expression.Use(_, _, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
@@ -194,11 +195,9 @@ object PatternExhaustiveness {
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
-      case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Upcast(exp, _, _) => visitExp(exp, root)
-      case Expression.Supercast(exp, _, _) => visitExp(exp, root)
+      case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedMaskingCast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>

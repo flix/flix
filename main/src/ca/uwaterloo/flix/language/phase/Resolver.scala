@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -57,9 +57,34 @@ object Resolver {
   private val Object = classOf[AnyRef]
 
   /**
+    * The set of cases that are used by default in the namespace.
+    */
+  private val DefaultCases = Map(
+    "Nil" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Nil", SourceLocation.Unknown),
+    "Cons" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "List", SourceLocation.Unknown), "Cons", SourceLocation.Unknown),
+
+    "None" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "None", SourceLocation.Unknown),
+    "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
+
+    "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
+
+    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
+    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
+  )
+
+  /**
     * Performs name resolution on the given program `root`.
     */
   def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+
+
+    // Get the default uses.
+    // Skip over anything we can't find
+    // in order to support LibMin/LibNix
+    val defaultUses: ListMap[String, Resolution] = ListMap(MapOps.mapValues(DefaultCases) {
+      case sym => root.symbols.getOrElse(Name.mkUnlocatedNName(sym.namespace), Map.empty).getOrElse(sym.name, Nil).map(Resolution.Declaration)
+    })
 
     val usesVal = root.uses.map {
       case (ns, uses0) =>
@@ -69,10 +94,10 @@ object Resolver {
     }
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
-    flatMapN(sequence(usesVal), resolveTypeAliases(root)) {
+    flatMapN(sequence(usesVal), resolveTypeAliases(defaultUses, root)) {
       case (uses, (taenv, taOrder)) =>
 
-        val unitsVal = traverse(root.units.values)(visitUnit(_, taenv, root))
+        val unitsVal = traverse(root.units.values)(visitUnit(_, taenv, defaultUses, root))
         flatMapN(unitsVal) {
           case units =>
             val table = SymbolTable.traverse(units)(tableUnit)
@@ -116,7 +141,6 @@ object Resolver {
     case enum: ResolvedAst.Declaration.RestrictableEnum => SymbolTable.empty.addRestrictableEnum(enum)
     case alias: ResolvedAst.Declaration.TypeAlias => SymbolTable.empty.addTypeAlias(alias)
     case effect: ResolvedAst.Declaration.Effect => SymbolTable.empty.addEffect(effect)
-    // TODO NS-REFACTOR this will be added once Cases become proper symbols
     case ResolvedAst.Declaration.Case(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
@@ -126,9 +150,9 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the root.
     */
-  private def semiResolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
+  private def semiResolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     fold(root.units.values, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
-      case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, root)) {
+      case (acc, unit) => mapN(semiResolveTypeAliasesInUnit(unit, defaultUses, root)) {
         case aliases => aliases.foldLeft(acc) {
           case (innerAcc, alias) => innerAcc + (alias.sym -> alias)
         }
@@ -139,12 +163,12 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the unit.
     */
-  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
+  private def semiResolveTypeAliasesInUnit(unit: NamedAst.CompilationUnit, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
             case ns: NamedAst.Declaration.Namespace => ns
           }
@@ -152,7 +176,7 @@ object Resolver {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
           val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, env, Name.RootNS, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, root))
+          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
           mapN(aliasesVal, nsVal) {
             case (aliases, ns) => aliases ::: ns.flatten
           }
@@ -162,13 +186,13 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the namespace.
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, loc) =>
       val ns = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
             case ns: NamedAst.Declaration.Namespace => ns
           }
@@ -176,7 +200,7 @@ object Resolver {
             case alias: NamedAst.Declaration.TypeAlias => alias
           }
           val aliasesVal = traverse(aliases0)(semiResolveTypeAlias(_, env, ns, root))
-          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, root))
+          val nsVal = traverse(namespaces)(semiResolveTypeAliasesInNamespace(_, defaultUses, root))
           mapN(aliasesVal, nsVal) {
             case (aliases, ns) => aliases ::: ns.flatten
           }
@@ -208,8 +232,8 @@ object Resolver {
     *   - a list of the aliases in a processing order,
     *     such that any alias only depends on those earlier in the list
     */
-  def resolveTypeAliases(root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
-    flatMapN(semiResolveTypeAliases(root)) {
+  def resolveTypeAliases(defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[(Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], List[Symbol.TypeAliasSym]), ResolutionError] = {
+    flatMapN(semiResolveTypeAliases(defaultUses, root)) {
       case semiResolved =>
         flatMapN(findResolutionOrder(semiResolved.values)) {
           case orderedSyms =>
@@ -288,13 +312,13 @@ object Resolver {
   /**
     * Performs name resolution on the compilation unit.
     */
-  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
+  private def visitUnit(unit: NamedAst.CompilationUnit, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.CompilationUnit, ResolutionError] = unit match {
     case NamedAst.CompilationUnit(usesAndImports0, decls0, loc) =>
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, Name.RootNS, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
-          val env = mkUseEnv(usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, Name.RootNS, root))
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
+          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, Name.RootNS, defaultUses, root))
           mapN(declsVal) {
             case decls => ResolvedAst.CompilationUnit(usesAndImports, decls, loc)
           }
@@ -304,7 +328,7 @@ object Resolver {
   /**
     * Performs name resolution on the declaration.
     */
-  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
+  private def visitDecl(decl: NamedAst.Declaration, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, defaultUses: ListMap[String, Resolution], root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
@@ -313,8 +337,8 @@ object Resolver {
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           // reset the env
-          val env = mkUseEnv(usesAndImports, root)
-          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, root))
+          val env = appendAllUseEnv(defaultUses, usesAndImports, root)
+          val declsVal = traverse(decls0)(visitDecl(_, env, taenv, ns, defaultUses, root))
           mapN(declsVal) {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
@@ -767,10 +791,10 @@ object Resolver {
       /**
         * Resolve the application expression, performing currying over the subexpressions.
         */
-      def visitApply(exp: NamedAst.Expression.Apply, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
+      def visitApply(exp: NamedAst.Expression.Apply, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expression, ResolutionError] = exp match {
         case NamedAst.Expression.Apply(exp0, exps0, loc) =>
-          val expVal = visitExp(exp0, env0, region)
-          val expsVal = traverse(exps0)(visitExp(_, env0, region))
+          val expVal = visitExp(exp0, env0)
+          val expsVal = traverse(exps0)(visitExp(_, env0))
           mapN(expVal, expsVal) {
             case (e, es) =>
               es.foldLeft(e) {
@@ -782,10 +806,10 @@ object Resolver {
       /**
         * Resolve the application expression, applying `defn` to `exps`.
         */
-      def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+      def visitApplyDef(app: NamedAst.Expression.Apply, defn: NamedAst.Declaration.Def, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         if (defn.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
-          val esVal = traverse(exps)(visitExp(_, env0, region))
+          val esVal = traverse(exps)(visitExp(_, env0))
           mapN(esVal) {
             es =>
               val base = ResolvedAst.Expression.Def(defn.sym, innerLoc)
@@ -793,17 +817,17 @@ object Resolver {
           }
         } else {
           // Case 2: We have to curry. (See below).
-          visitApply(app, env0, region)
+          visitApply(app, env0)
         }
       }
 
       /**
         * Resolve the application expression, applying `sig` to `exps`.
         */
-      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+      def visitApplySig(app: NamedAst.Expression.Apply, sig: NamedAst.Declaration.Sig, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
         if (sig.spec.fparams.length == exps.length) {
           // Case 1: Hooray! We can call the function directly.
-          val esVal = traverse(exps)(visitExp(_, env0, region))
+          val esVal = traverse(exps)(visitExp(_, env0))
           mapN(esVal) {
             case es =>
               val base = ResolvedAst.Expression.Sig(sig.sym, innerLoc)
@@ -811,15 +835,15 @@ object Resolver {
           }
         } else {
           // Case 2: We have to curry. (See below).
-          visitApply(app, env0, region)
+          visitApply(app, env0)
         }
       }
 
       /**
         * Resolves the tag application.
         */
-      def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        val esVal = traverse(exps)(visitExp(_, env0, region))
+      def visitApplyTag(caze: NamedAst.Declaration.Case, exps: List[NamedAst.Expression], env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        val esVal = traverse(exps)(visitExp(_, env0))
         mapN(esVal) {
           // Case 1: one expression. No tuple.
           case e :: Nil =>
@@ -834,8 +858,8 @@ object Resolver {
       /**
         * Resolves the tag application.
         */
-      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], isOpen: Boolean, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
-        val esVal = traverse(exps)(visitExp(_, env0, region))
+      def visitApplyRestrictableTag(caze: NamedAst.Declaration.RestrictableCase, exps: List[NamedAst.Expression], isOpen: Boolean, env0: ListMap[String, Resolution], innerLoc: SourceLocation, outerLoc: SourceLocation): Validation[ResolvedAst.Expression, ResolutionError] = {
+        val esVal = traverse(exps)(visitExp(_, env0))
         mapN(esVal) {
           // Case 1: one expression. No tuple.
           case e :: Nil =>
@@ -851,7 +875,7 @@ object Resolver {
       /**
         * Local visitor.
         */
-      def visitExp(e0: NamedAst.Expression, env0: ListMap[String, Resolution], region: Option[Symbol.VarSym]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
+      def visitExp(e0: NamedAst.Expression, env0: ListMap[String, Resolution]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
 
         case NamedAst.Expression.Wild(loc) =>
           ResolvedAst.Expression.Wild(loc).toSuccess
@@ -876,7 +900,7 @@ object Resolver {
 
         case NamedAst.Expression.OpenAs(name, exp, loc) =>
           val enumVal = lookupRestrictableEnum(name, env0, ns0, root)
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(enumVal, eVal) {
             case (enum, e) => ResolvedAst.Expression.OpenAs(enum.sym, e, loc)
           }.recoverOne {
@@ -891,7 +915,7 @@ object Resolver {
           ResolvedAst.Expression.Hole(sym, loc).toSuccess
 
         case NamedAst.Expression.HoleWithExp(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             case e => ResolvedAst.Expression.HoleWithExp(e, loc)
           }
@@ -906,9 +930,9 @@ object Resolver {
                   val env = decls.foldLeft(env0) {
                     case (acc, decl) => acc + (alias.name -> Resolution.Declaration(decl))
                   }
-                  mapN(visitExp(exp, env, region)) {
+                  mapN(visitExp(exp, env)) {
                     // TODO NS-REFACTOR: multiple uses here
-                    case e => ResolvedAst.Expression.Use(getSym(decls.head), e, loc)
+                    case e => ResolvedAst.Expression.Use(getSym(decls.head), alias, e, loc)
                   }.recoverOne {
                     case err: ResolutionError => ResolvedAst.Expression.Error(err)
                   }
@@ -921,31 +945,31 @@ object Resolver {
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.Ambiguous(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupTerm(qname, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.Var(_) => visitApply(app, env0, region)
-            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.Var(_) => visitApply(app, env0)
+            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(NamedAst.Expression.Open(qname, innerLoc), exps, outerLoc) =>
           flatMapN(lookupTerm(qname, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.Var(_) => visitApply(app, env0, region)
-            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, region, innerLoc, outerLoc)
-            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, region, innerLoc, outerLoc)
+            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.Var(_) => visitApply(app, env0)
+            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
           }
 
         case app@NamedAst.Expression.Apply(_, _, _) =>
-          visitApply(app, env0, region)
+          visitApply(app, env0)
 
         case NamedAst.Expression.Lambda(fparam, exp, loc) =>
           val pVal = Params.resolve(fparam, env0, taenv, ns0, root)
           flatMapN(pVal) {
             case p =>
               val env = env0 ++ mkFormalParamEnv(List(p))
-              val eVal = visitExp(exp, env, region)
+              val eVal = visitExp(exp, env)
               mapN(eVal) {
                 case e => ResolvedAst.Expression.Lambda(p, e, loc)
               }
@@ -954,50 +978,50 @@ object Resolver {
           }
 
         case NamedAst.Expression.Unary(sop, exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.Unary(sop, e, loc)
           }
 
         case NamedAst.Expression.Binary(sop, exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Binary(sop, e1, e2, loc)
           }
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
-          val e3Val = visitExp(exp3, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
+          val e3Val = visitExp(exp3, env0)
           mapN(e1Val, e2Val, e3Val) {
             case (e1, e2, e3) => ResolvedAst.Expression.IfThenElse(e1, e2, e3, loc)
           }
 
         case NamedAst.Expression.Stm(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Stm(e1, e2, loc)
           }
 
         case NamedAst.Expression.Discard(exp, loc) =>
-          visitExp(exp, env0, region) map {
+          visitExp(exp, env0) map {
             case e => ResolvedAst.Expression.Discard(e, loc)
           }
 
         case NamedAst.Expression.Let(sym, mod, exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
+          val e1Val = visitExp(exp1, env0)
           val env = env0 ++ mkVarEnv(sym)
-          val e2Val = visitExp(exp2, env, region)
+          val e2Val = visitExp(exp2, env)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Let(sym, mod, e1, e2, loc)
           }
 
         case NamedAst.Expression.LetRec(sym, mod, exp1, exp2, loc) =>
           val env = env0 ++ mkVarEnv(sym)
-          val e1Val = visitExp(exp1, env, region)
-          val e2Val = visitExp(exp2, env, region)
+          val e1Val = visitExp(exp1, env)
+          val e2Val = visitExp(exp2, env)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.LetRec(sym, mod, e1, e2, loc)
           }
@@ -1007,14 +1031,14 @@ object Resolver {
 
         case NamedAst.Expression.Scope(sym, regionVar, exp, loc) =>
           val env = env0 ++ mkVarEnv(sym) ++ mkTypeVarEnv(regionVar)
-          val eVal = visitExp(exp, env, Some(sym))
+          val eVal = visitExp(exp, env)
           mapN(eVal) {
             e => ResolvedAst.Expression.Scope(sym, regionVar, e, loc)
           }
 
         case NamedAst.Expression.ScopeExit(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.ScopeExit(e1, e2, loc)
           }
@@ -1026,15 +1050,15 @@ object Resolver {
               flatMapN(pVal) {
                 case p =>
                   val env = env0 ++ mkPatternEnv(p)
-                  val gVal = traverseOpt(guard)(visitExp(_, env, region))
-                  val bVal = visitExp(body, env, region)
+                  val gVal = traverseOpt(guard)(visitExp(_, env))
+                  val bVal = visitExp(body, env)
                   mapN(gVal, bVal) {
                     case (g, b) => ResolvedAst.MatchRule(p, g, b)
                   }
               }
           }
 
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           val rsVal = rulesVal
           mapN(eVal, rsVal) {
             case (e, rs) => ResolvedAst.Expression.Match(e, rs, loc)
@@ -1045,13 +1069,13 @@ object Resolver {
             case NamedAst.MatchTypeRule(sym, tpe, body) =>
               val tVal = resolveType(tpe, Wildness.AllowWild, env0, taenv, ns0, root)
               val env = env0 ++ mkVarEnv(sym)
-              val bVal = visitExp(body, env, region)
+              val bVal = visitExp(body, env)
               mapN(tVal, bVal) {
                 case (t, b) => ResolvedAst.MatchTypeRule(sym, t, b)
               }
           }
 
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.TypeMatch(e, rs, loc)
           }.recoverOne {
@@ -1059,7 +1083,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.RelationalChoose(star, exps, rules, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expsVal = traverse(exps)(visitExp(_, env0))
           val rulesVal = traverse(rules) {
             case NamedAst.RelationalChoiceRule(pat0, exp0) =>
               val p = pat0.map {
@@ -1072,7 +1096,7 @@ object Resolver {
                 case (acc, NamedAst.RelationalChoicePattern.Absent(_)) => acc
                 case (acc, NamedAst.RelationalChoicePattern.Present(sym, _)) => acc + (sym.text -> Resolution.Var(sym))
               }
-              mapN(visitExp(exp0, env, region)) {
+              mapN(visitExp(exp0, env)) {
                 case e => ResolvedAst.RelationalChoiceRule(p, e)
               }
           }
@@ -1081,7 +1105,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.RestrictableChoose(star, exp, rules, loc) =>
-          val expVal = visitExp(exp, env0, region)
+          val expVal = visitExp(exp, env0)
           val rulesVal = traverse(rules) {
             case NamedAst.RestrictableChoiceRule(pat0, exp0) =>
               val pVal = pat0 match {
@@ -1103,7 +1127,7 @@ object Resolver {
                   }
               }
 
-              val eVal = visitExp(exp0, env, region)
+              val eVal = visitExp(exp0, env)
               flatMapN(pVal, eVal) {
                 case (p, e) =>
                   ResolvedAst.RestrictableChoiceRule(p, e).toSuccess
@@ -1116,7 +1140,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.Tuple(elms, loc) =>
-          val esVal = traverse(elms)(e => visitExp(e, env0, region))
+          val esVal = traverse(elms)(e => visitExp(e, env0))
           mapN(esVal) {
             es => ResolvedAst.Expression.Tuple(es, loc)
           }
@@ -1125,116 +1149,98 @@ object Resolver {
           ResolvedAst.Expression.RecordEmpty(loc).toSuccess
 
         case NamedAst.Expression.RecordSelect(base, field, loc) =>
-          val bVal = visitExp(base, env0, region)
+          val bVal = visitExp(base, env0)
           mapN(bVal) {
             b => ResolvedAst.Expression.RecordSelect(b, field, loc)
           }
 
         case NamedAst.Expression.RecordExtend(field, value, rest, loc) =>
-          val vVal = visitExp(value, env0, region)
-          val rVal = visitExp(rest, env0, region)
+          val vVal = visitExp(value, env0)
+          val rVal = visitExp(rest, env0)
           mapN(vVal, rVal) {
             case (v, r) => ResolvedAst.Expression.RecordExtend(field, v, r, loc)
           }
 
         case NamedAst.Expression.RecordRestrict(field, rest, loc) =>
-          val rVal = visitExp(rest, env0, region)
+          val rVal = visitExp(rest, env0)
           mapN(rVal) {
             r => ResolvedAst.Expression.RecordRestrict(field, r, loc)
           }
 
-        case NamedAst.Expression.New(qname, exp, loc) =>
-          val erVal = traverseOpt(exp)(visitExp(_, env0, region))
-          mapN(erVal) {
-            er =>
-              ///
-              /// Translate [[new Foo(r)]] => Newable.new(r)
-              /// Translate [[new Foo()]]  => Newable.new(currentRegion)
-              ///
-              val sp1 = qname.sp1
-              val sp2 = qname.sp2
-              val classSym = Symbol.mkClassSym(Name.RootNS, Name.Ident(sp1, "Newable", sp2))
-              val sigSym = Symbol.mkSigSym(classSym, Name.Ident(sp1, "new", sp2))
-              val newExp = ResolvedAst.Expression.Sig(sigSym, loc)
-              val reg = getExplicitOrImplicitRegion(er, region, loc)
-              ResolvedAst.Expression.Apply(newExp, List(reg), loc)
-          }
-
         case NamedAst.Expression.ArrayLit(exps, exp, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, env0, region))
-          val expVal = visitExp(exp, env0, region)
+          val expsVal = traverse(exps)(visitExp(_, env0))
+          val expVal = visitExp(exp, env0)
           mapN(expsVal, expVal) {
             case (es, e) =>
               ResolvedAst.Expression.ArrayLit(es, e, loc)
           }
 
         case NamedAst.Expression.ArrayNew(exp1, exp2, exp3, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
-          val e3Val = visitExp(exp3, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
+          val e3Val = visitExp(exp3, env0)
           mapN(e1Val, e2Val, e3Val) {
             case (e1, e2, e3) =>
               ResolvedAst.Expression.ArrayNew(e1, e2, e3, loc)
           }
 
         case NamedAst.Expression.ArrayLoad(base, index, loc) =>
-          val bVal = visitExp(base, env0, region)
-          val iVal = visitExp(index, env0, region)
+          val bVal = visitExp(base, env0)
+          val iVal = visitExp(index, env0)
           mapN(bVal, iVal) {
             case (b, i) => ResolvedAst.Expression.ArrayLoad(b, i, loc)
           }
 
         case NamedAst.Expression.ArrayStore(base, index, elm, loc) =>
-          val bVal = visitExp(base, env0, region)
-          val iVal = visitExp(index, env0, region)
-          val eVal = visitExp(elm, env0, region)
+          val bVal = visitExp(base, env0)
+          val iVal = visitExp(index, env0)
+          val eVal = visitExp(elm, env0)
           mapN(bVal, iVal, eVal) {
             case (b, i, e) => ResolvedAst.Expression.ArrayStore(b, i, e, loc)
           }
 
         case NamedAst.Expression.ArrayLength(base, loc) =>
-          val bVal = visitExp(base, env0, region)
+          val bVal = visitExp(base, env0)
           mapN(bVal) {
             b => ResolvedAst.Expression.ArrayLength(b, loc)
           }
 
         case NamedAst.Expression.VectorLit(exps, loc) =>
-          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expsVal = traverse(exps)(visitExp(_, env0))
           mapN(expsVal) {
             case es => ResolvedAst.Expression.VectorLit(es, loc)
           }
 
         case NamedAst.Expression.VectorLoad(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.VectorLoad(e1, e2, loc)
           }
 
         case NamedAst.Expression.VectorLength(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             case e => ResolvedAst.Expression.VectorLength(e, loc)
           }
 
         case NamedAst.Expression.Ref(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = traverseOpt(exp2)(visitExp(_, env0, region))
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) =>
-              val reg = getExplicitOrImplicitRegion(e2, region, loc)
-              ResolvedAst.Expression.Ref(e1, reg, loc)
+              ResolvedAst.Expression.Ref(e1, e2, loc)
           }
 
         case NamedAst.Expression.Deref(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.Deref(e, loc)
           }
 
         case NamedAst.Expression.Assign(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.Assign(e1, e2, loc)
           }
@@ -1246,50 +1252,36 @@ object Resolver {
           }
           val expectedEffVal = resolvePurityAndEffect(expectedEff, Wildness.AllowWild, env0, taenv, ns0, root)
 
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal, expectedTypVal, expectedEffVal) {
             case (e, t, f) => ResolvedAst.Expression.Ascribe(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Of(qname, exp, loc) =>
-          val tagVal = lookupRestrictableTag(qname, env0, ns0, root)
-          val eVal = visitExp(exp, env0, region)
-          mapN(tagVal, eVal) {
-            case (tag, e) => ResolvedAst.Expression.Of(Ast.RestrictableCaseSymUse(tag.sym, qname.loc), e, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expression.Error(err)
+        case NamedAst.Expression.CheckedCast(c, exp, loc) =>
+          mapN(visitExp(exp, env0)) {
+            case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
           }
 
-        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+        case NamedAst.Expression.UncheckedCast(exp, declaredType, declaredEff, loc) =>
           val declaredTypVal = declaredType match {
             case None => (None: Option[UnkindedType]).toSuccess
             case Some(t) => mapN(resolveType(t, Wildness.ForbidWild, env0, taenv, ns0, root))(x => Some(x))
           }
           val declaredEffVal = resolvePurityAndEffect(declaredEff, Wildness.ForbidWild, env0, taenv, ns0, root)
 
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal, declaredTypVal, declaredEffVal) {
-            case (e, t, f) => ResolvedAst.Expression.Cast(e, t, f, loc)
+            case (e, t, f) => ResolvedAst.Expression.UncheckedCast(e, t, f, loc)
           }.recoverOne {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
-        case NamedAst.Expression.Mask(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+        case NamedAst.Expression.UncheckedMaskingCast(exp, loc) =>
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
-            case e => ResolvedAst.Expression.Mask(e, loc)
-          }
-
-        case NamedAst.Expression.Upcast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Upcast(e, loc)
-          }
-
-        case NamedAst.Expression.Supercast(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
-            case e => ResolvedAst.Expression.Supercast(e, loc)
+            case e => ResolvedAst.Expression.UncheckedMaskingCast(e, loc)
           }
 
         case NamedAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1297,13 +1289,13 @@ object Resolver {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
               val clazzVal = lookupJvmClass(className, sym.loc)
-              val bVal = visitExp(body, env, region)
+              val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
               }
           }
 
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expression.TryCatch(e, rs, loc)
           }.recoverOne {
@@ -1311,7 +1303,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.Without(exp, eff, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           val fVal = lookupEffect(eff, env0, ns0, root)
           mapN(eVal, fVal) {
             case (e, f) =>
@@ -1322,7 +1314,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.TryWith(exp, eff, rules, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           val fVal = lookupEffect(eff, env0, ns0, root)
           flatMapN(eVal, fVal) {
             case (e, f) =>
@@ -1334,7 +1326,7 @@ object Resolver {
                   flatMapN(opVal, fparamsVal) {
                     case (o, fp) =>
                       val env = env0 ++ mkFormalParamEnv(fp)
-                      val bodyVal = visitExp(body, env, region)
+                      val bodyVal = visitExp(body, env)
                       mapN(bodyVal) {
                         case b =>
                           val opUse = Ast.OpSymUse(o.sym, ident.loc)
@@ -1351,7 +1343,7 @@ object Resolver {
 
         case NamedAst.Expression.Do(op, exps, loc) =>
           val opVal = lookupOp(op, env0, ns0, root)
-          val expsVal = traverse(exps)(visitExp(_, env0, region))
+          val expsVal = traverse(exps)(visitExp(_, env0))
           mapN(opVal, expsVal) {
             case (o, es) =>
               val opUse = Ast.OpSymUse(o.sym, op.loc)
@@ -1361,13 +1353,13 @@ object Resolver {
           }
 
         case NamedAst.Expression.Resume(exp, loc) =>
-          val expVal = visitExp(exp, env0, region)
+          val expVal = visitExp(exp, env0)
           mapN(expVal) {
             e => ResolvedAst.Expression.Resume(e, loc)
           }
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, loc) =>
-          val argsVal = traverse(args)(visitExp(_, env0, region))
+          val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
@@ -1379,8 +1371,8 @@ object Resolver {
           }
 
         case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
-          val expVal = visitExp(exp, env0, region)
-          val argsVal = traverse(args)(visitExp(_, env0, region))
+          val expVal = visitExp(exp, env0)
+          val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
           val clazzVal = lookupJvmClass(className, loc)
@@ -1394,7 +1386,7 @@ object Resolver {
           }
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
-          val argsVal = traverse(args)(visitExp(_, env0, region))
+          val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
           val clazzVal = lookupJvmClass(className, loc)
@@ -1410,7 +1402,7 @@ object Resolver {
         case NamedAst.Expression.GetField(className, fieldName, exp, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0, region)) {
+              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0)) {
                 case (field, e) => ResolvedAst.Expression.GetField(field, clazz, e, loc)
               }
           }.recoverOne {
@@ -1420,7 +1412,7 @@ object Resolver {
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0, region), visitExp(exp2, env0, region)) {
+              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0), visitExp(exp2, env0)) {
                 case (field, e1, e2) => ResolvedAst.Expression.PutField(field, clazz, e1, e2, loc)
               }
           }.recoverOne {
@@ -1440,7 +1432,7 @@ object Resolver {
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
           flatMapN(lookupJvmClass(className, loc)) {
             case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0, region)) {
+              mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0)) {
                 case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, loc)
               }
           }.recoverOne {
@@ -1463,21 +1455,21 @@ object Resolver {
           }
 
         case NamedAst.Expression.NewChannel(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.NewChannel(e1, e2, loc)
           }
 
         case NamedAst.Expression.GetChannel(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.GetChannel(e, loc)
           }
 
         case NamedAst.Expression.PutChannel(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.PutChannel(e1, e2, loc)
           }
@@ -1485,9 +1477,9 @@ object Resolver {
         case NamedAst.Expression.SelectChannel(rules, default, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
-              val cVal = visitExp(chan, env0, region)
+              val cVal = visitExp(chan, env0)
               val env = env0 ++ mkVarEnv(sym)
-              val bVal = visitExp(body, env, region)
+              val bVal = visitExp(body, env)
               mapN(cVal, bVal) {
                 case (c, b) => ResolvedAst.SelectChannelRule(sym, c, b)
               }
@@ -1495,7 +1487,7 @@ object Resolver {
 
           val defaultVal = default match {
             case Some(exp) =>
-              val eVal = visitExp(exp, env0, region)
+              val eVal = visitExp(exp, env0)
               mapN(eVal) {
                 e => Some(e)
               }
@@ -1507,16 +1499,15 @@ object Resolver {
           }
 
         case NamedAst.Expression.Spawn(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) =>
-              val reg = getExplicitOrImplicitRegion(Some(e2), region, loc)
-              ResolvedAst.Expression.Spawn(e1, reg, loc)
+              ResolvedAst.Expression.Spawn(e1, e2, loc)
           }
 
         case NamedAst.Expression.Par(exp, loc) =>
-          mapN(visitExp(exp, env0, region)) {
+          mapN(visitExp(exp, env0)) {
             e => ResolvedAst.Expression.Par(e, loc)
           }
 
@@ -1533,25 +1524,25 @@ object Resolver {
                   val patEnv = mkPatternEnv(p)
                   val env = env0 ++ patEnv
                   finalUenv = finalUenv ++ patEnv
-                  val e0Val = visitExp(e0, env, region)
+                  val e0Val = visitExp(e0, env)
                   mapN(e0Val) {
                     case e1 => ResolvedAst.ParYieldFragment(p, e1, l0)
                   }
               }
           }
 
-          mapN(fragsVal, visitExp(exp, finalUenv, region)) {
+          mapN(fragsVal, visitExp(exp, finalUenv)) {
             case (fs, e) => ResolvedAst.Expression.ParYield(fs, e, loc)
           }
 
         case NamedAst.Expression.Lazy(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.Lazy(e, loc)
           }
 
         case NamedAst.Expression.Force(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.Force(e, loc)
           }
@@ -1564,39 +1555,39 @@ object Resolver {
 
         case NamedAst.Expression.FixpointLambda(pparams, exp, loc) =>
           val psVal = traverse(pparams)(Params.resolve(_, env0, taenv, ns0, root))
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(psVal, eVal) {
             case (ps, e) => ResolvedAst.Expression.FixpointLambda(ps, e, loc)
           }
 
         case NamedAst.Expression.FixpointMerge(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointMerge(e1, e2, loc)
           }
 
         case NamedAst.Expression.FixpointSolve(exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.FixpointSolve(e, loc)
           }
 
         case NamedAst.Expression.FixpointFilter(pred, exp, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.FixpointFilter(pred, e, loc)
           }
 
         case NamedAst.Expression.FixpointInject(exp, pred, loc) =>
-          val eVal = visitExp(exp, env0, region)
+          val eVal = visitExp(exp, env0)
           mapN(eVal) {
             e => ResolvedAst.Expression.FixpointInject(e, pred, loc)
           }
 
         case NamedAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0, region)
-          val e2Val = visitExp(exp2, env0, region)
+          val e1Val = visitExp(exp1, env0)
+          val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
@@ -1616,7 +1607,7 @@ object Resolver {
           flatMapN(fparamsVal) {
             case fparams =>
               val env = env0 ++ mkFormalParamEnv(fparams)
-              val expVal = visitExp(exp, env, None)
+              val expVal = visitExp(exp, env)
               val tpeVal = resolveType(tpe, Wildness.ForbidWild, env, taenv, ns0, root)
               val purAndEffVal = resolvePurityAndEffect(purAndEff, Wildness.ForbidWild, env, taenv, ns0, root)
               mapN(expVal, tpeVal, purAndEffVal) {
@@ -1625,7 +1616,7 @@ object Resolver {
           }
       }
 
-      visitExp(exp0, env00, None)
+      visitExp(exp0, env00)
     }
 
   }
@@ -1961,7 +1952,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
   def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
+    val classOpt = tryLookupName(qname, env, ns0, root)
     classOpt.collectFirst {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
     } match {
@@ -1979,7 +1970,7 @@ object Resolver {
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
-    val classOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
+    val classOpt = tryLookupName(qname, env, ns0, root)
     classOpt.collectFirst {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
     } match {
@@ -1997,7 +1988,7 @@ object Resolver {
     */
   private def lookupTerm(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedTerm, ResolutionError] = {
     // first look in the local env
-    val resolutions = tryLookupName(qname, allowCase = true, env, ns0, root)
+    val resolutions = tryLookupName(qname, env, ns0, root)
 
     resolutions.collect {
       case decl@Resolution.Declaration(_: NamedAst.Declaration.Def) => decl
@@ -2018,15 +2009,16 @@ object Resolver {
         } else {
           ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc).toFailure
         }
-      case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: Nil =>
+      //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
+      //        // Multiple case matches. Error.
+      //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
+      // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
+      case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
         ResolvedTerm.Tag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
-      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
-        // Multiple case matches. Error.
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
       case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
     }
@@ -2036,7 +2028,7 @@ object Resolver {
     * Looks up the effect operation with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupOp(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Op, ResolutionError] = {
-    val opOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
+    val opOpt = tryLookupName(qname, env, ns0, root)
 
     opOpt match {
       case Resolution.Declaration(op: NamedAst.Declaration.Op) :: Nil =>
@@ -2068,7 +2060,7 @@ object Resolver {
     */
   private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
     // look up the name
-    val matches = tryLookupName(qname, allowCase = true, env, ns0, root) collect {
+    val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
     }
 
@@ -2076,11 +2068,7 @@ object Resolver {
       // Case 0: No matches. Error.
       case Nil => ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc).toFailure
       // Case 1: Exactly one match. Success.
-      case caze :: Nil => caze.toSuccess
-      // Case 2: Multiple matches. Error
-      case cazes =>
-        val locs = cazes.map(_.sym.loc).sorted
-        ResolutionError.AmbiguousTag(qname.ident.name, ns0, locs, qname.loc).toFailure
+      case caze :: _ => caze.toSuccess
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2090,7 +2078,7 @@ object Resolver {
     */
   private def lookupRestrictableTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableCase, ResolutionError] = {
     // look up the name
-    val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect { // TODO RESTR-VARS disallowing case for now
+    val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableCase) => c
     }
 
@@ -2111,7 +2099,7 @@ object Resolver {
     * Looks up the restrictable enum name.
     */
   private def lookupRestrictableEnum(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.RestrictableEnum, ResolutionError] = {
-    val matches = tryLookupName(qname, allowCase = false, env, ns0, root) collect {
+    val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.RestrictableEnum) => c
     }
 
@@ -2560,33 +2548,12 @@ object Resolver {
     case object NotFound extends TypeLookupResult
   }
 
+
   /**
     * Looks up the ambiguous type.
     */
   private def lookupType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): TypeLookupResult = {
-
-    /**
-      * Looks up the type in the given namespace.
-      */
-    def lookupInNamespace(ns: Name.NName): TypeLookupResult = {
-      val symbolsInNamespace = root.symbols.getOrElse(ns, Map.empty)
-      symbolsInNamespace.getOrElse(qname.ident.name, Nil).collectFirst {
-        case alias: NamedAst.Declaration.TypeAlias =>
-          // Case 2: found a type alias
-          TypeLookupResult.TypeAlias(alias)
-        case enum: NamedAst.Declaration.Enum =>
-          // Case 3: found an enum
-          TypeLookupResult.Enum(enum)
-        case enum: NamedAst.Declaration.RestrictableEnum =>
-          // Case 4: found a restrictable enum
-          TypeLookupResult.RestrictableEnum(enum)
-        case effect: NamedAst.Declaration.Effect =>
-          // Case 5: found an effect
-          TypeLookupResult.Effect(effect)
-      }.getOrElse(TypeLookupResult.NotFound)
-    }
-
-    def lookupInUseEnv(name: String): TypeLookupResult = env(name).collectFirst {
+    tryLookupName(qname, env, ns0, root).collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) =>
         // Case 1: found a type alias
         TypeLookupResult.TypeAlias(alias)
@@ -2603,44 +2570,28 @@ object Resolver {
         // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
     }.getOrElse(TypeLookupResult.NotFound)
-
-    if (qname.isUnqualified) {
-      // Case 1. The name is unqualified. Look it up in the use environment.
-      lookupInUseEnv(qname.ident.name).orElse {
-        // Case 1: The name is unqualified. Lookup in the current namespace.
-        lookupInNamespace(ns0).orElse {
-          // Case 1.1: The name was not found in the current namespace. Try the root namespace.
-          lookupInNamespace(Name.RootNS)
-        }
-      }
-    } else {
-      // Case 2: The name is qualified. Look it up in its namespace.
-      lookupInNamespace(qname.namespace)
-    }
   }
 
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.TypeAlias, ResolutionError] = {
-    val symOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
+    val symOpt = tryLookupName(qname, env, ns0, root)
 
-    symOpt match {
-      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) :: Nil => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-      case _ => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
-    }
+    symOpt.collectFirst {
+      case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
   }
 
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
   private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
-    val symOpt = tryLookupName(qname, allowCase = false, env, ns0, root)
+    val symOpt = tryLookupName(qname, env, ns0, root)
 
-    symOpt match {
-      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) :: Nil => getEffectIfAccessible(eff, ns0, qname.loc)
-      case _ => ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure
-    }
+    symOpt.collectFirst {
+      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => getEffectIfAccessible(eff, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedEffect(qname, ns0, qname.loc).toFailure)
   }
 
   /**
@@ -2675,38 +2626,32 @@ object Resolver {
   /**
     * Returns the list of symbols this name points to, ordered from most closely declared to furthest.
     */
-  private def tryLookupName(qname: Name.QName, allowCase: Boolean, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
+  private def tryLookupName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): List[Resolution] = {
     if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Try in the use environment.
-      env(qname.ident.name) match {
-        // Case 1.1: It's not in the env.
-        case Nil =>
-          // First check the local namespace
-          // Collect both normal symbols in this env, and nested cases
-          val localDecls = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-          val localCases = if (allowCase) { // TODO NS-REFACTOR don't need this after changing case env into auto-uses
-            root.cases.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-          } else {
-            Nil
-          }
+      // Case 1: Unqualified name.
 
-          localDecls ::: localCases match {
-            // Case 1.1.1: Nothing local. Check the root env
-            case Nil =>
-              val rootDecls = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-              val rootCases = if (allowCase) { // TODO NS-REFACTOR don't need this after changing case env into auto-uses
-                root.cases.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
-              } else {
-                Nil
-              }
-              rootDecls ::: rootCases
-            // Case 1.1.2: There are locals. Use them.
-            case locals => locals
-          }
+      // Gather names according to priority:
+      // 1st priority: imported names
+      val envNames = env(qname.ident.name)
 
-        // Case 1.2 It is in the env, return the results
-        case l => l
+      // 2nd priority: names in the current namespace
+      val localNames = root.symbols.getOrElse(ns0, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+
+      // 3rd priority: the name of the current namespace
+      val currentNamespace = {
+        if (ns0.idents.lastOption.contains(qname.ident)) {
+          // Case 1.1.1.1: We are referring to the current namespace. Use that.
+          root.symbols.getOrElse(Name.mkUnlocatedNName(ns0.parts.init), Map.empty).getOrElse(ns0.parts.last, Nil).map(Resolution.Declaration)
+        } else {
+          Nil
+        }
       }
+
+      // 4th priority: names in the root namespace
+      val rootNames = root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(qname.ident.name, Nil).map(Resolution.Declaration)
+
+      envNames ::: localNames ::: currentNamespace ::: rootNames
+
     } else {
       // Case 2. Qualified name. Look it up directly.
       tryLookupQualifiedName(qname, env, ns0, root).getOrElse(Nil).map(Resolution.Declaration)
@@ -3379,26 +3324,6 @@ object Resolver {
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
 
   /**
-    * Returns either the explicit region (if present), the current region (if present), or the global region.
-    */
-  private def getExplicitOrImplicitRegion(explicitRegion: Option[ResolvedAst.Expression], currentRegion: Option[Symbol.VarSym], loc: SourceLocation): ResolvedAst.Expression = explicitRegion match {
-    case Some(result) =>
-      // Case 1: The region is explicitly given.
-      result
-    case None =>
-      // Case 2: The region is absent. Either use the current region or the global region.
-      currentRegion match {
-        case Some(sym) =>
-          // Case 2.1: Use the current region.
-          ResolvedAst.Expression.Var(sym, sym.loc)
-        case None =>
-          // Case 2.2: Use the global region.
-          val tpe = Type.mkRegion(Type.False, loc)
-          ResolvedAst.Expression.Region(tpe, loc)
-      }
-  }
-
-  /**
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
@@ -3442,7 +3367,7 @@ object Resolver {
     * Resolves the given Use.
     */
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
-    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, allowCase = false, ListMap.empty, ns, root) match {
+    case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
       case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
       // Case 2: A match. Map it to a use.
@@ -3457,13 +3382,6 @@ object Resolver {
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }
-  }
-
-  /**
-    * Creates a use environment from the given uses and imports.
-    */
-  private def mkUseEnv(usesAndImports: List[Ast.UseOrImport], root: NamedAst.Root)(implicit flix: Flix): ListMap[String, Resolution] = {
-    appendAllUseEnv(ListMap.empty, usesAndImports, root)
   }
 
   /**

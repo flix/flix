@@ -274,220 +274,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ExtraMethod](result)
   }
 
-  test("TestUpcast.01") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            upcast ()
-        |        else
-        |            1;
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.02") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            upcast x -> { println(x); x + 1 }
-        |        else
-        |            x -> x + 1;
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.03") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    let f =
-        |        if (true)
-        |            upcast x -> (unsafe_cast x + 1 as _ & ef)
-        |        else
-        |            upcast x -> x + 1;
-        |    let _ = f(1);
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.04") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            upcast (1, "a")
-        |        else
-        |            (1, 1);
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.05") {
-    val input =
-      """
-        |def f(): Unit =
-        |    let _ =
-        |        if (true)
-        |            upcast (1, "a")
-        |        else
-        |            upcast (1, 1);
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.06") {
-    val input =
-      """
-        |def f(): Unit & Impure =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let _ =
-        |        if (true)
-        |            upcast (newObject(), newObject())
-        |        else
-        |            (newObject(), newStringBuilder());
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.07") {
-    val input =
-      """
-        |pub eff A
-        |pub eff B
-        |pub eff C
-        |
-        |def f(): Unit =
-        |    let f = () -> ();
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
-        |    ()
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.08") {
-    val input =
-      """
-        |pub eff A
-        |pub eff B
-        |pub eff C
-        |
-        |def f(): Unit =
-        |    let f = () -> unsafe_cast () as _ \ A;
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
-        |    ()
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.09") {
-    val input =
-      """
-        |pub eff A
-        |pub eff B
-        |pub eff C
-        |
-        |def f(): Unit =
-        |    let f = () -> unsafe_cast () as _ & Impure \ A;
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let _ =
-        |        if (true)
-        |            upcast f
-        |        else
-        |            g;
-        |    ()
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.10") {
-    val input =
-      """
-        |pub eff A
-        |pub eff B
-        |pub eff C
-        |
-        |def f(): Unit =
-        |    let f = () -> unsafe_cast () as _ \ A;
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let _ =
-        |        if (true)
-        |            upcast f
-        |        else
-        |            upcast g;
-        |    ()
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
-  test("TestUpcast.11") {
-    val input =
-      """
-        |pub eff A
-        |pub eff B
-        |pub eff C
-        |
-        |def f(): Unit =
-        |    let f = () -> unsafe_cast () as _ & Impure \ A;
-        |    let g = () -> unsafe_cast () as _ \ { A, B, C };
-        |    let _ =
-        |        if (true)
-        |            upcast f
-        |        else
-        |            upcast g;
-        |    ()
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeUpcast](result)
-  }
-
   test("TestNonDefaultConstructor.01") {
     val input =
       """
@@ -552,99 +338,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.MissingDefaultMatchTypeCase](result)
   }
 
-  test("TestSupercast.01") {
-    val input =
-      """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
-        |    let _ =
-        |        if (true)
-        |            super_cast (unsafe_cast 1 as _ \ Impure)
-        |        else
-        |            newObject();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.FromNonJavaTypeSupercast](result)
-  }
-
-  test("TestSupercast.02") {
-    val input =
-      """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
-        |    let _ =
-        |        if (true)
-        |            unsafe_cast 1 as _ \ Impure
-        |        else
-        |            super_cast newObject();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToNonJavaTypeSupercast](result)
-  }
-
-  test("TestSupercast.03") {
-    val input =
-      """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
-        |    let _ =
-        |        if (true)
-        |            super_cast newObject()
-        |        else
-        |            newStringBuilder();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.UnsafeSupercast](result)
-  }
-
-  test("TestSupercast.04") {
-    val input =
-      """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.Object(): ##java.lang.Object \ Impure as newObject;
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
-        |    let _ =
-        |        if (true)
-        |            super_cast newObject()
-        |        else
-        |            super_cast newStringBuilder();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
-  }
-
-  test("TestSupercast.05") {
-    val input =
-      """
-        |def f(): Unit \ Impure =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ Impure as newStringBuilder;
-        |    let _ =
-        |        if (true)
-        |            super_cast newStringBuilder()
-        |        else
-        |            super_cast newStringBuilder();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
-  }
-
-  test("TestSupercast.06") {
-    val input = "def f(): ##java.lang.Object = super_cast \"hello\""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ToTypeVariableSupercast](result)
-  }
-
   test("UnableToDeriveSendable.01") {
     val input =
       """
@@ -666,7 +359,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.01") {
     val input =
       """
-        |def f(): Bool = unsafe_cast "true" as Bool
+        |def f(): Bool = unchecked_cast("true" as Bool)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -675,7 +368,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("ImpossibleCast.02") {
     val input =
       """
-        |def f(): String = unsafe_cast true as String
+        |def f(): String = unchecked_cast(true as String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -685,7 +378,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Bool)
-        |def f(): A = unsafe_cast true as A
+        |def f(): A = unchecked_cast(true as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -695,7 +388,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Bool)
-        |def f(): Bool = unsafe_cast A.A(false) as Bool
+        |def f(): Bool = unchecked_cast(A.A(false) as Bool)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -705,7 +398,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Int32)
-        |def f(): A = unsafe_cast 1 as A
+        |def f(): A = unchecked_cast(1 as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -715,7 +408,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(Int32)
-        |def f(): Int32 = unsafe_cast A.A(1) as Int32
+        |def f(): Int32 = unchecked_cast(A.A(1) as Int32)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -725,7 +418,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(String)
-        |def f(): A = unsafe_cast "a" as A
+        |def f(): A = unchecked_cast("a" as A)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)
@@ -735,7 +428,7 @@ class TestSafety extends FunSuite with TestUtils {
     val input =
       """
         |enum A(String)
-        |def f(): String = unsafe_cast A.A("a") as String
+        |def f(): String = unchecked_cast(A.A("a") as String)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.ImpossibleCast](result)

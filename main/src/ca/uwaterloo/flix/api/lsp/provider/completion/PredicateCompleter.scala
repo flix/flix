@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
@@ -25,17 +26,13 @@ object PredicateCompleter extends Completer {
   /**
     * Returns a List of Completion for predicates.
     */
-  override def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[PredicateCompletion] = {
-    if (root.isEmpty) {
-      return Nil
-    }
-
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
     index.predDefs.m.concat(index.predUses.m)
       .map {
         case (pred, locs) =>
           val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
           val name = pred.name
-          Completion.PredicateCompletion(name, priority(name), context)
+          Completion.PredicateCompletion(name, priority(name))
       }
   }
 }

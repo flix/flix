@@ -49,7 +49,7 @@ namespace Benchmark {
     @Experimental
     pub def defBenchmark(name: String, f: Unit -> a \ ef): Benchmark =
         let fn = () -> {
-            let _ = unsafe_cast f() as _ \ IO;
+            let _ = unchecked_cast(f() as _ \ IO);
             ()
         };
         Benchmark({name = name, f = fn})

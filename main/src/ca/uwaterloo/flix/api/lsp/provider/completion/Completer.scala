@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst
 
@@ -25,5 +26,5 @@ trait Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  def getCompletions(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root], delta: DeltaContext): Iterable[Completion]
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion]
 }

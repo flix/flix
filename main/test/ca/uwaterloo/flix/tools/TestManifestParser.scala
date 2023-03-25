@@ -27,10 +27,10 @@ class TestManifestParser extends FunSuite {
       |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3"
-      |"org.eclipse.jetty:jetty-server" = "4.7.0"
+      |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2.3"
+      |"org.junit:junit" = "1.2"
       |
       |""".stripMargin
   }
@@ -54,7 +54,7 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.version") {
-    assertResult(expected = SemVer(0,1,0))(actual = {
+    assertResult(expected = SemVer(0, 1, Some(0), None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.version
         case Err(e) => Err(e)
@@ -63,7 +63,7 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.flix") {
-    assertResult(expected = SemVer(0, 33, 0))(actual = {
+    assertResult(expected = SemVer(0, 33, Some(0), None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.flix
         case Err(e) => Err(e)
@@ -99,10 +99,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -124,12 +124,12 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1,2,3), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3,2,1), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1,2,3), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,0), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1,2,3), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,3), DependencyKind.Development)))(actual = {
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1,2,Some(3), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3,2,Some(1), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1,2,Some(3), None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1,2,Some(3), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,Some(0), Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => Err(e)
@@ -167,10 +167,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -197,10 +197,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -227,10 +227,10 @@ class TestManifestParser extends FunSuite {
       |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3"
-      |"org.eclipse.jetty:jetty-server" = "4.7.0"
+      |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2.3"
+      |"org.junit:junit" = "1.2"
       |
       |""".stripMargin
   }
@@ -257,10 +257,10 @@ class TestManifestParser extends FunSuite {
       |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3"
-      |"org.eclipse.jetty:jetty-server" = "4.7.0"
+      |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2.3"
+      |"org.junit:junit" = "1.2"
       |
       |""".stripMargin
   }
@@ -287,10 +287,10 @@ class TestManifestParser extends FunSuite {
       |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3"
-      |"org.eclipse.jetty:jetty-server" = "4.7.0"
+      |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2.3"
+      |"org.junit:junit" = "1.2"
       |
       |""".stripMargin
   }
@@ -317,10 +317,10 @@ class TestManifestParser extends FunSuite {
       |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3"
-      |"org.eclipse.jetty:jetty-server" = "4.7.0"
+      |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2.3"
+      |"org.junit:junit" = "1.2"
       |
       |""".stripMargin
   }
@@ -347,14 +347,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.version.format.02") {
@@ -377,14 +377,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.version.numbers.01") {
@@ -407,14 +407,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.version.numbers.02") {
@@ -437,14 +437,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.version.numbers.03") {
@@ -467,14 +467,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   //Flix
@@ -497,10 +497,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -527,10 +527,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -557,14 +557,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.flix.format.02") {
@@ -587,14 +587,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.flix.numbers.01") {
@@ -617,14 +617,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.flix.numbers.02") {
@@ -647,14 +647,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.flix.numbers.03") {
@@ -677,14 +677,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   //License
@@ -708,10 +708,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -738,10 +738,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -768,10 +768,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -798,10 +798,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -828,10 +828,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -839,7 +839,7 @@ class TestManifestParser extends FunSuite {
   }
 
   //Dependencies
-  test("Err.dependencies.missing") {
+  test("Ok.dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -855,14 +855,22 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dependencies.type") {
@@ -885,10 +893,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -915,10 +923,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -945,10 +953,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -975,14 +983,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.format.02") {
@@ -1005,14 +1013,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.format.03") {
@@ -1035,14 +1043,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.format.04") {
@@ -1065,14 +1073,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.numbers.01") {
@@ -1095,14 +1103,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.numbers.02") {
@@ -1125,14 +1133,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dependencies.numbers.03") {
@@ -1155,18 +1163,18 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   //Dev-dependencies
-  test("Err.dev-dependencies.missing") {
+  test("Ok.dev-dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -1183,14 +1191,24 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dev-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(
+                                 Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dev-dependencies.type") {
@@ -1213,10 +1231,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1243,14 +1261,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.format.02") {
@@ -1273,14 +1291,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Flix version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.format.03") {
@@ -1303,14 +1321,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.format.04") {
@@ -1329,18 +1347,18 @@ class TestManifestParser extends FunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |
         |[dev-dependencies]
-        |"github:fuzzer:fuzzer" = "1.2.3"
+        |"github:fuzzer-fuzzer" = "1.2.3"
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'host:username/projectname'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.FlixDependencyFormatError(null, "A Flix dependency should be formatted like so: 'repository:username/projectname'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.numbers.01") {
@@ -1363,14 +1381,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.numbers.02") {
@@ -1393,14 +1411,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-dependencies.numbers.03") {
@@ -1423,18 +1441,18 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Flix version as three numbers")))(ManifestParser.parse(toml, null))
   }
 
   //Mvn-dependencies
-  test("Err.mvn-dependencies.missing") {
+  test("Ok.mvn-dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -1453,11 +1471,19 @@ class TestManifestParser extends FunSuite {
         |"github:fuzzer/fuzzer" = "1.2.3"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'mvn-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.mvn-dependencies.type") {
@@ -1483,7 +1509,7 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = 470
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1510,10 +1536,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.pos/gresql:post¤resql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1540,10 +1566,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:post¤resql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1573,11 +1599,11 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = "470"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.mvn-dependencies.format.02") {
@@ -1600,14 +1626,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "47.0"
+        |"org.eclipse.jetty:jetty-server" = "47"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.mvn-dependencies.format.03") {
@@ -1630,10 +1656,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty.jetty-server" = "4.7.0"
+        |"org.eclipse.jetty.jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1660,10 +1686,10 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org:eclipse:jetty:jetty-server" = "4.7.0"
+        |"org:eclipse:jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
@@ -1693,11 +1719,11 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = "a.7.0"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.mvn-dependencies.numbers.02") {
@@ -1723,11 +1749,11 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = "4.b.0"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.mvn-dependencies.numbers.03") {
@@ -1753,15 +1779,15 @@ class TestManifestParser extends FunSuite {
         |"org.eclipse.jetty:jetty-server" = "4.7.c"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3"
+        |"org.junit:junit" = "1.2"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
   //Dev-mvn-dependencies
-  test("Err.dev-mvn-dependencies.missing") {
+  test("Ok.Dev-mvn-dependencies.missing") {
     val toml = {
       """
         |[package]
@@ -1781,11 +1807,20 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.MissingRequiredProperty(null, "'dev-mvn-dependencies' is missing")))(ManifestParser.parse(toml, null))
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production)))(actual = {
+      ManifestParser.parse(toml, null) match {
+        case Ok(manifest) => manifest.dependencies
+        case Err(e) => Err(e)
+      }
+    })
   }
 
   test("Err.dev-mvn-dependencies.type") {
@@ -1808,7 +1843,7 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org.junit:junit" = 123456
@@ -1838,14 +1873,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
-        |"org.junit:junit" = "123.456"
+        |"org.junit:junit" = "12"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-mvn-dependencies.format.02") {
@@ -1868,14 +1903,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org.junit:junit" = "1.2.3.4.5.6"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A version should be formatted like so: 'x.x.x'")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionHasWrongLength(null, "A Maven version should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-mvn-dependencies.format.03") {
@@ -1898,7 +1933,7 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org/junit/junit" = "1.2.3"
@@ -1928,7 +1963,7 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org:junit:junit" = "1.2.3"
@@ -1958,14 +1993,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org.junit:junit" = "a.2.3"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-mvn-dependencies.numbers.02") {
@@ -1988,14 +2023,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org.junit:junit" = "1.b.3"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
   test("Err.dev-mvn-dependencies.numbers.03") {
@@ -2018,14 +2053,14 @@ class TestManifestParser extends FunSuite {
         |
         |[mvn-dependencies]
         |"org.postgresql:postgresql" = "1.2.3"
-        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
         |"org.junit:junit" = "1.2.c"
         |
         |""".stripMargin
     }
-    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse version as three numbers")))(ManifestParser.parse(toml, null))
+    assertResult(Err(ManifestError.VersionNumberWrong(null, "Could not parse Maven version as numbers")))(ManifestParser.parse(toml, null))
   }
 
 }

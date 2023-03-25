@@ -148,11 +148,11 @@ namespace Concurrent/Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                new MutList(Static),
+                MutList.new(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            new MutDeque(Static)
+            MutDeque.new(Static)
         )
 
     ///
@@ -455,7 +455,7 @@ namespace Concurrent/Channel {
 
 
     ///
-    /// Unsafe wrapper for `Concurrent/Condition.await(c)` 
+    /// Unsafe wrapper for `Concurrent/Condition.await(c)`
     /// The channel lock is expected to be held.
     ///
     def awaitCondition(c: Condition): Unit \ IO =

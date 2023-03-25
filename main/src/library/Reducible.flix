@@ -80,8 +80,8 @@ pub class Reducible[t: Type -> Type] {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, t: t[a]): b \ ef =
-        let f1 = (a, b) -> f(a, upcast(_ -> b));
-        Reducible.reduceRightTo(f1, a -> f(a, upcast(_ -> z)), t)
+        let f1 = (a, b) -> f(a, constant(b));
+        Reducible.reduceRightTo(f1, a -> f(a, constant(z)), t)
 
     ///
     /// Alias for `reduce`.
@@ -144,18 +144,6 @@ pub class Reducible[t: Type -> Type] {
     ///
     pub def sumWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
         Reducible.foldLeft((acc, a) -> f(a) + acc, 0, t)
-
-    ///
-    /// Returns the product of all elements in `t`.
-    ///
-    pub def product(t: t[Int32]): Int32 =
-        Reducible.foldLeft((acc, a) -> a * acc, 1, t)
-
-    ///
-    /// Returns the product of all elements in `t` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
-        Reducible.foldLeft((acc, a) -> f(a) * acc, 1, t)
 
     ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
@@ -259,7 +247,7 @@ pub class Reducible[t: Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ Write(r) =
-        let v = new MutList(rc);
+        let v = MutList.new(rc);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(rc, v)
 
