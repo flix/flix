@@ -688,53 +688,6 @@ namespace TestNec {
     def sumWith05(): Bool =
         Nec.sumWith(x -> x + 1, necOf2(10, -10)) == 2
 
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Nec.product(singleton(1)) == 1
-
-    @test
-    def product02(): Bool =
-        Nec.product(necOf3(1, 2, 3)) == 6
-
-    @test
-    def product03(): Bool =
-        Nec.product(necOf4(1, 2, 3, -3)) == -18
-
-    @test
-    def product04(): Bool =
-        Nec.product(necOf4(-1, -2, -3, -4)) == 24
-
-    @test
-    def product05(): Bool =
-        Nec.product(necOf2(10, -10)) == -100
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Nec.productWith(x -> x + 1, singleton(1)) == 2
-
-    @test
-    def productWith02(): Bool =
-        Nec.productWith(x -> x + 1, necOf3(1, 2, 3)) == 24
-
-    @test
-    def productWith03(): Bool =
-        Nec.productWith(x -> x + 1, necOf4(1, 2, 3, -3)) == -48
-
-    @test
-    def productWith04(): Bool =
-        Nec.productWith(x -> x + 1, necOf4(-2, -3, -4, -5)) == 24
-
-    @test
-    def productWith05(): Bool =
-        Nec.productWith(x -> x + 1, necOf2(10, -10)) == -99
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //

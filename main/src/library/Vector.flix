@@ -498,7 +498,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -516,7 +516,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -542,7 +542,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -902,24 +902,6 @@ namespace Vector {
     ///
     pub def sumWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
         foldLeft((acc, x) -> acc + f(x), 0, v)
-
-    ///
-    /// Returns the product of all elements in the vector `v`.
-    ///
-    pub def product(v: Vector[Int32]): Int32 =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, v)
-
-    ///
-    /// Returns the product of all elements in the vector `v` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, v)
 
     ///
     /// Returns the concatenation of all the vectors in the vector `vs`.
@@ -1339,16 +1321,10 @@ namespace Vector {
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
-        unsafe_cast findIndicesHelper(rc, f, v) as Vector[Int32] \ ef
-    }
-
-    ///
-    /// Helper for `findIndices`.
-    ///
-    def findIndicesHelper(rc: Region[r], f: a -> Bool \ ef, v: Vector[a]): Array[Int32, r] \ { ef, Write(r) } =
         let l = MutList.new(rc);
         forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
-        MutList.toArray(rc, l)
+        MutList.toVector(l)
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
