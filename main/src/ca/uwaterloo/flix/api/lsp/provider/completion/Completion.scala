@@ -33,53 +33,101 @@ sealed trait Completion {
     */
   def toCompletionItem(context: CompletionContext)(implicit flix: Flix): CompletionItem = this match {
     case Completion.KeywordCompletion(name) =>
-      CompletionItem(label = name, sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name "),
+      CompletionItem(label = name,
+        sortText = Priority.normal(name),
+        textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Keyword)
     case Completion.FieldCompletion(name) =>
-      CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, s"$name "),
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Variable)
     case Completion.PredicateCompletion(name, priority) =>
-      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, s"$name "),
+      CompletionItem(label = name,
+        sortText = priority,
+        textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Variable)
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
-      CompletionItem(label = name, sortText = priority, textEdit = textEdit, insertTextFormat = insertTextFormat,
+      CompletionItem(label = name,
+        sortText = priority,
+        textEdit = textEdit,
+        insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
     case Completion.TypeEnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(label = s"${enumSym.name}$nameSuffix", sortText = priority, textEdit = textEdit,
-        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+      CompletionItem(label = s"${enumSym.name}$nameSuffix",
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = documentation,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum)
     case Completion.TypeAliasCompletion(aliasSym, nameSuffix, priority, textEdit, documentation) =>
-      CompletionItem(label = s"${aliasSym.name}$nameSuffix", sortText = priority, textEdit = textEdit,
-        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+      CompletionItem(label = s"${aliasSym.name}$nameSuffix",
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = documentation,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum)
     case Completion.EffectCompletion(name, priority, documentation) =>
-      CompletionItem(label = name, sortText = priority, textEdit = TextEdit(context.range, name),
-        documentation = documentation, insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Enum)
+      CompletionItem(label = name,
+        sortText = priority,
+        textEdit = TextEdit(context.range, name),
+        documentation = documentation,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Enum)
     case Completion.WithCompletion(name, priority, textEdit, documentation, insertTextFormat) =>
-      CompletionItem(label = name, sortText = priority, textEdit = textEdit, documentation = documentation,
-        insertTextFormat = insertTextFormat, kind = CompletionItemKind.Class)
+      CompletionItem(label = name,
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = documentation,
+        insertTextFormat = insertTextFormat,
+        kind = CompletionItemKind.Class)
     case Completion.ImportNewCompletion(constructor, clazz, aliasSuggestion) =>
       val (label, priority, textEdit) = CompletionUtils.getExecutableCompletionInfo(constructor, clazz, aliasSuggestion, context)
-      CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+      CompletionItem(label = label,
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Method)
     case Completion.ImportMethodCompletion(method, clazz) =>
       val (label, priority, textEdit) = CompletionUtils.getExecutableCompletionInfo(method, clazz, None, context)
-      CompletionItem(label = label, sortText = priority, textEdit = textEdit, documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Method)
+      CompletionItem(label = label,
+        sortText = priority,
+        textEdit = textEdit,
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Method)
     case Completion.ImportFieldCompletion(field, clazz, isGet) =>
       val ret = if (isGet) CompletionUtils.convertJavaClassToFlixType(field.getType) else "Unit"
       val asSuggestion = if (isGet) s"get${field.getName}" else s"set${field.getName}"
       val label = s"$clazz.${field.getName}: $ret"
       val textEdit = TextEdit(context.range, s"$label \\ IO as $${0:$asSuggestion};")
-      CompletionItem(label = label, sortText = Priority.high(label), textEdit = textEdit, documentation = None,
-        insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Field)
+      CompletionItem(label = label,
+        sortText = Priority.high(label),
+        textEdit = textEdit,
+        documentation = None,
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Field)
     case Completion.ClassCompletion(name) =>
-      CompletionItem(label = name, sortText = Priority.high(name), textEdit = TextEdit(context.range, name),
-        documentation = None, insertTextFormat = InsertTextFormat.PlainText, kind = CompletionItemKind.Class)
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Class)
     case Completion.SnippetCompletion(name, snippet, documentation) =>
-      CompletionItem(label = name, sortText = Priority.snippet(name), textEdit = TextEdit(context.range, snippet),
-        documentation = Some(documentation), insertTextFormat = InsertTextFormat.Snippet, kind = CompletionItemKind.Snippet)
+      CompletionItem(label = name,
+        sortText = Priority.snippet(name),
+        textEdit = TextEdit(context.range, snippet),
+        documentation = Some(documentation),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet)
     case Completion.VarCompletion(sym, tpe) =>
-      CompletionItem(label = sym.text, sortText = Priority.local(sym.text), textEdit = TextEdit(context.range, sym.text),
-        detail = Some(FormatType.formatType(tpe)(flix)), kind = CompletionItemKind.Variable)
+      CompletionItem(label = sym.text,
+        sortText = Priority.local(sym.text),
+        textEdit = TextEdit(context.range, sym.text),
+        detail = Some(FormatType.formatType(tpe)(flix)),
+        kind = CompletionItemKind.Variable)
     case Completion.DefCompletion(decl) =>
       val name = decl.sym.toString
       val snippet = CompletionUtils.getApplySnippet(name, decl.spec.fparams)(context)
@@ -138,8 +186,13 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         kind = kind)
+    case Completion.FromErrorsCompletion(name) =>
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name + " "),
+        detail = None,
+        kind = CompletionItemKind.Variable)
   }
-
 }
 
 object Completion {
@@ -321,4 +374,11 @@ object Completion {
     * @param kind the kind of completion.
     */
   case class UseCompletion(name: String, kind: CompletionItemKind) extends Completion
+
+  /**
+    * Represents a FromErrors completion
+    *
+    * @param name the name of the fromError completion.
+    */
+  case class FromErrorsCompletion(name: String) extends Completion
 }
