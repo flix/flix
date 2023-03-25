@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, flatTraverse, traverse}
 import ca.uwaterloo.flix.util.Result
 
 import java.io.{IOException, PrintStream}
@@ -28,20 +28,34 @@ import scala.util.Using
 object FlixPackageManager {
 
   /**
-    * Installs all the Flix dependencies for a Manifest at the /lib folder
+    * Finds all the transitive dependencies for `manifest` and
+    * returns their manifests. The toml files for the manifests
+    * will be put at `path`/lib.
+    */
+  def findTransitiveDependencies(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Manifest], PackageError] = {
+    out.println("Resolving transitive dependencies")
+
+    findTransitiveDependenciesRec(manifest, path, List(manifest))
+  }
+
+  /**
+    * Installs all the Flix dependencies for a list of Manifests at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Flix dependencies...")
 
-    val flixDeps = findFlixDependencies(manifest)
-    flixDeps.flatMap(dep => {
+    val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ++ findFlixDependencies(m))
+
+    val flixPaths = allFlixDeps.flatMap(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, path) match {
+      install(depName, dep.version, "fpkg", path) match {
         case Ok(l) => l
         case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
-    }).toOk
+    })
+
+    Ok(flixPaths)
   }
 
   /**
@@ -53,12 +67,12 @@ object FlixPackageManager {
     *
     * Returns a list of paths to the downloaded files.
     */
-  def install(project: String, version: SemVer, p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  private def install(project: String, version: SemVer, extension: String, p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
         GitHub.getSpecificRelease(proj, version).flatMap {
           release =>
-            val assets = release.assets.filter(_.name.endsWith(".fpkg"))
+            val assets = release.assets.filter(_.name.endsWith(s".$extension"))
             val lib = Bootstrap.getLibraryDirectory(p)
             val assetFolder = createAssetFolderPath(proj, release, lib)
 
@@ -87,6 +101,53 @@ object FlixPackageManager {
             }
             assets.map(asset => assetFolder.resolve(asset.name)).toOk
         }
+    }
+  }
+
+  /**
+    * Recursively finds all transitive dependencies of `manifest`.
+    * Downloads any missing toml files for found dependencies and
+    * parses them to manifests. Returns the list of manifests.
+    * `res` is the list of Manifests found so far to avoid duplicates.
+    */
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest])(implicit out: PrintStream): Result[List[Manifest], PackageError] = {
+    //find Flix dependencies of the current manifest
+    val flixDeps = findFlixDependencies(manifest)
+
+    for (
+      //download toml files
+      tomlPaths <- flatTraverse(flixDeps)(dep => {
+        val depName = s"${dep.username}/${dep.projectName}"
+        install(depName, dep.version, "toml", path)
+      });
+
+      //parse the manifests
+      transManifests <- traverse(tomlPaths)(p => parseManifest(p))
+
+    ) yield {
+      //remove duplicates
+      val newManifests = transManifests.filter(m => !res.contains(m))
+      var newRes = res ++ newManifests
+
+      //do recursive calls for all dependencies
+      for (m <- newManifests) {
+        findTransitiveDependenciesRec(m, path, newRes) match {
+          case Ok(t) => newRes = newRes ++ t.filter(a => !newRes.contains(a))
+          case Err(e) => return Err(e)
+        }
+      }
+      newRes
+    }
+  }
+
+  /**
+    * Parses the toml file at `path` into a Manifest,
+    * and converts any error to a PackageError.
+    */
+  private def parseManifest(path: Path): Result[Manifest, PackageError] = {
+    ManifestParser.parse(path) match {
+      case Ok(t) => Ok(t)
+      case Err(e) => Err(PackageError.ManifestParseError(e))
     }
   }
 
