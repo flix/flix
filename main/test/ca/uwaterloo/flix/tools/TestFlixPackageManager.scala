@@ -8,7 +8,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 class TestFlixPackageManager extends FunSuite {
-  val s = File.separator
+  val s: String = File.separator
 
   test("Install missing dependency.01") {
     assertResult(expected = true)(actual = {
@@ -39,7 +39,7 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out) match {
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
         case Err(e) => e
       }
@@ -76,7 +76,69 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out) match {
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
+                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
+        case Err(e) => e
+      }
+    })
+  }
+
+  test("Install missing dependencies from list of manifests") {
+    assertResult(expected = true)(actual = {
+      val toml1 = {
+        """
+          |[package]
+          |name = "test"
+          |description = "test"
+          |version = "0.0.0"
+          |flix = "0.0.0"
+          |authors = ["Anna Blume"]
+          |
+          |[dependencies]
+          |"github:magnus-madsen/helloworld" = "1.0.0"
+          |
+          |[dev-dependencies]
+          |
+          |[mvn-dependencies]
+          |
+          |[dev-mvn-dependencies]
+          |
+          |""".stripMargin
+      }
+
+      val toml2 = {
+        """
+          |[package]
+          |name = "test"
+          |description = "test"
+          |version = "0.0.0"
+          |flix = "0.0.0"
+          |authors = ["Anna Blume"]
+          |
+          |[dependencies]
+          |"github:magnus-madsen/helloworld" = "1.1.0"
+          |
+          |[dev-dependencies]
+          |
+          |[mvn-dependencies]
+          |
+          |[dev-mvn-dependencies]
+          |
+          |""".stripMargin
+      }
+
+      val manifest1 = ManifestParser.parse(toml1, null) match {
+        case Ok(m) => m
+        case Err(_) => ??? //should not happen
+      }
+      val manifest2 = ManifestParser.parse(toml2, null) match {
+        case Ok(m) => m
+        case Err(_) => ??? //should not happen
+      }
+
+      val path = Files.createTempDirectory("")
+      FlixPackageManager.installAll(List(manifest1, manifest2), path)(System.out) match {
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
                       l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
         case Err(e) => e
@@ -113,9 +175,45 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out) //installs the dependency
-      FlixPackageManager.installAll(manifest, path)(System.out) match { //does nothing
+      FlixPackageManager.installAll(List(manifest), path)(System.out) //installs the dependency
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match { //does nothing
         case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
+        case Err(e) => e
+      }
+    })
+  }
+
+  test("Find transitive dependency") {
+    assertResult(expected = true)(actual = {
+      val toml = {
+        """
+          |[package]
+          |name = "test"
+          |description = "test"
+          |version = "0.0.0"
+          |flix = "0.0.0"
+          |authors = ["Anna Blume"]
+          |
+          |[dependencies]
+          |"github:magnus-madsen/hellouniverse" = "1.0.0"
+          |
+          |[dev-dependencies]
+          |
+          |[mvn-dependencies]
+          |
+          |[dev-mvn-dependencies]
+          |
+          |""".stripMargin
+      }
+
+      val manifest = ManifestParser.parse(toml, null) match {
+        case Ok(m) => m
+        case Err(_) => ??? //should not happen
+      }
+
+      val path = Files.createTempDirectory("")
+      FlixPackageManager.findTransitiveDependencies(manifest, path)(System.out) match {
+        case Ok(l) => l.contains(manifest) && l.exists(m => m.name == "helloworld")
         case Err(e) => e
       }
     })
@@ -150,7 +248,7 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out)
+      FlixPackageManager.installAll(List(manifest), path)(System.out)
     })
   }
 
@@ -183,8 +281,10 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(manifest, path)(System.out)
+      FlixPackageManager.installAll(List(manifest), path)(System.out)
     })
   }
+
+  //test: finds transitive dependency
 
 }

@@ -32,4 +32,6 @@ object PackageError {
 
   case class CoursierError(msg: String) extends PackageError
 
+  case class ManifestParseError(e: ManifestError) extends PackageError
+
 }
