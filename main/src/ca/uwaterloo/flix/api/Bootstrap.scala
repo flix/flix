@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, Manifest}
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
@@ -328,7 +328,6 @@ object Bootstrap {
       bootstrap.folderMode().map(_ => bootstrap)
     }
   }
-
 }
 
 class Bootstrap(val projectPath: Path) {
@@ -355,11 +354,15 @@ class Bootstrap(val projectPath: Path) {
     }
 
     // 2. Check each dependency is available or download it.
-    FlixPackageManager.installAll(manifest, projectPath) match {
+    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath) match {
+      case Ok(l) => l
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+    }
+    FlixPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => flixPackagePaths = l
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
     }
-    MavenPackageManager.installAll(manifest, projectPath) match {
+    MavenPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => mavenPackagePaths = l
       case Err(e) => return Err(BootstrapError.MavenPackageError(e))
     }
@@ -370,7 +373,6 @@ class Bootstrap(val projectPath: Path) {
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
     sourcePaths = filesHere ++ filesSrc ++ filesTest
-
     ().toOk
   }
 

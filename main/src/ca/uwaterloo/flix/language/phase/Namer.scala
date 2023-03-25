@@ -795,12 +795,6 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
-    case WeededAst.Expression.Of(qname, exp, loc) =>
-      val expVal = visitExp(exp, ns0)
-      mapN(expVal) {
-        case e => NamedAst.Expression.Of(qname, e, loc)
-      }
-
     case WeededAst.Expression.CheckedCast(c, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expression.CheckedCast(c, e, loc)
