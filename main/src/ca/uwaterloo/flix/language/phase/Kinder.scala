@@ -702,12 +702,6 @@ object Kinder {
           KindedAst.Expression.Error(err, tvar, pvar, evar)
       }
 
-    case ResolvedAst.Expression.Of(sym, exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
-      mapN(expVal) {
-        case exp => KindedAst.Expression.Of(sym, exp, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
-      }
-
     case ResolvedAst.Expression.CheckedCast(cast, exp, loc) =>
       mapN(visitExp(exp, kenv0, senv, taenv, henv0, root)) {
         case e =>

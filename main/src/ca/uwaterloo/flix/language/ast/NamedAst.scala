@@ -165,8 +165,6 @@ object NamedAst {
 
     case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Of(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
     case class CheckedCast(cast: Ast.CheckedCastType, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
