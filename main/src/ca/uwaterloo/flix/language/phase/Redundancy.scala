@@ -637,9 +637,6 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expression.Of(_, exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
-
     case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>

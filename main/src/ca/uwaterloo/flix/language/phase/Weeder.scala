@@ -475,17 +475,19 @@ object Weeder {
   /**
     * Performs weeding on the given use or import `u0`.
     */
-  private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError.IllegalJavaClass] = u0 match {
+  private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      val us = names.map {
+      traverse(names) {
         case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) =>
-          val alias = aliasOpt.getOrElse(ident)
-          WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2))
+          mapN(checkAliasCase(ident.name, aliasOpt)) {
+            case () =>
+              val alias = aliasOpt.getOrElse(ident)
+              WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
+          }
       }
-      us.toList.toSuccess
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -505,6 +507,17 @@ object Weeder {
           WeededAst.UseOrImport.Import(fqn, ident, loc)
       }
       is.toList.toSuccess
+  }
+
+  /**
+    * Checks that the name's casing matches the alias's casing. (I.e., both uppercase or both lowercase.)
+    */
+  private def checkAliasCase(name: String, aliasOpt: Option[Name.Ident]): Validation[Unit, WeederError] = {
+    aliasOpt match {
+      case Some(alias) if (alias.name.charAt(0).isUpper != name(0).isUpper) =>
+        WeederError.IllegalUseAlias(name, alias.name, alias.loc).toFailure
+      case _ => ().toSuccess
+    }
   }
 
   /**
@@ -1691,12 +1704,6 @@ object Weeder {
       val f = visitPurityAndEffect(expectedEff)
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
-      }
-
-    case ParsedAst.Expression.Of(name, exp, sp2) =>
-      val sp1 = name.sp1
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Expression.Of(name, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
@@ -3259,7 +3266,6 @@ object Weeder {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.Of(qname, _, _) => qname.sp1
     case ParsedAst.Expression.UncheckedCast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, _, _) => sp1
     case ParsedAst.Expression.CheckedTypeCast(sp1, _, _) => sp1

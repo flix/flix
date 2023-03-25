@@ -574,10 +574,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
 
-    case TypedAst.Expression.Of(_, exp, _, _, _, _) =>
-      // remove the 'of' wrapper
-      visitExp(exp)
-
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
