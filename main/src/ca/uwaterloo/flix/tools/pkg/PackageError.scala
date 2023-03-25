@@ -83,6 +83,8 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class ManifestParseError(e: ManifestError) extends PackageError
+  case class ManifestParseError(e: ManifestError) extends PackageError {
+    override def message(f: Formatter): String = e.message(f)
+  }
 
 }
