@@ -442,7 +442,7 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
+  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
     // Configure a new Flix object.
     val newOptions = o.copy(
       output = Some(Bootstrap.getBuildDirectory(projectPath)),
@@ -536,6 +536,7 @@ class Bootstrap(val projectPath: Path) {
     * Runs all benchmarks in the flix package for the project.
     */
   def benchmark(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     build(o) map {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
@@ -546,6 +547,7 @@ class Bootstrap(val projectPath: Path) {
     * Runs the main function in flix package for the project.
     */
   def run(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     val res = for {
       compilationResult <- build(o).toOption
       main <- compilationResult.getMain
