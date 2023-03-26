@@ -36,7 +36,7 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Result[Unit, Int] = {
+  def init(p: Path, o: Options)(implicit out: PrintStream): Result[Unit, Int] = {
     //
     // Check that the current working directory is usable.
     //
@@ -192,20 +192,22 @@ object Bootstrap {
 
   /**
     * Creates a new directory at the given path `p`.
+    *
     * The path must not already contain a non-directory.
     */
-  private def newDirectoryIfAbsent(p: Path): Unit = {
+  private def newDirectoryIfAbsent(p: Path)(implicit out: PrintStream): Unit = {
     if (!Files.exists(p)) {
+      out.println(s"Creating: '$p'.")
       Files.createDirectories(p)
     }
   }
 
   /**
-    * Creates a new text file at the given path `p` with the given content `s`,
-    * if the file does not already exist.
+    * Creates a new text file at the given path `p` with the given content `s` if the file does not already exist.
     */
-  private def newFileIfAbsent(p: Path)(s: String): Unit = {
+  private def newFileIfAbsent(p: Path)(s: String)(implicit out: PrintStream): Unit = {
     if (!Files.exists(p)) {
+      out.println(s"Creating: '$p'.")
       Files.writeString(p, s, StandardOpenOption.CREATE)
     }
   }
@@ -224,7 +226,9 @@ object Bootstrap {
     * Adds an entry to the given zip file.
     */
   private def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
-    addToZip(zip, name, Files.readAllBytes(p))
+    if (Files.exists(p)) {
+      addToZip(zip, name, Files.readAllBytes(p))
+    }
   }
 
   /**
@@ -528,6 +532,7 @@ class Bootstrap(val projectPath: Path) {
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
       // Add required resources.
+      Bootstrap.addToZip(zip, "flix.toml", Bootstrap.getManifestFile(projectPath))
       Bootstrap.addToZip(zip, "LICENSE.md", Bootstrap.getLicenseFile(projectPath))
       Bootstrap.addToZip(zip, "README.md", Bootstrap.getReadmeFile(projectPath))
 
