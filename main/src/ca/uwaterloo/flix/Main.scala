@@ -137,38 +137,80 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Init =>
-          val result = Packager.init(cwd, options)
+          val result = Bootstrap.init(cwd, options)
           System.exit(getCode(result))
 
         case Command.Check =>
-          val result = Packager.check(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.check(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.Build =>
-          val result = Packager.build(cwd, options, loadClasses = false)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.build(options, loadClasses = false)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.BuildJar =>
-          val result = Packager.buildJar(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.buildJar(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.BuildPkg =>
-          val result = Packager.buildPkg(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.buildPkg(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.Run =>
-          val result = Packager.run(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.run(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          val result = Packager.benchmark(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.benchmark(o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          val result = Packager.test(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.test(o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(Formatter.NoFormatter))
+              System.exit(1)
+          }
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
@@ -181,7 +223,7 @@ object Main {
               shell.loop()
               System.exit(0)
             case Result.Err(e) =>
-              println(e)
+              println(e.message(Formatter.NoFormatter))
               System.exit(1)
           }
 

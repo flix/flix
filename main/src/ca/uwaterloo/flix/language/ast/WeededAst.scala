@@ -145,15 +145,13 @@ object WeededAst {
 
     case class VectorLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ref(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Ref(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: WeededAst.PurityAndEffect, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Of(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class CheckedCast(cast: Ast.CheckedCastType, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
