@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.{Bootstrap, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
@@ -155,6 +155,7 @@ object Main {
         case Command.Build =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
+              implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(options, loadClasses = false)
               System.exit(getCode(result))
             case Result.Err(e) =>
