@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPac
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file.attribute.BasicFileAttributes
@@ -54,8 +53,6 @@ object Bootstrap {
     //
     // Compute all the directories and files we intend to create.
     //
-    val buildDirectory = getBuildDirectory(p)
-    val libraryDirectory = getLibraryDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
@@ -68,8 +65,6 @@ object Bootstrap {
     //
     // Create the project directories and files.
     //
-    newDirectoryIfAbsent(buildDirectory)
-    newDirectoryIfAbsent(libraryDirectory)
     newDirectoryIfAbsent(sourceDirectory)
     newDirectoryIfAbsent(testDirectory)
 
