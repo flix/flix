@@ -70,7 +70,7 @@ object SimpleRunner {
           shell.loop()
           System.exit(0)
         case Result.Err(e) =>
-          println(e)
+          println(e.message(Formatter.getDefault))
           System.exit(1)
       }
     }
