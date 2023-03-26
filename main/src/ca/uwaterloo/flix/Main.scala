@@ -131,6 +131,8 @@ object Main {
 
     // check if command was passed.
     try {
+      val formatter = Formatter.getDefault
+
       cmdOpts.command match {
         case Command.None =>
           val result = SimpleRunner.run(cwd, cmdOpts, options)
@@ -146,7 +148,7 @@ object Main {
               val result = bootstrap.check(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -156,7 +158,7 @@ object Main {
               val result = bootstrap.build(options, loadClasses = false)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -166,7 +168,7 @@ object Main {
               val result = bootstrap.buildJar(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -176,7 +178,7 @@ object Main {
               val result = bootstrap.buildPkg(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -186,7 +188,7 @@ object Main {
               val result = bootstrap.run(options)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -197,7 +199,7 @@ object Main {
               val result = bootstrap.benchmark(o)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -208,7 +210,7 @@ object Main {
               val result = bootstrap.test(o)
               System.exit(getCode(result))
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
@@ -223,7 +225,7 @@ object Main {
               shell.loop()
               System.exit(0)
             case Result.Err(e) =>
-              println(e.message(Formatter.NoFormatter))
+              println(e.message(formatter))
               System.exit(1)
           }
 
