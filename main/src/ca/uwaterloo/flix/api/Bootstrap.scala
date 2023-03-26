@@ -463,42 +463,6 @@ class Bootstrap(val projectPath: Path) {
   }
 
   /**
-    * Runs the main function in flix package for the project.
-    */
-  def run(o: Options): Result[Unit, Int] = {
-    val res = for {
-      compilationResult <- build(o).toOption
-      main <- compilationResult.getMain
-    } yield {
-      main(Array.empty)
-      ().toOk[Unit, Int]
-    }
-    res.getOrElse(Err(1))
-  }
-
-  /**
-    * Runs all benchmarks in the flix package for the project.
-    */
-  def benchmark(o: Options): Result[Unit, Int] = {
-    build(o) map {
-      compilationResult =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
-    }
-  }
-
-  /**
-    * Runs all tests in the flix package for the project.
-    */
-  def test(o: Options): Result[Unit, Int] = {
-    implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(o) flatMap {
-      compilationResult =>
-        Tester.run(Nil, compilationResult)
-        ().toOk
-    }
-  }
-
-  /**
     * Builds a jar package for the project.
     */
   def buildJar(o: Options): Result[Unit, Int] = {
@@ -524,7 +488,7 @@ class Bootstrap(val projectPath: Path) {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getBuildDirectory(projectPath))
-        .map { path => (projectPath, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
@@ -557,7 +521,7 @@ class Bootstrap(val projectPath: Path) {
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(projectPath))
-        .map { path => (projectPath, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, sourceFile)
       }
@@ -566,6 +530,42 @@ class Bootstrap(val projectPath: Path) {
       case Failure(e) =>
         println(e.getMessage)
         Err(1)
+    }
+  }
+
+  /**
+    * Runs all benchmarks in the flix package for the project.
+    */
+  def benchmark(o: Options): Result[Unit, Int] = {
+    build(o) map {
+      compilationResult =>
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+    }
+  }
+
+  /**
+    * Runs the main function in flix package for the project.
+    */
+  def run(o: Options): Result[Unit, Int] = {
+    val res = for {
+      compilationResult <- build(o).toOption
+      main <- compilationResult.getMain
+    } yield {
+      main(Array.empty)
+      ().toOk[Unit, Int]
+    }
+    res.getOrElse(Err(1))
+  }
+
+  /**
+    * Runs all tests in the flix package for the project.
+    */
+  def test(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+    build(o) flatMap {
+      compilationResult =>
+        Tester.run(Nil, compilationResult)
+        ().toOk
     }
   }
 }
