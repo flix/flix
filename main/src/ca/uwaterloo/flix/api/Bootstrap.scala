@@ -17,11 +17,9 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, Manifest}
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.{Options, Result, Validation}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file.attribute.BasicFileAttributes
@@ -54,8 +52,6 @@ object Bootstrap {
     //
     // Compute all the directories and files we intend to create.
     //
-    val buildDirectory = getBuildDirectory(p)
-    val libraryDirectory = getLibraryDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
@@ -66,34 +62,18 @@ object Bootstrap {
     val mainTestFile = getMainTestFile(p)
 
     //
-    // Check that the project directories and files do not already exist.
-    //
-    val dirPaths = List(
-      buildDirectory, libraryDirectory, sourceDirectory, testDirectory
-    )
-
-    // blocked directories are those that already exist and are not directories
-    val blockedDirs = dirPaths.filter(p => Files.exists(p) && !Files.isDirectory(p))
-
-    if (blockedDirs.nonEmpty) {
-      throw new RuntimeException(s"The following files already exist and are not directories: ${blockedDirs.mkString(", ")}. Aborting.")
-    }
-
-    //
     // Create the project directories and files.
     //
-    newDirectoryIfAbsent(buildDirectory)
-    newDirectoryIfAbsent(libraryDirectory)
     newDirectoryIfAbsent(sourceDirectory)
     newDirectoryIfAbsent(testDirectory)
 
     newFileIfAbsent(manifestFile) {
       s"""[package]
-         |name    = "$packageName"
+         |name        = "$packageName"
          |description = "test"
-         |version = "0.1.0"
-         |flix    = "${Version.CurrentVersion}"
-         |authors = ["Tester"]
+         |version     = "0.1.0"
+         |flix        = "${Version.CurrentVersion}"
+         |authors     = ["John Doe <john@example.com>"]
          |""".stripMargin
     }
 
@@ -118,7 +98,7 @@ object Bootstrap {
     }
 
     newFileIfAbsent(mainTestFile) {
-      """@test
+      """@Test
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
@@ -201,7 +181,9 @@ object Bootstrap {
     * The path must not already contain a non-directory.
     */
   private def newDirectoryIfAbsent(p: Path): Unit = {
-    Files.createDirectories(p)
+    if (!Files.exists(p)) {
+      Files.createDirectories(p)
+    }
   }
 
   /**
@@ -209,7 +191,9 @@ object Bootstrap {
     * if the file does not already exist.
     */
   private def newFileIfAbsent(p: Path)(s: String): Unit = {
-    Files.writeString(p, s, StandardOpenOption.CREATE)
+    if (!Files.exists(p)) {
+      Files.writeString(p, s, StandardOpenOption.CREATE)
+    }
   }
 
   /**
@@ -458,7 +442,7 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix = new Flix()): Result[CompilationResult, Int] = {
+  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
     // Configure a new Flix object.
     val newOptions = o.copy(
       output = Some(Bootstrap.getBuildDirectory(projectPath)),
@@ -474,42 +458,6 @@ class Bootstrap(val projectPath: Path) {
       case failure =>
         flix.mkMessages(failure.errors).foreach(println)
         Err(1)
-    }
-  }
-
-  /**
-    * Runs the main function in flix package for the project.
-    */
-  def run(o: Options): Result[Unit, Int] = {
-    val res = for {
-      compilationResult <- build(o).toOption
-      main <- compilationResult.getMain
-    } yield {
-      main(Array.empty)
-      ().toOk[Unit, Int]
-    }
-    res.getOrElse(Err(1))
-  }
-
-  /**
-    * Runs all benchmarks in the flix package for the project.
-    */
-  def benchmark(o: Options): Result[Unit, Int] = {
-    build(o) map {
-      compilationResult =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
-    }
-  }
-
-  /**
-    * Runs all tests in the flix package for the project.
-    */
-  def test(o: Options): Result[Unit, Int] = {
-    implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
-    build(o) flatMap {
-      compilationResult =>
-        Tester.run(Nil, compilationResult)
-        ().toOk
     }
   }
 
@@ -539,7 +487,7 @@ class Bootstrap(val projectPath: Path) {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getBuildDirectory(projectPath))
-        .map { path => (projectPath, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
@@ -572,7 +520,7 @@ class Bootstrap(val projectPath: Path) {
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(projectPath))
-        .map { path => (projectPath, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, sourceFile)
       }
@@ -581,6 +529,44 @@ class Bootstrap(val projectPath: Path) {
       case Failure(e) =>
         println(e.getMessage)
         Err(1)
+    }
+  }
+
+  /**
+    * Runs all benchmarks in the flix package for the project.
+    */
+  def benchmark(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    build(o) map {
+      compilationResult =>
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+    }
+  }
+
+  /**
+    * Runs the main function in flix package for the project.
+    */
+  def run(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    val res = for {
+      compilationResult <- build(o).toOption
+      main <- compilationResult.getMain
+    } yield {
+      main(Array.empty)
+      ().toOk[Unit, Int]
+    }
+    res.getOrElse(Err(1))
+  }
+
+  /**
+    * Runs all tests in the flix package for the project.
+    */
+  def test(o: Options): Result[Unit, Int] = {
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
+    build(o) flatMap {
+      compilationResult =>
+        Tester.run(Nil, compilationResult)
+        ().toOk
     }
   }
 }

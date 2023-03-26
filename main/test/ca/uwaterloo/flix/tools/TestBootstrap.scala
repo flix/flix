@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.FunSuite
 
@@ -31,6 +31,7 @@ class TestBootstrap extends FunSuite {
   }
 
   test("build") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
     val b = Bootstrap.bootstrap(p)(System.out).get
@@ -38,6 +39,7 @@ class TestBootstrap extends FunSuite {
   }
 
   test("build-jar") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
     val b = Bootstrap.bootstrap(p)(System.out).get
@@ -51,6 +53,7 @@ class TestBootstrap extends FunSuite {
   }
 
   test("build-jar generates ZIP entries with fixed time") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
     val b = Bootstrap.bootstrap(p)(System.out).get
@@ -68,6 +71,7 @@ class TestBootstrap extends FunSuite {
   }
 
   test("build-jar always generates package that is byte-for-byte exactly the same") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)
     val packageName = p.getFileName.toString
