@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
-import ca.uwaterloo.flix.util.{Options, Result}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 import java.nio.file.{Files, Path}
@@ -20,12 +20,12 @@ class TestBootstrap extends FunSuite {
 
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
   }
 
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.check(DefaultOptions)
   }
@@ -33,7 +33,7 @@ class TestBootstrap extends FunSuite {
   test("build") {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
   }
@@ -41,7 +41,7 @@ class TestBootstrap extends FunSuite {
   test("build-jar") {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
@@ -55,7 +55,7 @@ class TestBootstrap extends FunSuite {
   test("build-jar generates ZIP entries with fixed time") {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
@@ -73,27 +73,29 @@ class TestBootstrap extends FunSuite {
   test("build-jar always generates package that is byte-for-byte exactly the same") {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".jar")
 
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
+
     def hash1 = calcHash(packagePath)
 
     b.build(DefaultOptions)
     b.buildJar(DefaultOptions)
+
     def hash2 = calcHash(packagePath)
 
     assert(
       hash1.equals(hash2),
-      s"Two file hashes are not same: ${hash1} and ${hash2}")
+      s"Two file hashes are not same: $hash1 and $hash2")
   }
 
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
 
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
@@ -106,7 +108,7 @@ class TestBootstrap extends FunSuite {
 
   test("build-pkg generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
 
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
@@ -123,39 +125,41 @@ class TestBootstrap extends FunSuite {
 
   test("build-pkg always generates package that is byte-for-byte exactly the same") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
     val packagePath = p.resolve(packageName + ".fpkg")
 
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)
+
     def hash1 = calcHash(packagePath)
 
     b.buildPkg(DefaultOptions)
+
     def hash2 = calcHash(packagePath)
 
     assert(
       hash1.equals(hash2),
-      s"Two file hashes are not same: ${hash1} and ${hash2}")
+      s"Two file hashes are not same: $hash1 and $hash2")
   }
 
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.benchmark(DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.run(DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Bootstrap.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.test(DefaultOptions)
   }
@@ -164,7 +168,7 @@ class TestBootstrap extends FunSuite {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) { }
+      while (input.read(buffer) != -1) {}
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }

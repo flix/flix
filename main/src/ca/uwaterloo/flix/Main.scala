@@ -139,7 +139,7 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Init =>
-          val result = Bootstrap.init(cwd, options)
+          val result = Bootstrap.init(cwd, options)(System.out)
           System.exit(getCode(result))
 
         case Command.Check =>
