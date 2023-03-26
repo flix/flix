@@ -683,13 +683,21 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the inner type of the array
-        val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        val elmType = tpe.asInstanceOf[MonoType.Array].tpe
+        // We get the erased elm type.
+        val jvmType = JvmOps.getErasedJvmType(elmType)
         // Evaluating the value of the 'default element'
         compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
         // Evaluating the 'length' of the array
         compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
         // Instantiating a new array of type jvmType
-        if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
+        if (elmType == MonoType.Str) {
+          visitor.visitTypeInsn(ANEWARRAY, "java/lang/String")
+        } else if (elmType.isInstanceOf[MonoType.Native]) {
+          val native = elmType.asInstanceOf[MonoType.Native]
+          val name = native.clazz.getName.replace('.', '/')
+          visitor.visitTypeInsn(ANEWARRAY, name)
+        } else if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
           visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
         } else { // Happens if the inner type is a primitive type
           visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
