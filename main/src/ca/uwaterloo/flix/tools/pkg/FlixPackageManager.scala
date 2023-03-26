@@ -33,7 +33,7 @@ object FlixPackageManager {
     * will be put at `path`/lib.
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path)(implicit out: PrintStream): Result[List[Manifest], PackageError] = {
-    out.println("Resolving transitive dependencies")
+    out.println("Resolving Flix dependencies...")
 
     findTransitiveDependenciesRec(manifest, path, List(manifest))
   }
@@ -43,7 +43,7 @@ object FlixPackageManager {
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
-    out.println("Resolving Flix dependencies...")
+    out.println("Downloading Flix dependencies...")
 
     val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ++ findFlixDependencies(m))
 
@@ -153,10 +153,10 @@ object FlixPackageManager {
 
   /**
     * Creates a path from the `lib` folder to where assets should be stored.
-    * The path will look like this: `lib`/owner/repo/verX.X.X.
+    * The path will look like this: `lib`/owner/repo/vX.X.X.
     */
   private def createAssetFolderPath(proj: GitHub.Project, release: GitHub.Release, lib: Path): Path = {
-    lib.resolve(proj.owner).resolve(proj.repo).resolve(s"ver${release.version.toString()}")
+    lib.resolve(proj.owner).resolve(proj.repo).resolve(release.version.toString)
   }
 
   /**
