@@ -17,9 +17,8 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, Manifest}
-import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
-import ca.uwaterloo.flix.util.{Options, Result, Validation}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.{PrintStream, PrintWriter}
@@ -561,7 +560,7 @@ class Bootstrap(val projectPath: Path) {
     * Runs all tests in the flix package for the project.
     */
   def test(o: Options): Result[Unit, Int] = {
-    implicit val flix: Flix = new Flix().setFormatter(AnsiTerminalFormatter)
+    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     build(o) flatMap {
       compilationResult =>
         Tester.run(Nil, compilationResult)
