@@ -56,6 +56,7 @@ object Bootstrap {
     val testDirectory = getTestDirectory(p)
 
     val manifestFile = getManifestFile(p)
+    val gitignoreFile = getGitIgnoreFile(p)
     val licenseFile = getLicenseFile(p)
     val readmeFile = getReadmeFile(p)
     val mainSourceFile = getMainSourceFile(p)
@@ -74,6 +75,14 @@ object Bootstrap {
          |version     = "0.1.0"
          |flix        = "${Version.CurrentVersion}"
          |authors     = ["John Doe <john@example.com>"]
+         |""".stripMargin
+    }
+
+    newFileIfAbsent(gitignoreFile) {
+      s"""*.fpkg
+         |*.jar
+         |build/
+         |lib/
          |""".stripMargin
     }
 
@@ -150,6 +159,11 @@ object Bootstrap {
     * Returns the path to the Manifest file relative to the given path `p`.
     */
   private def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
+
+  /**
+    * Returns the path to the .gitignore file relative to the given path `p`.
+    */
+  private def getGitIgnoreFile(p: Path): Path = p.resolve("./.gitignore").normalize()
 
   /**
     * Returns the path to the jar file based on the given path `p`.
