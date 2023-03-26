@@ -66,20 +66,6 @@ object Bootstrap {
     val mainTestFile = getMainTestFile(p)
 
     //
-    // Check that the project directories and files do not already exist.
-    //
-    val dirPaths = List(
-      buildDirectory, libraryDirectory, sourceDirectory, testDirectory
-    )
-
-    // blocked directories are those that already exist and are not directories
-    val blockedDirs = dirPaths.filter(p => Files.exists(p) && !Files.isDirectory(p))
-
-    if (blockedDirs.nonEmpty) {
-      throw new RuntimeException(s"The following files already exist and are not directories: ${blockedDirs.mkString(", ")}. Aborting.")
-    }
-
-    //
     // Create the project directories and files.
     //
     newDirectoryIfAbsent(buildDirectory)
@@ -89,11 +75,11 @@ object Bootstrap {
 
     newFileIfAbsent(manifestFile) {
       s"""[package]
-         |name    = "$packageName"
+         |name        = "$packageName"
          |description = "test"
-         |version = "0.1.0"
-         |flix    = "${Version.CurrentVersion}"
-         |authors = ["Tester"]
+         |version     = "0.1.0"
+         |flix        = "${Version.CurrentVersion}"
+         |authors     = ["John Doe <john@example.com>"]
          |""".stripMargin
     }
 
@@ -118,7 +104,7 @@ object Bootstrap {
     }
 
     newFileIfAbsent(mainTestFile) {
-      """@test
+      """@Test
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
@@ -201,7 +187,9 @@ object Bootstrap {
     * The path must not already contain a non-directory.
     */
   private def newDirectoryIfAbsent(p: Path): Unit = {
-    Files.createDirectories(p)
+    if (!Files.exists(p)) {
+      Files.createDirectories(p)
+    }
   }
 
   /**
@@ -209,7 +197,9 @@ object Bootstrap {
     * if the file does not already exist.
     */
   private def newFileIfAbsent(p: Path)(s: String): Unit = {
-    Files.writeString(p, s, StandardOpenOption.CREATE)
+    if (!Files.exists(p)) {
+      Files.writeString(p, s, StandardOpenOption.CREATE)
+    }
   }
 
   /**
