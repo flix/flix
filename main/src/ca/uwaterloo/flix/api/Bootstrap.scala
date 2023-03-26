@@ -197,7 +197,7 @@ object Bootstrap {
     */
   private def newDirectoryIfAbsent(p: Path)(implicit out: PrintStream): Unit = {
     if (!Files.exists(p)) {
-      out.println(s"Creating: '$p'.")
+      out.println(s"Creating '$p'.")
       Files.createDirectories(p)
     }
   }
@@ -207,7 +207,7 @@ object Bootstrap {
     */
   private def newFileIfAbsent(p: Path)(s: String)(implicit out: PrintStream): Unit = {
     if (!Files.exists(p)) {
-      out.println(s"Creating: '$p'.")
+      out.println(s"Creating '$p'.")
       Files.writeString(p, s, StandardOpenOption.CREATE)
     }
   }
