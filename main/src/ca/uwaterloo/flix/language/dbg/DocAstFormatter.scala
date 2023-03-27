@@ -1,11 +1,15 @@
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.dbg.Doc._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst._
+
 import scala.annotation.tailrec
 
 object DocAstFormatter {
 
   def format(p: Program)(implicit i: Indent): List[Doc] = {
-
+    import scala.math.Ordering.Implicits.seqOrdering
     val Program(enums0, defs0) = p
     val enums = enums0.map {
       case Enum(_, _, sym, cases) =>

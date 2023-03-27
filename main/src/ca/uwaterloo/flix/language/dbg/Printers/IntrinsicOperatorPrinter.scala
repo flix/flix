@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix.language.dbg.Printers
 
-import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator1N, IntrinsicOperator2, IntrinsicOperator3, IntrinsicOperatorN}
+import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
-import DocAst.Expression
-import DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst.Expression
+import ca.uwaterloo.flix.language.dbg.DocAst.Expression._
 
 object IntrinsicOperatorPrinter {
 
@@ -39,6 +39,7 @@ object IntrinsicOperatorPrinter {
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
   def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
+    case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
     case IntrinsicOperator1.Is(sym) => IsTag(sym, d)
     case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
     case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
@@ -80,6 +81,7 @@ object IntrinsicOperatorPrinter {
     case IntrinsicOperator2.ArrayNew => ArrayNew(d1, d2)
     case IntrinsicOperator2.ArrayLoad => ArrayLoad(d1, d2)
     case IntrinsicOperator2.Spawn => Spawn(d1, d2)
+    case IntrinsicOperator2.ScopeExit => ScopeExit(d1, d2)
     case IntrinsicOperator2.PutField(field) => JavaPutField(field, d1, d2)
   }
 

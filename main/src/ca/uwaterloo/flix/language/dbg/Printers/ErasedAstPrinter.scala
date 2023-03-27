@@ -53,7 +53,6 @@ object ErasedAstPrinter {
     */
   def print(e: ErasedAst.Expression): DocAst.Expression = e match {
     case Var(sym, _, _) => DocAst.Expression.VarWithOffset(sym)
-    case Unary(sop, exp, _, _) => DocAst.Expression.Unary(OperatorPrinter.print(sop), print(exp))
     case Binary(sop, _, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
@@ -61,7 +60,6 @@ object ErasedAstPrinter {
     case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(DocAst.Expression.VarWithOffset(sym), None, print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(DocAst.Expression.VarWithOffset(varSym), None, print(exp1), print(exp2))
     case Scope(sym, exp, _, _) => DocAst.Expression.Scope(DocAst.Expression.VarWithOffset(sym), print(exp))
-    case ScopeExit(exp1, exp2, _, _) => DocAst.Expression.ScopeExit(print(exp1), print(exp2))
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map(r => (r.sym, r.clazz, print(r.exp))))
     case NewObject(name, clazz, tpe, methods, _) =>
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
