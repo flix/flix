@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 /**
   * CompletionRanker
   *
-  * Ranks the completions to better suit the actual needs for the user
+  * Ranks the completions to better suit the actual needs for the user.
   */
 object CompletionRanker {
 
