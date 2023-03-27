@@ -28,10 +28,9 @@ object AstPrinter {
     */
   def printAst(phase: String, ast: => DocAst.Program)(implicit flix: Flix): Unit = {
     implicit val i: Indent = Doc.indentationLevel(Indent)
-    val phaseName = phase
-    if (flix.options.xprintasts.contains(phaseName)) {
+    if (flix.options.xprintasts.contains(phase)) {
       val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-      val filePath = buildAstsPath.resolve(s"$phaseName.$IrExtension")
+      val filePath = buildAstsPath.resolve(s"$phase.$IrExtension")
       Files.createDirectories(buildAstsPath)
 
       // Check if the file already exists.

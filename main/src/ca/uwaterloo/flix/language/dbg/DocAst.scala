@@ -32,6 +32,9 @@ object DocAst {
 
   case class Program(enums: List[Enum], defs: List[Def])
 
+  case class JvmMethod(ident: Name.Ident, fparams: List[Expression.Ascription], clo: Expression, tpe: Type)
+
+
   sealed trait Expression
 
   object Expression {
@@ -102,8 +105,6 @@ object DocAst {
 
     case class NewObject(name: String, clazz: Class[_], tpe: Type, methods: List[JvmMethod]) extends Composite
 
-    case class JvmMethod(ident: Name.Ident, fparams: List[Ascription], clo: Expression, tpe: Type)
-
     case class Native(clazz: Class[_]) extends Atom
 
     def Var(sym: Symbol.VarSym): Expression =
@@ -126,7 +127,7 @@ object DocAst {
     def Untag(sym: Symbol.CaseSym, d: Expression): Expression =
       Keyword("untag", d)
 
-    def IsTag(sym: Symbol.CaseSym, d: Expression): Expression =
+    def Is(sym: Symbol.CaseSym, d: Expression): Expression =
       Binary(d, "is", AsIs(sym.toString))
 
     def Ref(d: Expression): Expression =

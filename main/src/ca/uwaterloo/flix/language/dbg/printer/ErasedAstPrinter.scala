@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ErasedAst
+import ca.uwaterloo.flix.language.ast.{ErasedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.ErasedAst.Expression._
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -52,19 +52,21 @@ object ErasedAstPrinter {
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
   def print(e: ErasedAst.Expression): DocAst.Expression = e match {
-    case Var(sym, _, _) => DocAst.Expression.VarWithOffset(sym)
+    case Var(sym, _, _) => printVarSym(sym)
     case Binary(sop, _, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _) => DocAst.Expression.Branch(print(exp), branches.view.mapValues(print).toMap)
     case JumpTo(sym, _, _) => DocAst.Expression.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(DocAst.Expression.VarWithOffset(sym), None, print(exp1), print(exp2))
-    case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(DocAst.Expression.VarWithOffset(varSym), None, print(exp1), print(exp2))
-    case Scope(sym, exp, _, _) => DocAst.Expression.Scope(DocAst.Expression.VarWithOffset(sym), print(exp))
-    case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map(r => (r.sym, r.clazz, print(r.exp))))
+    case Let(sym, exp1, exp2, _, _) => DocAst.Expression.Let(printVarSym(sym), None, print(exp1), print(exp2))
+    case LetRec(varSym, _, _, exp1, exp2, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), None, print(exp1), print(exp2))
+    case Scope(sym, exp, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
+    case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map { case ErasedAst.CatchRule(sym, clazz, rexp) =>
+      (sym, clazz, print(rexp))
+    })
     case NewObject(name, clazz, tpe, methods, _) =>
       DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
-          DocAst.Expression.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
+          DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
     case Intrinsic0(op, _, _) => IntrinsicOperatorPrinter.print(op)
     case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
@@ -79,7 +81,13 @@ object ErasedAstPrinter {
     */
   private def printFormalParam(fp: ErasedAst.FormalParam): DocAst.Expression.Ascription = {
     val ErasedAst.FormalParam(sym, tpe) = fp
-    DocAst.Expression.Ascription(DocAst.Expression.VarWithOffset(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expression.Ascription(printVarSym(sym), MonoTypePrinter.print(tpe))
   }
+
+  /**
+    * Returns the [[DocAst.Expression]] representation of `sym`.
+    */
+  private def printVarSym(sym: Symbol.VarSym): DocAst.Expression =
+    DocAst.Expression.VarWithOffset(sym)
 
 }

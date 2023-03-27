@@ -40,7 +40,7 @@ object IntrinsicOperatorPrinter {
     */
   def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
     case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
-    case IntrinsicOperator1.Is(sym) => IsTag(sym, d)
+    case IntrinsicOperator1.Is(sym) => Is(sym, d)
     case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
     case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
     case IntrinsicOperator1.Cast => Cast(d, tpe)

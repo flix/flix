@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, LiftedAst, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.printer.LiftedAstPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -46,12 +48,22 @@ object LambdaLift {
       case (sym, enum0) => sym -> visitEnum(enum0)
     }
 
-    LiftedAst.Root(
+    val res = LiftedAst.Root(
       newDefs ++ m,
       newEnums,
       root.entryPoint,
       root.sources
     ).toSuccess
+
+    // print AST
+    res.map(liftedRoot => {
+      AstPrinter.printAst(
+        this.getClass.getSimpleName.dropRight(1),
+        LiftedAstPrinter.print(liftedRoot)
+      )
+    })
+
+    res
   }
 
   /**
