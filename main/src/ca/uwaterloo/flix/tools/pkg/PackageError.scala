@@ -83,6 +83,13 @@ object PackageError {
          |""".stripMargin
   }
 
+  case class NoSuchFile(project: String, extension: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+         |""".stripMargin
+  }
+
   case class ManifestParseError(e: ManifestError) extends PackageError {
     override def message(f: Formatter): String = e.message(f)
   }

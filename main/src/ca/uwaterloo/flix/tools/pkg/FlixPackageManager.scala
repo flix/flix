@@ -73,6 +73,9 @@ object FlixPackageManager {
         GitHub.getSpecificRelease(proj, version).flatMap {
           release =>
             val assets = release.assets.filter(_.name.endsWith(s".$extension"))
+            if(assets.isEmpty) {
+              return Err(PackageError.NoSuchFile(project, extension))
+            }
             val lib = Bootstrap.getLibraryDirectory(p)
             val assetFolder = createAssetFolderPath(proj, release, lib)
 
