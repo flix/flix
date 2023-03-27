@@ -181,7 +181,7 @@ object DocAst {
       DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
 
     def Cst(cst: Ast.Constant): Expression =
-      Printers.ConstantPrinter.print(cst)
+      printer.ConstantPrinter.print(cst)
 
     def AppClo(d: Expression, ds: List[Expression]): Expression =
       App(d, ds)
