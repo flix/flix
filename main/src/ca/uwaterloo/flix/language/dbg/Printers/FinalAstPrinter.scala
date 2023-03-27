@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
+package ca.uwaterloo.flix.language.dbg.Printers
 
 import ca.uwaterloo.flix.language.ast.FinalAst
 import ca.uwaterloo.flix.language.ast.FinalAst.Expression
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
+import ca.uwaterloo.flix.language.dbg.DocAst
 
 object FinalAstPrinter {
 

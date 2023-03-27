@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting
+package ca.uwaterloo.flix.language.dbg
 
 import scala.annotation.tailrec
 import scala.collection.{immutable, mutable}

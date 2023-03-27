@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
+package ca.uwaterloo.flix.language.dbg.Printers
 
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._

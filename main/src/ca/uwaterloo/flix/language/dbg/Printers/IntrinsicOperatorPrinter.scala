@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
+package ca.uwaterloo.flix.language.dbg.Printers
 
 import ca.uwaterloo.flix.language.ast.ErasedAst.{IntrinsicOperator0, IntrinsicOperator1, IntrinsicOperator1N, IntrinsicOperator2, IntrinsicOperator3, IntrinsicOperatorN}
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Expression
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Expression._
+import ca.uwaterloo.flix.language.dbg.DocAst
+import DocAst.Expression
+import DocAst.Expression._
 
 object IntrinsicOperatorPrinter {
 

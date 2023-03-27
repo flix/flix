@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers
+package ca.uwaterloo.flix.language.dbg.Printers
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.DocAst.Expression
+import ca.uwaterloo.flix.language.dbg.DocAst.Expression
 
 object ConstantPrinter {
 

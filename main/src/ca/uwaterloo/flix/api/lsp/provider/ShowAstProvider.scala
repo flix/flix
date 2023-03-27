@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.AstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 

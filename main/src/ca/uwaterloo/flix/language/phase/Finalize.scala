@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.AstPrinter
-import ca.uwaterloo.flix.language.dbg.prettierPrettyPrinting.Printers.FinalAstPrinter
+import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.Printers.FinalAstPrinter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
