@@ -105,7 +105,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
-    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc) // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
   }
 
   /**
@@ -132,7 +132,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
-    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc) // TODO ASSOC-TYPE danger!
+    case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
   }
 
   /**

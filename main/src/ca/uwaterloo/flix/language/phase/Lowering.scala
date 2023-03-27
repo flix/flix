@@ -913,7 +913,7 @@ object Lowering {
 
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
-      case Type.AssocType(cst, args, kind, loc) => throw InternalCompilerException("unexpected associated type", loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(visit), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
     }
 
     if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
