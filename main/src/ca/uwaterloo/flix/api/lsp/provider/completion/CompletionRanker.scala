@@ -42,6 +42,7 @@ object CompletionRanker {
                 currBest = (Some(Completion.DefCompletion(decl)), timestamp)
               case _ => // Not a def
             }
+          case _ => // Not a def
         }
         currBest._1
     }
