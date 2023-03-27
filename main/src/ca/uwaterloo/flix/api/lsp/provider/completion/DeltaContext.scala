@@ -22,6 +22,16 @@ import ca.uwaterloo.flix.language.ast.Symbol
   */
 case class DeltaContext(deltas: List[Delta]) {
 
+  /**
+    * Merges this.List[Delta] with other.List[Delta]
+    *
+    * @param other the other DeltaContext.
+    * @return      a new DeltaContext with the new List[Delta] ++ old List[Delta]
+    */
+  def mergeDeltas(other: DeltaContext): DeltaContext = {
+    DeltaContext(this.deltas ++ other.deltas)
+  }
+
   def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
     case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
     case _ => false
