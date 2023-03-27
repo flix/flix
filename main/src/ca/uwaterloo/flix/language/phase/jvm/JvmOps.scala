@@ -667,8 +667,6 @@ object JvmOps {
     def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
       case Expression.Var(_, _, _) => Set.empty
 
-      case Expression.Unary(_, exp, _, _) => visitExp(exp)
-
       case Expression.Binary(_, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
@@ -686,8 +684,6 @@ object JvmOps {
       case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.Scope(_, exp, _, _) => visitExp(exp)
-
-      case Expression.ScopeExit(exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 

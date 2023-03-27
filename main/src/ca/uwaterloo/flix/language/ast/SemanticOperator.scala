@@ -105,7 +105,7 @@ object SemanticOperator {
     /**
       * Negation.
       */
-    case object Neg extends Float64Op
+    case object Neg extends Float32Op
 
     /**
       * Addition.
@@ -733,7 +733,7 @@ object SemanticOperator {
     /**
       * Bitwise Not.
       */
-    case object Not extends Int64Op
+    case object Not extends BigIntOp
 
     /**
       * Addition.

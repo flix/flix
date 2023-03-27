@@ -951,10 +951,10 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param exp1 the reference.
-      * @param exp2 the optional region.
+      * @param exp2 the region.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Dereference expression.
@@ -983,15 +983,6 @@ object ParsedAst {
       * @param sp2       the position of the last character in the expression.
       */
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Of Expression.
-      *
-      * @param name the tag of the expression.
-      * @param exp  the expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Checked Type Cast expression.

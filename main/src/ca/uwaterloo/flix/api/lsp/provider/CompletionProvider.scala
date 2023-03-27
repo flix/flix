@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -83,11 +82,14 @@ object CompletionProvider {
     // (what would having no source even mean?) or if the position represented by pos was invalid with respect
     // to the source (which would imply a bug in VSCode?).
     //
-    val completions = source.flatMap(getContext(_, uri, pos)) match {
+    val completions = source.flatMap(getContext(_, uri, pos, currentErrors)) match {
       case None => Nil
       case Some(context) =>
         root match {
-          case Some(nonOptionRoot) => getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++ getCompletionsFromErrors(pos, currentErrors)(context, index, root)
+          case Some(nonOptionRoot) =>
+            getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
+            (FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
+              map (comp => comp.toCompletionItem(context)))
           case None => Nil
         }
     }
@@ -104,10 +106,10 @@ object CompletionProvider {
     entity match {
       case Some(Entity.Exp(TypedAst.Expression.HoleWithExp(TypedAst.Expression.Var(sym, sourceType, _), targetType, _, _, loc))) =>
         HoleCompletion.candidates(sourceType, targetType, root.get)
-          .map((root.get.defs(_)))
+          .map(root.get.defs(_))
           .filter(_.spec.mod.isPublic)
           .zipWithIndex
-          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", uri, loc, sym, decl, root) }
+          .map { case (decl, idx) => holeDefCompletion(f"$idx%09d", loc, sym, decl) }
       case _ => Nil
     }
   }
@@ -115,7 +117,7 @@ object CompletionProvider {
   /**
     * Creates a completion item from a hole with expression and a def.
     */
-  private def holeDefCompletion(priority: String, uri: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def, root: Option[TypedAst.Root])(implicit flix: Flix): CompletionItem = {
+  private def holeDefCompletion(priority: String, loc: SourceLocation, sym: Symbol.VarSym, decl: TypedAst.Def)(implicit flix: Flix): CompletionItem = {
     val name = decl.sym.toString
     val args = decl.spec.fparams.dropRight(1).zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.sym.text}}"
@@ -200,48 +202,6 @@ object CompletionProvider {
   }
 
   /**
-    * Returns a list of completions based on the given compilation messages.
-    */
-  private def getCompletionsFromErrors(pos: Position, errors: List[CompilationMessage])(implicit context: CompletionContext, index: Index, root: Option[TypedAst.Root]): Iterator[CompletionItem] = {
-    val undefinedNames = errors.collect {
-      case m: ResolutionError.UndefinedName => m
-    }
-    closest(pos, undefinedNames) match {
-      case None => Iterator.empty
-      case Some(undefinedNameError) =>
-        val suggestions = undefinedNameError.env.map {
-          case (name, sym) => CompletionItem(label = name,
-            sortText = Priority.high(name),
-            textEdit = TextEdit(context.range, name + " "),
-            detail = None,
-            kind = CompletionItemKind.Variable)
-        }
-        suggestions.iterator
-    }
-  }
-
-  /**
-    * Optionally returns the error message in `l` closest to the given position `pos`.
-    */
-  private def closest[T <: CompilationMessage](pos: Position, l: List[T]): Option[T] = {
-    if (l.isEmpty)
-      None
-    else
-      Some(l.minBy(msg => lineDistance(pos, msg.loc)))
-  }
-
-  /**
-    * Returns the line distance between `pos` and `loc`.
-    *
-    * Returns `Int.MaxValue` if `loc` is Unknown.
-    */
-  private def lineDistance(pos: Position, loc: SourceLocation): Int =
-    if (loc == SourceLocation.Unknown)
-      Int.MaxValue
-    else
-      Math.abs(pos.line - loc.beginLine)
-
-  /**
     * Characters that constitute a word.
     * This is more permissive than the parser, but that's OK.
     */
@@ -251,7 +211,7 @@ object CompletionProvider {
   /**
     * Returns the word at the end of a string, discarding trailing whitespace first
     */
-  private def getLastWord(s: String) = {
+  private def getLastWord(s: String): String = {
     s.reverse.dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
@@ -259,14 +219,14 @@ object CompletionProvider {
     * Returns the second-to-last word at the end of a string, *not* discarding
     * trailing whitespace first.
     */
-  private def getSecondLastWord(s: String) = {
+  private def getSecondLastWord(s: String): String = {
     s.reverse.dropWhile(isWordChar).dropWhile(_.isWhitespace).takeWhile(isWordChar).reverse
   }
 
   /**
     * Find context from the source, and cursor position within it.
     */
-  private def getContext(source: String, uri: String, pos: Position): Option[CompletionContext] = {
+  private def getContext(source: String, uri: String, pos: Position, errors: List[CompilationMessage]): Option[CompletionContext] = {
     val x = pos.character - 1
     val y = pos.line - 1
     val lines = source.linesWithSeparators.toList
@@ -285,9 +245,7 @@ object CompletionProvider {
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      CompletionContext(uri, range, word, previousWord, prefix)
+      CompletionContext(uri, pos, range, word, previousWord, prefix, errors)
     }
   }
-
-
 }

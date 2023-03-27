@@ -767,7 +767,7 @@ object Namer {
       }
 
     case WeededAst.Expression.Ref(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), traverseOpt(exp2)(visitExp(_, ns0))) {
+      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) =>
           NamedAst.Expression.Ref(e1, e2, loc)
       }
@@ -793,12 +793,6 @@ object Namer {
         case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
       }.recoverOne {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
-      }
-
-    case WeededAst.Expression.Of(qname, exp, loc) =>
-      val expVal = visitExp(exp, ns0)
-      mapN(expVal) {
-        case e => NamedAst.Expression.Of(qname, e, loc)
       }
 
     case WeededAst.Expression.CheckedCast(c, exp, loc) =>
