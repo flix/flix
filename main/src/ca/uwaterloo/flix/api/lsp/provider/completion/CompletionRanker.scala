@@ -38,7 +38,7 @@ object CompletionRanker {
         deltas.foreach {
           case Delta.AddDef(sym, timestamp) =>
             completions.foreach {
-              case Completion.DefCompletion(decl) if decl.sym == sym || currBest._2 < timestamp =>
+              case Completion.DefCompletion(decl) if decl.sym == sym && currBest._2 < timestamp =>
                 currBest = (Some(Completion.DefCompletion(decl)), timestamp)
               case _ => // Not a def
             }

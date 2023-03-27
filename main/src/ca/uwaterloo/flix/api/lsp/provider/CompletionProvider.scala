@@ -93,7 +93,7 @@ object CompletionProvider {
               case None => comp map(comp => comp.toCompletionItem(context))
               case Some(completionForBoost) =>
                 val elemForBoost = completionForBoost.toCompletionItem(context)
-                val boostedElem = CompletionItem(elemForBoost.label, "1" + elemForBoost.sortText.splitAt(1)._2, elemForBoost.filterText,
+                val boostedElem = CompletionItem(elemForBoost.label, "1" + elemForBoost.sortText.splitAt(1), elemForBoost.filterText,
                   elemForBoost.textEdit, elemForBoost.detail, elemForBoost.documentation,
                   elemForBoost.kind, elemForBoost.insertTextFormat, elemForBoost.commitCharacters)
                 List(boostedElem) ++ (comp map(comp => comp.toCompletionItem(context)))
