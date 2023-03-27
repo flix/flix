@@ -39,7 +39,7 @@ jobs:
       max-parallel: 1
       matrix:
         repo:
-          - "magnus-madsen/helloworld"
+          - "flix/museum"
           - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
           - "mlutze/flix-json"
