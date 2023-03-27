@@ -38,7 +38,7 @@ object ShowAstProvider {
 
     val text = "def main(): String = \"Work in progress!\"\n"
 
-    ("title" -> s"$phase.${AstPrinter.IREXTENSION}") ~ ("text" -> text)
+    ("title" -> s"$phase.${AstPrinter.IrExtension}") ~ ("text" -> text)
   }
 
 }

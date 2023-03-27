@@ -10,28 +10,28 @@ import java.nio.file.{Files, LinkOption, Path}
 object AstPrinter {
 
   /** default indentation width of 4 spaces */
-  private val INDENT = 4
+  private val Indent = 4
 
   /** default maximum output width of 80 chars */
-  private val WIDTH = 80
+  private val Width = 80
 
   /**
     * The extension of intermediate flix files.
     */
-  val IREXTENSION: String = "flixir"
+  val IrExtension: String = "flixir"
 
   /**
-    * Prints `ast` to `build/ast/<phase>.<AstPrinter.IREXTENSION>` if
+    * Prints `ast` to `build/ast/<phase>.<AstPrinter.IrExtension>` if
     * `flix.options.xprintasts` contains `phase`.
     *
     * @param ast    call-by-name to avoid premature computation
     */
   def printAst(phase: String, ast: => DocAst.Program)(implicit flix: Flix): Unit = {
-    implicit val i: Indent = Doc.indentationLevel(INDENT)
+    implicit val i: Indent = Doc.indentationLevel(Indent)
     val phaseName = phase
     if (flix.options.xprintasts.contains(phaseName)) {
       val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-      val filePath = buildAstsPath.resolve(s"$phaseName.$IREXTENSION")
+      val filePath = buildAstsPath.resolve(s"$phaseName.$IrExtension")
       Files.createDirectories(buildAstsPath)
 
       // Check if the file already exists.
@@ -48,7 +48,7 @@ object AstPrinter {
       }
 
       val docAst = DocAstFormatter.format(ast)
-      val str = docAst.map(Doc.pretty(WIDTH, _)).mkString("\n\n")
+      val str = docAst.map(Doc.pretty(Width, _)).mkString("\n\n")
       Files.write(filePath, str.getBytes)
     }
   }
