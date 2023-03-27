@@ -112,7 +112,7 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, _, clazz, tpe, tconstrs, defs, _, _) =>
+    case Instance(_, _, _, clazz, tpe, tconstrs, _, defs, _, _) => // TODO ASSOC-TYPES visit assocs
       val idx1 = Index.useOf(clazz.sym, clazz.loc)
       val idx2 = visitType(tpe)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
