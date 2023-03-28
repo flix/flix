@@ -157,6 +157,25 @@ class TestManifestParser extends FunSuite {
     })
   }
 
+  test("Err.name.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |mane = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.mane").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
   test("Err.name.type") {
     val toml = {
       """
@@ -195,6 +214,25 @@ class TestManifestParser extends FunSuite {
     })
   }
 
+  test("Err.description.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |desciption = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.desciption").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
   test("Err.description.type") {
     val toml = {
     """
@@ -228,6 +266,25 @@ class TestManifestParser extends FunSuite {
       |""".stripMargin
   }
     assertResult(ManifestError.MissingRequiredProperty(null, "package.version").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.version.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |varsion = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.varsion").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -361,6 +418,25 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.MissingRequiredProperty(null, "package.flix").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.flix.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flux = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.flux").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -500,6 +576,25 @@ class TestManifestParser extends FunSuite {
     })
   }
 
+  test("Err.license.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |licence = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.licence").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
   //Authors
   test("Err.authors.missing") {
     val toml = {
@@ -514,6 +609,25 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.MissingRequiredProperty(null, "package.authors").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.authors.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authars = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.authars").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -595,6 +709,29 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.DependencyFormatError(null, "123").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[depandencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |"github:mlutze/flixball" = "3.2.1"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "depandencies").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -830,6 +967,28 @@ class TestManifestParser extends FunSuite {
     })
   }
 
+  test("Err.dev-dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dev-dependences]
+        |"github:fuzzer/fuzzer" = "7.8.9"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "dev-dependences").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
   test("Err.dev-dependencies.format.01") {
     val toml = {
       """
@@ -1003,6 +1162,29 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.DependencyFormatError(null, "470").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.mvn-dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mwn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.0"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "mwn-dependencies").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
@@ -1233,6 +1415,28 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.DependencyFormatError(null, "123456").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.dev-mvn-dependencies.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dev-dependencies]
+        |"org.junit:junit" = "12.34.56"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalTableFound(null, "mvn-dev-dependencies").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
