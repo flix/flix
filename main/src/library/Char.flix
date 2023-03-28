@@ -30,11 +30,11 @@ namespace Char {
     pub def isAscii(c: Char): Bool = region rc {
         let _ = rc;
         import static get java.nio.charset.StandardCharsets.US_ASCII: ##java.nio.charset.Charset \ Write(rc) as asciiCharset;
-        import java.nio.charset.Charset.newEncoder(): ##java.nio.charset.CharsetEncoder \ Write(rc) as newEnc;
-        import java.nio.charset.CharsetEncoder.canEncode(Char): Bool \ Write(rc) as canEnc;
+        import java.nio.charset.Charset.newEncoder(): ##java.nio.charset.CharsetEncoder \ Write(rc);
+        import java.nio.charset.CharsetEncoder.canEncode(Char): Bool \ Write(rc);
         let cs = asciiCharset();
-        let encoder = newEnc(cs);
-        canEnc(cs, c)
+        let encoder = newEncoder(cs);
+        canEncode(encoder, c)
     }
 
     ///
