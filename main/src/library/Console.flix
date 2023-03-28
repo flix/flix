@@ -116,10 +116,10 @@ namespace Console {
         let hexOpt: Option[String] = {
             forM (
                 hex <- String.stripPrefix(substr = "#", hexCode);
+                if String.length(hex) == 6;
                 r <- String.sliceLeft(end = 2, hex) |> stringToHex;
                 g <- String.slice(start = 2, end = 4, hex) |> stringToHex;
-                b <- String.slice(start = 4, end = 6, hex) |> stringToHex;
-                if String.length(hex) == 6
+                b <- String.slice(start = 4, end = 6, hex) |> stringToHex
             ) yield
                 rgb((r, g, b), text, isFg = true)
         };
