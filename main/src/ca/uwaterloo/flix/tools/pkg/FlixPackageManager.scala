@@ -73,37 +73,36 @@ object FlixPackageManager {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
-      val path = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(assetName)
-      if (Files.exists(path)) {
+      val assetPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(assetName)
+      if (Files.exists(assetPath)) {
         out.println(s"  Cached `${proj.owner}/${proj.repo}.$extension` (v$version).")
-        Ok(path)
+        Ok(assetPath)
       } else {
         GitHub.getSpecificRelease(proj, version).flatMap { release =>
           val assets = release.assets.filter(_.name.endsWith(s".$extension"))
           if (assets.isEmpty) {
-            return Err(PackageError.NoSuchFile(project, extension))
-          }
-          if (assets.length != 1) {
-            return Err(PackageError.TooManyFiles(project, extension))
-          }
-          val lib = Bootstrap.getLibraryDirectory(p)
-          val assetFolder = createAssetFolderPath(proj, release, lib)
+            Err(PackageError.NoSuchFile(project, extension))
+          } else if (assets.length != 1) {
+            Err(PackageError.TooManyFiles(project, extension))
+          } else {
+            val lib = Bootstrap.getLibraryDirectory(p)
+            val assetFolder = createAssetFolderPath(proj, release, lib)
 
-          // download asset to the folder
-          val asset = assets.head
-          val assetPath = assetFolder.resolve(assetName)
-          out.print(s"  Downloading `${proj.owner}/${proj.repo}.$extension` (v$version)... ")
-          out.flush()
-          try {
-            Using(GitHub.downloadAsset(asset)) {
-              stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+            // download asset to the folder
+            val asset = assets.head
+            out.print(s"  Downloading `${proj.owner}/${proj.repo}.$extension` (v$version)... ")
+            out.flush()
+            try {
+              Using(GitHub.downloadAsset(asset)) {
+                stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
+              }
+            } catch {
+              case _: IOException => return Err(PackageError.DownloadError(asset))
             }
-          } catch {
-            case _: IOException => return Err(PackageError.DownloadError(asset))
-          }
-          out.println(s"OK.")
+            out.println(s"OK.")
 
-          Ok(assetPath)
+            Ok(assetPath)
+          }
         }
       }
     }
