@@ -28,7 +28,7 @@ class TestManifestParser extends FunSuite {
       |"github:fuzzer/fuzzer" = "1.2.3"
       |
       |[mvn-dependencies]
-      |"org.postgresql:postgresql" = "1.2.3"
+      |"org.postgresql:postgresql" = "1.2.3.4"
       |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
       |
       |[dev-mvn-dependencies]
@@ -56,7 +56,7 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.version") {
-    assertResult(expected = SemVer(0, 1, Some(0), None))(actual = {
+    assertResult(expected = SemVer(0, 1, Some(0), None, None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.version
         case Err(e) => e.message(f)
@@ -65,7 +65,7 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.flix") {
-    assertResult(expected = SemVer(0, 33, Some(0), None))(actual = {
+    assertResult(expected = SemVer(0, 33, Some(0), None, None))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.flix
         case Err(e) => e.message(f)
@@ -126,12 +126,12 @@ class TestManifestParser extends FunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1,2,Some(3), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3,2,Some(1), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1,2,Some(3), None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1,2,Some(3), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4,7,Some(0), Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1,2,None, None), DependencyKind.Development)))(actual = {
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -928,7 +928,7 @@ class TestManifestParser extends FunSuite {
         |"github:fuzzer/fuzzer" = "1.2.3"
         |
         |[mvn-dependencies]
-        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.postgresql:postgresql" = "1.2.3.4"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
@@ -936,10 +936,10 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -1294,7 +1294,7 @@ class TestManifestParser extends FunSuite {
         |"github:mlutze/flixball" = "3.2.1"
         |
         |[mvn-dependencies]
-        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.postgresql:postgresql" = "1.2.3.4"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |[dev-mvn-dependencies]
@@ -1303,11 +1303,11 @@ class TestManifestParser extends FunSuite {
         |""".stripMargin
     }
     assertResult(expected = List(
-                                 Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+                                 Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -1603,10 +1603,10 @@ class TestManifestParser extends FunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None), DependencyKind.Development)))(actual = {
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.junit", "junit", SemVer(1, 2, None, None, None), DependencyKind.Development)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)
@@ -1964,16 +1964,16 @@ class TestManifestParser extends FunSuite {
         |"github:fuzzer/fuzzer" = "1.2.3"
         |
         |[mvn-dependencies]
-        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.postgresql:postgresql" = "1.2.3.4"
         |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), None), DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), Some("M1")), DependencyKind.Production)))(actual = {
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
+                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", SemVer(1, 2, Some(3), Some(4), None), DependencyKind.Production),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", SemVer(4, 7, Some(0), None, Some("M1")), DependencyKind.Production)))(actual = {
       ManifestParser.parse(toml, null) match {
         case Ok(manifest) => manifest.dependencies
         case Err(e) => e.message(f)

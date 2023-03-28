@@ -58,7 +58,7 @@ object ManifestError {
     override def message(f: Formatter): String = {
       s"""
          | This toml file has a Maven version number of the wrong format: ${f.red(version)}.
-         | A version in Maven should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'.
+         | A version in Maven should be formatted like so: 'x.x.x', 'x.x', 'x.x.x.x' or 'x.x.x-x'.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
     }
