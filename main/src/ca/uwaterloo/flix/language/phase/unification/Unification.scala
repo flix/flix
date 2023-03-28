@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
@@ -119,7 +120,7 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
@@ -139,6 +140,14 @@ object Unification {
         }
         case Result.Err(e) => Result.Err(e)
       }
+
+    case (Type.AssocType(cst1, args1, kind1, loc1), Type.AssocType(cst2, args2, kind2, loc2)) if cst1 == cst2 && args1 == args2 => Result.Ok(Substitution.empty)
+
+    case (Type.AssocType(cst1, args1, kind1, loc1), t2) => ???
+      // TODO ASSOC-TYPES lookup in atenv (probably make a helper)
+      // TODO ASSOC-TYPES need to rigidify all vars in args1 to do lookup properly
+      // TODO ASSOC-TYPES then apply subst to new type
+      // TODO ASSOC-TYPES make into special function since it's also needed in monomorph
 
     case (Type.AssocType(cst1, args1, kind1, loc1), Type.AssocType(cst2, args2, kind2, loc2)) =>
       // TODO ASSOC-TYPES evaluate if possible
