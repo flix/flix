@@ -142,4 +142,24 @@ object ManifestError {
          |""".stripMargin
   }
 
+  case class IllegalTableFound(path: Path, tableName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The toml file has a table named ${f.red(tableName)}, which is not allowed.
+         | Allowed table names:
+         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class IllegalPackageKeyFound(path: Path, entryName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
+         | Allowed entry names in the package table:
+         |   name, description, version, flix, authors, license
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
 }
