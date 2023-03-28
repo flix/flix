@@ -15,11 +15,11 @@
  */
 
 instance LowerBound[Char] {
-    pub def minValue(): Char = '\u0000'
+    pub def minValue(): Char = Char.minValue()
 }
 
 instance UpperBound[Char] {
-    pub def maxValue(): Char = '\uffff'
+    pub def maxValue(): Char = Char.maxValue()
 }
 
 namespace Char {
@@ -117,5 +117,15 @@ namespace Char {
     /// Returns the character `c` as a string.
     ///
     pub def toString(c: Char): String = ToString.toString(c)
+
+    ///
+    /// Returns the character given by the all zero byte.
+    ///
+    pub def minValue(): Char = '\u0000'
+
+    ///
+    /// Returns the character given by the maximum valued byte.
+    ///
+    pub def maxValue(): Char = '\uffff'
 
 }
