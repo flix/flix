@@ -27,9 +27,14 @@ namespace Char {
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
-    pub def isAscii(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0000 and i <= 0x007F => true        // 'NUL'..'DEL'
-        case _ => false
+    pub def isAscii(c: Char): Bool = region rc {
+        let _ = rc;
+        import static get java.nio.charset.StandardCharsets.US_ASCII: ##java.nio.charset.Charset \ Write(rc) as asciiCharset;
+        import java.nio.charset.Charset.newEncoder(): ##java.nio.charset.CharsetEncoder \ Write(rc) as newEnc;
+        import java.nio.charset.CharsetEncoder.canEncode(Char): Bool \ Write(rc) as canEnc;
+        let cs = asciiCharset();
+        let encoder = newEnc(cs);
+        canEnc(cs, c)
     }
 
     ///
