@@ -55,6 +55,7 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
     ///
+    // TODO: Refactor
     pub def isAsciiDigit(c: Char): Bool = match toInt32(c) {
         case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
         case _ => false
@@ -63,6 +64,7 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
+    // TODO: Refactor
     pub def isOctDigit(c: Char): Bool = match toInt32(c) {
         case i if i >= 0x0030 and i <= 0x0037 => true        // '0'..'7'
         case _ => false
@@ -71,6 +73,7 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
+    // TODO: Refactor
     pub def isHexDigit(c: Char): Bool = match toInt32(c) {
         case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
         case i if i >= 0x0041 and i <= 0x0046 => true        // 'A'..'F'
@@ -125,6 +128,7 @@ namespace Char {
     ///
     /// Returns the character `c` as an Int32.
     ///
+    // TODO: Remove
     pub def toInt32(c: Char): Int32 = region rh {
         import static java.lang.Character.codePointAt(Array[Char, rh], Int32): Int32 \ Read(rh);
         codePointAt(Array.repeat(rh, 1, c), 0)
@@ -133,6 +137,7 @@ namespace Char {
     ///
     /// Returns the respective character for the int `i`.
     ///
+    // TODO: Remove
     pub def fromInt32(i: Int32): Option[Char] = region rh {
         import static java.lang.Character.toChars(Int32): Array[Char, rh] \ Write(rh);
         let _ = Array.repeat(rh, 0, 0); // Avoid redundancy error of unused var rh.
