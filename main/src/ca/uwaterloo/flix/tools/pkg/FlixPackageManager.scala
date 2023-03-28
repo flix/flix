@@ -65,7 +65,9 @@ object FlixPackageManager {
     *
     * The package is installed at `lib/<owner>/<repo>`
     *
-    * Returns a list of paths to the downloaded files.
+    * There should be only one file with the given extension.
+    *
+    * Returns the path to the downloaded file.
     */
   private def install(project: String, version: SemVer, extension: String, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
     GitHub.parseProject(project).flatMap {
