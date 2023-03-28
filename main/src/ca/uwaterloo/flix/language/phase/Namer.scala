@@ -124,15 +124,15 @@ object Namer {
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
-        case table1 => fold(sigs, table1) {
+        case table1 => fold(assocs ++ sigs, table1) {
           case (table, d) => tableDecl(d, table)
         }
       }
 
-    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
       addInstanceToTable(table0, ns, clazz.ident.name, inst).toSuccess
 
     case NamedAst.Declaration.Sig(sym, spec, exp) =>
@@ -160,6 +160,9 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) =>
+      tryAddToTable(table0, sym.namespace, sym.name, decl)
+
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
@@ -177,6 +180,10 @@ object Namer {
     case caze@NamedAst.Declaration.RestrictableCase(sym, _, _) =>
       // TODO RESTR-VARS add to case table?
       tryAddToTable(table0, sym.namespace, sym.name, caze)
+
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) =>
+      throw InternalCompilerException("unexpected tabling of associated type definition", loc)
+
   }
 
   /**
@@ -381,21 +388,45 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given associated type signature `s0`.
+    */
+  private def visitAssocTypeSig(s0: WeededAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
+      val sym = Symbol.mkAssocTypeSym(clazz, ident)
+      val tparams = getTypeParams(tparams0)
+      val kind = visitKind(kind0)
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc).toSuccess
+  }
+
+  /**
+    * Performs naming on the given associated type definition `d0`.
+    */
+  private def visitAssocTypeDef(d0: WeededAst.Declaration.AssocTypeDef, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
+      val argsVal = traverse(args0)(visitType)
+      val tpeVal = visitType(tpe0)
+      mapN(argsVal, tpeVal) {
+        case (args, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc)
+      }
+  }
+
+  /**
     * Performs naming on the given class `clazz`.
     */
   private def visitClass(clazz: WeededAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
-    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, signatures, laws0, loc) =>
+    case WeededAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, assocs0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0))
 
-      mapN(superClassesVal, sigsVal, lawsVal) {
-        case (superClasses, sigs, laws) =>
-          NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+      mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
+        case (superClasses, assocs, sigs, laws) =>
+          NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
       }
   }
 
@@ -403,16 +434,17 @@ object Namer {
     * Performs naming on the given instance `instance`.
     */
   private def visitInstance(instance: WeededAst.Declaration.Instance, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Instance, NameError] = instance match {
-    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, defs0, loc) =>
+    case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
       val tpeVal = visitType(tpe0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
-      flatMapN(tpeVal, tconstrsVal) {
-        case (tpe, tconstrs) =>
+      val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
+      flatMapN(tpeVal, tconstrsVal, assocsVal) {
+        case (tpe, tconstrs, assocs) =>
           val defsVal = traverse(defs0)(visitDef(_, ns0))
           mapN(defsVal) {
-            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns0.parts, loc)
+            defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns0.parts, loc)
           }
       }
   }
@@ -1538,7 +1570,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.loc
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
@@ -1548,7 +1580,9 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
     case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym.loc
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => sym.loc
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
