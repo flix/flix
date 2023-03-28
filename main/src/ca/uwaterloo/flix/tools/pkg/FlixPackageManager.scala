@@ -70,22 +70,26 @@ object FlixPackageManager {
   private def install(project: String, version: SemVer, extension: String, p: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
     GitHub.parseProject(project).flatMap {
       proj =>
-        GitHub.getSpecificRelease(proj, version).flatMap {
-          release =>
-            val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-            val lib = Bootstrap.getLibraryDirectory(p)
-            val assetFolder = createAssetFolderPath(proj, release, lib)
+        val lib = Bootstrap.getLibraryDirectory(p)
+        val name = s"${proj.repo}-$version.$extension"
+        val path = lib.resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(name)
 
-            // create the asset directory if it doesn't exist
-            Files.createDirectories(assetFolder)
+        if(Files.exists(path)) {
+          out.println(s"  Cached `${proj.owner}/${proj.repo}.$extension` (v$version).")
+          Ok(List(path))
+        } else {
+          GitHub.getSpecificRelease(proj, version).flatMap {
+            release =>
+              val assets = release.assets.filter(_.name.endsWith(s".$extension"))
+              val assetFolder = createAssetFolderPath(proj, release, lib)
 
-            // download each asset to the folder
-            for (asset <- assets) {
-              val assetName = asset.name
-              val path = assetFolder.resolve(assetName)
-              val newDownload = !Files.exists(path)
-              if (newDownload) {
-                out.print(s"  Downloading `$project/$assetName' (v$version)... ")
+              // create the asset directory if it doesn't exist
+              Files.createDirectories(assetFolder)
+
+              // download each asset to the folder
+              for (asset <- assets) {
+                val path = assetFolder.resolve(name)
+                out.print(s"  Downloading `${proj.owner}/${proj.repo}.$extension` (v$version)... ")
                 out.flush()
                 try {
                   Using(GitHub.downloadAsset(asset)) {
@@ -95,11 +99,9 @@ object FlixPackageManager {
                   case _: IOException => return Err(PackageError.DownloadError(asset))
                 }
                 out.println(s"OK.")
-              } else {
-                out.println(s"  Cached `$project/$assetName' (v$version).")
               }
-            }
-            assets.map(asset => assetFolder.resolve(asset.name)).toOk
+              assets.map(_ => assetFolder.resolve(name)).toOk
+          }
         }
     }
   }

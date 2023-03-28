@@ -44,7 +44,7 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -81,8 +81,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
-                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg") &&
+                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.1.0${s}helloworld-1.1.0.fpkg")
         case Err(e) => e
       }
     })
@@ -143,8 +143,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest1, manifest2), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg") &&
-                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}ver1.1.0${s}helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg") &&
+                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.1.0${s}helloworld-1.1.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -181,7 +181,7 @@ class TestFlixPackageManager extends FunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) //installs the dependency
       FlixPackageManager.installAll(List(manifest), path)(System.out) match { //does nothing
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}ver1.0.0${s}helloworld.fpkg")
+        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -295,6 +295,37 @@ class TestFlixPackageManager extends FunSuite {
     })
   }
 
-  //test: finds transitive dependency
+  test("Install transitive dependency") {
+    assertResult(expected = true)(actual = {
+      val toml = {
+        """
+          |[package]
+          |name = "test"
+          |description = "test"
+          |version = "0.0.0"
+          |flix = "0.0.0"
+          |authors = ["Anna Blume"]
+          |
+          |[dependencies]
+          |"github:magnus-madsen/hellouniverse" = "1.0.0"
+          |
+          |""".stripMargin
+      }
+
+      val manifest = ManifestParser.parse(toml, null) match {
+        case Ok(m) => m
+        case Err(_) => ??? //should not happen
+      }
+
+      val path = Files.createTempDirectory("")
+      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
+        case Ok(l) => println(l);
+
+          l.head.endsWith(s"magnus-madsen${s}hellouniverse${s}1.0.0${s}hellouniverse-1.0.0.fpkg") &&
+                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.3.0${s}helloworld-1.3.0.fpkg")
+        case Err(e) => e.message(f)
+      }
+    })
+  }
 
 }
