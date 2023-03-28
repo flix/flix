@@ -118,27 +118,4 @@ namespace Char {
     ///
     pub def toString(c: Char): String = ToString.toString(c)
 
-    ///
-    /// Returns the character `c` as an Int32.
-    ///
-    // TODO: Remove
-    pub def toInt32(c: Char): Int32 = region rh {
-        import static java.lang.Character.codePointAt(Array[Char, rh], Int32): Int32 \ Read(rh);
-        codePointAt(Array.repeat(rh, 1, c), 0)
-    }
-
-    ///
-    /// Returns the respective character for the int `i`.
-    ///
-    // TODO: Remove
-    pub def fromInt32(i: Int32): Option[Char] = region rh {
-        import static java.lang.Character.toChars(Int32): Array[Char, rh] \ Write(rh);
-        let _ = Array.repeat(rh, 0, 0); // Avoid redundancy error of unused var rh.
-        try {
-            Some(Array.get(0, toChars(i)))
-        } catch {
-            case _: ##java.lang.IllegalArgumentException => None
-        }
-    }
-
 }
