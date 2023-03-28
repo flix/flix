@@ -73,7 +73,7 @@ object FlixPackageManager {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
-      val path = lib.resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(assetName)
+      val path = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(assetName)
       if (Files.exists(path)) {
         out.println(s"  Cached `${proj.owner}/${proj.repo}.$extension` (v$version).")
         Ok(path)
