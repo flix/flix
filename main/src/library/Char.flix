@@ -67,11 +67,10 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
-    // TODO: Refactor
-    pub def isHexDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
-        case i if i >= 0x0041 and i <= 0x0046 => true        // 'A'..'F'
-        case i if i >= 0x0061 and i <= 0x0066 => true        // 'a'..'f'
+    pub def isHexDigit(c: Char): Bool = match c {
+        case i if '0' <= i and i <= '9' => true        // '0'..'9'
+        case i if 'A' <= i and i <= 'F' => true        // 'A'..'F'
+        case i if 'a' <= i and i <= 'f' => true        // 'a'..'f'
         case _ => false
     }
 
