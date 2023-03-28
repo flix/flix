@@ -73,7 +73,11 @@ object FlixPackageManager {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
-      val assetPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString).resolve(assetName)
+      val folderPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
+      //create the folder if it does not exist
+      Files.createDirectories(folderPath)
+      val assetPath = folderPath.resolve(assetName)
+
       if (Files.exists(assetPath)) {
         out.println(s"  Cached `${proj.owner}/${proj.repo}.$extension` (v$version).")
         Ok(assetPath)
@@ -85,9 +89,6 @@ object FlixPackageManager {
           } else if (assets.length != 1) {
             Err(PackageError.TooManyFiles(project, extension))
           } else {
-            val lib = Bootstrap.getLibraryDirectory(p)
-            val assetFolder = createAssetFolderPath(proj, release, lib)
-
             // download asset to the folder
             val asset = assets.head
             out.print(s"  Downloading `${proj.owner}/${proj.repo}.$extension` (v$version)... ")
@@ -153,14 +154,6 @@ object FlixPackageManager {
       case Ok(t) => Ok(t)
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
-  }
-
-  /**
-    * Creates a path from the `lib` folder to where assets should be stored.
-    * The path will look like this: `lib`/owner/repo/vX.X.X.
-    */
-  private def createAssetFolderPath(proj: GitHub.Project, release: GitHub.Release, lib: Path): Path = {
-    lib.resolve(proj.owner).resolve(proj.repo).resolve(release.version.toString)
   }
 
   /**

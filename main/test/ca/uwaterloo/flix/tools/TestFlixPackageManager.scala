@@ -318,7 +318,11 @@ class TestFlixPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(List(manifest), path)(System.out) match {
+      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path)(System.out) match {
+        case Ok(l) => l
+        case Err(e) => fail(e.message(f))
+      }
+      FlixPackageManager.installAll(manifests, path)(System.out) match {
         case Ok(l) =>
           l.head.endsWith(s"magnus-madsen${s}hellouniverse${s}1.0.0${s}hellouniverse-1.0.0.fpkg") &&
           l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.3.0${s}helloworld-1.3.0.fpkg")
