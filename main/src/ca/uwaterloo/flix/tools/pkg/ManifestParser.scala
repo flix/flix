@@ -72,6 +72,8 @@ object ManifestParser {
     }
 
     for (
+      _ <- checkKeys(parser, p);
+
       name <- getRequiredStringProperty("package.name", parser, p);
 
       description <- getRequiredStringProperty("package.description", parser, p);
@@ -100,6 +102,26 @@ object ManifestParser {
       devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
 
     ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
+  }
+
+  private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
+    val keySet: Set[String] = parser.keySet().asScala.toSet
+    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies")
+    val illegalKeys = keySet.diff(allowedKeys)
+
+    if(illegalKeys.nonEmpty) {
+      return Err(ManifestError.IllegalTableFound(p, illegalKeys.head))
+    }
+
+    val dottedKeys = parser.dottedKeySet().asScala.toSet
+    val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.license")
+    val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
+    if (illegalPackageKeys.nonEmpty) {
+      return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
+    }
+
+    ().toOk
   }
 
   /**
