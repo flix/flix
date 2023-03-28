@@ -87,8 +87,8 @@ object CompletionProvider {
       case Some(context) =>
         root match {
           case Some(nonOptionRoot) =>
-            getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
-            (FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
+            (getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
+            FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
               map (comp => comp.toCompletionItem(context)))
           case None => Nil
         }
@@ -134,7 +134,7 @@ object CompletionProvider {
       kind = CompletionItemKind.Function)
   }
 
-  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[CompletionItem] = {
+  private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
@@ -163,25 +163,25 @@ object CompletionProvider {
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
-      case withRegex() => WithCompleter.getCompletions(context) map (withComp => withComp.toCompletionItem(context))
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context) map (typ => typ.toCompletionItem(context))
-      case effectRegex() => EffectCompleter.getCompletions(context) map (effect => effect.toCompletionItem(context))
+      case withRegex() => WithCompleter.getCompletions(context)
+      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
+      case effectRegex() => EffectCompleter.getCompletions(context)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() =>
-        (ImportNewCompleter.getCompletions(context)
-        ++ ImportMethodCompleter.getCompletions(context)
-        ++ ImportFieldCompleter.getCompletions(context)
-        ++ ClassCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context)))
-      case useRegex() => UseCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
-      case instanceRegex() => InstanceCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
+        ImportNewCompleter.getCompletions(context) ++
+          ImportMethodCompleter.getCompletions(context) ++
+          ImportFieldCompleter.getCompletions(context) ++
+          ClassCompleter.getCompletions(context)
+      case useRegex() => UseCompleter.getCompletions(context)
+      case instanceRegex() => InstanceCompleter.getCompletions(context)
       //
       // The order of this list doesn't matter because suggestions are ordered
       // through sortText
       //
       case _ => getExpCompletions() ++
-        (PredicateCompleter.getCompletions(context) ++
+        PredicateCompleter.getCompletions(context) ++
           TypeCompleter.getCompletions(context) ++
-          EffectCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context)))
+          EffectCompleter.getCompletions(context)
     }
   }
 
@@ -190,7 +190,7 @@ object CompletionProvider {
     * This should include all completions supported that could be an expression.
     * All of the completions are not necessarily sound.
     */
-  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[CompletionItem] = {
+  private def getExpCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, deltaContext: DeltaContext): Iterable[Completion] = {
     KeywordCompleter.getCompletions(context) ++
       SnippetCompleter.getCompletions(context) ++
       VarCompleter.getCompletions(context) ++
@@ -198,7 +198,7 @@ object CompletionProvider {
       SignatureCompleter.getCompletions(context) ++
       FieldCompleter.getCompletions(context) ++
       OpCompleter.getCompletions(context) ++
-      MatchCompleter.getCompletions(context) map (comp => comp.toCompletionItem(context))
+      MatchCompleter.getCompletions(context)
   }
 
   /**
