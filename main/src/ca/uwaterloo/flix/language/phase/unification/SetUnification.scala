@@ -74,6 +74,7 @@ object SetUnification {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseIo(tpe1), eraseIo(tpe2), loc)
 
     case _: Type.Alias => throw InternalCompilerException("unexpected type alias", t.loc)
+    case _: Type.AssocType => throw InternalCompilerException("unexpected associated type", t.loc) // TODO ASSOC-TYPE ???
   }
 
   /**
