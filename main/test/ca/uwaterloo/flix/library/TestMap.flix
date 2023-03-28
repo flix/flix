@@ -1833,23 +1833,23 @@ def forEachWithIndex02(): Bool = region r {
 
 @test
 def unfold01(): Bool =
-    Map.unfold(s -> if (true) None else Option.map(x -> (s, x, s + 1), Char.fromInt32(s + 48)), 0) == Map#{}
+    Map.unfold(s -> if (true) None else Some(s, s + 48, s + 1), 0) == Map#{}
 
 @test
 def unfold02(): Bool =
-    Map.unfold(s -> if (s > 0) None else Option.map(x -> (s, x, s + 1), Char.fromInt32(s + 48)), 0) == Map#{0 => '0'}
+    Map.unfold(s -> if (s > 0) None else Some(s, s + 48, s + 1), 0) == Map#{0 => '0'}
 
 @test
 def unfold03(): Bool =
-    Map.unfold(s -> if (s > 1) None else Option.map(x -> (s, x, s + 1), Char.fromInt32(s + 48)), 0) == Map#{0 => '0', 1 => '1'}
+    Map.unfold(s -> if (s > 1) None else Some(s, s + 48, s + 1), 0) == Map#{0 => '0', 1 => '1'}
 
 @test
 def unfold04(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Option.map(x -> (s, x, s + 1), Char.fromInt32(s + 48)), 0) == Map#{0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 0) == Map#{0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
 
 @test
 def unfold05(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Option.map(x -> (s, x, s + 1), Char.fromInt32(s + 48)), 5) == Map#{5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 5) == Map#{5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
 
 @test
 def unfold06(): Bool =

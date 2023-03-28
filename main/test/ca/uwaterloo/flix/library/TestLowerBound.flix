@@ -42,7 +42,7 @@ namespace TestLowerBound {
     def testFloat64(): Bool = minValue() == Float64.minValue()
 
     @test
-    def testChar(): Bool = Some(minValue()) == Char.fromInt32(0)
+    def testChar(): Bool = minValue() == '0'
 
     @test
     def testTuple2(): Bool = minValue() == ('\u0000', '\u0000')
