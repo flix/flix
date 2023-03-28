@@ -239,6 +239,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
+    def AssociatedTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ ":" ~ optWS ~ Kind ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+    }
+
+    def AssociatedTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
+    }
+
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
     }
@@ -253,11 +261,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = namedRule("ClassBody") {
-        push(Nil) ~ SP
+        push(Nil) ~ push(Nil) ~ SP
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -279,11 +287,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = namedRule("InstanceBody") {
-        push(Nil) ~ SP
+        push(Nil) ~ push(Nil) ~ SP
       }
 
       def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeDef) ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -522,7 +530,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Of
+    Expressions.Assign
   }
 
   def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
@@ -566,10 +574,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ForEachYield: Rule1[ParsedAst.Expression.ForEachYield] = rule {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
-    }
-
-    def Of: Rule1[ParsedAst.Expression] = rule {
-      (Names.QName ~ WS ~ keyword("of") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Of) | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -699,7 +703,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.Ref) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {

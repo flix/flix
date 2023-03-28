@@ -79,6 +79,7 @@ object Typer {
 
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
+        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -105,7 +106,7 @@ object Typer {
         case (classSym, clazz) =>
           val instances = instances0.getOrElse(classSym, Nil)
           val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
           val superClasses = clazz.superClasses.map(_.head.sym)
@@ -138,13 +139,16 @@ object Typer {
     * Reassembles a single class.
     */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
+    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs0, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
+      val assocs = assocs0.map {
+        case KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) => TypedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) // TODO ASSOC-TYPES trivial
+      }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
       mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, assocs, sigs, laws, loc))
       }
   }
 
@@ -165,10 +169,13 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
+      val assocs = assocs0.map {
+        case KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) // TODO ASSOC-TYPES trivial
+      }
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
       mapN(defsVal) {
-        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
+        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
       }
   }
 
@@ -1462,8 +1469,6 @@ object Typer {
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case of@KindedAst.Expression.Of(_, _, _, _) => RestrictableChooseInference.inferOf(of, root)
-
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
@@ -2311,12 +2316,6 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
-
-      case KindedAst.Expression.Of(sym, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val pur = e.pur
-        val eff = e.eff
-        TypedAst.Expression.Of(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {

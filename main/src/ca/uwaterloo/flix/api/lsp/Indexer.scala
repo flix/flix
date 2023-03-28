@@ -112,7 +112,7 @@ object Indexer {
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, _, clazz, tpe, tconstrs, defs, _, _) =>
+    case Instance(_, _, _, clazz, tpe, tconstrs, _, defs, _, _) => // TODO ASSOC-TYPES visit assocs
       val idx1 = Index.useOf(clazz.sym, clazz.loc)
       val idx2 = visitType(tpe)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
@@ -305,9 +305,6 @@ object Indexer {
 
     case Expression.Ascribe(exp, tpe, pur, _, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Of(Ast.RestrictableCaseSymUse(sym, _), exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0) // TODO RESTR-VARS index sym
 
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -525,6 +522,7 @@ object Indexer {
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(Ast.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ traverse(args)(visitType) // TODO ASSOC-TYPES add occurrenc eof assoc type
   }
 
   /**

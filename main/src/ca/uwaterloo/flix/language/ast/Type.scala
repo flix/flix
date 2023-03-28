@@ -49,6 +49,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+    case Type.AssocType(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet) // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -62,6 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
+    case Type.AssocType(_, args, _, _) => args.flatMap(_.effects).to(SortedSet) // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -75,6 +77,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
+    case Type.AssocType(_, args, _, _) => args.flatMap(_.cases).to(SortedSet) // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -102,6 +105,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => Some(tc)
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
+    case Type.AssocType(_, _, _, loc) => None // TODO ASSOC-TYPE danger!
   }
 
   /**
@@ -128,6 +132,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => tc :: Nil
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
+    case Type.AssocType(_, _, _, loc) => Nil // TODO ASSOC-TYPE danger!
   }
 
   /**
@@ -158,6 +163,7 @@ sealed trait Type {
     case Type.Cst(_, _) => this
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
     case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+    case Type.AssocType(sym, args, kind, loc) => Type.AssocType(sym, args.map(_.map(f)), kind, loc)
   }
 
   /**
@@ -208,6 +214,7 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
+    case Type.AssocType(_, args, kind, _) => args.map(_.size).sum + 1
   }
 
   /**
@@ -454,6 +461,11 @@ object Type {
   case class Alias(cst: Ast.AliasConstructor, args: List[Type], tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def kind: Kind = tpe.kind
   }
+
+  /**
+    * An associated type.
+    */
+  case class AssocType(cst: Ast.AssocTypeConstructor, args: List[Type], kind: Kind, loc: SourceLocation) extends Type with BaseType
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
@@ -972,6 +984,7 @@ object Type {
     case Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
+    case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
   }
 
   /**
