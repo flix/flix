@@ -176,7 +176,7 @@ object ManifestParser {
     try {
       s.split('.') match {
         case Array(major, minor, patch) =>
-          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
+          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None))
         case _ => Err(ManifestError.FlixVersionHasWrongLength(p, s))
       }
     } catch {
@@ -289,18 +289,19 @@ object ManifestParser {
   /**
     * Converts `depVer` to a String and then to a semantic version
     * and returns an error if `depVer` is not of the correct format.
-    * Allowed formats are "x.x", "x.x.x" and "x.x.x-x"
+    * Allowed formats are "x.x", "x.x.x", "x.x.x.x" and "x.x.x-x"
     */
   def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
       val version = depVer.asInstanceOf[String]
       version.split('.') match {
-        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
+        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None, None))
         case Array(major, minor, patch) =>
           patch.split('-') match {
-            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
-            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
+            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None))
+            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, Some(build)))
           }
+        case Array(major, minor, patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build.toInt), None))
         case _ => Err(ManifestError.MavenVersionHasWrongLength(p, version))
       }
     } catch {
