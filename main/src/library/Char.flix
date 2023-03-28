@@ -55,11 +55,8 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
     ///
-    // TODO: Refactor
-    pub def isAsciiDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0039 => true        // '0'..'9'
-        case _ => false
-    }
+    pub def isAsciiDigit(c: Char): Bool =
+        isAscii(c) and isDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
