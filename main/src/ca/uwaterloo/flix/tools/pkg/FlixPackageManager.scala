@@ -70,45 +70,46 @@ object FlixPackageManager {
     * Returns the path to the downloaded file.
     */
   private def install(project: String, version: SemVer, extension: String, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
-    GitHub.parseProject(project).flatMap {
-      proj =>
-        GitHub.getSpecificRelease(proj, version).flatMap {
-          release =>
-            val assets = release.assets.filter(_.name.endsWith(s".$extension"))
-            if(assets.isEmpty) {
-              return Err(PackageError.NoSuchFile(project, extension))
-            }
-            if(assets.length != 1) {
-              return Err(PackageError.TooManyFiles(project, extension))
-            }
-            val lib = Bootstrap.getLibraryDirectory(p)
-            val assetFolder = createAssetFolderPath(proj, release, lib)
+    GitHub.parseProject(project).flatMap { proj =>
+      val lib = Bootstrap.getLibraryDirectory(p)
+      val assetName = s"${proj.repo}-$version.$extension"
+      val folderPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
+      //create the folder if it does not exist
+      Files.createDirectories(folderPath)
+      val assetPath = folderPath.resolve(assetName)
 
-            // create the asset directory if it doesn't exist
-            Files.createDirectories(assetFolder)
-
-            // download each asset to the folder
+      if (Files.exists(assetPath)) {
+        out.println(s"  Cached `${proj.owner}/${proj.repo}.$extension` (v$version).")
+        Ok(assetPath)
+      } else {
+        GitHub.getSpecificRelease(proj, version).flatMap { release =>
+          val assets = release.assets.filter(_.name.endsWith(s".$extension"))
+          if (assets.isEmpty) {
+            Err(PackageError.NoSuchFile(project, extension))
+          } else if (assets.length != 1) {
+            Err(PackageError.TooManyFiles(project, extension))
+          } else {
+            // download asset to the folder
             val asset = assets.head
-            val assetName = asset.name
-            val assetPath = assetFolder.resolve(assetName)
-            val newDownload = !Files.exists(assetPath)
-            if (newDownload) {
-              out.print(s"  Downloading `$project/$assetName' (v$version)... ")
-              out.flush()
-              try {
-                Using(GitHub.downloadAsset(asset)) {
-                  stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
-                }
-              } catch {
-                case _: IOException => return Err(PackageError.DownloadError(asset))
+            out.print(s"  Downloading `${proj.owner}/${proj.repo}.$extension` (v$version)... ")
+            out.flush()
+            try {
+              Using(GitHub.downloadAsset(asset)) {
+                stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
               }
-              out.println(s"OK.")
-            } else {
-              out.println(s"  Cached `$project/$assetName' (v$version).")
+            } catch {
+              case _: IOException => out.println(s"ERROR."); return Err(PackageError.DownloadError(asset))
             }
-
-            Ok(assetPath)
+            if(Files.exists(assetPath)) {
+              out.println(s"OK.")
+              Ok(assetPath)
+            } else {
+              out.println(s"ERROR.")
+              Err(PackageError.DownloadError(asset))
+            }
+          }
         }
+      }
     }
   }
 
@@ -157,14 +158,6 @@ object FlixPackageManager {
       case Ok(t) => Ok(t)
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
-  }
-
-  /**
-    * Creates a path from the `lib` folder to where assets should be stored.
-    * The path will look like this: `lib`/owner/repo/vX.X.X.
-    */
-  private def createAssetFolderPath(proj: GitHub.Project, release: GitHub.Release, lib: Path): Path = {
-    lib.resolve(proj.owner).resolve(proj.repo).resolve(release.version.toString)
   }
 
   /**
