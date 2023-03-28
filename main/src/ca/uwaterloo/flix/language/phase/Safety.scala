@@ -51,7 +51,7 @@ object Safety {
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
-      case Instance(_, _, _, _, tpe, _, _, _, loc) =>
+      case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Bool))
           List(SafetyError.SendableError(tpe, loc))
         else
@@ -221,9 +221,6 @@ object Safety {
         visit(exp1) ++ visit(exp2)
 
       case Expression.Ascribe(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expression.Of(_, exp, _, _, _, _) =>
         visit(exp)
 
       case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>

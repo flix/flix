@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -761,7 +761,7 @@ object Monomorph {
     *
     * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
     */
-  private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
+  private def eraseType(tpe: Type)(implicit root: Root, flix: Flix): Type = tpe match {
     case Type.Var(sym, loc) =>
       sym.kind match {
         case Kind.CaseSet(enumSym) =>
@@ -787,6 +787,19 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
+    case Type.AssocType(sym, args, kind, loc) =>
+      val clazz = root.classes(sym.sym.clazz)
+      // TODO ASSOC-TYPES should lazy map
+      // TODO ASSOC-TYPES make prettier
+      val (inst, subst) = root.instances(sym.sym.clazz).map {
+        case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
+          (i, Unification.unifyTypes(tpe, args.head, RigidityEnv.empty)) // TODO ASSOC-TYPES args should be arg
+      }.collectFirst {
+        case (inst, Result.Ok(subst)) => (inst, subst)
+      }.get
+
+      val assoc = inst.assocs.find(_.ident.name == sym.sym.name).get
+      subst(assoc.tpe)
   }
 
 }

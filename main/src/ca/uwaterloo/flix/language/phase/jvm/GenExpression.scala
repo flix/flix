@@ -39,8 +39,6 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Unary(sop, exp, _, _) => compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
-
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.
       // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
@@ -180,22 +178,6 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
-    case Expression.ScopeExit(exp1, exp2, tpe, loc) =>
-      // Compile the expression, putting a function implementing the Runnable interface on the stack
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-      // Compile the expression representing the region
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-      // Call the Region's `runOnExit` method
-      visitor.visitInsn(SWAP)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
-
-      // Put a Unit value on the stack
-      visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
     case Expression.TryCatch(exp, rules, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
@@ -287,6 +269,9 @@ object GenExpression {
     }
 
     case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+
+      case IntrinsicOperator1.Unary(sop) =>
+        compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
 
       case IntrinsicOperator1.Is(sym) =>
         // Adding source line number for debugging
@@ -698,13 +683,21 @@ object GenExpression {
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
         // We get the inner type of the array
-        val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+        val elmType = tpe.asInstanceOf[MonoType.Array].tpe
+        // We get the erased elm type.
+        val jvmType = JvmOps.getErasedJvmType(elmType)
         // Evaluating the value of the 'default element'
         compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
         // Evaluating the 'length' of the array
         compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
         // Instantiating a new array of type jvmType
-        if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
+        if (elmType == MonoType.Str) {
+          visitor.visitTypeInsn(ANEWARRAY, "java/lang/String")
+        } else if (elmType.isInstanceOf[MonoType.Native]) {
+          val native = elmType.asInstanceOf[MonoType.Native]
+          val name = native.clazz.getName.replace('.', '/')
+          visitor.visitTypeInsn(ANEWARRAY, name)
+        } else if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
           visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
         } else { // Happens if the inner type is a primitive type
           visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
@@ -777,6 +770,22 @@ object GenExpression {
             // Call the Region's `spawn` method
             visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.SpawnMethod.name, BackendObjType.Region.SpawnMethod.d.toDescriptor, false)
         }
+
+        // Put a Unit value on the stack
+        visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)
+
+      case IntrinsicOperator2.ScopeExit =>
+        // Compile the expression, putting a function implementing the Runnable interface on the stack
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
+
+        // Compile the expression representing the region
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
+
+        // Call the Region's `runOnExit` method
+        visitor.visitInsn(SWAP)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
 
         // Put a Unit value on the stack
         visitor.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.InstanceField.name, BackendObjType.Unit.jvmName.toDescriptor)

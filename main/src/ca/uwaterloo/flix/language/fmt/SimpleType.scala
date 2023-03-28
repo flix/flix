@@ -310,6 +310,8 @@ object SimpleType {
         mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
+      case Type.AssocType(cst, args, _, _) =>
+        mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null

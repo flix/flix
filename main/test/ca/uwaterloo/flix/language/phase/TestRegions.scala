@@ -32,7 +32,7 @@ class TestRegions extends FunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None;
+        |    let m = ref None @ Static;
         |    region r {
         |        let x = ref 123 @ r;
         |        m := Some(x);
@@ -52,7 +52,7 @@ class TestRegions extends FunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None;
+        |    let m = ref None @ Static;
         |    region r {
         |        let x = ref 123 @ r;
         |        m := Some(_ -> x);

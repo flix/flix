@@ -115,6 +115,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(eqClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
+        assocs = Nil,
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
@@ -265,6 +266,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(orderClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
+        assocs = Nil,
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
@@ -482,6 +484,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(toStringClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
+        assocs = Nil,
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
@@ -618,6 +621,7 @@ object Deriver {
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
+        assocs = Nil,
         ns = Name.RootNS,
         loc = loc
       ).toSuccess
@@ -739,6 +743,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(boxableClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
+        assocs = Nil,
         defs = Nil,
         ns = Name.RootNS,
         loc = loc
@@ -778,6 +783,7 @@ object Deriver {
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
+        assocs = Nil,
         ns = Name.RootNS,
         loc = loc
       ).toSuccess

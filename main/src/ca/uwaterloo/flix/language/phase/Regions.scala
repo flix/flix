@@ -189,9 +189,6 @@ object Regions {
     case Expression.Ascribe(exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expression.Of(_, exp, _, _, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
     case Expression.CheckedCast(_, exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
@@ -366,6 +363,7 @@ object Regions {
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
+    case Type.AssocType(_, args, _, _) => args.flatMap(boolTypesOf) // TODO ASSOC-TYPES ???
   }
 
   /**

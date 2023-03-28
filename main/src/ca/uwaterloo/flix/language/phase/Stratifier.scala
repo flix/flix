@@ -117,7 +117,10 @@ object Stratifier {
         case e => Expression.OpenAs(sym, e, tpe, loc)
       }
 
-    case Expression.Use(_, _, exp, _) => visitExp(exp)
+    case Expression.Use(sym, alias, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Use(sym, alias, e, loc)
+      }
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -308,11 +311,6 @@ object Stratifier {
     case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
-      }
-
-    case Expression.Of(sym, exp, tpe, pur, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Of(sym, e, tpe, pur, eff, loc)
       }
 
     case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
@@ -699,9 +697,6 @@ object Stratifier {
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expression.Of(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
