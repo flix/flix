@@ -61,11 +61,8 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
-    // TODO: Refactor
-    pub def isOctDigit(c: Char): Bool = match toInt32(c) {
-        case i if i >= 0x0030 and i <= 0x0037 => true        // '0'..'7'
-        case _ => false
-    }
+    pub def isOctDigit(c: Char): Bool =
+        '0' <= c and c <= '7'     // '0'..'7'
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
