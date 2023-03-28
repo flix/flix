@@ -46,6 +46,7 @@ jobs:
           - "mlutze/fcwg"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java
