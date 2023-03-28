@@ -735,6 +735,11 @@ object Ast {
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
 
   /**
+    * A constructor for an associated type. (Not a valid type by itself).
+    */
+  case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+
+  /**
     * A use of a Flix symbol or import of a Java class.
     */
   sealed trait UseOrImport

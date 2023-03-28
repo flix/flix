@@ -134,7 +134,7 @@ object Weeder {
     * Performs weeding on the given class declaration `c0`.
     */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, lawsAndSigs, sp2) =>
+    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -142,15 +142,16 @@ object Weeder {
 
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig)
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
 
       val tparam = visitTypeParam(tparam0)
 
-      mapN(annVal, modsVal, sigsVal, lawsVal, superClassesVal) {
-        case (ann, mods, sigs, laws, superClasses) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, sigs.flatten, laws.flatten, loc))
+      mapN(annVal, modsVal, assocsVal, sigsVal, lawsVal, superClassesVal) {
+        case (ann, mods, assocs, sigs, laws, superClasses) =>
+          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
 
@@ -182,18 +183,19 @@ object Weeder {
     * Performs weeding on the given instance declaration `i0`.
     */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
-    case ParsedAst.Declaration.Instance(doc0, ann0, mods0, sp1, clazz, tpe0, tconstrs0, defs0, sp2) =>
+    case ParsedAst.Declaration.Instance(doc0, ann0, mods0, sp1, clazz, tpe0, tconstrs0, assocs0, defs0, sp2) =>
       val doc = visitDoc(doc0)
       val tpe = visitType(tpe0)
 
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set.empty)
-      val defsVal = traverse(defs0)(visitInstanceDef)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val defsVal = traverse(defs0)(visitInstanceDef)
+      val assocsVal = traverse(assocs0)(visitAssocTypeDef)
 
-      mapN(annVal, modsVal, defsVal, tconstrsVal) {
-        case (ann, mods, defs, tconstrs) =>
-          List(WeededAst.Declaration.Instance(doc, ann, mods, clazz, tpe, tconstrs, defs.flatten, mkSL(sp1, sp2)))
+      mapN(annVal, modsVal, assocsVal, defsVal, tconstrsVal) {
+        case (ann, mods, assocs, defs, tconstrs) =>
+          List(WeededAst.Declaration.Instance(doc, ann, mods, clazz, tpe, tconstrs, assocs.flatten, defs.flatten, mkSL(sp1, sp2)))
       }
 
   }
@@ -427,6 +429,41 @@ object Weeder {
         case (mod, tparams) =>
           val tpe = visitType(tpe0)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
+    * Performs weeding on the given associated type signature `d0`.
+    */
+  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
+    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
+
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparamsVal = visitTypeParams(tparams0)
+      val kind = visitKind(kind0)
+      val loc = mkSL(sp1, sp2)
+
+      mapN(modVal, tparamsVal) {
+        case (mod, tparams) =>
+          List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams, kind, loc))
+      }
+  }
+
+  /**
+    * Performs weeding on the given associated type definition `d0`.
+    */
+  private def visitAssocTypeDef(d0: ParsedAst.Declaration.AssocTypeDef): Validation[List[WeededAst.Declaration.AssocTypeDef], WeederError] = d0 match {
+    case ParsedAst.Declaration.AssocTypeDef(doc0, mod0, sp1, ident, args0, tpe0, sp2) =>
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val args = args0.map(visitType).toList
+      val tpe = visitType(tpe0)
+      val loc = mkSL(sp1, sp2)
+
+      mapN(modVal) {
+        case mod =>
+          List(WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc))
       }
   }
 

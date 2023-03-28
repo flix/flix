@@ -258,7 +258,7 @@ object Documentor {
     * Returns the given instance `inst` as a JSON value.
     */
   private def visitInstance(sym: Symbol.ClassSym, inst: Instance)(implicit flix: Flix): JObject = inst match {
-    case Instance(_, ann, _, _, tpe, tcs, _, _, loc) =>
+    case Instance(_, ann, _, _, tpe, tcs, _, _, _, loc) => // TODO ASSOC-TYPES visit assocs
       ("sym" -> visitClassSym(sym)) ~
         ("ann" -> visitAnnotations(ann)) ~
         ("tpe" -> visitType(tpe)) ~
@@ -467,7 +467,7 @@ object Documentor {
     * Return the given class `clazz` as a JSON value.
     */
   private def visitClass(cla: Class)(implicit root: Root, flix: Flix): JObject = cla match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, signatures0, _, loc) =>
+    case Class(doc, ann, mod, sym, tparam, superClasses, _, signatures0, _, loc) => // TODO ASSOC-TYPES visit assocs
       val (sigs0, defs0) = signatures0.partition(_.impl.isEmpty)
 
       val sigs = sigs0.sortBy(_.sym.name).map(visitSig)

@@ -35,6 +35,7 @@ sealed trait UnkindedType {
     case t: UnkindedType.Enum => t
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
+    case t: UnkindedType.UnappliedAssocType => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(purAndEff, arity, loc) => UnkindedType.Arrow(purAndEff.map(_.map(f)), arity, loc)
@@ -44,6 +45,7 @@ sealed trait UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
+    case UnkindedType.AssocType(cst, args, loc) => UnkindedType.AssocType(cst, args.map(_.map(f)), loc)
   }
 
   /**
@@ -78,6 +80,7 @@ sealed trait UnkindedType {
     case UnkindedType.Enum(sym, loc) => SortedSet.empty
     case UnkindedType.RestrictableEnum(sym, loc) => SortedSet.empty
     case UnkindedType.UnappliedAlias(sym, loc) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(sym, loc) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
     case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) =>
       val p = pur.iterator.flatMap(_.typeVars).to(SortedSet)
@@ -90,6 +93,7 @@ sealed trait UnkindedType {
     case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
     case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
     case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
+    case UnkindedType.AssocType(cst, args, loc) => args.flatMap(_.typeVars).to(SortedSet)
   }
 }
 
@@ -151,6 +155,20 @@ object UnkindedType {
   case class UnappliedAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case UnappliedAlias(sym2, _) => sym == sym2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+    * An unapplied associated type.
+    * Only exists temporarily in the Resolver until it's converted to an [[AssocType]].
+    */
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case UnappliedAssocType(sym2, _) => sym == sym2
       case _ => false
     }
 
@@ -263,6 +281,18 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(cst, args, tpe)
+  }
+
+  /**
+    * A fully resolved associated type.
+    */
+  case class AssocType(cst: Ast.AssocTypeConstructor, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case AssocType(Ast.AssocTypeConstructor(sym2, _), args2, _) => cst.sym == sym2 && args == args2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(cst, args)
   }
 
   case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
@@ -493,7 +523,9 @@ object UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
+    case AssocType(cst, args, loc) => AssocType(cst, args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
+    case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
   }
 
   // TODO remove once typechecking Resolver.lookupJVMMethod is moved to Typer

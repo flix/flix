@@ -48,6 +48,10 @@ object InstanceCompleter extends Completer {
         val args = args0.map(replaceText(tvar, _, newText))
         val t = replaceText(tvar, tpe0, newText)
         Type.Alias(sym, args, t, loc)
+
+      case Type.AssocType(sym, args0, kind, loc) =>
+        val args = args0.map(replaceText(tvar, _, newText))
+        Type.AssocType(sym, args, kind, loc)
     }
 
     /**

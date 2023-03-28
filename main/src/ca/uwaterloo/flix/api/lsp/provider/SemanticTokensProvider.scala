@@ -132,7 +132,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given class `classDecl`.
     */
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
-    case TypedAst.Class(_, _, _, sym, tparam, superClasses, signatures, laws, _) =>
+    case TypedAst.Class(_, _, _, sym, tparam, superClasses, _, signatures, laws, _) => // TODO ASSOC-TYPES visit assocs
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = superClasses.flatMap(visitTypeConstraint)
@@ -146,7 +146,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
+    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, _, defs, _, _) => // TODO ASSOC-TYPES visit assocs
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
@@ -596,6 +596,10 @@ object SemanticTokensProvider {
       visitType(tpe1) ++ visitType(tpe2)
 
     case Type.Alias(cst, args, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+      Iterator(t) ++ args.flatMap(visitType).iterator
+
+    case Type.AssocType(cst, args, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
   }
