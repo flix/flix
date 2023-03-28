@@ -65,6 +65,7 @@ object Scheme {
       case Type.Cst(tc, _) => Type.Cst(tc, loc)
       case Type.Apply(tpe1, tpe2, _) => Type.Apply(visitType(tpe1), visitType(tpe2), loc)
       case Type.Alias(sym, args, tpe, _) => Type.Alias(sym, args.map(visitType), visitType(tpe), loc)
+      case Type.AssocType(sym, args, kind, _) => Type.AssocType(sym, args.map(visitType), kind, loc)
     }
 
     val newBase = visitType(baseType)

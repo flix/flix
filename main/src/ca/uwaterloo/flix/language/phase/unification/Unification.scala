@@ -140,6 +140,14 @@ object Unification {
         case Result.Err(e) => Result.Err(e)
       }
 
+    case (Type.AssocType(cst1, args1, kind1, loc1), Type.AssocType(cst2, args2, kind2, loc2)) =>
+      // TODO ASSOC-TYPES evaluate if possible
+      if (args1 == args2) {
+        Result.Ok(Substitution.empty)
+      } else {
+        Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      }
+
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 
