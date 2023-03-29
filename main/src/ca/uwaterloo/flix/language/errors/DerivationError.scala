@@ -17,10 +17,40 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.fmt.FormatType.formatType
+import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
   val kind: String = "Derivation Error"
+}
+
+object DerivationError {
+  /**
+    * Empty enums cannot derive certain type classes
+    *
+    * @param clazz The type class being derived
+    * @param loc The location where the error occured
+    */
+  case class IllegalDerivationForEmptyEnum(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError {
+    def summary: String = s"Illegal derivation for empty enum"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""
+         |>> Illegal derivation for empty enum
+         |
+         |Empty enums cannot derive ${cyan(clazz.toString)}
+         |
+         |${code(loc, "illegal type class derivation")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive certain type classes")
+  }
 }

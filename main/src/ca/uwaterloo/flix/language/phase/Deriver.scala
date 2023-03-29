@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, sequence, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, ToFailure, sequence, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -246,7 +246,7 @@ object Deriver {
     * }}}
     */
   private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare")
 
@@ -258,8 +258,8 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
-
-      KindedAst.Instance(
+      if (cases.isEmpty) DerivationError.IllegalDerivationForEmptyEnum(orderClassSym, loc).toFailure
+      else KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -465,7 +465,7 @@ object Deriver {
     * }}}
     */
   private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
@@ -477,7 +477,8 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
-      KindedAst.Instance(
+      if (cases.isEmpty) DerivationError.IllegalDerivationForEmptyEnum(toStringClassSym, loc).toFailure
+      else KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -601,7 +602,7 @@ object Deriver {
     * }}}
     */
   private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
       val hashDefSym = Symbol.mkDefnSym("Hash.hash")
 
@@ -612,8 +613,9 @@ object Deriver {
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
-
-      KindedAst.Instance(
+      if (cases.isEmpty)
+        DerivationError.IllegalDerivationForEmptyEnum(hashClassSym, loc).toFailure
+      else KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -731,12 +733,14 @@ object Deriver {
     * The instance is empty because the class has default definitions.
     */
   private def mkBoxableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
       val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, boxableClassSym, loc)
 
-      KindedAst.Instance(
+      if (cases.isEmpty)
+        DerivationError.IllegalDerivationForEmptyEnum(boxableClassSym, loc).toFailure
+      else KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
