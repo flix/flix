@@ -261,24 +261,6 @@ namespace DelayList {
         Foldable.sumWith(f ,l)
 
     ///
-    /// Returns the product of all elements in the DelayList `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def product(l: DelayList[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l` according to the function `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def productWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
-
-    ///
     /// Returns the concatenation of the elements in `l`.
     ///
     /// Does not force the tail of `l`.
@@ -630,8 +612,7 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
+        loop(l, identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -717,8 +698,8 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, upcast(identity))) // NB: Cast required because the identity continuation is pure,
-                                                                  // but the intermediate continuations are effect polymorphic.
+        if (isEmpty(l)) None else Some(loop(l, identity))
+
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
@@ -851,8 +832,8 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(() -> None)) // NB: Cast required because the identity continuation is pure,
-                                    // but the intermediate continuations are effect polymorphic.
+        loop(l, constant(None))
+
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
@@ -1354,8 +1335,7 @@ namespace DelayList {
             case LCons(x, xs) => {let ans = f(x); loop(force xs, ks -> k(consA(ans, ks)))}
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
+        loop(l, identity)
 
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.

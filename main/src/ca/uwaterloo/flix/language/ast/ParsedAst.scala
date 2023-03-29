@@ -175,6 +175,32 @@ object ParsedAst {
     case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
+      * Associated Type Signature Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the type.
+      * @param tparams the type parameters of the type.
+      * @param kind    the kind of the type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: ParsedAst.Kind, sp2: SourcePosition)
+
+    /**
+      * Associated Type Declaration.
+      *
+      * @param doc   the optional comment associated with the declaration.
+      * @param mod   the associated modifiers.
+      * @param sp1   the position of the first character in the declaration.
+      * @param ident the name of the type.
+      * @param args  the arguments of the type.
+      * @param tpe   the type of the type.
+      * @param sp2   the position of the last character in the declaration.
+      */
+    case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition)
+
+    /**
       * Relation Declaration.
       *
       * @param doc     the optional comment associated with the definition.
@@ -210,24 +236,26 @@ object ParsedAst {
       * @param ident        the name of the definition.
       * @param tparam       the type parameter.
       * @param superClasses the super classes of the class.
+      * @param assocs       the associated types
       * @param lawsAndSigs  the signatures and laws of the class.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeSig], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass instance.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param ann   the annotations associated with the declaration.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param clazz the name of the class.
-      * @param tpe   the type of the instance.
-      * @param defs  the definitions of the instance.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc    the optional comment associated with the declaration.
+      * @param ann    the annotations associated with the declaration.
+      * @param mod    the associated modifiers.
+      * @param sp1    the position of the first character in the declaration.
+      * @param clazz  the name of the class.
+      * @param tpe    the type of the instance.
+      * @param assocs the associated types
+      * @param defs   the definitions of the instance.
+      * @param sp2    the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeDef], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.
@@ -951,10 +979,10 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param exp1 the reference.
-      * @param exp2 the optional region.
+      * @param exp2 the region.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ref(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Dereference expression.
@@ -985,16 +1013,25 @@ object ParsedAst {
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Of Expression.
+      * Checked Type Cast expression.
       *
-      * @param name the tag of the expression.
-      * @param exp  the expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class Of(name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class CheckedTypeCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Cast Expression.
+      * Checked Effect Cast expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class CheckedEffectCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Unchecked Cast Expression.
       *
       * @param sp1       the position of the first character in the expression.
       * @param exp       the expression.
@@ -1002,34 +1039,16 @@ object ParsedAst {
       * @param purAndEff the optional purity and effect.
       * @param sp2       the position of the last character in the expression.
       */
-    case class Cast(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
+    case class UncheckedCast(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Mask expression
+      * Unchecked Masking Cast expression
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression to mask.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Mask(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Upcast Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Upcast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Supercast Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Supercast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class UncheckedMaskingCast(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Without Expression.

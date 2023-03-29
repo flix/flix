@@ -48,7 +48,7 @@ object Instances {
       */
     def checkLawApplication(class0: TypedAst.Class): List[InstanceError] = class0 match {
       // Case 1: lawful class
-      case TypedAst.Class(_, _, mod, _, _, _, sigs, laws, _) if mod.isLawful =>
+      case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
           case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
@@ -57,7 +57,7 @@ object Instances {
           sig => InstanceError.UnlawfulSignature(sig, sig.loc)
         }
       // Case 2: non-lawful class
-      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) => Nil
+      case TypedAst.Class(_, _, _, _, _, _, _, _, _, _) => Nil
     }
 
     /**
@@ -83,7 +83,7 @@ object Instances {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, ns, _) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
@@ -99,7 +99,7 @@ object Instances {
       * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _) => tpe match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
         case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc))
         case _: Type.Apply =>
@@ -121,6 +121,7 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
+        case Type.AssocType(assoc, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc) // TODO ASSOC-TYPES real error
       }
     }
 
@@ -148,6 +149,7 @@ object Instances {
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(generifyBools), kind, loc)
     }
 
     /**
@@ -208,7 +210,7 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _) =>
+      case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
         val superClasses = root.classEnv(clazz.sym).superClasses
         superClasses flatMap {
           superClass =>

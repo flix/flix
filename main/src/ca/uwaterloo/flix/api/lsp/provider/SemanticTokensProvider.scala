@@ -132,7 +132,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given class `classDecl`.
     */
   private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
-    case TypedAst.Class(_, _, _, sym, tparam, superClasses, signatures, laws, _) =>
+    case TypedAst.Class(_, _, _, sym, tparam, superClasses, _, signatures, laws, _) => // TODO ASSOC-TYPES visit assocs
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = superClasses.flatMap(visitTypeConstraint)
@@ -146,7 +146,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance): Iterator[SemanticToken] = inst0 match {
-    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, defs, _, _) =>
+    case TypedAst.Instance(_, _, _, sym, tpe, tconstrs, _, defs, _, _) => // TODO ASSOC-TYPES visit assocs
       // NB: we use SemanticTokenType.Class because the OOP "Class" most directly corresponds to the FP "Instance"
       val t = SemanticToken(SemanticTokenType.Class, Nil, sym.loc)
       val st1 = Iterator(t)
@@ -290,7 +290,7 @@ object SemanticTokensProvider {
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp) // TODO RESTR-VARS sym
 
-    case Expression.Use(_, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
+    case Expression.Use(_, _, _, _) => Iterator.empty // TODO NS-REFACTOR add token for sym
 
     case Expression.Cst(_, _, _) => Iterator.empty
 
@@ -418,19 +418,13 @@ object SemanticTokensProvider {
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Of(sym, exp, _, _, _, _) =>
-      visitExp(exp) // TODO RESTR-VARS visit sym
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, tpe, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, eff, _, _, _, _) =>
@@ -602,6 +596,10 @@ object SemanticTokensProvider {
       visitType(tpe1) ++ visitType(tpe2)
 
     case Type.Alias(cst, args, _, _) =>
+      val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
+      Iterator(t) ++ args.flatMap(visitType).iterator
+
+    case Type.AssocType(cst, args, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
   }

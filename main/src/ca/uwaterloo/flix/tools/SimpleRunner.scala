@@ -70,7 +70,7 @@ object SimpleRunner {
           shell.loop()
           System.exit(0)
         case Result.Err(e) =>
-          println(e)
+          println(e.message(Formatter.getDefault))
           System.exit(1)
       }
     }
@@ -89,8 +89,8 @@ object SimpleRunner {
           System.exit(1)
       }
     }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
+
+    flix.setFormatter(Formatter.getDefault)
 
     // evaluate main.
     val timer = new Timer(flix.compile())
