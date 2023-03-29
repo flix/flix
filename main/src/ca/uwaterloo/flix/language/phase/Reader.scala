@@ -84,10 +84,11 @@ object Reader {
         val entry = iterator.nextElement()
         val name = entry.getName
         if (name.endsWith(".flix")) {
+          val fullName = p.getFileName.toString + ":" + name
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.Text(name, str, stable = false), arr, stable = false)
+          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
         }
       }
       result.toList
