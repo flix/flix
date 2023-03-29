@@ -34,7 +34,20 @@ mod Control {
     }
 
     mod Random {
-        pub def randomBool(): Unit = ???
+
+        ///
+        /// Randomly returns `true` or `false`.
+        ///
+        pub def bool(): Bool \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns `true` or `false`.
+        ///
+        /// Returns `true` with the given `likelyhood` which is a number between `0.0` and `1.0`.
+        ///
+        pub def boolWithChance(likehood: Float64): Bool \ Random = checked_ecast(???)
+
+
     }
 
     ///
@@ -51,7 +64,6 @@ mod Control {
         pub def random(): Bool \ Random = checked_ecast(???)
     }
 
-    // TODO: Add instances for Unit
     // TODO: Add instances for Char
     // TODO: Add instances for Float32
     // TODO: Add instances for Float64
