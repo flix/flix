@@ -14,22 +14,30 @@
  * limitations under the License.
  */
 
+package ca.uwaterloo.flix.language.phase
+
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestDeriver extends FunSuite with TestUtils {
+  test("DerivationError.EmptyEnum.Eq") {
+    val compiled = compile("enum E with Eq", Options.TestWithLibMin)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
+  }
+  test("DerivationError.EmptyEnum.Order") {
+    val compiled = compile("enum E with Eq, Order", Options.TestWithLibMin)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
+  }
 
-  test("DerivationError") {
-    val inputs = List(
-      "pub enum E with Eq, Order",
-      "pub enum E with ToString",
-      "pub enum E with Hash",
-    )
-    inputs
-      .map { compile(_, Options.TestWithLibNix) }
-      .foreach(expectError[DerivationError.IllegalDerivationForEmptyEnum])
+  test("DerivationError.EmptyEnum.ToString") {
+    val compiled = compile("enum E with ToString", Options.TestWithLibMin)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
+  }
+  test("DerivationError.EmptyEnum.Hash") {
+    val compiled = compile("enum E with Hash", Options.TestWithLibMin)
+    expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
 }
 
