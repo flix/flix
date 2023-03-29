@@ -47,6 +47,102 @@ mod Control {
         ///
         pub def boolWithChance(likehood: Float64): Bool \ Random = checked_ecast(???)
 
+        ///
+        /// Randomly returns a character from the pool 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()'.
+        ///
+        pub def char(): Char \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a character drawn from the characthers in `pool`.
+        ///
+        pub def charWithPool(pool: String): Char \ Random = checked_ecast(???)
+
+        // TODO: charAlpha, charNumeric, charLower, charUpper (???)
+
+        // TODO: Floats
+
+        // TODO: integers
+
+        // TODO: letter
+
+        // TODO: natural
+        pub def natural(min: Int32, max: Int32): Int32 \ Random = checked_ecast(???)
+
+        // TODO: prime
+
+        // TODO: String
+
+        // TODO: sets
+
+        ///
+        /// Randomly returns an element from `l` with equal chance.
+        ///
+        pub def pick(l: Nel[a]): a \ Random = checked_ecast(???)
+
+        // TODO: Shufflers.
+
+
+
+
+        // TODO: Domains: geohash, date, hour, year
+
+        //
+        // Geography
+        //
+
+        ///
+        /// Randomly returns city (one of the top 25 cities by population).
+        ///
+        pub def city(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a country, e.g. "Denmark".
+        ///
+        pub def country(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a two-letter country code following ISO 3166-1, e.g. "DK".
+        ///
+        pub def countryCode(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a pair of a valid latitude and longitude.
+        ///
+        pub def coordinates(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a valid latitude.
+        ///
+        pub def latitude(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a valid longitude.
+        ///
+        pub def longitude(): String \ Random = checked_ecast(???)
+
+        ///
+        /// Randomly returns a valid geohash (see https://en.wikipedia.org/wiki/Geohash).
+        ///
+        pub def geohash(): String \ Random = checked_ecast(???)
+
+        //
+        // Time
+        //
+
+        ///
+        /// Randomly returns an hour: an integer between [1, 12].
+        ///
+        pub def hour12(): Int32 \ Random = natural(1, 12 + 1)
+
+        ///
+        /// Randomly returns an hour: an integer between [1, 24].
+        ///
+        pub def hour24(): Int32 \ Random = natural(1, 24 + 1)
+
+        ///
+        /// Randomly returns a week day: one of ["Monday", "Tuesday", ...].
+        ///
+        pub def weekday(): String \ Random = pick(Nel.Nel("Monday", "Tuesday" :: Nil)) // TODO
 
     }
 
