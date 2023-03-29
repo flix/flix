@@ -58,3 +58,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Lukas Rønn](https://github.com/LukasRonn)
 - [Magnus Holm Rasmussen](https://github.com/mR4smussen)
 - [Daniel Welch](https://github.com/dtwelch)
+- [Sam Ezeh](https://github.com/dignissimus)
