@@ -63,12 +63,28 @@ mod Control {
 
         // TODO: integers
 
-        // TODO: letter
-
         // TODO: natural
         pub def natural(min: Int32, max: Int32): Int32 \ Random = checked_ecast(???)
 
-        // TODO: prime
+        ///
+        /// Returns a random prime number.
+        ///
+        pub def prime(): Int32 \ Random = checked_ecast(???)
+
+        ///
+        /// Optionally returns a random prime number which is equal-to or larger-than `min`.
+        ///
+        pub def primeWithMin(min: Int32): Option[Int32] \ Random = checked_ecast(???)
+
+        ///
+        /// Optionally returns a random prime number which is smaller-than or equal-to `max`.
+        ///
+        pub def primeWithMax(max: Int32): Option[Int32] \ Random = checked_ecast(???)
+
+        ///
+        /// Optionally returns a random prime number which is between `min` and `max` (both inclusive).
+        ///
+        pub def primeWithMinMax(min: Int32, max: Int32): Option[Int32] \ Random = checked_ecast(???)
 
         // TODO: String
 
@@ -80,11 +96,6 @@ mod Control {
         pub def pick(l: Nel[a]): a \ Random = checked_ecast(???)
 
         // TODO: Shufflers.
-
-
-
-
-        // TODO: Domains: geohash, date, hour, year
 
         //
         // Geography
@@ -177,7 +188,11 @@ mod Control {
 
     // TODO: Add instances for pairs N=1...10
 
-    // TODO: Add instances for Option?
-    // TODO: Add instances for Result?
+    instance Arbitrary[Option[t]] with Arbitrary[t] {
+        pub def random(): Option[t] \ Random = if (Control.Random.bool()) None else Some(Arbitrary.random())
+    }
+
+    // TODO: Add instance for Result?
+    // TODO: Add instance for List? Set? Map?
 
 }
