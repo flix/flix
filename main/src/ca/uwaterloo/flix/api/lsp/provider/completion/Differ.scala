@@ -44,42 +44,24 @@ object Differ {
     * @return a list of changes as Delta's.
     */
   private def calcDefDiff(oldAst: TypedAst.Root, newAst: TypedAst.Root): List[Delta] = {
-    /*
-      The code below seems very cumbersome. I would propose:
-
-        1. Compute all symbols in both ASTs.
-        2. Iterate through this set and call compareDefs on each pair (if both exist).
-
-      Putting this into some helper functions.
-     */
-
-
-    // Find all newly added defs
-    val newlyAddedDefs = (newAst.defs.keySet -- oldAst.defs.keySet).toList.map(sym => Delta.AddDef(sym, getCurrentTimestamp))
-    // Check if any of the oldDefs has changed implementation
-    val changedDefs =
-      newAst.defs.keySet.toList.flatMap(sym =>
+    newAst.defs.flatMap {
+      case (sym, newDef) =>
+        // Check if the sym also exists in the oldAst
         oldAst.defs.get(sym) match {
-          case Some(oldDef) =>
-            newAst.defs.get(sym) match {
-              case Some(newDef) =>
-                // Case 1: We have the same sym in both new and old AST. Check if the implementation has changed
-                if (compareDefs(oldDef, newDef)) {
-                  // Decl has changed
-                  Some(Delta.AddDef(sym, getCurrentTimestamp))
-                } else {
-                  // Decl hasn't changed
-                  None
-                }
-              case None =>
-                // The def has been deleted
-                None
-            }
           case None =>
-            // It's a newly added def
-            None
-        })
-    newlyAddedDefs ++ changedDefs
+            // It's a newly added def, add it to the deltas
+            Some(Delta.AddDef(sym, getCurrentTimestamp))
+          case Some(oldDef) =>
+            // We have an old def, check if the implementation has changed
+            if (compareDefs(oldDef, newDef)) {
+              // The def has changed, add it to the deltas
+              Some(Delta.AddDef(sym, getCurrentTimestamp))
+            } else {
+              // The def hasn't changed, don't add it to the deltas.
+              None
+            }
+        }
+    }.toList
   }
 
   /**
