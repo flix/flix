@@ -741,7 +741,7 @@ namespace TestInt16 {
     def flipBit06(): Bool = Int16.flipBit(pos = 16, 0i16) == 0i16
 
     @test
-    def flipBit07(): Bool = Int16.flipBit(pos = 15, Int16.shiftLEft(1i16, 15)) == 0i16
+    def flipBit07(): Bool = Int16.flipBit(pos = 15, Int16.leftShift(1i16, 15)) == 0i16
 
     @test
     def flipBit08(): Bool = Int16.flipBit(pos = 0, -1i16) == -2i16
