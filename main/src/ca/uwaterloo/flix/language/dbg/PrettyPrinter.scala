@@ -457,8 +457,7 @@ object PrettyPrinter {
       case BinaryOperator.BitwiseAnd => "&&&"
       case BinaryOperator.BitwiseOr => "|||"
       case BinaryOperator.BitwiseXor => "^^^"
-      case BinaryOperator.BitwiseLeftShift => "<<<"
-      case BinaryOperator.BitwiseRightShift => ">>>"
+      case _ => "???"
     }
 
     def fmtJvmMethod(method: JvmMethod, formatter: Formatter)(implicit flix: Flix): String = method match {

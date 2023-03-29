@@ -74,7 +74,7 @@ namespace BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
-        if ((x >>> position) `rem` 2ii == 0ii) 0 else 1
+        if (rightShift(x, position) `rem` 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
@@ -84,17 +84,17 @@ namespace BigInt {
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     ///
-    pub def setBit(x: BigInt, position: Int32): BigInt = x ||| (1ii <<< position)
+    pub def setBit(x: BigInt, position: Int32): BigInt = x ||| leftShift(1ii, position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     ///
-    pub def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~(1ii <<< position)
+    pub def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~leftShift(1ii, position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     ///
-    pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
+    pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ leftShift(1ii, position)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -102,6 +102,17 @@ namespace BigInt {
     pub def log2(x: BigInt): Int32 =
         import java.math.BigInteger.bitLength(): Int32 \ {};
         bitLength(x)
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHL$(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHR$(x, y)
+
 
     ///
     /// Return a string representation of `x`.

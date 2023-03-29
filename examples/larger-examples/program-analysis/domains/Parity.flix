@@ -1,3 +1,6 @@
+import BitwiseShl
+import BitwiseShr
+
 //
 // An implementation of the parity domain.
 //
@@ -221,7 +224,7 @@ namespace Domain/Parity {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-//    #safe2((x, y) -> x <<< y)
+//    #safe2((x, y) -> BitwiseShl.shl(x, y))
 //    #strict2 #monotone2
     pub def leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)         => Bot
@@ -236,7 +239,7 @@ namespace Domain/Parity {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-//    #safe2((x, y) -> x >>> y)
+//    #safe2((x, y) -> BitwiseShr.shl(x, y))
 //    #strict2 #monotone2
     pub def rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Bot)     => Bot
