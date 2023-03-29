@@ -32,18 +32,18 @@ sealed trait DerivationError extends CompilationMessage {
 
 object DerivationError {
   /**
-    * Empty enums cannot derive certain type classes
+    * Illegal type class derivation for an empty enum
     *
     * @param clazz The type class being derived
     * @param loc The location where the error occured
     */
   case class IllegalDerivationForEmptyEnum(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError {
-    def summary: String = s"Illegal derivation for empty enum"
+    def summary: String = s"Illegal type class derivation for an empty enum"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> Illegal derivation for empty enum
+         |>> Illegal type class derivation for an empty enum
          |
          |Empty enums cannot derive ${cyan(clazz.toString)}
          |
@@ -51,6 +51,6 @@ object DerivationError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive certain type classes")
+    def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive type classes")
   }
 }

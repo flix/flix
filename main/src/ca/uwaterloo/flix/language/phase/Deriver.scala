@@ -51,7 +51,7 @@ object Deriver {
     * Builds the instances derived from this enum.
     */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, _, derives, _, _, _) =>
+    case KindedAst.Enum(_, _, _, _, _, derives, cases, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
@@ -60,6 +60,7 @@ object Deriver {
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
       sequence(derives.map {
+        case Ast.Derivation(sym, loc) if cases.isEmpty => DerivationError.IllegalDerivationForEmptyEnum(sym, loc).toFailure
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
@@ -246,7 +247,7 @@ object Deriver {
     * }}}
     */
   private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare")
 
@@ -258,8 +259,7 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
-      if (cases.isEmpty) DerivationError.IllegalDerivationForEmptyEnum(orderClassSym, loc).toFailure
-      else KindedAst.Instance(
+      KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -465,7 +465,7 @@ object Deriver {
     * }}}
     */
   private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString")
 
@@ -477,8 +477,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
-      if (cases.isEmpty) DerivationError.IllegalDerivationForEmptyEnum(toStringClassSym, loc).toFailure
-      else KindedAst.Instance(
+      KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -602,7 +601,7 @@ object Deriver {
     * }}}
     */
   private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
       val hashDefSym = Symbol.mkDefnSym("Hash.hash")
 
@@ -613,9 +612,7 @@ object Deriver {
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
-      if (cases.isEmpty)
-        DerivationError.IllegalDerivationForEmptyEnum(hashClassSym, loc).toFailure
-      else KindedAst.Instance(
+      KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -733,14 +730,12 @@ object Deriver {
     * The instance is empty because the class has default definitions.
     */
   private def mkBoxableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, cases, tpe, _) =>
+    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, boxableClassSym, loc)
 
-      if (cases.isEmpty)
-        DerivationError.IllegalDerivationForEmptyEnum(boxableClassSym, loc).toFailure
-      else KindedAst.Instance(
+      KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
