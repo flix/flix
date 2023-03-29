@@ -37,7 +37,7 @@ object Flix {
   /**
     * The reserved Flix delimiter.
     */
-  val Delimiter: String = "%"
+  val Delimiter: String = "$"
 }
 
 /**
