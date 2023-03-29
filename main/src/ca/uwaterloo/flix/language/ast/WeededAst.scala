@@ -33,9 +33,9 @@ object WeededAst {
     case class Namespace(ident: Name.Ident, usesAndImports: List[WeededAst.UseOrImport], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     // TODO change laws to WeededAst.Law
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, superClasses: List[WeededAst.TypeConstraint], assocs: List[WeededAst.Declaration.AssocTypeSig], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: WeededAst.Type, tconstrs: List[WeededAst.TypeConstraint], assocs: List[WeededAst.Declaration.AssocTypeDef], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.KindedTypeParams, fparams: List[WeededAst.FormalParam], exp: Option[WeededAst.Expression], tpe: WeededAst.Type, purAndEff: PurityAndEffect, tconstrs: List[WeededAst.TypeConstraint], loc: SourceLocation)
 
@@ -48,6 +48,10 @@ object WeededAst {
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: WeededAst.TypeParam, tparams: WeededAst.TypeParams, derives: List[Name.QName], cases: List[WeededAst.RestrictableCase], loc: SourceLocation) extends WeededAst.Declaration
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, kind: WeededAst.Kind, loc: SourceLocation)
+
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[WeededAst.Type], tpe: WeededAst.Type, loc: SourceLocation)
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, ops: List[WeededAst.Declaration.Op], loc: SourceLocation) extends WeededAst.Declaration
 

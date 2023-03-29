@@ -39,6 +39,7 @@ object TypeMinimization {
       case tpe: Type.Cst => tpe
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(minimizeType(tpe1), minimizeType(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(minimizeType), minimizeType(tpe), loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(minimizeType), kind, loc)
     }
   }
 
