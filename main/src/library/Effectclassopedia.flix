@@ -6,13 +6,6 @@ eff Console {
 }
 
 
-eff Random1 {
-
-}
-
-mod Random1 {
-    pub def randomBool(): Unit = ???
-}
 
 
 
