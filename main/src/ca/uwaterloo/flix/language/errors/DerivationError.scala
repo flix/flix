@@ -37,20 +37,22 @@ object DerivationError {
     * @param clazz The type class being derived
     * @param loc The location where the error occured
     */
-  case class IllegalDerivationForEmptyEnum(clazz: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError {
-    def summary: String = s"Illegal type class derivation for an empty enum"
+  case class IllegalDerivationForEmptyEnum(enum: Symbol.EnumSym, clazz: Symbol.ClassSym, classLoc: SourceLocation)(implicit flix: Flix) extends DerivationError {
+    def summary: String = s"Illegal type class derivation for empty enum ${enum.toString}"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
          |>> Illegal type class derivation for an empty enum
          |
-         |Empty enums cannot derive ${cyan(clazz.toString)}
+         |Attempted to derive an instance of ${cyan(clazz.toString)} for enum ${cyan(enum.toString)} but it is empty
          |
-         |${code(loc, "illegal type class derivation")}
+         |${code(classLoc, "illegal type class derivation")}
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive type classes")
+
+    def loc = classLoc
   }
 }
