@@ -85,6 +85,9 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
           val args = args0.map(visit)
           val tpe = visit(tpe0)
           Type.Alias(sym, args, tpe, loc)
+        case Type.AssocType(cst, args0, kind, loc) =>
+          val args = args0.map(visit)
+          Type.AssocType(cst, args, kind, loc)
       }
 
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.

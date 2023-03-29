@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.lsp.LanguageServer
-import ca.uwaterloo.flix.api.Version
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
+import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 
@@ -131,50 +131,104 @@ object Main {
 
     // check if command was passed.
     try {
+      val formatter = Formatter.getDefault
+
       cmdOpts.command match {
         case Command.None =>
           val result = SimpleRunner.run(cwd, cmdOpts, options)
           System.exit(getCode(result))
 
         case Command.Init =>
-          val result = Packager.init(cwd, options)
+          val result = Bootstrap.init(cwd, options)(System.out)
           System.exit(getCode(result))
 
         case Command.Check =>
-          val result = Packager.check(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.check(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Build =>
-          val result = Packager.build(cwd, options, loadClasses = false)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              implicit val flix: Flix = new Flix().setFormatter(formatter)
+              val result = bootstrap.build(options, loadClasses = false)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.BuildJar =>
-          val result = Packager.buildJar(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.buildJar(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.BuildPkg =>
-          val result = Packager.buildPkg(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.buildPkg(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Run =>
-          val result = Packager.run(cwd, options)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.run(options)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          val result = Packager.benchmark(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.benchmark(o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          val result = Packager.test(cwd, o)
-          System.exit(getCode(result))
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val result = bootstrap.test(o)
+              System.exit(getCode(result))
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Repl =>
-          val sourceProvider = if (cmdOpts.files.isEmpty) SourceProvider.ProjectPath(cwd) else SourceProvider.SourceFileList(cmdOpts.files)
-          val shell = new Shell(sourceProvider, options)
-          shell.loop()
-          System.exit(0)
+          if (cmdOpts.files.nonEmpty) {
+            println("The `repl' command cannot be used with a list of files.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd)(System.out) match {
+            case Result.Ok(bootstrap) =>
+              val shell = new Shell(bootstrap, options)
+              shell.loop()
+              System.exit(0)
+            case Result.Err(e) =>
+              println(e.message(formatter))
+              System.exit(1)
+          }
 
         case Command.Lsp(port) =>
           val o = options.copy(progress = false)

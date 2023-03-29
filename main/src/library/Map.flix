@@ -113,7 +113,7 @@ namespace Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -632,39 +632,6 @@ namespace Map {
         }
 
     ///
-    /// Returns the product of all keys in the map `m`.
-    ///
-    pub def productKeys(m: Map[Int32, v]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productKeys(t)
-
-    ///
-    /// Returns the product of all values in the map `m`.
-    ///
-    pub def productValues(m: Map[k, Int32]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productValues(t)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
-        let Map(t) = m;
-        def pw() = RedBlackTree.productWith(f, t);
-        typematch f {
-            case g: (k, v) -> Int32 \ {} =>
-                if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, g, t)
-                else
-                    pw()
-            case _: (k, v) -> Int32 \ ef => pw()
-            case _: _ => unreachable!()
-        }
-
-    ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
     ///
     /// Returns `false` if `m` is the empty map.
@@ -841,7 +808,7 @@ namespace Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 

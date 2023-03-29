@@ -37,8 +37,9 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.io.ByteArrayInputStream
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -187,6 +188,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
+      case JString("lsp/showAst") => Request.parseShowAst(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -251,7 +253,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddJar(id, uri) =>
-      flix.addJar(uri)
+      val path = Path.of(new URI(uri))
+      flix.addJar(path)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
@@ -271,16 +274,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
     case Request.Complete(id, uri, pos) =>
-      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root.orNull, delta)
+      ("id" -> id) ~ CompletionProvider.autoComplete(uri, pos, sources.get(uri), currentErrors)(flix, index, root, delta)
 
     case Request.Highlight(id, uri, pos) =>
-      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ HighlightProvider.processHighlight(uri, pos)(index, root)
 
     case Request.Hover(id, uri, pos) =>
-      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root.orNull, flix)
+      ("id" -> id) ~ HoverProvider.processHover(uri, pos, current)(index, root, flix)
 
     case Request.Goto(id, uri, pos) =>
-      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root.orNull)
+      ("id" -> id) ~ GotoProvider.processGoto(uri, pos)(index, root)
 
     case Request.Implementation(id, uri, pos) =>
       ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ImplementationProvider.processImplementation(uri, pos)(root.orNull).map(_.toJSON))
@@ -314,9 +317,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ShowAstProvider.showAst(phase)(index, root, flix))
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
-
-    case Request.ListPhases(id) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ListPhasesProvider.phases.map(JString))
 
   }
 

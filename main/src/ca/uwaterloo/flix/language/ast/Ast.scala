@@ -82,6 +82,25 @@ object Ast {
   }
 
   /**
+    * A common supertype for casts.
+    */
+  sealed trait CheckedCastType
+
+  object CheckedCastType {
+
+    /**
+      * Represents a checked type cast.
+      */
+    case object TypeCast extends CheckedCastType
+
+    /**
+      * Represents a checked effect cast.
+      */
+    case object EffectCast extends CheckedCastType
+
+  }
+
+  /**
     * A common supertype for constant values.
     */
   sealed trait Constant
@@ -714,6 +733,11 @@ object Ast {
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
+
+  /**
+    * A constructor for an associated type. (Not a valid type by itself).
+    */
+  case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
   /**
     * A use of a Flix symbol or import of a Java class.

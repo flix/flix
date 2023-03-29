@@ -15,12 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import java.nio.file.Path
-
-case class Manifest(name: String, description: String, version: SemVer, flix: SemVer, license: Option[String], authors: List[String], dependencies: List[Dependency]) {
-
-  def getFlixPackages: List[Path] = Nil // TODO
-
-  def getMavenPackages: List[Path] = Nil // TODO
-
-}
+case class Manifest(name: String,
+                    description: String,
+                    version: SemVer, flix:
+                    SemVer, license: Option[String],
+                    authors: List[String],
+                    dependencies: List[Dependency]) { }
