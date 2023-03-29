@@ -1,0 +1,62 @@
+/*
+ * Copyright 2023 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+///
+/// A module for the generation of random values.
+///
+/// Inspired by the Chance.js library: https://chancejs.com/
+///
+mod Control {
+
+    ///
+    /// An algebraic effect for the generation of a 32-bit random integer.
+    ///
+    pub eff Random {
+
+        ///
+        /// Returns a pseudo-random Int32 value.
+        ///
+        pub def random(): Unit /* Int32 */
+
+    }
+
+    mod Random {
+        pub def randomBool(): Unit = ???
+    }
+
+    ///
+    /// A type class for types that can be randomly generated.
+    ///
+    pub class Arbitrary[t] {
+        ///
+        /// Returns a random t.
+        ///
+        pub def random(): t \ Random
+    }
+
+    instance Arbitrary[Bool] {
+        pub def random(): Bool \ Random = checked_ecast(???)
+    }
+
+    // TODO: Add instances for
+
+    instance Arbitrary[(a, b)] with Arbitrary[a], Arbitrary[b] {
+        pub def random(): (a, b) \ Random = checked_ecast(???)
+    }
+
+    // TODO: Add instances for pairs N=1...10
+
+}
