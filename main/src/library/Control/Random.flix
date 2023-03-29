@@ -51,12 +51,25 @@ mod Control {
         pub def random(): Bool \ Random = checked_ecast(???)
     }
 
-    // TODO: Add instances for
+    // TODO: Add instances for Unit
+    // TODO: Add instances for Char
+    // TODO: Add instances for Float32
+    // TODO: Add instances for Float64
+    // TODO: Add instances for BigDecimal
+    // TODO: Add instances for Int8
+    // TODO: Add instances for Int16
+    // TODO: Add instances for Int32
+    // TODO: Add instances for Int64
+    // TODO: Add instances for BigInt
+    // TODO: Add instances for String
 
     instance Arbitrary[(a, b)] with Arbitrary[a], Arbitrary[b] {
-        pub def random(): (a, b) \ Random = checked_ecast(???)
+        pub def random(): (a, b) \ Random = (Arbitrary.random(), Arbitrary.random())
     }
 
     // TODO: Add instances for pairs N=1...10
+
+    // TODO: Add instances for Option?
+    // TODO: Add instances for Result?
 
 }
