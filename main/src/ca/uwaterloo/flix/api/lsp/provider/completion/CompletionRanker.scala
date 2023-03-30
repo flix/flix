@@ -94,7 +94,7 @@ object CompletionRanker {
         val defDeltas: List[Delta.ModifiedDef] = deltasForFilter.flatMap(delta => delta match {
           case Delta.ModifiedDef(sym, timestamp) => Some(Delta.ModifiedDef(sym, timestamp))
           case _ => None
-        }).reverse
+        })
         if (defDeltas.isEmpty) {
             // We don't have any defDeltas and therefore no best def completion
             None

@@ -23,18 +23,30 @@ import ca.uwaterloo.flix.language.ast.Symbol
 case class DeltaContext(deltas: List[Delta]) {
 
   /**
-    * Merges this.List[Delta] with other.List[Delta]
+    * Merges this.List[Delta] with other.List[Delta].
+    * Removes duplicates that has an older timestamp.
     *
     * @param other the other DeltaContext.
-    * @return a new DeltaContext with the new List[Delta] ++ old List[Delta]
+    * @return      a DeltaContext with the of changes as List[Delta],
+    *              where the most recent is the first elem of the list.
     */
   def mergeDeltas(other: DeltaContext): DeltaContext = {
-    DeltaContext(this.deltas ++ other.deltas)
+    val newDeltas = {
+      if (other.deltas.isEmpty) {
+        this.deltas
+      } else {
+        (this.deltas ++ other.deltas).reverse.distinctBy {
+          case Delta.ModifiedDef(sym, _) => sym
+          case Delta.AddEnum(sym, _) => sym
+          case Delta.AddField(field, _) => field
+        }.sortWith(_.timestamp > _.timestamp) // Sorts the list, to make sure the newest timestamp is the first elem.
+      }
+    }
+    DeltaContext(newDeltas)
   }
 
   def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
     case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
     case _ => false
   }
-
 }
