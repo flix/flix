@@ -30,11 +30,11 @@ sealed trait Delta {
 object Delta {
 
   /**
-    * Represents the addition of a new function.
+    * Represents the modification of a new function.
     *
-    * @param sym the symbol of the new function.
+    * @param sym the symbol of the modified function.
     */
-  case class AddDef(sym: Symbol.DefnSym, timestamp: Long) extends Delta
+  case class ModifiedDef(sym: Symbol.DefnSym, timestamp: Long) extends Delta
 
   /**
     * Represents the addition of a new enum.

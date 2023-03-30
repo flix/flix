@@ -50,12 +50,12 @@ object Differ {
         oldAst.defs.get(sym) match {
           case None =>
             // It's a newly added def, add it to the deltas
-            Some(Delta.AddDef(sym, getCurrentTimestamp))
+            Some(Delta.ModifiedDef(sym, getCurrentTimestamp))
           case Some(oldDef) =>
             // We have an old def, check if the implementation has changed
             if (compareDefs(oldDef, newDef)) {
               // The def has changed, add it to the deltas
-              Some(Delta.AddDef(sym, getCurrentTimestamp))
+              Some(Delta.ModifiedDef(sym, getCurrentTimestamp))
             } else {
               // The def hasn't changed, don't add it to the deltas.
               None

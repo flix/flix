@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.TypedAst
 
+import scala.annotation.tailrec
+
 /**
   * CompletionRanker
   *
@@ -49,55 +51,68 @@ object CompletionRanker {
     * @return             Some(DefCompletion) if a better completion is possible, else none.
     */
   private def findBestDefCompletion(completions: Iterable[Completion], deltas: List[Delta]): Option[Completion] = {
-    val (bestDefComp, _) =
-      // Iterate through all deltas and find the defs
-      deltas.foldLeft[(Option[Completion], Long)](None, 0) {
-        case ((currBestDef, currBestTimestamp), delta) =>
-          delta match {
-            case Delta.AddDef(sym, timestamp) =>
-              // We have a def, find that specific def in the list of completions
-              completions.find(comp => comp match {
-                case DefCompletion(decl) =>
-                  // Check if the def found is the same as the def from delta and check if it has the most recent timestamp
-                  isAChangedDef(decl, sym) && isABetterDefCompletion(currBestTimestamp, timestamp)
-                case _ =>
-                  // Not a def
-                  false
-              }) match {
-                case None =>
-                  // We don't have a newer def
-                  (currBestDef, currBestTimestamp)
-                case comp =>
-                  // We have a newer added/changed def
-                  (comp, timestamp)
-              }
-            case _ =>
-              // Not a def
-              (currBestDef, currBestTimestamp)
+    /**
+      * Auxiliary function for findBestDefCompletion
+      *
+      * @param completions  the list of possible completions.
+      * @param delta        the modifiedDefDelta at question.
+      * @param deltas       the rest of the modifiedDefDeltas as a list.
+      * @return             Some(DefCompletion) if a better completion is possible, else none.
+      */
+    @tailrec
+    def aux(completions: Iterable[Completion], delta: Delta.ModifiedDef, deltas: List[Delta.ModifiedDef]): Option[Completion] = {
+      // We have a def, find that specific def in the list of completions
+      completions.find(comp => comp match {
+        case DefCompletion(decl) =>
+          // Check if the def found is the same as the def from delta
+          isAModifiedDef(decl, delta.sym)
+        case _ =>
+          // Not a def
+          false
+      }) match {
+        case None =>
+          // This delta isn't part of the possible completions
+          // Check if there are more deltas
+          if (deltas.isEmpty) {
+            // No more deltas. We don't have a best def completion
+            None
+          } else {
+            // More deltas, check if the next delta is part of the possible completions
+            aux(completions, deltas.head, deltas.tail)
           }
+        case comp =>
+          // The delta is part of the completions, return that completion.
+          comp
+      }
+    }
+
+    // Check if we have a List of deltas
+    deltas match {
+      case Nil => None
+      case deltasForFilter =>
+        // Remove all none ModifiedDef deltas, and reverse the list, so the most recent defDelta is the first elem.
+        val defDeltas: List[Delta.ModifiedDef] = deltasForFilter.flatMap(delta => delta match {
+          case Delta.ModifiedDef(sym, timestamp) => Some(Delta.ModifiedDef(sym, timestamp))
+          case _ => None
+        }).reverse
+        if (defDeltas.isEmpty) {
+            // We don't have any defDeltas and therefore no best def completion
+            None
+        } else {
+            // We have some defDeltas
+            aux(completions, defDeltas.head, defDeltas.tail)
         }
-    bestDefComp
+    }
   }
 
   /**
-    * Checks if the def decl is changed/added.
+    * Checks if the def decl is modified. Hence the sym from delta is the same is the one in the completion.
     *
     * @param decl        the def decl.
-    * @param deltaDefSym the sym of a changed def decl.
+    * @param deltaDefSym the sym of a modified def decl.
     * @return            true, if the def decl at question is changed, false otherwise.
     */
-  private def isAChangedDef(decl: TypedAst.Def, deltaDefSym: DefnSym): Boolean = {
+  private def isAModifiedDef(decl: TypedAst.Def, deltaDefSym: DefnSym): Boolean = {
     decl.sym == deltaDefSym
-  }
-
-  /**
-    * Checks if the timestamp for the changed/added def is better than the current best.
-    *
-    * @param timestamp          the timestamp of the def in the List[Delta]
-    * @param currBestTimestamp  the timestamp of the current best def completion.
-    * @return                   true if the def has a newer timestamp than the currBest, false otherwise.
-    */
-  private def isABetterDefCompletion(currBestTimestamp: Long, timestamp: Long): Boolean = {
-    currBestTimestamp < timestamp
   }
 }
