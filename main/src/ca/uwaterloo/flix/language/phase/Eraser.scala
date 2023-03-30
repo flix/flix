@@ -114,7 +114,7 @@ object Eraser {
       ErasedAst.Expression.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      ErasedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
+      ErasedAst.Expression.Binary(sop, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       ErasedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)

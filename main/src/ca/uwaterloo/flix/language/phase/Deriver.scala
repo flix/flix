@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOperator, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, sequence, traverse}
+import ca.uwaterloo.flix.util.Validation.{ToSuccess, ToFailure, sequence, traverse}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -51,7 +51,7 @@ object Deriver {
     * Builds the instances derived from this enum.
     */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, _, derives, _, _, _) =>
+    case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
@@ -60,6 +60,7 @@ object Deriver {
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
       sequence(derives.map {
+        case Ast.Derivation(classSym, classLoc) if cases.isEmpty => DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, classLoc).toFailure
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
@@ -258,7 +259,6 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
-
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -612,7 +612,6 @@ object Deriver {
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
-
       KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
