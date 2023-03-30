@@ -44,13 +44,13 @@ namespace TestInt64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 2)
+    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 63)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int64.minValue() == Int64.leftShift(1i64, 2)
+    def minValue01(): Bool = Int64.minValue() == Int64.leftShift(1i64, 63)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -198,28 +198,28 @@ namespace TestInt64 {
     // leftShift                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseLeftShift01(): Bool = Int64.leftShift(8i64, 2) == 8i64
+    def testBitwiseLeftShift01(): Bool = Int64.leftShift(8i64, 0) == 8i64
 
     @test
-    def testBitwiseLeftShift02(): Bool = Int64.leftShift(8i64, 2) == 34359738368i64
+    def testBitwiseLeftShift02(): Bool = Int64.leftShift(8i64, 32) == 34359738368i64
 
     @test
-    def testBitwiseLeftShift03(): Bool = Int64.leftShift(8i64, 2) == -9223372036854775808i64
+    def testBitwiseLeftShift03(): Bool = Int64.leftShift(8i64, 60) == -9223372036854775808i64
 
     @test
-    def testBitwiseLeftShift04(): Bool = Int64.leftShift(8i64, 2) == 0i64
+    def testBitwiseLeftShift04(): Bool = Int64.leftShift(8i64, 61) == 0i64
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseRightShift01(): Bool = Int64.rightShift(12000000000i64, 2) == 12000000000i64
+    def testBitwiseRightShift01(): Bool = Int64.rightShift(12000000000i64, 0) == 12000000000i64
 
     @test
     def testBitwiseRightShift02(): Bool = Int64.rightShift(12000000000i64, 2) == 3000000000i64
 
     @test
-    def testBitwiseRightShift03(): Bool = Int64.rightShift(12000000000i64, 2) == 0i64
+    def testBitwiseRightShift03(): Bool = Int64.rightShift(12000000000i64, 63) == 0i64
 
     @test
     def testBitwiseRightShift04(): Bool = Int64.rightShift(-12000000000i64, 2) == -3000000000i64

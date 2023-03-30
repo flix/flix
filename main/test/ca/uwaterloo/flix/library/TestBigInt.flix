@@ -448,16 +448,16 @@ namespace TestBigInt {
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseRightShift21(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 1200000000000000000000ii
+    def testBitwiseRightShift04(): Bool = BigInt.rightShift(1200000000000000000000ii, 0) == 1200000000000000000000ii
 
     @test
-    def testBitwiseRightShift22(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 300000000000000000000ii
+    def testBitwiseRightShift05(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 300000000000000000000ii
 
     @test
-    def testBitwiseRightShift23(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 0ii
+    def testBitwiseRightShift06(): Bool = BigInt.rightShift(1200000000000000000000ii, 72) == 0ii
 
     @test
-    def testBitwiseRightShift24(): Bool = BigInt.rightShift(-1200000000000000000000ii, 2) == -300000000000000000000ii
+    def testBitwiseRightShift07(): Bool = BigInt.rightShift(-1200000000000000000000ii, 2) == -300000000000000000000ii
 
 
     /////////////////////////////////////////////////////////////////////////////

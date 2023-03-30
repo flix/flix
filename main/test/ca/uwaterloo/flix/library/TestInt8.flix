@@ -198,28 +198,28 @@ namespace TestInt8 {
     // leftShift                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseLeftShift01(): Bool = Int8.leftShift(8i8, 2) == 8i8
+    def testBitwiseLeftShift01(): Bool = Int8.leftShift(8i8, 0) == 8i8
     
     @test
     def testBitwiseLeftShift02(): Bool = Int8.leftShift(8i8, 2) == 32i8
     
     @test
-    def testBitwiseLeftShift03(): Bool = Int8.leftShift(8i8, 2) == -128i8
+    def testBitwiseLeftShift03(): Bool = Int8.leftShift(8i8, 4) == -128i8
     
     @test
-    def testBitwiseLeftShift04(): Bool = Int8.leftShift(8i8, 2) == 0i8
+    def testBitwiseLeftShift04(): Bool = Int8.leftShift(8i8, 5) == 0i8
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseRightShift01(): Bool = Int8.rightShift(120i8, 2) == 120i8
+    def testBitwiseRightShift01(): Bool = Int8.rightShift(120i8, 0) == 120i8
 
     @test
     def testBitwiseRightShift02(): Bool = Int8.rightShift(120i8, 2) == 30i8
 
     @test
-    def testBitwiseRightShift03(): Bool = Int8.rightShift(120i8, 2) == 0i8
+    def testBitwiseRightShift03(): Bool = Int8.rightShift(120i8, 7) == 0i8
 
     @test
     def testBitwiseRightShift04(): Bool = Int8.rightShift(-120i8, 2) == -30i8

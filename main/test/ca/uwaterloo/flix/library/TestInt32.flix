@@ -242,16 +242,16 @@ namespace TestInt32 {
     def testBitwiseLeftShift04(): Bool = Int32.leftShift(8, 29) == 0
 
     @test
-    def testBitwiseLeftShift13(): Bool = Int32.leftShift(8i32, 2) == 8i32
+    def testBitwiseLeftShift05(): Bool = Int32.leftShift(8i32, 0) == 8i32
 
     @test
-    def testBitwiseLeftShift14(): Bool = Int32.leftShift(8i32, 2) == 524288i32
+    def testBitwiseLeftShift06(): Bool = Int32.leftShift(8i32, 16) == 524288i32
 
     @test
-    def testBitwiseLeftShift15(): Bool = Int32.leftShift(8i32, 2) == -2147483648i32
+    def testBitwiseLeftShift07(): Bool = Int32.leftShift(8i32, 28) == -2147483648i32
 
     @test
-    def testBitwiseLeftShift16(): Bool = Int32.leftShift(8i32, 2) == 0i32
+    def testBitwiseLeftShift08(): Bool = Int32.leftShift(8i32, 29) == 0i32
 
     
     /////////////////////////////////////////////////////////////////////////////
@@ -270,16 +270,16 @@ namespace TestInt32 {
     def testBitwiseRightShift04(): Bool = Int32.rightShift(-120000, 2) == -30000
 
     @test
-    def testBitwiseRightShift13(): Bool = Int32.rightShift(120000i32, 2) == 120000i32
+    def testBitwiseRightShift05(): Bool = Int32.rightShift(120000i32, 0) == 120000i32
 
     @test
-    def testBitwiseRightShift14(): Bool = Int32.rightShift(120000i32, 2) == 30000i32
+    def testBitwiseRightShift06(): Bool = Int32.rightShift(120000i32, 2) == 30000i32
 
     @test
-    def testBitwiseRightShift15(): Bool = Int32.rightShift(120000i32, 2) == 0i32
+    def testBitwiseRightShift07(): Bool = Int32.rightShift(120000i32, 31) == 0i32
 
     @test
-    def testBitwiseRightShift16(): Bool = Int32.rightShift(-120000i32, 2) == -30000i32
+    def testBitwiseRightShift08(): Bool = Int32.rightShift(-120000i32, 2) == -30000i32
 
     /////////////////////////////////////////////////////////////////////////////
     // logicalRightShift                                                       //

@@ -44,13 +44,13 @@ namespace TestInt16 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int16.maxValue() == ~~~Int16.leftShift(1i16, 2)
+    def maxValue01(): Bool = Int16.maxValue() == ~~~Int16.leftShift(1i16, 15)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int16.minValue() == Int16.leftShift(1i16, 2)
+    def minValue01(): Bool = Int16.minValue() == Int16.leftShift(1i16, 15)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -197,28 +197,28 @@ namespace TestInt16 {
     // leftShift                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseLeftShift01(): Bool = Int16.leftShift(8i16, 2) == 8i16
+    def testBitwiseLeftShift01(): Bool = Int16.leftShift(8i16, 0) == 8i16
 
     @test
-    def testBitwiseLeftShift02(): Bool = Int16.leftShift(8i16, 2) == 2048i16
+    def testBitwiseLeftShift02(): Bool = Int16.leftShift(8i16, 8) == 2048i16
 
     @test
-    def testBitwiseLeftShift03(): Bool = Int16.leftShift(8i16, 2) == -32768i16
+    def testBitwiseLeftShift03(): Bool = Int16.leftShift(8i16, 12) == -32768i16
 
     @test
-    def testBitwiseLeftShift04(): Bool = Int16.leftShift(8i16, 2) == 0i16
+    def testBitwiseLeftShift04(): Bool = Int16.leftShift(8i16, 13) == 0i16
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def testBitwiseRightShift01(): Bool = Int16.rightShift(12000i16, 2) == 12000i16
+    def testBitwiseRightShift01(): Bool = Int16.rightShift(12000i16, 0) == 12000i16
 
     @test
     def testBitwiseRightShift02(): Bool = Int16.rightShift(12000i16, 2) == 3000i16
 
     @test
-    def testBitwiseRightShift03(): Bool = Int16.rightShift(12000i16, 2) == 0i16
+    def testBitwiseRightShift03(): Bool = Int16.rightShift(12000i16, 15) == 0i16
 
     @test
     def testBitwiseRightShift04(): Bool = Int16.rightShift(-12000i16, 2) == -3000i16
@@ -228,16 +228,16 @@ namespace TestInt16 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int16.logicalRightShift(dist = 4, 2233i16) == Int16.rightShift(2233i16, 2)
+    def logicalRightShift01(): Bool = Int16.logicalRightShift(dist = 4, 2233i16) == Int16.rightShift(2233i16, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int16.logicalRightShift(dist = 33, 32767i16) == Int16.rightShift(32767i16, 2)
+    def logicalRightShift02(): Bool = Int16.logicalRightShift(dist = 33, 32767i16) == Int16.rightShift(32767i16, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int16.logicalRightShift(dist = -8, 2233i16) == Int16.rightShift(2233i16, 2)
+    def logicalRightShift03(): Bool = Int16.logicalRightShift(dist = -8, 2233i16) == Int16.rightShift(2233i16, -8)
 
     @test
-    def logicalRightShift04(): Bool = Int16.logicalRightShift(dist = 4, 2233i16) == Int16.rightShift(2233i16, 2)
+    def logicalRightShift04(): Bool = Int16.logicalRightShift(dist = 4, 2233i16) == Int16.rightShift(2233i16, 4)
 
     @test
     def logicalRightShift05(): Bool = Int16.logicalRightShift(dist = 1, -1i16) == 32767i16
@@ -465,13 +465,13 @@ namespace TestInt16 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int16.highestOneBit(-1i16) == Int16.leftShift(1i16, 2)
+    def highestOneBit01(): Bool = Int16.highestOneBit(-1i16) == Int16.leftShift(1i16, 15)
 
     @test
-    def highestOneBit02(): Bool = Int16.highestOneBit(-32768i16) == Int16.leftShift(1i16, 2)
+    def highestOneBit02(): Bool = Int16.highestOneBit(-32768i16) == Int16.leftShift(1i16, 15)
 
     @test
-    def highestOneBit03(): Bool = Int16.highestOneBit(-77i16) == Int16.leftShift(1i16, 2)
+    def highestOneBit03(): Bool = Int16.highestOneBit(-77i16) == Int16.leftShift(1i16, 15)
 
     @test
     def highestOneBit04(): Bool = Int16.highestOneBit(2i16) == 2i16
@@ -567,7 +567,7 @@ namespace TestInt16 {
     def lowestOneBit01(): Bool = Int16.lowestOneBit(-1i16) == 1i16
 
     @test
-    def lowestOneBit02(): Bool = Int16.lowestOneBit(-32768i16) == Int16.leftShift(1i16, 2)
+    def lowestOneBit02(): Bool = Int16.lowestOneBit(-32768i16) == Int16.leftShift(1i16, 15)
 
     @test
     def lowestOneBit03(): Bool = Int16.lowestOneBit(1i16) == 1i16
@@ -714,7 +714,7 @@ namespace TestInt16 {
     def clearBit11(): Bool = Int16.clearBit(pos = 5, -1i16) == -33i16
 
     @test
-    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == ~~~Int16.leftShift(1i16, 2)
+    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == ~~~Int16.leftShift(1i16, 15)
 
     @test
     def clearBit13(): Bool = Int16.clearBit(pos = 32, -1i16) == -2i16
@@ -753,7 +753,7 @@ namespace TestInt16 {
     def flipBit10(): Bool = Int16.flipBit(pos = 5, -1i16) == -33i16
 
     @test
-    def flipBit11(): Bool = Int16.flipBit(pos = 13, -1i16) == (-1i16-Int16.leftShift(1i16, 2))
+    def flipBit11(): Bool = Int16.flipBit(pos = 13, -1i16) == (-1i16-Int16.leftShift(1i16, 13))
 
     @test
     def flipBit12(): Bool = Int16.flipBit(pos = 32, -1i16) == -2i16
