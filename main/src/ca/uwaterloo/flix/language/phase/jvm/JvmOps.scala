@@ -518,8 +518,8 @@ object JvmOps {
       enum0.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(caseSym, uninstantiatedTagType, _))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
-          val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
+          val (subst, econstrs) = Unification.unifyTypes(hackMonoType2Type(enum0.tpeDeprecated), hackMonoType2Type(tpe), RigidityEnv.empty).get
+          val tagType = subst(hackMonoType2Type(uninstantiatedTagType)) // TODO ASSOC-TYPES consider econstrs
 
           sacc + TagInfo(caseSym.enumSym, caseSym.name, args, tpe, hackType2MonoType(tagType))
       }
