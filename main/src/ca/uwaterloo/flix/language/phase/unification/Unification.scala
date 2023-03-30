@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
@@ -28,16 +27,16 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
-      Result.Ok(Substitution.empty)
+      Result.Ok(Substitution.empty, Nil)
     } else {
       (renv.get(x.sym), renv.get(y.sym)) match {
         // Case 1: x is flexible
-        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y))
+        case (Rigidity.Flexible, _) => Result.Ok(Substitution.singleton(x.sym, y), Nil)
         // Case 2: y is flexible
-        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x))
+        case (_, Rigidity.Flexible) => Result.Ok(Substitution.singleton(y.sym, x), Nil)
         // Case 3: both variables are rigid
         case (Rigidity.Rigid, Rigidity.Rigid) => Result.Err(UnificationError.RigidVar(x, y))
       }
@@ -47,7 +46,7 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = tpe match {
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = tpe match {
 
     // ensure the kinds are compatible
     case _ if !KindUnification.unifiesWith(x.kind, tpe.kind) => Result.Err(UnificationError.MismatchedTypes(x, tpe))
@@ -65,14 +64,14 @@ object Unification {
         return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
 
-      Result.Ok(Substitution.singleton(x.sym, tpe))
+      Result.Ok(Substitution.singleton(x.sym, tpe), Nil)
   }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     //
     // Effects
@@ -80,9 +79,9 @@ object Unification {
     case (Kind.Effect, Kind.Effect) =>
       // don't try to unify effects if the `no-set-effects` flag is on
       if (flix.options.xnoseteffects) {
-        Ok(Substitution.empty)
+        Ok(Substitution.empty, Nil)
       } else {
-        SetUnification.unify(tpe1, tpe2, renv)
+        SetUnification.unify(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in sets
       }
 
     //
@@ -91,100 +90,61 @@ object Unification {
     case (Kind.Bool, Kind.Bool) =>
       // don't try to unify effects if the `no-bool-effects` flag is on
       if (flix.options.xnobooleffects) {
-        Ok(Substitution.empty)
+        Ok(Substitution.empty, Nil)
       } else {
-        BoolUnification.unify(tpe1, tpe2, renv)
+        BoolUnification.unify(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in bools
       }
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       val cases = sym1.universe
-      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1)
+      CaseSetUnification.unify(tpe1, tpe2, renv, cases, sym1).map((_, Nil)) // TODO ASSOC-TYPES support in sets
 
     //
     // Record Rows
     //
-    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
 
     //
     // Schema Rows
     //
-    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv)
+    case (Kind.SchemaRow, Kind.SchemaRow) => SchemaUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
 
     //
     // Other: Star or Arrow
     //
-    case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv, atenv)
+    case _ => unifyStarOrArrowTypes(tpe1, tpe2, renv)
   }
 
   /**
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
     case (_, x: Type.Var) => unifyVar(x, tpe1, renv)
 
-    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty)
+    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(Substitution.empty, Nil)
 
-    case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv, atenv)
+    case (Type.Alias(_, _, tpe, _), _) => unifyTypes(tpe, tpe2, renv)
 
-    case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv, atenv)
+    case (_, Type.Alias(_, _, tpe, _)) => unifyTypes(tpe1, tpe, renv)
 
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-      unifyTypes(t11, t21, renv, atenv) match {
-        case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22), renv, atenv) match {
-          case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
+      unifyTypes(t11, t21, renv) match {
+        case Result.Ok((subst1, econstrs1)) => unifyTypes(subst1(t12), subst1(t22), renv) match {
+          case Result.Ok((subst2, econstrs2)) => Result.Ok(subst2 @@ subst1, econstrs1 ++ econstrs2) // TODO ASSOC-TYPES do we need to subst on econstrs?
           case Result.Err(e) => Result.Err(e)
         }
         case Result.Err(e) => Result.Err(e)
       }
 
-    case (Type.AssocType(cst1, args1, kind1, loc1), Type.AssocType(cst2, args2, kind2, loc2)) if cst1.sym == cst2.sym && args1 == args2 => Result.Ok(Substitution.empty)
+    case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 => Result.Ok(Substitution.empty, Nil)
 
-    case (Type.AssocType(cst1, args1, kind1, loc1), t2) =>
-      val arg1 = args1.head // TODO ASSOC-TYPES assuming 1
-      val instRenv = args1.flatMap(_.typeVars).foldLeft(renv) {
-        case (acc, tvar) => acc.markRigid(tvar.sym)
-      }
-      // look up the constructor in the atenv
-      atenv(cst1.sym).map {
-        case Ast.AssocTypeDef(arg, ret) => (Unification.unifyTypes(arg, arg1, instRenv, atenv), ret)
-      }.collect {
-        // find the instances that match
-        case (Result.Ok(subst), ret) => subst(ret)
-      } match {
-        // Case 1: no matches. We cannot reduce. Defer the constraint.
-        case Nil => ??? // TODO ASSOC-TYPES cannot reduce: defer
-        // Case 2: Exactly one match. Reduce to that type.
-        case t :: Nil => unifyTypes(t, t2, renv, atenv)
-        // Case 3: Multiple matches. Impossible.
-        case _ :: _ :: _ => throw InternalCompilerException("Unexpected overlapping instances", loc1)
-      }
-      // TODO ASSOC-TYPES make into special function since it's also needed in monomorph
+    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List((tpe1, tpe2)))
 
-    // TODO ASSOC-TYPES deduplicate against above
-    case (t1, Type.AssocType(cst2, args2, kind2, loc2)) =>
-      val arg2 = args2.head // TODO ASSOC-TYPES assuming 2
-      val instRenv = args2.flatMap(_.typeVars).foldLeft(renv) {
-        case (acc, tvar) => acc.markRigid(tvar.sym)
-      }
-      // look up the constructor in the atenv
-      atenv(cst2.sym).map {
-        case Ast.AssocTypeDef(arg, ret) => (Unification.unifyTypes(arg, arg2, instRenv, atenv), ret)
-      }.collect {
-        // find the instances that match
-        case (Result.Ok(subst), ret) => subst(ret)
-      } match {
-        // Case 2: no matches. We cannot reduce. Defer the constraint.
-        case Nil => ??? // TODO ASSOC-TYPES cannot reduce: defer
-        // Case 2: Exactly one match. Reduce to that type.
-        case t :: Nil => unifyTypes(t1, t, renv, atenv)
-        // Case 3: Multiple matches. Impossible.
-        case _ :: _ :: _ => throw InternalCompilerException("Unexpected overlapping instances", loc2)
-      }
-    // TODO ASSOC-TYPES make into special function since it's also needed in monomorph
+    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List((tpe1, tpe2)))
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
@@ -192,31 +152,31 @@ object Unification {
   /**
     * Lifts the given type `tpe` into the inference monad.
     */
-  def liftM(tpe: Type): InferMonad[Type] = InferMonad { case (s, renv) => Ok((s, renv, s(tpe))) }
+  def liftM(tpe: Type): InferMonad[Type] = InferMonad { case (s, renv) => Ok((s, Nil, renv, s(tpe))) }
 
   /**
     * Lifts the given type constraints, type, purity, and effect into the inference monad.
     */
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
-    InferMonad { case (s, renv) => Ok((s, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
+    InferMonad { case (s, renv) => Ok((s, Nil, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution, renv: RigidityEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
-      unifyTypes(type1, type2, renv, atenv) match {
-        case Result.Ok(s1) =>
+      unifyTypes(type1, type2, renv) match {
+        case Result.Ok((s1, econstrs)) =>
           val subst = s1 @@ s
-          Ok((subst, renv, subst(tpe1)))
+          Ok((subst, econstrs, renv, subst(tpe1))) // TODO ASSOC-TYPES need to apply subst?
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
-            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, atenv, loc))
-            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, atenv, loc))
+            case (Some(TypeConstructor.Arrow(_)), _) => Err(getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, renv, loc))
+            case (_, Some(TypeConstructor.Arrow(_))) => Err(getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, renv, loc))
             case _ => Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
           }
 
@@ -263,7 +223,7 @@ object Unification {
   /**
     * Unifies the `expected` type with the `actual` type.
     */
-  def expectTypeM(expected: Type, actual: Type, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     // Note: The handler should *NOT* use `expected` nor `actual` since they have not had their variables substituted.
     def handler(e: TypeError): TypeError = e match {
       case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
@@ -276,23 +236,23 @@ object Unification {
       case e => e
     }
 
-    unifyTypeM(expected, actual, atenv, loc).transformError(handler)
+    unifyTypeM(expected, actual, loc).transformError(handler)
   }
 
   /**
     * Unifies the `expected` type with the `actual` type (and unifies `bind` with the result).
     */
-  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def expectTypeM(expected: Type, actual: Type, bind: Type.Var, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     for {
-      r <- expectTypeM(expected, actual, atenv, loc)
-      _ <- unifyTypeM(bind, r, atenv, loc)
+      r <- expectTypeM(expected, actual, loc)
+      _ <- unifyTypeM(bind, r, loc)
     } yield r
   }
 
   /**
     * Unifies the `expectedTypes` types with the `actualTypes`.
     */
-  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
@@ -311,7 +271,7 @@ object Unification {
         case (Nil, Nil, Nil) => InferMonad.point(())
         case (x :: xs, y :: ys, l :: ls) =>
           for {
-            _ <- unifyTypeM(x, y, atenv, l).transformError(handler(i))
+            _ <- unifyTypeM(x, y, l).transformError(handler(i))
           } yield visit(i + 1, xs, ys, ls)
         case (missingArg :: _, Nil, _) => InferMonad.errPoint(TypeError.UnderApplied(missingArg, loc))
         case (Nil, excessArg :: _l, _) => InferMonad.errPoint(TypeError.OverApplied(excessArg, loc))
@@ -324,12 +284,12 @@ object Unification {
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
-  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
       case Type.Apply(_, resultType, _) =>
-        if (Unification.unifiesWith(resultType, argType, renv, atenv)) {
+        if (Unification.unifiesWith(resultType, argType, renv)) {
           arrowType.typeArguments.lift(2) match {
             case None => default
             case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
@@ -347,21 +307,21 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3), atenv, loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3, tpe4), atenv, loc)
+  def unifyTypeM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypeM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyTypeM(ts: List[Type], atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
-        case tpe => visit(unifyTypeM(tpe, y, atenv, loc), ys)
+        case tpe => visit(unifyTypeM(tpe, y, loc), ys)
       }
     }
 
@@ -371,11 +331,11 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypeAllowEmptyM(ts: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
       liftM(Type.freshVar(kind, loc))
     else
-      unifyTypeM(ts, atenv, loc)
+      unifyTypeM(ts, loc)
   }
 
   /**
@@ -388,7 +348,7 @@ object Unification {
       BoolUnification.unify(bf1, bf2, renv) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
-          Ok(subst, renv, subst(tpe1))
+          Ok(subst, Nil, renv, subst(tpe1)) // TODO ASSOC types support Bools, need to apply subst?
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
@@ -428,7 +388,7 @@ object Unification {
     */
   def unbindVar(tvar: Type.Var): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s.unbind(tvar.sym), renv, ()))
+      case (s, renv) => Ok((s.unbind(tvar.sym), Nil, renv, ()))
     }
 
   /**
@@ -437,7 +397,7 @@ object Unification {
   def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
     InferMonad { case (s, renv) =>
       val purifiedEff = purify(tvar, s(eff))
-      Ok((s, renv, purifiedEff))
+      Ok((s, Nil, renv, purifiedEff))
     }
 
   /**
@@ -483,7 +443,7 @@ object Unification {
       if (Regions.essentialTo(rvar, t)) {
         Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
       } else
-        Ok((s, renv, ()))
+        Ok((s, Nil, renv, ()))
     }
 
   /**
@@ -491,14 +451,14 @@ object Unification {
     */
   def rigidifyM(rvar: Type.Var): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s, renv.markRigid(rvar.sym), ()))
+      case (s, renv) => Ok((s, Nil, renv.markRigid(rvar.sym), ()))
     }
 
   /**
     * Returns true iff `tpe1` unifies with `tpe2`.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, atenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    Unification.unifyTypes(tpe1, tpe2, renv, atenv) match {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+    Unification.unifyTypes(tpe1, tpe2, renv) match {
       case Result.Ok(_) => true
       case Result.Err(_) => false
     }

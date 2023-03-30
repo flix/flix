@@ -371,7 +371,7 @@ object Monomorph {
               // Case 1: types don't unify; just continue
               case Result.Err(_) => None
               // Case 2: types unify; use the substitution in the body
-              case Result.Ok(caseSubst) =>
+              case Result.Ok((caseSubst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
                 // visit the base expression under the initial environment
                 val e = visitExp(exp, env0, subst)
                 // Generate a fresh symbol for the let-bound variable.
@@ -749,7 +749,7 @@ object Monomorph {
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
-      case Result.Ok(subst) =>
+      case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst)
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
@@ -795,8 +795,9 @@ object Monomorph {
         case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
           (i, Unification.unifyTypes(tpe, args.head, RigidityEnv.empty)) // TODO ASSOC-TYPES args should be arg
       }.collectFirst {
-        case (inst, Result.Ok(subst)) => (inst, subst)
+        case (inst, Result.Ok((subst, econstrs))) => (inst, subst) // TODO ASSOC-TYPES consider econstrs
       }.get
+      // TODO ASSOC-TYPES use Instances.findInstanceForType
 
       val assoc = inst.assocs.find(_.ident.name == sym.sym.name).get
       subst(assoc.tpe)

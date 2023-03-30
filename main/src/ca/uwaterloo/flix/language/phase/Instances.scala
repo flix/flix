@@ -201,7 +201,9 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map((superInst, _))
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
+          case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+        }
       }.nextOption()
     }
 

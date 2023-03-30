@@ -321,7 +321,7 @@ object Typer {
           val initialRenv = getRigidityFromParams(fparams0)
 
           run(initialSubst, initialRenv) match {
-            case Ok((subst, renv0, (partialTconstrs, partialType))) =>
+            case Ok((subst, econstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
