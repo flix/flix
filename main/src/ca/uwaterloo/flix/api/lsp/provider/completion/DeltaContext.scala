@@ -18,32 +18,66 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * Represents a list of changes.
+  * Represents changes between ASTs.
   */
-case class DeltaContext(deltas: List[Delta]) {
-
+object DeltaContext {
   /**
-    * Merges this.List[Delta] with other.List[Delta].
-    * Removes duplicates that has an older timestamp.
+    * Merges two DeltaContext.
     *
-    * @param other the other DeltaContext.
-    * @return      a DeltaContext with the of changes as List[Delta],
-    *              where the most recent is the first elem of the list.
+    * Removes duplicates that has an older timestamp, and deltas older than 5 minutes.
+    *
+    * Limits deltas to 1000 elements.
+    *
+    * Sorts the list with the most recent delta as first element.
+    *
+    * @param d1  the first DeltaContext.
+    * @param d2  the second DeltaContext.
+    * @return    a DeltaContext with the of changes as List[Delta],
+    *            where the most recent is the first element of the list.
     */
-  def mergeDeltas(other: DeltaContext): DeltaContext = {
+  def mergeDeltas(d1: DeltaContext, d2: DeltaContext): DeltaContext = {
     val newDeltas = {
-      if (other.deltas.isEmpty) {
-        this.deltas
+      if (d2.deltas.isEmpty) {
+        d1.deltas
       } else {
-        (this.deltas ++ other.deltas).reverse.distinctBy {
-          case Delta.ModifiedDef(sym, _) => sym
-          case Delta.AddEnum(sym, _) => sym
-          case Delta.AddField(field, _) => field
-        }.sortWith(_.timestamp > _.timestamp) // Sorts the list, to make sure the newest timestamp is the first elem.
+        val (limitDeltas, _) = filterOutdated(d1.deltas ++ d2.deltas)
+            .splitAt(1000) // Limits the list to the 1000 most recent deltas
+        limitDeltas
       }
     }
     DeltaContext(newDeltas)
   }
+
+  /**
+    * Removes all duplicates, so only the most recent appear in the list.
+    *
+    * Sorts the list with the most recent delta as first element.
+    *
+    * Also removes all deltas older than 5 minutes.
+    *
+    * @param deltas the list of deltas.
+    * @return       a new list of deltas without duplicates, older deltas than 5 minutes and in sorted order.
+    */
+  private def filterOutdated(deltas: List[Delta]): List[Delta] = {
+    // Remove all duplicates.
+    // Reverses the list so the most recent deltas appears first.
+    // This ensures that all duplicates with older timestamp will be removed.
+    val deltaWithoutDuplicates = deltas.reverse.distinctBy {
+      case Delta.ModifiedDef(sym, _) => sym
+      case Delta.AddEnum(sym, _) => sym
+      case Delta.AddField(field, _) => field
+    }
+    val fiveMinTimestamp = Differ.getCurrentTimestamp - 300000000000L
+    deltaWithoutDuplicates
+      .sortWith(_.timestamp > _.timestamp) // Sorts the list, to make sure the newest timestamp is the first elem.
+      .takeWhile(_.timestamp > fiveMinTimestamp) // Remove deltas other than 5 minutes
+  }
+}
+
+/**
+  * Represents a list of changes.
+  */
+case class DeltaContext(deltas: List[Delta]) {
 
   def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
     case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?

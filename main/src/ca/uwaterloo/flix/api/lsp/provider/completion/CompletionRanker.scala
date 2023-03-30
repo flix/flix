@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
 import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
-import ca.uwaterloo.flix.language.ast.TypedAst
 
 import scala.annotation.tailrec
 
@@ -32,19 +31,16 @@ object CompletionRanker {
   /**
     * Calculate the best 1st completion in popup-pane
     *
-    * @param completions       the list of decided completions.
-    * @param deltaContext      current list of delta's.
-    * @return Some(Completion) if a better completion is possible, else none.
+    * @param completions   the list of decided completions.
+    * @param deltaContext  current list of delta's.
+    * @return              Some(Completion) if a better completion is possible, else none.
     */
-  def findBest(completions: Iterable[Completion], deltaContext: DeltaContext): Option[Completion] =
-    deltaContext.deltas match {
-      case Nil => None
-      case deltas =>
-        findBestDefCompletion(completions, deltas)
-    }
+  def findBest(completions: Iterable[Completion], deltaContext: DeltaContext): Option[Completion] = {
+    findBestDefCompletion(completions, deltaContext.deltas)
+  }
 
   /**
-    * Find the best/newest def completion
+    * Find the best/newest modified def completion.
     *
     * @param completions  the list of completions.
     * @param deltas       the list of changes.
@@ -52,24 +48,20 @@ object CompletionRanker {
     */
   private def findBestDefCompletion(completions: Iterable[Completion], deltas: List[Delta]): Option[Completion] = {
     /**
-      * Auxiliary function for findBestDefCompletion
+      * Auxiliary function for findBestDefCompletion.
+      *
+      * It first check if the most recent modified def is a possible completion. If it is, it returns that completion.
+      * If not, then it checks for the second most recent modified def, and continues.
       *
       * @param completions  the list of possible completions.
       * @param delta        the modifiedDefDelta at question.
       * @param deltas       the rest of the modifiedDefDeltas as a list.
-      * @return             Some(DefCompletion) if a better completion is possible, else none.
+      * @return             Some(Completion) if a better completion is possible, else none.
       */
     @tailrec
     def aux(completions: Iterable[Completion], delta: Delta.ModifiedDef, deltas: List[Delta.ModifiedDef]): Option[Completion] = {
-      // We have a def, find that specific def in the list of completions
-      completions.find(comp => comp match {
-        case DefCompletion(decl) =>
-          // Check if the def found is the same as the def from delta
-          isAModifiedDef(decl, delta.sym)
-        case _ =>
-          // Not a def
-          false
-      }) match {
+      // We have a deltaDef, find that def in the list of completions
+      completions.find(comp => completionMatchesDeltaDef(comp, delta.sym)) match {
         case None =>
           // This delta isn't part of the possible completions
           // Check if there are more deltas
@@ -90,29 +82,46 @@ object CompletionRanker {
     deltas match {
       case Nil => None
       case deltasForFilter =>
-        // Remove all none ModifiedDef deltas, and reverse the list, so the most recent defDelta is the first elem.
-        val defDeltas: List[Delta.ModifiedDef] = deltasForFilter.flatMap(delta => delta match {
-          case Delta.ModifiedDef(sym, timestamp) => Some(Delta.ModifiedDef(sym, timestamp))
-          case _ => None
-        })
-        if (defDeltas.isEmpty) {
+        // Remove all none ModifiedDef deltas
+        getDefDeltas(deltasForFilter) match {
+          case Nil =>
             // We don't have any defDeltas and therefore no best def completion
             None
-        } else {
+          case ::(head, next) =>
             // We have some defDeltas
-            aux(completions, defDeltas.head, defDeltas.tail)
+            aux(completions, head, next)
         }
     }
   }
 
   /**
-    * Checks if the def decl is modified. Hence the sym from delta is the same is the one in the completion.
+    * Checks if the completion is a DefCompletion and it matches the Delta def.
     *
-    * @param decl        the def decl.
-    * @param deltaDefSym the sym of a modified def decl.
-    * @return            true, if the def decl at question is changed, false otherwise.
+    * @param comp         the completion.
+    * @param deltaDefSym  the symbol of the delta def.
+    * @return             true if the comp matches the sym, false otherwise.
     */
-  private def isAModifiedDef(decl: TypedAst.Def, deltaDefSym: DefnSym): Boolean = {
-    decl.sym == deltaDefSym
+  private def completionMatchesDeltaDef(comp: Completion, deltaDefSym: DefnSym): Boolean = {
+    comp match {
+      case DefCompletion(decl) =>
+        // Check if the def found is the same as the def from delta
+        decl.sym == deltaDefSym
+      case _ =>
+        // Not a def
+        false
+    }
+  }
+
+  /**
+    * Removes all none ModifiedDef deltas from the list of deltas.
+    *
+    * @param deltas the list of deltas.
+    * @return       a List[ModifiedDef] only consisting of ModifiedDef deltas.
+    */
+  private def getDefDeltas(deltas: List[Delta]): List[Delta.ModifiedDef] = {
+    deltas.flatMap(delta => delta match {
+      case Delta.ModifiedDef(sym, timestamp) => Some(Delta.ModifiedDef(sym, timestamp))
+      case _ => None
+    })
   }
 }
