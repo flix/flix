@@ -204,7 +204,8 @@ object Monomorph {
         val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.pur, Type.freshVar(Kind.Effect, body.loc.asSynthetic), body.tpe, sym.loc.asSynthetic) // TODO use eff
         val tvars = base.typeVars.map(_.sym).toList
         val tconstrs = Nil // type constraints are not used after monomorph
-        val scheme = Scheme(tvars, tconstrs, base)
+        val econstrs = Nil // equality constraints are not used after monomorph
+        val scheme = Scheme(tvars, tconstrs, econstrs, base)
 
         // Reassemble the definition.
         specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
@@ -227,7 +228,7 @@ object Monomorph {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base))))
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)

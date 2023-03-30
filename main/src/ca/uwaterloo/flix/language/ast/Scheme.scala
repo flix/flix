@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 object Scheme {
@@ -29,14 +28,15 @@ object Scheme {
     * Instantiate one of the variables in the scheme, adding new quantifiers as needed.
     */
   def partiallyInstantiate(sc: Scheme, quantifier: Symbol.KindedTypeVarSym, value: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       if (!quantifiers.contains(quantifier)) {
         throw InternalCompilerException("Quantifier not in scheme.", loc)
       }
       val subst = Substitution.singleton(quantifier, value)
-      val newConstraints = constraints.map(subst.apply)
+      val newTconstrs = tconstrs.map(subst.apply)
+      val newEconstrs = econstrs.map(subst.apply)
       val newBase = subst(base)
-      generalize(newConstraints, newBase)
+      generalize(newTconstrs, newEconstrs, newBase)
   }
 
   /**
@@ -70,7 +70,7 @@ object Scheme {
 
     val newBase = visitType(baseType)
 
-    val newConstrs = sc.constraints.map {
+    val newConstrs = sc.tconstrs.map {
       case Ast.TypeConstraint(head, tpe0, loc) =>
         val tpe = tpe0.map(visitType)
         Ast.TypeConstraint(head, tpe, loc)
@@ -82,9 +82,9 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars)
-    Scheme(quantifiers.toList.map(_.sym), tconstrs, tpe0)
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[(Type, Type)], tpe0: Type): Scheme = {
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr._1.typeVars ++ econstr._2.typeVars)
+    Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
   }
 
   /**
@@ -132,8 +132,8 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
-        val newTconstrs1Val = ClassEnvironment.reduce(sc1.constraints.map(subst.apply), classEnv)
-        val newTconstrs2Val = ClassEnvironment.reduce(sc2.constraints.map(subst.apply), classEnv)
+        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
+        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
         flatMapN(newTconstrs1Val, newTconstrs2Val) {
           case (newTconstrs1, newTconstrs2) =>
             mapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
@@ -149,7 +149,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], constraints: List[Ast.TypeConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[(Type, Type)], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

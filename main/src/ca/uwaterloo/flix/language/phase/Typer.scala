@@ -303,7 +303,7 @@ object Typer {
 
 
       // Add the assumed constraints to the declared scheme
-      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+      val declaredScheme = sc.copy(tconstrs = sc.tconstrs ++ assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -321,20 +321,21 @@ object Typer {
           val initialRenv = getRigidityFromParams(fparams0)
 
           run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
-            case Ok((subst, econstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
-              println(econstrs)
+            case Ok((subst, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
-              val (inferredConstrs, inferredType) = (partialTconstrs.map(subst.apply), subst(partialType))
+              val inferredTconstrs = partialTconstrs.map(subst.apply)
+              val inferredEconstrs = partialEconstrs.map(subst.apply)
+              val inferredType = subst(partialType)
 
               ///
               /// Check that the inferred type is at least as general as the declared type.
               ///
               /// NB: Because the inferredType is always a function type, the purect is always implicitly accounted for.
               ///
-              val inferredSc = Scheme.generalize(inferredConstrs, inferredType)
+              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType)
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
@@ -373,8 +374,8 @@ object Typer {
                       return TypeError.EffectPolymorphicDeclaredAsPure(inferredPur, loc).toFailure
                     } else {
                       // Case 3: Check if it is the purity that cannot be generalized.
-                      val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, inferredPur)
-                      val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, declaredPur)
+                      val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredPur)
+                      val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredPur)
                       Scheme.checkLessThanEqual(inferredPurScheme, declaredPurScheme, classEnv) match {
                         case Validation.Success(_) =>
                         // Case 3.1: The purity is not the problem. Regular generalization error.
@@ -408,7 +409,8 @@ object Typer {
               ///
               val finalInferredType = subst(partialType)
               val finalInferredTconstrs = partialTconstrs.map(subst.apply)
-              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
+              val finalInferredEconstrs = partialEconstrs.map(subst.apply)
+              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredEconstrs, finalInferredType)
 
               (spec, TypedAst.Impl(exp, inferredScheme)).toSuccess
 
