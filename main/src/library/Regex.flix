@@ -516,10 +516,10 @@ namespace Regex {
     /// Return the start and end positions of the matcher `m`.
     ///
     def matcherRange(m: Matcher[r]): Result[String, {start = Int32, end = Int32}] \ Read(r) =
-        use Result.flatMap;
-        let* s = matcherStart(m);
-        let* e = matcherEnd(m);
-        Ok({start = s, end = e})
+        forM (s <- matcherStart(m);
+              e <- matcherEnd(m))
+        yield ({start = s, end = e})
+
 
     ///
     /// Return the text content of the current match of matcher `m`.
