@@ -453,7 +453,7 @@ namespace TestInt32 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int32.highestOneBit(-1) == Int32.leftshift(1, 31)
+    def highestOneBit01(): Bool = Int32.highestOneBit(-1) == Int32.leftShift(1, 31)
 
     @test
     def highestOneBit02(): Bool = Int32.highestOneBit(-2147483000) == Int32.leftShift(1, 31)
