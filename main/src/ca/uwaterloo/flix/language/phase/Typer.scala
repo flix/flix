@@ -320,8 +320,9 @@ object Typer {
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromParams(fparams0)
 
-          run(initialSubst, initialRenv) match {
+          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
             case Ok((subst, econstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
+              println(econstrs)
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.

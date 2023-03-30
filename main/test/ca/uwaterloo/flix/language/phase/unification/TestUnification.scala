@@ -368,13 +368,13 @@ class TestUnification extends FunSuite with TestUtils {
 
   test("unifyM.01") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0, RigidityEnv.empty) // TODO ASSOC-TYPES consider econstrs
+    val result = Unification.unifyTypeM(Type.Bool, Type.Bool, loc).run(subst0, Nil, RigidityEnv.empty) // TODO ASSOC-TYPES consider econstrs
     assert(isOk(result))
   }
 
   test("unifyM.02") {
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(Type.Bool, Type.Char, loc).run(subst0, RigidityEnv.empty) // TODO ASSOC-TYPES consider econstrs
+    val result = Unification.unifyTypeM(Type.Bool, Type.Char, loc).run(subst0, Nil, RigidityEnv.empty) // TODO ASSOC-TYPES consider econstrs
     assert(!isOk(result))
   }
 
@@ -382,7 +382,7 @@ class TestUnification extends FunSuite with TestUtils {
     val tpe1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)
     val tpe2 = Type.Bool
     val subst0 = Substitution.empty
-    val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0, RigidityEnv.empty)
+    val result = Unification.unifyTypeM(tpe1, tpe2, loc).run(subst0, Nil, RigidityEnv.empty)
     val (subst, econstrs, _, tpe) = result.get // TODO ASSOC-TYPES consider econstrs
     assertResult(Type.Bool)(subst(tpe1))
     assertResult(Type.Bool)(subst(tpe2))
@@ -393,7 +393,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyTypeM(Type.Bool, Type.Bool, loc)
     val res2 = Unification.unifyTypeM(Type.Char, Type.Char, loc)
-    val result = seqM(List(res1, res2)).run(subst0, RigidityEnv.empty)
+    val result = seqM(List(res1, res2)).run(subst0, Nil, RigidityEnv.empty)
     assert(isOk(result))
   }
 
@@ -401,7 +401,7 @@ class TestUnification extends FunSuite with TestUtils {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
     val res2 = Unification.unifyTypeM(Type.Bool, Type.Char, loc)
-    val result = seqM(List(res1, res2)).run(subst0, RigidityEnv.empty)
+    val result = seqM(List(res1, res2)).run(subst0, Nil, RigidityEnv.empty)
     assert(!isOk(result))
   }
 
@@ -410,7 +410,7 @@ class TestUnification extends FunSuite with TestUtils {
     val res1 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Bool, loc)
     val res2 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Char, loc)
     val res3 = Unification.unifyTypeM(Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.mkTuple(List(Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc), Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc), loc)), loc), loc)
-    val result = seqM(List(res1, res2, res3)).run(subst0, RigidityEnv.empty)
+    val result = seqM(List(res1, res2, res3)).run(subst0, Nil, RigidityEnv.empty)
     val (subst, econstrs, _, _) = result.get // TODO ASSOC-TYPES consider econstrs
     assertResult(Type.Bool)(subst.m(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))
     assertResult(Type.Char)(subst.m(new Symbol.KindedTypeVarSym(2, Ast.VarText.Absent, Kind.Star, isRegion = false, loc)))

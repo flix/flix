@@ -152,26 +152,27 @@ object Unification {
   /**
     * Lifts the given type `tpe` into the inference monad.
     */
-  def liftM(tpe: Type): InferMonad[Type] = InferMonad { case (s, renv) => Ok((s, Nil, renv, s(tpe))) }
+  def liftM(tpe: Type): InferMonad[Type] = InferMonad { case (s, econstrs, renv) => Ok((s, econstrs, renv, s(tpe))) }
 
   /**
     * Lifts the given type constraints, type, purity, and effect into the inference monad.
     */
   def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
-    InferMonad { case (s, renv) => Ok((s, Nil, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
+    InferMonad { case (s, econstrs, renv) => Ok((s, econstrs, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, renv: RigidityEnv) => {
+    InferMonad((s: Substitution, econstrs: List[(Type, Type)], renv: RigidityEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
       unifyTypes(type1, type2, renv) match {
-        case Result.Ok((s1, econstrs)) =>
+        case Result.Ok((s1, econstrs1)) =>
           val subst = s1 @@ s
-          Ok((subst, econstrs, renv, subst(tpe1))) // TODO ASSOC-TYPES need to apply subst?
+          val e = econstrs1 ++ econstrs
+          Ok((subst, e, renv, subst(tpe1))) // TODO ASSOC-TYPES need to apply subst?
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
@@ -342,13 +343,13 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, renv: RigidityEnv) => {
+    InferMonad((s: Substitution, econstrs: List[(Type, Type)], renv: RigidityEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       BoolUnification.unify(bf1, bf2, renv) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
-          Ok(subst, Nil, renv, subst(tpe1)) // TODO ASSOC types support Bools, need to apply subst?
+          Ok(subst, econstrs, renv, subst(tpe1)) // TODO ASSOC types support Bools, need to apply subst?
 
         case Result.Err(e) => e match {
           case UnificationError.MismatchedBools(baseType1, baseType2) =>
@@ -388,16 +389,16 @@ object Unification {
     */
   def unbindVar(tvar: Type.Var): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s.unbind(tvar.sym), Nil, renv, ()))
+      case (s, econstrs, renv) => Ok((s.unbind(tvar.sym), econstrs, renv, ()))
     }
 
   /**
     * Purifies the given effect `eff` in the type inference monad.
     */
   def purifyEffM(tvar: Type.Var, eff: Type): InferMonad[Type] =
-    InferMonad { case (s, renv) =>
+    InferMonad { case (s, econstrs, renv) =>
       val purifiedEff = purify(tvar, s(eff))
-      Ok((s, Nil, renv, purifiedEff))
+      Ok((s, econstrs, renv, purifiedEff))
     }
 
   /**
@@ -435,7 +436,7 @@ object Unification {
     * Ensures that the region variable `rvar` does not escape in the type `tpe` nor from the context.
     */
   def noEscapeM(rvar: Type.Var, tpe: Type)(implicit flix: Flix): InferMonad[Unit] =
-    InferMonad { case (s, renv) =>
+    InferMonad { case (s, econstrs, renv) =>
       // Apply the current substitution to `tpe`.
       val t = TypeMinimization.minimizeType(s(tpe))
 
@@ -443,7 +444,7 @@ object Unification {
       if (Regions.essentialTo(rvar, t)) {
         Err(TypeError.RegionVarEscapes(rvar, t, rvar.loc))
       } else
-        Ok((s, Nil, renv, ()))
+        Ok((s, econstrs, renv, ()))
     }
 
   /**
@@ -451,7 +452,7 @@ object Unification {
     */
   def rigidifyM(rvar: Type.Var): InferMonad[Unit] =
     InferMonad {
-      case (s, renv) => Ok((s, Nil, renv.markRigid(rvar.sym), ()))
+      case (s, econstrs, renv) => Ok((s, econstrs, renv.markRigid(rvar.sym), ()))
     }
 
   /**
