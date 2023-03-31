@@ -273,14 +273,14 @@ namespace Int64 {
         }
 
     ///
-    /// Returns `x` with the bits shifted left by `y` places
+    /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int64, y: Int32): Int64 = $INT64_SHL$(x, y)
+    pub def rightShift(x: Int64, y: Int32): Int64 = $INT64_SHR$(x, y)
 
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int64, y: Int32): Int64 = $INT64_SHR$(x, y)
+    pub def leftShift(x: Int64, y: Int32): Int64 = $INT64_SHL$(x, y)
 
 
     ///
