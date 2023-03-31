@@ -2,9 +2,10 @@
 
 Version 0.35.0:
 
+- Language: Added region capabilities (thanks Jonathan, Magnus)
+- Language: Added initial support for structured concurrency (thanks Paul!)
 - Language: Added `foreach` and `foreach-yield` syntactic sugar for imperative iteration (thanks Jakob!)
 - Language: Added `forA` and `forM` syntactic sugar for applicative and monadic expressions (thanks Jakob!)
-- Language: Added initial support for structured concurrency (thanks Paul!)
 - Language: Added `checked_cast` and `checked_ecast` (thanks Magnus!)
 - Language: Reworked the module system (thanks Matthew!)
 - Library: Added `Iterator` module (thanks Stephen!)
