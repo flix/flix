@@ -7,6 +7,7 @@ Version 0.35.0:
 - Language: Added initial support for structured concurrency (thanks Paul!)
 - Language: Added `checked_cast` and `checked_ecast` (thanks Magnus!)
 - Language: Reworked the module system (thanks Matthew!)
+- Library: Added `Iterator` module (thanks Stephen!)
 - Library: Added `Regex` module (thanks Stephen!)
 - Library: Added `Vector` module (thanks Stephen!)
 - Library: Added region capabilities to all mutable data structures (thanks Jakob, Paul, Stephen!)
@@ -384,10 +385,8 @@ HEAD (in progress, not released):
 
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Added `Iterator` (thanks Jakob!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
 - Improved stratification algorithm (thanks Jonathan!)
-- Regions.
 - Inliner
 - Datalog abstraction
 - Restrictable variants
