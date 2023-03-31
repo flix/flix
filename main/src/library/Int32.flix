@@ -238,7 +238,7 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
-        if (leftShift(x, pos.pos) `rem` 2 == 0) 0 else 1
+        if (rightShift(x, pos.pos) `rem` 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
