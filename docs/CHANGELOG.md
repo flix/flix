@@ -2,18 +2,21 @@
 
 Version 0.35.0:
 
-- Library: Added region capabilities to all mutable data structures (thanks Jakob, Paul, Stephen!)
-- Language: Added checked_cast and checked_ecast (thanks Magnus!)
+- Language: Added `foreach` and `foreach-yield` syntactic sugar for imperative iteration (thanks Jakob!)
+- Language: Added `forA` and `forM` syntactic sugar for applicative and monadic expressions (thanks Jakob!)
 - Language: Added initial support for structured concurrency (thanks Paul!)
-- Library: Associate channels with regions (thanks Paul!)
-- Compiler: Improve type inference for function applications (thanks Magnus!)
-- Compiler: Use BDDs to represent effects (thanks Anna!)
-- Language: Reworked module system (thanks Matthew!)
-- VSCode: Added support for hole completions (thanks Daniel!)
+- Language: Added `checked_cast` and `checked_ecast` (thanks Magnus!)
+- Language: Reworked the module system (thanks Matthew!)
+- Library: Added `Regex` module (thanks Stephen!)
+- Library: Added `Vector` module (thanks Stephen!)
+- Library: Added region capabilities to all mutable data structures (thanks Jakob, Paul, Stephen!)
 - VSCode: Allow most IDE features to work in the presence of program errors (thanks Jakob, Paul, Magnus!)
+- VSCode: Added support for hole completions (thanks Daniel!)
 - Compiler: Added initial support for Flix package management (thanks Anna!)
 - Compiler: Added initial support for integration with Maven (thanks Anna!)
-- Language: Add `forA` and `forM` syntactic sugar for applicative and monadic expressions (Thanks Jakob!)
+- Compiler: Improved type inference for function applications (thanks Magnus!)
+- Compiler: Use BDDs to represent effects (thanks Anna!)
+- Compiler: Improved performance of JVM code generation (thanks Magnus!)
 
 Version 0.34.0:
 - Language: Reworked channels into a `Sender` and `Receiver` part (thanks Paul!)
