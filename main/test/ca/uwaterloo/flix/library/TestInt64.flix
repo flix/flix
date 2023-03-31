@@ -726,7 +726,7 @@ namespace TestInt64 {
     def flipBit10(): Bool = Int64.flipBit(pos = 5, -1i64) == -33i64
 
     @test
-    def flipBit11(): Bool = Int64.flipBit(pos = 31, -1i64) == (-1i64-Int64.leftShift(1i64, 2))
+    def flipBit11(): Bool = Int64.flipBit(pos = 31, -1i64) == (-1i64-Int64.leftShift(1i64, 31))
 
     @test
     def flipBit12(): Bool = Int64.flipBit(pos = 64, -1i64) == -2i64

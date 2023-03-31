@@ -750,7 +750,7 @@ namespace TestInt8 {
     def flipBit10(): Bool = Int8.flipBit(pos = 5, -1i8) == -33i8
 
     @test
-    def flipBit11(): Bool = Int8.flipBit(pos = 5, -1i8) == (-1i8-Int8.leftShift(1i8, 2))
+    def flipBit11(): Bool = Int8.flipBit(pos = 5, -1i8) == (-1i8-Int8.leftShift(1i8, 5))
 
     @test
     def flipBit12(): Bool = Int8.flipBit(pos = 32, -1i8) == -2i8
