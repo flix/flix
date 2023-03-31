@@ -257,7 +257,7 @@ object Redundancy {
     }
 
     val defErrors = root.defs.values.flatMap {
-      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.constraints)
+      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.tconstrs)
     }
 
     val classErrors = root.classes.values.flatMap {
@@ -266,7 +266,7 @@ object Redundancy {
     }
 
     val sigErrors = root.sigs.values.flatMap {
-      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.constraints)
+      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.tconstrs)
     }
 
     (instErrors ++ defErrors ++ classErrors ++ sigErrors).toList

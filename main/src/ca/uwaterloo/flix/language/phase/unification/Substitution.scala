@@ -110,11 +110,18 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * NB: Throws an InternalCompilerException if quantifiers are present in the substitution.
     */
   def apply(sc: Scheme): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       if (sc.quantifiers.exists(m.contains)) {
         throw InternalCompilerException("Quantifier in substitution.", base.loc)
       }
-      Scheme(quantifiers, constraints.map(apply), apply(base))
+      Scheme(quantifiers, tconstrs.map(apply), econstrs.map(apply), apply(base))
+  }
+
+  /**
+    * Applies `this` substitution to the given pair of types `ts`.
+    */
+  def apply(ts: (Type, Type)): (Type, Type) = if (isEmpty) ts else ts match {
+    case (t1, t2) => (apply(t1), apply(t2))
   }
 
   /**

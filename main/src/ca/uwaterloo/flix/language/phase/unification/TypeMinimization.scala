@@ -47,7 +47,7 @@ object TypeMinimization {
     * Minimizes the given scheme, reducing it to a more concise equivalent form.
     */
   def minimizeScheme(sc: Scheme)(implicit flix: Flix): Scheme = sc match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val newBase = minimizeType(base)
       val tvars = newBase.typeVars.map(_.sym)
 
@@ -55,11 +55,11 @@ object TypeMinimization {
       val newQuants = quantifiers.filter(tvars.contains)
 
       // filter out unused type constraints
-      val newTconstrs = constraints.filter {
+      val newTconstrs = tconstrs.filter {
         case Ast.TypeConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
         case _ => false
       }
-      Scheme(newQuants, newTconstrs, newBase)
+      Scheme(newQuants, newTconstrs, econstrs, newBase)
   }
 
   /**
