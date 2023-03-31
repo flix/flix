@@ -1,5 +1,20 @@
 # Changelog
 
+Version 0.35.0:
+
+- Library: Added region capabilities to all mutable data structures (thanks Jakob, Paul, Stephen!)
+- Language: Added checked_cast and checked_ecast (thanks Magnus!)
+- Language: Added initial support for structured concurrency (thanks Paul!)
+- Library: Associate channels with regions (thanks Paul!)
+- Compiler: Improve type inference for function applications (thanks Magnus!)
+- Compiler: Use BDDs to represent effects (thanks Anna!)
+- Language: Reworked module system (thanks Matthew!)
+- VSCode: Added support for hole completions (thanks Daniel!)
+- VSCode: Allow most IDE features to work in the presence of program errors (thanks Jakob, Paul, Magnus!)
+- Compiler: Added initial support for Flix package management (thanks Anna!)
+- Compiler: Added initial support for integration with Maven (thanks Anna!)
+- Language: Add `forA` and `forM` syntactic sugar for applicative and monadic expressions (Thanks Jakob!)
+
 Version 0.34.0:
 - Language: Reworked channels into a `Sender` and `Receiver` part (thanks Paul!)
 - Language: Added `Sendable` type class and require it for messages sent on channels (thanks Paul!)
@@ -364,14 +379,12 @@ Version 0.1:
 
 HEAD (in progress, not released):
 
-- Language: Added support for `opaque` enums (thanks Matt!)
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
 - Added `Iterator` (thanks Jakob!)
-- Added `foldRightLazy` operations (thanks Nicola!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
 - Improved stratification algorithm (thanks Jonathan!)
 - Regions.
 - Inliner
 - Datalog abstraction
-- For and Forecah
+- Restrictable variants
