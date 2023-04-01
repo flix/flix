@@ -131,7 +131,7 @@ namespace Int64 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
-        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, dist.dist)
+        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
