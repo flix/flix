@@ -245,6 +245,7 @@ class Flix {
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
+    "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
   )
 
   /**

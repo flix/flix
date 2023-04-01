@@ -615,37 +615,41 @@ namespace TestBigInt {
 
     @test
     def tryToFloat3204(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(max)
+            forM (
+                max <- Float32.maxValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(max)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat3205(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float32.maxValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(max + 1ii)
+            forM (
+                max <- Float32.maxValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(max + 1ii)
+            ) yield res
         };
         step() == None
 
     @test
     def tryToFloat3206(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(min)
+            forM (
+                min <- Float32.minValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(min)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat3207(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float32.minValue() |> Float32.tryToBigInt;
-            BigInt.tryToFloat32(min - 1ii)
+            forM (
+                min <- Float32.minValue() |> Float32.tryToBigInt;
+                res <- BigInt.tryToFloat32(min - 1ii)
+            ) yield res
         };
         step() == None
 
@@ -663,37 +667,41 @@ namespace TestBigInt {
 
     @test
     def tryToFloat6404(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(max)
+            forM (
+                max <- Float64.maxValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(max)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat6405(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* max = Float64.maxValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(max + 1ii)
+            forM (
+                max <- Float64.maxValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(max + 1ii)
+            ) yield res
         };
         step() == None
 
     @test
     def tryToFloat6406(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(min)
+            forM (
+                min <- Float64.minValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(min)
+            ) yield res
         };
         step() != None
 
     @test
     def tryToFloat6407(): Bool =
-        use Option.flatMap;
         let step = () -> {
-            let* min = Float64.minValue() |> Float64.tryToBigInt;
-            BigInt.tryToFloat64(min - 1ii)
+            forM (
+                min <- Float64.minValue() |> Float64.tryToBigInt;
+                res <- BigInt.tryToFloat64(min - 1ii)
+            ) yield res
         };
         step() == None
 

@@ -879,10 +879,10 @@ object Lowering {
     * Lowers the given scheme `sc0`.
     */
   private def visitScheme(sc0: Scheme)(implicit root: TypedAst.Root, flix: Flix): Scheme = sc0 match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       // TODO: What about constraints?
       val b = visitType(base)
-      Scheme(quantifiers, constraints, b)
+      Scheme(quantifiers, tconstrs, econstrs, b)
   }
 
   /**

@@ -740,7 +740,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
+      Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force |
@@ -817,10 +817,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
       SP ~ keyword("let") ~ WS ~ Modifiers ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
-    }
-
-    def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
-      SP ~ keyword("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {

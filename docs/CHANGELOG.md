@@ -1,5 +1,25 @@
 # Changelog
 
+Version 0.35.0:
+
+- Language: Added region capabilities (thanks Jonathan, Magnus)
+- Language: Added initial support for structured concurrency (thanks Paul!)
+- Language: Added `foreach` and `foreach-yield` syntactic sugar for imperative iteration (thanks Jakob!)
+- Language: Added `forA` and `forM` syntactic sugar for applicative and monadic expressions (thanks Jakob!)
+- Language: Added `checked_cast` and `checked_ecast` (thanks Magnus!)
+- Language: Reworked the module system (thanks Matthew!)
+- Library: Added `Iterator` module (thanks Stephen!)
+- Library: Added `Regex` module (thanks Stephen!)
+- Library: Added `Vector` module (thanks Stephen!)
+- Library: Added region capabilities to all mutable data structures (thanks Jakob, Paul, Stephen!)
+- VSCode: Allow most IDE features to work in the presence of program errors (thanks Jakob, Paul, Magnus!)
+- VSCode: Added support for hole completions (thanks Daniel!)
+- Compiler: Added initial support for Flix package management (thanks Anna!)
+- Compiler: Added initial support for integration with Maven (thanks Anna!)
+- Compiler: Improved type inference for function applications (thanks Magnus!)
+- Compiler: Use BDDs to represent effects (thanks Anna!)
+- Compiler: Improved performance of JVM code generation (thanks Magnus!)
+
 Version 0.34.0:
 - Language: Reworked channels into a `Sender` and `Receiver` part (thanks Paul!)
 - Language: Added `Sendable` type class and require it for messages sent on channels (thanks Paul!)
@@ -364,14 +384,10 @@ Version 0.1:
 
 HEAD (in progress, not released):
 
-- Language: Added support for `opaque` enums (thanks Matt!)
 - Added a new file API (thanks Nina!)
 - Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Added `Iterator` (thanks Jakob!)
-- Added `foldRightLazy` operations (thanks Nicola!)
 - Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
 - Improved stratification algorithm (thanks Jonathan!)
-- Regions.
 - Inliner
 - Datalog abstraction
-- For and Forecah
+- Restrictable variants
