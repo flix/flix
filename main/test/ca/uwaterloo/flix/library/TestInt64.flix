@@ -228,16 +228,16 @@ namespace TestInt64 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 2)
+    def logicalRightShift01(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int64.logicalRightShift(dist = 33, 22336688888i64) == Int64.rightShift(22336688888i64, 2)
+    def logicalRightShift02(): Bool = Int64.logicalRightShift(dist = 33, 22336688888i64) == Int64.rightShift(22336688888i64, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int64.logicalRightShift(dist = -8, 2233i64) == Int64.rightShift(2233i64, 2)
+    def logicalRightShift03(): Bool = Int64.logicalRightShift(dist = -8, 2233i64) == Int64.rightShift(2233i64, 8)
 
     @test
-    def logicalRightShift04(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 2)
+    def logicalRightShift04(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 4)
 
     @test
     def logicalRightShift05(): Bool = Int64.logicalRightShift(dist = 1, -1i64) == 9223372036854775807i64
