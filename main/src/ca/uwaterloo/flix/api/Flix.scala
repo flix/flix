@@ -87,8 +87,6 @@ class Flix {
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
     "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
-    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
-    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads

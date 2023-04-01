@@ -430,6 +430,36 @@ namespace TestBigInt {
     @test
     def flipBit13(): Bool = BigInt.flipBit(-1ii, 32) == -4294967297ii
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // leftShift
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseLeftShift01(): Bool = BigInt.leftShift(8ii, 0) == 8ii
+
+    @test
+    def testBitwiseLeftShift02(): Bool = BigInt.leftShift(8ii, 32) == 34359738368ii
+
+    @test
+    def testBitwiseLeftShift03(): Bool = BigInt.leftShift(8ii, 64) == 147573952589676412928ii
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseRightShift04(): Bool = BigInt.rightShift(1200000000000000000000ii, 0) == 1200000000000000000000ii
+
+    @test
+    def testBitwiseRightShift05(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 300000000000000000000ii
+
+    @test
+    def testBitwiseRightShift06(): Bool = BigInt.rightShift(1200000000000000000000ii, 72) == 0ii
+
+    @test
+    def testBitwiseRightShift07(): Bool = BigInt.rightShift(-1200000000000000000000ii, 2) == -300000000000000000000ii
+
+
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
