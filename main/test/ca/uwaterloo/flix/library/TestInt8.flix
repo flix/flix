@@ -44,13 +44,13 @@ namespace TestInt8 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int8.maxValue() == ~~~Int8.leftShift(1i8, 2)
+    def maxValue01(): Bool = Int8.maxValue() == ~~~Int8.leftShift(1i8, 7)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int8.minValue() == Int8.leftShift(1i8, 2)
+    def minValue01(): Bool = Int8.minValue() == Int8.leftShift(1i8, 7)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -228,16 +228,16 @@ namespace TestInt8 {
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int8.logicalRightShift(dist = 4, 98i8) == Int8.rightShift(98i8, 2)
+    def logicalRightShift01(): Bool = Int8.logicalRightShift(dist = 4, 98i8) == Int8.rightShift(98i8, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int8.logicalRightShift(dist = 33, 127i8) == Int8.rightShift(127i8, 2)
+    def logicalRightShift02(): Bool = Int8.logicalRightShift(dist = 33, 127i8) == Int8.rightShift(127i8, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int8.logicalRightShift(dist = -8, 93i8) == Int8.rightShift(93i8, 2)
+    def logicalRightShift03(): Bool = Int8.logicalRightShift(dist = -8, 93i8) == Int8.rightShift(93i8, -8)
 
     @test
-    def logicalRightShift04(): Bool = Int8.logicalRightShift(dist = 4, 93i8) == Int8.rightShift(93i8, 2)
+    def logicalRightShift04(): Bool = Int8.logicalRightShift(dist = 4, 93i8) == Int8.rightShift(93i8, 4)
 
     @test
     def logicalRightShift05(): Bool = Int8.logicalRightShift(dist = 1, -1i8) == 127i8
@@ -462,13 +462,13 @@ namespace TestInt8 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) == Int8.leftShift(1i8, 2)
+    def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) == Int8.leftShift(1i8, 7)
 
     @test
-    def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) == Int8.leftShift(1i8, 2)
+    def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) == Int8.leftShift(1i8, 7)
 
     @test
-    def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) == Int8.leftShift(1i8, 2)
+    def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) == Int8.leftShift(1i8, 7)
 
     @test
     def highestOneBit04(): Bool = Int8.highestOneBit(2i8) == 2i8
@@ -564,7 +564,7 @@ namespace TestInt8 {
     def lowestOneBit01(): Bool = Int8.lowestOneBit(-1i8) == 1i8
 
     @test
-    def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) == Int8.leftShift(1i8, 2)
+    def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) == Int8.leftShift(1i8, 7)
 
     @test
     def lowestOneBit03(): Bool = Int8.lowestOneBit(1i8) == 1i8

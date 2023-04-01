@@ -432,13 +432,13 @@ namespace TestInt64 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int64.highestOneBit(-1i64) == Int64.leftShift(1i64, 2)
+    def highestOneBit01(): Bool = Int64.highestOneBit(-1i64) == Int64.leftShift(1i64, 63)
 
     @test
-    def highestOneBit02(): Bool = Int64.highestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 2)
+    def highestOneBit02(): Bool = Int64.highestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 63)
 
     @test
-    def highestOneBit03(): Bool = Int64.highestOneBit(-778899i64) == Int64.leftShift(1i64, 2)
+    def highestOneBit03(): Bool = Int64.highestOneBit(-778899i64) == Int64.leftShift(1i64, 63)
 
     @test
     def highestOneBit04(): Bool = Int64.highestOneBit(2i64) == 2i64
@@ -474,7 +474,7 @@ namespace TestInt64 {
     def numberOfLeadingZeros03(): Bool = Int64.numberOfLeadingZeros(-1i64) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 2)) == 1
+    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 63)) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(2i64 ** 62i64) == 1
@@ -534,7 +534,7 @@ namespace TestInt64 {
     def lowestOneBit01(): Bool = Int64.lowestOneBit(-1i64) == 1i64
 
     @test
-    def lowestOneBit02(): Bool = Int64.lowestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 2)
+    def lowestOneBit02(): Bool = Int64.lowestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 63)
 
     @test
     def lowestOneBit03(): Bool = Int64.lowestOneBit(1i64) == 1i64
@@ -645,7 +645,7 @@ namespace TestInt64 {
     def setBit10(): Bool = Int64.setBit(pos = 30, -17i64) == -17i64
 
     @test
-    def setBit11(): Bool = Int64.setBit(pos = 63, 0i64) == Int64.leftShift(1i64, 2)
+    def setBit11(): Bool = Int64.setBit(pos = 63, 0i64) == Int64.leftShift(1i64, 63)
 
     @test
     def setBit12(): Bool = Int64.setBit(pos = 64, 0i64) == 1i64
