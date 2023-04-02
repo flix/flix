@@ -59,18 +59,27 @@ object DeltaContext {
     * @return       a new list of deltas without duplicates, older deltas than 5 minutes and in sorted order.
     */
   private def filterOutdated(deltas: List[Delta]): List[Delta] = {
-    // Remove all duplicates.
+    val deltasWithoutDuplicates = removeOlderDuplicates(deltas)
+    val fiveMinTimestamp = Differ.getCurrentTimestamp - 300000000000L
+    deltasWithoutDuplicates
+      .sortWith(_.timestamp > _.timestamp) // Sorts the list, to make sure the newest timestamp is the first elem.
+      .takeWhile(_.timestamp > fiveMinTimestamp) // Remove deltas older than 5 minutes
+  }
+
+  /**
+    * Removes all older duplicates of the same delta.
+    *
+    * @param deltas the list of deltas.
+    * @return       a new list of deltas without duplicates.
+    */
+  private def removeOlderDuplicates(deltas: List[Delta]): List[Delta] = {
     // Reverses the list so the most recent deltas appears first.
     // This ensures that all duplicates with older timestamp will be removed.
-    val deltaWithoutDuplicates = deltas.reverse.distinctBy {
+    deltas.reverse.distinctBy {
       case Delta.ModifiedDef(sym, _) => sym
       case Delta.AddEnum(sym, _) => sym
       case Delta.AddField(field, _) => field
     }
-    val fiveMinTimestamp = Differ.getCurrentTimestamp - 300000000000L
-    deltaWithoutDuplicates
-      .sortWith(_.timestamp > _.timestamp) // Sorts the list, to make sure the newest timestamp is the first elem.
-      .takeWhile(_.timestamp > fiveMinTimestamp) // Remove deltas other than 5 minutes
   }
 }
 

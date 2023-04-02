@@ -78,19 +78,14 @@ object CompletionRanker {
       }
     }
 
-    // Check if we have a List of deltas
-    deltas match {
-      case Nil => None
-      case deltasForFilter =>
-        // Remove all none ModifiedDef deltas
-        getDefDeltas(deltasForFilter) match {
-          case Nil =>
-            // We don't have any defDeltas and therefore no best def completion
-            None
-          case ::(head, next) =>
-            // We have some defDeltas
-            aux(completions, head, next)
-        }
+    // Remove all none ModifiedDef deltas
+    getDefDeltas(deltas) match {
+      case Nil =>
+        // We don't have any defDeltas and therefore no best def completion
+        None
+      case ::(head, next) =>
+        // We have some defDeltas
+        aux(completions, head, next)
     }
   }
 
