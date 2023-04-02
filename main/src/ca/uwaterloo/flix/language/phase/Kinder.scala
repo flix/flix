@@ -210,7 +210,7 @@ object Kinder {
       mapN(tpeVal) {
         case tpe =>
           val quants = tparams.map(_.sym)
-          val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
+          val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
           KindedAst.Case(sym, tpe, sc, loc)
       }
   }
@@ -224,7 +224,7 @@ object Kinder {
       mapN(tpeVal) {
         case tpe =>
           val quants = (index :: tparams).map(_.sym)
-          val sc = Scheme(quants, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
+          val sc = Scheme(quants, Nil, Nil, Type.mkPureArrow(tpe, resTpe, sym.loc.asSynthetic))
           KindedAst.RestrictableCase(sym, tpe, sc, loc) // TODO RESTR-VARS the scheme is different for these. REVISIT
       }
   }
@@ -388,7 +388,7 @@ object Kinder {
         case (tparams, fparams, tpe, (pur, eff), tconstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, eff, tpe, tpe.loc)
-          val sc = Scheme(allQuantifiers, tconstrs, base)
+          val sc = Scheme(allQuantifiers, tconstrs, Nil, base) // TODO ASSOC-TYPES need syntax for eq constraints
           KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
       }
   }

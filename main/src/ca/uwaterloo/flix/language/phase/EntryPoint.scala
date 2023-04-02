@@ -50,7 +50,7 @@ object EntryPoint {
     * The scheme of the entry point function.
     * `Unit -> Unit`
     */
-  private val EntryPointScheme = Scheme(Nil, Nil, Type.mkImpureArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
+  private val EntryPointScheme = Scheme(Nil, Nil, Nil, Type.mkImpureArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
 
   /**
     * The default entry point in case none is specified. (`main`)
@@ -128,7 +128,7 @@ object EntryPoint {
     */
   private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
-      val unitSc = Scheme.generalize(Nil, Type.Unit)
+      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
 
       // First check that there's exactly one argument.
       val argVal = declaredScheme.base.arrowArgTypes match {
@@ -142,7 +142,7 @@ object EntryPoint {
 
       flatMapN(argVal: Validation[Type, EntryPointError]) {
         arg =>
-          val argSc = Scheme.generalize(Nil, arg)
+          val argSc = Scheme.generalize(Nil, Nil, arg)
 
           if (Scheme.equal(unitSc, argSc, classEnv)) {
             // Case 1: Unit -> XYZ. We can ignore the args.
@@ -161,8 +161,8 @@ object EntryPoint {
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
-      val unitSc = Scheme.generalize(Nil, Type.Unit)
-      val resultSc = Scheme.generalize(Nil, resultTpe)
+      val unitSc = Scheme.generalize(Nil, Nil, Type.Unit)
+      val resultSc = Scheme.generalize(Nil, Nil, resultTpe)
 
 
       if (Scheme.equal(unitSc, resultSc, classEnv)) {
