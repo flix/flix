@@ -1344,7 +1344,7 @@ def unfoldWithIter01(): Bool = region r {
         if (true)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
             c
         };
@@ -1358,11 +1358,11 @@ def unfoldWithIter02(): Bool = region r {
         if (deref x > 0)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
             c
         };
-    Set.unfoldWithIter(step) == Set#{'0'}
+    Set.unfoldWithIter(step) == Set#{48}
 }
 
 @test
@@ -1372,11 +1372,11 @@ def unfoldWithIter03(): Bool = region r {
         if (deref x > 1)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
             c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '1'}
+    Set.unfoldWithIter(step) == Set#{48, 49}
 }
 
 @test
@@ -1386,11 +1386,11 @@ def unfoldWithIter04(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
             c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 }
 
 @test
@@ -1400,11 +1400,11 @@ def unfoldWithIter05(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
             c
         };
-    Set.unfoldWithIter(step) == Set#{'5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{53, 54, 55, 56, 57}
 }
 
 @test
@@ -1414,11 +1414,11 @@ def unfoldWithIter06(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 2;
             c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
+    Set.unfoldWithIter(step) == Set#{48, 50, 52, 54, 56}
 }
 
     /////////////////////////////////////////////////////////////////////////////
