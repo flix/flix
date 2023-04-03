@@ -53,6 +53,9 @@ def isAscii10(): Bool = Char.isAscii('â') == false
 @test
 def isAscii11(): Bool = Char.isAscii('Â') == false
 
+@test
+def isAscii12(): Bool = Char.isAscii('\u0081') == false
+
 /////////////////////////////////////////////////////////////////////////////
 // isLetter                                                                //
 /////////////////////////////////////////////////////////////////////////////
