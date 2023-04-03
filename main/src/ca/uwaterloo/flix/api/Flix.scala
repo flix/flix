@@ -37,7 +37,7 @@ object Flix {
   /**
     * The reserved Flix delimiter.
     */
-  val Delimiter: String = "%"
+  val Delimiter: String = "$"
 }
 
 /**
@@ -87,8 +87,6 @@ class Flix {
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
     "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
-    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
-    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -247,6 +245,7 @@ class Flix {
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
+    "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
   )
 
   /**

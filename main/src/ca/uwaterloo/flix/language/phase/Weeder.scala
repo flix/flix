@@ -41,8 +41,8 @@ object Weeder {
     * Users must not define fields or variables with these names.
     */
   private val ReservedWords = Set(
-    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<<<", "<=",
-    "<=>", "==", "=>", ">", ">=", ">>>", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
+    "!=", "&&&", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<=",
+    "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
@@ -1134,40 +1134,6 @@ object Weeder {
         case err: WeederError => WeededAst.Expression.Error(err)
       }
 
-    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
-      val loc = mkSL(sp1, sp2)
-
-      //
-      // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
-      //
-      // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
-      //
-      val ident = Name.Ident(sp1, "flatMap", sp2)
-      val flatMap = WeededAst.Expression.Ambiguous(Name.mkQName(ident), loc)
-
-      mapN(visitPattern(pat), visitExp(exp1, senv), visitExp(exp2, senv)) {
-        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-          // No pattern match.
-          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
-          val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
-          WeededAst.Expression.Apply(inner, List(value), loc)
-        case (pat, value, body) =>
-          // Full-blown pattern match.
-          val lambdaIdent = Name.Ident(sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), sp2)
-          val lambdaVar = WeededAst.Expression.Ambiguous(Name.mkQName(lambdaIdent), loc)
-
-          val rule = WeededAst.MatchRule(pat, None, body)
-          val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), loc)
-
-          val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
-          val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
-          val inner = WeededAst.Expression.Apply(flatMap, List(lambda), loc)
-          WeededAst.Expression.Apply(inner, List(value), loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expression.Error(err)
-      }
-
     case ParsedAst.Expression.LetRecDef(sp1, ident, fparams, _, exp1, exp2, sp2) =>
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
@@ -2202,8 +2168,6 @@ object Weeder {
         case "&&&" => OperatorResult.BuiltIn(Name.mkQName("BitwiseAnd.and", sp1, sp2))
         case "|||" => OperatorResult.BuiltIn(Name.mkQName("BitwiseOr.or", sp1, sp2))
         case "^^^" => OperatorResult.BuiltIn(Name.mkQName("BitwiseXor.xor", sp1, sp2))
-        case "<<<" => OperatorResult.BuiltIn(Name.mkQName("BitwiseShl.shl", sp1, sp2))
-        case ">>>" => OperatorResult.BuiltIn(Name.mkQName("BitwiseShr.shr", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }
@@ -3276,7 +3240,6 @@ object Weeder {
     case ParsedAst.Expression.MonadicFor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ForEachYield(sp1, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRecDef(sp1, _, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewObject(sp1, _, _, _) => sp1

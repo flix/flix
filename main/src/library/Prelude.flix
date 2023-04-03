@@ -108,6 +108,11 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
+/// Touches the given region capability `rc`.
+///
+pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
+
+///
 /// Prints the stringified representation of `x`.
 ///
 /// WARNING: The debug function is pure hence if the

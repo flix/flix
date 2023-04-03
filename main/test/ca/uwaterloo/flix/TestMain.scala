@@ -117,12 +117,6 @@ class TestMain extends FunSuite {
     assert(opts.lsp.nonEmpty)
   }
 
-  test("--output build") {
-    val args = Array("--output", "build", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.output.contains("build"))
-  }
-
   test("--test") {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get

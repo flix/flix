@@ -28,10 +28,10 @@ object FormatScheme {
     val mainPart = formatSchemeWithoutConstraints(sc)
 
     val tconstrPart =
-      if (sc.constraints.isEmpty)
+      if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
 
     mainPart + tconstrPart
   }
@@ -44,10 +44,10 @@ object FormatScheme {
     val mainPart = formatSchemeWithoutConstraintsWithOptions(sc, fmt)
 
     val tconstrPart =
-      if (sc.constraints.isEmpty)
+      if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
 
     mainPart + tconstrPart
   }
