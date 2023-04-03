@@ -466,9 +466,9 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
+  def build(loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
     // Configure a new Flix object.
-    val newOptions = o.copy(
+    val newOptions = flix.options.copy(
       output = Some(Bootstrap.getBuildDirectory(projectPath)),
       loadClassFiles = loadClasses
     )
@@ -576,7 +576,7 @@ class Bootstrap(val projectPath: Path) {
     */
   def benchmark(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build(o) map {
+    build() map {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
@@ -588,7 +588,7 @@ class Bootstrap(val projectPath: Path) {
   def run(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     val res = for {
-      compilationResult <- build(o).toOption
+      compilationResult <- build().toOption
       main <- compilationResult.getMain
     } yield {
       main(Array.empty)
@@ -602,7 +602,7 @@ class Bootstrap(val projectPath: Path) {
     */
   def test(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build(o) flatMap {
+    build() flatMap {
       compilationResult =>
         Tester.run(Nil, compilationResult)
         ().toOk

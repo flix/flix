@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util._
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
+import java.io.PrintStream
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
@@ -55,7 +56,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Remove any line continuation backslashes from the given string
     */
-  def unescapeLine(s: String): String = {
+  private def unescapeLine(s: String): String = {
 
     // (?s) enables dotall mode (so . matches newlines)
     val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
@@ -159,8 +160,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     case Command.Praise => execPraise()
     case Command.Eval(s) => execEval(s)
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
+    case Command.Init => Bootstrap.init(bootstrap.projectPath, flix.options)(new PrintStream(terminal.output()))
+    case Command.Build => bootstrap.build()(flix)
+    case Command.Check => bootstrap.check(flix.options)
+    case Command.BuildJar => bootstrap.buildJar(flix.options)
+    case Command.BuildPkg => bootstrap.buildPkg(flix.options)
+    case Command.Test => bootstrap.test(flix.options)
     case Command.Unknown(s) => execUnknown(s)
-    case _ => terminal.writer().println("Package commands are currently not available from the shell")
   }
 
   /**
@@ -236,7 +242,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
-    w.println("  :benchmark :bench           Runs the benchmarks for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
