@@ -834,7 +834,7 @@ namespace Map {
     ///
     /// `f` should return `None` to signal the end of building the map.
     ///
-    pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k,v] \ ef with Order[k] =
+    pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k, v] \ ef with Order[k] =
         def loop(sst, m) = match f(sst) {
             case None            => m
             case Some(k, v, st1) => loop(st1, insert(k, v, m))
