@@ -635,6 +635,13 @@ object Ast {
   case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
 
   /**
+    * Represents the definition of an associated type.
+    * If this associated type is named `Assoc`, then
+    * Assoc[arg] = ret.
+    */
+  case class AssocTypeDef(arg: Type, ret: Type)
+
+  /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
   case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
@@ -733,6 +740,11 @@ object Ast {
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
+
+  /**
+    * A constructor for an associated type. (Not a valid type by itself).
+    */
+  case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
   /**
     * A use of a Flix symbol or import of a Java class.

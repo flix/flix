@@ -239,6 +239,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
+    def AssociatedTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ ":" ~ optWS ~ Kind ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+    }
+
+    def AssociatedTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
+    }
+
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
     }
@@ -253,11 +261,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = namedRule("ClassBody") {
-        push(Nil) ~ SP
+        push(Nil) ~ push(Nil) ~ SP
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -279,11 +287,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EmptyBody = namedRule("InstanceBody") {
-        push(Nil) ~ SP
+        push(Nil) ~ push(Nil) ~ SP
       }
 
       def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeDef) ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -522,7 +530,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Of
+    Expressions.Assign
   }
 
   def ExpressionEOI: Rule1[ParsedAst.Expression] = rule {
@@ -568,10 +576,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("foreach") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ForEachYield
     }
 
-    def Of: Rule1[ParsedAst.Expression] = rule {
-      (Names.QName ~ WS ~ keyword("of") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Of) | Assign
-    }
-
     def Assign: Rule1[ParsedAst.Expression] = rule {
       LogicalOr ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
@@ -615,12 +619,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
       // NB: use optional here to prevent (x <= y <= z)
-      Shift ~ optional(WS ~ (operator("<=") | operator(">=") | operator("<") | operator(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def Shift: Rule1[ParsedAst.Expression] = rule {
-      // NB: use optional here to prevent (x <<< y <<< z)
-      Additive ~ optional(optWS ~ (operator("<<<") | operator(">>>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      Additive ~ optional(WS ~ (operator("<=") | operator(">=") | operator("<") | operator(">")) ~ WS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
@@ -649,7 +648,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("&&&" | ":::" | "<+>" | "<<<" | "<=>" | ">>>" | "???" | "^^^" | "and" | "mod" | "not" | "rem" | "|||" | "~~~")
+        capture("&&&" | ":::" | "<+>" | "<=>" | "???" | "^^^" | "and" | "mod" | "not" | "rem" | "|||" | "~~~")
       }
 
       // Match any two character operator which is not reserved.
@@ -699,7 +698,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     // TODO: Why are these not primary?
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ keyword("ref") ~ WS ~ Ref ~ optional(WS ~ keyword("@") ~ WS ~ Expression) ~ SP ~> ParsedAst.Expression.Ref) | Deref
+      (SP ~ keyword("ref") ~ WS ~ Ref ~ WS ~ keyword("@") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
@@ -741,7 +740,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      Static | Scope | LetMatch | LetMatchStar | LetRecDef | LetUse | LetImport | IfThenElse |
+      Static | Scope | LetMatch | LetRecDef | LetUse | LetImport | IfThenElse |
         RelationalChoose | RestrictableChoose | TypeMatch | Match | LambdaMatch | Try | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda |
         SelectChannel | Spawn | ParYield | Par | Lazy | Force |
@@ -818,10 +817,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
       SP ~ keyword("let") ~ WS ~ Modifiers ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatch
-    }
-
-    def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
-      SP ~ keyword("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
     def LetRecDef: Rule1[ParsedAst.Expression.LetRecDef] = {

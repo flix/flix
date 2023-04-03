@@ -79,6 +79,7 @@ object Typer {
 
         case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
         case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
+        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
 
         case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
         case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
@@ -105,7 +106,7 @@ object Typer {
         case (classSym, clazz) =>
           val instances = instances0.getOrElse(classSym, Nil)
           val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _) => Ast.Instance(tpe, tconstrs)
+            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super class parameters since they should all be the same as the class param
           val superClasses = clazz.superClasses.map(_.head.sym)
@@ -138,13 +139,16 @@ object Typer {
     * Reassembles a single class.
     */
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[(Symbol.ClassSym, TypedAst.Class), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, sigs0, laws0, loc) =>
+    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs0, sigs0, laws0, loc) =>
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
+      val assocs = assocs0.map {
+        case KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) => TypedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) // TODO ASSOC-TYPES trivial
+      }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
       mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, sigs, laws, loc))
+        case (sigs, laws) => (sym, TypedAst.Class(doc, ann, mod, sym, tparams.head, superClasses, assocs, sigs, laws, loc))
       }
   }
 
@@ -165,10 +169,13 @@ object Typer {
     * Reassembles a single instance.
     */
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
-    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs0, ns, loc) =>
+    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
+      val assocs = assocs0.map {
+        case KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) // TODO ASSOC-TYPES trivial
+      }
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
       mapN(defsVal) {
-        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
+        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
       }
   }
 
@@ -296,7 +303,7 @@ object Typer {
 
 
       // Add the assumed constraints to the declared scheme
-      val declaredScheme = sc.copy(constraints = sc.constraints ++ assumedTconstrs)
+      val declaredScheme = sc.copy(tconstrs = sc.tconstrs ++ assumedTconstrs)
 
       ///
       /// Pattern match on the result to determine if type inference was successful.
@@ -313,20 +320,22 @@ object Typer {
           val initialSubst = getSubstFromParams(fparams0)
           val initialRenv = getRigidityFromParams(fparams0)
 
-          run(initialSubst, initialRenv) match {
-            case Ok((subst, renv0, (partialTconstrs, partialType))) =>
+          run(initialSubst, Nil, initialRenv) match { // TODO ASSOC-TYPES initial econstrs?
+            case Ok((subst, partialEconstrs, renv0, (partialTconstrs, partialType))) => // TODO ASSOC-TYPES check econstrs
 
               ///
               /// The partial type returned by the inference monad does not have the substitution applied.
               ///
-              val (inferredConstrs, inferredType) = (partialTconstrs.map(subst.apply), subst(partialType))
+              val inferredTconstrs = partialTconstrs.map(subst.apply)
+              val inferredEconstrs = partialEconstrs.map(subst.apply)
+              val inferredType = subst(partialType)
 
               ///
               /// Check that the inferred type is at least as general as the declared type.
               ///
               /// NB: Because the inferredType is always a function type, the purect is always implicitly accounted for.
               ///
-              val inferredSc = Scheme.generalize(inferredConstrs, inferredType)
+              val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType)
               Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv) match {
                 // Case 1: no errors, continue
                 case Validation.Success(_) => // noop
@@ -365,8 +374,8 @@ object Typer {
                       return TypeError.EffectPolymorphicDeclaredAsPure(inferredPur, loc).toFailure
                     } else {
                       // Case 3: Check if it is the purity that cannot be generalized.
-                      val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, inferredPur)
-                      val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, declaredPur)
+                      val inferredPurScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredPur)
+                      val declaredPurScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredPur)
                       Scheme.checkLessThanEqual(inferredPurScheme, declaredPurScheme, classEnv) match {
                         case Validation.Success(_) =>
                         // Case 3.1: The purity is not the problem. Regular generalization error.
@@ -400,7 +409,8 @@ object Typer {
               ///
               val finalInferredType = subst(partialType)
               val finalInferredTconstrs = partialTconstrs.map(subst.apply)
-              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredType)
+              val finalInferredEconstrs = partialEconstrs.map(subst.apply)
+              val inferredScheme = Scheme(finalInferredType.typeVars.toList.map(_.sym), finalInferredTconstrs, finalInferredEconstrs, finalInferredType)
 
               (spec, TypedAst.Impl(exp, inferredScheme)).toSuccess
 
@@ -1462,8 +1472,6 @@ object Typer {
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
-      case of@KindedAst.Expression.Of(_, _, _, _) => RestrictableChooseInference.inferOf(of, root)
-
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
@@ -2311,12 +2319,6 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
-
-      case KindedAst.Expression.Of(sym, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        val pur = e.pur
-        val eff = e.eff
-        TypedAst.Expression.Of(sym, e, subst0(tvar), pur, eff, loc)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
