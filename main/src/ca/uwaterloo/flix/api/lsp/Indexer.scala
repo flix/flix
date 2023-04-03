@@ -182,8 +182,8 @@ object Indexer {
     case Expression.OpenAs(_, exp, _, _) => // TODO RESTR-VARS sym
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
-    case Expression.Use(_, _, _, _) =>
-      Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
+    case Expression.Use(_, _, exp, _) =>
+      Index.occurrenceOf(exp0) ++ visitExp(exp) // TODO NS-REFACTOR add use of sym
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
