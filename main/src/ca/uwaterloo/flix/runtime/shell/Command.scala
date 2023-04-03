@@ -58,17 +58,12 @@ object Command {
   /**
     * Builds a jar file from the current project.
     */
-  case object Jar extends Command
+  case object BuildJar extends Command
 
   /**
     * Builds an fpkg file from the current project.
     */
-  case object Fpkg extends Command
-
-  /**
-    * Runs the benchmarks for the current project.
-    */
-  case object Bench extends Command
+  case object BuildPkg extends Command
 
   /**
     * Runs the tests for the current project.
@@ -158,19 +153,13 @@ object Command {
     // Jar
     //
     if (input == ":build-jar" || input == ":jar")
-      return Command.Jar
+      return Command.BuildJar
 
     //
     // Fpkg
     //
     if (input == ":build-pkg" || input == ":pkg")
-      return Command.Fpkg
-
-    //
-    // Bench
-    //
-    if (input == ":benchmark" || input == ":bench")
-      return Command.Bench
+      return Command.BuildPkg
 
     //
     // Eval
