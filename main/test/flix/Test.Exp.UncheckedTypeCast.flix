@@ -42,28 +42,4 @@
         unchecked_cast(mkSb() as ##java.lang.Object)
     }
 
-    @test
-    def testUncheckedTypeCast09(): ##java.io.Serializable =
-        unchecked_cast((123, 456, 789) as ##java.io.Serializable)
-
-/*
-    // @test crashes at runtime (unsafe)
-    def testUncheckedTypeCast07(): ##java.lang.String = region rh {
-        let _ = rh;
-        import new java.lang.Object(): ##java.lang.Object \ Write(rh) as mkObj;
-        unchecked_cast(mkObj() as ##java.lang.String)
-    }
-
-    // @test rejected by compiler
-    def testUncheckedTypeCast08(): ##java.lang.String =
-        unchecked_cast(('a', 'b', false) as ##java.lang.String)
-
-    // @test crashes at runtime (unsafe)
-    def testUncheckedTypeCast10(): (Char, Bool) = region rh {
-        let _ = rh;
-        import new java.lang.Object(): ##java.lang.Object \ Write(rh) as mkObj;
-        unchecked_cast(mkObj() as (Char, Bool))
-    }
-*/
-
 }

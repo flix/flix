@@ -444,16 +444,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ImpossibleCast](result)
   }
 
-  ignore("ImpossibleCast.10") {
-    val input =
-      """
-        |def f(): ##java.io.Serializable =
-        |    unchecked_cast((123, 456, 789) as ##java.io.Serializable)
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.ImpossibleCast](result)
-  }
-
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
