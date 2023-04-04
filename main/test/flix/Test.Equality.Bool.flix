@@ -1,4 +1,4 @@
-mod Test/Equality/Bool {
+mod Test.Equality.Bool {
 
     @test
     def testEqBool01(): Bool = true == true

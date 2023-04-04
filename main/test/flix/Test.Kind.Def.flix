@@ -1,4 +1,4 @@
-mod Test/Kind/Def {
+mod Test.Kind/Def {
 
     mod Implicit {
 

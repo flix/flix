@@ -1,4 +1,4 @@
-mod Test/Kind/Class {
+mod Test.Kind/Class {
 
     mod Implicit {
 

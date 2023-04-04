@@ -1,4 +1,4 @@
-mod Test/Term/Apply {
+mod Test.Term/Apply {
 
     @test
     def testTermApply01(): #{ R(Int32) } = solve #{

@@ -1,4 +1,4 @@
-mod Test/Dec/TypeAlias {
+mod Test.Dec.TypeAlias {
 
     /**
      * A type alias for degrees celsius.

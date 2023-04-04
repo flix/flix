@@ -1,4 +1,4 @@
-mod Test/Exp/ArrayLoad {
+mod Test.Exp.ArrayLoad {
 
     @test
     def testArrayLoad01(): Int32 = region r {

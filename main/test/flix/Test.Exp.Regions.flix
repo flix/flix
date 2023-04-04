@@ -1,4 +1,4 @@
-mod Test/Exp/Regions {
+mod Test.Exp.Regions {
 
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.

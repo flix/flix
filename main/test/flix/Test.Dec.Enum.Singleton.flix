@@ -1,4 +1,4 @@
-mod Test/Dec/Enum/Singleton {
+mod Test.Dec.Enum.Singleton {
 
     /**
      * An enum for degrees celsius.

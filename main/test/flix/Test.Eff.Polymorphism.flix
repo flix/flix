@@ -1,4 +1,4 @@
-mod Test/Eff/Polymorphism {
+mod Test.Eff.Polymorphism {
 
     @test
     def testEffPoly01(): Bool =

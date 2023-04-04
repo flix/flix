@@ -1,4 +1,4 @@
-mod Test/Exp/Int16 {
+mod Test.Exp.Int16 {
 
     @test
     def testInt16_01(): Int16 = -5320i16

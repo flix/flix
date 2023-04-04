@@ -1,4 +1,4 @@
-mod Test/Derives/Boxable {
+mod Test.Derives.Boxable {
     use Boxable.box
 
     pub enum ImplicitEnum with Eq, Order, ToString {

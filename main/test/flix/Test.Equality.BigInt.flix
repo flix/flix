@@ -1,4 +1,4 @@
-mod Test/Equality/BigInt {
+mod Test.Equality.BigInt {
 
     @test
     def testEqBigInt01(): Bool = 0ii == 0ii

@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint.Solve {
+mod Test.Exp.Fixpoint.Solve {
 
     @test
     def testFixpointSolveUnit(): Bool =

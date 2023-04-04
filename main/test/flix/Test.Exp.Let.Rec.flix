@@ -1,4 +1,4 @@
-mod Test/Exp/LetRec {
+mod Test.Exp.LetRec {
 
     ///
     /// Basic Tail Recursion.

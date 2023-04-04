@@ -1,4 +1,4 @@
-mod Test/Exp/New {
+mod Test.Exp.New {
 
     @test
     def testNewMutList1Region04(): Unit =

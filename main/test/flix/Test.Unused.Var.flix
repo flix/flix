@@ -1,4 +1,4 @@
-mod Test/Unused/Var {
+mod Test.Unused/Var {
 
     @test
     def testUnusedVar01(): Int32 =

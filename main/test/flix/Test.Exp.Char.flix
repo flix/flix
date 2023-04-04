@@ -1,4 +1,4 @@
-mod Test/Exp/Char {
+mod Test.Exp.Char {
 
     @test
     def testChar01(): Char = 'a'

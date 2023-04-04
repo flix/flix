@@ -1,4 +1,4 @@
-mod Test/Equality/String {
+mod Test.Equality.String {
 
     @test
     def testEqString01(): Bool = "" == ""

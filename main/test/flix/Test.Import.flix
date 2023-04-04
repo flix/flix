@@ -1,4 +1,4 @@
-mod Test/Import {
+mod Test.Import {
 
   import java.lang.{StringBuffer, CharSequence => ASeqOfChars}
   import java.lang.{StringBuffer => RenamedBuffer1}
@@ -23,7 +23,7 @@ mod Test/Import {
     Assert.eq(subStr, "world")
 }
 
-mod Test/Import {
+mod Test.Import {
   // Doesn't cause an error because different scope from above
   import java.lang.{StringBuffer => RenamedBuffer1}
   import java.lang.CharSequence
@@ -42,7 +42,7 @@ mod Test/Import {
     newTime(1000i64)
   }
 
-mod Test/Import {
+mod Test.Import {
   // Doesn't cause an error because different scope from above
   import java.lang.CharSequence
 }

@@ -1,4 +1,4 @@
-mod Test/Exp/Tuple {
+mod Test.Exp.Tuple {
 
     @test
     def testUnitTuple01(): Unit = ()
