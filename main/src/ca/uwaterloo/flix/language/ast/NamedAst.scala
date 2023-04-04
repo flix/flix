@@ -66,7 +66,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -457,6 +457,8 @@ object NamedAst {
   }
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class EqualityConstraint(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 
