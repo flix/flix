@@ -1,4 +1,4 @@
-mod Bench/Chain {
+mod Bench.Chain {
 
     use Benchmark.Benchmark
     use Benchmark.defBenchmark
