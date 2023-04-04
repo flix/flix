@@ -1,4 +1,4 @@
-namespace Test/Exp/Infix {
+mod Test/Exp/Infix {
 
     @test
     def testInfix01(): Bool = 1 `add` 2 == 1 + 2
@@ -21,7 +21,7 @@ namespace Test/Exp/Infix {
     def add(x: Int32, y: Int32): Int32 = x + y
     def sub(x: Int32, y: Int32): Int32 = x - y
 
-    namespace A {
+    mod A {
         pub def mul(x: Int32, y: Int32): Int32 = x * y
     }
 

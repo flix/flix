@@ -1,4 +1,4 @@
-namespace Test/Exp/Effect {
+mod Test/Exp/Effect {
 
     // no test annotations for now
     // just making it public for redundancy purposes

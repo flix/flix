@@ -1,4 +1,4 @@
-namespace Test/Use/Tag {
+mod Test/Use/Tag {
 
     @test
     def testUseEnum01(): Bool =
@@ -147,19 +147,19 @@ namespace Test/Use/Tag {
             case Currency.USD => true
         }
 
-    namespace A {
+    mod A {
         pub enum Color {
             case Red,
             case Blu
         }
-        namespace B {
+        mod B {
             pub enum Currency {
                 case USD,
                 case CAD
             }
         }
     }
-    namespace C {
+    mod C {
         use Test/Use/Tag/A/B.Currency
 
         @test

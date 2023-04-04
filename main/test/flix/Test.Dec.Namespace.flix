@@ -1,18 +1,18 @@
-namespace A {
+mod A {
     pub def f(): Bool = true
 }
 
-namespace A/B {
+mod A/B {
     pub def f(): Bool = true
 }
 
-namespace A/B/C {
+mod A/B/C {
     pub def f(): Bool = true
 }
 
-namespace A {
-    namespace B {
-        namespace C {
+mod A {
+    mod B {
+        mod C {
             pub def g(): Bool = true
         }
         pub def g(): Bool = true
@@ -20,9 +20,9 @@ namespace A {
     pub def g(): Bool = true
 }
 
-namespace X {
-    namespace Y {
-        namespace Z {
+mod X {
+    mod Y {
+        mod Z {
             pub def f(): Bool = X/Y.f()
         }
         pub def f(): Bool = X.f()
@@ -30,27 +30,27 @@ namespace X {
     pub def f(): Bool = true
 }
 
-namespace Test/Dec/Namespace {
+mod Test/Dec/Mod {
 
     @test
-    def testNamespace01(): Bool = A.f()
+    def testMod01(): Bool = A.f()
 
     @test
-    def testNamespace02(): Bool = A/B.f()
+    def testMod02(): Bool = A/B.f()
 
     @test
-    def testNamespace03(): Bool = A/B/C.f()
+    def testMod03(): Bool = A/B/C.f()
 
     @test
-    def testNamespace04(): Bool = A.g()
+    def testMod04(): Bool = A.g()
 
     @test
-    def testNamespace05(): Bool = A/B.g()
+    def testMod05(): Bool = A/B.g()
 
     @test
-    def testNamespace06(): Bool = A/B/C.g()
+    def testMod06(): Bool = A/B/C.g()
 
     @test
-    def testNamespace07(): Bool = X/Y/Z.f()
+    def testMod07(): Bool = X/Y/Z.f()
 
 }

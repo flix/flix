@@ -1,4 +1,4 @@
-namespace Test/Exp/Interpolation {
+mod Test/Exp/Interpolation {
 
     @test
     def interpolation01(): Bool =
