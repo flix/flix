@@ -166,7 +166,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ OptTypeConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ OptTypeConstraintList ~ optWS ~ OptEqualityConstraintList ~ optWS ~ "=" ~ optWS ~ Expressions.Stm ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
@@ -279,6 +279,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def OptTypeConstraintList: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
       optional(keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+    }
+
+    def EqualityConstraint: Rule1[ParsedAst.EqualityConstraint] = rule {
+      SP ~ Type ~ optWS ~ "~" ~ optWS ~ Type ~ SP ~> ParsedAst.EqualityConstraint
+    }
+
+    def OptEqualityConstraintList: Rule1[Seq[ParsedAst.EqualityConstraint]] = rule {
+      optional(keyword("where") ~ WS ~ oneOrMore(EqualityConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.EqualityConstraint]]) => o.getOrElse(Seq.empty))
     }
 
     def Instance: Rule1[ParsedAst.Declaration] = {

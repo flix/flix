@@ -516,7 +516,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -528,11 +528,12 @@ object Resolver {
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
               val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
               val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+              val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, purAndEffVal, tconstrsVal) {
-                case (tpe, purAndEff, tconstrs) =>
+              mapN(tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
+                case (tpe, purAndEff, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, econstrs, loc)
               }
           }
       }
@@ -651,7 +652,7 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.typeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
@@ -1904,6 +1905,20 @@ object Resolver {
         case (clazz, tpe) =>
           val head = Ast.TypeConstraint.Head(clazz.sym, clazz0.loc)
           ResolvedAst.TypeConstraint(head, tpe, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given equality constraint `econstr0`.
+    */
+  def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+      val t1Val = resolveType(tpe1, Wildness.ForbidWild, env, taenv, ns0, root)
+      val t2Val = resolveType(tpe2, Wildness.ForbidWild, env, taenv, ns0, root)
+
+      mapN(t1Val, t2Val) {
+        case (t1, t2) =>
+          ResolvedAst.EqualityConstraint(t1, t2, loc)
       }
   }
 
@@ -3520,7 +3535,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
       mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
   }
 

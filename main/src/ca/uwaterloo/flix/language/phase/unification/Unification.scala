@@ -27,7 +27,7 @@ object Unification {
   /**
     * Unify the two type variables `x` and `y`.
     */
-  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = {
+  private def unifyVars(x: Type.Var, y: Type.Var, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.EqualityConstraint]), UnificationError] = {
     // Case 0: types are identical
     if (x.sym == y.sym) {
       Result.Ok(Substitution.empty, Nil)
@@ -46,7 +46,7 @@ object Unification {
   /**
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = tpe match {
+  def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.EqualityConstraint]), UnificationError] = tpe match {
 
     // ensure the kinds are compatible
     case _ if !KindUnification.unifiesWith(x.kind, tpe.kind) => Result.Err(UnificationError.MismatchedTypes(x, tpe))
@@ -71,7 +71,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2`.
     */
   // NB: The order of cases has been determined by code coverage analysis.
-  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = (tpe1.kind, tpe2.kind) match {
+  def unifyTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.EqualityConstraint]), UnificationError] = (tpe1.kind, tpe2.kind) match {
 
     //
     // Effects
@@ -119,7 +119,7 @@ object Unification {
     * Unifies the types `tpe1` and `tpe2`.
     * The types must each have a Star or Arrow kind.
     */
-  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[(Type, Type)]), UnificationError] = (tpe1, tpe2) match {
+  private def unifyStarOrArrowTypes(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.EqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
     case (x: Type.Var, _) => unifyVar(x, tpe2, renv)
 
@@ -142,9 +142,9 @@ object Unification {
 
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 => Result.Ok(Substitution.empty, Nil)
 
-    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List((tpe1, tpe2)))
+    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(tpe1, tpe2, SourceLocation.Unknown))) // TODO ASSOC-TYPES loc?
 
-    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List((tpe1, tpe2)))
+    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(tpe1, tpe2, SourceLocation.Unknown))) // TODO ASSOC-TYPES loc?
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
@@ -165,7 +165,7 @@ object Unification {
     * associated substitution into the type inference monad.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, econstrs: List[(Type, Type)], renv: RigidityEnv) => {
+    InferMonad((s: Substitution, econstrs: List[Ast.EqualityConstraint], renv: RigidityEnv) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
       unifyTypes(type1, type2, renv) match {
@@ -343,7 +343,7 @@ object Unification {
     * Unifies the two given Boolean formulas `tpe1` and `tpe2`.
     */
   def unifyBoolM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    InferMonad((s: Substitution, econstrs: List[(Type, Type)], renv: RigidityEnv) => {
+    InferMonad((s: Substitution, econstrs: List[Ast.EqualityConstraint], renv: RigidityEnv) => {
       val bf1 = s(tpe1)
       val bf2 = s(tpe2)
       BoolUnification.unify(bf1, bf2, renv) match {
