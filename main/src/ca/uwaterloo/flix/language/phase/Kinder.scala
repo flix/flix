@@ -377,18 +377,19 @@ object Kinder {
     * Adds `quantifiers` to the generated scheme's quantifier list.
     */
   private def visitSpec(spec0: ResolvedAst.Spec, quantifiers: List[Symbol.KindedTypeVarSym], kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Spec, KindError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, senv)).map(_.flatten)
       val fparamsVal = traverse(fparams0)(visitFormalParam(_, kenv, senv, taenv, root))
       val tpeVal = visitType(tpe0, Kind.Star, kenv, senv, taenv, root)
       val purAndEffVal = visitPurityAndEffect(purAndEff0, kenv, senv, taenv, root)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, senv, taenv, root))
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, kenv, senv, taenv, root))
 
-      mapN(tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
-        case (tparams, fparams, tpe, (pur, eff), tconstrs) =>
+      mapN(tparamsVal, fparamsVal, tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
+        case (tparams, fparams, tpe, (pur, eff), tconstrs, econstrs) =>
           val allQuantifiers = quantifiers ::: tparams.map(_.sym)
           val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), pur, eff, tpe, tpe.loc)
-          val sc = Scheme(allQuantifiers, tconstrs, Nil, base) // TODO ASSOC-TYPES need syntax for eq constraints
+          val sc = Scheme(allQuantifiers, tconstrs, econstrs, base)
           KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
       }
   }
@@ -1399,6 +1400,19 @@ object Kinder {
   }
 
   /**
+    * Performs kinding on the given equality constraint under the given kind environment.
+    */
+  private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.EqualityConstraint, KindError] = econstr match {
+    case ResolvedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+      // TODO ASSOC-TYPES check that these are the same kind
+      val t1Val = visitType(tpe1, Kind.Wild, kenv, senv, taenv, root)
+      val t2Val = visitType(tpe2, Kind.Wild, kenv, senv, taenv, root)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) => Ast.EqualityConstraint(t1, t2, loc)
+      }
+  }
+
+  /**
     * Performs kinding on the given type parameter under the given kind environment.
     */
   private def visitTypeParam(tparam: ResolvedAst.TypeParam, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[List[KindedAst.TypeParam], KindError] = {
@@ -1545,7 +1559,7 @@ object Kinder {
     * as in the case of a class type parameter used in a sig or law.
     */
   private def inferSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, purAndEff, tconstrs, _) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, purAndEff, tconstrs, _, _) => // TODO ASSOC-TYPES use econstrs for inference?
       val fparamKenvsVal = traverse(fparams)(inferFormalParam(_, kenv, taenv, root))
       val tpeKenvVal = inferType(tpe, Kind.Star, kenv, taenv, root)
       val effKenvVal = inferPurityAndEffect(purAndEff, kenv, taenv, root)
@@ -1770,7 +1784,7 @@ object Kinder {
     * Gets a kind environment from the spec.
     */
   private def getKindEnvFromSpec(spec0: ResolvedAst.Spec, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = spec0 match {
-    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _) =>
+    case ResolvedAst.Spec(_, _, _, tparams0, _, _, _, _, _, _) =>
       tparams0 match {
         case tparams: ResolvedAst.TypeParams.Kinded => getKindEnvFromKindedTypeParams(tparams) ++ kenv
         case _: ResolvedAst.TypeParams.Unkinded => inferSpec(spec0, kenv, taenv, root)

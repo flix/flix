@@ -1485,6 +1485,65 @@ def unfold08(): Bool =
 // unfoldWithIter                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
+///
+/// Converts Int32 in ranges [65;90] (inclusive) and [97;122] (inclusive) to a Char.
+///
+def toChar(step: Int32): Char = match step {
+    case 65  => 'A'
+    case 66  => 'B'
+    case 67  => 'C'
+    case 68  => 'D'
+    case 69  => 'E'
+    case 70  => 'F'
+    case 71  => 'G'
+    case 72  => 'H'
+    case 73  => 'I'
+    case 74  => 'J'
+    case 75  => 'K'
+    case 76  => 'L'
+    case 77  => 'M'
+    case 78  => 'N'
+    case 79  => 'O'
+    case 80  => 'P'
+    case 81  => 'Q'
+    case 82  => 'R'
+    case 83  => 'S'
+    case 84  => 'T'
+    case 85  => 'U'
+    case 86  => 'V'
+    case 87  => 'W'
+    case 88  => 'X'
+    case 89  => 'Y'
+    case 90  => 'Z'
+    case 97  => 'a'
+    case 98  => 'b'
+    case 99  => 'c'
+    case 100 => 'd'
+    case 101 => 'e'
+    case 102 => 'f'
+    case 103 => 'g'
+    case 104 => 'h'
+    case 105 => 'i'
+    case 106 => 'j'
+    case 107 => 'k'
+    case 108 => 'l'
+    case 109 => 'm'
+    case 110 => 'n'
+    case 111 => 'o'
+    case 112 => 'p'
+    case 113 => 'q'
+    case 114 => 'r'
+    case 115 => 's'
+    case 116 => 't'
+    case 117 => 'u'
+    case 118 => 'v'
+    case 119 => 'w'
+    case 120 => 'x'
+    case 121 => 'y'
+    case 122 => 'z'
+    case _   => bug!("toChar called with bad input!")
+}
+
 @test
 def unfoldWithIter01(): Bool = region r {
     let x = ref 0 @ r;
@@ -1492,9 +1551,9 @@ def unfoldWithIter01(): Bool = region r {
         if (true)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == ""
 }
@@ -1506,9 +1565,9 @@ def unfoldWithIter02(): Bool = region r {
         if (deref x > 0)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "a"
 }
@@ -1520,9 +1579,9 @@ def unfoldWithIter03(): Bool = region r {
         if (deref x > 1)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "ab"
 }
@@ -1534,9 +1593,9 @@ def unfoldWithIter04(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "abcdefghij"
 }
@@ -1548,9 +1607,9 @@ def unfoldWithIter05(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 1;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "fghij"
 }
@@ -1562,9 +1621,9 @@ def unfoldWithIter06(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 97);
+            let c = Some(toChar(deref x + 97));
             x := deref x + 2;
-            Some(c)
+            c
         };
     String.unfoldWithIter(step) == "acegi"
 }
@@ -1617,8 +1676,8 @@ def unfoldStringWithIter01(): Bool = region r {
         if (true)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
@@ -1633,8 +1692,8 @@ def unfoldStringWithIter02(): Bool = region r {
         if (deref x > 0)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
@@ -1649,8 +1708,8 @@ def unfoldStringWithIter03(): Bool = region r {
         if (deref x > 1)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
@@ -1665,8 +1724,8 @@ def unfoldStringWithIter04(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
@@ -1681,8 +1740,8 @@ def unfoldStringWithIter05(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 1;
             Some(s)
@@ -1697,8 +1756,8 @@ def unfoldStringWithIter06(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c1 = Char.fromInt32(deref x + 65);
-            let c2 = Char.fromInt32(deref x + 97);
+            let c1 = toChar(deref x + 65);
+            let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
             x := deref x + 2;
             Some(s)

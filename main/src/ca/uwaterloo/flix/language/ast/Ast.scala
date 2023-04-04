@@ -600,6 +600,11 @@ object Ast {
   }
 
   /**
+    * Represents that `tpe1` and `tpe2` are equivalent types.
+    */
+  case class EqualityConstraint(tpe1: Type, tpe2: Type, loc: SourceLocation)
+
+  /**
     * Represents a use of an effect sym.
     */
   case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
