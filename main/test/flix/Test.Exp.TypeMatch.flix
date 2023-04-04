@@ -1,4 +1,4 @@
-mod Time.Exp/ReifyType {
+mod Test/Exp/ReifyType {
 
     //////////////////////////////////////
     // Emulating reifyType              //

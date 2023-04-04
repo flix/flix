@@ -1,4 +1,4 @@
-mod Time.Exp/Fixpoint.Lambda {
+mod Test/Exp/Fixpoint/Lambda {
 
     pub def testLambdaCopy01(): Bool = {
         let p1 = #(Input, Output) -> #{

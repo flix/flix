@@ -1,4 +1,4 @@
-mod Time.Exp/Jvm/PutStaticField {
+mod Test/Exp/Jvm/PutStaticField {
 
     @test
     def testPutStaticBoolField01(): Bool \ IO =

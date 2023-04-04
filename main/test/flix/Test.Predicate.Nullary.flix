@@ -1,4 +1,4 @@
-mod Time.Predicate/Nullary {
+mod Test/Predicate/Nullary {
 
     @test
     def testNullaryPredicate01(): Bool =

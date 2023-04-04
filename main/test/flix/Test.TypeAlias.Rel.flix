@@ -1,4 +1,4 @@
-mod Time.TypeAlias/Rel {
+mod Test/TypeAlias/Rel {
 
     rel A(x: Int32)
     rel B(x: Int32, y: Int32)

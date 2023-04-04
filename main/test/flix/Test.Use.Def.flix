@@ -105,7 +105,7 @@ mod Op {
     pub def prefish(left: String, right: String): String = "${left} fish ${right}"
 }
 
-mod Time.Use/Def {
+mod Test/Use/Def {
 
     @test
     def testMod16(): Bool =

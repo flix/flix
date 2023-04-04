@@ -1,4 +1,4 @@
-mod Time.Equality/Unit {
+mod Test/Equality/Unit {
 
     @test
     def testEqUnit01(): Bool = () == ()

@@ -1,4 +1,4 @@
-mod Time.Exp/Binary/Spaceship {
+mod Test/Exp/Binary/Spaceship {
     use Comparison.{EqualTo, GreaterThan, LessThan}
 
     @test

@@ -1,4 +1,4 @@
-mod Time.Exp/ArrayStore {
+mod Test/Exp/ArrayStore {
 
     @test
     def testArrayStore01(): Unit = region r {

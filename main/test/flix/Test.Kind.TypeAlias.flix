@@ -1,4 +1,4 @@
-mod Time.Kind/TypeAlias {
+mod Test/Kind/TypeAlias {
     mod Implicit {
         type alias TStar[a] = a
 

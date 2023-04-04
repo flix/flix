@@ -1,4 +1,4 @@
-mod Time.Equality/Map {
+mod Test/Equality/Map {
 
     @test
     def testEqMap01(): Bool = (Map#{}: Map[Unit, Unit]) == Map#{}: Map[Unit, Unit]

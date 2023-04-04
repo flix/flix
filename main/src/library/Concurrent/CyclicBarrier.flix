@@ -22,7 +22,7 @@ mod Concurrent {
   pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
 }
 
-mod Concurrent.CyclicBarrier {
+mod Concurrent/CyclicBarrier {
 
     // TODO NS-REFACTOR can remove these
     use Concurrent.CyclicBarrier

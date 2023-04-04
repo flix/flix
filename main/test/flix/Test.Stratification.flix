@@ -1,6 +1,6 @@
-mod Time.Stratification {
+mod Test/Stratification {
 
-    mod Time.Stratification/Not {
+    mod Test/Stratification/Not {
 
         //
         //
@@ -321,7 +321,7 @@ mod Time.Stratification {
             > 0
     }
 
-    mod Time.Stratification/Fix {
+    mod Test/Stratification/Fix {
 
         //
         //

@@ -26,8 +26,8 @@ mod Concurrent {
         use Concurrent.ReentrantLock
         use Concurrent.ReentrantLock.ReentrantLock
 
-        use Concurrent.Condition
-        use Concurrent.Condition.Condition
+        use Concurrent/Condition
+        use Concurrent/Condition.Condition
 
 
         ///

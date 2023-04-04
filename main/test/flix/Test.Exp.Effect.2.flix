@@ -1,9 +1,9 @@
 // TODO rename file and consolidate with Test.Exp.Effect.flix
-mod Time.Exp/Effect {
-    use Time.Exp/Effect/Ding.ding
-    use Time.Exp/Effect/Print.print
-    use Time.Exp/Effect/Print.println
-    use Time.Exp/Effect/Throw.throw
+mod Test/Exp/Effect {
+    use Test/Exp/Effect/Ding.ding
+    use Test/Exp/Effect/Print.print
+    use Test/Exp/Effect/Print.println
+    use Test/Exp/Effect/Throw.throw
 
     eff Print {
         pub def println(): Unit

@@ -1,4 +1,4 @@
-mod Time.Exp/TryWith {
+mod Test/Exp/TryWith {
     eff Print {
         pub def doIt(): Unit
     }
@@ -18,7 +18,7 @@ mod Time.Exp/TryWith {
     @Test
     def testTryWith01(): Unit = {
         try {
-            do Time.Exp/TryWith/Print.doIt()
+            do Test/Exp/TryWith/Print.doIt()
         } with Print {
             def doIt() = ()
         }
@@ -27,11 +27,11 @@ mod Time.Exp/TryWith {
     @Test
     def testTryWith02(): Unit = {
         try {
-            do Time.Exp/TryWith/Print.doIt()
+            do Test/Exp/TryWith/Print.doIt()
         } with Print {
             def doIt() = {
                 try {
-                    do Time.Exp/TryWith/Print2.doIt2()
+                    do Test/Exp/TryWith/Print2.doIt2()
                 } with Print2 {
                     def doIt2() = ()
                 }
@@ -41,7 +41,7 @@ mod Time.Exp/TryWith {
 
     @Test
     def testTryWith03(): Unit = {
-        let letsDoIt = () -> do Time.Exp/TryWith/Print.doIt();
+        let letsDoIt = () -> do Test/Exp/TryWith/Print.doIt();
         try {
             letsDoIt()
         } with Print {
@@ -52,7 +52,7 @@ mod Time.Exp/TryWith {
     @Test
     def testTryWith04(): Unit = {
         try {
-            do Time.Exp/TryWith/Greet.greet("Alice")
+            do Test/Exp/TryWith/Greet.greet("Alice")
         } with Greet {
             def greet(_) = ()
         }
@@ -61,11 +61,11 @@ mod Time.Exp/TryWith {
     @Test
     def testTryWith05(): Unit = {
         try {
-            do Time.Exp/TryWith/Greet.greet("Duchess")
+            do Test/Exp/TryWith/Greet.greet("Duchess")
         } with Greet {
             def greet(name) = {
                 try {
-                    do Time.Exp/TryWith/Greet2.greet2(name)
+                    do Test/Exp/TryWith/Greet2.greet2(name)
                 } with Greet2 {
                     def greet2(_) = ()
                 }
@@ -78,7 +78,7 @@ mod Time.Exp/TryWith {
         def greetAll(names: List[String]) = match names {
             case Nil => ()
             case hd :: tl => {
-                do Time.Exp/TryWith/Greet.greet(hd);
+                do Test/Exp/TryWith/Greet.greet(hd);
                 greetAll(tl)
             }
         };
@@ -94,8 +94,8 @@ mod Time.Exp/TryWith {
     def testTryWith07(): Unit = {
         try {
             try {
-                do Time.Exp/TryWith/Print.doIt();
-                do Time.Exp/TryWith/Print2.doIt2()
+                do Test/Exp/TryWith/Print.doIt();
+                do Test/Exp/TryWith/Print2.doIt2()
             } with Print {
                 def doIt() = ()
             }
@@ -108,11 +108,11 @@ mod Time.Exp/TryWith {
     def testTryWith08(): Unit = {
         try {
             try {
-                do Time.Exp/TryWith/Print.doIt()
+                do Test/Exp/TryWith/Print.doIt()
             } with Print {
                 def doIt() = ()
             };
-            do Time.Exp/TryWith/Print2.doIt2()
+            do Test/Exp/TryWith/Print2.doIt2()
         } with Print2 {
             def doIt2() = ()
         }

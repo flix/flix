@@ -1,4 +1,4 @@
-mod Time.Exp/Unary/Logic {
+mod Test/Exp/Unary/Logic {
 
     @test
     def testLogicalNot01(): Bool = false == not true

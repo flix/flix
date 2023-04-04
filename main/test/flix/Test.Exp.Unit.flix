@@ -1,4 +1,4 @@
-mod Time.Exp/Unit {
+mod Test/Exp/Unit {
 
     @test
     def testUnit01(): Unit = ()

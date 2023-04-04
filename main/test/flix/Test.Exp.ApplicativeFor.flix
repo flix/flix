@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod Time.Exp/ApplicativeFor {
+mod Test/Exp/ApplicativeFor {
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                    //

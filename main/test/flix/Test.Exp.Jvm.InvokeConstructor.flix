@@ -1,4 +1,4 @@
-mod Time.Exp/Jvm/InvokeConstructor {
+mod Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokeConstructor01(): ##java.lang.Boolean \ IO =

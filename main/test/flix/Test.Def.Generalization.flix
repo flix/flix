@@ -1,4 +1,4 @@
-mod Time.Def/Generalization {
+mod Test/Def/Generalization {
 
     // NB: Due to monomorphization some of these test cases are erased and never executed.
     // That is acceptable; we just want to ensure that they type check.

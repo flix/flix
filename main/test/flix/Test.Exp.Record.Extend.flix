@@ -1,4 +1,4 @@
-mod Time.Exp/Record/Extend {
+mod Test/Exp/Record/Extend {
 
     @test
     def testRecordExtend01(): { fstName = String } =

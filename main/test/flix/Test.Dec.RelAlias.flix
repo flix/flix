@@ -1,4 +1,4 @@
-mod Time.Dec/RelAlias {
+mod Test/Dec/RelAlias {
 
     @test
     def testDecRel01(): #{ A } = #{}

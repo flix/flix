@@ -17,14 +17,14 @@
 mod Fixpoint {
 
     use Boxable.{box, unbox}
-    use Fixpoint.Ast.{Datalog, Constraint, HeadTerm, Denotation}
-    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Denotation.{Relational, Latticenal}
-    use Fixpoint.Ram.RamSym
-    use Fixpoint.Shared.PredSym
-    use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}
+    use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
+    use Fixpoint/Ast.Constraint.Constraint
+    use Fixpoint/Ast.HeadPredicate.HeadAtom
+    use Fixpoint/Ast.Denotation.{Relational, Latticenal}
+    use Fixpoint/Ram.RamSym
+    use Fixpoint/Shared.PredSym
+    use Fixpoint/Shared.PredSym.PredSym
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -73,7 +73,7 @@ mod Fixpoint {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(List.append(edb1, edb2), List.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint/Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
                 case Relational => Map.union
                 case Latticenal(_, _, lub, _) => Map.unionWith(lub)
@@ -114,8 +114,8 @@ mod Fixpoint {
     ///
     @Internal
     pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
-        use Fixpoint.PredSymsOf.predSymsOf;
-        use Fixpoint.SubstitutePredSym.substitute;
+        use Fixpoint/PredSymsOf.predSymsOf;
+        use Fixpoint/SubstitutePredSym.substitute;
 
         // Import a function that can create new ids.
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
@@ -715,7 +715,7 @@ mod Fixpoint {
             pFacts |> MutList.toList
         }
         case Model(db) => region r {
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint/Ram.toDenotation;
             let pFacts = MutList.new(r);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {

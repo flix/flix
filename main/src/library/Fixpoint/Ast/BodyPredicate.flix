@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-mod Fixpoint.Ast {
+mod Fixpoint/Ast {
 
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
-    use Fixpoint.Shared.PredSym
+    use Fixpoint/Shared.PredSym
     use ToString.toString
 
     @Internal

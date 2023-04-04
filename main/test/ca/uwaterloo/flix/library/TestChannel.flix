@@ -17,13 +17,13 @@
 
  mod TestChannel {
 
-    use Concurrent.Channel.Mpmc
-    use Concurrent.Channel.unsafeGetAndUnlock
-    use Concurrent.Channel.get
-    use Concurrent.Channel.mpmcAdmin
-    use Concurrent.Channel.newChannel
-    use Concurrent.Channel.put
-    use Concurrent.Channel.selectFrom
+    use Concurrent/Channel.Mpmc
+    use Concurrent/Channel.unsafeGetAndUnlock
+    use Concurrent/Channel.get
+    use Concurrent/Channel.mpmcAdmin
+    use Concurrent/Channel.newChannel
+    use Concurrent/Channel.put
+    use Concurrent/Channel.selectFrom
 
     @test
     def testNew01(): Mpmc[Int32] \ IO = newChannel(0)

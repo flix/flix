@@ -1,4 +1,4 @@
-mod Time.Equality/Set {
+mod Test/Equality/Set {
 
     @test
     def testEqSet01(): Bool = (Set#{}: Set[Unit]) == Set#{}: Set[Unit]

@@ -1,4 +1,4 @@
-mod Time.Exp/Regions {
+mod Test/Exp/Regions {
 
     // Uses references and regions (e.g. could just duplicate most test cases for both).
     // Test cases that use 0, 1, 2, and 3 nested regions.
@@ -1387,7 +1387,7 @@ mod Time.Exp/Regions {
     def testRegionExit01(): Bool \ IO = region r1 {
         let x  = ref false @ r1;
         region r2 {
-            spawn { Thread.sleep(Time.Duration.fromMilliSeconds(10)); x := true } @ r2
+            spawn { Thread.sleep(Time/Duration.fromMilliSeconds(10)); x := true } @ r2
         };
         deref x
     }

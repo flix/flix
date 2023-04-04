@@ -1,4 +1,4 @@
-mod Time.Exp/Match/Wild {
+mod Test/Exp/Match/Wild {
 
     @test
     def testWild01(): Bool = match () {

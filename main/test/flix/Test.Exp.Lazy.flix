@@ -1,4 +1,4 @@
-mod Time.Exp/Lazy {
+mod Test/Exp/Lazy {
 
     @test
     def testUnitLazy01(): Lazy[Unit] =

@@ -16,8 +16,8 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint.Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
 
     ///
     /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
@@ -50,7 +50,7 @@ mod Fixpoint {
                     // merge B into A
                     // If A and B have the same arity.
                     case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
-                        use Fixpoint.Ram.arityOf;
+                        use Fixpoint/Ram.arityOf;
                         let isCopy =
                             List.map(t -> match t {
                                 case RamTerm.RowLoad(var, i) => if (varB == var) i else -1

@@ -1,4 +1,4 @@
-mod Time.Derives/Order {
+mod Test/Derives/Order {
     use Order.compare
     use Comparison.{EqualTo, LessThan, GreaterThan}
 

@@ -30,7 +30,7 @@ mod X {
     pub def f(): Bool = true
 }
 
-mod Time.Dec/Mod {
+mod Test/Dec/Mod {
 
     @test
     def testMod01(): Bool = A.f()

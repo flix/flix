@@ -16,7 +16,7 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     ///
     /// Hoist and query optimize `stmt`.
@@ -82,8 +82,8 @@ mod Fixpoint {
     ///
     def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
         case RelOp.Search(var, ramSym, body) =>
-            use Fixpoint.Ram.BoolExp.Eq;
-            use Fixpoint.Ram.RamTerm.{RowLoad, Lit};
+            use Fixpoint/Ram.BoolExp.Eq;
+            use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
             let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
             let (ground, notGround) = List.partition(isExpGround(freeVars), innerGround);
             let (varQuery, rest1) =
@@ -132,8 +132,8 @@ mod Fixpoint {
     }
 
     def longestPrefixQuery(varQuery: List[BoolExp[v]]): (List[BoolExp[v]], List[BoolExp[v]]) =
-        use Fixpoint.Ram.BoolExp.Eq;
-        use Fixpoint.Ram.RamTerm.{RowLoad, Lit};
+        use Fixpoint/Ram.BoolExp.Eq;
+        use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
         // Sort equalities of the form `var[i] = rhs` ascending on `i`.
         List.sortWith(x -> y -> match (x, y) {
             case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => Comparison.fromInt32(index1 - index2)

@@ -1,4 +1,4 @@
-mod Time.Exp/HoleWithExp {
+mod Test/Exp/HoleWithExp {
 
     @test
     def testHoleWithExp01(): Int32 = match (None : Option[Int32]) {

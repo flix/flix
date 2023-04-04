@@ -1,4 +1,4 @@
-mod Time.Def/Op {
+mod Test/Def/Op {
     def ||(x: String, y: String): String = "${x} || ${y}"
 
     def &&(x: String, y: String): String = "${x} && ${y}"

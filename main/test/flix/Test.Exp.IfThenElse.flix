@@ -1,4 +1,4 @@
-mod Time.Exp/IfThenElse {
+mod Test/Exp/IfThenElse {
 
     @test
     def testIfThenElse01(): Bool = if (true) true else false

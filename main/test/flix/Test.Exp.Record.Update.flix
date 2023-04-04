@@ -1,4 +1,4 @@
-mod Time.Exp/Record/Update {
+mod Test/Exp/Record/Update {
 
     @test
     def testRecordUpdate01(): { x = Int32, y = Int32, z = Int32 } =

@@ -1,4 +1,4 @@
-mod Time.Exp/ForEachYield {
+mod Test/Exp/ForEachYield {
 
     @test
     def testForEachYield01(): List[Int32] =
