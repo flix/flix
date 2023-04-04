@@ -16,7 +16,7 @@ mod Test.Exp.Infix {
     def testInfix05(): Bool = 2 `Test.Exp.Infix.A.mul` 3 == 2 * 3
 
     @test
-    def testInfix06(): Bool = 3 `Test.Exp.Infix.Divisible.div` 2 == 3 . 2
+    def testInfix06(): Bool = 3 `Test.Exp.Infix.Divisible.div` 2 == 3 / 2
 
     def add(x: Int32, y: Int32): Int32 = x + y
     def sub(x: Int32, y: Int32): Int32 = x - y
