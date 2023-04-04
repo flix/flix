@@ -1,4 +1,4 @@
-namespace Stratifier {
+mod Stratifier {
     use Int32.max
     use List.{toMap, map, flatMap, partition}
 
