@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
     use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph}
     use Fixpoint/Ast.Datalog.{Datalog, Model, Join}

@@ -1,5 +1,5 @@
 
-namespace X {
+mod X {
     use A.Color
     use A/B.Currency
     use A/B.Kelvin
@@ -20,7 +20,7 @@ namespace X {
     pub def o(): MyMeter = 123
 }
 
-namespace Y {
+mod Y {
     use B.Kilogram
     use B.Acre
 
@@ -28,12 +28,12 @@ namespace Y {
     pub def g(): Acre = 123
 }
 
-namespace A {
+mod A {
     pub enum Color {
         case Red,
         case Blu
     }
-    namespace B {
+    mod B {
         pub enum Currency {
             case USD,
             case CAD
@@ -43,7 +43,7 @@ namespace A {
     }
 }
 
-namespace B {
+mod B {
     pub enum Kilogram(Int32)
     pub type alias Acre = Int32
 }

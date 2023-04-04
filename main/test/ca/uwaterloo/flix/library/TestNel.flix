@@ -1,4 +1,4 @@
-namespace TestNel {
+mod TestNel {
 
     use Hash.hash
     use Nel.Nel

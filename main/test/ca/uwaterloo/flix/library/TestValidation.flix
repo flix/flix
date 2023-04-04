@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestValidation {
+mod TestValidation {
 
     use Hash.hash
     use Nec.{cons, singleton}

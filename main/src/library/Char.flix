@@ -22,7 +22,7 @@ instance UpperBound[Char] {
     pub def maxValue(): Char = Char.maxValue()
 }
 
-namespace Char {
+mod Char {
 
     ///
     ///  Returns `true` if the given char `c` is an ascii character.

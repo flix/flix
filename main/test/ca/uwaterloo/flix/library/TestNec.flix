@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestNec {
+mod TestNec {
 
     use Hash.hash
 

@@ -3,7 +3,7 @@
  */
 use Bool.{∧, ∨, →, ↔, ⊕}
 
-namespace Belnap {
+mod Belnap {
 
     ///
     /// The elements of the boolean lattice.

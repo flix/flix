@@ -118,7 +118,7 @@ instance Iterable[Chain] {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
 }
 
-namespace Chain {
+mod Chain {
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}
 

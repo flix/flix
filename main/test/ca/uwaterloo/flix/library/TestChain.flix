@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestChain {
+mod TestChain {
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //

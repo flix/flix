@@ -1,4 +1,4 @@
-namespace BenchmarkMap {
+mod BenchmarkMap {
 
     ///
     /// create a map of `Int32 -> Int32` and compute the size of it.
