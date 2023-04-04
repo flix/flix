@@ -51,8 +51,8 @@ mod C {
 mod D {
     use A.f
     use B.{f => fb}
-    use X/Y.g
-    use X/Y/Z.{g => gz}
+    use X.Y.g
+    use X.Y.Z.{g => gz}
 
     @test
     def testMod08(): Bool = f() == 1
@@ -85,19 +85,19 @@ def testMod12(): Bool =
 
 @test
 def testMod13(): Bool =
-    use X/Y.g;
+    use X.Y.g;
     g() == 6
 
 @test
 def testMod14(): Bool =
-    use X/Y/Z.g;
+    use X.Y.Z.g;
     g() == 7
 
 @test
 def testMod15(): Bool =
     use X.{g => gx};
-    use X/Y.{g => gxy};
-    use X/Y/Z.{g => gxyz};
+    use X.Y.{g => gxy};
+    use X.Y.Z.{g => gxyz};
     (gx() + gxy() + gxyz()) == 18
 
 mod Op {

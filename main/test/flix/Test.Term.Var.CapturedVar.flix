@@ -1,4 +1,4 @@
-mod Test.Term/Lit/Var/CapturedVar {
+mod Test.Term.Lit.Var.CapturedVar {
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Unit                                                                    ///

@@ -78,9 +78,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): Int32 = A/B/C.g()
+         |  def f(): Int32 = A.B.C.g()
          |
-         |  mod B/C {
+         |  mod B.C {
          |    def g(): Int32 = A.f()
          |  }
          |}
@@ -111,9 +111,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |  def f(): A.B.C.Color = A.B.C.Color.Blu
          |
-         |  mod B/C {
+         |  mod B.C {
          |    enum Color {
          |      case Blu,
          |      case Red
@@ -137,7 +137,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
          |
          |mod B {
-         |  def g(): A.Color = A/Color.Red
+         |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -149,9 +149,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |  def f(): A.B.C.Color = A.B.C.Color.Blu
          |
-         |  mod B/C {
+         |  mod B.C {
          |    pub opaque enum Color {
          |      case Blu,
          |      case Red
@@ -185,9 +185,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): A/B/C.Color = ???
+         |  def f(): A.B.C.Color = ???
          |
-         |  mod B/C {
+         |  mod B.C {
          |    enum Color {
          |      case Blu,
          |      case Red
@@ -218,9 +218,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(): A/B/C.Color = 123
+         |  def f(): A.B.C.Color = 123
          |
-         |  mod B/C {
+         |  mod B.C {
          |    type alias Color = Int32
          |  }
          |}
@@ -250,9 +250,9 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |mod A {
-         |  def f(x: a): Int32 with A/B/C.Show[a] = ???
+         |  def f(x: a): Int32 with A.B.C.Show[a] = ???
          |
-         |  mod B/C {
+         |  mod B.C {
          |    class Show[a] {
          |      pub def show(x: a): String
          |    }

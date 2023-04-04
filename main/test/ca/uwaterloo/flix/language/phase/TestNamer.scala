@@ -84,7 +84,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.06") {
     val input =
       s"""
-         |mod A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
@@ -143,7 +143,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.10") {
     val input =
       s"""
-         |mod A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
@@ -162,7 +162,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.11") {
     val input =
       s"""
-         |mod A/C {
+         |mod A.C {
          |  def f(): Int = 42
          |}
          |
