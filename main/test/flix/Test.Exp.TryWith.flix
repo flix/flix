@@ -1,4 +1,4 @@
-mod Test/Exp/TryWith {
+namespace Test/Exp/TryWith {
     eff Print {
         pub def doIt(): Unit
     }

@@ -1,4 +1,4 @@
-mod Test/Term/Lit/Var/CapturedVar {
+namespace Test/Term/Lit/Var/CapturedVar {
 
     ///////////////////////////////////////////////////////////////////////////////
     /// Unit                                                                    ///

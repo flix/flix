@@ -1,4 +1,4 @@
-mod Test/Dec/RelAlias {
+namespace Test/Dec/RelAlias {
 
     @test
     def testDecRel01(): #{ A } = #{}

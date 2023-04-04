@@ -7,7 +7,7 @@
 ///
 use Bool.{∧, ∨, →, ↔, ⊕}
 
-mod Domain/IntervalAlt {
+namespace Domain/IntervalAlt {
 
     ///
     /// The elements of the IntervalAlt lattice.

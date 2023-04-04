@@ -75,7 +75,7 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
-mod MultiMap {
+namespace MultiMap {
 
     ///
     /// Returns a string representation of `m`.

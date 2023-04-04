@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Time/Epoch {
+namespace Time/Epoch {
 
     ///
     /// Returns the number of nano seconds since the Unix epoch.

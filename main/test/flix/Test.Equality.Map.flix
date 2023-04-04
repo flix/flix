@@ -1,4 +1,4 @@
-mod Test/Equality/Map {
+namespace Test/Equality/Map {
 
     @test
     def testEqMap01(): Bool = (Map#{}: Map[Unit, Unit]) == Map#{}: Map[Unit, Unit]

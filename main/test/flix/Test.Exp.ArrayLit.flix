@@ -1,4 +1,4 @@
-mod Test/Exp/ArrayLit {
+namespace Test/Exp/ArrayLit {
 
     @test
     def testArrayLit01(): Unit = region r {

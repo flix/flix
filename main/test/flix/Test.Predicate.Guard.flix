@@ -1,4 +1,4 @@
-mod Test/Predicate/Guard {
+namespace Test/Predicate/Guard {
 
     @test
     def testGuardConst01(): Bool =

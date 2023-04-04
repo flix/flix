@@ -1,4 +1,4 @@
-mod Test/Exp/Tag {
+namespace Test/Exp/Tag {
 
     enum A {
         case OfUnit(Unit)

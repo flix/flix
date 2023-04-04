@@ -1,4 +1,4 @@
-mod Test/Exp/MonadicFor {
+namespace Test/Exp/MonadicFor {
 
     @test
     def testMonadicFor01(): Bool =

@@ -1,4 +1,4 @@
-mod Test/Derives/Order {
+namespace Test/Derives/Order {
     use Order.compare
     use Comparison.{EqualTo, LessThan, GreaterThan}
 

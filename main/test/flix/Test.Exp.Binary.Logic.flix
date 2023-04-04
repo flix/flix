@@ -1,4 +1,4 @@
-mod Test/Exp/Binary/Logic {
+namespace Test/Exp/Binary/Logic {
 
     //
     // Precedence.

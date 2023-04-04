@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Lambda {
+namespace Test/Exp/Fixpoint/Lambda {
 
     pub def testLambdaCopy01(): Bool = {
         let p1 = #(Input, Output) -> #{

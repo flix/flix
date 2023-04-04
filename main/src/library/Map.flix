@@ -107,7 +107,7 @@ instance Iterable[Map[k]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
-mod Map {
+namespace Map {
 
     ///
     /// Returns a string representation of the given map `m`.

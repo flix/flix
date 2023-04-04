@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+namespace Fixpoint {
 
     use Boxable.{box, unbox}
     use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}

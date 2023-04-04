@@ -1,4 +1,4 @@
-mod Test/Exp/Jvm/GetStaticFieldStaticInnerClass {
+namespace Test/Exp/Jvm/GetStaticFieldStaticInnerClass {
 
     @test
     def testGetStaticBoolField01(): Bool \ IO =

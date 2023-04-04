@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+namespace Fixpoint {
 
     use Fixpoint/Ast.Datalog
     use Fixpoint/Ram.RamStmt

@@ -1,4 +1,4 @@
-mod Test/Equality/Unit {
+namespace Test/Equality/Unit {
 
     @test
     def testEqUnit01(): Bool = () == ()

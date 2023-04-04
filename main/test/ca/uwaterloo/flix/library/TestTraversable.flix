@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestTraversable {
+namespace TestTraversable {
 
     use Traversable.{sequence, traverse, mapAccumLeft}
 

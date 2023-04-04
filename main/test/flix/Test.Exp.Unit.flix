@@ -1,4 +1,4 @@
-mod Test/Exp/Unit {
+namespace Test/Exp/Unit {
 
     @test
     def testUnit01(): Unit = ()

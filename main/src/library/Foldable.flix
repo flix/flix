@@ -354,7 +354,7 @@ pub class Foldable[t : Type -> Type] {
 
 }
 
-mod Foldable {
+namespace Foldable {
 
     use Applicative.{*>}
 

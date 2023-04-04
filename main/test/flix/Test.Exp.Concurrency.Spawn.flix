@@ -1,4 +1,4 @@
-mod Test/Exp/Concurrency/Spawn {
+namespace Test/Exp/Concurrency/Spawn {
 
     @test
     def testSpawn01(): Unit \ IO = region r { spawn () @ r }

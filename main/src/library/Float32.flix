@@ -22,7 +22,7 @@ instance UpperBound[Float32] {
     pub def maxValue(): Float32 = Float32.maxValue()
 }
 
-mod Float32 {
+namespace Float32 {
 
     ///
     /// Returns the number of bits used to represent a `Float32`.

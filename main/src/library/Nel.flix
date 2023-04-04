@@ -116,7 +116,7 @@ instance Iterable[Nel] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
 }
 
-mod Nel {
+namespace Nel {
 
     ///
     /// Returns a string representation of the given non-empty list `l`.

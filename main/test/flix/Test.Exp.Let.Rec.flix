@@ -1,4 +1,4 @@
-mod Test/Exp/LetRec {
+namespace Test/Exp/LetRec {
 
     ///
     /// Basic Tail Recursion.

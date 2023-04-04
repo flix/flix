@@ -1,4 +1,4 @@
-mod Test/Dec/Enum/Singleton {
+namespace Test/Dec/Enum/Singleton {
 
     /**
      * An enum for degrees celsius.

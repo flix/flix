@@ -1,4 +1,4 @@
-mod Test/Derives/ToString {
+namespace Test/Derives/ToString {
     pub enum Enum with ToString {
       case EmptyCase
       case SingletonCase(Int32)

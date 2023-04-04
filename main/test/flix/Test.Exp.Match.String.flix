@@ -1,4 +1,4 @@
-mod Test/Exp/Match/String {
+namespace Test/Exp/Match/String {
 
     @test
     def testMatchString01(): Bool = match "" {

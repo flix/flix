@@ -1,4 +1,4 @@
-mod Test/Exp/Match/Guard {
+namespace Test/Exp/Match/Guard {
 
     @test
     def testGuard01(): Bool =

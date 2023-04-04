@@ -22,7 +22,7 @@ instance UpperBound[Bool] {
     pub def maxValue(): Bool = true
 }
 
-mod Bool {
+namespace Bool {
 
     ///
     /// Alias for logical conjunction.

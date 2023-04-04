@@ -1,8 +1,8 @@
-mod Test/Kind/Def {
+namespace Test/Kind/Def {
 
-    mod Implicit {
+    namespace Implicit {
 
-        mod FormalParams {
+        namespace FormalParams {
             rel R(i: Int32)
 
             pub def star(x: a): Int32 = ???
@@ -16,13 +16,13 @@ mod Test/Kind/Def {
             pub def starToStar(x: a[Int32]): Int32 = ???
         }
 
-        mod Return {
+        namespace Return {
             rel R(i: Int32)
 
             pub def star(): a = ???
         }
 
-        mod TypeConstraint {
+        namespace TypeConstraint {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
 
@@ -31,7 +31,7 @@ mod Test/Kind/Def {
             pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
         }
 
-        mod Enum {
+        namespace Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
             pub enum ERecordRow[_a: RecordRow]
@@ -48,7 +48,7 @@ mod Test/Kind/Def {
             pub def starStar(x: a, y: EStar[a]): Int32 = ???
         }
 
-        mod Effect {
+        namespace Effect {
             pub enum EBool[_a: Bool]
 
             pub def bool(): Int32 \ ef = unchecked_cast(??? as _ \ ef)
@@ -58,16 +58,16 @@ mod Test/Kind/Def {
             pub def enum_(x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
-        mod Exp {
+        namespace Exp {
             rel R(i: Int32)
 
             pub def star(x: a): Int32 = let _: a = ???; ???
         }
     }
 
-    mod Explicit {
+    namespace Explicit {
 
-        mod FormalParams {
+        namespace FormalParams {
             rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = ???
@@ -81,13 +81,13 @@ mod Test/Kind/Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 = ???
         }
 
-        mod Return {
+        namespace Return {
             rel R(i: Int32)
 
             pub def star[a: Type](): a = ???
         }
 
-        mod TypeConstraint {
+        namespace TypeConstraint {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
             class CBoolToStar[a: Bool -> Type]
@@ -100,7 +100,7 @@ mod Test/Kind/Def {
             pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unchecked_cast(??? as _ \ ef)
         }
 
-        mod Enum {
+        namespace Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
             pub enum ERecordRow[_a: RecordRow]
@@ -117,7 +117,7 @@ mod Test/Kind/Def {
             pub def starStar[a: Type](x: a, y: EStar[a]): Int32 = ???
         }
 
-        mod Effect {
+        namespace Effect {
             pub enum EBool[_a: Bool]
 
             pub def bool[ef: Bool](): Int32 \ ef = unchecked_cast(??? as _ \ ef)
@@ -127,22 +127,22 @@ mod Test/Kind/Def {
             pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
-        mod Exp {
+        namespace Exp {
             rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = let _: a = ???; ???
         }
     }
 
-    mod Regression {
-        mod Test01 {
+    namespace Regression {
+        namespace Test01 {
             pub enum Func[ef : Bool] {
                 case Function(Int32 -> Int32 \ ef)
             }
             pub def func(f: Int32 -> Int32 \ ef, g: Func[ef]): Int32 = ???
         }
 
-        mod Test02 {
+        namespace Test02 {
             pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] = ???
 
             pub enum PredSym

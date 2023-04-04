@@ -47,7 +47,7 @@ pub class Traversable[t : Type -> Type] with Functor[t], Foldable[t] {
 }
 
 
-mod Traversable {
+namespace Traversable {
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the

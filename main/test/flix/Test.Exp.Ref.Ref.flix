@@ -1,4 +1,4 @@
-mod Test/Exp/Ref/Ref {
+namespace Test/Exp/Ref/Ref {
 
     @test
     def testRef01(): Unit = region r { discard ref () @ r }

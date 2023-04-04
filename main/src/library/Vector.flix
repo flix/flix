@@ -101,7 +101,7 @@ instance Iterable[Vector] {
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ Write(r) = Vector.iterator(rc, v)
 }
 
-mod Vector {
+namespace Vector {
 
     ///
     /// Compares `a` and `b` lexicographically.

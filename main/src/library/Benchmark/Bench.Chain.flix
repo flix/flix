@@ -1,4 +1,4 @@
-mod Bench/Chain {
+namespace Bench/Chain {
 
     use Benchmark.Benchmark
     use Benchmark.defBenchmark

@@ -1,4 +1,4 @@
-mod Test/Exp/Match/Bool {
+namespace Test/Exp/Match/Bool {
 
     @test
     def testMatchBool01(): Bool = match true {

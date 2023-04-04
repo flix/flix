@@ -1,4 +1,4 @@
-mod Test/Exp/Match/Tag {
+namespace Test/Exp/Match/Tag {
 
     @test
     def testMatchOption01(): Bool = match None {

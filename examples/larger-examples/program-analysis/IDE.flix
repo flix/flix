@@ -20,7 +20,7 @@
 ///
 /// Written by Magnus Madsen, Ondřej Lhoták.
 ///
-mod IDE {
+namespace IDE {
 
     ///
     /// An IDE instance where:
@@ -142,7 +142,7 @@ mod IDE {
 ///
 /// We begin by defining the lattice and its associated operations.
 ///
-mod ConstantProp {
+namespace ConstantProp {
 
     ///            Top
     ///

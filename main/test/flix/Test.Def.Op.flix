@@ -1,4 +1,4 @@
-mod Test/Def/Op {
+namespace Test/Def/Op {
     def ||(x: String, y: String): String = "${x} || ${y}"
 
     def &&(x: String, y: String): String = "${x} && ${y}"

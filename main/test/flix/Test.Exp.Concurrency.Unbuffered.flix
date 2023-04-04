@@ -1,4 +1,4 @@
-mod Test/Exp/Concurrency/Unbuffered {
+namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet01(): Bool \ IO = region r {

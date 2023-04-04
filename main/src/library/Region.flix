@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Region {
+namespace Region {
 
   ///
   /// Add x to a stack of `Closeable` to be closed when the region exits:
@@ -24,6 +24,6 @@ mod Region {
   /// * `Closeable`s are guaranteed to be closed in the reverse order in
   ///   which they're added (most recently added first).
   ///
-  pub def closeOnExit(x: a, r: Region[r]): Unit \ {r, IO} with Closeable[a] =
+  pub def closeOnExit(x: a, r: Region[r]): Unit \ {r, IO} with Closeable[a] = 
       $SCOPE_EXIT$(() -> Closeable.close(x), r)
 }

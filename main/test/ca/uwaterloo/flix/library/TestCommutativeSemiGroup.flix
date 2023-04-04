@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestCommutativeSemiGroup {
+namespace TestCommutativeSemiGroup {
 
     /////////////////////////////////////////////////////////////////////////////
     // Syntax                                                                  //

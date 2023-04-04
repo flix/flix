@@ -1,4 +1,4 @@
-mod Test/Exp/Ref/Deref {
+namespace Test/Exp/Ref/Deref {
 
     @test
     def testDeref01(): Bool = region r {

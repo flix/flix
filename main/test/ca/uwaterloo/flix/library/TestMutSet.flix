@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestMutSet {
+namespace TestMutSet {
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

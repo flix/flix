@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestFoldable {
+namespace TestFoldable {
 
     use Applicative.{point, *>}
 

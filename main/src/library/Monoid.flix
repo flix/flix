@@ -38,7 +38,7 @@ pub lawful class Monoid[a] with SemiGroup[a] {
 
 }
 
-mod Monoid {
+namespace Monoid {
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

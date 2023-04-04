@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestSet {
+namespace TestSet {
 
     use ToString.toString
     use Hash.hash

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestObject {
+namespace TestObject {
 
     /////////////////////////////////////////////////////////////////////////////
     // isNull                                                                  //

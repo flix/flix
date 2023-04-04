@@ -1,4 +1,4 @@
-mod Test/Predicate/Nullary {
+namespace Test/Predicate/Nullary {
 
     @test
     def testNullaryPredicate01(): Bool =

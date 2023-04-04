@@ -1,7 +1,7 @@
 /**
  * An implementation of the sign domain lifted over the constant propagation domain.
  */
-mod Domain/ConstantSign {
+namespace Domain/ConstantSign {
 
     ///
     /// The elements of the constant-sign lattice.

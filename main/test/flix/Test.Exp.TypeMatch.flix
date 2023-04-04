@@ -1,4 +1,4 @@
-mod Test/Exp/ReifyType {
+namespace Test/Exp/ReifyType {
 
     //////////////////////////////////////
     // Emulating reifyType              //

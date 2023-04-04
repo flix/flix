@@ -1,4 +1,4 @@
-mod Test/Exp/BigDecimal {
+namespace Test/Exp/BigDecimal {
 
     @test
     def testBigDecimal_01(): BigDecimal = 0.0ff

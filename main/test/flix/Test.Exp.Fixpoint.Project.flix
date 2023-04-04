@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Project {
+namespace Test/Exp/Fixpoint/Project {
 
     @test
     def testProject01(): Bool =

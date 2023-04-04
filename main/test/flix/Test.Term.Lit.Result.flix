@@ -1,4 +1,4 @@
-mod Test/Term/Lit/Result {
+namespace Test/Term/Lit/Result {
 
     @test
     def testLitResult01(): Bool =

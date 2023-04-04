@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestUnorderedFoldable {
+namespace TestUnorderedFoldable {
 
     // Most tests are copied over from the `Set` test suite
     // and optionally adapted to types with a `CommutativeMonoid` instance.

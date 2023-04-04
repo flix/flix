@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestGetOpt {
+namespace TestGetOpt {
 
     use GetOpt.{OptionDescr}
     use GetOpt.ArgDescr.{NoArg, ReqArg, OptArg}

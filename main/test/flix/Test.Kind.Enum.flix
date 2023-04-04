@@ -1,5 +1,5 @@
-mod Test/Kind/Enum {
-    mod Implicit {
+namespace Test/Kind/Enum {
+    namespace Implicit {
         pub enum EStar[a] {
             case CStar1(a)
             case CStar2(a -> a)
@@ -12,7 +12,7 @@ mod Test/Kind/Enum {
         }
     }
 
-    mod Explicit {
+    namespace Explicit {
         rel R(i: Int32)
 
         pub enum EStar[a: Type] {

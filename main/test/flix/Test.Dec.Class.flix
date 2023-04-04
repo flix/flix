@@ -1,10 +1,10 @@
-mod Test/Dec/Class {
-    mod Test01 {
+namespace Test/Dec/Class {
+    namespace Test01 {
 
         class X[a]
     }
 
-    mod Test02 {
+    namespace Test02 {
 
         class X[a] {
             pub def f(x: a): Bool
@@ -12,7 +12,7 @@ mod Test/Dec/Class {
 
     }
 
-    mod Test03 {
+    namespace Test03 {
         class X[a] {
             pub def f(x: a): Bool
         }
@@ -24,7 +24,7 @@ mod Test/Dec/Class {
         pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
     }
 
-    mod Test04 {
+    namespace Test04 {
         class C[a] {
             pub def f(x: a): Bool
         }
@@ -36,14 +36,14 @@ mod Test/Dec/Class {
         pub def h(x: a): Bool with C[a], D[a] = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
     }
 
-    mod Test05 {
+    namespace Test05 {
 
         class C[a]
 
         instance C[List[a]] with C[a]
     }
 
-    mod Test06 {
+    namespace Test06 {
 
         pub class C[a] {
             pub def f(x: a): Bool
@@ -65,13 +65,13 @@ mod Test/Dec/Class {
         pub def g(x: List[Int32]): Bool = Test/Dec/Class/Test06/C.f(x)
     }
 
-    mod Test07 {
+    namespace Test07 {
         use Test/Dec/Class/Test06.C
 
         pub def g(x: a): a with C[a] = x
     }
 
-    mod Test08 {
+    namespace Test08 {
 
         class F[m : Type -> Type] {
             pub def map(f: a -> b, x: m[a]): m[b]
@@ -85,7 +85,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test09 {
+    namespace Test09 {
         class Eff[ef : Bool] {
             pub def isPure(f: a -> b \ ef): Bool
         }
@@ -95,7 +95,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test10 {
+    namespace Test10 {
         class C[a] {
             pub def f(x: a): Bool
         }
@@ -117,11 +117,11 @@ mod Test/Dec/Class {
         pub def h(x: a): Bool with E[a] = Test/Dec/Class/Test10/C.f(x)
     }
 
-    mod Test11 {
+    namespace Test11 {
         lawful class C[a] {
             pub def f(x: a, y: a): Bool
 
-            // TODO handle mods better
+            // TODO handle namespaces better
             law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
         }
 
@@ -130,7 +130,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test12 {
+    namespace Test12 {
         class C[a] {
             pub def f(): a
 
@@ -142,7 +142,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test13 {
+    namespace Test13 {
         class C[a] {
             pub def f(): a
 
@@ -167,7 +167,7 @@ mod Test/Dec/Class {
         def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
     }
 
-    mod Test14 {
+    namespace Test14 {
         class C[a] {
             pub def c(x: a): Int32
         }
@@ -179,7 +179,7 @@ mod Test/Dec/Class {
         pub def f(x: a): Int32 with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
     }
 
-    mod Test15 {
+    namespace Test15 {
         class C[a]
 
         class D[a]
@@ -187,7 +187,7 @@ mod Test/Dec/Class {
         pub def f(x: a, y: b): Bool with C[a], D[b] = ???
     }
 
-    mod Test16 {
+    namespace Test16 {
         class D[a] {
             pub def f(x: a, y: a): Bool
         }
@@ -197,7 +197,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test17 {
+    namespace Test17 {
         class D[a] {
             pub def f(x: a): Bool
         }
@@ -207,7 +207,7 @@ mod Test/Dec/Class {
         }
     }
 
-    mod Test18 {
+    namespace Test18 {
         pub enum E[_: Bool]
         pub enum F[_: Bool, _: Type]
 
@@ -219,7 +219,7 @@ mod Test/Dec/Class {
         instance D[F[true]]
     }
 
-    mod Test19 {
+    namespace Test19 {
         pub enum M[_: Bool, a: Type] {
             case M(a)
         }

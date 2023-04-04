@@ -1,4 +1,4 @@
-mod Test/Exp/Par {
+namespace Test/Exp/Par {
 
     def f(x: Int32): Bool = x == 1
 

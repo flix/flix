@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Solve/Lattice {
+namespace Test/Exp/Fixpoint/Solve/Lattice {
 
     enum Constant {
           case Top,

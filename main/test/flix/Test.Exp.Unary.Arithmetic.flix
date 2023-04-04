@@ -1,4 +1,4 @@
-mod Test/Exp/Unary/Arithmetic {
+namespace Test/Exp/Unary/Arithmetic {
 
     @test
     def testUnaryMinus01(): Bool = -0 == 0

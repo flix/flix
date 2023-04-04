@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Polymorphism {
+namespace Test/Exp/Record/Polymorphism {
 
     @test
     def testRecordNonPolyExtend01(): Unit =

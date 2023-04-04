@@ -3,7 +3,7 @@
  *
  * Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
  */
-mod Domain/Mod3 {
+namespace Domain/Mod3 {
 
     ///
     /// The elements of the modulo three lattice.
@@ -219,7 +219,7 @@ mod Domain/Mod3 {
 //    law strict1(f: Mod3 -> Mod3): Bool = Bounded.strict1(f, Bot, Bot)
 
 //    law strict2(f: (Mod3, Mod3) -> Mod3): Bool = Bounded.strict2(f, Bot, Bot, Bot)
-
+    
 //    law monotone1(f: Mod3 -> Mod3): Bool = PartialOrder.monotone1(f, leq, leq)
 
 //    law monotone2(f: (Mod3, Mod3) -> Mod3): Bool = PartialOrder.monotone2(f, leq, leq, leq)

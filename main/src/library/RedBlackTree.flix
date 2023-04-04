@@ -91,7 +91,7 @@ instance Iterable[RedBlackTree[k]] {
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }
 
-mod RedBlackTree {
+namespace RedBlackTree {
 
     ///
     /// The color of a red-black tree node.

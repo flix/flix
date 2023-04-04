@@ -1,129 +1,129 @@
-mod A {
+namespace A {
     pub def f(): Int32 = 1
 
     @test
-    def testmod01(): Bool =
+    def testNamespace01(): Bool =
         use A.f;
         f() == 1
 
     @test
-    def testmod02(): Bool =
+    def testNamespace02(): Bool =
         use B.f;
         f() == 2
 
     @test
-    def testmod03(): Bool =
+    def testNamespace03(): Bool =
         use C.f;
         f() == 3
 }
 
-mod B {
+namespace B {
     pub def f(): Int32 = 2
 
     @test
-    def testmod04(): Bool =
+    def testNamespace04(): Bool =
         use A.{f => fa};
         fa() == 1
 
     @test
-    def testmod05(): Bool =
+    def testNamespace05(): Bool =
         use B.{f => fb};
         fb() == 2
 
     @test
-    def testmod06(): Bool =
+    def testNamespace06(): Bool =
         use C.{f => fc};
         fc() == 3
 
 }
 
-mod C {
+namespace C {
     pub def f(): Int32 = 3
 
     @test
-    def testmod07(): Bool =
+    def testNamespace07(): Bool =
         use A.{f => fa};
         use B.{f => fb};
         use C.{f => fc};
         (fa() + fb() + fc()) == 6
 }
 
-mod D {
+namespace D {
     use A.f
     use B.{f => fb}
     use X/Y.g
     use X/Y/Z.{g => gz}
 
     @test
-    def testmod08(): Bool = f() == 1
+    def testNamespace08(): Bool = f() == 1
 
     @test
-    def testmod09(): Bool = fb() == 2
+    def testNamespace09(): Bool = fb() == 2
 
     @test
-    def testmod10(): Bool = g() == 6
+    def testNamespace10(): Bool = g() == 6
 
     @test
-    def testmod11(): Bool = gz() == 7
+    def testNamespace11(): Bool = gz() == 7
 }
 
 pub def g(): Int32 = 4
-mod X {
+namespace X {
     pub def g(): Int32 = 5
-    mod Y {
+    namespace Y {
         pub def g(): Int32 = 6
-        mod Z {
+        namespace Z {
             pub def g(): Int32 = 7
         }
     }
 }
 
 @test
-def testmod12(): Bool =
+def testNamespace12(): Bool =
     use X.g;
     g() == 5
 
 @test
-def testmod13(): Bool =
+def testNamespace13(): Bool =
     use X/Y.g;
     g() == 6
 
 @test
-def testmod14(): Bool =
+def testNamespace14(): Bool =
     use X/Y/Z.g;
     g() == 7
 
 @test
-def testmod15(): Bool =
+def testNamespace15(): Bool =
     use X.{g => gx};
     use X/Y.{g => gxy};
     use X/Y/Z.{g => gxyz};
     (gx() + gxy() + gxyz()) == 18
 
-mod Op {
+namespace Op {
     pub def <><(left: String, right: String): String  = "${left} fish ${right}"
     pub def prefish(left: String, right: String): String = "${left} fish ${right}"
 }
 
-mod Test/Use/Def {
+namespace Test/Use/Def {
 
     @test
-    def testmod16(): Bool =
+    def testNamespace16(): Bool =
         use Op.{<><};
         "one" <>< "two" == "one fish two"
 
     @test
-    def testmod17(): Bool =
+    def testNamespace17(): Bool =
         use Op.{<>< => ><>};
         "one" ><> "two" == "one fish two"
 
     @test
-    def testmod18(): Bool =
+    def testNamespace18(): Bool =
         use Op.{<>< => fish};
         fish("one", "two") == "one fish two"
 
     @test
-    def testmod19(): Bool =
+    def testNamespace19(): Bool =
         use Op.{prefish => ><>};
         "one" ><> "two" == "one fish two"
 

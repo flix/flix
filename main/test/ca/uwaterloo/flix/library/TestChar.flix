@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestChar {
+namespace TestChar {
 
 /////////////////////////////////////////////////////////////////////////////
 // isAscii                                                                 //

@@ -126,7 +126,7 @@ instance Iterable[List] {
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
-mod List {
+namespace List {
 
     ///
     /// Renders the list `l` to a String.

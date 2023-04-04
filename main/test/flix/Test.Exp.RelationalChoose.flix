@@ -1,4 +1,4 @@
-mod Test/Exp/Choose {
+namespace Test/Exp/Choose {
     use Choice.{Present, Absent}
 
     @test

@@ -21,7 +21,7 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
-mod MutSet {
+namespace MutSet {
 
     ///
     /// Returns a string representation of the given mutable set `s`.

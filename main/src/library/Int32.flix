@@ -22,7 +22,7 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-mod Int32 {
+namespace Int32 {
 
     ///
     /// Returns the number of bits used to represent an `Int32`.

@@ -1,4 +1,4 @@
-mod Test/Integ/Class/Schema {
+namespace Test/Integ/Class/Schema {
     rel R(x: Int32, y: Bool)
 
     class C[a] {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Assert {
+namespace Assert {
 
     ///
     /// Asserts that `expected` must equal `actual`.

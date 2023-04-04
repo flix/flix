@@ -1,7 +1,7 @@
 /**
  * An implementation of the strict sign domain.
  */
-mod Domain/StrictSign {
+namespace Domain/StrictSign {
 
     ///
     /// The elements of the strict sign lattice.

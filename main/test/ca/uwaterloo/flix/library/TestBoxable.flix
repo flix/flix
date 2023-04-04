@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestBoxable {
+namespace TestBoxable {
 
     use Boxable.{box, unbox}
 

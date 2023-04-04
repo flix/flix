@@ -1,4 +1,4 @@
-mod Test/Derives/Eq {
+namespace Test/Derives/Eq {
 
     pub enum Enum with Eq {
       case EmptyCase

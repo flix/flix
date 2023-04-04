@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-mod TestMonadZip {
+namespace TestMonadZip {
 
     // Generally the functions from the `MonadZip` class will be tested without
-    // overloading in their respective mods. The tests here are basically
+    // overloading in their respective namespaces. The tests here are basically
     // to test the typeclass instances can be invoked as expected.
 
     // Helper

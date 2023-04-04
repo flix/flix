@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-mod Concurrent/Channel {
+namespace Concurrent/Channel {
     use Concurrent/ReentrantLock.lock
     use Concurrent/ReentrantLock
     use Concurrent/ReentrantLock.newLock

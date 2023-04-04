@@ -1,4 +1,4 @@
-mod Debug {
+namespace Debug {
     ///
     /// Prints the stringified representation of `x` with the given `prefix`.
     ///

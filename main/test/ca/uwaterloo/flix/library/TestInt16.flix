@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestInt16 {
+namespace TestInt16 {
 
     use Mul.mul
 

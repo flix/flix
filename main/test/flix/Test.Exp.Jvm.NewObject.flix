@@ -1,4 +1,4 @@
-mod Test/Exp/Jvm/NewObject {
+namespace Test/Exp/Jvm/NewObject {
 
   import java.lang.Object
   import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface,

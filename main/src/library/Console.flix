@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Console {
+namespace Console {
 
     ///
     /// Returns true if there is a `Console` object associated with the current JVM.

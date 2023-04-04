@@ -1,4 +1,4 @@
-mod Test/Equality/BigInt {
+namespace Test/Equality/BigInt {
 
     @test
     def testEqBigInt01(): Bool = 0ii == 0ii

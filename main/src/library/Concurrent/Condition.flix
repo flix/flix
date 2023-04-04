@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Concurrent {
+namespace Concurrent {
 
     ///
     /// A wrapper around a Java Condition.
@@ -22,7 +22,7 @@ mod Concurrent {
     @Internal
     pub enum Condition(##java.util.concurrent.locks.Condition)
 
-    mod Condition {
+    namespace Condition {
         // TODO NS-REFACTOR these imports can be removed
         use Concurrent.Condition;
         use Concurrent.Condition.Condition;

@@ -1,4 +1,4 @@
-mod Bench/Fusion {
+namespace Bench/Fusion {
 
     use Benchmark.Benchmark
     use Benchmark.defBenchmark

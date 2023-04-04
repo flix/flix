@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestFloat64 {
+namespace TestFloat64 {
 
     use Mul.mul
 

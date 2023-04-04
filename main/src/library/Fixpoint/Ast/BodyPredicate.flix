@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint/Ast {
+namespace Fixpoint/Ast {
 
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym

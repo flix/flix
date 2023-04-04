@@ -1,4 +1,4 @@
-mod Test/Exp/Stm {
+namespace Test/Exp/Stm {
 
     @test
     def testStm01(): Int32 \ IO =

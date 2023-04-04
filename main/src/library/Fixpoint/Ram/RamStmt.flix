@@ -16,7 +16,7 @@
 
 use Fixpoint/Ast.Constraint
 
-mod Fixpoint/Ram {
+namespace Fixpoint/Ram {
 
     @Internal
     pub enum RamStmt[v] {

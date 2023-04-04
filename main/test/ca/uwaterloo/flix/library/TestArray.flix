@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestArray {
+namespace TestArray {
 
     use Array.sameElements
 

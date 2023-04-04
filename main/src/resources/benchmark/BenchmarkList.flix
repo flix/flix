@@ -1,4 +1,4 @@
-mod BenchmarkList {
+namespace BenchmarkList {
 
     ///
     /// create a list of integers and compute the length of the result.

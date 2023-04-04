@@ -1,6 +1,6 @@
-mod Test/Stratification {
+namespace Test/Stratification {
 
-    mod Test/Stratification/Not {
+    namespace Test/Stratification/Not {
 
         //
         //
@@ -321,7 +321,7 @@ mod Test/Stratification {
             > 0
     }
 
-    mod Test/Stratification/Fix {
+    namespace Test/Stratification/Fix {
 
         //
         //

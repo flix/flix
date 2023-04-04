@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Literal {
+namespace Test/Exp/Record/Literal {
 
     @test
     def testEmptyRecord01(): {} =

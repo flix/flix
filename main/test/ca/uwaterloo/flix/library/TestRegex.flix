@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestRegex {
+namespace TestRegex {
 
     /////////////////////////////////////////////////////////////////////////////
     // Pattern.toString                                                        //

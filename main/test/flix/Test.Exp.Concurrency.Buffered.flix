@@ -1,4 +1,4 @@
-mod Test/Exp/Concurrency/Buffered {
+namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel01(): Bool \ {} = region r {

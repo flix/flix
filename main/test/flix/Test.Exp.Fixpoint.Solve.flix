@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Solve {
+namespace Test/Exp/Fixpoint/Solve {
 
     @test
     def testFixpointSolveUnit(): Bool =

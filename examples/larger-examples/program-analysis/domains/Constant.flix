@@ -1,7 +1,7 @@
 /**
  * An implementation of the constant propagation lattice.
  */
-mod Domain/Constant {
+namespace Domain/Constant {
 
     ///
     /// The elements of the constant propagation lattice.

@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestMonoid {
+namespace TestMonoid {
 
     use Monoid.{empty, combine}
 

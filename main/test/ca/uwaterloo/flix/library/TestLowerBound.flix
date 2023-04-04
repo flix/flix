@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestLowerBound {
+namespace TestLowerBound {
     use LowerBound.minValue
 
     @test

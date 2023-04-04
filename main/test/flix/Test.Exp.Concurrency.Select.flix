@@ -1,4 +1,4 @@
-mod Test/Exp/Concurrency/Select {
+namespace Test/Exp/Concurrency/Select {
 
     @test
     def testSelectBuffered01(): Bool \ IO = region r {

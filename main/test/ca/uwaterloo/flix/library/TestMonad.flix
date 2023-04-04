@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod TestMonad {
+namespace TestMonad {
 
     use Monad.{flatten, kleisliLeft, kleisliRight}
     use Monad.{=<<, >>=, >=>, <=<}

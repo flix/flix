@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestString {
+namespace TestString {
 
 /////////////////////////////////////////////////////////////////////////////
 // charAt                                                                  //

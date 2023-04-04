@@ -1,4 +1,4 @@
-mod Test/Exp/Force {
+namespace Test/Exp/Force {
 
     @test
     def testUnitForce01(): Bool =

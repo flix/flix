@@ -1,4 +1,4 @@
-mod Test/Currying {
+namespace Test/Currying {
 
     @test
     def testCurry01(): Bool = f(1, 2) == f(1)(2)

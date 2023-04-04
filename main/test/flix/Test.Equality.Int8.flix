@@ -1,4 +1,4 @@
-mod Test/Equality/Int8 {
+namespace Test/Equality/Int8 {
 
     @test
     def testEqInt8_01(): Bool = 0i8 == 0i8

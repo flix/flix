@@ -1,4 +1,4 @@
-mod Test/Equality/Int16 {
+namespace Test/Equality/Int16 {
 
     @test
     def testEqInt16_01(): Bool = 0i16 == 0i16

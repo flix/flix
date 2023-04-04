@@ -1,4 +1,4 @@
-mod Test/Equality/BigDecimal {
+namespace Test/Equality/BigDecimal {
 
     @test
     def testEqBigDecimal_01(): Bool = +0.0ff == +0.0ff

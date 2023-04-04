@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-mod Time {
+namespace Time {
 
     ///
     /// A wrapper around a Java instant.
     ///
     enum Instant(##java.time.Instant)
 
-    mod Instant {
+    namespace Instant {
 
         ///
         /// Returns the current time from the system clock.

@@ -23,7 +23,7 @@ pub enum Choice[a: Type, _isAbsent : Bool, _isPresent : Bool] {
     case Present(a)
 }
 
-mod Choice {
+namespace Choice {
 
     ///
     /// Asserts that `c` is `Absent`. Akin to a type ascription.

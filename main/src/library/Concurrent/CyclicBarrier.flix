@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Concurrent {
+namespace Concurrent {
   ///
   /// A wrapper around a Java CyclicBarrier
   ///
@@ -22,7 +22,7 @@ mod Concurrent {
   pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
 }
 
-mod Concurrent/CyclicBarrier {
+namespace Concurrent/CyclicBarrier {
 
     // TODO NS-REFACTOR can remove these
     use Concurrent.CyclicBarrier

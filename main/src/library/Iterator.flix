@@ -18,7 +18,7 @@ pub enum Iterator[a: Type, ef: Bool, r: Region] {
     case Iterator(Region[r], Unit -> Iterator.Step[a] \ {r, ef})
 }
 
-mod Iterator {
+namespace Iterator {
     use Step.{Ans, Skip, Done}
 
 

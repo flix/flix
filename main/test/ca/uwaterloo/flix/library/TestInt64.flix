@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestInt64 {
+namespace TestInt64 {
 
     use Mul.mul
 

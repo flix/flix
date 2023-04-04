@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestMultiMap {
+namespace TestMultiMap {
 
     use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 

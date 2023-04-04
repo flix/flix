@@ -1,27 +1,27 @@
-mod Test/Kind/Class {
+namespace Test/Kind/Class {
 
-    mod Implicit {
+    namespace Implicit {
 
-        mod TypeConstraint {
+        namespace TypeConstraint {
             class CStar[a: Type]
 
             class CStar1[a] with CStar[a]
         }
 
-        mod Sig {
-            mod FormalParams {
+        namespace Sig {
+            namespace FormalParams {
                 class CStar1[a] {
                     pub def star(x: a): Int32 = ???
                 }
             }
 
-            mod Return {
+            namespace Return {
                 class CStar1[a] {
                     pub def star(): a = ???
                 }
             }
 
-            mod TypeConstraint {
+            namespace TypeConstraint {
                 class CStar[a: Type]
 
                 class CStar1[a] {
@@ -29,7 +29,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Enum {
+            namespace Enum {
                 pub enum EStar[_a: Type]
 
                 class CStar1[a] {
@@ -37,13 +37,13 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Exp {
+            namespace Exp {
                 class CStar1[a] {
                     pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
 
-            mod Mix {
+            namespace Mix {
                 // ensure we use `m`'s annotation
                 class CTypeBoolType[m: Type -> Bool -> Type] {
                     pub def fAndM(f: a -> b \ ef1, x: m[a, ef2]): m[b, ef1 and ef2]
@@ -51,14 +51,14 @@ mod Test/Kind/Class {
             }
         }
 
-        mod Law {
-            mod FormalParams {
+        namespace Law {
+            namespace FormalParams {
                 class CStar1[a] {
                     law star: forall(x: a) . ???
                 }
             }
 
-            mod TypeConstraint {
+            namespace TypeConstraint {
                 class CStar[a: Type]
 
                 class CStar1[a] {
@@ -66,7 +66,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Enum {
+            namespace Enum {
                 pub enum EStar[_a: Type]
 
                 class CStar1[a] {
@@ -74,7 +74,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Exp {
+            namespace Exp {
                 class CStar1[a] {
                     law star: forall(x: a) . { ???: a; ??? }
                 }
@@ -82,8 +82,8 @@ mod Test/Kind/Class {
         }
     }
 
-    mod Explicit {
-        mod TypeConstraint {
+    namespace Explicit {
+        namespace TypeConstraint {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
 
@@ -92,8 +92,8 @@ mod Test/Kind/Class {
             class CStarToStar1[a: Type -> Type] with CStarToStar[a]
         }
 
-        mod Sig {
-            mod FormalParams {
+        namespace Sig {
+            namespace FormalParams {
                 class CStar1[a: Type] {
                     pub def star(x: a): Int32 = ???
                 }
@@ -103,7 +103,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Return {
+            namespace Return {
                 class CStar1[a: Type] {
                     pub def star(): a = ???
                 }
@@ -113,7 +113,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod TypeConstraint {
+            namespace TypeConstraint {
                 class CStar[a: Type]
                 class CStarToStar[a: Type -> Type]
                 class CBoolToStar[a: Bool -> Type]
@@ -131,7 +131,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Enum {
+            namespace Enum {
                 pub enum EStar[_a: Type]
                 pub enum EStarToStar[_a: Type -> Type]
 
@@ -144,15 +144,15 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Exp {
+            namespace Exp {
                 class CStar1[a: Type] {
                     pub def star(x: a): Int32 = let _: a = ???; ???
                 }
             }
         }
 
-        mod Law {
-            mod FormalParams {
+        namespace Law {
+            namespace FormalParams {
                 class CStar1[a: Type] {
                     law star: forall(x: a) . ???
                 }
@@ -162,7 +162,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod TypeConstraint {
+            namespace TypeConstraint {
                 class CStar[a: Type]
                 class CStarToStar[a: Type -> Type]
                 class CBoolToStar[a: Bool -> Type]
@@ -180,7 +180,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Enum {
+            namespace Enum {
                 pub enum EStar[_a: Type]
                 pub enum EStarToStar[_a: Type -> Type]
 
@@ -193,7 +193,7 @@ mod Test/Kind/Class {
                 }
             }
 
-            mod Exp {
+            namespace Exp {
                 class CStar1[a: Type] {
                     law star: forall(x: a) . { ???: a; ??? }
                 }

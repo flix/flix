@@ -1,4 +1,4 @@
-mod Test/Eff/Polymorphism {
+namespace Test/Eff/Polymorphism {
 
     @test
     def testEffPoly01(): Bool =

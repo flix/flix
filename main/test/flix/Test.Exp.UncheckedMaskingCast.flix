@@ -1,4 +1,4 @@
-mod Test/Exp/UncheckedMaskingCast {
+namespace Test/Exp/UncheckedMaskingCast {
 
     @test
     def testMask01(): Bool = masked_cast(true)

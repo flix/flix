@@ -1,4 +1,4 @@
-mod Test/Exp/Match/Wild {
+namespace Test/Exp/Match/Wild {
 
     @test
     def testWild01(): Bool = match () {

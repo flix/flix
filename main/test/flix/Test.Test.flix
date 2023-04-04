@@ -1,4 +1,4 @@
-mod Test/Test {
+namespace Test/Test {
   // Tests that test the test framework itself
 
   @Test @Skip

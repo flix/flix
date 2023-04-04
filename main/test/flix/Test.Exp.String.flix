@@ -1,4 +1,4 @@
-mod Test/Exp/String {
+namespace Test/Exp/String {
 
     @test
     def testString01(): String = ""

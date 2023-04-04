@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Select {
+namespace Test/Exp/Record/Select {
 
     @test
     def testRecordSelect01(): String =

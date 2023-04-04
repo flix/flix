@@ -1,4 +1,4 @@
-mod Test/TypeAlias/Rel {
+namespace Test/TypeAlias/Rel {
 
     rel A(x: Int32)
     rel B(x: Int32, y: Int32)

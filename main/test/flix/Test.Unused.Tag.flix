@@ -1,4 +1,4 @@
-mod Test/Unused/Tag {
+namespace Test/Unused/Tag {
 
     enum Color {
         case Red,

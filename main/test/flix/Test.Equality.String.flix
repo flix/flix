@@ -1,4 +1,4 @@
-mod Test/Equality/String {
+namespace Test/Equality/String {
 
     @test
     def testEqString01(): Bool = "" == ""

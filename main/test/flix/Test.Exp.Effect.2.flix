@@ -1,5 +1,5 @@
 // TODO rename file and consolidate with Test.Exp.Effect.flix
-mod Test/Exp/Effect {
+namespace Test/Exp/Effect {
     use Test/Exp/Effect/Ding.ding
     use Test/Exp/Effect/Print.print
     use Test/Exp/Effect/Print.println

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod TestStringBuilder {
+namespace TestStringBuilder {
 
     /////////////////////////////////////////////////////////////////////////////
     // new                                                                     //

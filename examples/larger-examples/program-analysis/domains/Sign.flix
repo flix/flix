@@ -3,7 +3,7 @@
  *
  * See Cousot & Cousot '77 for details.
  */
-mod Domain/Sign {
+namespace Domain/Sign {
 
     ///
     /// The elements of the sign lattice.
