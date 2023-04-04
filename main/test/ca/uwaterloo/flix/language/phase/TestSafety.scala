@@ -673,4 +673,19 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCastToVar](result)
   }
 
+  test("IllegalCastToVar.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_cast("abc")
+        |        else
+        |            checked_cast("def");
+        |    ()
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
 }
