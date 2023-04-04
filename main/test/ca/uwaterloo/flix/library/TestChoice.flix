@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace TestChoice {
+mod TestChoice {
 
     use Choice.{assertAbsent, assertPresent, isAbsent, isPresent, unbox, getWithDefault,
                 withDefault, filter, flatten, map, flatMap, invert}

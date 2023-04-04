@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestOrder {
+mod TestOrder {
 
     /////////////////////////////////////////////////////////////////////////////
     // fromInt                                                                 //

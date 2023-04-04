@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFile {
+mod TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,

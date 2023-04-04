@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestMap {
+mod TestMap {
 
     use ToString.toString
     use Hash.hash
