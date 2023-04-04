@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.Constraint
+use Fixpoint.Ast.Constraint
 
-mod Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     @Internal
     pub enum RamStmt[v] {

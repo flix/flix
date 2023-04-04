@@ -16,7 +16,7 @@
 
 mod Fixpoint {
 
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.Shared.PredSym
 
     ///
     /// A type class for types that contain predicate symbols.

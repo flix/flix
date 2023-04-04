@@ -1387,7 +1387,7 @@ mod Test/Exp/Regions {
     def testRegionExit01(): Bool \ IO = region r1 {
         let x  = ref false @ r1;
         region r2 {
-            spawn { Thread.sleep(Time/Duration.fromMilliSeconds(10)); x := true } @ r2
+            spawn { Thread.sleep(Time.Duration.fromMilliSeconds(10)); x := true } @ r2
         };
         deref x
     }
