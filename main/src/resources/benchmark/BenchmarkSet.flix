@@ -1,4 +1,4 @@
-namespace BenchmarkSet {
+mod BenchmarkSet {
 
     ///
     /// create a set of `Int32` and compute the size of the result.
