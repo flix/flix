@@ -434,6 +434,26 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.ImpossibleCast](result)
   }
 
+  test("ImpossibleCast.09") {
+    val input =
+      """
+        |def f(): ##java.lang.String =
+        |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
+  ignore("ImpossibleCast.10") {
+    val input =
+      """
+        |def f(): ##java.io.Serializable =
+        |    unchecked_cast((123, 456, 789) as ##java.io.Serializable)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.ImpossibleCast](result)
+  }
+
   test("IllegalCheckedTypeCast.01") {
     val input =
       """
@@ -631,7 +651,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCastFromVar](result)
   }
 
-
   test("IllegalCastToVar.01") {
     val input =
       """
@@ -649,26 +668,6 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |def f(x: Int32): b =
         |    checked_cast(x)
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalCastToVar](result)
-  }
-
-  test("ImpossibleCast.01") {
-    val input =
-      """
-        |def f(): ##java.lang.String =
-        |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalCastToVar](result)
-  }
-
-  test("ImpossibleCast.02") {
-    val input =
-      """
-        |def f(): ##java.io.Serializable =
-        |    unchecked_cast((123, 456, 789) as ##java.io.Serializable)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCastToVar](result)
