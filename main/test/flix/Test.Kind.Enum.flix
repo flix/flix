@@ -1,4 +1,4 @@
-mod Test.Kind/Enum {
+mod Test.Kind.Enum {
     mod Implicit {
         pub enum EStar[a] {
             case CStar1(a)

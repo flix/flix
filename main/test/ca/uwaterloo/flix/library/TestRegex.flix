@@ -42,18 +42,18 @@ mod TestRegex {
 
     @test
     def compileWithFlags01(): Bool =
-        use Regex/Flag.{CaseInsenstive};
+        use Regex.Flag.{CaseInsenstive};
         Regex.compileWithFlags("\\p{Alpha}+", Set#{CaseInsenstive}) |> Result.isOk
 
     @test
     def compileWithFlags02(): Bool =
-        use Regex/Flag.{CaseInsenstive};
+        use Regex.Flag.{CaseInsenstive};
         Regex.compileWithFlags("\\p{Alpha+", Set#{CaseInsenstive}) |> Result.isErr
 
 
     @test
     def compileWithFlags03(): Bool =
-        use Regex/Flag.{CaseInsenstive, Multiline};
+        use Regex.Flag.{CaseInsenstive, Multiline};
         Regex.compileWithFlags("\\p{Alpha}+", Set#{CaseInsenstive, Multiline}) |> Result.isOk
 
 
@@ -103,12 +103,12 @@ mod TestRegex {
 
     @test
     def flags03(): Bool =
-        use Regex/Flag.{CaseInsenstive};
+        use Regex.Flag.{CaseInsenstive};
         Result.map(Regex.flags, Regex.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive})) == Ok(Set#{CaseInsenstive})
 
     @test
     def flags04(): Bool =
-        use Regex/Flag.{CaseInsenstive, Multiline};
+        use Regex.Flag.{CaseInsenstive, Multiline};
         Result.map(Regex.flags, Regex.compileWithFlags("\\p{Blank}", Set#{CaseInsenstive, Multiline})) == Ok(Set#{CaseInsenstive, Multiline})
 
     /////////////////////////////////////////////////////////////////////////////
