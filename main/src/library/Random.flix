@@ -4,7 +4,7 @@
 ///
 pub enum Random(##java.util.Random)
 
-namespace Random {
+mod Random {
 
     ///
     /// Returns a fresh random number generator.

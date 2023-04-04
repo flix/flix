@@ -19,7 +19,7 @@
 ///
 enum StringBuilder[_: Region](##java.lang.StringBuilder)
 
-namespace StringBuilder {
+mod StringBuilder {
 
     ///
     /// Returns a new mutable StringBuilder.

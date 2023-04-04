@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
     use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
     use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym}

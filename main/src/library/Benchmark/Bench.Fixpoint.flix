@@ -1,4 +1,4 @@
-namespace Bench/Fixpoint {
+mod Bench/Fixpoint {
 
     use Benchmark.Benchmark
     use Benchmark.defBenchmark

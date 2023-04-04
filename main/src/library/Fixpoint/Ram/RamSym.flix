@@ -15,7 +15,7 @@
  */
 
 
-namespace Fixpoint/Ram {
+mod Fixpoint/Ram {
 
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym

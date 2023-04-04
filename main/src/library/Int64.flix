@@ -22,7 +22,7 @@ instance UpperBound[Int64] {
     pub def maxValue(): Int64 = Int64.maxValue()
 }
 
-namespace Int64 {
+mod Int64 {
 
     ///
     /// Returns the number of bits used to represent an `Int64`.
