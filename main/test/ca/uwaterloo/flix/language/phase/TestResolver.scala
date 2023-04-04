@@ -862,7 +862,7 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("UndefinedType.02") {
     val input =
-      s"""namespace A {
+      s"""mod A {
          |  def foo(bar: Baz, baz: Baz): Qux = bar
          |}
        """.stripMargin
