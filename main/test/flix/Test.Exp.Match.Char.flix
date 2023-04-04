@@ -1,4 +1,4 @@
-mod Test.Exp.Match/Char {
+mod Test.Exp.Match.Char {
 
     @test
     def testMatchChar01(): Bool = match 'a' {
