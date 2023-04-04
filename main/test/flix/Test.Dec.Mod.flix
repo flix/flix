@@ -33,24 +33,24 @@ mod X {
 mod Test.Dec.Mod {
 
     @test
-    def testMod01(): Bool = A.f()
+    def testmod01(): Bool = A.f()
 
     @test
-    def testMod02(): Bool = A.B.f()
+    def testmod02(): Bool = A.B.f()
 
     @test
-    def testMod03(): Bool = A.B.C.f()
+    def testmod03(): Bool = A.B.C.f()
 
     @test
-    def testMod04(): Bool = A.g()
+    def testmod04(): Bool = A.g()
 
     @test
-    def testMod05(): Bool = A.B.g()
+    def testmod05(): Bool = A.B.g()
 
     @test
-    def testMod06(): Bool = A.B.C.g()
+    def testmod06(): Bool = A.B.C.g()
 
     @test
-    def testMod07(): Bool = X.Y.Z.f()
+    def testmod07(): Bool = X.Y.Z.f()
 
 }
