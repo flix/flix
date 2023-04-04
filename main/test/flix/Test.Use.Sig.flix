@@ -123,7 +123,7 @@ mod X {
     }
 }
 
-mod Test/Use/Sig {
+mod Time.Use/Sig {
 
     @test
     def testMod12(): Bool =

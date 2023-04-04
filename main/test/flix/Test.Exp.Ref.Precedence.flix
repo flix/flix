@@ -1,4 +1,4 @@
-mod Test/Exp/Ref/Precedence {
+mod Time.Exp/Ref/Precedence {
 
     @test
     def testRefPrecedence01(): Bool = region reg {

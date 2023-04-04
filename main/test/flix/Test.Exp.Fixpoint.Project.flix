@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Project {
+mod Time.Exp/Fixpoint.Project {
 
     @test
     def testProject01(): Bool =

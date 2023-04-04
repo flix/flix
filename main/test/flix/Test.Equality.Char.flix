@@ -1,4 +1,4 @@
-mod Test/Equality/Char {
+mod Time.Equality/Char {
 
     @test
     def testEqChar01(): Bool = 'a' == 'a'

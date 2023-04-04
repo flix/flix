@@ -1,4 +1,4 @@
-mod Test/Exp/String {
+mod Time.Exp/String {
 
     @test
     def testString01(): String = ""

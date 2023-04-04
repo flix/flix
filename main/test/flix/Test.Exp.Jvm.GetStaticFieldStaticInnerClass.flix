@@ -1,4 +1,4 @@
-mod Test/Exp/Jvm/GetStaticFieldStaticInnerClass {
+mod Time.Exp/Jvm/GetStaticFieldStaticInnerClass {
 
     @test
     def testGetStaticBoolField01(): Bool \ IO =

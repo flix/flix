@@ -1,4 +1,4 @@
-mod Test/Predicate/Guard {
+mod Time.Predicate/Guard {
 
     @test
     def testGuardConst01(): Bool =

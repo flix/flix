@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Compose {
+mod Time.Exp/Fixpoint.Compose {
 
     @test
     def testFixpointCompose01(): #{ A(Int32, Int32, Int32) } =

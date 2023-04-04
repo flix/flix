@@ -1,4 +1,4 @@
-mod Test/Kind/Class {
+mod Time.Kind/Class {
 
     mod Implicit {
 

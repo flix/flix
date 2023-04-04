@@ -1,4 +1,4 @@
-mod Test/Unused/Def {
+mod Time.Unused/Def {
 
     // NB: Compile, but not execute.
     def _unusedDef01(): Int32 =

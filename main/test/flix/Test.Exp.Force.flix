@@ -1,4 +1,4 @@
-mod Test/Exp/Force {
+mod Time.Exp/Force {
 
     @test
     def testUnitForce01(): Bool =

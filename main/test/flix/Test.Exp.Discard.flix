@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod Test/Exp/Discard {
+mod Time.Exp/Discard {
 
 
     // Simple Type Tests

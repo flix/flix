@@ -1,4 +1,4 @@
-mod Test/Equality/Tuple {
+mod Time.Equality/Tuple {
 
     @test
     def testEqTuple01(): Bool = () == ()

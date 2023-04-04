@@ -1,4 +1,4 @@
-mod Test/Exp/Match/String {
+mod Time.Exp/Match/String {
 
     @test
     def testMatchString01(): Bool = match "" {

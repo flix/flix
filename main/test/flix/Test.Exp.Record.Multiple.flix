@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Multiple {
+mod Time.Exp/Record/Multiple {
 
     @test
     def testMultipleRecordOps01(): { a = Int32, d = Int32 } =

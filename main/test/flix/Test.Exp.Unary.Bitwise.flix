@@ -1,4 +1,4 @@
-mod Test/Exp/Unary/Bitwise {
+mod Time.Exp/Unary/Bitwise {
 
     @test
     def testUnaryBitwiseNegate01(): Bool = ~~~0 == -1

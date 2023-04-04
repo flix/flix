@@ -1,4 +1,4 @@
-mod Test/Derives/Sendable {
+mod Time.Derives/Sendable {
 
     pub enum Enum1(Int32) with Sendable
 

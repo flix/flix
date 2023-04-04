@@ -13,7 +13,7 @@ mod M {
     pub def f(): U = ???
 }
 
-mod Test/Integ/Enum/TypeAlias {
+mod Time.Integ/Enum/TypeAlias {
     pub type alias T[ef: Region] = Unit -> Bool \ ef
     pub enum E[ef: Region] {
         case E(T[ef])

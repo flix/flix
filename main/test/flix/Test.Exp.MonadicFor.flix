@@ -1,4 +1,4 @@
-mod Test/Exp/MonadicFor {
+mod Time.Exp/MonadicFor {
 
     @test
     def testMonadicFor01(): Bool =

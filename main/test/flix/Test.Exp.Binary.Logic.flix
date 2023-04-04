@@ -1,4 +1,4 @@
-mod Test/Exp/Binary/Logic {
+mod Time.Exp/Binary/Logic {
 
     //
     // Precedence.

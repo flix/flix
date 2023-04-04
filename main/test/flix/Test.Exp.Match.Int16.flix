@@ -1,4 +1,4 @@
-mod Test/Exp/Match/Int16 {
+mod Time.Exp/Match/Int16 {
 
     @test
     def testMatchInt16_01(): Bool = match 0i16 {

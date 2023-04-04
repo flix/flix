@@ -1,4 +1,4 @@
-mod Test/Eff/Simplification {
+mod Time.Eff/Simplification {
     @test
     def testPureAndPure(): Unit & Pure and Pure \ {} = pure()
 

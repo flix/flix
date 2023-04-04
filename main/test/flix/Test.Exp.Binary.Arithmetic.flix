@@ -1,4 +1,4 @@
-mod Test/Exp/Binary/Arithmetic {
+mod Time.Exp/Binary/Arithmetic {
 
     @test
     def testBinaryPlus01(): Bool = (2147483647 + 1) == -2147483648

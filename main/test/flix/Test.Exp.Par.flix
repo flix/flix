@@ -1,4 +1,4 @@
-mod Test/Exp/Par {
+mod Time.Exp/Par {
 
     def f(x: Int32): Bool = x == 1
 

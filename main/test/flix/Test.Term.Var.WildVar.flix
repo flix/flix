@@ -1,4 +1,4 @@
-mod Test/Term/Var/WildVar {
+mod Time.Term/Var/WildVar {
 
     @test
     def testWildVar01(): Bool =

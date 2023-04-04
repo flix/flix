@@ -1,4 +1,4 @@
-mod Test/Exp/Hole {
+mod Time.Exp/Hole {
 
     @test
     def testHole01(): Int32 = if (true) 42 else ?hole

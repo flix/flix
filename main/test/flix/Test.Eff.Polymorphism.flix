@@ -1,4 +1,4 @@
-mod Test/Eff/Polymorphism {
+mod Time.Eff/Polymorphism {
 
     @test
     def testEffPoly01(): Bool =

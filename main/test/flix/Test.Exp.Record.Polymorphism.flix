@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Polymorphism {
+mod Time.Exp/Record/Polymorphism {
 
     @test
     def testRecordNonPolyExtend01(): Unit =

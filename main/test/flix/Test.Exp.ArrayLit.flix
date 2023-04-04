@@ -1,4 +1,4 @@
-mod Test/Exp/ArrayLit {
+mod Time.Exp/ArrayLit {
 
     @test
     def testArrayLit01(): Unit = region r {

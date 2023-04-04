@@ -1,4 +1,4 @@
-mod Test/Equality/Int32 {
+mod Time.Equality/Int32 {
 
     @test
     def testEqInt32_01(): Bool = 0i32 == 0i32

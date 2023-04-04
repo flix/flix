@@ -1,4 +1,4 @@
-mod Test/Exp/Block {
+mod Time.Exp/Block {
 
     @test
     def testBlock01(): Int32 = {42}

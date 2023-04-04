@@ -1,4 +1,4 @@
-mod Test/Exp/Concurrency/Unbuffered {
+mod Time.Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet01(): Bool \ IO = region r {

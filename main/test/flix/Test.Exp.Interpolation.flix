@@ -1,4 +1,4 @@
-mod Test/Exp/Interpolation {
+mod Time.Exp/Interpolation {
 
     @test
     def interpolation01(): Bool =
@@ -242,11 +242,11 @@ mod Test/Exp/Interpolation {
 ///    def toString(x: String): String = x
 ///}
 
-instance ToString[Test/Exp/Interpolation.Color] {
-    pub def toString(c: Test/Exp/Interpolation.Color): String =
-        use Test/Exp/Interpolation.Color.Red;
-        use Test/Exp/Interpolation.Color.Green;
-        use Test/Exp/Interpolation.Color.Blue;
+instance ToString[Time.Exp/Interpolation.Color] {
+    pub def toString(c: Time.Exp/Interpolation.Color): String =
+        use Time.Exp/Interpolation.Color.Red;
+        use Time.Exp/Interpolation.Color.Green;
+        use Time.Exp/Interpolation.Color.Blue;
         match c {
             case Red   => "r"
             case Green => "g"

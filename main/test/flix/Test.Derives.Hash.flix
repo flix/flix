@@ -1,4 +1,4 @@
-mod Test/Derives/Hash {
+mod Time.Derives/Hash {
     use Hash.hash
 
     pub enum Enum with Hash {

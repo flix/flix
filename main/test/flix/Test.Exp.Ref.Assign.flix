@@ -1,4 +1,4 @@
-mod Test/Exp/Ref/Assign {
+mod Time.Exp/Ref/Assign {
 
     @test
     def testAssignUnit01(): Bool = region r {

@@ -1,4 +1,4 @@
-mod Test/Exp/Ref/Ref {
+mod Time.Exp/Ref/Ref {
 
     @test
     def testRef01(): Unit = region r { discard ref () @ r }

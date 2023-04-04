@@ -1,4 +1,4 @@
-mod Test/Dec/Class {
+mod Time.Dec/Class {
     mod Test01 {
 
         class X[a]
@@ -21,7 +21,7 @@ mod Test/Dec/Class {
             pub def f(x: Int32): Bool = x == 0
         }
 
-        pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
+        pub def g(x: Int32): Bool = Time.Dec/Class/Test03/X.f(x)
     }
 
     mod Test04 {
@@ -33,7 +33,7 @@ mod Test/Dec/Class {
             pub def g(x: a): Bool
         }
 
-        pub def h(x: a): Bool with C[a], D[a] = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
+        pub def h(x: a): Bool with C[a], D[a] = Time.Dec/Class/Test04/C.f(x) and Time.Dec/Class/Test04/D.g(x)
     }
 
     mod Test05 {
@@ -62,11 +62,11 @@ mod Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int32]): Bool = Test/Dec/Class/Test06/C.f(x)
+        pub def g(x: List[Int32]): Bool = Time.Dec/Class/Test06/C.f(x)
     }
 
     mod Test07 {
-        use Test/Dec/Class/Test06.C
+        use Time.Dec/Class/Test06.C
 
         pub def g(x: a): a with C[a] = x
     }
@@ -112,9 +112,9 @@ mod Test/Dec/Class {
 
         instance E[Int32]
 
-        pub def g(x: a): Bool with D[a] = Test/Dec/Class/Test10/C.f(x)
+        pub def g(x: a): Bool with D[a] = Time.Dec/Class/Test10/C.f(x)
 
-        pub def h(x: a): Bool with E[a] = Test/Dec/Class/Test10/C.f(x)
+        pub def h(x: a): Bool with E[a] = Time.Dec/Class/Test10/C.f(x)
     }
 
     mod Test11 {
@@ -122,7 +122,7 @@ mod Test/Dec/Class {
             pub def f(x: a, y: a): Bool
 
             // TODO handle mods better
-            law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+            law reflexivity: forall (x: a, y: a) . Time.Dec/Class/Test11/C.f(x, y) == Time.Dec/Class/Test11/C.f(y, x)
         }
 
         instance C[Int32] {
@@ -146,9 +146,9 @@ mod Test/Dec/Class {
         class C[a] {
             pub def f(): a
 
-            pub def g(): a = Test/Dec/Class/Test13/C.f()
+            pub def g(): a = Time.Dec/Class/Test13/C.f()
 
-            pub def h(): a = Test/Dec/Class/Test13/C.g()
+            pub def h(): a = Time.Dec/Class/Test13/C.g()
         }
 
         instance C[Int32] {
@@ -158,13 +158,13 @@ mod Test/Dec/Class {
         }
 
         @test
-        def testSigOverride01(): Bool = Test/Dec/Class/Test13/C.f() == 0
+        def testSigOverride01(): Bool = Time.Dec/Class/Test13/C.f() == 0
 
         @test
-        def testSigOverride02(): Bool = Test/Dec/Class/Test13/C.g() == 0
+        def testSigOverride02(): Bool = Time.Dec/Class/Test13/C.g() == 0
 
         @test
-        def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
+        def testSigOverride03(): Bool = Time.Dec/Class/Test13/C.h() == 1
     }
 
     mod Test14 {
@@ -176,7 +176,7 @@ mod Test/Dec/Class {
             pub def d(x: a): Int32
         }
 
-        pub def f(x: a): Int32 with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+        pub def f(x: a): Int32 with D[a] = Time.Dec/Class/Test14/C.c(x) + Time.Dec/Class/Test14/D.d(x)
     }
 
     mod Test15 {
@@ -193,7 +193,7 @@ mod Test/Dec/Class {
         }
 
         class C[a] {
-            law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+            law l: forall (x: a, y: a) with D[a] . Time.Dec/Class/Test16/D.f(x, y)
         }
     }
 
@@ -203,7 +203,7 @@ mod Test/Dec/Class {
         }
 
         class E[a: Type -> Type] {
-            law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+            law l: forall (x: a[b]) with D[a[b]] . Time.Dec/Class/Test17/D.f(x)
         }
     }
 

@@ -1,4 +1,4 @@
-mod Test/Dec/Effect {
+mod Time.Dec/Effect {
     pub eff Console {
         pub def println(s: String): Unit
     }

@@ -1,4 +1,4 @@
-mod Test/Exp/Ascribe {
+mod Time.Exp/Ascribe {
 
     @test
     def testAscribe01(): Unit = () : Unit

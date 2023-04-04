@@ -1,4 +1,4 @@
-mod Test/Exp/Jvm/InvokeMethod {
+mod Time.Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokeMethod01(): Bool \ IO =

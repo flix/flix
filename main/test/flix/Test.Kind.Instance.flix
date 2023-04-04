@@ -1,4 +1,4 @@
-mod Test/Kind/Instance {
+mod Time.Kind/Instance {
 
     mod TypeConstraint {
         pub enum EStar[_a: Type]

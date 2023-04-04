@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Literal {
+mod Time.Exp/Record/Literal {
 
     @test
     def testEmptyRecord01(): {} =

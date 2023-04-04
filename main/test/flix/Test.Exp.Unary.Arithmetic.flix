@@ -1,4 +1,4 @@
-mod Test/Exp/Unary/Arithmetic {
+mod Time.Exp/Unary/Arithmetic {
 
     @test
     def testUnaryMinus01(): Bool = -0 == 0

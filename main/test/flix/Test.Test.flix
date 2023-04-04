@@ -1,4 +1,4 @@
-mod Test/Test {
+mod Time.Test {
   // Tests that test the test framework itself
 
   @Test @Skip

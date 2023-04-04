@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint/Query {
+mod Time.Exp/Fixpoint.Query {
 
     @test
     def testQuery01(): Bool =

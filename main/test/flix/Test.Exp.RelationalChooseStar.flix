@@ -1,4 +1,4 @@
-mod Test/Exp/ChooseStar {
+mod Time.Exp/ChooseStar {
     use Choice.{Absent, Present}
 
     @test

@@ -1,4 +1,4 @@
-mod Test/Dec/Enum {
+mod Time.Dec/Enum {
     pub enum Empty
 
     pub enum EmptyWithBraces {}

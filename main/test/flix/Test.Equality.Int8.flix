@@ -1,4 +1,4 @@
-mod Test/Equality/Int8 {
+mod Time.Equality/Int8 {
 
     @test
     def testEqInt8_01(): Bool = 0i8 == 0i8

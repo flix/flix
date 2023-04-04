@@ -1,4 +1,4 @@
-mod Test/Exp/ArrayLength {
+mod Time.Exp/ArrayLength {
 
     @test
     def testArrayLength01(): Int32 = region r {

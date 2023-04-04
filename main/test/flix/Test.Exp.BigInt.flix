@@ -1,4 +1,4 @@
-mod Test/Exp/BigInt {
+mod Time.Exp/BigInt {
 
     @test
     def testBigInt01(): BigInt = 0ii

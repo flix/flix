@@ -1,4 +1,4 @@
-mod Test/Exp/Let/Match {
+mod Time.Exp/Let/Match {
 
     @test
     def testLetMatch01(): Bool =

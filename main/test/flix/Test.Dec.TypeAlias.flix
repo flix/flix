@@ -1,4 +1,4 @@
-mod Test/Dec/TypeAlias {
+mod Time.Dec/TypeAlias {
 
     /**
      * A type alias for degrees celsius.

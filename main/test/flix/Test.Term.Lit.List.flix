@@ -1,4 +1,4 @@
-mod Test/Term/Lit/List {
+mod Time.Term/Lit/List {
 
     @test
     def testLitList01(): Bool =

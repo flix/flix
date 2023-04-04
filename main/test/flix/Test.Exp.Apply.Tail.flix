@@ -1,4 +1,4 @@
-mod Test/Exp/Apply/Tail {
+mod Time.Exp/Apply/Tail {
 
     @test
     def testApplyTail01(): Bool = odd(1)

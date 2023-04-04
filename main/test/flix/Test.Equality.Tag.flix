@@ -1,4 +1,4 @@
-mod Test/Equality/Tag {
+mod Time.Equality/Tag {
 
     @test
     def testEqTag01(): Bool = None: Option[Unit] == None

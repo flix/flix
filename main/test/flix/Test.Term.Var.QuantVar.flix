@@ -1,4 +1,4 @@
-mod Test/Term/Var/QuantVar {
+mod Time.Term/Var/QuantVar {
 
     @test
     def testQuantVar01(): Bool =

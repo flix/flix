@@ -1,4 +1,4 @@
-mod Test/Exp/BigDecimal {
+mod Time.Exp/BigDecimal {
 
     @test
     def testBigDecimal_01(): BigDecimal = 0.0ff

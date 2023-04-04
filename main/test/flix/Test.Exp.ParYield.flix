@@ -1,4 +1,4 @@
-mod Test/Exp/ParYield {
+mod Time.Exp/ParYield {
 
     @test
     def testParYield01(): Int32 =

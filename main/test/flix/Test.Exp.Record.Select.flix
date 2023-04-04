@@ -1,4 +1,4 @@
-mod Test/Exp/Record/Select {
+mod Time.Exp/Record/Select {
 
     @test
     def testRecordSelect01(): String =

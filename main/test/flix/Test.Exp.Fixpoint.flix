@@ -1,4 +1,4 @@
-mod Test/Exp/Fixpoint {
+mod Time.Exp/Fixpoint {
 
     @test
     def testSemiNaive01(): Bool =

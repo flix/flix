@@ -1,4 +1,4 @@
-mod Test/Exp/Tag/Lambda {
+mod Time.Exp/Tag/Lambda {
 
     @test
     def testTagLambda01(): Option[Int32] = (Some)(42)

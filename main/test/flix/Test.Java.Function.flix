@@ -1,4 +1,4 @@
-mod Test/Java/Function {
+mod Time.Java/Function {
     import java.lang.Object
     import java.util.function.Function
     import java.util.function.Consumer
