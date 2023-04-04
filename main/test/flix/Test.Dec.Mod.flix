@@ -23,7 +23,7 @@ mod A {
 mod X {
     mod Y {
         mod Z {
-            pub def f(): Bool = X/Y.f()
+            pub def f(): Bool = X.Y.f()
         }
         pub def f(): Bool = X.f()
     }
@@ -51,6 +51,6 @@ mod Test.Dec.Mod {
     def testMod06(): Bool = A.B.C.g()
 
     @test
-    def testMod07(): Bool = X/Y/Z.f()
+    def testMod07(): Bool = X.Y.Z.f()
 
 }
