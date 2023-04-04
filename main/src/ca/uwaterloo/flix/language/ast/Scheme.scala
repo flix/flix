@@ -82,8 +82,8 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[(Type, Type)], tpe0: Type): Scheme = {
-    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr._1.typeVars ++ econstr._2.typeVars)
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], tpe0: Type): Scheme = {
+    val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
   }
 
@@ -149,7 +149,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[(Type, Type)], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

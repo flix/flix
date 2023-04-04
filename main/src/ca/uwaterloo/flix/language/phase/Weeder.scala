@@ -218,7 +218,7 @@ object Weeder {
     * Performs weeding on the given def declaration `d0`.
     */
   private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
-    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, purOrEff, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, purOrEff, tconstrs0, econstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
 
       val doc = visitDoc(doc0)
@@ -231,11 +231,12 @@ object Weeder {
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val purAndEff = visitPurityAndEffect(purOrEff)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
-        case (as, mod, _, _, tparams, fparams, exp, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal, econstrsVal) {
+        case (as, mod, _, _, tparams, fparams, exp, tconstrs, econstrs) =>
           val tpe = visitType(tpe0)
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, purAndEff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -258,7 +259,8 @@ object Weeder {
           val ts = fs.map(_.tpe.get)
           val purAndEff = WeededAst.PurityAndEffect(None, None)
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, purAndEff, tconstrs, mkSL(sp1, sp2)))
+          val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, purAndEff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -3025,6 +3027,19 @@ object Weeder {
       } else {
         WeederError.IllegalTypeConstraintParameter(mkSL(sp1, sp2)).toFailure
       }
+  }
+
+  /**
+    * Weeds the given equality constraint `econstr`.
+    */
+  private def visitEqualityConstraint(econstr: ParsedAst.EqualityConstraint): Validation[WeededAst.EqualityConstraint, WeederError] = econstr match {
+    case ParsedAst.EqualityConstraint(sp1, tpe1, tpe2, sp2) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      val loc = mkSL(sp1, sp2)
+      // TODO ASSOC-TYPES check that left is assoc type?
+      WeededAst.EqualityConstraint(t1, t2, loc).toSuccess
+
   }
 
   /**

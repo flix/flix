@@ -72,7 +72,7 @@ object ResolvedAst {
     case class Op(sym: Symbol.OpSym, spec: ResolvedAst.Spec) extends Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: ResolvedAst.TypeParams, fparams: List[ResolvedAst.FormalParam], tpe: UnkindedType, purAndEff: UnkindedType.PurityAndEffect, tconstrs: List[ResolvedAst.TypeConstraint], econstrs: List[ResolvedAst.EqualityConstraint], loc: SourceLocation)
 
   sealed trait Expression {
     def loc: SourceLocation
@@ -372,6 +372,8 @@ object ResolvedAst {
   }
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
+
+  case class EqualityConstraint(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
   case class ParYieldFragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
 
