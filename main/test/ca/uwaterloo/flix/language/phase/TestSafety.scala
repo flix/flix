@@ -631,4 +631,47 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[SafetyError.IllegalCastFromVar](result)
   }
 
+
+  test("IllegalCastToVar.01") {
+    val input =
+      """
+        |def f(): b =
+        |    g("ABC")
+        |
+        |def g(x: String): a = checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("IllegalCastToVar.02") {
+    val input =
+      """
+        |def f(x: Int32): b =
+        |    checked_cast(x)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("ImpossibleCast.01") {
+    val input =
+      """
+        |def f(): ##java.lang.String =
+        |    unchecked_cast(('a', 'b', false) as ##java.lang.String)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
+  test("ImpossibleCast.02") {
+    val input =
+      """
+        |def f(): ##java.io.Serializable =
+        |    unchecked_cast((123, 456, 789) as ##java.io.Serializable)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCastToVar](result)
+  }
+
 }
