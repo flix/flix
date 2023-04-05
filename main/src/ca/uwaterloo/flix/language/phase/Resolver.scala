@@ -2439,7 +2439,7 @@ object Resolver {
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs =>
             val cst = Ast.AssocTypeConstructor(sym, loc)
-            UnkindedType.AssocType(cst, resolvedArgs, tpe0.loc)
+            UnkindedType.AssocType(cst, resolvedArgs.head, tpe0.loc)
         }
 
       case _: UnkindedType.Var =>
