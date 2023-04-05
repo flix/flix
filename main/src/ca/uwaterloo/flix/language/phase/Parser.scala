@@ -1835,7 +1835,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       */
     // TODO NS-REFACTOR remove
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy(".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
@@ -1843,7 +1843,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       * Dot-separated name.
       */
     def DotSeparated: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy(".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy("/" | ".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
