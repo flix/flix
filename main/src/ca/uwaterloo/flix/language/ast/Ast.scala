@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.collection.ListMap
-
 import java.nio.file.Path
 import java.util.Objects
 
@@ -602,7 +600,7 @@ object Ast {
   /**
     * Represents that `tpe1` and `tpe2` are equivalent types.
     */
-  case class EqualityConstraint(tpe1: Type, tpe2: Type, loc: SourceLocation)
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
 
   /**
     * Represents a use of an effect sym.

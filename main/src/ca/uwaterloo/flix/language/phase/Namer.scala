@@ -464,11 +464,11 @@ object Namer {
     * Performs naming on the given equality constraint `econstr`.
     */
   private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
-    case WeededAst.EqualityConstraint(tpe1, tpe2, loc) =>
+    case WeededAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => NamedAst.EqualityConstraint(t1, t2, loc)
+        case (t1, t2) => NamedAst.EqualityConstraint(qname, t1, t2, loc)
       }
   }
 
