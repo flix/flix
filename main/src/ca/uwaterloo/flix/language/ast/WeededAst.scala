@@ -422,7 +422,7 @@ object WeededAst {
 
   case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class EqualityConstraint(assoc: Name.QName, tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Name.QName, tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 

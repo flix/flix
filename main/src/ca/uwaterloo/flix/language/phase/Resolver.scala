@@ -1912,13 +1912,16 @@ object Resolver {
     * Performs name resolution on the given equality constraint `econstr0`.
     */
   def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
-    case NamedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+    case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
+      val assocVal = lookupAssocType(qname, env, ns0, root)
+
       val t1Val = resolveType(tpe1, Wildness.ForbidWild, env, taenv, ns0, root)
       val t2Val = resolveType(tpe2, Wildness.ForbidWild, env, taenv, ns0, root)
 
-      mapN(t1Val, t2Val) {
-        case (t1, t2) =>
-          ResolvedAst.EqualityConstraint(t1, t2, loc)
+      mapN(assocVal, t1Val, t2Val) {
+        case (assoc, t1, t2) =>
+          val head = Ast.AssocTypeConstructor(assoc.sym, qname.loc)
+          ResolvedAst.EqualityConstraint(head, t1, t2, loc)
       }
   }
 
@@ -2649,6 +2652,17 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+  }
+
+  /**
+    * Optionally returns the associated type signature with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupAssocType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+    val symOpt = tryLookupName(qname, env, ns0, root)
+
+    symOpt.collectFirst {
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
     }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
   }
 

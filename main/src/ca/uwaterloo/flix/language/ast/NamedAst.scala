@@ -458,7 +458,7 @@ object NamedAst {
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class EqualityConstraint(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Name.QName, tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 

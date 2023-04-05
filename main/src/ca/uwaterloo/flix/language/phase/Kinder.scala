@@ -1403,12 +1403,12 @@ object Kinder {
     * Performs kinding on the given equality constraint under the given kind environment.
     */
   private def visitEqualityConstraint(econstr: ResolvedAst.EqualityConstraint, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.EqualityConstraint, KindError] = econstr match {
-    case ResolvedAst.EqualityConstraint(tpe1, tpe2, loc) =>
+    case ResolvedAst.EqualityConstraint(cst, tpe1, tpe2, loc) =>
       // TODO ASSOC-TYPES check that these are the same kind
       val t1Val = visitType(tpe1, Kind.Wild, kenv, senv, taenv, root)
       val t2Val = visitType(tpe2, Kind.Wild, kenv, senv, taenv, root)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => Ast.EqualityConstraint(t1, t2, loc)
+        case (t1, t2) => Ast.EqualityConstraint(cst, t1, t2, loc)
       }
   }
 
