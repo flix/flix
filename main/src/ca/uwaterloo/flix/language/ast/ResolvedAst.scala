@@ -65,7 +65,7 @@ object ResolvedAst {
 
     case class AssociatedTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: ResolvedAst.TypeParam, kind: Kind, loc: SourceLocation) extends Declaration
 
-    case class AssociatedTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class AssociatedTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Declaration.Op], loc: SourceLocation) extends Declaration
 
