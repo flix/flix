@@ -40,19 +40,19 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
+    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The type scheme: '${red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
+         |>> The type scheme: '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}'.
          |
          |${code(loc, "unable to generalize the type scheme.")}
          |
          |The declared type does not match the inferred type:
          |
-         |  Declared: ${cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
-         |  Inferred: ${magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
+         |  Declared: ${cyan(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}
+         |  Inferred: ${magenta(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}
          |""".stripMargin
     }
 
