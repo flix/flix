@@ -1246,19 +1246,19 @@ object Kinder {
           }
       }
 
-    case UnkindedType.AssocType(cst, args0, loc) =>
+    case UnkindedType.AssocType(cst, arg0, loc) =>
       val clazz = root.classes(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       clazz.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams, k0, loc) =>
+        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, k0, loc) =>
           // TODO ASSOC-TYPES for now assuming just one type parameter
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
             case Some(kind) =>
               val innerExpectedKind = getClassKind(clazz)
-              val argsVal = traverse(args0)(visitType(_, innerExpectedKind, kenv, senv, taenv, root))
-              mapN(argsVal) {
-                case args => Type.AssocType(cst, args, kind, loc)
+              val argVal = visitType(arg0, innerExpectedKind, kenv, senv, taenv, root)
+              mapN(argVal) {
+                case arg => Type.AssocType(cst, arg, kind, loc)
               }
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc).toFailure
           }
@@ -1639,16 +1639,10 @@ object Kinder {
         }
       }
 
-    case UnkindedType.AssocType(cst, args, loc) =>
+    case UnkindedType.AssocType(cst, arg, _) =>
       val clazz = root.classes(cst.sym.clazz)
       val kind = getClassKind(clazz)
-
-      // TODO ASSOC-TYPES folding here but should only be one arg
-      fold(args, KindEnv.empty) {
-        case (acc, arg) => flatMapN(inferType(arg, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
-      }
+      inferType(arg, kind, kenv0, taenv, root)
 
     case UnkindedType.Arrow(purAndEff, _, _) =>
       val purAndEffKenvVal = inferPurityAndEffect(purAndEff, kenv0, taenv, root)
