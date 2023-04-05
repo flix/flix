@@ -125,8 +125,8 @@ object Typer {
       val assocs = for {
         (classSym, _) <- classes0
         inst <- instances0.getOrElse(classSym, Nil)
-        assoc <- inst.assocs // TODO ASSOC-TYPES assocs should have been RESOLVED >:(
-      } yield (assoc., Ast.AssocTypeDef(assoc.arg, assoc.tpe))
+        assoc <- inst.assocs
+      } yield (assoc.sym.sym , Ast.AssocTypeDef(assoc.arg, assoc.tpe))
 
 
       assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {

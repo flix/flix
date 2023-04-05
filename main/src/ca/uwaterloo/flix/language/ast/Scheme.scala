@@ -141,7 +141,7 @@ object Scheme {
               case _ =>
                 val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
                 val newEconstrs2 = sc2.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
-                mapN(Validation.traverse(newEconstrs1)(EqualityEnvironment.entail(newEconstrs2, _, eqEnv))) { // TODO ASSOC-TYPE return unification error
+                mapN(Validation.traverse(newEconstrs1)(EqualityEnvironment.entail(newEconstrs2, _, eqEnv))) {
                   case _ => subst
                 }
             }
