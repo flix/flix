@@ -373,7 +373,7 @@ object ResolvedAst {
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
-  case class EqualityConstraint(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
   case class ParYieldFragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
 
