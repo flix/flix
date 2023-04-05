@@ -33,7 +33,13 @@ object FormatScheme {
       else
         " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
 
-    mainPart + tconstrPart
+    val econstrPart =
+      if (sc.econstrs.isEmpty)
+        ""
+      else
+        " with " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraint).mkString(", ")
+
+    mainPart + tconstrPart + econstrPart
   }
 
   /**
@@ -49,7 +55,13 @@ object FormatScheme {
       else
         " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
 
-    mainPart + tconstrPart
+    val econstrPart =
+      if (sc.econstrs.isEmpty)
+        ""
+      else
+        " with " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
+
+    mainPart + tconstrPart + econstrPart
   }
 
   /**
