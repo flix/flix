@@ -143,7 +143,7 @@ object Typer {
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) => TypedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) => TypedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv))
