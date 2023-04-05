@@ -800,7 +800,7 @@ object Monomorph {
       }.get
       // TODO ASSOC-TYPES use Instances.findInstanceForType
 
-      val assoc = inst.assocs.find(_.ident.name == sym.sym.name).get
+      val assoc = inst.assocs.find(_.sym.sym == sym.sym).get
       subst(assoc.tpe)
   }
 

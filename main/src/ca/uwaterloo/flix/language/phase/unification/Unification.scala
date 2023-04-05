@@ -217,6 +217,12 @@ object Unification {
 
         case Result.Err(err: UnificationError.MultipleMatchingInstances) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
+
+        case Result.Err(err: UnificationError.IrreducibleAssocType) =>
+          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
+
+        case Result.Err(err: UnificationError.UnsupportedEquality) =>
+          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
       }
     })
   }
