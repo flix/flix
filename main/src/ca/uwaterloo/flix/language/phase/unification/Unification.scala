@@ -142,9 +142,9 @@ object Unification {
 
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 => Result.Ok(Substitution.empty, Nil)
 
-    case (_: Type.AssocType, _) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(tpe1, tpe2, SourceLocation.Unknown))) // TODO ASSOC-TYPES loc?
+    case (Type.AssocType(cst, args, _, loc), _) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, args.head, tpe2, loc)))
 
-    case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(tpe1, tpe2, SourceLocation.Unknown))) // TODO ASSOC-TYPES loc?
+    case (_, Type.AssocType(cst, args, _, loc)) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, args.head, tpe2, loc)))
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
