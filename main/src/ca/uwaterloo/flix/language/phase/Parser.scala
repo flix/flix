@@ -162,7 +162,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ keyword("mod") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ (keyword("namespace") | keyword("mod")) ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
