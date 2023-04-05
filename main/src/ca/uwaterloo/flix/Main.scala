@@ -140,13 +140,13 @@ object Main {
 
         case Command.Init =>
           val result = Bootstrap.init(cwd, options)(System.out)
-          System.exit(getCode(result))
+          System.exit(toCode(result))
 
         case Command.Check =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.check(options)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -157,7 +157,7 @@ object Main {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -167,7 +167,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -177,7 +177,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -187,7 +187,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.run(options)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -198,7 +198,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -209,7 +209,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
-              System.exit(getCode(result))
+              System.exit(toCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(1)
@@ -252,7 +252,7 @@ object Main {
   /**
     * Extracts the exit code from the given result.
     */
-  private def getCode[A](result: Result[_, A]): Int = result match {
+  private def toCode[A](result: Result[_, A]): Int = result match {
     case Result.Ok(_) => 0
     case Result.Err(_) => 1
   }
