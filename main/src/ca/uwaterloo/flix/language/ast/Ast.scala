@@ -628,6 +628,11 @@ object Ast {
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an associated type sym.
+    */
+  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+
+  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])

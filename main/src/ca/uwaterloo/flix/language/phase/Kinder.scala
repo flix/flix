@@ -410,12 +410,12 @@ object Kinder {
     * Performs kinding on the given associated type definition under the given kind environment.
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssociatedTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssociatedTypeDef, KindError] = d0 match {
-    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, sym, arg0, tpe0, loc) =>
       val argVal = visitType(arg0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
 
       mapN(argVal, tpeVal) {
-        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
+        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
       }
   }
 
