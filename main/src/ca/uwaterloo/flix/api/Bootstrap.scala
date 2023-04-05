@@ -17,16 +17,16 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToErr, ToOk}
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.{PrintStream, PrintWriter}
+import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor, StandardCopyOption, StandardOpenOption}
-import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.util.{Failure, Success, Using}
 
@@ -37,12 +37,12 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options)(implicit out: PrintStream): Result[Unit, Int] = {
+  def init(p: Path, o: Options)(implicit out: PrintStream): Result[Unit, String] = {
     //
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
-      throw new RuntimeException(s"The directory: '$p' is not accessible. Aborting.")
+      return s"The directory: '$p' is not accessible. Aborting.".toErr
     }
 
     //
@@ -447,7 +447,7 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Type checks the source files for the project.
     */
-  def check(o: Options): Result[Unit, Int] = {
+  def check(o: Options): Result[Unit, List[String]] = {
     // Configure a new Flix object.
     implicit val flix: Flix = new Flix()
     flix.setOptions(o)
@@ -457,16 +457,14 @@ class Bootstrap(val projectPath: Path) {
 
     flix.check() match {
       case Validation.Success(_) => ().toOk
-      case failure =>
-        flix.mkMessages(failure.errors).foreach(println)
-        Result.Err(1)
+      case failure => flix.mkMessages(failure.errors) toErr
     }
   }
 
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
+  def build(loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, List[String]] = {
     // Configure a new Flix object.
     val newOptions = flix.options.copy(
       output = Some(Bootstrap.getBuildDirectory(projectPath)),
@@ -479,16 +477,14 @@ class Bootstrap(val projectPath: Path) {
 
     flix.compile() match {
       case Validation.Success(r) => Result.Ok(r)
-      case failure =>
-        flix.mkMessages(failure.errors).foreach(println)
-        Err(1)
+      case failure => flix.mkMessages(failure.errors).toErr
     }
   }
 
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(o: Options): Result[Unit, Int] = {
+  def buildJar(o: Options): Result[Unit, String] = {
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
@@ -497,7 +493,7 @@ class Bootstrap(val projectPath: Path) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      throw new RuntimeException(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.")
+      return s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.".toErr
     }
 
     // Construct a new zip file.
@@ -520,19 +516,17 @@ class Bootstrap(val projectPath: Path) {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) =>
-        println(e.getMessage)
-        Err(1)
+      case Failure(e) => Err(e.getMessage)
     }
   }
 
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(o: Options): Result[Unit, Int] = {
+  def buildPkg(o: Options): Result[Unit, String] = {
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      throw new RuntimeException("Cannot create a Flix package without a `flix.toml` file.")
+      return "Cannot create a Flix package without a `flix.toml` file.".toErr
     }
 
     // Create the artifact directory, if it does not exist.
@@ -543,7 +537,7 @@ class Bootstrap(val projectPath: Path) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      throw new RuntimeException(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.")
+      return s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.".toErr
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -565,16 +559,14 @@ class Bootstrap(val projectPath: Path) {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) =>
-        println(e.getMessage)
-        Err(1)
+      case Failure(e) => Err(e.getMessage)
     }
   }
 
   /**
     * Runs all benchmarks in the flix package for the project.
     */
-  def benchmark(o: Options): Result[Unit, Int] = {
+  def benchmark(o: Options): Result[Unit, List[String]] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     build() map {
       compilationResult =>
@@ -585,27 +577,21 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Runs the main function in flix package for the project.
     */
-  def run(o: Options): Result[Unit, Int] = {
+  def run(o: Options): Result[Unit, List[String]] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    val res = for {
-      compilationResult <- build().toOption
-      main <- compilationResult.getMain
-    } yield {
-      main(Array.empty)
-      ().toOk[Unit, Int]
+    build().map(_.getMain).map {
+      case Some(main) => main(Array.empty)
+      case None => ()
     }
-    res.getOrElse(Err(1))
   }
 
   /**
     * Runs all tests in the flix package for the project.
     */
-  def test(o: Options): Result[Unit, Int] = {
+  def test(o: Options): Result[Unit, List[String]] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build() flatMap {
-      compilationResult =>
-        Tester.run(Nil, compilationResult)
-        ().toOk
+    build() map {
+      compilationResult => Tester.run(Nil, compilationResult)
     }
   }
 }

@@ -252,6 +252,14 @@ object Main {
   /**
     * Extracts the exit code from the given result.
     */
+  private def getCode[A](result: Result[_, A]): Int = result match {
+    case Result.Ok(_) => 0
+    case Result.Err(_) => 1
+  }
+
+  /**
+    * Extracts the exit code from the given result.
+    */
   private def getCode(result: Result[_, Int]): Int = result match {
     case Result.Ok(_) => 0
     case Result.Err(code) => code
