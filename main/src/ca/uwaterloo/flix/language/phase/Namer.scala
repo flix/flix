@@ -393,20 +393,20 @@ object Namer {
   private def visitAssocTypeSig(s0: WeededAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
-      val tparams = getTypeParams(tparams0)
+      val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc).toSuccess
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc).toSuccess
   }
 
   /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: WeededAst.Declaration.AssocTypeDef, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
-    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
-      val argsVal = traverse(args0)(visitType)
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+      val argVal = visitType(arg0)
       val tpeVal = visitType(tpe0)
-      mapN(argsVal, tpeVal) {
-        case (args, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc)
+      mapN(argVal, tpeVal) {
+        case (arg, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
       }
   }
 

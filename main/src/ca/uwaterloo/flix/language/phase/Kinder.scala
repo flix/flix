@@ -398,11 +398,11 @@ object Kinder {
     * Performs kinding on the given associated type signature under the given kind environment.
     */
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssociatedTypeSig, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[KindedAst.AssociatedTypeSig, KindError] = s0 match {
-    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams0, kind, loc) =>
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, senv)).map(_.flatten)
+    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam0, kind, loc) =>
+      val tparamVal = visitTypeParam(tparam0, kenv, senv)
 
-      mapN(tparamsVal) {
-        case tparams => KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc)
+      mapN(tparamVal) {
+        case tparam => KindedAst.AssociatedTypeSig(doc, mod, sym, tparam.head, kind, loc) // TODO ASSOC-TYPES assuming no splitting happening here...
       }
   }
 
@@ -410,11 +410,11 @@ object Kinder {
     * Performs kinding on the given associated type definition under the given kind environment.
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssociatedTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssociatedTypeDef, KindError] = d0 match {
-    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, args0, tpe0, loc) =>
-      val argsVal = traverse(args0)(visitType(_, Kind.Wild, kenv, senv, taenv, root)) // TODO ASSOC-TYPES use expected from signature
+    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+      val argVal = visitType(arg0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
 
-      mapN(argsVal, tpeVal) {
+      mapN(argVal, tpeVal) {
         case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
       }
   }
