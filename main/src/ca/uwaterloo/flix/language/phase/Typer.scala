@@ -171,7 +171,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv))
       mapN(defsVal) {

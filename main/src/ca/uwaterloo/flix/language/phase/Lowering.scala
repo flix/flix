@@ -202,7 +202,7 @@ object Lowering {
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc) => LoweredAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
+        case TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
       }
       val defs = defs0.map(visitDef)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
