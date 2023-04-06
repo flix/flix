@@ -991,6 +991,12 @@ object WeederError {
     })
   }
 
+  /**
+    * An error raised to indicate that the name of a module does not begin with an uppercase symbol.
+    *
+    * @param name the part of the module name that does not begin with an uppercase symbol.
+    * @param loc  the location where the error occurred
+    */
   case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
 
     override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
