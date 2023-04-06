@@ -89,13 +89,20 @@ object Weeder {
   }
 
   /**
-    * Returns true if all parts in `names` begin with uppercase letters.
+    * Is successful if all parts in `names` begin with uppercase letters.
+    * Returns a SoftFailure otherwise.
     */
-  private def isValidModuleName(names: Name.NName): Boolean = {
-    names.parts.forall {
-      case s =>
-        val first = s.substring(0, 1)
-        first.toUpperCase == first
+  private def visitModuleName(names: Name.NName): Validation[Unit, WeederError.IllegalModuleName] = {
+    names.idents.foldLeft(().toSuccess[Unit, WeederError.IllegalModuleName]) {
+      case (acc, i) => flatMapN(acc) {
+        _ =>
+          val s = i.name
+          val first = s.substring(0, 1)
+          if (first.toUpperCase != first)
+            ().toSoftFailure(WeederError.IllegalModuleName(s, i.loc))
+          else
+            ().toSuccess
+      }
     }
   }
 
@@ -103,25 +110,25 @@ object Weeder {
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
-    case ParsedAst.Declaration.Namespace(sp1, names, usesOrImports, decls, sp2) => isValidModuleName(names) match {
-      case true =>
-        val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
+    case ParsedAst.Declaration.Namespace(sp1, names, usesOrImports, decls, sp2) =>
+      flatMapN(visitModuleName(names): Validation[Unit, WeederError]) {
+        case _ =>
+          val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
 
-        val declarationsVal = traverse(decls)(visitDecl)
+          val declarationsVal = traverse(decls)(visitDecl)
 
-        mapN(usesAndImportsVal, declarationsVal) {
-          case (us, ds) =>
-            // TODO can improve SL by starting from ident
-            val loc = mkSL(sp1, sp2)
+          mapN(usesAndImportsVal, declarationsVal) {
+            case (us, ds) =>
+              // TODO can improve SL by starting from ident
+              val loc = mkSL(sp1, sp2)
 
-            val base = WeededAst.Declaration.Namespace(names.idents.last, us.flatten, ds.flatten, mkSL(sp1, sp2))
-            val ns = names.idents.init.foldRight(base: WeededAst.Declaration) {
-              case (ident, acc) => WeededAst.Declaration.Namespace(ident, Nil, List(acc), loc)
-            }
-            List(ns)
-        }
-      case false => WeederError.IllegalModuleName(names.parts.last, names.loc).toFailure
-    }
+              val base = WeededAst.Declaration.Namespace(names.idents.last, us.flatten, ds.flatten, mkSL(sp1, sp2))
+              val ns = names.idents.init.foldRight(base: WeededAst.Declaration) {
+                case (ident, acc) => WeededAst.Declaration.Namespace(ident, Nil, List(acc), loc)
+              }
+              List(ns)
+          }
+      }
 
     case d: ParsedAst.Declaration.Def => visitTopDef(d)
 
