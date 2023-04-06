@@ -37,7 +37,7 @@ object FormatScheme {
       if (sc.econstrs.isEmpty)
         ""
       else
-        " with " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraint).mkString(", ")
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraint).mkString(", ")
 
     mainPart + tconstrPart + econstrPart
   }
@@ -59,7 +59,7 @@ object FormatScheme {
       if (sc.econstrs.isEmpty)
         ""
       else
-        " with " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
 
     mainPart + tconstrPart + econstrPart
   }
@@ -107,7 +107,7 @@ object FormatScheme {
       if (sc.econstrs.isEmpty)
         ""
       else
-        " with " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
 
     quantifiersPart + typePart + econstrPart
   }
