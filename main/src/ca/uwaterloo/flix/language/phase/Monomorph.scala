@@ -788,19 +788,19 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
-    case Type.AssocType(sym, args, kind, loc) =>
+    case Type.AssocType(sym, arg, kind, loc) =>
       val clazz = root.classes(sym.sym.clazz)
       // TODO ASSOC-TYPES should lazy map
       // TODO ASSOC-TYPES make prettier
       val (inst, subst) = root.instances(sym.sym.clazz).map {
         case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
-          (i, Unification.unifyTypes(tpe, args.head, RigidityEnv.empty)) // TODO ASSOC-TYPES args should be arg
+          (i, Unification.unifyTypes(tpe, arg, RigidityEnv.empty))
       }.collectFirst {
         case (inst, Result.Ok((subst, econstrs))) => (inst, subst) // TODO ASSOC-TYPES consider econstrs
       }.get
       // TODO ASSOC-TYPES use Instances.findInstanceForType
 
-      val assoc = inst.assocs.find(_.ident.name == sym.sym.name).get
+      val assoc = inst.assocs.find(_.sym.sym == sym.sym).get
       subst(assoc.tpe)
   }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestVector {
+mod TestVector {
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //

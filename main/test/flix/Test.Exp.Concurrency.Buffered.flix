@@ -1,4 +1,4 @@
-namespace Test/Exp/Concurrency/Buffered {
+mod Test.Exp.Concurrency.Buffered {
 
     @test
     def testBufferedChannel01(): Bool \ {} = region r {

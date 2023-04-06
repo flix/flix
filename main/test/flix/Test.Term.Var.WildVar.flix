@@ -1,4 +1,4 @@
-namespace Test/Term/Var/WildVar {
+mod Test.Term.Var.WildVar {
 
     @test
     def testWildVar01(): Bool =

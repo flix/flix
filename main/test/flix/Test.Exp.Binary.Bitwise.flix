@@ -1,4 +1,4 @@
-namespace Test/Exp/Binary/Bitwise {
+mod Test.Exp.Binary.Bitwise {
 
     @test
     def testBinaryBitwiseAnd01(): Bool = (40000 &&& -1) == 40000

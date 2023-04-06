@@ -599,9 +599,9 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
       Iterator(t) ++ args.flatMap(visitType).iterator
 
-    case Type.AssocType(cst, args, _, _) =>
+    case Type.AssocType(cst, arg, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
-      Iterator(t) ++ args.flatMap(visitType).iterator
+      Iterator(t) ++ visitType(arg)
   }
 
   /**

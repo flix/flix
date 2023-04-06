@@ -53,7 +53,7 @@ instance Applicative[Validation[e]] {
 }
 
 
-namespace Validation {
+mod Validation {
 
     ///
     /// Applies the function in `v1` to the value in `v2`.

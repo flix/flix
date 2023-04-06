@@ -1,4 +1,4 @@
-namespace Test/Exp/Int64 {
+mod Test.Exp.Int64 {
 
     @test
     def testInt64_01(): Int64 = -254454121542i64

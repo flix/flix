@@ -123,7 +123,7 @@ instance Iterable[DelayList] {
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
 }
 
-namespace DelayList {
+mod DelayList {
 
     ///
     /// Returns a string representation of `l`.

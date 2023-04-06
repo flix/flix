@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace Test/Exp/ApplicativeFor {
+mod Test.Exp.ApplicativeFor {
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                    //

@@ -1,4 +1,4 @@
-namespace Test/Equality/Int32 {
+mod Test.Equality.Int32 {
 
     @test
     def testEqInt32_01(): Bool = 0i32 == 0i32

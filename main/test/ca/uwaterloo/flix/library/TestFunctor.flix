@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestFunctor {
+mod TestFunctor {
 
     use Functor.{map, ignore}
     use Functor.{<$>, <$$>, <$, $>}

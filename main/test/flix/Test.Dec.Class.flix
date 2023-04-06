@@ -1,10 +1,10 @@
-namespace Test/Dec/Class {
-    namespace Test01 {
+mod Test.Dec.Class {
+    mod Test01 {
 
         class X[a]
     }
 
-    namespace Test02 {
+    mod Test02 {
 
         class X[a] {
             pub def f(x: a): Bool
@@ -12,7 +12,7 @@ namespace Test/Dec/Class {
 
     }
 
-    namespace Test03 {
+    mod Test03 {
         class X[a] {
             pub def f(x: a): Bool
         }
@@ -21,10 +21,10 @@ namespace Test/Dec/Class {
             pub def f(x: Int32): Bool = x == 0
         }
 
-        pub def g(x: Int32): Bool = Test/Dec/Class/Test03/X.f(x)
+        pub def g(x: Int32): Bool = Test.Dec.Class.Test03.X.f(x)
     }
 
-    namespace Test04 {
+    mod Test04 {
         class C[a] {
             pub def f(x: a): Bool
         }
@@ -33,17 +33,17 @@ namespace Test/Dec/Class {
             pub def g(x: a): Bool
         }
 
-        pub def h(x: a): Bool with C[a], D[a] = Test/Dec/Class/Test04/C.f(x) and Test/Dec/Class/Test04/D.g(x)
+        pub def h(x: a): Bool with C[a], D[a] = Test.Dec.Class.Test04.C.f(x) and Test.Dec.Class.Test04.D.g(x)
     }
 
-    namespace Test05 {
+    mod Test05 {
 
         class C[a]
 
         instance C[List[a]] with C[a]
     }
 
-    namespace Test06 {
+    mod Test06 {
 
         pub class C[a] {
             pub def f(x: a): Bool
@@ -62,16 +62,16 @@ namespace Test/Dec/Class {
             }
         }
 
-        pub def g(x: List[Int32]): Bool = Test/Dec/Class/Test06/C.f(x)
+        pub def g(x: List[Int32]): Bool = Test.Dec.Class.Test06.C.f(x)
     }
 
-    namespace Test07 {
-        use Test/Dec/Class/Test06.C
+    mod Test07 {
+        use Test.Dec.Class.Test06.C
 
         pub def g(x: a): a with C[a] = x
     }
 
-    namespace Test08 {
+    mod Test08 {
 
         class F[m : Type -> Type] {
             pub def map(f: a -> b, x: m[a]): m[b]
@@ -85,7 +85,7 @@ namespace Test/Dec/Class {
         }
     }
 
-    namespace Test09 {
+    mod Test09 {
         class Eff[ef : Bool] {
             pub def isPure(f: a -> b \ ef): Bool
         }
@@ -95,7 +95,7 @@ namespace Test/Dec/Class {
         }
     }
 
-    namespace Test10 {
+    mod Test10 {
         class C[a] {
             pub def f(x: a): Bool
         }
@@ -112,17 +112,17 @@ namespace Test/Dec/Class {
 
         instance E[Int32]
 
-        pub def g(x: a): Bool with D[a] = Test/Dec/Class/Test10/C.f(x)
+        pub def g(x: a): Bool with D[a] = Test.Dec.Class.Test10.C.f(x)
 
-        pub def h(x: a): Bool with E[a] = Test/Dec/Class/Test10/C.f(x)
+        pub def h(x: a): Bool with E[a] = Test.Dec.Class.Test10.C.f(x)
     }
 
-    namespace Test11 {
+    mod Test11 {
         lawful class C[a] {
             pub def f(x: a, y: a): Bool
 
-            // TODO handle namespaces better
-            law reflexivity: forall (x: a, y: a) . Test/Dec/Class/Test11/C.f(x, y) == Test/Dec/Class/Test11/C.f(y, x)
+            // TODO handle mods better
+            law reflexivity: forall (x: a, y: a) . Test.Dec.Class.Test11.C.f(x, y) == Test.Dec.Class.Test11.C.f(y, x)
         }
 
         instance C[Int32] {
@@ -130,7 +130,7 @@ namespace Test/Dec/Class {
         }
     }
 
-    namespace Test12 {
+    mod Test12 {
         class C[a] {
             pub def f(): a
 
@@ -142,13 +142,13 @@ namespace Test/Dec/Class {
         }
     }
 
-    namespace Test13 {
+    mod Test13 {
         class C[a] {
             pub def f(): a
 
-            pub def g(): a = Test/Dec/Class/Test13/C.f()
+            pub def g(): a = Test.Dec.Class.Test13.C.f()
 
-            pub def h(): a = Test/Dec/Class/Test13/C.g()
+            pub def h(): a = Test.Dec.Class.Test13.C.g()
         }
 
         instance C[Int32] {
@@ -158,16 +158,16 @@ namespace Test/Dec/Class {
         }
 
         @test
-        def testSigOverride01(): Bool = Test/Dec/Class/Test13/C.f() == 0
+        def testSigOverride01(): Bool = Test.Dec.Class.Test13.C.f() == 0
 
         @test
-        def testSigOverride02(): Bool = Test/Dec/Class/Test13/C.g() == 0
+        def testSigOverride02(): Bool = Test.Dec.Class.Test13.C.g() == 0
 
         @test
-        def testSigOverride03(): Bool = Test/Dec/Class/Test13/C.h() == 1
+        def testSigOverride03(): Bool = Test.Dec.Class.Test13.C.h() == 1
     }
 
-    namespace Test14 {
+    mod Test14 {
         class C[a] {
             pub def c(x: a): Int32
         }
@@ -176,10 +176,10 @@ namespace Test/Dec/Class {
             pub def d(x: a): Int32
         }
 
-        pub def f(x: a): Int32 with D[a] = Test/Dec/Class/Test14/C.c(x) + Test/Dec/Class/Test14/D.d(x)
+        pub def f(x: a): Int32 with D[a] = Test.Dec.Class.Test14.C.c(x) + Test.Dec.Class.Test14.D.d(x)
     }
 
-    namespace Test15 {
+    mod Test15 {
         class C[a]
 
         class D[a]
@@ -187,27 +187,27 @@ namespace Test/Dec/Class {
         pub def f(x: a, y: b): Bool with C[a], D[b] = ???
     }
 
-    namespace Test16 {
+    mod Test16 {
         class D[a] {
             pub def f(x: a, y: a): Bool
         }
 
         class C[a] {
-            law l: forall (x: a, y: a) with D[a] . Test/Dec/Class/Test16/D.f(x, y)
+            law l: forall (x: a, y: a) with D[a] . Test.Dec.Class.Test16.D.f(x, y)
         }
     }
 
-    namespace Test17 {
+    mod Test17 {
         class D[a] {
             pub def f(x: a): Bool
         }
 
         class E[a: Type -> Type] {
-            law l: forall (x: a[b]) with D[a[b]] . Test/Dec/Class/Test17/D.f(x)
+            law l: forall (x: a[b]) with D[a[b]] . Test.Dec.Class.Test17.D.f(x)
         }
     }
 
-    namespace Test18 {
+    mod Test18 {
         pub enum E[_: Bool]
         pub enum F[_: Bool, _: Type]
 
@@ -219,7 +219,7 @@ namespace Test/Dec/Class {
         instance D[F[true]]
     }
 
-    namespace Test19 {
+    mod Test19 {
         pub enum M[_: Bool, a: Type] {
             case M(a)
         }

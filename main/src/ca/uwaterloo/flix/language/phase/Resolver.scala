@@ -462,13 +462,13 @@ object Resolver {
           val clazzVal = lookupClassForImplementation(clazz0, env, ns0, root)
           val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
-          val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, env, taenv, ns0, root))
-          flatMapN(clazzVal, tpeVal, tconstrsVal, assocsVal) {
-            case (clazz, tpe, tconstrs, assocs) =>
+          flatMapN(clazzVal, tpeVal, tconstrsVal) {
+            case (clazz, tpe, tconstrs) =>
+              val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-              mapN(defsVal) {
-                case defs =>
+              mapN(defsVal, assocsVal) {
+                case (defs, assocs) =>
                   val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
                   ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
@@ -625,24 +625,32 @@ object Resolver {
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
   private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeSig, ResolutionError] = s0 match {
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams0, kind0, loc) =>
-      val tparamsVal = resolveTypeParams(tparams0, env, ns0, root)
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, loc) =>
+      val tparamVal = Params.resolveTparam(tparam0, env, ns0, root)
       val kindVal = resolveKind(kind0, env, ns0, root)
-      mapN(tparamsVal, kindVal) {
-        case (tparams, kind) => ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc)
+      mapN(tparamVal, kindVal) {
+        case (tparam, kind) => ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc)
       }
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
-    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
       // For now we don't add any tvars from the args. We should have gotten those directly from the instance
-      val argsVal = traverse(args0)(resolveType(_, Wildness.ForbidWild, env, taenv, ns0, root))
+      val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
-      mapN(argsVal, tpeVal) {
-        case (args, tpe) => ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
+      val symVal = clazz.assocs.collectFirst {
+        case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) if sym.name == ident.name => sym
+      } match {
+        case None => throw InternalCompilerException("unknown assoc type def", loc) // TODO ASSOC-TYPES proper error
+        case Some(sym) => sym.toSuccess
+      }
+      mapN(symVal, argVal, tpeVal) {
+        case (sym, arg, tpe) =>
+          val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
+          ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, symUse, arg, tpe, loc)
       }
   }
 
@@ -2439,7 +2447,7 @@ object Resolver {
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs =>
             val cst = Ast.AssocTypeConstructor(sym, loc)
-            UnkindedType.AssocType(cst, resolvedArgs, tpe0.loc)
+            UnkindedType.AssocType(cst, resolvedArgs.head, tpe0.loc)
         }
 
       case _: UnkindedType.Var =>

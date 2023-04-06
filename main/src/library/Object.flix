@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Object {
+mod Object {
 
     ///
     /// Returns `true` if the given value `x` is `null`.

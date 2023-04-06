@@ -53,9 +53,9 @@ object NamedAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparams: NamedAst.TypeParams, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Declaration
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: NamedAst.TypeParam, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[NamedAst.Type], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: NamedAst.Type, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 

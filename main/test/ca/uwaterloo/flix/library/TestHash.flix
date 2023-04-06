@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestHash {
+mod TestHash {
 
     use Hash.hash
 

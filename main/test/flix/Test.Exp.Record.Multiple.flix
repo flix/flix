@@ -1,4 +1,4 @@
-namespace Test/Exp/Record/Multiple {
+mod Test.Exp.Record.Multiple {
 
     @test
     def testMultipleRecordOps01(): { a = Int32, d = Int32 } =

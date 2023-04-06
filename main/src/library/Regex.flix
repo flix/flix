@@ -31,7 +31,7 @@
 /// > String.breakOnRight ~> Regex/Text.breakOnLast
 ///
 
-namespace Regex {
+mod Regex {
 
     use Regex.Pattern
     use Regex.Pattern.{Pattern}

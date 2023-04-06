@@ -398,11 +398,11 @@ object Kinder {
     * Performs kinding on the given associated type signature under the given kind environment.
     */
   private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssociatedTypeSig, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[KindedAst.AssociatedTypeSig, KindError] = s0 match {
-    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams0, kind, loc) =>
-      val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv, senv)).map(_.flatten)
+    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam0, kind, loc) =>
+      val tparamVal = visitTypeParam(tparam0, kenv, senv)
 
-      mapN(tparamsVal) {
-        case tparams => KindedAst.AssociatedTypeSig(doc, mod, sym, tparams, kind, loc)
+      mapN(tparamVal) {
+        case tparam => KindedAst.AssociatedTypeSig(doc, mod, sym, tparam.head, kind, loc) // TODO ASSOC-TYPES assuming no splitting happening here...
       }
   }
 
@@ -410,12 +410,12 @@ object Kinder {
     * Performs kinding on the given associated type definition under the given kind environment.
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssociatedTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssociatedTypeDef, KindError] = d0 match {
-    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, ident, args0, tpe0, loc) =>
-      val argsVal = traverse(args0)(visitType(_, Kind.Wild, kenv, senv, taenv, root)) // TODO ASSOC-TYPES use expected from signature
+    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, sym, arg0, tpe0, loc) =>
+      val argVal = visitType(arg0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
 
-      mapN(argsVal, tpeVal) {
-        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, ident, args, tpe, loc)
+      mapN(argVal, tpeVal) {
+        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
       }
   }
 
@@ -1246,19 +1246,19 @@ object Kinder {
           }
       }
 
-    case UnkindedType.AssocType(cst, args0, loc) =>
+    case UnkindedType.AssocType(cst, arg0, loc) =>
       val clazz = root.classes(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       clazz.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparams, k0, loc) =>
+        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, k0, loc) =>
           // TODO ASSOC-TYPES for now assuming just one type parameter
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
             case Some(kind) =>
               val innerExpectedKind = getClassKind(clazz)
-              val argsVal = traverse(args0)(visitType(_, innerExpectedKind, kenv, senv, taenv, root))
-              mapN(argsVal) {
-                case args => Type.AssocType(cst, args, kind, loc)
+              val argVal = visitType(arg0, innerExpectedKind, kenv, senv, taenv, root)
+              mapN(argVal) {
+                case arg => Type.AssocType(cst, arg, kind, loc)
               }
             case None => KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = k0, loc).toFailure
           }
@@ -1639,16 +1639,10 @@ object Kinder {
         }
       }
 
-    case UnkindedType.AssocType(cst, args, loc) =>
+    case UnkindedType.AssocType(cst, arg, _) =>
       val clazz = root.classes(cst.sym.clazz)
       val kind = getClassKind(clazz)
-
-      // TODO ASSOC-TYPES folding here but should only be one arg
-      fold(args, KindEnv.empty) {
-        case (acc, arg) => flatMapN(inferType(arg, kind, kenv0, taenv, root)) {
-          kenv => acc ++ kenv
-        }
-      }
+      inferType(arg, kind, kenv0, taenv, root)
 
     case UnkindedType.Arrow(purAndEff, _, _) =>
       val purAndEffKenvVal = inferPurityAndEffect(purAndEff, kenv0, taenv, root)

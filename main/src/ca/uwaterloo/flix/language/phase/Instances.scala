@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances {
@@ -173,7 +174,7 @@ object Instances {
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
                 // Case 5.1: the schemes match. Success!
                 Nil
               } else {
