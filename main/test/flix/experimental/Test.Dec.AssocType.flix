@@ -13,4 +13,6 @@ mod Test.Dec.AssocType {
     }
 
     pub def hasA(s: String): Bool = Coll.contains('A', s)
+
+    pub def hasAGeneric(s: a): Bool with Coll[a] where Coll.Elem[a] ~ Char = Coll.contains('A', s)
 }
