@@ -29,17 +29,18 @@ object EqualityEnvironment {
     // create assoc-type substitution using econstrs
     val subst = toSubst(econstrs)
 
-    // apply it to econstr
-    val newEconstr = subst(econstr)
-
     // extract the types
-    val Ast.EqualityConstraint(cst, arg, tpe2, loc) = newEconstr
+    val Ast.EqualityConstraint(cst, arg, tpe2, loc) = econstr
     val tpe1 = Type.AssocType(cst, arg, Kind.Wild, loc) // TODO ASSOC-TYPES move kind to cst/sym maybe
+
+    // apply the substitution to them
+    val newTpe1 = subst(tpe1)
+    val newTpe2 = subst(tpe2)
 
     // check that econstr becomes tautological (according to global instance map)
     for {
-      res1 <- reduceType(tpe1, eqEnv)
-      res2 <- reduceType(tpe2, eqEnv)
+      res1 <- reduceType(newTpe1, eqEnv)
+      res2 <- reduceType(newTpe2, eqEnv)
       renv = (res1.typeVars ++ res2.typeVars).map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
       res <- if (Unification.unifiesWith(res1, res2, renv)) Result.Ok(()): Result[Unit, UnificationError] else Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Unit, UnificationError] // TODO ASSOC-TYPES weird typing hack
     } yield ()
