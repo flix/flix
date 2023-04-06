@@ -871,4 +871,80 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModuleName](result)
   }
+
+  test("IllegalModuleName.02") {
+    val input =
+      """
+        |mod myMod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.03") {
+    val input =
+      """
+        |mod mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.04") {
+    val input =
+      """
+        |mod mymod.Othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.05") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.06") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.07") {
+    val input =
+      """
+        |mod mymod {
+        |    mod othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  test("IllegalModuleName.08") {
+    val input =
+      """
+        |mod mymod {
+        |    mod Othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
 }
