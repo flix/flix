@@ -31,4 +31,7 @@ mod Test.Dec.AssocType {
 
     @test
     def testHasAGeneric02(): Bool = not hasAGeneric("XYZ")
+//
+//    @test
+//    def testHead01(): Bool = Coll.head("ABC") == Some('A')
 }

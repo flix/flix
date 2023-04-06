@@ -145,7 +145,7 @@ object Unification {
 
     case (Type.AssocType(cst, arg, _, loc), _) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe2, loc)))
 
-    case (_, Type.AssocType(cst, arg, _, loc)) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe2, loc)))
+    case (_, Type.AssocType(cst, arg, _, loc)) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe1, loc)))
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
