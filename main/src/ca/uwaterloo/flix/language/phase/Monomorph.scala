@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -629,7 +629,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv)
         }
     }
 
@@ -796,7 +796,7 @@ object Monomorph {
         case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
           (i, Unification.unifyTypes(tpe, arg, RigidityEnv.empty))
       }.collectFirst {
-        case (inst, Result.Ok((subst, econstrs))) => (inst, subst) // TODO ASSOC-TYPES consider econstrs
+        case (inst, Result.Ok((subst, Nil))) => (inst, subst) // TODO ASSOC-TYPES consider econstrs
       }.get
       // TODO ASSOC-TYPES use Instances.findInstanceForType
 
