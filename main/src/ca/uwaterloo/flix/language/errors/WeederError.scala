@@ -990,4 +990,21 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
+    /**
+      * Returns a short description of the error message.
+      */
+    override def summary: String = ???
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = ???
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = ???
+  }
 }

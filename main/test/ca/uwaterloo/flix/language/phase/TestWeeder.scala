@@ -861,4 +861,14 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUseAlias](result)
   }
+
+  test("IllegalModuleName.01") {
+    val input =
+      """
+        |mod mymod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
 }
