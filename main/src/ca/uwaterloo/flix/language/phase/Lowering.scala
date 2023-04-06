@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, Name, Scheme, SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
-import org.apache.xbean.propertyeditor.PropertyEditors
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -171,7 +170,7 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv).toSuccess
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv).toSuccess
   }
 
   /**
@@ -892,7 +891,7 @@ object Lowering {
     def visit(tpe: Type): Type = tpe match {
       case Type.Var(sym, loc) => sym.kind match {
         case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
-        case _ => tpe0
+        case _ => tpe
       }
 
       // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
@@ -904,7 +903,7 @@ object Lowering {
         val t = visitType(tpe)
         Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(_, _) => tpe0
+      case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = visitType(tpe1)
@@ -913,7 +912,8 @@ object Lowering {
 
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
-      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(visit), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
+      case Type.AssocType(cst, args, kind, loc) =>
+        Type.AssocType(cst, args.map(visit), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
     }
 
     if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
