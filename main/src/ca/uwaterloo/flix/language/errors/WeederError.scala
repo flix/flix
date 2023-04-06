@@ -977,7 +977,7 @@ object WeederError {
       s"""${line(kind, source.name)}
          |>> Mismatched alias case.
          |
-         |${code(loc, "The case of '${fromName}' does not match the case of '${toName}'.")}
+         |${code(loc, s"The case of '${fromName}' does not match the case of '${toName}'.")}
          |
          |""".stripMargin
     }
@@ -992,19 +992,21 @@ object WeederError {
   }
 
   case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
-    /**
-      * Returns a short description of the error message.
-      */
-    override def summary: String = ???
 
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = ???
+    override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = ???
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Lowercase module name.
+         |
+         |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "A module name must begin with an uppercase letter."
+    })
   }
 }
