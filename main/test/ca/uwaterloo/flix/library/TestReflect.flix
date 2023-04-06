@@ -1,4 +1,4 @@
-namespace TestReflect {
+mod TestReflect {
     use Reflect.default
 
     @test

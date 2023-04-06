@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestBigDecimal {
+mod TestBigDecimal {
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //

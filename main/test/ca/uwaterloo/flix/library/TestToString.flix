@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestToString {
+mod TestToString {
 
     use ToString.toString
 

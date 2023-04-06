@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestFromString {
+mod TestFromString {
     use FromString.fromString
 
     @test

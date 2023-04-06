@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace System {
+mod System {
 
     ///
     /// Operations on the Standard Input Stream.
     ///
-    namespace StdIn {
+    mod StdIn {
 
         ///
         /// Returns an iterator over lines from the standard input stream.
@@ -57,7 +57,7 @@ namespace System {
     ///
     /// Operations on the Standard Output Stream.
     ///
-    namespace StdOut {
+    mod StdOut {
 
         ///
         /// Prints the given string `s` to the standard output stream.
@@ -99,7 +99,7 @@ namespace System {
     ///
     /// Operations on the Standard Error Stream.
     ///
-    namespace StdErr {
+    mod StdErr {
 
         ///
         /// Prints the given string `s` to the standard error stream.

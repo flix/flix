@@ -97,7 +97,7 @@ instance Iterable[Set] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
-namespace Set {
+mod Set {
 
     ///
     /// Returns a string representation of the given set `s`.

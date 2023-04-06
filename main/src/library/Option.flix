@@ -153,7 +153,7 @@ instance Iterable[Option] {
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ Write(r) = Option.iterator(rc, o)
 }
 
-namespace Option {
+mod Option {
 
     ///
     /// Returns `true` iff `o` is `None`.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestDelayList {
+mod TestDelayList {
     use DelayList.{ENil, ECons, LCons, LList}
 
     /////////////////////////////////////////////////////////////////////////////

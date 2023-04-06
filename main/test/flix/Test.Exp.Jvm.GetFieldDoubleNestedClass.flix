@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/GetFieldDoubleNestedClass {
+mod Test.Exp.Jvm.GetFieldDoubleNestedClass {
 
     @test
     def testGetBoolField01(): Bool \ IO =

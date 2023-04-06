@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
     use Fixpoint.PredSymsOf
-    use Fixpoint/PredSymsOf.predSymsOf
+    use Fixpoint.PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
-    use Fixpoint/SubstitutePredSym.substitute
-    use Fixpoint/Shared.PredSym
-    use Fixpoint/Ram.RamSym
+    use Fixpoint.SubstitutePredSym.substitute
+    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ram.RamSym
 
     @Internal
     pub enum Datalog[v] {
@@ -67,7 +67,7 @@ namespace Fixpoint/Ast {
                 StringBuilder.toString(sb)
             }
             case Datalog.Model(db) => region r {
-                use Fixpoint/Ram.toDenotation;
+                use Fixpoint.Ram.toDenotation;
                 let sb = StringBuilder.new(r);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {

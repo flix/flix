@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Environment {
+mod Environment {
 
     ///
     /// Returns the arguments passed to the program via the command line.

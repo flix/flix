@@ -1,4 +1,4 @@
-namespace BenchmarkConstraint {
+mod BenchmarkConstraint {
 
     rel DirectedEdge(x: Int32, y: Int32)
     rel DirectedPath(x: Int32, y: Int32)

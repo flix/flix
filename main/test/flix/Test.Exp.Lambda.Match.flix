@@ -1,4 +1,4 @@
-namespace Test/Exp/Lambda/Match {
+mod Test.Exp.Lambda.Match {
 
     enum Celsius(Int32)
     enum Fahrenheit(Int32)

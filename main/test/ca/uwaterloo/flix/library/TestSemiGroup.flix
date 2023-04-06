@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestSemiGroup {
+mod TestSemiGroup {
 
     use SemiGroup.{combine, combineN}
 

@@ -38,7 +38,7 @@ pub class Boxable[a] with Order[a] {
 
 }
 
-namespace Boxable {
+mod Boxable {
 
     ///
     /// Lifts the given function `f` to operate on boxed values.

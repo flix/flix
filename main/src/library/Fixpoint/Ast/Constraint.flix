@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
     use Fixpoint.PredSymsOf
-    use Fixpoint/PredSymsOf.predSymsOf
+    use Fixpoint.PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
-    use Fixpoint/SubstitutePredSym.substitute
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.SubstitutePredSym.substitute
+    use Fixpoint.Shared.PredSym
 
     @Internal
     pub enum Constraint[v] {

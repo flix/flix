@@ -1,4 +1,4 @@
-namespace Test/Exp/Binary/Logic {
+mod Test.Exp.Binary.Logic {
 
     //
     // Precedence.

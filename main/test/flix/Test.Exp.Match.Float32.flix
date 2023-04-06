@@ -1,4 +1,4 @@
-namespace Test/Exp/Match/Float32 {
+mod Test.Exp.Match.Float32 {
 
     @test
     def testMatchFloat32_01(): Bool = match 0.0f32 {

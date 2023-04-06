@@ -1,4 +1,4 @@
-mod Test/Dec/AssocType {
+mod Test.Dec.AssocType {
 
     class Coll[a] {
         type Elem[a]: Type

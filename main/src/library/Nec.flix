@@ -139,7 +139,7 @@ instance Iterable[Nec] {
     pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ Write(r) = Nec.iterator(r, l)
 }
 
-namespace Nec {
+mod Nec {
     use ViewLeft.{OneLeft, SomeLeft}
     use ViewRight.{OneRight, SomeRight}
 

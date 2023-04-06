@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError.{UnexpectedArgument}
+import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArgument
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 import java.nio.file.Path
@@ -224,7 +224,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.06") {
     flix.addSourceCode(FileA,
       s"""
-         |namespace F {
+         |mod F {
          |    pub def f(x: Bool): Bool = not x
          |}
          |""".stripMargin)
@@ -250,7 +250,7 @@ class TestIncremental extends FunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileD,
       s"""
-         |namespace DDD {
+         |mod DDD {
          |    pub enum D[a] {
          |        case DA(a)
          |    }
