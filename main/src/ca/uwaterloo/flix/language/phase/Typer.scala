@@ -602,7 +602,7 @@ object Typer {
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Cst(Ast.Constant.Regex(_), loc) =>
-        liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkRegex(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
