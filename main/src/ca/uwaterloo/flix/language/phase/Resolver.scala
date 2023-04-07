@@ -2206,6 +2206,7 @@ object Resolver {
         case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
         case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+        case "Regex" => UnkindedType.Cst(TypeConstructor.Regex, loc).toSuccess
         case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
