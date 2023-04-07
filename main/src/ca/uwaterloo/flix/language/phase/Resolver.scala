@@ -682,13 +682,15 @@ object Resolver {
           case "Predicate" => Kind.Predicate.toSuccess
           case "Region" => Kind.Bool.toSuccess
           case _ =>
-            mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
-              case enum => Kind.CaseSet(enum.sym)
+            lookupRestrictableEnum(qname, env, ns0, root) match {
+              case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
+              case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
             }
         }
       } else {
-        mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
-          case enum => Kind.CaseSet(enum.sym)
+        lookupRestrictableEnum(qname, env, ns0, root) match {
+          case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
+          case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
         }
       }
     case NamedAst.Kind.Arrow(k10, k20, loc) =>
