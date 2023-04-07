@@ -1020,6 +1020,32 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
+  test("UnderAppliedAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |def f(x: C.T): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
+  test("UndefinedAssocType.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[String] {
+        |    type T[String] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalDerivation.01") {
     val input =
       """
