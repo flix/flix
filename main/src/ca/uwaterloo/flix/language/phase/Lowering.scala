@@ -1584,11 +1584,7 @@ object Lowering {
     val cls = Class.forName("java.util.regex.Pattern")
     val mtd = cls.getDeclaredMethod("compile", Class.forName("java.lang.String"))
     val exp = LoweredAst.Expression.Cst(Ast.Constant.Str(patt), Type.Str, loc)
-    println(mtd)
-    // val tpe = Type.mkNative(cls, loc)
-    // val tpe = Type.Str
-    val tpe = Type.mkPureArrow(Type.Str, Type.mkNative(cls, loc), loc)
-    // val tpe = Type.Unit
+    val tpe = Type.mkNative(cls, loc)
     val pur = Type.Pure
     val eff = Type.Empty
     LoweredAst.Expression.InvokeStaticMethod(mtd, exp :: Nil, tpe, pur, eff, loc)
