@@ -1001,7 +1001,7 @@ object WeederError {
       s"""${line(kind, source.name)}
          |>> Mismatched alias case.
          |
-         |${code(loc, "The case of '${fromName}' does not match the case of '${toName}'.")}
+         |${code(loc, s"The case of '${fromName}' does not match the case of '${toName}'.")}
          |
          |""".stripMargin
     }
@@ -1014,4 +1014,48 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate a non-unary associated type.
+    *
+    * @param numParams the number of parameters of the associated type.
+    * @param loc       the location where the error occurred.
+    */
+  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Non-unary associated type signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-unary associated type signature.
+         |
+         |${code(loc, s"Associated types must have exactly one parameter, but ${numParams} are given here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an ill-formed equality constraint.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal equality constraint."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal equality constraint.
+         |
+         |${code(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
 }

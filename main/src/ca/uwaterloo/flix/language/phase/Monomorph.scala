@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -619,7 +619,10 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+    // Perform erasure on the type
+    val tpe = eraseType(tpe0)
+
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -629,7 +632,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv)
         }
     }
 
@@ -788,20 +791,9 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
-    case Type.AssocType(sym, arg, kind, loc) =>
-      val clazz = root.classes(sym.sym.clazz)
-      // TODO ASSOC-TYPES should lazy map
-      // TODO ASSOC-TYPES make prettier
-      val (inst, subst) = root.instances(sym.sym.clazz).map {
-        case i@Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc) =>
-          (i, Unification.unifyTypes(tpe, arg, RigidityEnv.empty))
-      }.collectFirst {
-        case (inst, Result.Ok((subst, econstrs))) => (inst, subst) // TODO ASSOC-TYPES consider econstrs
-      }.get
-      // TODO ASSOC-TYPES use Instances.findInstanceForType
-
-      val assoc = inst.assocs.find(_.sym.sym == sym.sym).get
-      subst(assoc.tpe)
+    case Type.AssocType(cst, arg, kind, loc) =>
+      val a = eraseType(arg)
+      EqualityEnvironment.reduceAssocTypeStep(cst, a, root.eqEnv).get
   }
 
 }
