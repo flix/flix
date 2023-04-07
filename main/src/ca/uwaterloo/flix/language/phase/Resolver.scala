@@ -2442,12 +2442,21 @@ object Resolver {
         }
 
       case UnkindedType.UnappliedAssocType(sym, loc) =>
-        // TODO ASSOC-TYPES for now just assuming that it is applied to exactly the right number
-        // TODO ASSOC-TYPES should check params number like for aliases
-        traverse(targs)(finishResolveType(_, taenv)) map {
-          resolvedArgs =>
-            val cst = Ast.AssocTypeConstructor(sym, loc)
-            UnkindedType.AssocType(cst, resolvedArgs.head, tpe0.loc)
+        targs match {
+          // Case 1: The associated type is under-applied.
+          case Nil => ResolutionError.UnderAppliedAssocType(sym, loc).toFailure
+
+          // Case 2: The type alias is fully applied.
+          // Apply the types first type inside the assoc type, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val cst = Ast.AssocTypeConstructor(sym, loc)
+                val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
+                UnkindedType.mkApply(assoc, targTl, tpe0.loc)
+            }
         }
 
       case _: UnkindedType.Var =>

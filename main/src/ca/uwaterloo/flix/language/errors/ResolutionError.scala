@@ -979,6 +979,30 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate an under-applied type alias.
+    *
+    * @param sym the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied associated type: ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Under-applied associated type '${red(sym.name)}'.
+         |
+         |${code(loc, "Under-applied associated type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Associated types must be fully applied."
+    })
+
+  }
+  /**
     * An error raised to indicate that a signature does not include the class's type parameter.
     *
     * @param sym the symbol of the signature.
