@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.{BigDecimal, BigInteger}
+import java.util.regex.{Pattern => JPattern}
+import java.util.regex.{PatternSyntaxException}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -2261,6 +2263,18 @@ object Weeder {
   }
 
   /**
+    * Checks that the regular expression patt is valid by attempting to compile it.
+    */
+  private def weedRegexPattern(patt: String, loc: SourceLocation): Validation[String, WeederError.IllegalLiteral] = {
+    try {
+      var regex = JPattern.compile(patt)
+      patt.toSuccess
+    } catch {
+      case _: PatternSyntaxException => WeederError.InvalidRegularExpression(patt, loc).toFailure
+    }
+  }
+
+    /**
     * Performs weeding on the given literal.
     */
   private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError.IllegalLiteral] = lit0 match {
@@ -2326,6 +2340,12 @@ object Weeder {
       weedCharSequence(chars) map {
         string => Ast.Constant.Str(string)
       }
+
+    case ParsedAst.Literal.Regex(sp1, patt, sp2) =>
+      weedRegexPattern(patt, mkSL(sp1, sp2)) map {
+        string => Ast.Constant.Regex(string)
+      }
+
   }
 
   /**

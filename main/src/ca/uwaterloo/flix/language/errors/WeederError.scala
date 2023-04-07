@@ -680,6 +680,30 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param patt     the invalid regular expression
+    * @param loc      the location where the error occurred
+    */
+  case class InvalidRegularExpression(patt: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literals must be a valid regular expression."
+    })
+  }
+
+  /**
     * An error raised to indicate an empty interpolated expression (`"${}"`)
     *
     * @param loc the location where the error occurred.
