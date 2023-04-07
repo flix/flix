@@ -601,6 +601,9 @@ object Typer {
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
 
+      case KindedAst.Expression.Cst(Ast.Constant.Regex(_), loc) =>
+        liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
+
       case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
@@ -2696,6 +2699,8 @@ object Typer {
 
       case KindedAst.Pattern.Cst(Ast.Constant.Str(s), loc) => liftM(Type.Str)
 
+      case KindedAst.Pattern.Cst(Ast.Constant.Regex(s), loc) => liftM(Type.Regex)
+
       case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
@@ -2964,6 +2969,7 @@ object Typer {
     case Constant.Int64(_) => Type.Int64
     case Constant.BigInt(_) => Type.BigInt
     case Constant.Str(_) => Type.Str
+    case Constant.Regex(_) => Type.Regex
   }
 
 
