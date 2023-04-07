@@ -3050,10 +3050,9 @@ object Weeder {
       val t2 = visitType(tpe2)
       val loc = mkSL(sp1, sp2)
       t1 match {
-        case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, loc) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
-        case _ => throw InternalCompilerException("illegal econstr", loc) // TODO ASSOC-TYPES proper error
+        case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
+        case _ => WeederError.IllegalEqualityConstraint(loc).toFailure
       }
-
   }
 
   /**

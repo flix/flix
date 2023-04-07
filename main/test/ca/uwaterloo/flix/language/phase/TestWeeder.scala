@@ -894,4 +894,22 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.NonUnaryAssocType](result)
   }
+
+  test("IllegalEqualityConstraint.01") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("IllegalEqualityConstraint.02") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Elem[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
 }
