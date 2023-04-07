@@ -34,4 +34,9 @@ mod Test.Dec.AssocType {
 
     @test
     def testHead01(): Bool = Coll.head("ABC") == Some('A')
+
+    def testRecordHelper01(): {x = Coll.Elem[String]} = {x = 'a'}
+
+    @test
+    def testRecord01(): Bool =  testRecordHelper01().x == 'a'
 }
