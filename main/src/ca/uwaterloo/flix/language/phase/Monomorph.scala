@@ -259,7 +259,7 @@ object Monomorph {
       * Specializes the given type.
       */
     def visitType(t: Type, subst: StrictSubstitution): Type = {
-      EqualityEnvironment.reduceType(subst0(t), root.eqEnv).get
+      EqualityEnvironment.reduceType(subst(t), root.eqEnv).get
     }
 
     // TODO: Monomorph: Must apply subst to all effects.
