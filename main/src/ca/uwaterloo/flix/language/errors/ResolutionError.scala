@@ -663,6 +663,31 @@ object ResolutionError {
   }
 
   /**
+    * Undefined Kind Error.
+    *
+    * @param qn  the name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined kind: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined kind '${red(qn.toString)}'.
+         |
+         |${code(loc, "undefined kind.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent kind?"
+    })
+  }
+
+  /**
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.

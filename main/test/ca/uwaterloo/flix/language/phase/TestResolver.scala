@@ -1456,4 +1456,31 @@ class TestResolver extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibAll)
     expectError[ResolutionError.UndefinedName](result)
   }
+
+  test("UndefinedKind.01") {
+    val input =
+      """
+        |class C[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.02") {
+    val input =
+      """
+        |enum E[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.03") {
+    val input =
+      """
+        |def f[a: Blah](x: a): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
 }
