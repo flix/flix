@@ -451,7 +451,9 @@ object Weeder {
           val tparamVal = tparams match {
             case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
             case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
-            case _ => throw InternalCompilerException("must be exactly on parameter", loc) // TODO ASSOC-TYPES real error
+            case WeededAst.TypeParams.Elided => NonUnaryAssocType(0, ident.loc).toFailure
+            case WeededAst.TypeParams.Kinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
+            case WeededAst.TypeParams.Unkinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
           }
           mapN(tparamVal) {
             case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
@@ -468,7 +470,7 @@ object Weeder {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val argVal = args0.map(visitType).toList match {
         case hd :: Nil => hd.toSuccess
-        case _ => throw InternalCompilerException("must be exactly one parameter", mkSL(sp1, sp2)) // TODO ASSOC-TYPES real error
+        case ts => NonUnaryAssocType(ts.length, ident.loc).toFailure
       }
       val tpe = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
