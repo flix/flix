@@ -1381,6 +1381,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars

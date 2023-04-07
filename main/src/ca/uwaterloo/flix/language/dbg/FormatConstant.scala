@@ -40,5 +40,6 @@ object FormatConstant {
     case Ast.Constant.Int64(lit) => s"${lit}i64"
     case Ast.Constant.BigInt(lit) => s"${lit}ii"
     case Ast.Constant.Str(lit) => "\"" + lit + "\""
+    case Ast.Constant.Regex(lit) => "Regex#\"" + lit + "\""
   }
 }

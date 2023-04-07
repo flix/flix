@@ -3299,6 +3299,8 @@ object Resolver {
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
 
+        case TypeConstructor.Regex => Class.forName("java.util.regex.Pattern").toSuccess
+
         case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
 
         case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess

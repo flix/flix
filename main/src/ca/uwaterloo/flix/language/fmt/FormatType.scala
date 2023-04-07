@@ -162,6 +162,7 @@ object FormatType {
       case SimpleType.Int64 => true
       case SimpleType.BigInt => true
       case SimpleType.Str => true
+      case SimpleType.Regex => true
       case SimpleType.Array => true
       case SimpleType.Vector => true
       case SimpleType.Ref => true
@@ -225,6 +226,7 @@ object FormatType {
       case SimpleType.Int64 => "Int64"
       case SimpleType.BigInt => "BigInt"
       case SimpleType.Str => "String"
+      case SimpleType.Regex => "Regex"
       case SimpleType.Array => "Array"
       case SimpleType.Vector => "Vector"
       case SimpleType.Ref => "Ref"

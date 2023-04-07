@@ -128,9 +128,9 @@ object BackendType {
     case MonoType.Int16 => Int16
     case MonoType.Int32 => Int32
     case MonoType.Int64 => Int64
-    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.Str | MonoType.Array(_) |
-         MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) | MonoType.Enum(_, _) |
-         MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
+    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.Str | MonoType.Regex |
+         MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Enum(_, _) | MonoType.Arrow(_, _) | MonoType.RecordEmpty() | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty() | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
          MonoType.Var(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
   }

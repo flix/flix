@@ -1131,6 +1131,9 @@ object GenExpression {
       addSourceLine(visitor, loc)
       visitor.visitLdcInsn(s)
 
+    case Ast.Constant.Regex(s) =>
+      throw new IllegalArgumentException("TODO - Ast.Constant.Regex")
+
   }
 
   /*
