@@ -611,6 +611,31 @@ object ResolutionError {
   }
 
   /**
+    * Undefined associated type error.
+    *
+    * @param qn  associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined associated type: '${qn}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined associated type'${red(qn.toString)}'.
+         |
+         |${code(loc, "associated type not found.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent associated type?"
+    })
+  }
+
+  /**
     * Undefined Type Error.
     *
     * @param qn  the name.
@@ -1002,6 +1027,7 @@ object ResolutionError {
     })
 
   }
+
   /**
     * An error raised to indicate that a signature does not include the class's type parameter.
     *

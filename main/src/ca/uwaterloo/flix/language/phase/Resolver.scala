@@ -644,7 +644,7 @@ object Resolver {
       val symVal = clazz.assocs.collectFirst {
         case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) if sym.name == ident.name => sym
       } match {
-        case None => throw InternalCompilerException("unknown assoc type def", loc) // TODO ASSOC-TYPES proper error
+        case None => ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc).toFailure
         case Some(sym) => sym.toSuccess
       }
       mapN(symVal, argVal, tpeVal) {
