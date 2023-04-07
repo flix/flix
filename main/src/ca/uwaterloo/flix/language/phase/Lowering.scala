@@ -1587,8 +1587,8 @@ object Lowering {
     println(mtd)
     // val tpe = Type.mkNative(cls, loc)
     // val tpe = Type.Str
-    // val tpe = Type.mkPureArrow(Type.Str, Type.mkNative(cls, loc), loc)
-    val tpe = Type.Unit
+    val tpe = Type.mkPureArrow(Type.Str, Type.mkNative(cls, loc), loc)
+    // val tpe = Type.Unit
     val pur = Type.Pure
     val eff = Type.Empty
     LoweredAst.Expression.InvokeStaticMethod(mtd, exp :: Nil, tpe, pur, eff, loc)
