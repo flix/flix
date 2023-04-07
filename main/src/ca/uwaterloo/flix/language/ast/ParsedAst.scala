@@ -1213,6 +1213,16 @@ object ParsedAst {
       */
     case class Debug(sp1: SourcePosition, kind: ParsedAst.DebugKind, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Instanceof expression (currently a binary op - maybe change the syntax?).
+      *
+      * @param exp the expression.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Instanceof(exp: ParsedAst.Expression, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Expression
+
+
   }
 
   /**

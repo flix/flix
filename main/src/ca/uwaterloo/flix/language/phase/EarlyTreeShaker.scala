@@ -292,6 +292,9 @@ object EarlyTreeShaker {
 
     case Expression.Without(exp, _, _, _, _, _) =>
       visitExp(exp)
+
+    case Expression.Instanceof(exp, _, _, _, _, _) =>
+      visitExp(exp)
   }
 
   /**

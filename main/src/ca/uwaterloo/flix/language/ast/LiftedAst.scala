@@ -169,6 +169,10 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
+    case class Instanceof(exp: LiftedAst.Expression, className: String, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
+      def purity: Purity = Pure
+    }
+
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = Impure
     }

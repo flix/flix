@@ -182,6 +182,10 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
+    case class Instanceof(exp: SimplifiedAst.Expression, className: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def purity: Purity = Pure
+    }
+
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       def purity: Purity = Impure
     }

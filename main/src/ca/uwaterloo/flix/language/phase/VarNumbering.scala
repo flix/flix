@@ -231,6 +231,10 @@ object VarNumbering {
       case Expression.Force(exp, _, _) =>
         visitExp(exp, i0)
 
+      /// TODO SPT - is className considered a variable?...
+      case Expression.Instanceof(exp, _, _, _) =>
+        visitExp(exp, i0)
+
       case Expression.HoleError(_, _, _) =>
         i0
 

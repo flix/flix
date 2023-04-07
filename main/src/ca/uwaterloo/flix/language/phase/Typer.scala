@@ -1978,6 +1978,15 @@ object Typer {
           resultEff = Type.mkUnion(eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.Instanceof(exp, className, tvar, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          // TODO - do we need to assert the type of `typ`?
+          resultTyp = Type.Bool
+          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
         InferMonad.point((Nil, tvar, pvar, evar))
 
@@ -2602,6 +2611,11 @@ object Typer {
         val mergeExp = TypedAst.Expression.FixpointMerge(e1, e2, stf, e1.tpe, pur, eff, loc)
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
+
+      case KindedAst.Expression.Instanceof(exp, className, tvar, loc) =>
+        val e1 = visitExp(exp, subst0)
+        val tpe = subst0(tvar)
+        TypedAst.Expression.Instanceof(e1, className, tpe, e1.pur, e1.eff, loc)
 
       case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
         val tpe = subst0(tvar)

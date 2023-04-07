@@ -237,6 +237,9 @@ object LateTreeShaker {
     case Expression.Force(exp, _, _) =>
       visitExp(exp)
 
+    case Expression.Instanceof(exp, _, _, _) =>
+      visitExp(exp)
+
     case Expression.HoleError(_, _, _) =>
       Set.empty
 

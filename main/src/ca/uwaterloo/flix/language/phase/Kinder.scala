@@ -974,6 +974,12 @@ object Kinder {
         case (exp1, exp2) => KindedAst.Expression.FixpointProject(pred, exp1, exp2, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Expression.Instanceof(exp0, className, loc) =>
+      val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
+      mapN(expVal) {
+        exp => KindedAst.Expression.Instanceof(exp, className, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Expression.Error(m) =>
       val tvar = Type.freshVar(Kind.Star, m.loc)
       val pvar = Type.freshVar(Kind.Bool, m.loc)

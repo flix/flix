@@ -230,6 +230,10 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
+    case Expression.Instanceof(exp, className, _, loc) =>
+      addSourceLine(visitor, loc)
+      AsmOps.compileThrowHoleError(visitor, "TODO", loc)
+
     case Expression.Intrinsic0(op, tpe, loc) => op match {
       case IntrinsicOperator0.Cst(cst) =>
         compileConstant(visitor, cst, tpe, loc)

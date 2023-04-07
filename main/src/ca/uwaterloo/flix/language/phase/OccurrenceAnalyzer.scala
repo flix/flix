@@ -417,6 +417,11 @@ object OccurrenceAnalyzer {
       val (e, o1) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Force(e, tpe, loc), o1.increaseSizeByOne())
 
+
+    case Expression.Instanceof(exp, className, tpe, loc) =>
+      val (e, o) = visitExp(sym0, exp)
+      (OccurrenceAst.Expression.Instanceof(e, className, tpe, loc), o.increaseSizeByOne())
+
     case Expression.HoleError(sym, tpe, loc) =>
       (OccurrenceAst.Expression.HoleError(sym, tpe, loc), OccurInfo.One)
 

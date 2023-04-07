@@ -64,6 +64,8 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
 
+    case class Instanceof(exp: ErasedAst.Expression, className: String, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+
     case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
 
     case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression

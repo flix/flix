@@ -45,7 +45,7 @@ object Weeder {
     "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
-    "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
+    "if", "import", "inline", "instance", "instanceof", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "opaque", "override", "pub", "ref", "region",
     "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
@@ -1426,6 +1426,13 @@ object Weeder {
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
+      }
+
+    case ParsedAst.Expression.Instanceof(exp, name, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
+      val loc = mkSL(sp1, sp2)
+      visitExp(exp, senv) map {
+        case e => WeededAst.Expression.Instanceof(e, name.toString, loc)
       }
 
     case ParsedAst.Expression.RelationalChoose(sp1, star, exps, rules, sp2) =>
@@ -3315,6 +3322,7 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.Instanceof(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 

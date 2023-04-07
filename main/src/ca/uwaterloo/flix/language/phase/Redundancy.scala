@@ -818,6 +818,9 @@ object Redundancy {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.Instanceof(exp, _, _, _, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.Error(_, _, _, _) =>
       Used.empty.withErrorNode
 

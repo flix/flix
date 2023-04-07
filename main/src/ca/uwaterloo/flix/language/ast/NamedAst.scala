@@ -233,6 +233,8 @@ object NamedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Instanceof(exp: NamedAst.Expression, className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class Error(m: CompilationMessage) extends NamedAst.Expression {
       override def loc: SourceLocation = m.loc
     }

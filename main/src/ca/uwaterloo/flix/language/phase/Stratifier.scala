@@ -505,6 +505,11 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
+    case Expression.Instanceof(exp, className, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Instanceof(e, className, tpe, pur, eff, loc)
+      }
+
     case Expression.Error(m, tpe, pur, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
@@ -817,6 +822,9 @@ object Stratifier {
       labelledGraphOfExp(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.Instanceof(exp, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Error(_, _, _, _) =>

@@ -1636,6 +1636,12 @@ object Resolver {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
           }
 
+        case NamedAst.Expression.Instanceof(exp, className, loc) =>
+          val eVal = visitExp(exp, env0)
+          mapN(eVal) {
+            e => ResolvedAst.Expression.Instanceof(e, className, loc)
+          }
+
         case NamedAst.Expression.Error(m) =>
           // Note: We must NOT use [[Validation.toSoftFailure]] because
           // that would duplicate the error inside the Validation.

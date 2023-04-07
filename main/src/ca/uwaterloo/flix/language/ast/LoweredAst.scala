@@ -245,6 +245,8 @@ object LoweredAst {
 
     case class Force(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
+    case class Instanceof(exp: LoweredAst.Expression, className: String, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
+
   }
 
   sealed trait Pattern {

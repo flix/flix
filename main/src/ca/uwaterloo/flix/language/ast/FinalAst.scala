@@ -139,6 +139,8 @@ object FinalAst {
 
     case class Force(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
+    case class Instanceof(exp: FinalAst.Expression, className: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

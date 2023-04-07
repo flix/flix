@@ -1081,6 +1081,11 @@ object Namer {
         case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
       }
 
+    case WeededAst.Expression.Instanceof(exp, className, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.Instanceof(e, className, loc)
+      }
+
     case WeededAst.Expression.Error(m) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
