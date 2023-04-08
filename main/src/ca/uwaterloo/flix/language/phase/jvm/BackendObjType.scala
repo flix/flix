@@ -50,6 +50,7 @@ sealed trait BackendObjType {
     case BackendObjType.Native(className) => className
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
+    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
@@ -824,6 +825,8 @@ object BackendObjType {
     }
   }
 
+  case object Regex extends BackendObjType
+
   case object FlixError extends BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName, JvmName.Error)
@@ -1027,7 +1030,7 @@ object BackendObjType {
     def ChildExceptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, IsVolatile, "childException", JvmName.Throwable.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ NEW(BackendObjType.ConcurrentLinkedQueue.jvmName) ~
       DUP() ~ invokeConstructor(BackendObjType.ConcurrentLinkedQueue.jvmName, MethodDescriptor.NothingToVoid) ~
       PUTFIELD(ThreadsField) ~
@@ -1067,7 +1070,7 @@ object BackendObjType {
         RETURN()
       }
     ))
-  
+
     // final public void exit() throws InterruptedException {
     //   Thread t;
     //   while ((t = threads.poll()) != null)
@@ -1078,14 +1081,14 @@ object BackendObjType {
     def ExitMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "exit", MethodDescriptor.NothingToVoid, Some(
       withName(1, BackendObjType.Thread.toTpe) { t =>
         whileLoop(Condition.NONNULL) {
-          thisLoad() ~ GETFIELD(ThreadsField) ~ 
+          thisLoad() ~ GETFIELD(ThreadsField) ~
           INVOKEVIRTUAL(ConcurrentLinkedQueue.PollMethod) ~
-          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store() 
+          CHECKCAST(BackendObjType.Thread.jvmName) ~ DUP() ~ t.store()
         } {
           t.load() ~ INVOKEVIRTUAL(Thread.JoinMethod)
         } ~
         withName(2, BackendObjType.Iterator.toTpe) { i =>
-          thisLoad() ~ GETFIELD(OnExitField) ~ 
+          thisLoad() ~ GETFIELD(OnExitField) ~
           INVOKEVIRTUAL(LinkedList.IteratorMethod) ~
           i.store() ~
           whileLoop(Condition.NE) {
@@ -1105,9 +1108,9 @@ object BackendObjType {
     //   regionThread.interrupt();
     // }
     def ReportChildExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "reportChildException", mkDescriptor(JvmName.Throwable.toTpe)(VoidableType.Void), Some(
-      thisLoad() ~ ALOAD(1) ~ 
+      thisLoad() ~ ALOAD(1) ~
       PUTFIELD(ChildExceptionField) ~
-      thisLoad() ~ GETFIELD(RegionThreadField) ~ 
+      thisLoad() ~ GETFIELD(RegionThreadField) ~
       INVOKEVIRTUAL(Thread.InterruptMethod) ~
       RETURN()
     ))
@@ -1152,14 +1155,14 @@ object BackendObjType {
 
     // UncaughtExceptionHandler(Region r) { this.r = r; }
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, BackendObjType.Region.toTpe :: Nil, Some(
-      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~ 
+      thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
       thisLoad() ~ ALOAD(1) ~ PUTFIELD(RegionField) ~
       RETURN()
     ))
 
     // public void uncaughtException(Thread t, Throwable e) { r.reportChildException(e); }
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "uncaughtException", ThreadUncaughtExceptionHandler.UncaughtExceptionMethod.d, Some(
-      thisLoad() ~ GETFIELD(RegionField) ~ 
+      thisLoad() ~ GETFIELD(RegionField) ~
       ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
       RETURN()
     ))
@@ -1273,7 +1276,7 @@ object BackendObjType {
 
   case object LinkedList extends BackendObjType {
 
-    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "addFirst", 
+    def AddFirstMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "addFirst",
       mkDescriptor(JavaObject.toTpe)(VoidableType.Void), None)
 
     def IteratorMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "iterator",
@@ -1296,7 +1299,7 @@ object BackendObjType {
   }
 
   case object ConcurrentLinkedQueue extends BackendObjType {
-    
+
     def AddMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "add",
       mkDescriptor(JavaObject.toTpe)(BackendType.Bool), None)
 
@@ -1315,7 +1318,7 @@ object BackendObjType {
     def CurrentThreadMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "currentThread",
       mkDescriptor()(this.toTpe), None)
 
-    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "interrupt", 
+    def InterruptMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "interrupt",
       MethodDescriptor.NothingToVoid, None)
 
     def SetUncaughtExceptionHandlerMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "setUncaughtExceptionHandler",

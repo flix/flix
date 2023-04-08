@@ -598,6 +598,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Int64) => 0
     case Some(TypeConstructor.BigInt) => 0
     case Some(TypeConstructor.Str) => 0
+    case Some(TypeConstructor.Regex) => 0
     case Some(TypeConstructor.Relation) => 0
     case Some(TypeConstructor.Lattice) => 0
     case Some(TypeConstructor.RecordRowEmpty) => 0

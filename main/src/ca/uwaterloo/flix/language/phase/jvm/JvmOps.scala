@@ -62,6 +62,7 @@ object JvmOps {
     case MonoType.Int64 => JvmType.PrimLong
     case MonoType.BigInt => JvmType.BigInteger
     case MonoType.Str => JvmType.String
+    case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
 
     // Compound

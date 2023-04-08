@@ -1045,6 +1045,9 @@ object Type {
     else if (c == classOf[java.lang.String]) {
       Type.Str
     }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      Type.Regex
+    }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit
     }

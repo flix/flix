@@ -3226,7 +3226,7 @@ object Resolver {
                    UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
                    UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
                    UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
-                   UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+                   UnkindedType.Cst(TypeConstructor.Regex, _) |UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
@@ -3629,6 +3629,7 @@ object Resolver {
     case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
     case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc)
+    case "java.util.regex.Pattern" => UnkindedType.Cst(TypeConstructor.Regex, loc)
     case "java.util.function.Function" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
     case "java.util.function.Consumer" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
     case "java.util.function.Predicate" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)

@@ -2264,18 +2264,6 @@ object Weeder {
     visit(chars0.toList, Nil)
   }
 
-  /**
-    * Checks that the regular expression patt is valid by attempting to compile it.
-    */
-  private def weedRegexPattern(patt: String, loc: SourceLocation): Validation[String, WeederError.IllegalLiteral] = {
-    try {
-      var regex = JPattern.compile(patt)
-      patt.toSuccess
-    } catch {
-      case _: PatternSyntaxException => WeederError.InvalidRegularExpression(patt, loc).toFailure
-    }
-  }
-
     /**
     * Performs weeding on the given literal.
     */
@@ -2343,9 +2331,9 @@ object Weeder {
         string => Ast.Constant.Str(string)
       }
 
-    case ParsedAst.Literal.Regex(sp1, patt, sp2) =>
-      weedRegexPattern(patt, mkSL(sp1, sp2)) map {
-        string => Ast.Constant.Regex(string)
+    case ParsedAst.Literal.Regex(sp1, regex, sp2) =>
+      toRegexPattern(regex, mkSL(sp1, sp2)) map {
+        case patt => Ast.Constant.Regex(patt)
       }
 
   }
@@ -3254,6 +3242,16 @@ object Weeder {
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
+  }
+
+  /**
+    * Attempts to compile the given regular expression into a Pattern.
+    */
+  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
+    var patt = JPattern.compile(regex)
+    patt.toSuccess
+  } catch {
+    case _: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, loc).toFailure
   }
 
   /**

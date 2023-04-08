@@ -349,10 +349,6 @@ object Lowering {
     * Lowers the given expression `exp0`.
     */
   private def visitExp(exp0: TypedAst.Expression)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = exp0 match {
-    case TypedAst.Expression.Cst(Ast.Constant.Regex(patt), tpe, loc) =>
-      val t = visitType(tpe)
-      mkRegex(patt, loc)
-
     case TypedAst.Expression.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       LoweredAst.Expression.Cst(cst, t, loc)
@@ -1580,15 +1576,15 @@ object Lowering {
   /**
     * Returns an InvokeStaticMethod expression to compile the regex pattern `exp`.
     */
-  private def mkRegex(patt: String, loc: SourceLocation): LoweredAst.Expression = {
-    val cls = Class.forName("java.util.regex.Pattern")
-    val mtd = cls.getDeclaredMethod("compile", Class.forName("java.lang.String"))
-    val exp = LoweredAst.Expression.Cst(Ast.Constant.Str(patt), Type.Str, loc)
-    val tpe = Type.mkNative(cls, loc)
-    val pur = Type.Pure
-    val eff = Type.Empty
-    LoweredAst.Expression.InvokeStaticMethod(mtd, exp :: Nil, tpe, pur, eff, loc)
-  }
+//  private def mkRegex(patt: String, loc: SourceLocation): LoweredAst.Expression = {
+//    val cls = Class.forName("java.util.regex.Pattern")
+//    val mtd = cls.getDeclaredMethod("compile", Class.forName("java.lang.String"))
+//    val exp = LoweredAst.Expression.Cst(Ast.Constant.Str(patt), Type.Str, loc)
+//    val tpe = Type.mkNative(cls, loc)
+//    val pur = Type.Pure
+//    val eff = Type.Empty
+//    LoweredAst.Expression.InvokeStaticMethod(mtd, exp :: Nil, tpe, pur, eff, loc)
+//  }
 
   /**
     * Returns a new `VarSym` for use in a let-binding.

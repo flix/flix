@@ -98,6 +98,7 @@ object JvmType {
   val AtomicLong: JvmType.Reference = Reference(JvmName.AtomicLong)
   val BigDecimal: JvmType.Reference = Reference(BackendObjType.BigDecimal.jvmName)
   val BigInteger: JvmType.Reference = Reference(BackendObjType.BigInt.jvmName)
+  val Regex: JvmType.Reference = Reference(BackendObjType.Regex.jvmName)
   val Object: JvmType.Reference = Reference(BackendObjType.JavaObject.jvmName)
   val String: JvmType.Reference = Reference(BackendObjType.String.jvmName)
 
