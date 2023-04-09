@@ -179,25 +179,56 @@ def lineSeparator02(): Bool =
     let newline = String.lineSeparator();
     String.length(newline) == 1 or String.length(newline) == 2
 
-    /////////////////////////////////////////////////////////////////////////////
-    // toArray                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region r {
-        Array.sameElements(String.toArray(r, ""), Array#{} @ r)
-    }
+@test
+def toArray01(): Bool = region r {
+    Array.sameElements(String.toArray(r, ""), Array#{} @ r)
+}
 
-    @test
-    def toArray02(): Bool = region r {
-        Array.sameElements(String.toArray(r, "ABC"), Array#{'A', 'B', 'C'} @ r)
-    }
+@test
+def toArray02(): Bool = region r {
+    Array.sameElements(String.toArray(r, "ABC"), Array#{'A', 'B', 'C'} @ r)
+}
 
-    @test
-    def toArray03(): Bool = region r {
-        Array.sameElements(String.toArray(r, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ r)
-    }
+@test
+def toArray03(): Bool = region r {
+    Array.sameElements(String.toArray(r, "1 2 3"), Array#{'1', ' ', '2', ' ', '3'} @ r)
+}
 
+/////////////////////////////////////////////////////////////////////////////
+// toRegex                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toRegex01(): Bool =
+    String.toRegex("\\p{Alpha}+") |> Result.isOk
+
+@test
+def toRegex02(): Bool =
+    String.toRegex("\\p{Alpha+") |> Result.isErr
+
+/////////////////////////////////////////////////////////////////////////////
+// toRegexWithFlags                                                        //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def compileWithFlags01(): Bool =
+    use Regex.Flag.{CaseInsenstive};
+    String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha}+") |> Result.isOk
+
+@test
+def compileWithFlags02(): Bool =
+    use Regex.Flag.{CaseInsenstive};
+    String.toRegexWithFlags(Set#{CaseInsenstive}, "\\p{Alpha+") |> Result.isErr
+
+
+@test
+def compileWithFlags03(): Bool =
+    use Regex.Flag.{CaseInsenstive, Multiline};
+    String.toRegexWithFlags(Set#{CaseInsenstive, Multiline}, "\\p{Alpha}+") |> Result.isOk
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //

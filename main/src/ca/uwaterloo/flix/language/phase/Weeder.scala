@@ -3251,7 +3251,7 @@ object Weeder {
     var patt = JPattern.compile(regex)
     patt.toSuccess
   } catch {
-    case _: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, loc).toFailure
+    case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
   }
 
   /**

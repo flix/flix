@@ -685,7 +685,7 @@ object WeederError {
     * @param patt     the invalid regular expression
     * @param loc      the location where the error occurred
     */
-  case class InvalidRegularExpression(patt: String, loc: SourceLocation) extends IllegalLiteral {
+  case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
     def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
 
     def message(formatter: Formatter): String = {
@@ -695,6 +695,8 @@ object WeederError {
          |
          |${code(loc, "The pattern literal is not a well-formed regular expression.")}
          |
+         |Pattern compilation error:
+         |${err}
          |""".stripMargin
     }
 

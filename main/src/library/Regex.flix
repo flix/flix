@@ -88,7 +88,7 @@ mod Regex {
     ///
     /// Sum a list of flags to an `Int32` bit mask.
     ///
-    def sumFlags(flags: Set[Flag]): Int32 =
+    pub def sumFlags(flags: Set[Flag]): Int32 =
         Set.foldLeft((ac,e) -> ac + toInt(e), 0, flags)
 
     ///
@@ -101,35 +101,6 @@ mod Regex {
         };
         List.filter(check, CanonEq :: CaseInsenstive :: Comments :: Dotall :: Literal ::
                             Multiline :: UnicodeCase :: UnicodeCharacterClass :: UnixLines :: Nil)
-
-
-    ///
-    /// Compile the regular expression `regex` into a Regex object (internally
-    /// a Regex is `java.util.regex.Pattern`).
-    ///
-    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
-    ///
-    /// The syntax of regular expressions is the same as Java, see the JDK Javadocs
-    /// of the class `util.regex.Pattern` for reference.
-    ///
-    pub def compile(regex: String): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
-            compile(regex)
-        })
-
-
-    ///
-    /// Compile the regular expression `regex` into a Regex with the supplied flags.
-    ///
-    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
-    ///
-    pub def compileWithFlags(regex: String, flags: Set[Flag]): Result[String, Regex] =
-        Result.tryCatch(_ -> {
-            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
-            compile(regex, sumFlags(flags))
-        })
-
 
     ///
     /// Return the unmatchable Regex - a regular expression that will not match any input.
