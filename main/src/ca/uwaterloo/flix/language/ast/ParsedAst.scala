@@ -532,7 +532,7 @@ object ParsedAst {
       * @param patt  the regular expression pattern
       * @param sp2   the position of the last character in the literal.
       */
-    case class Regex(sp1: SourcePosition, patt: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Regex(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
 
   }
 

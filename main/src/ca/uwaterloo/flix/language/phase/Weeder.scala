@@ -2331,11 +2331,12 @@ object Weeder {
         string => Ast.Constant.Str(string)
       }
 
-    case ParsedAst.Literal.Regex(sp1, regex, sp2) =>
-      toRegexPattern(regex, mkSL(sp1, sp2)) map {
-        case patt => Ast.Constant.Regex(patt)
+    case ParsedAst.Literal.Regex(sp1, chars, sp2) =>
+      flatMapN(weedCharSequence(chars)) {
+        case string => toRegexPattern(string, mkSL(sp1, sp2)) map {
+            case patt => Ast.Constant.Regex(patt)
+          }
       }
-
   }
 
   /**

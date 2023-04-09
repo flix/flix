@@ -22,4 +22,7 @@ mod Test.Exp.Regex {
     @test
     def testRegex02(): Regex = Regex#".*"
 
+    @test
+    def testRegex03(): Regex = Regex#"\"{3}"
+
 }
