@@ -24,6 +24,35 @@ mod TestRegex {
     def toString01(): Bool =
         ToString.toString(Regex.unmatchable()) != ""
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Regex literals                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def literal01(): Bool =
+        Regex.isMatch(Regex#"a+", "") == false
+
+    @test
+    def literal02(): Bool =
+        Regex.isMatch(Regex#"a*", "") == true
+
+    @test
+    def literal03(): Bool =
+        Regex.isMatch(Regex#"a*", "a") == true
+
+    @test
+    def literal04(): Bool =
+        Regex.isMatch(Regex#"a*", "aa") == true
+
+    @test
+    def literal05(): Bool =
+        Regex.isMatch(Regex#"a*", "aab") == false
+
+    @test
+    def literal06(): Bool =
+        Regex.isMatch(Regex#"a*b", "aab") == true
+
     /////////////////////////////////////////////////////////////////////////////
     // compile                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -146,7 +175,7 @@ mod TestRegex {
             Regex.compile("a*b")) == Ok(true)
 
     /////////////////////////////////////////////////////////////////////////////
-    // isMatch                                                                 //
+    // isSubmatch                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
