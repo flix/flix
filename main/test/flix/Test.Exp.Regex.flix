@@ -47,5 +47,19 @@ mod Test.Exp.Regex {
     def testRegex08(): Bool =
         Regex.isMatch(Regex#"\\[+a*b\\]+", "[[[[aaaab]]")
 
+    @test
+    def testRegex09(): Bool =
+        Regex.isMatch(Regex#"\\[+\"a*b\"\\]+", "[[[[\"aaaab\"]]")
 
+    @test
+    def testRegex10(): Bool =
+        Regex.isMatch(Regex#"\\[+\\{a*b\\}\\]+", "[[[[{aaaab}]]")
+
+    @test
+    def testRegex11(): Bool =
+        Regex.isMatch(Regex#"\\[+\\{+a*b\\}+\\]+", "[[[[{{aaaab}}]]")
+
+    @test
+    def testRegex12(): Bool =
+        Regex.isMatch(Regex#"\\[+\\{+\"+a*b\"+\\}+\\]+", "[[[[{{\"\"\"aaaab\"\"\"}}]]")
 }
