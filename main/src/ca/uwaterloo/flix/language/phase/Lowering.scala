@@ -1574,19 +1574,6 @@ object Lowering {
   }
 
   /**
-    * Returns an InvokeStaticMethod expression to compile the regex pattern `exp`.
-    */
-//  private def mkRegex(patt: String, loc: SourceLocation): LoweredAst.Expression = {
-//    val cls = Class.forName("java.util.regex.Pattern")
-//    val mtd = cls.getDeclaredMethod("compile", Class.forName("java.lang.String"))
-//    val exp = LoweredAst.Expression.Cst(Ast.Constant.Str(patt), Type.Str, loc)
-//    val tpe = Type.mkNative(cls, loc)
-//    val pur = Type.Pure
-//    val eff = Type.Empty
-//    LoweredAst.Expression.InvokeStaticMethod(mtd, exp :: Nil, tpe, pur, eff, loc)
-//  }
-
-  /**
     * Returns a new `VarSym` for use in a let-binding.
     *
     * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].

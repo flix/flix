@@ -152,34 +152,34 @@ mod Regex {
     ///
     /// Return the regular expression string used to build this Regex.
     ///
-    pub def pattern(rx: Regex): String =
+    pub def pattern(rgx: Regex): String =
         import java.util.regex.Pattern.pattern(): String \ {};
-        pattern(rx)
+        pattern(rgx)
 
     ///
-    /// Return the flags used to build the Regex `rx`.
+    /// Return the flags used to build the Regex `rgx`.
     ///
-    pub def flags(rx: Regex): Set[Flag] =
+    pub def flags(rgx: Regex): Set[Flag] =
         import java.util.regex.Pattern.flags(): Int32 \ {};
-        let i = flags(rx);
+        let i = flags(rgx);
         listFlags(i) |> List.toSet
 
 
     ///
-    /// Returns `true` if the entire string `s` is matched by the Regex `rx`.
+    /// Returns `true` if the entire string `s` is matched by the Regex `rgx`.
     ///
-    pub def isMatch(rx: Regex, s: String): Bool = region rc {
+    pub def isMatch(rgx: Regex, s: String): Bool = region rc {
         import java.util.regex.Matcher.matches(): Bool \ rc;
-        let Matcher(m1) = newMatcher(rc, rx, s);
+        let Matcher(m1) = newMatcher(rc, rgx, s);
         matches(m1)
     }
 
     ///
-    /// Returns `true` if the string `input` is matched by the Regex `rx`
+    /// Returns `true` if the string `input` is matched by the Regex `rgx`
     /// at any position within the string `s`.
     ///
-    pub def isSubmatch(rx: Regex, s: String): Bool = region rc {
-        newMatcher(rc, rx, s) |> find!
+    pub def isSubmatch(rgx: Regex, s: String): Bool = region rc {
+        newMatcher(rc, rgx, s) |> find!
     }
 
     ///
@@ -400,11 +400,11 @@ mod Regex {
     enum Matcher[_: Region](##java.util.regex.Matcher)
 
     ///
-    /// Create a Matcher for Regex `rx` on the source String `input`.
+    /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
-    def newMatcher(_: Region[r], rx: Regex, s: String): Matcher[r] \ Write(r) =
+    def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ Write(r) =
         import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ r;
-        Matcher(matcher(rx, unchecked_cast(s as ##java.lang.CharSequence)))
+        Matcher(matcher(rgx, unchecked_cast(s as ##java.lang.CharSequence)))
 
     ///
     /// Attempt to find the next match. Returns `true` and moves to the next match
