@@ -267,6 +267,7 @@ object Main {
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
+                     githubKey: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -389,7 +390,10 @@ object Main {
         text("specifies the main entry point.")
 
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem")
+        text("provides suggestions on how to solve a problem.")
+
+      opt[String]("github-key").action((s, c) => c.copy(githubKey = Some(s))).
+        text("API key to use for GitHub dependency resolution.")
 
       help("help").text("prints this usage information.")
 
@@ -404,14 +408,14 @@ object Main {
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
 
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
+
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
-
-      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
-        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 
