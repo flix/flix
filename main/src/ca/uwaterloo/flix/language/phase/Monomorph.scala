@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -70,34 +70,66 @@ object Monomorph {
       */
     def isEmpty: Boolean = s.isEmpty
 
+    private def default(tpe0: Type): Type = tpe0.kind match {
+      case Kind.Bool =>
+        // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+        // TODO: In the future we need to decide what should actually happen if such variables occur.
+        // TODO: In particular, it seems there are two cases.
+        // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+        // TODO: B. Variables that occur inside an expression but nowhere else really.
+        if (flix.options.xstrictmono)
+          throw UnexpectedNonConstBool(tpe0, tpe0.loc)
+        else
+          Type.True
+      case Kind.Effect => Type.Empty
+      case Kind.RecordRow => Type.RecordRowEmpty
+      case Kind.SchemaRow => Type.SchemaRowEmpty
+      case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+      case _ => Type.Unit
+    }
+
     /**
       * Applies `this` substitution to the given type `tpe`.
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
     def apply(tpe0: Type): Type = {
-      val t = s(tpe0)
+      // NB: The order of cases has been determined by code coverage analysis.
+      def visit(t: Type): Type =
+        t match {
+          case x: Type.Var => s.m.getOrElse(x.sym, default(t))
+          case Type.Cst(tc, _) => t
+          case Type.Apply(t1, t2, loc) =>
+            val y = visit(t2)
+            visit(t1) match {
+              // Simplify boolean equations.
+              case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
 
-      t.map {
-        case Type.Var(sym, loc) =>
-          sym.kind match {
-            case Kind.Bool =>
-              // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-              // TODO: In the future we need to decide what should actually happen if such variables occur.
-              // TODO: In particular, it seems there are two cases.
-              // TODO: A. Variables that occur inside the specialized types (those we can erase?)
-              // TODO: B. Variables that occur inside an expression but nowhere else really.
-              if (flix.options.xstrictmono)
-                throw UnexpectedNonConstBool(tpe0, loc)
-              else
-                Type.True
-            case Kind.Effect => Type.Empty
-            case Kind.RecordRow => Type.RecordRowEmpty
-            case Kind.SchemaRow => Type.SchemaRowEmpty
-            case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
-            case _ => Type.Unit
-          }
-      }
+              // Simplify set expressions
+              case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
+              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
+              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
+
+              case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
+
+              // Else just apply
+              case x => Type.Apply(x, y, loc)
+            }
+          case Type.Alias(sym, args0, tpe0, loc) =>
+            val args = args0.map(visit)
+            val tpe = visit(tpe0)
+            Type.Alias(sym, args, tpe, loc)
+          case Type.AssocType(cst, args0, kind, loc) =>
+            val args = args0.map(visit)
+            Type.AssocType(cst, args, kind, loc)
+        }
+
+      // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
+      if (isEmpty) tpe0 else visit(tpe0)
     }
 
     /**
