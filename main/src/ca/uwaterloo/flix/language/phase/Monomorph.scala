@@ -98,7 +98,11 @@ object Monomorph {
       // NB: The order of cases has been determined by code coverage analysis.
       def visit(t: Type): Type =
         t match {
-          case x: Type.Var => s.m.getOrElse(x.sym, default(t))
+          // When a substitution is performed, eliminate variables from the result.
+          case x: Type.Var => s.m.get(x.sym) match {
+            case Some(tpe) => tpe.map(default)
+            case None => default(t)
+          }
           case Type.Cst(tc, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
@@ -124,6 +128,8 @@ object Monomorph {
             val args = args0.map(visit)
             val tpe = visit(tpe0)
             Type.Alias(sym, args, tpe, loc)
+
+          // Perform reduction on associated types.
           case Type.AssocType(cst, arg0, _, loc) =>
             val arg = visit(arg0)
             EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
@@ -132,8 +138,7 @@ object Monomorph {
             }
         }
 
-      // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-      if (isEmpty) tpe0 else visit(tpe0)
+      visit(tpe0)
     }
 
     /**
