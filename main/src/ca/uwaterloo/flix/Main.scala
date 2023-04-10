@@ -87,6 +87,7 @@ object Main {
       documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
+      githubKey = cmdOpts.githubKey,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
@@ -143,7 +144,7 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.check(options)
               System.exit(getCode(result))
@@ -153,7 +154,7 @@ object Main {
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
@@ -164,7 +165,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
               System.exit(getCode(result))
@@ -174,7 +175,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
               System.exit(getCode(result))
@@ -184,7 +185,7 @@ object Main {
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.run(options)
               System.exit(getCode(result))
@@ -195,7 +196,7 @@ object Main {
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
               System.exit(getCode(result))
@@ -206,7 +207,7 @@ object Main {
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
               System.exit(getCode(result))
@@ -220,7 +221,7 @@ object Main {
             println("The `repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
