@@ -120,7 +120,7 @@ mod String {
     /// of the class `util.regex.Pattern` for reference.
     ///
     /// Warning: It is strongly recommended to use a Regex literal instead of `toRegex`.
-    /// Regex literals are checke at compile time.
+    /// Regex literals are checked at compile time.
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
@@ -135,7 +135,7 @@ mod String {
     /// Returns `Err` if the regex is ill-formed and cannot be compiled.
     ///
     /// Warning: It is strongly recommended to use a Regex literal instead of `toRegexWithFlags`.
-    /// Regex literals are checke at compile time. See the JDK documentation of
+    /// Regex literals are checked at compile time. See the JDK documentation of
     /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
