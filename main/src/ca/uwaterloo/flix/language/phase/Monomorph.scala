@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -64,7 +65,7 @@ object Monomorph {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  private case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
@@ -123,9 +124,12 @@ object Monomorph {
             val args = args0.map(visit)
             val tpe = visit(tpe0)
             Type.Alias(sym, args, tpe, loc)
-          case Type.AssocType(cst, args0, kind, loc) =>
-            val args = args0.map(visit)
-            Type.AssocType(cst, args, kind, loc)
+          case Type.AssocType(cst, arg0, _, loc) =>
+            val arg = visit(arg0)
+            EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+              case Ok(t) => t
+              case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
+            }
         }
 
       // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
@@ -136,7 +140,7 @@ object Monomorph {
       * Adds the given mapping to the substitution.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
-      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe))
+      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
     }
 
     /**
@@ -420,10 +424,10 @@ object Monomorph {
                 val env1 = env0 + (sym -> freshSym)
                 val subst1 = caseSubst @@ subst.nonStrict
                 // visit the body under the extended environment
-                val body = visitExp(body0, env1, StrictSubstitution(subst1))
+                val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
                 val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
                 val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
-                Some(Expression.Let(freshSym, Modifiers.Empty, e, body, visitType(tpe, StrictSubstitution(subst1)), pur, eff, loc))
+                Some(Expression.Let(freshSym, Modifiers.Empty, e, body, visitType(tpe, StrictSubstitution(subst1, root.eqEnv)), pur, eff, loc))
             }
         }.next() // We are safe to get next() because the last case will always match
 
@@ -794,7 +798,7 @@ object Monomorph {
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
-        StrictSubstitution(subst)
+        StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }
