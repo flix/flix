@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Schem
 import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.immutable.SortedSet

@@ -79,6 +79,16 @@ object EqualityEnvironment {
   }
 
   /**
+    * Fully reduces the given associated type.
+    */
+  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Type, UnificationError] = {
+    for {
+      tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
+      res <- reduceType(tpe, eqEnv)
+    } yield res
+  }
+
+  /**
     * Reduces associated types in the equality environment.
     */
   def reduceType(t0: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Type, UnificationError] = {
