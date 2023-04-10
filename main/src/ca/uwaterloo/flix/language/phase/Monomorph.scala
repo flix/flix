@@ -778,13 +778,14 @@ object Monomorph {
       sym.kind match {
         case Kind.CaseSet(enumSym) =>
           Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case _ =>
+        case Kind.Bool =>
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe, loc)
           else {
             // TODO: We should return Type.ErasedBool or something.
             Type.True
           }
+        case _ => tpe
       }
 
     case Type.Cst(_, _) => tpe
