@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.{ToSoftFailure, ToSuccess, flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -175,7 +175,7 @@ object EntryPoint {
           ().toSuccess
         } else {
           // Case 3: Bad result type. Error.
-          EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc).toFailure
+          ().toSoftFailure(EntryPointError.IllegalEntryPointResult(sym, resultTpe, sym.loc))
         }
       }
   }
