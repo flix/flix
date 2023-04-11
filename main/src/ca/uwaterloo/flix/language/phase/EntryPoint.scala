@@ -31,19 +31,19 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   * The argument to the `func` must have type `Unit`.
   *
   * If the result type of `func` has type `Unit`,
-  *   then the result is returned from `main%` as normal.
+  * then the result is returned from `main%` as normal.
   * If the result type of `func` is some other type with a `ToString` instance,
-  *   then the result is printed in `main%`.
+  * then the result is printed in `main%`.
   * If the result type of `func` is some other type without a `ToString` instance,
-  *   then an error is raised.
+  * then an error is raised.
   *
-  *  For example, given an entry point `func` with type `Unit -> Float64`,
-  *  we produce:
-  *  {{{
+  * For example, given an entry point `func` with type `Unit -> Float64`,
+  * we produce:
+  * {{{
   *  pub def main%(): Unit \ IO = {
   *      println(func(args))
   *  }
-  *  }}}
+  * }}}
   */
 object EntryPoint {
 
@@ -134,24 +134,22 @@ object EntryPoint {
       // First check that there's exactly one argument.
       val argVal = declaredScheme.base.arrowArgTypes match {
         // Case 1: One arg. Ok :)
-        case arg :: Nil => arg.toSuccess
+        case arg :: Nil => Some(arg).toSuccess
         // Case 2: Multiple args. Error.
-        case _ :: _ :: _ => EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
+        case _ :: _ :: _ => None.toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 
-      flatMapN(argVal: Validation[Type, EntryPointError]) {
-        arg =>
-          val argSc = Scheme.generalize(Nil, Nil, arg)
+      flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
+        // Case 1: Unit -> XYZ. We can ignore the args.
+        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg), classEnv, ListMap.empty) =>
+          ().toSuccess
 
-          if (Scheme.equal(unitSc, argSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
-            // Case 1: Unit -> XYZ. We can ignore the args.
-            ().toSuccess
-          } else {
-            // Case 2: Bad arguments. Error.
-            EntryPointError.IllegalEntryPointArgs(sym, sym.loc).toFailure
-          }
+        // Case 2: Bad arguments. Error
+        // Case 3: argVal was None / SoftError
+        case Some(_) | None =>
+          ().toSoftFailure(EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
       }
   }
 
