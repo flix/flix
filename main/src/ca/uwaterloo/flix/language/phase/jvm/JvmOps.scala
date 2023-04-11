@@ -657,7 +657,7 @@ object JvmOps {
       formalParamTypes ++ expressionTypes + defn.tpe
     }
 
-    def visitExps(exps: Iterable[Expression]): Set[MonoType] = {
+    def visitExps(exps: Iterable[Expr]): Set[MonoType] = {
       exps.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -666,30 +666,30 @@ object JvmOps {
     /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
-    def visitExp(exp0: Expression): Set[MonoType] = (exp0 match {
-      case Expression.Var(_, _, _) => Set.empty
+    def visitExp(exp0: Expr): Set[MonoType] = (exp0 match {
+      case Expr.Var(_, _, _) => Set.empty
 
-      case Expression.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Binary(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expr.IfThenElse(exp1, exp2, exp3, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-      case Expression.Branch(exp, branches, _, _) =>
+      case Expr.Branch(exp, branches, _, _) =>
         val exps = branches.map {
           case (_, e) => e
         }
         visitExp(exp) ++ visitExps(exps)
 
-      case Expression.JumpTo(_, _, _) => Set.empty
+      case Expr.JumpTo(_, _, _) => Set.empty
 
-      case Expression.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.Let(_, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.Scope(_, exp, _, _) => visitExp(exp)
+      case Expr.Scope(_, exp, _, _) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
+      case Expr.TryCatch(exp, rules, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.NewObject(_, _, _, methods, _) =>
+      case Expr.NewObject(_, _, _, methods, _) =>
         methods.foldLeft(Set.empty[MonoType]) {
           case (sacc, JvmMethod(_, fparams, clo, retTpe, _)) =>
             val fs = fparams.foldLeft(Set(retTpe)) {
@@ -698,17 +698,17 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expression.Intrinsic0(_, tpe, _) => Set(tpe)
+      case Expr.Intrinsic0(_, tpe, _) => Set(tpe)
 
-      case Expression.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
+      case Expr.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
 
-      case Expression.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expr.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
+      case Expr.Intrinsic3(_, exp1, exp2, exp3, tpe, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
-      case Expression.IntrinsicN(_, exps, tpe, _) => visitExps(exps) + tpe
+      case Expr.IntrinsicN(_, exps, tpe, _) => visitExps(exps) + tpe
 
-      case Expression.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
+      case Expr.Intrinsic1N(_, exp, exps, tpe, _) => visitExp(exp) ++ visitExps(exps) + tpe
 
     }) ++ Set(exp0.tpe)
 

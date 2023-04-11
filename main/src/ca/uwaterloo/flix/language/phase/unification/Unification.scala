@@ -103,7 +103,7 @@ object Unification {
     //
     // Record Rows
     //
-    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
     //
     // Schema Rows
