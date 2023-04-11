@@ -1946,9 +1946,9 @@ object Typer {
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
         // Require Boxable and Foldable instances.
-        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+        val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val boxable = Ast.TypeConstraint(Ast.TypeConstraint.Head(boxableSym, loc), freshElmTypeVar, loc)
+        val eq = Ast.TypeConstraint(Ast.TypeConstraint.Head(eqSym, loc), freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
         for {
@@ -1957,7 +1957,7 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
           resultPur = pur
           resultEff = eff
-        } yield (boxable :: foldable :: constrs, resultTyp, resultPur, resultEff)
+        } yield (foldable :: constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
@@ -2861,8 +2861,8 @@ object Typer {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Order", root),
     )
     classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
@@ -2872,8 +2872,8 @@ object Typer {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Order", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
