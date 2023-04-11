@@ -64,17 +64,17 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
+    case class Intrinsic3(op: IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class IntrinsicN(op: IntrinsicOperatorN, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1N(op: ErasedAst.IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
   }
 
