@@ -30,51 +30,51 @@ object ErasedAst {
                   closures: Set[ClosureInfo],
                   anonClasses: Set[AnonClassInfo])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
   }
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, ErasedAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
-  sealed trait Expression {
+  sealed trait Expr {
     def tpe: MonoType
 
     def loc: SourceLocation
   }
 
-  object Expression {
+  object Expr {
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Binary(sop: SemanticOperator, exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class IfThenElse(exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, exp3: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: ErasedAst.Expression, branches: Map[Symbol.LabelSym, ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Branch(exp: ErasedAst.Expr, branches: Map[Symbol.LabelSym, ErasedAst.Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class TryCatch(exp: ErasedAst.Expr, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expr, exp2: ErasedAst.Expr, exp3: ErasedAst.Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[ErasedAst.Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1N(op: ErasedAst.IntrinsicOperator1N, exp: ErasedAst.Expression, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic1N(op: ErasedAst.IntrinsicOperator1N, exp: ErasedAst.Expr, exps: List[ErasedAst.Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
   }
 
@@ -228,9 +228,9 @@ object ErasedAst {
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], clo: ErasedAst.Expression, retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], clo: ErasedAst.Expr, retTpe: MonoType, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expr)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 }

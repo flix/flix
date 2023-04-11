@@ -35,13 +35,13 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
-    case Expression.Var(sym, tpe, _) =>
+  def compileExpression(exp0: Expr, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
+    case Expr.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expression.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+    case Expr.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val ifElse = new Label()
@@ -54,7 +54,7 @@ object GenExpression {
       compileExpression(exp3, visitor, currentClass, lenv0, entryPoint)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Branch(exp, branches, _, loc) =>
+    case Expr.Branch(exp, branches, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Calculating the updated jumpLabels map
@@ -77,13 +77,13 @@ object GenExpression {
       // label for the end of branches
       visitor.visitLabel(endLabel)
 
-    case Expression.JumpTo(sym, _, loc) =>
+    case Expr.JumpTo(sym, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Jumping to the label
       visitor.visitJumpInsn(GOTO, lenv0(sym))
 
-    case Expression.Let(sym, exp1, exp2, _, loc) =>
+    case Expr.Let(sym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -94,7 +94,7 @@ object GenExpression {
       visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.LetRec(varSym, index, defSym, exp1, exp2, _, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Jvm Type of the `exp1`
@@ -117,7 +117,7 @@ object GenExpression {
       visitor.visitVarInsn(iStore, varSym.getStackOffset + 1)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
-    case Expression.Scope(sym, exp, _, loc) =>
+    case Expr.Scope(sym, exp, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
@@ -170,7 +170,7 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
       visitor.visitLabel(afterFinally)
 
-    case Expression.TryCatch(exp, rules, _, loc) =>
+    case Expr.TryCatch(exp, rules, _, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
 
@@ -216,7 +216,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.NewObject(name, _, tpe, methods, loc) =>
+    case Expr.NewObject(name, _, tpe, methods, loc) =>
       addSourceLine(visitor, loc)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       visitor.visitTypeInsn(NEW, className)
@@ -230,7 +230,7 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expression.Intrinsic0(op, tpe, loc) => op match {
+    case Expr.Intrinsic0(op, tpe, loc) => op match {
       case IntrinsicOperator0.Cst(cst) =>
         compileConstant(visitor, cst, tpe, loc)
 
@@ -260,7 +260,7 @@ object GenExpression {
         AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
     }
 
-    case Expression.Intrinsic1(op, exp, tpe, loc) => op match {
+    case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
 
       case IntrinsicOperator1.Unary(sop) =>
         compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, sop)
@@ -616,7 +616,7 @@ object GenExpression {
 
     }
 
-    case Expression.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
+    case Expr.Intrinsic2(op, exp1, exp2, tpe, loc) => op match {
 
       case IntrinsicOperator2.RecordExtend(field) =>
         // Adding source line number for debugging
@@ -732,7 +732,7 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expression.Intrinsic0(IntrinsicOperator0.Region, tpe, loc) =>
+          case Expr.Intrinsic0(IntrinsicOperator0.Region, tpe, loc) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
@@ -794,7 +794,7 @@ object GenExpression {
 
     }
 
-    case Expression.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => op match {
+    case Expr.Intrinsic3(op, exp1, exp2, exp3, tpe, loc) => op match {
       case IntrinsicOperator3.ArrayStore =>
         // Adding source line number for debugging
         addSourceLine(visitor, loc)
@@ -816,7 +816,7 @@ object GenExpression {
 
     }
 
-    case Expression.IntrinsicN(op, exps, tpe, loc) => op match {
+    case Expr.IntrinsicN(op, exps, tpe, loc) => op match {
 
       case IntrinsicOperatorN.Closure(sym) =>
         // JvmType of the closure
@@ -972,7 +972,7 @@ object GenExpression {
         }
     }
 
-    case Expression.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
+    case Expr.Intrinsic1N(op, exp, exps, tpe, loc) => op match {
       case IntrinsicOperator1N.ApplyClo =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
@@ -1160,7 +1160,7 @@ object GenExpression {
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
-  private def compileUnaryExpr(e: Expression,
+  private def compileUnaryExpr(e: Expr,
                                currentClassType: JvmType.Reference,
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
@@ -1279,7 +1279,7 @@ object GenExpression {
     case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", loc)
   }
 
-  private def compileBinaryExpr(exp1: Expression, exp2: Expression,
+  private def compileBinaryExpr(exp1: Expr, exp2: Expr,
                                 currentClass: JvmType.Reference,
                                 visitor: MethodVisitor,
                                 lenv0: Map[Symbol.LabelSym, Label],
@@ -1373,8 +1373,8 @@ object GenExpression {
    * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
-  private def compileArithmeticExpr(e1: Expression,
-                                    e2: Expression,
+  private def compileArithmeticExpr(e1: Expr,
+                                    e2: Expr,
                                     currentClassType: JvmType.Reference,
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
@@ -1422,7 +1422,7 @@ object GenExpression {
     }
   }
 
-  private def compileExponentiateExpr(exp1: Expression, exp2: Expression, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
+  private def compileExponentiateExpr(exp1: Expr, exp2: Expr, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     val (castToDouble, castFromDouble) = sop match {
       case Float32Op.Exp => (F2D, D2F)
       case Float64Op.Exp => (NOP, NOP) // already a double
@@ -1530,8 +1530,8 @@ object GenExpression {
      * BigInts are compared using the `compareTo` method.
      * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
      */
-  private def compileComparisonExpr(e1: Expression,
-                                    e2: Expression,
+  private def compileComparisonExpr(e1: Expr,
+                                    e2: Expr,
                                     currentClassType: JvmType.Reference,
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
@@ -1632,8 +1632,8 @@ object GenExpression {
    * Note that LogicalAnd, LogicalOr, and Implication do short-circuit evaluation.
    * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
-  private def compileLogicalExpr(e1: Expression,
-                                 e2: Expression,
+  private def compileLogicalExpr(e1: Expr,
+                                 e2: Expr,
                                  currentClassType: JvmType.Reference,
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
@@ -1711,8 +1711,8 @@ object GenExpression {
    *
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
-  private def compileBitwiseExpr(e1: Expression,
-                                 e2: Expression,
+  private def compileBitwiseExpr(e1: Expr,
+                                 e2: Expr,
                                  currentClassType: JvmType.Reference,
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
@@ -1788,7 +1788,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(visitor: MethodVisitor, args: List[Expression], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
+  private def pushArgs(visitor: MethodVisitor, args: List[Expr], signature: Array[Class[_ <: Object]], currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
