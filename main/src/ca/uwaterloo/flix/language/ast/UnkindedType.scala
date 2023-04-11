@@ -567,6 +567,9 @@ object UnkindedType {
     else if (c == classOf[java.lang.String]) {
       UnkindedType.Cst(TypeConstructor.Str, SourceLocation.Unknown)
     }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
+    }
     else if (c == java.lang.Void.TYPE) {
       UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
     }

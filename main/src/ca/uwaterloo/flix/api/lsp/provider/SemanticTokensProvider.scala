@@ -640,6 +640,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
+    case TypeConstructor.Regex => true
     case TypeConstructor.Sender => true
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true

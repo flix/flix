@@ -297,6 +297,11 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
+    * Represents the Regex pattern type.
+    */
+  val Regex: Type = Type.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
+
+  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -543,6 +548,11 @@ object Type {
     * Returns the String type with the given source location `loc`.
     */
   def mkString(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Str, loc)
+
+  /**
+    * Returns the Regex pattern type with the given source location `loc`.
+    */
+  def mkRegex(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Regex, loc)
 
   /**
     * Returns the True type with the given source location `loc`.
@@ -1034,6 +1044,9 @@ object Type {
     }
     else if (c == classOf[java.lang.String]) {
       Type.Str
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      Type.Regex
     }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit

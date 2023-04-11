@@ -67,6 +67,8 @@ object SimpleType {
 
   case object Str extends SimpleType
 
+  case object Regex extends SimpleType
+
   case object Array extends SimpleType
 
   case object Vector extends SimpleType
@@ -326,6 +328,7 @@ object SimpleType {
         case TypeConstructor.Int64 => Int64
         case TypeConstructor.BigInt => BigInt
         case TypeConstructor.Str => Str
+        case TypeConstructor.Regex => Regex
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)

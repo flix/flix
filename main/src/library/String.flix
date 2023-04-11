@@ -16,6 +16,8 @@
 
 mod String {
 
+    use Regex.Flag
+
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
@@ -107,6 +109,41 @@ mod String {
     ///
     pub def toArray(r: Region[r], s: String): Array[Char, r] \ Write(r) =
         Array.init(r, i -> charAt(i, s), length(s))
+
+    ///
+    /// Compile the regular expression `regex` into a Regex object (internally
+    /// a Regex is `java.util.regex.Pattern`).
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// The syntax of regular expressions is the same as Java, see the JDK Javadocs
+    /// of the class `util.regex.Pattern` for reference.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegex`.
+    /// Regex literals are checked at compile time.
+    ///
+    pub def toRegex(regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
+            compile(regex)
+        })
+
+
+    ///
+    /// Compile the regular expression `regex` into a Regex with the supplied flags.
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegexWithFlags`.
+    /// Regex literals are checked at compile time. See the JDK documentation of
+    /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
+    ///
+    pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
+            compile(regex, Regex.sumFlags(flags))
+        })
+
 
     ///
     /// Build a string of length `len` by applying `f` to the successive indices.
