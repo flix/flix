@@ -198,11 +198,11 @@ object ErasedAst {
 
     case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
-    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+   case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends IntrinsicOperatorN
 
     case object Tuple extends IntrinsicOperatorN
 
@@ -228,7 +228,7 @@ object ErasedAst {
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
