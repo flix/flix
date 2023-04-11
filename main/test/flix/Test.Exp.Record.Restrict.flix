@@ -1,4 +1,4 @@
-namespace Test/Exp/Record/Restrict {
+mod Test.Exp.Record.Restrict {
 
     @test
     def testRecordRestrict01(): { lstName = String, age = Int32, cowboy = Bool } =

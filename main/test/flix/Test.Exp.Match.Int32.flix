@@ -1,4 +1,4 @@
-namespace Test/Exp/Match/Int32 {
+mod Test.Exp.Match.Int32 {
 
     @test
     def testMatchInt32_01(): Bool = match 0i32 {

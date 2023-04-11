@@ -1,4 +1,4 @@
-namespace Test/Equality/Float64 {
+mod Test.Equality.Float64 {
 
     @test
     def testEqFloat64_01(): Bool = +0.0f64 == +0.0f64

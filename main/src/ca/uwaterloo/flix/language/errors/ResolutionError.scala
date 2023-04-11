@@ -611,6 +611,31 @@ object ResolutionError {
   }
 
   /**
+    * Undefined associated type error.
+    *
+    * @param qn  associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedAssocType(qn: Name.QName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined associated type: '${qn}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined associated type'${red(qn.toString)}'.
+         |
+         |${code(loc, "associated type not found.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent associated type?"
+    })
+  }
+
+  /**
     * Undefined Type Error.
     *
     * @param qn  the name.
@@ -635,6 +660,31 @@ object ResolutionError {
       s"${underline("Tip:")} Possible typo or non-existent type?"
     })
 
+  }
+
+  /**
+    * Undefined Kind Error.
+    *
+    * @param qn  the name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    def summary: String = s"Undefined kind: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined kind '${red(qn.toString)}'.
+         |
+         |${code(loc, "undefined kind.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent kind?"
+    })
   }
 
   /**
@@ -974,6 +1024,31 @@ object ResolutionError {
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type aliases must be fully applied."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an under-applied type alias.
+    *
+    * @param sym the associated type.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied associated type: ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Under-applied associated type '${red(sym.name)}'.
+         |
+         |${code(loc, "Under-applied associated type.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Associated types must be fully applied."
     })
 
   }

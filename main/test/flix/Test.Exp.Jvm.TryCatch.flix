@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace Test/Exp/Jvm/TestTryCatch {
+mod Test.Exp.Jvm.TestTryCatch {
 
     def exception(): Unit \ IO =
         import static java.lang.Math.floorDiv(Int32, Int32): Int32 \ IO;

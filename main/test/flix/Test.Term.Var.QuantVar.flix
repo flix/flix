@@ -1,4 +1,4 @@
-namespace Test/Term/Var/QuantVar {
+mod Test.Term.Var.QuantVar {
 
     @test
     def testQuantVar01(): Bool =

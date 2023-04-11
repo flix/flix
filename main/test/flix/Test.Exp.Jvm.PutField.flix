@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/PutField {
+mod Test.Exp.Jvm.PutField {
 
     @test
     def testPutBoolField01(): Bool \ IO =

@@ -21,7 +21,7 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-namespace MutMap {
+mod MutMap {
 
     ///
     /// Returns a string representation of the given MutMap `m`.

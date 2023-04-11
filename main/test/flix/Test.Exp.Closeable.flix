@@ -1,4 +1,4 @@
-namespace Test/Exp/Closeable {
+mod Test.Exp.Closeable {
     use MyCloseable.MyCloseable
     use MyCloseable2.MyCloseable2
 

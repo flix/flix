@@ -446,9 +446,18 @@ object Weeder {
       val kind = visitKind(kind0)
       val loc = mkSL(sp1, sp2)
 
-      mapN(modVal, tparamsVal) {
+      flatMapN(modVal, tparamsVal) {
         case (mod, tparams) =>
-          List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams, kind, loc))
+          val tparamVal = tparams match {
+            case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
+            case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
+            case WeededAst.TypeParams.Elided => NonUnaryAssocType(0, ident.loc).toFailure
+            case WeededAst.TypeParams.Kinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
+            case WeededAst.TypeParams.Unkinded(ts) => NonUnaryAssocType(ts.length, ident.loc).toFailure
+          }
+          mapN(tparamVal) {
+            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
+          }
       }
   }
 
@@ -459,13 +468,16 @@ object Weeder {
     case ParsedAst.Declaration.AssocTypeDef(doc0, mod0, sp1, ident, args0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val args = args0.map(visitType).toList
+      val argVal = args0.map(visitType).toList match {
+        case hd :: Nil => hd.toSuccess
+        case ts => NonUnaryAssocType(ts.length, ident.loc).toFailure
+      }
       val tpe = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
 
-      mapN(modVal) {
-        case mod =>
-          List(WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc))
+      mapN(modVal, argVal) {
+        case (mod, arg) =>
+          List(WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc))
       }
   }
 
@@ -3038,10 +3050,9 @@ object Weeder {
       val t2 = visitType(tpe2)
       val loc = mkSL(sp1, sp2)
       t1 match {
-        case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, loc) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
-        case _ => throw InternalCompilerException("illegal econstr", loc) // TODO ASSOC-TYPES proper error
+        case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
+        case _ => WeederError.IllegalEqualityConstraint(loc).toFailure
       }
-
   }
 
   /**

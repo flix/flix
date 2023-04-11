@@ -1,4 +1,4 @@
-namespace Test/Integ/Class/Schema {
+mod Test.Integ.Class.Schema {
     rel R(x: Int32, y: Bool)
 
     class C[a] {
@@ -21,13 +21,13 @@ namespace Test/Integ/Class/Schema {
 
     @test
     def testSchemaInSig01(): Bool = {
-        let _ = Test/Integ/Class/Schema/C.f(5);
+        let _ = Test.Integ.Class.Schema.C.f(5);
         true
     }
 
     @test
     def testSchemaInSig02(): Bool = {
-        let _ = Test/Integ/Class/Schema/D.f(5);
+        let _ = Test.Integ.Class.Schema.D.f(5);
         true
     }
 }

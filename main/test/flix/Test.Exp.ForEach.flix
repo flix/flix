@@ -1,4 +1,4 @@
-namespace Test/Exp/Foreach {
+mod Test.Exp.Foreach {
 
     //
     // Note that some of these tests are poorly formatted on purpose to test parsing.

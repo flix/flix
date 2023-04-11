@@ -1,10 +1,10 @@
-namespace Bench/Fixpoint {
+mod Bench.Fixpoint {
 
     use Benchmark.Benchmark
     use Benchmark.defBenchmark
 
     pub def runBenchmarks() : Unit \ IO = region r {
-        let s1 = Bench/Fixpoint.benchmarks();
+        let s1 = Bench.Fixpoint.benchmarks();
         discard Benchmark.runWithBudget(s1 |> List.toArray(r), 250_000_000_000i64);
         ()
     }

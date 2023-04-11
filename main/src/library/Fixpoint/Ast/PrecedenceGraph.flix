@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.Shared.PredSym
 
     @Internal
     pub enum PrecedenceGraph(Set[PrecedenceEdge])

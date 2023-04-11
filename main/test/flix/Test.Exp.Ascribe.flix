@@ -1,4 +1,4 @@
-namespace Test/Exp/Ascribe {
+mod Test.Exp.Ascribe {
 
     @test
     def testAscribe01(): Unit = () : Unit

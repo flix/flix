@@ -1,4 +1,4 @@
-namespace Test/Term/Lit/Set {
+mod Test.Term.Lit.Set {
 
     @test
     def testLitSet01(): Bool =

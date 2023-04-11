@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/InvokeMethod {
+mod Test.Exp.Jvm.InvokeMethod {
 
     @test
     def testInvokeMethod01(): Bool \ IO =

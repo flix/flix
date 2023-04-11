@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestMutList {
+mod TestMutList {
     use ToString.toString
     use MutList.MutList
     use MutList.sameElements

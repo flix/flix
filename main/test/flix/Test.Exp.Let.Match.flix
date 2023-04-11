@@ -1,4 +1,4 @@
-namespace Test/Exp/Let/Match {
+mod Test.Exp.Let.Match {
 
     @test
     def testLetMatch01(): Bool =

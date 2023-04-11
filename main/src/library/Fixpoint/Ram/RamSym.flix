@@ -15,12 +15,12 @@
  */
 
 
-namespace Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
-    use Fixpoint/Ast.Denotation
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.Ast.Denotation
+    use Fixpoint.Shared.PredSym
 
     @Internal
     pub enum RamSym[v] {

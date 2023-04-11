@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace String {
+mod String {
 
     ///
     /// Returns the character at position `i` in the string `s`.

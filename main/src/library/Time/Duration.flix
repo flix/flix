@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Time/Duration {
+mod Time.Duration {
     use Int32.toInt64
     use Time.Duration
     use Time.Duration.Duration

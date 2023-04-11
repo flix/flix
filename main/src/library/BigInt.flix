@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace BigInt {
+mod BigInt {
 
     ///
     /// Returns the smaller of `x` and `y`.

@@ -15,7 +15,7 @@
  */
 
 
-namespace TestDelayMap {
+mod TestDelayMap {
 
     /////////////////////////////////////////////////////////////////////////////
     // insertWith                                                              //

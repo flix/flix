@@ -1,4 +1,4 @@
-namespace Test/Exp/Int32 {
+mod Test.Exp.Int32 {
 
     @test
     def testInt32_01(): Int32 = -254542i32

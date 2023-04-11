@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph}
-    use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
-    use Fixpoint/Ast.PrecedenceGraph.PrecedenceGraph
-    use Fixpoint/Ast.PrecedenceEdge.{WeakEdge, StrongEdge}
-    use Fixpoint/Ast.Constraint.Constraint
-    use Fixpoint/Ast.HeadPredicate.HeadAtom
-    use Fixpoint/Ast.BodyPredicate.BodyAtom
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph}
+    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.PrecedenceGraph.PrecedenceGraph
+    use Fixpoint.Ast.PrecedenceEdge.{WeakEdge, StrongEdge}
+    use Fixpoint.Ast.Constraint.Constraint
+    use Fixpoint.Ast.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.BodyPredicate.BodyAtom
+    use Fixpoint.Shared.PredSym
 
     ///
     /// Compute a stratification with Ullman's algorithm.
