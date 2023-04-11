@@ -33,6 +33,23 @@ pub class Boxable[a] with Order[a] {
 mod Boxable {
 
     ///
+    /// Boxes the given `x`.
+    ///
+    pub def boxXYZ(x: a): Boxed with Order[a] = typematch x {
+        case v: Bool    => Boxed.BoxedBool(v)
+        case v: Char    => Boxed.BoxedChar(v)
+        case v: Int8    => Boxed.BoxedInt8(v)
+        case v: Int16   => Boxed.BoxedInt16(v)
+        case v: Int32   => Boxed.BoxedInt32(v)
+        case v: Int64   => Boxed.BoxedInt64(v)
+        case v: Float32 => Boxed.BoxedFloat32(v)
+        case v: Float64 => Boxed.BoxedFloat64(v)
+        case _: _ =>
+            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
+            Boxed.BoxedObject(unchecked_cast(x as ##java.lang.Object), cmp)
+    }
+
+    ///
     /// Unboxes the given `x`.
     ///
     pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
