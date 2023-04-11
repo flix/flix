@@ -143,12 +143,20 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Init =>
-          getCode(Bootstrap.init(cwd, options)(System.out))
+          Bootstrap.init(cwd, options)(System.out) match {
+            case Result.Ok(_) =>
+              System.exit(EXIT_SUCCESS)
+            case Result.Err(e) =>
+              System.err.println(e)
+              System.exit(EXIT_FAILURE)
+          }
 
         case Command.Check =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              getCode(bootstrap.check(options))
+              val result = bootstrap.check(options)
+              printErrors(System.err, result)
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
               System.exit(EXIT_FAILURE)
