@@ -42,7 +42,9 @@ object EqualityEnvironment {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
       renv = (res1.typeVars ++ res2.typeVars).map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-      res <- if (Unification.unifiesWith(res1, res2, renv)) Result.Ok(()): Result[Unit, UnificationError] else Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Unit, UnificationError] // TODO ASSOC-TYPES weird typing hack
+      res <- if (Unification.unifiesWith(res1, res2, renv, ListMap.empty)) Result.Ok(()): Result[Unit, UnificationError] else Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Unit, UnificationError]
+      // TODO ASSOC-TYPES weird typing hack
+      // TODO ASSOC-TYPES using empty eqEnv correct?
     } yield ()
   }.toValidation
 
@@ -74,6 +76,16 @@ object EqualityEnvironment {
       case None => Result.Err(UnificationError.IrreducibleAssocType(cst.sym, arg))
       case Some(t) => Result.Ok(t)
     }
+  }
+
+  /**
+    * Fully reduces the given associated type.
+    */
+  def reduceAssocType(cst: Ast.AssocTypeConstructor, arg: Type, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[Type, UnificationError] = {
+    for {
+      tpe <- reduceAssocTypeStep(cst, arg, eqEnv)
+      res <- reduceType(tpe, eqEnv)
+    } yield res
   }
 
   /**

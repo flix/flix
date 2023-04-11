@@ -20,7 +20,8 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Regions
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Unification {
 
@@ -102,7 +103,7 @@ object Unification {
     //
     // Record Rows
     //
-    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv).map((_, Nil)) // TODO ASSOC-TYPES support in rows
+    case (Kind.RecordRow, Kind.RecordRow) => RecordUnification.unifyRows(tpe1, tpe2, renv)
 
     //
     // Schema Rows
@@ -144,7 +145,7 @@ object Unification {
 
     case (Type.AssocType(cst, arg, _, loc), _) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe2, loc)))
 
-    case (_, Type.AssocType(cst, arg, _, loc)) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe2, loc)))
+    case (_, Type.AssocType(cst, arg, _, loc)) => Result.Ok(Substitution.empty, List(Ast.EqualityConstraint(cst, arg, tpe1, loc)))
 
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
@@ -296,7 +297,7 @@ object Unification {
 
     arrowType match {
       case Type.Apply(_, resultType, _) =>
-        if (Unification.unifiesWith(resultType, argType, renv)) {
+        if (Unification.unifiesWith(resultType, argType, renv, ListMap.empty)) { // TODO ASSOC-TYPES empty OK?
           arrowType.typeArguments.lift(2) match {
             case None => default
             case Some(excessArgument) => TypeError.OverApplied(excessArgument, loc)
@@ -462,11 +463,20 @@ object Unification {
     }
 
   /**
-    * Returns true iff `tpe1` unifies with `tpe2`.
+    * Returns true iff `tpe1` unifies with `tpe2`, without introducing equality constraints.
     */
-  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Boolean = {
+  def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
-      case Result.Ok(_) => true
+      case Result.Ok((_, econstrs)) =>
+        // check that all econstrs hold under the environment
+        econstrs.forall {
+          econstr =>
+            EqualityEnvironment.entail(Nil, econstr, eqEnv) match {
+              case Validation.Success(_) => true
+              case Validation.Failure(_) => false
+              case Validation.SoftFailure(_, _) => false
+            }
+        }
       case Result.Err(_) => false
     }
   }

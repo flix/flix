@@ -1079,4 +1079,55 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModuleName](result)
   }
+
+  test("NonUnaryAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a, b]: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.02") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.03") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    type T[Int32, b] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("IllegalEqualityConstraint.01") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("IllegalEqualityConstraint.02") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Elem[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
 }

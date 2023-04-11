@@ -1020,6 +1020,32 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
+  test("UnderAppliedAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |def f(x: C.T): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
+  test("UndefinedAssocType.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[String] {
+        |    type T[String] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalDerivation.01") {
     val input =
       """
@@ -1429,5 +1455,32 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedKind.01") {
+    val input =
+      """
+        |class C[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.02") {
+    val input =
+      """
+        |enum E[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.03") {
+    val input =
+      """
+        |def f[a: Blah](x: a): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
   }
 }

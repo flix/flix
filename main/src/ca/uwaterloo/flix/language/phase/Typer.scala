@@ -57,7 +57,7 @@ object Typer {
       case (classes, instances, defs, effs) =>
         val sigs = classes.values.flatMap(_.signatures).map(sig => sig.sym -> sig).toMap
         val modules = collectModules(root)
-        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, root.names)
+        TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names)
     }
   }
 
@@ -163,7 +163,9 @@ object Typer {
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) => TypedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssociatedTypeSig(doc, mod, sym, tp, kind, loc) =>
+          val tps = getTypeParams(List(tp))
+          TypedAst.AssociatedTypeSig(doc, mod, sym, tps.head, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv, eqEnv))
