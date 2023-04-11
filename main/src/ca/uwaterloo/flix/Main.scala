@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 
-import java.io.File
+import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -34,6 +34,7 @@ object Main {
 
   private val EXIT_SUCCESS = 0
   private val EXIT_FAILURE = 1
+
 
   /**
     * The main method.
@@ -158,6 +159,7 @@ object Main {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -168,6 +170,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -178,6 +181,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -188,6 +192,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.run(options)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -199,6 +204,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -210,6 +216,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
+              printErrors(System.err, result)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -218,7 +225,7 @@ object Main {
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
-            println("The `repl' command cannot be used with a list of files.")
+            println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd)(System.out) match {
@@ -256,6 +263,14 @@ object Main {
   private def getCode[T, E](result: Result[T, E]): Int = result match {
     case Result.Ok(_) => EXIT_SUCCESS
     case Result.Err(_) => EXIT_FAILURE
+  }
+
+  /**
+    * Prints errors from `result` to `out` if any errors are present.
+    */
+  private def printErrors[T](out: PrintStream, result: Result[T, List[String]]): Unit = result match {
+    case Result.Ok(_) => ()
+    case Result.Err(e) => e.foreach(out.println)
   }
 
   /**

@@ -484,7 +484,7 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(o: Options): Result[Unit, String] = {
+  def buildJar(o: Options): Result[Unit, List[String]] = {
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
@@ -493,7 +493,7 @@ class Bootstrap(val projectPath: Path) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.".toErr
+      return List(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.").toErr
     }
 
     // Construct a new zip file.
@@ -516,17 +516,17 @@ class Bootstrap(val projectPath: Path) {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) => Err(e.getMessage)
+      case Failure(e) => List(e.getMessage).toErr
     }
   }
 
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(o: Options): Result[Unit, String] = {
+  def buildPkg(o: Options): Result[Unit, List[String]] = {
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return "Cannot create a Flix package without a `flix.toml` file.".toErr
+      return List("Cannot create a Flix package without a `flix.toml` file.").toErr
     }
 
     // Create the artifact directory, if it does not exist.
@@ -537,7 +537,7 @@ class Bootstrap(val projectPath: Path) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.".toErr
+      return List(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.").toErr
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -559,7 +559,7 @@ class Bootstrap(val projectPath: Path) {
       }
     } match {
       case Success(()) => ().toOk
-      case Failure(e) => Err(e.getMessage)
+      case Failure(e) => List(e.getMessage).toErr
     }
   }
 
