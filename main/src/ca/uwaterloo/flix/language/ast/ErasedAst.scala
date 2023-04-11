@@ -198,7 +198,7 @@ object ErasedAst {
 
     case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
-   case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
