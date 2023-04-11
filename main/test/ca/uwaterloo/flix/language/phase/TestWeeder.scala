@@ -912,4 +912,40 @@ class TestWeeder extends FunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEqualityConstraint](result)
   }
+
+  test("InvalidRegularExpression.01") {
+    val input =
+      """
+        |def f(): Regex = regex"[a-*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.02") {
+    val input =
+      """
+        |def f(): Regex = regex"a{}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.03") {
+    val input =
+      """
+        |def f(): Regex = regex"a{-1}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.04") {
+    val input =
+      """
+        |def f(): Regex = regex"\\p{InvalidGroupName}*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
 }

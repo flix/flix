@@ -129,6 +129,8 @@ object Ast {
     case class BigInt(lit: java.math.BigInteger) extends Constant
 
     case class Str(lit: java.lang.String) extends Constant
+
+    case class Regex(lit: java.util.regex.Pattern) extends Constant
   }
 
   /**
