@@ -32,6 +32,9 @@ import java.nio.file.Paths
   */
 object Main {
 
+  private val EXIT_SUCCESS = 0
+  private val EXIT_FAILURE = 1
+
   /**
     * The main method.
     */
@@ -139,17 +142,15 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Init =>
-          val result = Bootstrap.init(cwd, options)(System.out)
-          System.exit(toCode(result))
+          getCode(Bootstrap.init(cwd, options)(System.out))
 
         case Command.Check =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = bootstrap.check(options)
-              System.exit(toCode(result))
+              getCode(bootstrap.check(options))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.Build =>
@@ -157,40 +158,40 @@ object Main {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.BuildJar =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.BuildPkg =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.Run =>
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.run(options)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.Benchmark =>
@@ -198,10 +199,10 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.Test =>
@@ -209,10 +210,10 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
-              System.exit(toCode(result))
+              System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
-              System.exit(1)
+              System.exit(EXIT_FAILURE)
           }
 
         case Command.Repl =>
@@ -252,17 +253,9 @@ object Main {
   /**
     * Extracts the exit code from the given result.
     */
-  private def toCode[A](result: Result[_, A]): Int = result match {
-    case Result.Ok(_) => 0
-    case Result.Err(_) => 1
-  }
-
-  /**
-    * Extracts the exit code from the given result.
-    */
-  private def getCode(result: Result[_, Int]): Int = result match {
-    case Result.Ok(_) => 0
-    case Result.Err(code) => code
+  private def getCode[T, E](result: Result[T, E]): Int = result match {
+    case Result.Ok(_) => EXIT_SUCCESS
+    case Result.Err(_) => EXIT_FAILURE
   }
 
   /**
