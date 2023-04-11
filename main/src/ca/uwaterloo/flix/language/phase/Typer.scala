@@ -1945,10 +1945,10 @@ object Typer {
         val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
-        // Require Boxable and Foldable instances.
-        val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
+        // Require Order and Foldable instances.
+        val orderSym = PredefinedClasses.lookupClassSym("Order", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val eq = Ast.TypeConstraint(Ast.TypeConstraint.Head(eqSym, loc), freshElmTypeVar, loc)
+        val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
         for {

@@ -13,14 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-///
-/// A type class for types that can be boxed.
-///
-pub class Boxable[a] with Order[a] {
-
-}
-
 mod Boxable {
 
     ///

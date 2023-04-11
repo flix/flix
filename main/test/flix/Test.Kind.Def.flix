@@ -146,7 +146,6 @@ mod Test.Kind.Def {
             pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Order[t1], Order[t2], Order[t3], Foldable[f] = ???
 
             pub enum PredSym
-            pub class Boxable[a]
             pub enum Datalog[_a]
             pub class Foldable[a: Type -> Type]
         }
