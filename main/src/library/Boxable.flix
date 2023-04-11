@@ -19,15 +19,6 @@
 ///
 pub class Boxable[a] with Order[a] {
 
-    ///
-    /// Boxes the given `x`.
-    ///
-    pub def box(x: a): Boxed = {
-        let value = unchecked_cast(x as ##java.lang.Object);
-        let compare = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-        Boxed.BoxedObject(value, compare)
-    }
-
 }
 
 mod Boxable {
@@ -35,7 +26,7 @@ mod Boxable {
     ///
     /// Boxes the given `x`.
     ///
-    pub def boxXYZ(x: a): Boxed with Order[a] = typematch x {
+    pub def box(x: a): Boxed with Order[a] = typematch x {
         case v: Bool    => Boxed.BoxedBool(v)
         case v: Char    => Boxed.BoxedChar(v)
         case v: Int8    => Boxed.BoxedInt8(v)
@@ -182,43 +173,30 @@ mod Boxable {
 }
 
 instance Boxable[Unit] {
-    pub override def box(x: Unit): Boxed = {
-        let value = checked_cast(x);
-        let compare = (_, _) -> Comparison.EqualTo;
-        Boxed.BoxedObject(value, compare)
-    }
 }
 
 instance Boxable[Bool] {
-    pub override def box(x: Bool): Boxed = Boxed.BoxedBool(x)
 }
 
 instance Boxable[Char] {
-    pub override def box(x: Char): Boxed = Boxed.BoxedChar(x)
 }
 
 instance Boxable[Int8] {
-    pub override def box(x: Int8): Boxed = Boxed.BoxedInt8(x)
 }
 
 instance Boxable[Int16] {
-    pub override def box(x: Int16): Boxed = Boxed.BoxedInt16(x)
 }
 
 instance Boxable[Int32] {
-    pub override def box(x: Int32): Boxed = Boxed.BoxedInt32(x)
 }
 
 instance Boxable[Int64] {
-    pub override def box(x: Int64): Boxed = Boxed.BoxedInt64(x)
 }
 
 instance Boxable[Float32] {
-    pub override def box(x: Float32): Boxed = Boxed.BoxedFloat32(x)
 }
 
 instance Boxable[Float64] {
-    pub override def box(x: Float64): Boxed = Boxed.BoxedFloat64(x)
 }
 
 instance Boxable[BigDecimal]
