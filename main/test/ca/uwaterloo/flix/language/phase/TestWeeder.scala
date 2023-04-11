@@ -916,7 +916,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InvalidRegularExpression.01") {
     val input =
       """
-        |def f(): Regex = Regex#"[a-*"
+        |def f(): Regex = regex"[a-*"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)
@@ -925,7 +925,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InvalidRegularExpression.02") {
     val input =
       """
-        |def f(): Regex = Regex#"a{}"
+        |def f(): Regex = regex"a{}"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)
@@ -934,7 +934,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InvalidRegularExpression.03") {
     val input =
       """
-        |def f(): Regex = Regex#"a{-1}"
+        |def f(): Regex = regex"a{-1}"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)
@@ -943,7 +943,7 @@ class TestWeeder extends FunSuite with TestUtils {
   test("InvalidRegularExpression.04") {
     val input =
       """
-        |def f(): Regex = Regex#"\\p{InvalidGroupName}*"
+        |def f(): Regex = regex"\\p{InvalidGroupName}*"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.InvalidRegularExpression](result)

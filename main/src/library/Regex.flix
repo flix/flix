@@ -197,7 +197,7 @@ mod Regex {
     pub def split(regex: {regex = Regex}, s: String): List[String] = region rc {
         import java.util.regex.Pattern.split(##java.lang.CharSequence): Array[String, rc] \ Write(rc);
         let _ = rc; // This avoids a redundancy error.
-        Array.toList(split(regex.regex, unchecked_cast(s as ##java.lang.CharSequence)))
+        Array.toList(split(regex.regex, checked_cast(s)))
     }
 
 
@@ -375,7 +375,7 @@ mod Regex {
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ Write(r) =
         import java.util.regex.Pattern.matcher(##java.lang.CharSequence): ##java.util.regex.Matcher \ r;
-        Matcher(matcher(rgx, unchecked_cast(s as ##java.lang.CharSequence)))
+        Matcher(matcher(rgx, checked_cast(s)))
 
     ///
     /// Attempt to find the next match. Returns `true` and moves to the next match

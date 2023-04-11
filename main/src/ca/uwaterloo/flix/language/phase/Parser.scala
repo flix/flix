@@ -443,7 +443,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Regex: Rule1[ParsedAst.Literal.Regex] = rule {
-      SP ~ "Regex#\"" ~ zeroOrMore(!("\"") ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Regex
+      SP ~ "regex\"" ~ zeroOrMore(!("\"") ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Regex
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
