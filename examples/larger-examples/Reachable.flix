@@ -76,8 +76,7 @@ namespace Reachable/Functional {
 }
 
 namespace Reachable/Logic {
-    // Note that Boxable includes Order
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Boxable[n] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         let edgeFacts = project edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
         let reachable = #{

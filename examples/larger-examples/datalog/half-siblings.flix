@@ -1,4 +1,4 @@
-pub def halfSiblings(siblings: List[(person, person)]): List[(person, person)] with Boxable[person] =
+pub def halfSiblings(siblings: List[(person, person)]): List[(person, person)] with Order[person] =
     let s = inject siblings into Sibling;
     let lp: #{ Sibling(person, person), Parent(person, person), HalfSibling(person, person) } = #{
         Sibling(x, y) :- Parent(x, p), Parent(y, p), if x != y.
