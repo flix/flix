@@ -28,17 +28,51 @@ pub class Boxable[a] with Order[a] {
         Boxed.BoxedObject(value, compare)
     }
 
-    ///
-    /// Unboxes the given `x`.
-    ///
-    pub def unbox(x: Boxed): a = match x {
-        case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
-        case _                       => ?bug
-    }
-
 }
 
 mod Boxable {
+
+    ///
+    /// Unboxes the given `x`.
+    ///
+    pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
+        case _: Proxy[Bool] => match x {
+            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Char] => match x {
+            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Int8] => match x {
+            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Int16] => match x {
+            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Int32] => match x {
+            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Int64] => match x {
+            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Float32] => match x {
+            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: Proxy[Float64] => match x {
+            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+        case _: _ => match x {
+            case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
+            case _                       => unreachable!()
+        }
+    }
 
     ///
     /// Lifts the given function `f` to operate on boxed values.
@@ -136,71 +170,38 @@ instance Boxable[Unit] {
         let compare = (_, _) -> Comparison.EqualTo;
         Boxed.BoxedObject(value, compare)
     }
-    pub override def unbox(_: Boxed): Unit = ()
 }
 
 instance Boxable[Bool] {
     pub override def box(x: Bool): Boxed = Boxed.BoxedBool(x)
-    pub override def unbox(x: Boxed): Bool = match x {
-        case Boxed.BoxedBool(v) => v
-        case _            => ?bug
-    }
 }
 
 instance Boxable[Char] {
     pub override def box(x: Char): Boxed = Boxed.BoxedChar(x)
-    pub override def unbox(x: Boxed): Char = match x {
-        case Boxed.BoxedChar(v) => v
-        case _            => ?bug
-    }
 }
 
 instance Boxable[Int8] {
     pub override def box(x: Int8): Boxed = Boxed.BoxedInt8(x)
-    pub override def unbox(x: Boxed): Int8 = match x {
-        case Boxed.BoxedInt8(v) => v
-        case _            => ?bug
-    }
 }
 
 instance Boxable[Int16] {
     pub override def box(x: Int16): Boxed = Boxed.BoxedInt16(x)
-    pub override def unbox(x: Boxed): Int16 = match x {
-        case Boxed.BoxedInt16(v) => v
-        case _             => ?bug
-    }
 }
 
 instance Boxable[Int32] {
     pub override def box(x: Int32): Boxed = Boxed.BoxedInt32(x)
-    pub override def unbox(x: Boxed): Int32 = match x {
-        case Boxed.BoxedInt32(v) => v
-        case _             => ?bug
-    }
 }
 
 instance Boxable[Int64] {
     pub override def box(x: Int64): Boxed = Boxed.BoxedInt64(x)
-    pub override def unbox(x: Boxed): Int64 = match x {
-        case Boxed.BoxedInt64(v) => v
-        case _             => ?bug
-    }
 }
 
 instance Boxable[Float32] {
     pub override def box(x: Float32): Boxed = Boxed.BoxedFloat32(x)
-    pub override def unbox(x: Boxed): Float32 = match x {
-        case Boxed.BoxedFloat32(v) => v
-        case _               => ?bug
-    }
 }
 
 instance Boxable[Float64] {
     pub override def box(x: Float64): Boxed = Boxed.BoxedFloat64(x)
-    pub override def unbox(x: Boxed): Float64 = match x {
-        case Boxed.BoxedFloat64(v) => v
-        case _               => ?bug
-    }
 }
 
 instance Boxable[BigDecimal]
