@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 Stephen Tetley
+ *  Copyright 2023 Stephen Tetley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,11 +14,35 @@
  *  limitations under the License.
  */
 
-mod TestFunctor {
+mod TestGradedFunctor {
 
-    use Functor.{map, ignore}
-    use Functor.{<$>, <$$>, <$, $>}
+    use GradedFunctor.{<$>, <$$>, <$, $>}
 
+    use TestGradedFunctor.Int32Reader
+    use TestGradedFunctor.Int32Reader.{Int32Reader}
+
+    ///
+    /// A Reader functor with the environment type restricted to `Int32`.
+    ///
+    pub enum Int32Reader[ef: Bool, a: Type](Int32 -> a \ ef)
+
+    ///
+    /// Run an Int32Reader computation.
+    ///
+    def runReader(ma: Int32Reader[ef, a], i: Int32): a \ ef =
+        let Int32Reader(ma1) = ma;
+        ma1(i)
+
+    def ask(): Int32Reader[ef, Int32] =
+        Int32Reader(i -> checked_ecast(i))
+
+    instance GradedFunctor[Int32Reader] {
+        pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
+            Int32Reader(i ->
+                let a = runReader(unchecked_cast(ma as Int32Reader[ef and ef1, a]), i);
+                f(a)
+            )
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
@@ -26,23 +50,16 @@ mod TestFunctor {
 
     @test
     def map01(): Bool =
-        map(x -> x + 1, None) == None
+        runReader(GradedFunctor.map(x -> x + 1, ask()), 0) == 1
 
     @test
     def map02(): Bool =
-        map(x -> x + 1, Some(1)) == Some(2)
+        runReader(GradedFunctor.map(x -> if (x > 0) Some(x) else None, ask()), 0) == None
 
     @test
     def map03(): Bool =
-        map(x -> x + 1, Nil) == Nil
+        runReader(GradedFunctor.map(x -> if (x > 0) Some(x) else None, ask()), 1) == Some(1)
 
-    @test
-    def map04(): Bool =
-        map(x -> x + 1, 1 :: Nil) == 2 :: Nil
-
-    @test
-    def map05(): Bool =
-        map(x -> x + 1, 1 :: 2 :: Nil) == 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
@@ -50,23 +67,17 @@ mod TestFunctor {
 
     @test
     def replace01(): Bool =
-        Functor.replace(None, 'A') == None
+        runReader(GradedFunctor.replace(ask(), 2), 1) == 2
 
     @test
     def replace02(): Bool =
-        Functor.replace(Some(1), 'A') == Some('A')
+        let opti: Option[Int32] = None;
+        runReader(GradedFunctor.replace(ask(), opti), 1) == None
 
     @test
     def replace03(): Bool =
-        Functor.replace(Nil, 'A') == Nil
+        runReader(GradedFunctor.replace(ask(), Some(2)), 1) == Some(2)
 
-    @test
-    def replace04(): Bool =
-        Functor.replace(1 :: Nil, 'A') == 'A' :: Nil
-
-    @test
-    def replace05(): Bool =
-        Functor.replace(1 :: 2 :: Nil, 'A') == 'A' :: 'A' :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // ignore                                                                  //
@@ -74,23 +85,11 @@ mod TestFunctor {
 
     @test
     def ignore01(): Bool =
-        ignore(None) == None
+        runReader(GradedFunctor.ignore(ask()), 1) == ()
 
-    @test
+   @test
     def ignore02(): Bool =
-        ignore(Some(1)) == Some(())
-
-    @test
-    def ignore03(): Bool =
-        ignore(Nil) == Nil
-
-    @test
-    def ignore04(): Bool =
-        ignore(1 :: Nil) == () :: Nil
-
-    @test
-    def ignore05(): Bool =
-        ignore(1 :: 2 :: Nil) == () :: () :: Nil
+        runReader(GradedFunctor.ignore(ask()), 100) == ()
 
     /////////////////////////////////////////////////////////////////////////////
     // symMap (<$>)                                                            //
@@ -98,11 +97,11 @@ mod TestFunctor {
 
     @test
     def symMap01(): Bool =
-        (x -> x + 1) <$> None == None
+        runReader((x -> x + 1) <$> ask(), 1) == 2
 
     @test
     def symMap02(): Bool =
-        (x -> x + 1) <$> Some(1) == Some(2)
+        runReader((x -> if (x > 0) Some(x) else None) <$> ask(), 1) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // symFlippedMap (<$$>)                                                    //
@@ -110,11 +109,11 @@ mod TestFunctor {
 
     @test
     def symFilppedMap01(): Bool =
-        None <$$> (x -> x + 1) == None
+        runReader(ask() <$$> (x -> x + 1), 1) == 2
 
     @test
     def symFlippedMap02(): Bool =
-        Some(1) <$$> (x -> x + 1) == Some(2)
+        runReader(ask() <$$> (x -> if (x > 0) Some(x) else None), 1) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // symReplace (<$)                                                         //
@@ -122,11 +121,11 @@ mod TestFunctor {
 
     @test
     def symReplace01(): Bool =
-        () <$ None == None
+        runReader(() <$ ask(), 1) == ()
 
     @test
     def symReplace02(): Bool =
-        () <$ Some(1) == Some(())
+        runReader(Some(100) <$ ask(), 1) == Some(100)
 
     /////////////////////////////////////////////////////////////////////////////
     // symFlippedReplace ($>)                                                  //
@@ -134,10 +133,10 @@ mod TestFunctor {
 
     @test
     def symFlippedReplace01(): Bool =
-        None $> () == None
+        runReader(ask() $> (), 1) == ()
 
     @test
     def symFlippedReplace02(): Bool =
-        Some(1) $> () == Some(())
+        runReader(ask() $> Some(100), 1) == Some(100)
 
 }
