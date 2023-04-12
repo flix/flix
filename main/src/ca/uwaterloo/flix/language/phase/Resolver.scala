@@ -38,14 +38,13 @@ object Resolver {
   /**
     * Symbols of classes that are derivable.
     */
-  private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
   private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
   private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
   private val SendableSym = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
 
   /**
     * Java classes for primitives and Object
@@ -1968,19 +1967,7 @@ object Resolver {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ =>
-            // if the enum derives Eq, Order, and ToString
-            // AND it does not already derive Boxable
-            // then add Boxable to its derivations
-            // otherwise just use the given list of derivations
-            val classesImplyingBoxable = List(EqSym, OrderSym, ToStringSym)
-            val deriveSyms = derives.map(_.clazz)
-            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(BoxableSym)) {
-              val loc = derives.map(_.loc).min
-              Ast.Derivation(BoxableSym, loc) :: derives
-            } else {
-              derives
-            }
+          _ => derives
         }
     }
   }

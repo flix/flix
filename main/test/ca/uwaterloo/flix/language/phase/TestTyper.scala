@@ -358,7 +358,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    expectError[TypeError.MissingEq](result)
   }
 
   test("MissingEq.01") {

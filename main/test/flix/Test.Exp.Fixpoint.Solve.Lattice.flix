@@ -62,8 +62,6 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         }
     }
 
-    instance Boxable[Constant]
-
     instance ToString[Constant] {
         pub def toString(x: Constant): String = match x {
             case Constant.Top    => "Constant.Top"

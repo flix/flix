@@ -42,6 +42,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object Lowering {
 
   private object Defs {
+    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
+
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
@@ -97,15 +99,6 @@ object Lowering {
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
 
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
-  }
-
-  private object Sigs {
-    private val SL: SourcePosition = SourcePosition.Unknown
-    private val RootNS: Name.NName = Name.NName(SL, Nil, SL)
-
-    private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
-
-    lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("box"))
   }
 
   private object Types {
@@ -1271,7 +1264,7 @@ object Lowering {
   private def box(exp: LoweredAst.Expression)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    val innerExp = LoweredAst.Expression.Sig(Sigs.Box, tpe, loc)
+    val innerExp = LoweredAst.Expression.Def(Defs.Box, tpe, loc)
     LoweredAst.Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, Type.Empty, loc)
   }
 

@@ -149,7 +149,7 @@ mod Test.Exp.Fixpoint.Solve {
         let m = query p select (x, y) from Path(x, y);
         List.memberOf(("d", "b"), m)
 
-    def closure(): #{Edge(a, a), Path(a, a) | r} with Boxable[a] = #{
+    def closure(): #{Edge(a, a), Path(a, a) | r} with Order[a] = #{
         Edge(y, x) :- Edge(x, y).
         Path(x, y) :- Edge(x, y).
         Path(x, z) :- Path(x, y), Edge(y, z).
