@@ -355,8 +355,9 @@ mod Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
-                case Loop(_) =>
-                    ??? // TODO
+                case Loop(xyz) =>
+                    // TODO
+                    ???(debug(xyz))
             }, Nil, body)
 
     def unwrap(o: Option[a]): a = match o {
