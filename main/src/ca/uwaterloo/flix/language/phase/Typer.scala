@@ -2814,7 +2814,7 @@ object Typer {
 
       case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
         val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
-        val expectedType = Type.mkVector(tupleType, loc)
+        val expectedType = Type.mkVector(varSyms.head.tvar, loc) // TODO
         for {
           (constrs, tpe, pur, eff) <- inferExp(exp, root)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
