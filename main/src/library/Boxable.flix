@@ -162,4 +162,10 @@ mod Boxable {
     pub def lift5b(f: t1 -> t2 -> t3 -> t4 -> t5 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Bool with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5))
 
+
+
+    @Internal
+    pub def lift2X2(f: i1 -> i2 -> (o1, o2)): Vector[Boxed] -> Vector[Boxed] with Order[i1], Order[i2], Order[o1], Order[o2] =
+        (v: Vector[Boxed]) -> Vector#{box(f(unbox(Vector.get(0, v)), unbox(Vector.get(1, v))))}
+
 }
