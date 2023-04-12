@@ -53,6 +53,17 @@ object Unification {
     case _ if !KindUnification.unifiesWith(x.kind, tpe.kind) => Result.Err(UnificationError.MismatchedTypes(x, tpe))
 
     case y: Type.Var => unifyVars(x, y, renv)
+
+    // No rigidity/occurs check for associated types
+    // TODO ASSOC-TYPES probably the same situation for type aliases
+    case assoc: Type.AssocType =>
+      // don't do the substitution if the var is in the assoc type
+      if (assoc.typeVars contains x) {
+        Result.Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(x, assoc))))
+      } else {
+        Result.Ok((Substitution.singleton(x.sym, assoc), Nil))
+      }
+
     case _ =>
 
       // Check if `x` is rigid.

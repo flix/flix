@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
   * as soon as they run without special options.
   */
 class ExperimentalSuite extends FlixSuite(incremental = true) {
-  implicit val options: Options = Options.TestWithLibAll.copy(xallowredundancies = true)
+  implicit val options: Options = Options.TestWithLibAll.copy(xallowredundancies = true, threads = 1)
 
   mkTest("main/test/flix/experimental/Test.Dec.AssocType.flix")
 }

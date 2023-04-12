@@ -174,7 +174,7 @@ object Instances {
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, root.eqEnv)) {
                 // Case 5.1: the schemes match. Success!
                 Nil
               } else {
