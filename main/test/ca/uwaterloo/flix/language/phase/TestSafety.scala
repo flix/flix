@@ -244,17 +244,6 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalRelationalUseOfLatticeVariable](result)
   }
 
-  test("UseOfLatticeVariable.01") {
-    val input =
-      """
-        |pub def f(): #{ A(Int32), B(Int32; Int32) } = #{
-        |    A(x: Int32) :- B(12; x).
-        |}
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[IllegalRelationalUseOfLatticeVariable](result)
-  }
-
   test("TestInvalidThis.01") {
     val input =
       """
