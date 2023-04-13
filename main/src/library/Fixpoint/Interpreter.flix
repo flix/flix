@@ -60,6 +60,7 @@ mod Fixpoint {
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Project(_) => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
+        case RelOp.Loop(_) => ??? // TODO
     }
 
     def evalOp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v] =

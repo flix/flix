@@ -30,7 +30,7 @@ mod Fixpoint.Ast {
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
-        case Loop1(v -> List[v])
+        case Loop(Vector[VarSym], Vector[v] -> Vector[Vector[v]], Vector[VarSym])
     }
 
     instance PredSymsOf[BodyPredicate[v]] {
@@ -74,7 +74,7 @@ mod Fixpoint.Ast {
                 case BodyPredicate.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case BodyPredicate.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-                case BodyPredicate.Loop1(_) => "<loop>"
+                case BodyPredicate.Loop(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
             }
     }
 }
