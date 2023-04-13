@@ -2017,8 +2017,8 @@ object Typer {
       (tconstrs, tpe, pur, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
       // TODO Currently disabled due to region issues. See issue #5603
-//      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
-//      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      //      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
+      //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, pur, eff)
   }
 
@@ -2813,13 +2813,12 @@ object Typer {
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-        // TODO: Use type classes instead of array?
         val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
-        val expectedType = Type.mkArray(tupleType, Type.False, loc)
+        val expectedType = Type.mkVector(tupleType, loc)
         for {
           (constrs, tpe, pur, eff) <- inferExp(exp, root)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
           expEff <- unifyTypeM(Type.Empty, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
     }
