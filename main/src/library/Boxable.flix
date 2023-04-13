@@ -15,6 +15,8 @@
  */
 mod Boxable {
 
+    use Vector.get
+
     ///
     /// Boxes the given `x`.
     ///
@@ -336,10 +338,5 @@ mod Boxable {
         (v: Vector[Boxed]) ->
             let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
             Vector.map(g, f(unbox(get(0, v)), unbox(get(1, v)), unbox(get(2, v)), unbox(get(3, v)), unbox(get(4, v))))
-
-    ///
-    /// Private copy of `Vector.get`.
-    ///
-    def get(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
 
 }
