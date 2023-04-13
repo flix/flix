@@ -23,7 +23,7 @@ pub type alias Graph[node] = {
 
 /// Given the undirected graph described by `nodes` and `edges`, connected components are
 /// found and a relation with the component representative for each node is returned.
-pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r } with Boxable[node] =
+pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r } with Order[node] =
     let nodes = inject g.nodes into Node;
     let edges = inject g.edges into Edge;
     let reachability = #{
@@ -50,7 +50,7 @@ pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r }
 
 /// Connects the undirected graph given by `nodes` and `edges`
 /// ny connecting the connected components of the graph.
-pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with Boxable[node] =
+pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with Order[node] =
     let missingEdges = #{
         // `Component(rep; c)` describes that the node `rep` is the representative of the component
         // `c` which is a set of nodes. The semicolon makes `c` use lattice semantics which
