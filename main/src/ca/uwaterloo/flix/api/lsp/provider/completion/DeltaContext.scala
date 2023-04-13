@@ -15,16 +15,23 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.Symbol
-
 /**
   * Represents a list of changes.
   */
-case class DeltaContext(deltas: List[Delta]) {
+case class DeltaContext(delta: Delta)
 
-  def isNewEnum(sym: Symbol.EnumSym): Boolean = deltas.exists {
-    case Delta.AddEnum(sym2, _) => sym == sym2 // TODO: And time?
-    case _ => false
+/**
+  * Represents changes between ASTs.
+  */
+object DeltaContext {
+  /**
+    * Merges two DeltaContext.
+    *
+    * @param d1 the first DeltaContext.
+    * @param d2 the second DeltaContext.
+    * @return   a DeltaContext with a new Delta containing all changes
+    */
+  def mergeDeltas(d1: DeltaContext, d2: DeltaContext): DeltaContext = {
+    DeltaContext(Delta(d1.delta.defs ++ d2.delta.defs))
   }
-
 }

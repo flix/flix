@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2023 Magnus Madsen, Lukas Rønn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,41 +15,9 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
-import ca.uwaterloo.flix.language.ast.{Name, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
-  * A common super-type for deltas (differences) between ASTs.
+  * A data-type for deltas (differences) between ASTs.
   */
-sealed trait Delta {
-  /**
-    * Returns the timestamp (time since UNIX epoch) of when the change happened.
-    */
-  def timestamp: Long
-}
-
-object Delta {
-
-  /**
-    * Represents the addition of a new function.
-    *
-    * @param sym the symbol of the new function.
-    */
-  case class AddDef(sym: Symbol.DefnSym, timestamp: Long) extends Delta
-
-  /**
-    * Represents the addition of a new enum.
-    *
-    * @param sym the symbol of the new enum.
-    */
-  case class AddEnum(sym: Symbol.EnumSym, timestamp: Long) extends Delta
-
-  /**
-    * Represents the addition of a new field.
-    *
-    * @param field the name of the field.
-    */
-  case class AddField(field: Name.Field, timestamp: Long) extends Delta
-
-  // TODO: ...
-
-}
+case class Delta(defs: Map[Symbol.DefnSym, Long])
