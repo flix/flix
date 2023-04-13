@@ -365,7 +365,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
-    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(this.delta, oldRoot, root))
+    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
     this.currentErrors = errors.toList
 
