@@ -71,8 +71,8 @@ mod TestGradedFunctor {
 
     @test
     def replace02(): Bool =
-        let opti: Option[Int32] = None;
-        runReader(GradedFunctor.replace(ask(), opti), 1) == None
+        let noneI32: Option[Int32] = None;
+        runReader(GradedFunctor.replace(ask(), noneI32), 1) == None
 
     @test
     def replace03(): Bool =
