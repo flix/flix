@@ -22,6 +22,7 @@ mod Fixpoint.Ram {
         case Query(RowVar, RamSym[v], List[(Int32, RamTerm[v])], RelOp[v])
         case Project(List[RamTerm[v]], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
+        case Loop(RowVar, Vector[v] -> Vector[Vector[v]], Vector[RamTerm[v]], RelOp[v])
     }
 
     instance ToString[RelOp[v]] {
@@ -40,6 +41,8 @@ mod Fixpoint.Ram {
                 case RelOp.If(test, then) =>
                     let tst = test |> List.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                case RelOp.Loop(rowVar, _, terms, body) =>
+                    "loop(${rowVar} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
             }
     }
 }

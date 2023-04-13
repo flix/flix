@@ -127,6 +127,7 @@ mod Fixpoint {
                 res <- f(newBody)
             ) yield res
         case RelOp.Project(_) => Some(op)
+        case RelOp.Loop(_) => ??? // TODO
     }
 
     ///
