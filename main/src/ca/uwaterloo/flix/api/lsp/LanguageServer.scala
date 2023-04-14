@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{Delta, DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -93,7 +93,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current delta context. Initially has no changes.
     */
-  private var delta: DeltaContext = DeltaContext(Delta(Map.empty))
+  private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).

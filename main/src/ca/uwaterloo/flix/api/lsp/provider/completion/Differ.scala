@@ -26,14 +26,14 @@ object Differ {
   def difference(old: Option[TypedAst.Root], newAst: TypedAst.Root): DeltaContext = old match {
     case None =>
       // Case 1: No old AST. No difference.
-      DeltaContext(Delta(Map.empty))
+      DeltaContext(Map.empty)
     case Some(oldAst) =>
       // Case 2: We have an oldAst and a newAst. Compute their difference.
 
       // TODO: Add some comments and introduce helper functions.
       val newDefs = findModifiedDefs(oldAst, newAst)
 
-      DeltaContext(Delta(newDefs))
+      DeltaContext(newDefs)
   }
 
   private def findModifiedDefs(oldAst: TypedAst.Root, newAst: TypedAst.Root): Map[Symbol.DefnSym, Long] = {

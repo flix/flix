@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.language.ast.Symbol
+
 /**
   * Represents a list of changes.
   */
-case class DeltaContext(delta: Delta)
+case class DeltaContext(defs: Map[Symbol.DefnSym, Long])
 
 /**
   * Represents changes between ASTs.
@@ -27,11 +29,16 @@ object DeltaContext {
   /**
     * Merges two DeltaContext.
     *
+    * This is not a commutative operation.
+    *
+    * If d1 and d2 contains the same key, but a different value, the resulting DeltaContext
+    * will contain a mapping from that key to the value from d2.
+    *
     * @param d1 the first DeltaContext.
     * @param d2 the second DeltaContext.
-    * @return   a DeltaContext with a new Delta containing all changes
+    * @return   a DeltaContext with a new map containing all changes.
     */
   def mergeDeltas(d1: DeltaContext, d2: DeltaContext): DeltaContext = {
-    DeltaContext(Delta(d1.delta.defs ++ d2.delta.defs))
+    DeltaContext(d1.defs ++ d2.defs)
   }
 }
