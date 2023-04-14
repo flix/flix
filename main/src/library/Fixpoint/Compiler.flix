@@ -23,7 +23,7 @@ mod Fixpoint {
     use Fixpoint.Ast.HeadPredicate.HeadAtom
     use Fixpoint.Ast.BodyPredicate.{BodyAtom}
     use Fixpoint.Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint.Ast.BodyPredicate.{Loop1}
+    use Fixpoint.Ast.BodyPredicate.{Loop}
     use Fixpoint.Ast.isRelational
     use Fixpoint.Shared.PredSym
     use Fixpoint.Shared.PredSym.PredSym
@@ -355,7 +355,7 @@ mod Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
-                case Loop1(_) =>
+                case Loop(_) =>
                     ??? // TODO
             }, Nil, body)
 

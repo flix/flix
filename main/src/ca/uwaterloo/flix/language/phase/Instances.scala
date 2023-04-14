@@ -122,7 +122,7 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
-        case Type.AssocType(assoc, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc) // TODO ASSOC-TYPES real error
+        case Type.AssocType(assoc, _, _, loc) => List(InstanceError.IllegalAssocTypeInstance(assoc.sym, clazz.sym, loc))
       }
     }
 
