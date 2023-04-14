@@ -130,8 +130,9 @@ mod Fixpoint {
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, test ::: innerGround)
         case RelOp.Loop(rowVar, f, terms, body) =>
+            // TODO: The above hoisting is broken...
             // TODO: Do anything with rowVar?
-            let (innerOp, innerGround) = queryOp(body, freeVars);
+            let (innerOp, innerGround) = queryOp(body, Set.insert(rowVar, freeVars));
             (RelOp.Loop(rowVar, f, terms, innerOp), innerGround)
     }
 

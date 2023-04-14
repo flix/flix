@@ -198,7 +198,9 @@ mod Fixpoint {
                                 RamSym.Full(bodySym, arity1, den)
                             };
                             RelOp.Search(rowVar, ramSym, acc)
-                            // TODO: Loop atom
+                        case Loop(_, f, freeVars) =>
+                            let terms = Vector.map(v -> unwrap(Map.get(v, env)), freeVars);
+                            RelOp.Loop(rowVar, f, terms, acc)
                         case _ => acc
                     }, loopBody, augBody) |>
                     RamStmt.Insert;
