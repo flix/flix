@@ -520,23 +520,24 @@ object Stratifier {
   }
 
   /**
-    * Reorders a constraint such that its negated atoms occur last.
+    * Reorders a constraint such that its negated atoms and loop predicates occur last.
     */
   private def reorder(c0: Constraint): Constraint = {
     /**
       * Returns `true` if the body predicate is negated.
       */
-    def isNegative(p: Predicate.Body): Boolean = p match {
+    def isNegativeOrLoop(p: Predicate.Body): Boolean = p match {
       case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
+      case Predicate.Body.Loop(_, _, _) => true
       case _ => false
     }
 
-    // Collect all the negated and non-negated predicates.
-    val negated = c0.body filter isNegative
-    val nonNegated = c0.body filterNot isNegative
+    // Order the predicates from first to last.
+    val last = c0.body filter isNegativeOrLoop
+    val first = c0.body filterNot isNegativeOrLoop
 
     // Reassemble the constraint.
-    c0.copy(body = nonNegated ::: negated)
+    c0.copy(body = first ::: last)
   }
 
   /**
