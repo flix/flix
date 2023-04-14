@@ -126,6 +126,21 @@ mod Vector {
         loop(0)
 
     ///
+    /// Returns the number of threads to use for parallel evaluation.
+    ///
+    def threads(): Int32 =
+        // Note: We use a multiple of the number of physical cores for better performance.
+        let multiplier = 4;
+        multiplier * Environment.getVirtualProcessors()
+
+    ///
+    /// Determines whether to use parallel evaluation.
+    ///
+    /// By default we only enable parallel evaluation if the vector has a certain size.
+    ///
+    def useParallelEvaluation(v: Vector[t]): Bool = length(v) >= 1024
+
+    ///
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
@@ -472,16 +487,80 @@ mod Vector {
     ///
     /// The result is a new vector.
     ///
-    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        init(i -> f(get(i, v)), length(v))
+    /// Purity reflective: Runs in parallel when given a pure function `f`
+    @ParallelWhenPure
+    pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef = mapWithIndex((_, x) -> f(x), v)
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
+        typematch f {
+            case g: (Int32, a) -> b \ {} =>
+                if (useParallelEvaluation(v))
+                    parMapWithIndex(threads() - 1, g, v)
+                else seqMapWithIndex(g, v)
+            case g: (Int32, a) -> b \ ef => seqMapWithIndex(g, v)
+            case _:_ => unreachable!()
+        }
+
+    ///
+    /// Returns the result of applying `f` to every element in `v`.
+    ///
+    /// The result is a new vector.
+    ///
+    pub def seqMap(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
+        init(i -> f(get(i, v)), length(v))
+
+    ///
+    /// Returns the result of applying `f` to every element in `v`.
+    ///
+    /// The result is a new vector.
+    ///
+    /// The implementation spawns `n` threads each applying `f` on some subvector that is
+    /// disjoint from the rest of the threads.
+    ///
+    pub def parMap(n: Int32, f: a -> b, v: Vector[a]): Vector[b] = parMapWithIndex(n, (_, x) -> f(x), v)
+
+    ///
+    /// Returns the result of applying `f` to every element in `v` along with that element's index.
+    ///
+    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    ///
+    pub def seqMapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(i, get(i, v)), length(v))
+
+    ///
+    /// Returns the result of applying `f` to every element in `v` along with that element's index.
+    ///
+    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    ///
+    /// The implementation spawns `n` threads each applying `f` on some subvector that is
+    /// disjoint from the rest of the threads.
+    ///
+    pub def parMapWithIndex(n: Int32, f: (Int32, a) -> b, v: Vector[a]): Vector[b] =
+        unchecked_cast(region rc {
+            let result: Array[b, rc] = Array.new(rc, length(v));
+            def transform(left, right) = {
+                if (left <= right) {
+                    Array.put(f(left, get(left, v)), left, result);
+                    transform(left + 1, right)
+                }
+                else ()
+            };
+            def parTransform(t, left, right) =
+                if (t <= 1) transform(left, right)
+                else {
+                    spawn parTransform((t - 2) / 2, left, (left + right) / 2) @ rc;
+                    spawn parTransform((t - 2) / 2, (left + right) / 2, right) @ rc
+                };
+            parTransform(n, 0, length(v));
+            unchecked_cast(result as Vector[b])
+        } as Vector[b] \ {})
+
 
     ///
     /// Returns the result of running all the actions in the list `v` going from left
@@ -888,8 +967,42 @@ mod Vector {
     ///
     /// Returns the number of elements in `v` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool \ ef, v: Vector[a]): Int32 \ ef =
+    pub def seqCount(f: a -> Bool \ ef, v: Vector[a]): Int32 \ ef =
         foldLeft((b, x) -> if (f(x)) b + 1 else b, 0, v)
+
+    ///
+    /// Returns the number of elements in `v` that satisfy the predicate `f`.
+    ///
+    /// Purity reflective: Runs in parallel when given a pure function `f`
+    ///
+    pub def count(f: a -> Bool \ ef, v: Vector[a]): Int32 \ ef =
+        typematch f {
+            case g: a -> Bool \ ef => seqCount(g, v)
+            case g: a -> Bool \ {} =>
+                if (useParallelEvaluation(v)) parCount(threads(), g, v)
+                else seqCount(g, v)
+            case _:_ => unreachable!()
+        }
+
+
+    ///
+    /// Returns the number of elements in `v` that satisfy the predicate `f`.
+    ///
+    /// The implementation spawns `n` threads each applying `f` on some subvector that is
+    /// disjoint from the rest of the threads.
+    ///
+    pub def parCount(n: Int32, f: a -> Bool, v: Vector[a]): Int32 =
+        def process(left, right) =
+            if (left == right) 0
+            else (if (f(get(left, v))) 1 else 0) + process(left + 1, right);
+        def parProcess(t, left, right) =
+            if (n <= 1) process(left, right)
+            else par (
+                l <- parProcess((t - 2) / 2, left, (left + right) / 2);
+                r <- parProcess((t - 2) / 2, (left + right) / 2, right)
+            ) yield l + r;
+        parProcess(n, 0, length(v))
+
 
     ///
     /// Returns the sum of all elements in the vector `v`.
@@ -934,6 +1047,51 @@ mod Vector {
                 loop(i + 1)
         };
         loop(0)
+
+    ///
+    /// Returns `true` if and only if at least one element in `v` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `v` is empty.
+    ///
+    /// Note that this is equivalent to `exists` but for performance reasons -- to avoid
+    /// megamorphic calls -- we use a copy here.
+    ///
+    pub def seqExists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef =
+        let len = length(v);
+        def loop(i) = {
+            if (i >= len)
+                false
+            else if (f(get(i, v)))
+                true
+            else
+                loop(i + 1)
+        };
+        loop(0)
+
+    ///
+    /// Returns `true` if and only if at least one element in `v` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `v` is empty.
+    ///
+    /// The function `f` must be pure.
+    ///
+    /// Traverses the vector `v` in parallel.
+    ///
+    @Parallel
+    pub def parExists(n: Int32, f: a -> Bool, v: Vector[a]): Bool =
+        def check(left, right): Bool = {
+            if (left == right) false
+            else f(get(left, v)) or check(left + 1, right)
+        };
+        def parCheck(threads, left, right): Bool = {
+            if (threads <= 1) check(left, right)
+            else par(
+                l <- parCheck((n - 2) / 2, left, (left + right) / 2);
+                r <- parCheck((n - 2) / 2, (left + right) / 2, right)
+            ) yield l or r
+
+        };
+        parCheck(n, 0, length(v))
 
     ///
     /// Returns `true` if and only if all elements in `v` satisfy the predicate `f`.
