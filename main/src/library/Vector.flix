@@ -1260,6 +1260,16 @@ namespace Vector {
         foldRight(Set.insert, Set.empty(), v)
 
     ///
+    /// Splits the vector `v` at position `n` into two parts
+    ///
+    pub def splitAt(n: Int32, v: Vector[a]): (Vector[a], Vector[a]) = region rc {
+        let arr = unchecked_cast(v as Array[a, rc]);
+        let left = Array.copyOfRange(rc, 0, n, arr);
+        let right = Array.copyOfRange(rc, n, length(v) - 1, arr);
+        (unchecked_cast(left as Vector[a]), unchecked_cast(right as Vector[a]))
+    }
+
+    ///
     /// Returns the association vector `v` as a map.
     ///
     /// If `v` contains multiple mappings with the same key, `toMap` does not

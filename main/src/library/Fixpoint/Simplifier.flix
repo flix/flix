@@ -52,10 +52,10 @@ namespace Fixpoint {
                     case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
                         use Fixpoint/Ram.arityOf;
                         let isCopy =
-                            List.map(t -> match t {
+                            Vector.map(t -> match t {
                                 case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
                                 case _ => -1
-                            }, tuple) == List.range(0, arityOf(relB));
+                            }, tuple) == Vector.range(0, arityOf(relB));
                         if (isCopy)
                             RamStmt.Merge(relB, relA)
                         else
@@ -82,7 +82,7 @@ namespace Fixpoint {
         case RelOp.If(test, then) =>
             let (memberOf, rest) =
                 // Delete checks of the form `x[i] == x[i]` and `x ≤ x` and `x ⊓ y ≤ x`.
-                List.filter(e -> match e {
+                Vector.filter(e -> match e {
                     case BoolExp.Eq(RowLoad(lhs), RowLoad(rhs)) => lhs != rhs
                     case BoolExp.Leq(_, lhs, LoadLatVar(rhsVar)) =>
                         let lhsVars = ramTermVars(lhs);
@@ -90,13 +90,13 @@ namespace Fixpoint {
                     case _ => true
                 }, test) |>
                 // Partition into membership tests and rest.
-                List.partition(e -> match e {
+                Vector.partition(e -> match e {
                     case BoolExp.NotMemberOf(_) => true
                     case _ => false
                 });
-            let newTest = rest ::: memberOf;
+            let newTest = Vector.append(rest, memberOf);
             // Simplify `if () then body` to `body`.
-            if (List.isEmpty(newTest))
+            if (Vector.isEmpty(newTest))
                 Some(then)
             else
                 Some(RelOp.If(newTest, then))

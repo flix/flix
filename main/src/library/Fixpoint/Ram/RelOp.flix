@@ -19,9 +19,9 @@ namespace Fixpoint/Ram {
     @Internal
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
-        case Query(RowVar, RamSym[v], List[(Int32, RamTerm[v])], RelOp[v])
-        case Project(List[RamTerm[v]], RamSym[v])
-        case If(List[BoolExp[v]], RelOp[v])
+        case Query(RowVar, RamSym[v], Vector[(Int32, RamTerm[v])], RelOp[v])
+        case Project(Vector[RamTerm[v]], RamSym[v])
+        case If(Vector[BoolExp[v]], RelOp[v])
     }
 
     instance ToString[RelOp[v]] {
@@ -31,14 +31,14 @@ namespace Fixpoint/Ram {
                 case RelOp.Search(var, ramSym, body) =>
                     "search ${var} ∈ ${ramSym} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Query(var, ramSym, prefixQuery, body) =>
-                    let query = List.joinWith(match (i, term) -> {
+                    let query = Vector.joinWith(match (i, term) -> {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, ramSym) =>
-                    "project (${terms |> List.join(", ")}) into ${ramSym}"
+                    "project (${terms |> Vector.join(", ")}) into ${ramSym}"
                 case RelOp.If(test, then) =>
-                    let tst = test |> List.join(" ∧ ");
+                    let tst = test |> Vector.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
     }

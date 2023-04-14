@@ -504,6 +504,15 @@ namespace Set {
         foldLeft((acc, x) -> x :: acc, Nil, s)
 
     ///
+    /// Returns the set `s` as a vector.
+    ///
+pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.new(rc, size(s));
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), s);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the set `s` as a chain.
     ///
     pub def toChain(s: Set[a]): Chain[a] =

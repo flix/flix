@@ -23,14 +23,14 @@ namespace Fixpoint/Ast {
 
     @Internal
     pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, List[BodyTerm[v]])
+        case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, Vector[BodyTerm[v]])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, VarSym)
         case Guard2(v -> v -> Bool, VarSym, VarSym)
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
-        case Loop1(v -> List[v])
+        case Loop1(v -> Vector[v])
     }
 
     instance PredSymsOf[BodyPredicate[v]] {
@@ -61,12 +61,12 @@ namespace Fixpoint/Ast {
             };
             match body {
                 case BodyPredicate.BodyAtom(predSym, Denotation.Relational, p, f, terms) =>
-                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> List.join(", ")})"
+                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
                 case BodyPredicate.BodyAtom(predSym, Denotation.Latticenal(_), p, f, terms) =>
-                    let (keyTerms, latticeTerms) = List.splitAt(List.length(terms)-1, terms);
-                    match List.head(latticeTerms) {
+                    let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
+                    match Vector.head(latticeTerms) {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
-                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.join(", ")}; ${l})"
+                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
                 case BodyPredicate.Guard0(_) => "<clo>()"
                 case BodyPredicate.Guard1(_, v) => "<clo>(${v})"

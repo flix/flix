@@ -63,7 +63,7 @@ namespace Fixpoint {
     pub def queryStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
         case RamStmt.Insert(op) =>
             let (innerOp, ground) = queryOp(op, Set#{});
-            if (List.isEmpty(ground))
+            if (Vector.isEmpty(ground))
                 RamStmt.Insert(innerOp)
             else
                 RamStmt.Insert(RelOp.If(ground, innerOp))
@@ -80,15 +80,15 @@ namespace Fixpoint {
     /// `freeVars` is the set of variables bound by an outer loop.
     /// Returns the optimized op and the conditions that occur in `op` that have to be hoisted.
     ///
-    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
+    def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], Vector[BoolExp[v]]) = match op {
         case RelOp.Search(var, ramSym, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
             let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
-            let (ground, notGround) = List.partition(isExpGround(freeVars), innerGround);
+            let (ground, notGround) = Vector.partition(isExpGround(freeVars), innerGround);
             let (varQuery, rest1) =
                 // Make sure `var` is on the lhs of all equalities.
-                List.map(exp -> match exp {
+                Vector.map(exp -> match exp {
                     case Eq(RowLoad(row1, i), RowLoad(row2, j)) =>
                         if (row2 == var)
                             Eq(RowLoad(row2, j), RowLoad(row1, i))
@@ -98,15 +98,15 @@ namespace Fixpoint {
                     case _ => exp
                 }, notGround) |>
                 // Partition into those equalities that have `var` on the lhs and those that don't.
-                List.partition(exp -> match exp {
+                Vector.partition(exp -> match exp {
                     case Eq(RowLoad(row1, _), RowLoad(row2, _)) => row1 != row2 and row1 == var
                     case Eq(RowLoad(row, _), Lit(_)) => row == var
                     case _ => false
                 });
             let (prefixQuery, rest2) = longestPrefixQuery(varQuery);
-            let test = rest1 ::: rest2;
-            if (List.isEmpty(prefixQuery))
-                if (List.isEmpty(test))
+            let test = Vector.append(rest1, rest2);
+            if (Vector.isEmpty(prefixQuery))
+                if (Vector.isEmpty(test))
                     let search = RelOp.Search(var, ramSym, innerOp);
                     (search, ground)
                 else
@@ -114,47 +114,47 @@ namespace Fixpoint {
                     (search, ground)
             else
                 let query =
-                    List.map(x -> match x {
+                    Vector.map(x -> match x {
                         case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
                         case _ => ???
                     }, prefixQuery);
-                if (List.isEmpty(test))
+                if (Vector.isEmpty(test))
                     let search = RelOp.Query(var, ramSym, query, innerOp);
                     (search, ground)
                 else
                     let search = RelOp.Query(var, ramSym, query, RelOp.If(test, innerOp));
                     (search, ground)
-        case RelOp.Query(_) => (op, Nil)
-        case RelOp.Project(_) => (op, Nil)
+        case RelOp.Query(_) => (op, Vector.empty())
+        case RelOp.Project(_) => (op, Vector.empty())
         case RelOp.If(test, then) =>
             let (innerOp, innerGround) = queryOp(then, freeVars);
-            (innerOp, test ::: innerGround)
+            (innerOp, Vector.append(test, innerGround))
     }
 
-    def longestPrefixQuery(varQuery: List[BoolExp[v]]): (List[BoolExp[v]], List[BoolExp[v]]) =
+    def longestPrefixQuery(varQuery: Vector[BoolExp[v]]): (Vector[BoolExp[v]], Vector[BoolExp[v]]) =
         use Fixpoint/Ram.BoolExp.Eq;
         use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
         // Sort equalities of the form `var[i] = rhs` ascending on `i`.
-        List.sortWith(x -> y -> match (x, y) {
+        Vector.sortWith(x -> y -> match (x, y) {
             case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => Comparison.fromInt32(index1 - index2)
             case _ => ???
         }, varQuery) |>
         // Group `var[i] = rhs` by `i`.
-        List.groupBy(x -> y -> match (x, y) {
+        Vector.groupBy(x -> y -> match (x, y) {
             case (Eq(RowLoad(_, index1), _), Eq(RowLoad(_, index2), _)) => index1 == index2
             case _ => ???
         }) |>
-        prefixHelper(0, Nil, Nil)
+        prefixHelper(0, Vector.empty(), Vector.empty())
 
-    def prefixHelper(i: Int32, prefix: List[BoolExp[v]], rest: List[BoolExp[v]], eqs: List[List[BoolExp[v]]]): (List[BoolExp[v]], List[BoolExp[v]]) =
-        match eqs {
-            case e :: es =>
-                let (p, r) = List.partition(be -> match be {
+    def prefixHelper(i: Int32, prefix: Vector[BoolExp[v]], rest: Vector[BoolExp[v]], eqs: Vector[Vector[BoolExp[v]]]): (Vector[BoolExp[v]], Vector[BoolExp[v]]) =
+        match Vector.head(eqs) {
+            case Some(e) =>
+                let (p, r) = Vector.partition(be -> match be {
                     case BoolExp.Eq(RamTerm.RowLoad(_, j), _) => i == j
                     case _ => ???
                 }, e);
-                prefixHelper(i + 1, prefix ::: p, rest ::: r, es)
-            case Nil => (prefix, rest)
+                prefixHelper(i + 1, Vector.append(prefix, p), Vector.append(rest, r), Vector.slice(start = 1, end = Vector.length(eqs), eqs))
+            case None => (prefix, rest)
         }
 
     ///
@@ -162,7 +162,7 @@ namespace Fixpoint {
     ///
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
-        case BoolExp.NotMemberOf(terms, _) => List.forAll(isTermGround(freeVars), terms)
+        case BoolExp.NotMemberOf(terms, _) => Vector.forAll(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Leq(_, lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
         case BoolExp.Guard0(_) => true
