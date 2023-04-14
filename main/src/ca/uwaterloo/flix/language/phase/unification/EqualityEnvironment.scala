@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -25,13 +25,12 @@ object EqualityEnvironment {
   /**
     * Checks that the given `econstrs` entail the given `econstr`.
     */
-  def entail(econstrs: List[Ast.EqualityConstraint], econstr: Ast.EqualityConstraint, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Unit, UnificationError] = {
+  def entail(econstrs: List[Ast.EqualityConstraint], econstr: Ast.BroadEqualityConstraint, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Unit, UnificationError] = {
     // create assoc-type substitution using econstrs
     val subst = toSubst(econstrs)
 
     // extract the types
-    val Ast.EqualityConstraint(cst, arg, tpe2, loc) = econstr
-    val tpe1 = Type.AssocType(cst, arg, Kind.Wild, loc) // TODO ASSOC-TYPES move kind to cst/sym maybe
+    val Ast.BroadEqualityConstraint(tpe1, tpe2) = econstr
 
     // apply the substitution to them
     val newTpe1 = subst(tpe1)
@@ -47,6 +46,23 @@ object EqualityEnvironment {
       // TODO ASSOC-TYPES using empty eqEnv correct?
     } yield ()
   }.toValidation
+
+  /**
+    * Converts the given EqualityConstraint into a BroadEqualityConstraint.
+    */
+  def narrow(econstr: Ast.BroadEqualityConstraint): Ast.EqualityConstraint = econstr match {
+    case Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, _, _), tpe2) =>
+      Ast.EqualityConstraint(cst, tpe1, tpe2, SourceLocation.Unknown)
+    case _ => throw InternalCompilerException("unexpected broad equality constraint", SourceLocation.Unknown)
+  }
+
+  /**
+    * Converts the given Equality
+    */
+  def broaden(econstr: Ast.EqualityConstraint): Ast.BroadEqualityConstraint = econstr match {
+    case Ast.EqualityConstraint(cst, tpe1, tpe2, loc) =>
+      Ast.BroadEqualityConstraint(Type.AssocType(cst, tpe1, Kind.Wild, loc), tpe2)
+  }
 
   /**
     * Converts the list of equality constraints to a substitution.
