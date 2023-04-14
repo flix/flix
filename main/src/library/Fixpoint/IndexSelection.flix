@@ -129,11 +129,7 @@ mod Fixpoint {
         case RelOp.If(test, then) =>
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, test ::: innerGround)
-        case RelOp.Loop(rowVar, f, terms, body) =>
-            // TODO: The above hoisting is broken...
-            // TODO: Do anything with rowVar?
-            let (innerOp, innerGround) = queryOp(body, Set.insert(rowVar, freeVars));
-            (RelOp.Loop(rowVar, f, terms, innerOp), innerGround)
+        case RelOp.Loop(_) => (op, Nil)
     }
 
     def longestPrefixQuery(varQuery: List[BoolExp[v]]): (List[BoolExp[v]], List[BoolExp[v]]) =
