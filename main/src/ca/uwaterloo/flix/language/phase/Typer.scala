@@ -2813,7 +2813,7 @@ object Typer {
         } yield (constrs, mkAnySchemaRowType(loc))
 
       case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-        val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
+        val tupleType = Type.mkTuplish(varSyms.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         for {
           (constrs, tpe, pur, eff) <- inferExp(exp, root)
