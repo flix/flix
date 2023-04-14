@@ -1,6 +1,36 @@
 mod Test.Predicate.Loop {
 
     @Test
+    def testLoopF1X2_01(): Bool =
+    let ff = _x -> Vector#{};
+        let pr = #{
+            A(1).
+            R(a, b) :- A(x), let (a, b) = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{}: List[(Int32, Int32)], actual)
+
+    @Test
+    def testLoopF1X2_02(): Bool =
+    let ff = x -> Vector#{(x, x)};
+        let pr = #{
+            A(1).
+            R(a, b) :- A(x), let (a, b) = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{(1, 1)}, actual)
+
+    @Test
+    def testLoopF1X2_03(): Bool =
+    let ff = x -> Vector#{(x, x), (x + 1, x + 1)};
+        let pr = #{
+            A(1).
+            R(a, b) :- A(x), let (a, b) = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{(1, 1), (2, 2)}, actual)
+
+    @Test
     def testLoopF2X1_01(): Bool =
     let ff = (_x, _y) -> Vector#{};
         let pr = #{
