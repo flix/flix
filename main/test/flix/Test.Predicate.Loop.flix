@@ -123,7 +123,7 @@ mod Test.Predicate.Loop {
 
     @Test
     def testLoopDelta01(): Bool =
-    let ff = (x, y) -> Vector#{(x, y)};
+        let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
             A(1, 1). A(2, 2).
 
@@ -136,7 +136,7 @@ mod Test.Predicate.Loop {
 
     @Test
     def testLoopDelta02(): Bool =
-    let ff = (x, y) -> Vector#{(x, y)};
+        let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
             A(1, 1). A(2, 2).
 
@@ -149,7 +149,7 @@ mod Test.Predicate.Loop {
 
     @Test
     def testLoopDelta03(): Bool =
-    let ff = (x, y) -> Vector#{(x, y)};
+        let ff = (x, y) -> Vector#{(x, y)};
         let pr = #{
             A(1, 1). A(2, 2).
 
@@ -159,5 +159,42 @@ mod Test.Predicate.Loop {
         };
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(List#{(1, 1), (2, 2)}, actual)
+
+
+    @Test
+    def testLoopMulti01(): Bool =
+        let ff = x -> Vector#{x};
+        let gg = x -> Vector#{x + 1};
+        let pr = #{
+            A(1). A(2).
+
+            R(a, b) :- A(x), let a = ff(x), let b = gg(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{(1, 2), (2, 3)}, actual)
+
+    @Test
+    def testLoopMulti02(): Bool =
+        let ff = x -> Vector#{x};
+        let gg = x -> Vector#{x + 1};
+        let pr = #{
+            A(1). A(2).
+
+            R(a, b) :- let a = ff(x), A(x), let b = gg(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{(1, 2), (2, 3)}, actual)
+
+    @Test
+    def testLoopMulti03(): Bool =
+        let ff = x -> Vector#{x};
+        let gg = x -> Vector#{x + 1};
+        let pr = #{
+            A(1). A(2).
+
+            R(a, b) :- let a = ff(x), let b = gg(x), A(x).
+        };
+        let actual = query pr select (x, y) from R(x, y);
+        Assert.eq(List#{(1, 2), (2, 3)}, actual)
 
 }
