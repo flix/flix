@@ -497,7 +497,7 @@ object CodeHinter {
     case Type.Cst(_, _) => 0
     case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
     case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
-    case Type.AssocType(_, args, _, _) => args.map(numberOfVarOccurs).sum
+    case Type.AssocType(_, arg, _, _) => numberOfVarOccurs(arg)
   }
 
 }

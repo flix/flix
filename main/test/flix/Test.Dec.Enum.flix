@@ -1,4 +1,4 @@
-namespace Test/Dec/Enum {
+mod Test.Dec.Enum {
     pub enum Empty
 
     pub enum EmptyWithBraces {}

@@ -1,4 +1,4 @@
-namespace Test/Exp/Match/Int64 {
+mod Test.Exp.Match.Int64 {
 
     @test
     def testMatchInt64_01(): Bool = match 0i64 {

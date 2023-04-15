@@ -1,4 +1,4 @@
-namespace Test/Unused/Var {
+mod Test.Unused.Var {
 
     @test
     def testUnusedVar01(): Int32 =
@@ -62,7 +62,7 @@ namespace Test/Unused/Var {
             case _foo <- recv(rx) => 123
         }
     }
-    
+
     @test
     def testUnusedVar11(): Int32 = region r {
         let (tx1, rx1) = Channel.buffered(r, 1);

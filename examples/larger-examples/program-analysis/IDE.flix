@@ -20,7 +20,7 @@
 ///
 /// Written by Magnus Madsen, Ondřej Lhoták.
 ///
-namespace IDE {
+mod IDE {
 
     ///
     /// An IDE instance where:
@@ -50,7 +50,7 @@ namespace IDE {
     pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], JoinLattice[l], MeetLattice[l],
-             Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
+             Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
         let main = ide.main;
@@ -142,7 +142,7 @@ namespace IDE {
 ///
 /// We begin by defining the lattice and its associated operations.
 ///
-namespace ConstantProp {
+mod ConstantProp {
 
     ///            Top
     ///
@@ -354,7 +354,7 @@ def main(): Unit \ IO =
         ("p","ep") :: Nil;
 
     let eshIntra =
-        ("smain","zero","x", ConstantProp/MicroFunction.Bot) ::
+        ("smain","zero","x", ConstantProp.MicroFunction.Bot) ::
         ("n2","x","x", ConstantProp.id()) ::
         ("n3","x","x", ConstantProp.id()) ::
 
@@ -362,18 +362,18 @@ def main(): Unit \ IO =
         ("sp","x","x", ConstantProp.id()) ::
         ("n4","a","a", ConstantProp.id()) ::
         ("n4","x","x", ConstantProp.id()) ::
-        ("n5","a","a", ConstantProp/MicroFunction.NonBot(1,-2, ConstantProp/Const.Bot)) ::
+        ("n5","a","a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot)) ::
         ("n5","x","x", ConstantProp.id()) ::
         ("n6","a","a", ConstantProp.id()) ::
         ("n7","a","a", ConstantProp.id()) ::
         ("n7","x","x", ConstantProp.id()) ::
-        ("n8","a","a", ConstantProp/MicroFunction.NonBot(1,2, ConstantProp/Const.Bot)) ::
+        ("n8","a","a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot)) ::
         ("n8","x","x", ConstantProp.id()) ::
         ("n9","a","a", ConstantProp.id()) ::
-        ("n9","a","x", ConstantProp/MicroFunction.NonBot(-2,5, ConstantProp/Const.Bot)) :: Nil;
+        ("n9","a","x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot)) :: Nil;
 
     let eshCallStart =
-        ("n1","zero","p","a",ConstantProp/MicroFunction.NonBot(0,7,ConstantProp/Const.Bot)) ::
+        ("n1","zero","p","a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot)) ::
         ("n1","x","p","x",ConstantProp.id()) ::
         ("n6","a","p","a",ConstantProp.id()) ::
         ("n6","x","p","x",ConstantProp.id()) :: Nil;

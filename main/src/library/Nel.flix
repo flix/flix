@@ -21,8 +21,6 @@ pub enum Nel[a] with Sendable {
     case Nel(a, List[a])
 }
 
-instance Boxable[Nel[a]] with Boxable[a]
-
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
@@ -116,7 +114,7 @@ instance Iterable[Nel] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
 }
 
-namespace Nel {
+mod Nel {
 
     ///
     /// Returns a string representation of the given non-empty list `l`.

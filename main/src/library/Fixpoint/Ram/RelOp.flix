@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     @Internal
     pub enum RelOp[v] {
@@ -22,6 +22,7 @@ namespace Fixpoint/Ram {
         case Query(RowVar, RamSym[v], Vector[(Int32, RamTerm[v])], RelOp[v])
         case Project(Vector[RamTerm[v]], RamSym[v])
         case If(Vector[BoolExp[v]], RelOp[v])
+        case Loop(RowVar, Vector[v] -> Vector[Vector[v]], Vector[RamTerm[v]], RelOp[v])
     }
 
     instance ToString[RelOp[v]] {
@@ -40,6 +41,8 @@ namespace Fixpoint/Ram {
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                case RelOp.Loop(rowVar, _, terms, body) =>
+                    "loop(${rowVar} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
             }
     }
 }

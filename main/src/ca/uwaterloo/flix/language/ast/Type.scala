@@ -49,7 +49,7 @@ sealed trait Type {
     case Type.Cst(tc, _) => SortedSet.empty
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
-    case Type.AssocType(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet) // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -63,7 +63,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
-    case Type.AssocType(_, args, _, _) => args.flatMap(_.effects).to(SortedSet) // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.effects// TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -77,7 +77,7 @@ sealed trait Type {
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
-    case Type.AssocType(_, args, _, _) => args.flatMap(_.cases).to(SortedSet) // TODO ASSOC-TYPES throw error?
+    case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
   }
 
   /**
@@ -214,7 +214,7 @@ sealed trait Type {
     case Type.Cst(_, _) => 1
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
-    case Type.AssocType(_, args, kind, _) => args.map(_.size).sum + 1
+    case Type.AssocType(_, arg, kind, _) => arg.size + 1
   }
 
   /**
@@ -295,6 +295,11 @@ object Type {
     * Represents the String type.
     */
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
+
+  /**
+    * Represents the Regex pattern type.
+    */
+  val Regex: Type = Type.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
 
   /**
     * Represents the Lazy type constructor.
@@ -465,7 +470,7 @@ object Type {
   /**
     * An associated type.
     */
-  case class AssocType(cst: Ast.AssocTypeConstructor, args: List[Type], kind: Kind, loc: SourceLocation) extends Type with BaseType
+  case class AssocType(cst: Ast.AssocTypeConstructor, arg: Type, kind: Kind, loc: SourceLocation) extends Type with BaseType
 
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
@@ -543,6 +548,11 @@ object Type {
     * Returns the String type with the given source location `loc`.
     */
   def mkString(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Str, loc)
+
+  /**
+    * Returns the Regex pattern type with the given source location `loc`.
+    */
+  def mkRegex(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Regex, loc)
 
   /**
     * Returns the True type with the given source location `loc`.
@@ -999,6 +1009,17 @@ object Type {
   }
 
   /**
+    * Returns true if the given type contains an associated type somewhere within it.
+    */
+  def hasAssocType(t: Type): Boolean = t match {
+    case Var(_, _) => false
+    case Cst(_, _) => false
+    case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
+    case Alias(_, _, tpe, _) => hasAssocType(tpe)
+    case AssocType(_, _, _, _) => true
+  }
+
+  /**
     * Returns the Flix Type of a Java Class
     */
   def getFlixType(c: Class[_]): Type = {
@@ -1034,6 +1055,9 @@ object Type {
     }
     else if (c == classOf[java.lang.String]) {
       Type.Str
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      Type.Regex
     }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit

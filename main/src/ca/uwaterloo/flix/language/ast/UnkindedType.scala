@@ -45,7 +45,7 @@ sealed trait UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
-    case UnkindedType.AssocType(cst, args, loc) => UnkindedType.AssocType(cst, args.map(_.map(f)), loc)
+    case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
   }
 
   /**
@@ -93,7 +93,7 @@ sealed trait UnkindedType {
     case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
     case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
     case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
-    case UnkindedType.AssocType(cst, args, loc) => args.flatMap(_.typeVars).to(SortedSet)
+    case UnkindedType.AssocType(cst, arg, loc) => arg.typeVars
   }
 }
 
@@ -286,13 +286,13 @@ object UnkindedType {
   /**
     * A fully resolved associated type.
     */
-  case class AssocType(cst: Ast.AssocTypeConstructor, args: List[UnkindedType], loc: SourceLocation) extends UnkindedType {
+  case class AssocType(cst: Ast.AssocTypeConstructor, arg: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
-      case AssocType(Ast.AssocTypeConstructor(sym2, _), args2, _) => cst.sym == sym2 && args == args2
+      case AssocType(Ast.AssocTypeConstructor(sym2, _), arg2, _) => cst.sym == sym2 && arg == arg2
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(cst, args)
+    override def hashCode(): Int = Objects.hash(cst, arg)
   }
 
   case class PurityAndEffect(pur: Option[UnkindedType], eff: Option[List[UnkindedType]]) {
@@ -523,7 +523,7 @@ object UnkindedType {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => UnkindedType.CaseIntersection(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
-    case AssocType(cst, args, loc) => AssocType(cst, args.map(eraseAliases), loc) // TODO ASSOC-TYPES check that this is valid
+    case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
   }
@@ -566,6 +566,9 @@ object UnkindedType {
     }
     else if (c == classOf[java.lang.String]) {
       UnkindedType.Cst(TypeConstructor.Str, SourceLocation.Unknown)
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
     }
     else if (c == java.lang.Void.TYPE) {
       UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)

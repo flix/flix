@@ -92,6 +92,12 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
+  case class AssocType(e: TypedAst.AssociatedTypeSig) extends Entity {
+    def loc: SourceLocation = e.sym.loc
+
+    def precision: Precision = Precision.High
+  }
+
   case class Exp(e: TypedAst.Expression) extends Entity {
     def loc: SourceLocation = e.loc
     def precision: Precision = Precision.Low

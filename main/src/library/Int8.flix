@@ -22,7 +22,7 @@ instance UpperBound[Int8] {
     pub def maxValue(): Int8 = Int8.maxValue()
 }
 
-namespace Int8 {
+mod Int8 {
 
     ///
     /// Returns the number of bits used to represent an `Int8`.

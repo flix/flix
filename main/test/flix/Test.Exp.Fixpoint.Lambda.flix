@@ -1,4 +1,4 @@
-namespace Test/Exp/Fixpoint/Lambda {
+mod Test.Exp.Fixpoint.Lambda {
 
     pub def testLambdaCopy01(): Bool = {
         let p1 = #(Input, Output) -> #{
@@ -114,7 +114,7 @@ namespace Test/Exp/Fixpoint/Lambda {
     pub def testPolymorphism04(): Bool =
         query poly(123), poly("abc"), poly(true) select x from R(x) |> List.memberOf("OK")
 
-    def poly(x: a): #{ R(String) } with Boxable[a] =
+    def poly(x: a): #{ R(String) } with Order[a] =
         #(R) -> #{
             A(x).
             R("OK") :- A(x).

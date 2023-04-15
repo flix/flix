@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Array {
+mod Array {
 
     ///
     /// Compares `a` and `b` lexicographically.

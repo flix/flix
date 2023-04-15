@@ -70,5 +70,3 @@ instance Order[Down[a]] with Order[a] {
         case (Down.Down(xx), Down.Down(yy)) => yy <=> xx
     }
 }
-
-instance Boxable[Down[a]] with Order[a], ToString[a]

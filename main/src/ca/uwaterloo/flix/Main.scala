@@ -156,7 +156,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
-              val result = bootstrap.build(options, loadClasses = false)
+              val result = bootstrap.build(loadClasses = false)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Channel {
+mod Channel {
     use Time.Duration
 
     ///
@@ -23,7 +23,7 @@ namespace Channel {
     pub def buffered(r: Region[r], n: Int32): (Sender[t, r], Receiver[t, r]) \ Write(r) =
         let m = if (n < 0) 0 else n;
         $CHANNEL_NEW$(r, m)
-        
+
     ///
     /// Returns a new unbuffered channel (i.e. a channel with zero capacity).
     ///
@@ -57,7 +57,7 @@ namespace Channel {
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { Read(r), Write(r), IO } = 
+    pub def timeout(r: Region[r], d: Duration): Receiver[Unit, r] \ { Read(r), Write(r), IO } =
         let (tx, rx) = Channel.unbuffered(r);
         spawn { Thread.sleep(d); send((), tx) } @ r;
         rx

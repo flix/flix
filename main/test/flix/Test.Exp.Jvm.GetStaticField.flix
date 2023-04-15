@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/GetStaticField {
+mod Test.Exp.Jvm.GetStaticField {
 
     ///
     /// Java Standard Library.

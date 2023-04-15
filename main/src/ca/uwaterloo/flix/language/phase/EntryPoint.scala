@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -144,7 +145,7 @@ object EntryPoint {
         arg =>
           val argSc = Scheme.generalize(Nil, Nil, arg)
 
-          if (Scheme.equal(unitSc, argSc, classEnv)) {
+          if (Scheme.equal(unitSc, argSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
             // Case 1: Unit -> XYZ. We can ignore the args.
             ().toSuccess
           } else {
@@ -165,7 +166,7 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe)
 
 
-      if (Scheme.equal(unitSc, resultSc, classEnv)) {
+      if (Scheme.equal(unitSc, resultSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
         // Case 1: XYZ -> Unit.
         ().toSuccess
       } else {

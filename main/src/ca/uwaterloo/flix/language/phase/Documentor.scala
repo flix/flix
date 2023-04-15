@@ -156,7 +156,7 @@ object Documentor {
         ("namespaces" -> namespacesSorted) ~
         ("classes" -> classesByNS) ~
         ("enums" -> enumsByNS) ~
-        ("restrictableEnums" -> restrictableEnumsByNS)
+        ("restrictableEnums" -> restrictableEnumsByNS) ~
         ("typeAliases" -> typeAliasesByNS) ~
         ("defs" -> defsByNS)
 

@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestApplicative {
+mod TestApplicative {
 
     use Applicative.{product, productLeft, productRight, product3, product4, product5}
     use Applicative.{<*>, <**>, *>, <*}

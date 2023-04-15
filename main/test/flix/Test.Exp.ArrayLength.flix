@@ -1,4 +1,4 @@
-namespace Test/Exp/ArrayLength {
+mod Test.Exp.ArrayLength {
 
     @test
     def testArrayLength01(): Int32 = region r {

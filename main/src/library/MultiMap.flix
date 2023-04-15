@@ -27,8 +27,6 @@ pub enum MultiMap[k, v] with Sendable {
     case MultiMap(Map[k, Set[v]])
 }
 
-instance Boxable[MultiMap[k, v]] with Boxable[k], Boxable[v]
-
 instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
 }
@@ -75,7 +73,7 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
-namespace MultiMap {
+mod MultiMap {
 
     ///
     /// Returns a string representation of `m`.

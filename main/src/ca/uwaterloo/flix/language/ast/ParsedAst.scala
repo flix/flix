@@ -77,9 +77,10 @@ object ParsedAst {
       * @param purAndEff  the declared purity.
       * @param exp        the expression.
       * @param tconstrs   the type constraints.
+      * @param econstrs   the equality constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, purAndEff: ParsedAst.PurityAndEffect, tconstrs: Seq[ParsedAst.TypeConstraint], econstrs: Seq[ParsedAst.EqualityConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -523,6 +524,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the literal.
       */
     case class Str(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
+      * Regex Pattern Literal.
+      *
+      * @param sp1   the position of the first character in the literal.
+      * @param patt  the regular expression pattern
+      * @param sp2   the position of the last character in the literal.
+      */
+    case class Regex(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
   }
 
   /**
@@ -1881,6 +1892,16 @@ object ParsedAst {
     * @param sp2    the position of the last character in the type constraint.
     */
   case class TypeConstraint(sp1: SourcePosition, clazz: Name.QName, tparam: ParsedAst.Type, sp2: SourcePosition)
+
+  /**
+    * An equality constraint.
+    *
+    * @param sp1  the source position of the first character in the equality constraint.
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param sp2  the source position of the last character in the equality constraint.
+    */
+  case class EqualityConstraint(sp1: SourcePosition, tpe1: Type, tpe2: Type, sp2: SourcePosition)
 
   /**
     * Formal Parameter.

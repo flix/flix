@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
-    use Fixpoint/Ast.Denotation
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
+    use Fixpoint.Ast.Denotation
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
     type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
@@ -60,6 +60,7 @@ namespace Fixpoint {
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Project(_) => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
+        case RelOp.Loop(_) => ??? // TODO
     }
 
     def evalOp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v] =

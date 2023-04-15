@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
+mod Fixpoint {
 
     ///
     /// Prints the Datalog program before the fixpoint computation.

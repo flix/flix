@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestResult {
+mod TestResult {
 
     use Hash.hash
     use Validation.{Success, Failure}

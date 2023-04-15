@@ -166,7 +166,7 @@ instance Hash[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Hash[a1], Hash[a2]
     }
 }
 
-namespace Hash {
+mod Hash {
 
     ///
     /// Combines the two given hash values.

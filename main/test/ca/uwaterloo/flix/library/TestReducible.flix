@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestReducible {
+mod TestReducible {
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym}
-    use Fixpoint/Ast.Datalog.Datalog
-    use Fixpoint/Ast.Constraint.Constraint
-    use Fixpoint/Ast.HeadPredicate.HeadAtom
-    use Fixpoint/Ast.BodyPredicate.{BodyAtom}
-    use Fixpoint/Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint/Ast.BodyPredicate.{Loop1}
-    use Fixpoint/Ast.isRelational
-    use Fixpoint/Shared.PredSym
-    use Fixpoint/Shared.PredSym.PredSym
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym}
+    use Fixpoint.Ast.Datalog.Datalog
+    use Fixpoint.Ast.Constraint.Constraint
+    use Fixpoint.Ast.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.BodyPredicate.{BodyAtom}
+    use Fixpoint.Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint.Ast.BodyPredicate.{Loop}
+    use Fixpoint.Ast.isRelational
+    use Fixpoint.Shared.PredSym
+    use Fixpoint.Shared.PredSym.PredSym
 
     ///
     /// Compile the given Datalog program `d` to RAM.
@@ -358,7 +358,7 @@ namespace Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     Vector.append(Vector.singleton(BoolExp.Guard5(f, t1, t2, t3, t4, t5)), acc)
-                case Loop1(_) =>
+                case Loop(_) =>
                     ??? // TODO
             }, Vector.empty(), body)
 

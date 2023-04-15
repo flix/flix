@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
     @Internal
     pub enum VarSym with Eq, Order, ToString {

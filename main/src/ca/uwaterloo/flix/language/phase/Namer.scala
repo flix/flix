@@ -393,20 +393,20 @@ object Namer {
   private def visitAssocTypeSig(s0: WeededAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
-      val tparams = getTypeParams(tparams0)
+      val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc).toSuccess
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc).toSuccess
   }
 
   /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: WeededAst.Declaration.AssocTypeDef, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
-    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
-      val argsVal = traverse(args0)(visitType)
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+      val argVal = visitType(arg0)
       val tpeVal = visitType(tpe0)
-      mapN(argsVal, tpeVal) {
-        case (args, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc)
+      mapN(argVal, tpeVal) {
+        case (arg, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
       }
   }
 
@@ -461,6 +461,18 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given equality constraint `econstr`.
+    */
+  private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
+    case WeededAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
+      val t1Val = visitType(tpe1)
+      val t2Val = visitType(tpe2)
+      mapN(t1Val, t2Val) {
+        case (t1, t2) => NamedAst.EqualityConstraint(qname, t1, t2, loc)
+      }
+  }
+
+  /**
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: WeededAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
@@ -476,6 +488,7 @@ object Namer {
 
       flatMapN(fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
         case (fparams, tpe, purAndEff, tconstrs) =>
+          val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
 
           // Then visit the parts depending on the parameters
           val expVal = traverseOpt(exp0)(visitExp(_, ns0))
@@ -484,7 +497,7 @@ object Namer {
             case exp =>
 
               val sym = Symbol.mkSigSym(classSym, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
       }
@@ -494,7 +507,7 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Def, NameError] = decl0 match {
-    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, loc) =>
+    case WeededAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, purAndEff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, purAndEff0)
@@ -505,9 +518,10 @@ object Namer {
       val tpeVal = visitType(tpe0)
       val purAndEffVal = visitPurityAndEffect(purAndEff0)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, purAndEffVal, tconstrsVal) {
-        case (fparams, tpe, purAndEff, tconstrs) =>
+      flatMapN(fparamsVal, tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
+        case (fparams, tpe, purAndEff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = visitExp(exp, ns0)
@@ -516,7 +530,7 @@ object Namer {
             case e =>
 
               val sym = Symbol.mkDefnSym(ns0, ident)
-              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+              val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Def(sym, spec, e)
           }
       }
@@ -552,9 +566,10 @@ object Namer {
         case (fparams, tpe, tconstrs) =>
           val tparams = NamedAst.TypeParams.Kinded(Nil) // operations are monomorphic
           val purAndEff = NamedAst.PurityAndEffect(None, None) // operations are pure
+          val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
 
           val sym = Symbol.mkOpSym(effSym, ident)
-          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc)
+          val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc)
           NamedAst.Declaration.Op(sym, spec)
       }
   }
@@ -1366,6 +1381,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars

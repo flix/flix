@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestUpperBound {
+mod TestUpperBound {
     use UpperBound.maxValue
 
     @test

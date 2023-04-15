@@ -118,10 +118,17 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   }
 
   /**
-    * Applies `this` substitution to the given pair of types `ts`.
+    * Applies `this` substitution to the given equality constraint.
     */
-  def apply(ts: (Type, Type)): (Type, Type) = if (isEmpty) ts else ts match {
-    case (t1, t2) => (apply(t1), apply(t2))
+  def apply(ec: Ast.EqualityConstraint): Ast.EqualityConstraint = if (isEmpty) ec else ec match {
+    case Ast.EqualityConstraint(cst, t1, t2, loc) => Ast.EqualityConstraint(cst, apply(t1), apply(t2), loc)
+  }
+
+  /**
+    * Applies `this` substitution to the given equality constraint.
+    */
+  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
+    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
   }
 
   /**

@@ -1,4 +1,4 @@
-namespace Test/Exp/Fixpoint/Query {
+mod Test.Exp.Fixpoint.Query {
 
     @test
     def testQuery01(): Bool =

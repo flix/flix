@@ -1,4 +1,4 @@
-namespace Test/Exp/ArrayNew {
+mod Test.Exp.ArrayNew {
 
     @test
     def testArrayNew01(): Unit = region r {

@@ -365,6 +365,7 @@ object Safety {
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => Nil
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => Nil
       case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => Nil
 
       // Allow casting one Java type to another if there is a sub-type relationship.
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
@@ -373,6 +374,10 @@ object Safety {
       // Similar, but for String.
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
         if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Similar, but for Regex.
+      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
 
       // Similar, but for BigInt.
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
@@ -425,7 +430,7 @@ object Safety {
       Type.Unit :: Type.Bool :: Type.Char ::
         Type.Float32 :: Type.Float64 :: Type.Int8 ::
         Type.Int16 :: Type.Int32 :: Type.Int64 ::
-        Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
+        Type.Str :: Type.Regex :: Type.BigInt :: Type.BigDecimal :: Nil
     }
 
     (tpe1, tpe2) match {
@@ -555,7 +560,12 @@ object Safety {
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
 
-    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Loop(boundVars, exp, loc) =>
+      // check for non-positively bound negative variables.
+      val fvs = freeVars(exp).keySet intersect quantVars
+      val err1 = ((fvs -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+
+      err1 ::: visitExp(exp, renv, root)
   }
 
   /**
@@ -587,7 +597,10 @@ object Safety {
 
     case Predicate.Body.Guard(_, _) => Set.empty
 
-    case Predicate.Body.Loop(_, _, _) => Set.empty
+    case Predicate.Body.Loop(boundVars, _, _) =>
+      // Tricky: All bound variables are positively defined if their free variables are.
+      // For now, we say that they are not positively defined.
+      Set.empty
   }
 
   /**

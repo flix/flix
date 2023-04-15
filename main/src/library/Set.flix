@@ -23,8 +23,6 @@ pub enum Set[t] with Sendable {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with Boxable[t]
-
 instance Eq[Set[a]] with Eq[a] {
     pub def eq(s1: Set[a], s2: Set[a]): Bool =
         Set.toList(s1) == Set.toList(s2)
@@ -97,7 +95,7 @@ instance Iterable[Set] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
-namespace Set {
+mod Set {
 
     ///
     /// Returns a string representation of the given set `s`.

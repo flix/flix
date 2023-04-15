@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestChar {
+mod TestChar {
 
 /////////////////////////////////////////////////////////////////////////////
 // isAscii                                                                 //
@@ -52,6 +52,9 @@ def isAscii10(): Bool = Char.isAscii('â') == false
 
 @test
 def isAscii11(): Bool = Char.isAscii('Â') == false
+
+@test
+def isAscii12(): Bool = Char.isAscii('\u0081') == false
 
 /////////////////////////////////////////////////////////////////////////////
 // isLetter                                                                //
@@ -525,79 +528,5 @@ def toString10(): Bool = Char.toString('â') == "â"
 
 @test
 def toString11(): Bool = Char.toString('Â') == "Â"
-
-/////////////////////////////////////////////////////////////////////////////
-// toInt32                                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toInt3201(): Bool = Char.toInt32('a') == 0x0061
-
-@test
-def toInt3202(): Bool = Char.toInt32('A') == 0x0041
-
-@test
-def toInt3203(): Bool = Char.toInt32(' ') == 0x0020
-
-@test
-def toInt3204(): Bool = Char.toInt32('+') == 0x002B
-
-@test
-def toInt3205(): Bool = Char.toInt32('0') == 0x0030
-
-@test
-def toInt3206(): Bool = Char.toInt32('9') == 0x0039
-
-@test
-def toInt3207(): Bool = Char.toInt32('†') == 0x2020         // dagger
-
-@test
-def toInt3208(): Bool = Char.toInt32('\u00FE') == 0x00FE    // lower-case thorn
-
-@test
-def toInt3209(): Bool = Char.toInt32('\u00B1') == 0x00B1    // plus-minus sign
-
-@test
-def toInt3210(): Bool = Char.toInt32('â') == 0x00E2         // a-circumflex (lower case)
-
-@test
-def toInt3211(): Bool = Char.toInt32('Â') == 0x00C2         // A-circumflex (upper-case)
-
-/////////////////////////////////////////////////////////////////////////////
-// fromInt32                                                               //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def fromInt3201(): Bool = Char.fromInt32(0x0061) == 'a'
-
-@test
-def fromInt3202(): Bool = Char.fromInt32(0x0041) == 'A'
-
-@test
-def fromInt3203(): Bool = Char.fromInt32(0x0020) == ' '
-
-@test
-def fromInt3204(): Bool = Char.fromInt32(0x002B) == '+'
-
-@test
-def fromInt3205(): Bool = Char.fromInt32(0x0030) == '0'
-
-@test
-def fromInt3206(): Bool = Char.fromInt32(0x0039) == '9'
-
-@test
-def fromInt3207(): Bool = Char.fromInt32(0x2020) == '†'         // dagger
-
-@test
-def fromInt3208(): Bool = Char.fromInt32(0x00FE) == '\u00FE'    // lower-case thorn
-
-@test
-def fromInt3209(): Bool = Char.fromInt32(0x00B1) == '\u00B1'    // plus-minus sign
-
-@test
-def fromInt3210(): Bool = Char.fromInt32(0x00E2) == 'â'         // a-circumflex (lower case)
-
-@test
-def fromInt3211(): Bool = Char.fromInt32(0x00C2) == 'Â'         // A-circumflex (upper-case)
 
 }

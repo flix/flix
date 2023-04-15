@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestChain {
+mod TestChain {
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //
@@ -219,32 +219,32 @@ namespace TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty(): Chain[Int32]) == Chain/ViewLeft.NoneLeft
+    def viewLeft01(): Bool = Chain.viewLeft(Chain.empty(): Chain[Int32]) == Chain.ViewLeft.NoneLeft
 
     @test
-    def viewLeft02(): Bool = Chain.viewLeft(Chain.singleton(1)) == Chain/ViewLeft.SomeLeft(1, Chain.empty())
+    def viewLeft02(): Bool = Chain.viewLeft(Chain.singleton(1)) == Chain.ViewLeft.SomeLeft(1, Chain.empty())
 
     @test
-    def viewLeft03(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: Nil)) == Chain/ViewLeft.SomeLeft(1, Chain.singleton(2))
+    def viewLeft03(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: Nil)) == Chain.ViewLeft.SomeLeft(1, Chain.singleton(2))
 
     @test
-    def viewLeft04(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewLeft.SomeLeft(1, List.toChain(2 :: 3 :: Nil))
+    def viewLeft04(): Bool = Chain.viewLeft(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain.ViewLeft.SomeLeft(1, List.toChain(2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // viewRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def viewRight01(): Bool = Chain.viewRight(Chain.empty(): Chain[Int32]) == Chain/ViewRight.NoneRight
+    def viewRight01(): Bool = Chain.viewRight(Chain.empty(): Chain[Int32]) == Chain.ViewRight.NoneRight
 
     @test
-    def viewRight02(): Bool = Chain.viewRight(Chain.singleton(1)) == Chain/ViewRight.SomeRight(Chain.empty(), 1)
+    def viewRight02(): Bool = Chain.viewRight(Chain.singleton(1)) == Chain.ViewRight.SomeRight(Chain.empty(), 1)
 
     @test
-    def viewRight03(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: Nil)) == Chain/ViewRight.SomeRight(Chain.singleton(1), 2)
+    def viewRight03(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: Nil)) == Chain.ViewRight.SomeRight(Chain.singleton(1), 2)
 
     @test
-    def viewRight04(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain/ViewRight.SomeRight(List.toChain(1 :: 2 :: Nil), 3)
+    def viewRight04(): Bool = Chain.viewRight(List.toChain(1 :: 2 :: 3 :: Nil)) == Chain.ViewRight.SomeRight(List.toChain(1 :: 2 :: Nil), 3)
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //

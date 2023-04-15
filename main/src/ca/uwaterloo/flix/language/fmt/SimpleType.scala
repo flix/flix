@@ -67,6 +67,8 @@ object SimpleType {
 
   case object Str extends SimpleType
 
+  case object Regex extends SimpleType
+
   case object Array extends SimpleType
 
   case object Vector extends SimpleType
@@ -310,8 +312,8 @@ object SimpleType {
         mkApply(Var(sym.id, sym.kind, sym.isRegion, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
-      case Type.AssocType(cst, args, _, _) =>
-        mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
+      case Type.AssocType(cst, arg, _, _) =>
+        mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null
@@ -326,6 +328,7 @@ object SimpleType {
         case TypeConstructor.Int64 => Int64
         case TypeConstructor.BigInt => BigInt
         case TypeConstructor.Str => Str
+        case TypeConstructor.Regex => Regex
 
         case TypeConstructor.Arrow(arity) =>
           val args = t.typeArguments.map(visit)

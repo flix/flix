@@ -1,4 +1,4 @@
-namespace Test/Exp/Effect {
+mod Test.Exp.Effect {
 
     // no test annotations for now
     // just making it public for redundancy purposes
@@ -23,14 +23,14 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def perform01(): Unit \ Fail = {
-        do Test/Exp/Effect/Fail.fail(":(")
+        do Test.Exp.Effect.Fail.fail(":(")
     }
 
     // @test
     pub def perform02(): Bool = {
         try {
-            do Test/Exp/Effect/Console.println("hi");
-            do Test/Exp/Effect/Console.println("bye");
+            do Test.Exp.Effect.Console.println("hi");
+            do Test.Exp.Effect.Console.println("bye");
             true
         } with Console {
             def println(_) = resume()
@@ -39,7 +39,7 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def handlePerform01(): Unit = {
-        try do Test/Exp/Effect/Fail.fail("rats") with Fail {
+        try do Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_) = ()
         }
     }
@@ -47,7 +47,7 @@ namespace Test/Exp/Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Test/Exp/Effect/Console.println("It was the best of times");
+            let _ = do Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {
             def println(_) = resume()

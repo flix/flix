@@ -35,7 +35,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
   }
 
   test("build-jar") {
@@ -43,7 +43,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -57,7 +57,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -78,12 +78,12 @@ class TestBootstrap extends FunSuite {
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     def hash1 = calcHash(jarPath)
 
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     def hash2 = calcHash(jarPath)

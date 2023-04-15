@@ -77,6 +77,8 @@ object PatternExhaustiveness {
 
     case object Str extends TyCon
 
+    case object Regex extends TyCon
+
     case object Wild extends TyCon
 
     case class Tuple(args: List[TyCon]) extends TyCon
@@ -570,6 +572,7 @@ object PatternExhaustiveness {
     case TyCon.Float32 => 0
     case TyCon.Float64 => 0
     case TyCon.Str => 0
+    case TyCon.Regex => 0
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
@@ -595,6 +598,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Int64) => 0
     case Some(TypeConstructor.BigInt) => 0
     case Some(TypeConstructor.Str) => 0
+    case Some(TypeConstructor.Regex) => 0
     case Some(TypeConstructor.Relation) => 0
     case Some(TypeConstructor.Lattice) => 0
     case Some(TypeConstructor.RecordRowEmpty) => 0
@@ -633,6 +637,7 @@ object PatternExhaustiveness {
     case TyCon.Float32 => "Float32"
     case TyCon.Float64 => "Float64"
     case TyCon.Str => "Str"
+    case TyCon.Regex => "Regex"
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
@@ -678,6 +683,7 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
     case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {

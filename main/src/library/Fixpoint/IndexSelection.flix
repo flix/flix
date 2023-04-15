@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     ///
     /// Hoist and query optimize `stmt`.
@@ -82,8 +82,8 @@ namespace Fixpoint {
     ///
     def queryOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], Vector[BoolExp[v]]) = match op {
         case RelOp.Search(var, ramSym, body) =>
-            use Fixpoint/Ram.BoolExp.Eq;
-            use Fixpoint/Ram.RamTerm.{RowLoad, Lit};
+            use Fixpoint.Ram.BoolExp.Eq;
+            use Fixpoint.Ram.RamTerm.{RowLoad, Lit};
             let (innerOp, innerGround) = queryOp(body, Set.insert(var, freeVars));
             let (ground, notGround) = Vector.partition(isExpGround(freeVars), innerGround);
             let (varQuery, rest1) =
@@ -129,6 +129,7 @@ namespace Fixpoint {
         case RelOp.If(test, then) =>
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, Vector.append(test, innerGround))
+        case RelOp.Loop(_) => ??? // TODO;
     }
 
     def longestPrefixQuery(varQuery: Vector[BoolExp[v]]): (Vector[BoolExp[v]], Vector[BoolExp[v]]) =

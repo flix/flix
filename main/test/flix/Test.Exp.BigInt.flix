@@ -1,4 +1,4 @@
-namespace Test/Exp/BigInt {
+mod Test.Exp.BigInt {
 
     @test
     def testBigInt01(): BigInt = 0ii
