@@ -37,20 +37,9 @@ object CompletionRanker {
   def findBest(completions: Iterable[Completion], index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
     findBestVarCompletion(completions, index.varUses) match {
-      case None => findBestDefCompletion(completions, deltaContext)
+      case None => DefRanker.findBest(completions, deltaContext)
       case comp => comp
     }
-  }
-
-  /**
-    * Find the best/newest def completion.
-    *
-    * @param completions  the list of possible completions.
-    * @param deltaContext the current changes.
-    * @return             Some(Completion) if a better completion is possible, else none.
-    */
-  private def findBestDefCompletion(completions: Iterable[Completion], deltaContext: DeltaContext): Option[Completion] = {
-    None
   }
 
   /**
