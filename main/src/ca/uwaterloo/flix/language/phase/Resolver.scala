@@ -1768,17 +1768,17 @@ object Resolver {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
 
+        case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
+          val varsVal = traverse(idents)(lookupVar(_, env))
+          val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
+          mapN(varsVal, eVal) {
+            case (outVars, e) => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+          }
+
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
           mapN(eVal) {
             e => ResolvedAst.Predicate.Body.Guard(e, loc)
-          }
-
-        case NamedAst.Predicate.Body.Loop(idents, exp, loc) =>
-          val varsVal = traverse(idents)(lookupVar(_, env))
-          val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
-          mapN(varsVal, eVal) {
-            case (vars, e) => ResolvedAst.Predicate.Body.Loop(vars, e, loc)
           }
       }
     }

@@ -2475,14 +2475,14 @@ object Weeder {
           WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
       }
 
+    case ParsedAst.Predicate.Body.Functional(sp1, idents, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Predicate.Body.Functional(idents.toList, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Predicate.Body.Loop(sp1, idents, exp, sp2) =>
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Predicate.Body.Loop(idents.toList, e, mkSL(sp1, sp2))
       }
 
   }

@@ -2804,21 +2804,21 @@ object Typer {
           tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
         } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
-      case KindedAst.Predicate.Body.Guard(exp, loc) =>
-        for {
-          (constrs, tpe, pur, eff) <- inferExp(exp, root)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
-          expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-          expEff <- unifyTypeM(Type.Empty, eff, loc)
-        } yield (constrs, mkAnySchemaRowType(loc))
-
-      case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-        val tupleType = Type.mkTuplish(varSyms.map(_.tvar), loc)
+      case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
+        val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         for {
           (constrs, tpe, pur, eff) <- inferExp(exp, root)
           expTyp <- unifyTypeM(expectedType, tpe, loc)
           expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+
+      case KindedAst.Predicate.Body.Guard(exp, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expTyp <- unifyTypeM(Type.Bool, tpe, loc)
           expEff <- unifyTypeM(Type.Empty, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
     }
@@ -2832,13 +2832,13 @@ object Typer {
       val ts = terms.map(t => reassemblePattern(t, root, subst0))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst0(tvar), loc)
 
+    case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
+      val e = reassembleExp(exp, root, subst0)
+      TypedAst.Predicate.Body.Functional(outVars, e, loc)
+
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
-
-    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-      val e = reassembleExp(exp, root, subst0)
-      TypedAst.Predicate.Body.Loop(varSyms, e, loc)
 
   }
 
