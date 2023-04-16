@@ -2812,7 +2812,7 @@ object Typer {
           expEff <- unifyTypeM(Type.Empty, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
 
-      case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+      case KindedAst.Predicate.Body.Functional(varSyms, exp, loc) =>
         val tupleType = Type.mkTuplish(varSyms.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         for {
@@ -2836,7 +2836,7 @@ object Typer {
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
 
-    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
+    case KindedAst.Predicate.Body.Functional(varSyms, exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Loop(varSyms, e, loc)
 
