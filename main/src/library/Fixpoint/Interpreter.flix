@@ -60,7 +60,7 @@ mod Fixpoint {
         case RelOp.Query(_, _, _, body) => allocEnv(r, depth + 1, body)
         case RelOp.Project(_) => (Array.repeat(r, depth, Vector.empty()), Array.new(r, depth))
         case RelOp.If(_, then) => allocEnv(r, depth, then)
-        case RelOp.Loop(_) => ??? // TODO
+        case RelOp.Loop(_, _, _, body) => allocEnv(r, depth + 1, body)
     }
 
     def evalOp(r1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], op: RelOp[v]): Unit \ { Read(r1), Write(r1), Read(r2), Write(r2) } with Order[v] =
@@ -103,6 +103,15 @@ mod Fixpoint {
                     evalOp(r1, db, env, then)
                 } else {
                     ()
+                }
+            case RelOp.Loop(RowVar.Index(i), f, terms, body) =>
+                let args = terms |> Vector.map(evalTerm(env));
+                let result = f(args): Vector[Vector[v]];
+
+                let (tupleEnv, _latEnv) = env; // TODO: Support latEnv?
+                foreach (t <- result) {
+                    Array.put(t, i, tupleEnv);
+                    evalOp(r1, db, env, body)
                 }
             case _ => ()
         }
@@ -206,6 +215,7 @@ mod Fixpoint {
             let v4 = evalTerm(env, t4);
             let v5 = evalTerm(env, t5);
             f(v1)(v2)(v3)(v4)(v5)
+        case RamTerm.RowLoad(rowVar, index) => bug!("Illegal RowLoad with ${rowVar} ${index}")
         case _ => bug!("Illegal term ${term}")
     }
 }

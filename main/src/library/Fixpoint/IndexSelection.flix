@@ -129,7 +129,7 @@ mod Fixpoint {
         case RelOp.If(test, then) =>
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, test ::: innerGround)
-        case RelOp.Loop(_) => ??? // TODO
+        case RelOp.Loop(_) => (op, Nil)
     }
 
     def longestPrefixQuery(varQuery: List[BoolExp[v]]): (List[BoolExp[v]], List[BoolExp[v]]) =

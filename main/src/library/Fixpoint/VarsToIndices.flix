@@ -47,7 +47,12 @@ mod Fixpoint {
                  RelOp.Project(List.map(lowerTerm(rowVars), terms), ramSym)
             case RelOp.If(test, then) =>
                  RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
-            case RelOp.Loop(_) => ??? // TODO
+            case RelOp.Loop(rowVar, f, terms, body) =>
+                let newVar = RowVar.Index(depth);
+                let newVars = Map.insert(rowVar, newVar, rowVars);
+                let newTerms = terms |> Vector.map(lowerTerm(rowVars)); // TODO: rowVars or newVars?
+                let newBody = lowerOp(body, newVars, depth + 1);
+                RelOp.Loop(newVar, f, newTerms, newBody)
         }
 
     def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
