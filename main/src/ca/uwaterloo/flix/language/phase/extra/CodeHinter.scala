@@ -354,7 +354,7 @@ object CodeHinter {
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
+    case Body.Functional(_, exp, _) => visitExp(exp)
   }
 
   /**

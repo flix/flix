@@ -528,7 +528,7 @@ object Stratifier {
       */
     def isNegativeOrLoop(p: Predicate.Body): Boolean = p match {
       case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
-      case Predicate.Body.Loop(_, _, _) => true
+      case Predicate.Body.Functional(_, _, _) => true
       case _ => false
     }
 
@@ -880,7 +880,7 @@ object Stratifier {
           case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
             edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
           case Body.Guard(_, _) => edges
-          case Body.Loop(_, _, _) => edges
+          case Body.Functional(_, _, _) => edges
         }
       }
 

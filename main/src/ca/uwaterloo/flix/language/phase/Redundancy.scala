@@ -959,7 +959,7 @@ object Redundancy {
     case Body.Guard(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Body.Loop(varSyms, exp, _) =>
+    case Body.Functional(varSyms, exp, _) =>
       varSyms.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
         case (acc, varSym) => acc ++ Used.of(varSym)
       }

@@ -2834,7 +2834,7 @@ object Typer {
 
     case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
-      TypedAst.Predicate.Body.Loop(outVars, e, loc)
+      TypedAst.Predicate.Body.Functional(outVars, e, loc)
 
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)

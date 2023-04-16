@@ -1062,7 +1062,7 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
-    case TypedAst.Predicate.Body.Loop(outVars, exp0, loc) =>
+    case TypedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val inVars = quantifiedVars(cparams0, exp0)
       val exp = visitExp(exp0)
@@ -1321,7 +1321,7 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.LoopX`.
+    * Returns a `Fixpoint.Ast.BodyPredicate.Functional`.
     */
   private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
     // Compute the number of in and out variables.

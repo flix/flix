@@ -560,7 +560,7 @@ object Safety {
 
     case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
 
-    case Predicate.Body.Loop(boundVars, exp, loc) =>
+    case Predicate.Body.Functional(boundVars, exp, loc) =>
       // check for non-positively bound negative variables.
       val fvs = freeVars(exp).keySet intersect quantVars
       val err1 = ((fvs -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
@@ -597,7 +597,7 @@ object Safety {
 
     case Predicate.Body.Guard(_, _) => Set.empty
 
-    case Predicate.Body.Loop(boundVars, _, _) =>
+    case Predicate.Body.Functional(boundVars, _, _) =>
       // Tricky: All bound variables are positively defined if their free variables are.
       // For now, we say that they are not positively defined.
       Set.empty

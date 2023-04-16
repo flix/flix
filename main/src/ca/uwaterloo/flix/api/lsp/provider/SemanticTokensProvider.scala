@@ -778,7 +778,7 @@ object SemanticTokensProvider {
     case Body.Guard(exp, _) =>
       visitExp(exp)
 
-    case Body.Loop(varSyms, exp, loc) =>
+    case Body.Functional(varSyms, exp, loc) =>
       val ts = varSyms.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
       visitExp(exp) ++ ts
   }
