@@ -197,4 +197,35 @@ mod Test.Predicate.Loop {
         let actual = query pr select (x, y) from R(x, y);
         Assert.eq(List#{(1, 2), (2, 3)}, actual)
 
+
+    @Test
+    def testLoopLat_01(): Bool =
+        let ff = _ -> Vector#{};
+        let pr = #{
+            A(1).
+            R(x; a) :- A(x), let a = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x; y);
+        Assert.eq(List#{}: List[(Int32, Int32)], actual)
+
+    @Test
+    def testLoopLat_02(): Bool =
+        let ff = x -> Vector#{x + 2, x + 1};        // Deliberately out-of-order.
+        let pr = #{
+            A(1).
+            R(x; a) :- A(x), let a = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x; y);
+        Assert.eq(List#{(1, 3)}, actual)
+
+    @Test
+    def testLoopLat_03(): Bool =
+        let ff = x -> Vector#{x + 3, x + 1, x + 2}; // Deliberately out-of-order.
+        let pr = #{
+            A(1).
+            R(x; a) :- A(x), let a = ff(x).
+        };
+        let actual = query pr select (x, y) from R(x; y);
+        Assert.eq(List#{(1, 4)}, actual)
+
 }
