@@ -231,8 +231,8 @@ object Statistics {
     */
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
     case Body.Atom(_, _, _, _, _, _, _) => Counter.empty
-    case Body.Guard(exp, loc) => visitExp(exp)
-    case Body.Functional(varSyms, exp, loc) => visitExp(exp)
+    case Body.Functional(_, exp, _) => visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
   }
 
   /**

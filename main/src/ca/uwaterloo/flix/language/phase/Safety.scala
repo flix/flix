@@ -558,14 +558,15 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
-
-    case Predicate.Body.Functional(boundVars, exp, loc) =>
-      // check for non-positively bound negative variables.
-      val fvs = freeVars(exp).keySet intersect quantVars
-      val err1 = ((fvs -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+    case Predicate.Body.Functional(outVars, exp, loc) =>
+      // check for non-positively in variables (free variables in exp).
+      val inVars = freeVars(exp).keySet intersect quantVars
+      val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
 
       err1 ::: visitExp(exp, renv, root)
+
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
+
   }
 
   /**
@@ -595,12 +596,12 @@ object Safety {
         Set.empty
     }
 
+    case Predicate.Body.Functional(_, _, _) =>
+      // A functional does not positively bind any variables. Not even its outVars.
+      Set.empty
+
     case Predicate.Body.Guard(_, _) => Set.empty
 
-    case Predicate.Body.Functional(boundVars, _, _) =>
-      // Tricky: All bound variables are positively defined if their free variables are.
-      // For now, we say that they are not positively defined.
-      Set.empty
   }
 
   /**

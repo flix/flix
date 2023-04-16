@@ -775,12 +775,12 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 
+    case Body.Functional(outVars, exp, loc) =>
+      val ts = outVars.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
+      visitExp(exp) ++ ts
+
     case Body.Guard(exp, _) =>
       visitExp(exp)
-
-    case Body.Functional(varSyms, exp, loc) =>
-      val ts = varSyms.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
-      visitExp(exp) ++ ts
   }
 
   /**

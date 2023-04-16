@@ -879,8 +879,8 @@ object Stratifier {
         case (edges, body) => body match {
           case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
             edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
-          case Body.Guard(_, _) => edges
           case Body.Functional(_, _, _) => edges
+          case Body.Guard(_, _) => edges
         }
       }
 
