@@ -542,24 +542,24 @@ mod Vector {
     /// disjoint from the rest of the threads.
     ///
     pub def parMapWithIndex(n: Int32, f: (Int32, a) -> b, v: Vector[a]): Vector[b] =
-        unchecked_cast(region rc {
-            let result: Array[b, rc] = Array.new(rc, length(v));
-            def transform(left, right) = {
-                if (left <= right) {
-                    Array.put(f(left, get(left, v)), left, result);
-                    transform(left + 1, right)
+        def transform(left, right) = region rc {
+            let result = Array.new(rc, right - left);
+            def loop(l) =
+                if (l < right) {
+                    Array.put(f(l - left, get(l, v)), l - left, result);
+                    loop(l + 1)
                 }
-                else ()
-            };
-            def parTransform(t, left, right) =
-                if (t <= 1) transform(left, right)
-                else {
-                    spawn parTransform((t - 2) / 2, left, (left + right) / 2) @ rc;
-                    spawn parTransform((t - 2) / 2, (left + right) / 2, right) @ rc
-                };
-            parTransform(n, 0, length(v));
-            unchecked_cast(result as Vector[b])
-        } as Vector[b] \ {})
+                else ();
+            loop(left);
+            Array.toVector(result)
+        };
+        def parTransform(t, left, right) =
+            if (t <= 1) transform(left, right)
+            else par (
+                v1 <- parTransform((t - 2) / 2, left, (left + right) / 2);
+                v2 <- parTransform((t - 2) / 2, (left + right) / 2, right)
+            ) yield Vector.append(v1, v2);
+        parTransform(n, 0, length(v))
 
 
     ///
