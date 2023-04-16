@@ -524,6 +524,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the literal.
       */
     case class Str(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
+      * Regex Pattern Literal.
+      *
+      * @param sp1   the position of the first character in the literal.
+      * @param patt  the regular expression pattern
+      * @param sp2   the position of the last character in the literal.
+      */
+    case class Regex(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
+
   }
 
   /**

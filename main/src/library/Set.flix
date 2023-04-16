@@ -23,8 +23,6 @@ pub enum Set[t] with Sendable {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with Boxable[t]
-
 instance Eq[Set[a]] with Eq[a] {
     pub def eq(s1: Set[a], s2: Set[a]): Bool =
         Set.toList(s1) == Set.toList(s2)

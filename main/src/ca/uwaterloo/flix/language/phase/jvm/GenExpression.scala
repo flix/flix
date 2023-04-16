@@ -1162,6 +1162,12 @@ object GenExpression {
       addSourceLine(visitor, loc)
       visitor.visitLdcInsn(s)
 
+    case Ast.Constant.Regex(patt) =>
+      addSourceLine(visitor, loc)
+      visitor.visitLdcInsn(patt.pattern)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+
   }
 
   /*

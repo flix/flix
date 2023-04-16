@@ -1,4 +1,4 @@
-pub def friendSuggestions(friends: List[(person, person)]): List[(person, person)] with Boxable[person] =
+pub def friendSuggestions(friends: List[(person, person)]): List[(person, person)] with Order[person] =
     let f = inject friends into Friend;
     let lp = #{
         Suggestion(me, nf) :-

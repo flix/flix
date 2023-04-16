@@ -93,6 +93,12 @@ instance ToString[BigDecimal] {
         toString(x)
 }
 
+instance ToString[Regex] {
+    pub def toString(x: Regex): String =
+        import java.util.regex.Pattern.toString(): String \ {};
+        toString(x)
+}
+
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
     pub def toString(t: (a1, a2)): String = match t {
         case (x1, x2) =>
