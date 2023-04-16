@@ -17,6 +17,8 @@
 mod TestGradedApplicative {
 
     use GradedFunctor.{<$>, <$$>, <$, $>}
+    use GradedApplicative.{point, ap, map2, map3, map4, map5, product, productLeft, productRight,
+        product3, product4, product5, <*>, <**>, *>, <*}
 
     use TestGradedApplicative.Int32Reader
     use TestGradedApplicative.Int32Reader.{Int32Reader}
@@ -53,24 +55,22 @@ mod TestGradedApplicative {
             )
     }
 
-
     /////////////////////////////////////////////////////////////////////////////
     // point                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def point01(): Bool =
-        runReader(GradedApplicative.point(1), 0) == 1
+        runReader(point(1), 0) == 1
 
     @test
     def point02(): Bool =
         let noneI32: Option[Int32] = None;
-        runReader(GradedApplicative.point(noneI32), 0) == None
+        runReader(point(noneI32), 0) == None
 
     @test
     def point03(): Bool =
-        runReader(GradedApplicative.point(Some(1)), 1) == Some(1)
-
+        runReader(point(Some(1)), 1) == Some(1)
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
@@ -78,18 +78,238 @@ mod TestGradedApplicative {
 
     @test
     def ap01(): Bool =
-        use GradedApplicative.{point, ap};
         runReader(ap(point(x -> x + 1), point(2)), 1) == 3
 
     @test
     def ap02(): Bool =
-        use GradedApplicative.{point, ap};
         runReader(ap(point(x -> Some(x)), point(2)), 1) == Some(2)
 
     @test
     def ap03(): Bool =
-        use GradedApplicative.{point, ap};
         runReader(ap(point(x -> Some(x)), ask()), 1) == Some(1)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // map2                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map201(): Bool =
+        runReader(map2((x, y) -> if (x > 0) Some(y) else None, point(1), point(2)), 1) == Some(2)
+
+    @test
+    def map202(): Bool =
+        runReader(map2((x, y) -> if (x > 0) Some(y) else None, ask(), point(2)), 1) == Some(2)
+
+    @test
+    def map203(): Bool =
+        runReader(map2((x, y) -> if (x > 0) Some(y) else None, point(0), point(2)), 1) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map3                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map301(): Bool =
+        runReader(map3((x, y, z) -> if (x > 0) Some(y + z) else None, point(1), point(2), point(3)), 1) == Some(5)
+
+    @test
+    def map302(): Bool =
+        runReader(map3((x, y, z) -> if (x > 0) Some(y + z) else None, ask(), point(2), point(3)), 1) == Some(5)
+
+    @test
+    def map303(): Bool =
+        runReader(map3((x, y, z) -> if (x > 0) Some(y + z) else None, point(0), point(2), point(3)), 1) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map4                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map401(): Bool =
+        runReader(map4((v, x, y, z) -> if (v > 0) Some(x + y + z) else None, point(1), point(2), point(3), point(4)), 1) == Some(9)
+
+    @test
+    def map402(): Bool =
+        runReader(map4((v, x, y, z) -> if (v > 0) Some(x + y + z) else None, ask(), point(2), point(3), point(4)), 1) == Some(9)
+
+    @test
+    def map403(): Bool =
+        runReader(map4((v, x, y, z) -> if (v > 0) Some(x + y + z) else None, point(0), point(2), point(3), point(4)), 1) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map5                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map501(): Bool =
+        runReader(map5((u, v, x, y, z) -> if (u > 0) Some(v + x + y + z) else None, point(1), point(2), point(3), point(4), point(5)), 1) == Some(14)
+
+    @test
+    def map502(): Bool =
+        runReader(map5((u, v, x, y, z) -> if (u > 0) Some(v + x + y + z) else None, ask(), point(2), point(3), point(4), point(5)), 1) == Some(14)
+
+    @test
+    def map503(): Bool =
+        runReader(map5((u, v, x, y, z) -> if (u > 0) Some(v + x + y + z) else None, point(0), point(2), point(3), point(4), point(5)), 1) == None
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product01(): Bool =
+        runReader(product(ask(), point(2)), 1) == (1, 2)
+
+    @test
+    def product02(): Bool =
+        runReader(product(ask(), point(Some(2))), 1) == (1, Some(2))
+
+    @test
+    def product03(): Bool =
+        runReader(product(point(Some(2)), ask()), 1) == (Some(2), 1)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productLeft01(): Bool =
+        runReader(productLeft(ask(), point(2)), 1) == 1
+
+    @test
+    def productLeft02(): Bool =
+        runReader(productLeft(ask(), point(Some(2))), 1) == 1
+
+    @test
+    def productLeft03(): Bool =
+        runReader(productLeft(point(Some(2)), ask()), 1) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // productRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def productRight01(): Bool =
+        runReader(productRight(ask(), point(2)), 1) == 2
+
+    @test
+    def productRight02(): Bool =
+        runReader(productRight(ask(), point(Some(2))), 1) == Some(2)
+
+    @test
+    def productRight03(): Bool =
+        runReader(productRight(point(Some(2)), ask()), 1) == 1
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product3                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product301(): Bool =
+        runReader(product3(ask(), point(2), point(3)), 1) == (1, 2, 3)
+
+    @test
+    def product302(): Bool =
+        runReader(product3(ask(), point(Some(2)), point(3)), 1) == (1, Some(2), 3)
+
+    @test
+    def product303(): Bool =
+        runReader(product3(point(Some(2)), ask(), point(3)), 1) == (Some(2), 1, 3)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product4                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product401(): Bool =
+        runReader(product4(ask(), point(2), point(3), point(Some(4))), 1) == (1, 2, 3, Some(4))
+
+    @test
+    def product402(): Bool =
+        runReader(product4(ask(), point(Some(2)), point(3), point(Some(4))), 1) == (1, Some(2), 3, Some(4))
+
+    @test
+    def product403(): Bool =
+        runReader(product4(point(Some(2)), ask(), point(3), point(Some(4))), 1) == (Some(2), 1, 3, Some(4))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // product5                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def product501(): Bool =
+        runReader(product5(ask(), point(2), point(3), point(Some(4)), point("five")), 1) == (1, 2, 3, Some(4), "five")
+
+    @test
+    def product502(): Bool =
+        runReader(product5(ask(), point(Some(2)), point(3), point(Some(4)), point("five")), 1) == (1, Some(2), 3, Some(4), "five")
+
+    @test
+    def product503(): Bool =
+        runReader(product5(point(Some(2)), ask(), point(3), point(Some(4)), point("five")), 1) == (Some(2), 1, 3, Some(4), "five")
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symAp                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symAp01(): Bool =
+        runReader(point(x -> x + 1) <*> point(2), 1) == 3
+
+    @test
+    def symAp02(): Bool =
+        runReader(point(x -> Some(x)) <*> point(2), 1) == Some(2)
+
+    @test
+    def symAp03(): Bool =
+        runReader(point(x -> Some(x)) <*> ask(), 1) == Some(1)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symFlippedAp                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symFlippedAp01(): Bool =
+        runReader(point(2) <**> point(x -> x + 1), 1) == 3
+
+    @test
+    def symFlippedAp02(): Bool =
+        runReader(point(2) <**> point(x -> Some(x)), 1) == Some(2)
+
+    @test
+    def symFlippedAp03(): Bool =
+        runReader(ask() <**> point(x -> Some(x)), 1) == Some(1)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symProductLeft                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symProductLeft01(): Bool =
+        runReader(ask() <*  point(2), 1) == 1
+
+    @test
+    def symProductLeft02(): Bool =
+        runReader(ask() <* point(Some(2)), 1) == 1
+
+    @test
+    def symProductLeft03(): Bool =
+        runReader(point(Some(2)) <* ask(), 1) == Some(2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symProductRight                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symProductRight01(): Bool =
+        runReader(ask() *> point(2), 1) == 2
+
+    @test
+    def symProductRight02(): Bool =
+        runReader(ask() *> point(Some(2)), 1) == Some(2)
+
+    @test
+    def symProductRight03(): Bool =
+        runReader(point(Some(2)) *> ask(), 1) == 1
 
 }

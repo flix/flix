@@ -18,7 +18,7 @@ pub class GradedApplicative[m: Bool -> Type -> Type] with GradedFunctor[m] {
 
     ///
     /// Lifts `x` into the graded applicative context.
-    ///    
+    ///
     pub def point(x: a): m[ef, a]
 
     ///
@@ -30,34 +30,31 @@ pub class GradedApplicative[m: Bool -> Type -> Type] with GradedFunctor[m] {
     /// Map a binary function to work on graded applicatives.
     /// Instances can define more efficient implementations than the default implementation.
     ///
-    pub def map2(f: t1 -> t2 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2]): m[ef1 and ef2 and ef, a] = 
+    pub def map2(f: t1 -> t2 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2]): m[ef1 and ef2 and ef, a] =
         GradedApplicative.ap(GradedFunctor.map(f, x1), x2)
 
     ///
     /// Map a ternary function to work on graded applicatives.
     /// Instances can define more efficient implementations than the default implementation.
     ///
-    pub def map3(f: t1 -> t2 -> t3 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3]): m[ef1 and ef2 and ef3 and ef, a] = 
+    pub def map3(f: t1 -> t2 -> t3 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3]): m[ef1 and ef2 and ef3 and ef, a] =
         GradedApplicative.ap(GradedApplicative.map2(f, x1, x2), x3)
 
     ///
     /// Map a 4-ary function to work on graded applicatives.
     /// Instances can define more efficient implementations than the default implementation
     ///
-    pub def map4(f: t1 -> t2 -> t3 -> t4 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3], x4: m[ef4, t4]): m[ef1 and ef2 and ef3 and ef4 and ef, a] = 
+    pub def map4(f: t1 -> t2 -> t3 -> t4 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3], x4: m[ef4, t4]): m[ef1 and ef2 and ef3 and ef4 and ef, a] =
         GradedApplicative.ap(GradedApplicative.map3(f, x1, x2, x3), x4)
 
     ///
     /// Map a 5-ary function to work on graded applicatives.
     /// Instances can define more efficient implementations than the default implementation
     ///
-    pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3], x4: m[ef4, t4], x5: m[ef5, t5]): m[ef1 and ef2 and ef3 and ef4 and ef5 and ef, a] = 
+    pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> a \ ef, x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3], x4: m[ef4, t4], x5: m[ef5, t5]): m[ef1 and ef2 and ef3 and ef4 and ef5 and ef, a] =
         GradedApplicative.ap(GradedApplicative.map4(f, x1, x2, x3, x4), x5)
 
-
-
 }
-
 
 mod GradedApplicative {
 
@@ -108,7 +105,7 @@ mod GradedApplicative {
     /// `<*>` is an operator alias for `ap`.
     ///
     pub def <*>[m: Bool -> Type -> Type, ef: Bool, ef1: Bool, ef2: Bool, a: Type, b: Type]
-               (mf: m[ef1, a -> b \ ef2], ma: m[ef, a]): m[ef and ef1 and ef2, b] with GradedApplicative[m] = 
+               (mf: m[ef1, a -> b \ ef2], ma: m[ef, a]): m[ef and ef1 and ef2, b] with GradedApplicative[m] =
         GradedApplicative.ap(mf, ma)
 
     ///
@@ -117,21 +114,21 @@ mod GradedApplicative {
     /// The order of evaluation is `ma` then `mf`.
     ///
     pub def <**>[a: Type, b: Type, ef1: Bool, ef2: Bool, ef: Bool, m: Bool -> Type -> Type]
-                (ma: m[ef1, a], mf: m[ef2, a -> b \ ef]): m[ef1 and ef2 and ef, b] with GradedApplicative[m] = 
+                (ma: m[ef1, a], mf: m[ef2, a -> b \ ef]): m[ef1 and ef2 and ef, b] with GradedApplicative[m] =
         GradedApplicative.map2((a, f) -> f(a), ma, mf)
 
     ///
     /// `<*` is an operator alias for `productLeft`.
     ///
     pub def <*[a: Type, b: Type, ef1: Bool, ef2: Bool, m: Bool -> Type -> Type]
-              (ma: m[ef1, a], mb: m[ef2, b]): m[ef1 and ef2, a] with GradedApplicative[m] = 
+              (ma: m[ef1, a], mb: m[ef2, b]): m[ef1 and ef2, a] with GradedApplicative[m] =
         productLeft(ma, mb)
 
     ///
     /// `*>` is an operator alias for `productRight`.
     ///
     pub def *>[a: Type, b: Type, ef1: Bool, ef2: Bool, m: Bool -> Type -> Type]
-              (ma: m[ef1, a], mb: m[ef2, b]): m[ef1 and ef2, b] with GradedApplicative[m] = 
+              (ma: m[ef1, a], mb: m[ef2, b]): m[ef1 and ef2, b] with GradedApplicative[m] =
         productRight(ma, mb)
 
 }
