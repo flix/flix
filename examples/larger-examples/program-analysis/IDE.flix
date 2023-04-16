@@ -384,7 +384,7 @@ def main(): Unit \ IO =
 
     let result = IDE.run({
         zero         = "zero",
-        main         = "smain",
+        main         = "main",
         cfg          = cfg,
         startNodes   = startNodes,
         endNodes     = endNodes,
