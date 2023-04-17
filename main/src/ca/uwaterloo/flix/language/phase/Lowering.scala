@@ -1365,7 +1365,7 @@ object Lowering {
     val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
     val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
     val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
-    mkTag(Enums.BodyPredicate, s"Loop", innerExp, Types.BodyPredicate, loc)
+    mkTag(Enums.BodyPredicate, s"Functional", innerExp, Types.BodyPredicate, loc)
   }
 
   /**

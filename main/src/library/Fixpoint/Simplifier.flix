@@ -126,11 +126,11 @@ mod Fixpoint {
                 newBody <- simplifyOp(stratum, body);
                 res <- f(newBody)
             ) yield res
-        case RelOp.Project(_)    => Some(op)
-        case RelOp.Loop(rowVar, f, terms, body) =>
+        case RelOp.Functional(rowVar, f, terms, body) =>
             forM(
                 newBody <- simplifyOp(stratum, body)
-            ) yield RelOp.Loop(rowVar, f, terms, newBody)
+            ) yield RelOp.Functional(rowVar, f, terms, newBody)
+        case RelOp.Project(_)    => Some(op)
     }
 
     ///
