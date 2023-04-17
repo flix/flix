@@ -33,8 +33,19 @@ mod TestGradedFunctor {
         let Int32Reader(ma1) = ma;
         ma1(i)
 
+    ///
+    /// Return the current environemnt.
+    ///
     def ask(): Int32Reader[ef, Int32] =
         Int32Reader(i -> checked_ecast(i))
+
+    ///
+    /// Use an array computation which changes the effect type (i.e. the "grade") of the Int32Reader.
+    ///
+    def genArray(rc: Region[r], n: Int32): Int32Reader[ef and r, Array[Int32, r]] =
+        Int32Reader(i ->
+            checked_ecast(Array.repeat(rc, n, i))
+        )
 
     instance GradedFunctor[Int32Reader] {
         pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
@@ -60,6 +71,10 @@ mod TestGradedFunctor {
     def map03(): Bool =
         runReader(GradedFunctor.map(x -> if (x > 0) Some(x) else None, ask()), 1) == Some(1)
 
+    @test
+    def map04(): Bool = region rc {
+        runReader(GradedFunctor.map(Array.length, genArray(rc, 3)), 1) == 3
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
@@ -78,6 +93,10 @@ mod TestGradedFunctor {
     def replace03(): Bool =
         runReader(GradedFunctor.replace(ask(), Some(2)), 1) == Some(2)
 
+    @test
+    def replace04(): Bool = region rc {
+        runReader(GradedFunctor.replace(genArray(rc, 3), ()), 1) == ()
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // ignore                                                                  //

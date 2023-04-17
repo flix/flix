@@ -21,13 +21,9 @@ pub class GradedMonad[m: Bool -> Type -> Type] with GradedApplicative[m] {
     ///
     pub def flatMap(f: a -> m[ef1, b] \ ef, x: m[ef2, a]): m[ef1 and ef2 and ef, b]
 
-
 }
 
-
 mod GradedMonad {
-
-
 
     ///
     /// The graded version of the monadic `join` operator.
@@ -58,7 +54,7 @@ mod GradedMonad {
     /// `=<<` is an operator alias for `flatMap`.
     ///
     pub def =<<[a: Type, b: Type, ef1: Bool, ef2: Bool, ef: Bool, m: Bool -> Type -> Type]
-               (k: a -> m[ef1, b] \ ef, x: m[ef2, a]): m[ef1 and ef2 and ef, b] with GradedMonad[m] = 
+               (k: a -> m[ef1, b] \ ef, x: m[ef2, a]): m[ef1 and ef2 and ef, b] with GradedMonad[m] =
         GradedMonad.flatMap(k, x)
 
     ///
@@ -67,7 +63,7 @@ mod GradedMonad {
     /// `>>=` is the monadic bind operator.
     ///
     pub def >>=[a: Type, b: Type, ef1: Bool, ef2: Bool, ef: Bool, m: Bool -> Type -> Type]
-               (x: m[ef1, a], k: a -> m[ef2, b] \ ef): m[ef1 and ef2 and ef, b] with GradedMonad[m] = 
+               (x: m[ef1, a], k: a -> m[ef2, b] \ ef): m[ef1 and ef2 and ef, b] with GradedMonad[m] =
         GradedMonad.flatMap(k, x)
 
 

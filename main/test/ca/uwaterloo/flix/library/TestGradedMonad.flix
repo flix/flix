@@ -16,7 +16,8 @@
 
 mod TestGradedMonad {
 
-    use GradedFunctor.{<$>, <$$>, <$, $>}
+    use GradedApplicative.{point};
+    use GradedMonad.{flatMap, flatten, kleisliLeft, kleisliRight};
 
     use TestGradedMonad.Int32Reader
     use TestGradedMonad.Int32Reader.{Int32Reader}
@@ -30,8 +31,19 @@ mod TestGradedMonad {
         let Int32Reader(ma1) = ma;
         ma1(i)
 
+    ///
+    /// Return the current environemnt.
+    ///
     def ask(): Int32Reader[ef, Int32] =
         Int32Reader(i -> checked_ecast(i))
+
+    ///
+    /// Use an array computation which changes the effect type (i.e. the "grade") of the Int32Reader.
+    ///
+    def genArray(rc: Region[r], n: Int32): Int32Reader[ef and r, Array[Int32, r]] =
+        Int32Reader(i ->
+            checked_ecast(Array.repeat(rc, n, i))
+        )
 
     instance GradedFunctor[Int32Reader] {
         pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
@@ -67,8 +79,36 @@ mod TestGradedMonad {
 
     @test
     def flatMap01(): Bool =
-        use GradedApplicative.{point};
-        use GradedMonad.{flatMap};
-        runReader(flatMap(x -> point(x+1), ask()), 0) == 1
+        runReader(flatMap(x -> point(x+1), point(1)), 1) == 2
 
+    @test
+    def flatMap02(): Bool =
+        runReader(flatMap(x -> point(x+1), ask()), 1) == 2
+
+    @test
+    def flatMap03(): Bool =
+        runReader(flatMap(x -> if (x > 0) point(Some(x)) else point(None), ask()), 1) == Some(1)
+
+    @test
+    def flatMap04(): Bool = region rc {
+        runReader(flatMap(x -> point(Array.length(x)), genArray(rc, 3)), 1) == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool =
+        runReader(flatten(point(point(1))), 1) == 1
+
+    @test
+    def flatten02(): Bool =
+        runReader(flatten(point(ask())), 1) == 1
+
+    @test
+    def flatten03(): Bool = region rc {
+        let arr = runReader(flatten(point(genArray(rc, 3))), 1);
+        Array.toList(arr) == List#{1, 1, 1}
+    }
 }
