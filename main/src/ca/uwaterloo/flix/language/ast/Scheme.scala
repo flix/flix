@@ -83,7 +83,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], tpe0: Type): Scheme = {
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
   }
@@ -140,8 +140,11 @@ object Scheme {
             flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
               case _ =>
                 val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
-                val newEconstrs2 = sc2.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
-                mapN(Validation.traverse(newEconstrs1)(EqualityEnvironment.entail(newEconstrs2, _, eqEnv))) {
+                val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
+                val entailmentVal = Validation.traverse(newEconstrs1) {
+                  case econstr => EqualityEnvironment.entail(newEconstrs2, econstr, eqEnv)
+                }
+                mapN(entailmentVal) {
                   case _ => subst
                 }
             }
@@ -155,7 +158,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

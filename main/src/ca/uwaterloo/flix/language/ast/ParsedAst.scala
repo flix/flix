@@ -529,7 +529,7 @@ object ParsedAst {
       * Regex Pattern Literal.
       *
       * @param sp1   the position of the first character in the literal.
-      * @param patt  the regular expression pattern
+      * @param chars the regular expression pattern
       * @param sp2   the position of the last character in the literal.
       */
     case class Regex(sp1: SourcePosition, chars: Seq[ParsedAst.CharCode], sp2: SourcePosition) extends ParsedAst.Literal
@@ -1379,6 +1379,16 @@ object ParsedAst {
       case class Atom(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
+        * Functional Predicate.
+        *
+        * @param sp1    the position of the first character in the predicate.
+        * @param idents the out variables of the predicate.
+        * @param exp    the expression to iterate over.
+        * @param sp2    the position of the last character in the predicate.
+        */
+      case class Functional(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
         * Guard Predicate.
         *
         * @param sp1 the position of the first character in the predicate.
@@ -1386,16 +1396,6 @@ object ParsedAst {
         * @param sp2 the position of the last character in the predicate.
         */
       case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * Loop Predicate.
-        *
-        * @param sp1    the position of the first character in the predicate.
-        * @param idents the variable bound by the predicate.
-        * @param exp    the expression to iterate over.
-        * @param sp2    the position of the last character in the predicate.
-        */
-      case class Loop(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
 

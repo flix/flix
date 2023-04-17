@@ -1009,6 +1009,17 @@ object Type {
   }
 
   /**
+    * Returns true if the given type contains an associated type somewhere within it.
+    */
+  def hasAssocType(t: Type): Boolean = t match {
+    case Var(_, _) => false
+    case Cst(_, _) => false
+    case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
+    case Alias(_, _, tpe, _) => hasAssocType(tpe)
+    case AssocType(_, _, _, _) => true
+  }
+
+  /**
     * Returns the Flix Type of a Java Class
     */
   def getFlixType(c: Class[_]): Type = {

@@ -268,7 +268,7 @@ object PatternExhaustiveness {
   private def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp, root)
-    case TypedAst.Predicate.Body.Loop(_, exp, _) => visitExp(exp, root)
+    case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp, root)
   }
 
   /**
@@ -584,6 +584,7 @@ object PatternExhaustiveness {
     * @param tpe the type to count
     * @return the number of arguments a type constructor expects
     */
+  // TODO: Maybe we can use the kind instead?
   private def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
     case None => 0
     case Some(TypeConstructor.Unit) => 0
@@ -607,6 +608,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Schema) => 0
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
+    case Some(TypeConstructor.Vector) => 1
     case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?

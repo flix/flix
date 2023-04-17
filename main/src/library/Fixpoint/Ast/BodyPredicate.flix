@@ -24,13 +24,13 @@ mod Fixpoint.Ast {
     @Internal
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Denotation[v], Polarity, Fixity, List[BodyTerm[v]])
+        case Functional(Vector[VarSym], Vector[v] -> Vector[Vector[v]], Vector[VarSym])
         case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, VarSym)
         case Guard2(v -> v -> Bool, VarSym, VarSym)
         case Guard3(v -> v -> v -> Bool, VarSym, VarSym, VarSym)
         case Guard4(v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym)
         case Guard5(v -> v -> v -> v -> v -> Bool, VarSym, VarSym, VarSym, VarSym, VarSym)
-        case Loop(Vector[VarSym], Vector[v] -> Vector[Vector[v]], Vector[VarSym])
     }
 
     instance PredSymsOf[BodyPredicate[v]] {
@@ -68,13 +68,13 @@ mod Fixpoint.Ast {
                         case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
                         case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> List.join(", ")}; ${l})"
                     }
+                case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
                 case BodyPredicate.Guard0(_) => "<clo>()"
                 case BodyPredicate.Guard1(_, v) => "<clo>(${v})"
                 case BodyPredicate.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
                 case BodyPredicate.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
                 case BodyPredicate.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
-                case BodyPredicate.Loop(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
             }
     }
 }
