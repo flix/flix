@@ -17,7 +17,7 @@
 mod TestGradedMonad {
 
     use GradedApplicative.{point};
-    use GradedMonad.{flatMap, flatten, kleisliLeft, kleisliRight};
+    use GradedMonad.{flatMap, flatten, kleisliLeft, kleisliRight, >>=, =<<};
 
     use TestGradedMonad.Int32Reader
     use TestGradedMonad.Int32Reader.{Int32Reader}
@@ -44,6 +44,13 @@ mod TestGradedMonad {
         Int32Reader(i ->
             checked_ecast(Array.repeat(rc, n, i))
         )
+
+    ///
+    /// Lift a function into Int32Reader.
+    ///
+    def liftFun(f: a -> b \ ef): a -> Int32Reader[ef, b] = a ->
+        Int32Reader(_ -> checked_ecast(f(a)))
+
 
     instance GradedFunctor[Int32Reader] {
         pub def map(f: a -> b \ ef1, ma: Int32Reader[ef, a]): Int32Reader[ef and ef1, b] =
@@ -79,15 +86,15 @@ mod TestGradedMonad {
 
     @test
     def flatMap01(): Bool =
-        runReader(flatMap(x -> point(x+1), point(1)), 1) == 2
+        runReader(flatMap(liftFun(x -> x + 1), point(1)), 1) == 2
 
     @test
     def flatMap02(): Bool =
-        runReader(flatMap(x -> point(x+1), ask()), 1) == 2
+        runReader(flatMap(liftFun(x -> x + 1), ask()), 1) == 2
 
     @test
     def flatMap03(): Bool =
-        runReader(flatMap(x -> if (x > 0) point(Some(x)) else point(None), ask()), 1) == Some(1)
+        runReader(flatMap(liftFun(x -> if (x > 0) Some(x) else None), ask()), 1) == Some(1)
 
     @test
     def flatMap04(): Bool = region rc {
@@ -111,4 +118,88 @@ mod TestGradedMonad {
         let arr = runReader(flatten(point(genArray(rc, 3))), 1);
         Array.toList(arr) == List#{1, 1, 1}
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // kleisliLeft                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def kleisliLeft01(): Bool =
+        let fn = i -> kleisliLeft(liftFun(x -> x + 1), liftFun(x -> Some(x)), i);
+        runReader(fn(1), 1) == Some(2)
+
+   @test
+    def kleisliLeft02(): Bool =
+        let fn = i -> kleisliLeft(liftFun(x -> x + 1), liftFun(x -> Some(x)), i);
+        runReader(flatMap(fn, ask()), 1) == Some(2)
+
+   @test
+    def kleisliLeft03(): Bool = region rc {
+        let fn = i -> kleisliLeft(x -> genArray(rc, x), liftFun(arr -> Array.length(arr)), i);
+        runReader(flatMap(fn, point(3)), 1) == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // kleisliRight                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def kleisliRight01(): Bool =
+        let fn = i -> kleisliRight(liftFun(x -> Some(x)), liftFun(x -> x + 1), i);
+        runReader(fn(1), 1) == Some(2)
+
+   @test
+    def kleisliRight02(): Bool =
+        let fn = i -> kleisliRight(liftFun(x -> Some(x)), liftFun(x -> x + 1), i);
+        runReader(flatMap(fn, ask()), 1) == Some(2)
+
+   @test
+    def kleisliRight03(): Bool = region rc {
+        let fn = i -> kleisliRight(liftFun(arr -> Array.length(arr)), x -> genArray(rc, x), i);
+        runReader(flatMap(fn, point(3)), 1) == 3
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symFlatMap                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symFlatMap01(): Bool =
+        runReader(liftFun(x -> x + 1) =<< point(1), 1) == 2
+
+    @test
+    def symFlatMap02(): Bool =
+        runReader(liftFun(x -> x + 1) =<< ask(), 1) == 2
+
+    @test
+    def symFlatMap03(): Bool =
+        runReader(liftFun(x -> if (x > 0) Some(x) else None) =<< ask(), 1) == Some(1)
+
+    @test
+    def symFlatMap04(): Bool = region rc {
+        runReader((x -> point(Array.length(x))) =<< genArray(rc, 3), 1) == 3
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // symFlippedFlatMap                                                       //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def symFlippedFlatMap01(): Bool =
+        runReader(point(1) >>= liftFun(x -> x + 1), 1) == 2
+
+    @test
+    def symFlippedFlatMap02(): Bool =
+        runReader(ask() >>= liftFun(x -> x + 1), 1) == 2
+
+    @test
+    def symFlippedFlatMap03(): Bool =
+        runReader(ask() >>= liftFun(x -> if (x > 0) Some(x) else None), 1) == Some(1)
+
+    @test
+    def symFlippedFlatMap04(): Bool = region rc {
+        runReader(genArray(rc, 3) >>= x -> point(Array.length(x)), 1) == 3
+    }
+
 }

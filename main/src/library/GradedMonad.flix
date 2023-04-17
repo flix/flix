@@ -66,7 +66,4 @@ mod GradedMonad {
                (x: m[ef1, a], k: a -> m[ef2, b] \ ef): m[ef1 and ef2 and ef, b] with GradedMonad[m] =
         GradedMonad.flatMap(k, x)
 
-
 }
-
-

@@ -100,7 +100,6 @@ mod GradedApplicative {
                     (x1: m[ef1, t1], x2: m[ef2, t2], x3: m[ef3, t3], x4: m[ef4, t4], x5: m[ef5, t5]): m[ef1 and ef2 and ef3 and ef4 and ef5, (t1, t2, t3, t4, t5)] with GradedApplicative[m] =
         GradedApplicative.map5((a, b, c, d, e) -> (a, b, c, d, e), x1, x2, x3, x4, x5)
 
-
     ///
     /// `<*>` is an operator alias for `ap`.
     ///
@@ -132,5 +131,3 @@ mod GradedApplicative {
         productRight(ma, mb)
 
 }
-
-

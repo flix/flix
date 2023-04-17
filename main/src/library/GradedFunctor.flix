@@ -18,7 +18,6 @@ pub class GradedFunctor[m: Bool -> Type -> Type] {
     pub def map(f: a -> b \ ef1, x: m[ef, a]): m[ef and ef1, b]
 }
 
-
 mod GradedFunctor {
 
     ///
@@ -34,7 +33,6 @@ mod GradedFunctor {
     ///
     pub def ignore[a: Type, ef: Bool, m: Bool -> Type -> Type]
                   (ma: m[ef, a]): m[ef, Unit] with GradedFunctor[m] = replace(ma, ())
-
 
     ///
     /// `<$>` is an operator alias for `gmap`.
@@ -60,7 +58,4 @@ mod GradedFunctor {
     pub def $>[a: Type, b: Type, ef: Bool, m: Bool -> Type -> Type]
               (ma: m[ef, a], x: b): m[ef, b] with GradedFunctor[m] = replace(ma, x)
 
-
 }
-
-
