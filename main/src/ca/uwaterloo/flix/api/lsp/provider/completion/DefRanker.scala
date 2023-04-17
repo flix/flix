@@ -95,9 +95,8 @@ object DefRanker {
     * @return a List[DefCompletion] only consisting of Def completions.
     */
   private def getDefCompletions(comps: Iterable[Completion]): Iterable[DefCompletion] = {
-    comps.flatMap {
-      case DefCompletion(decl) => Some(DefCompletion(decl))
-      case _ => None
+    comps.collect {
+      case DefCompletion(decl) => DefCompletion(decl)
     }
   }
 }
