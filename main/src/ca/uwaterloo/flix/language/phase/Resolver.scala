@@ -688,7 +688,7 @@ object Resolver {
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
     case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
-      val tvars = tpes.flatMap(_.typeVars).to(SortedSet)
+      val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {

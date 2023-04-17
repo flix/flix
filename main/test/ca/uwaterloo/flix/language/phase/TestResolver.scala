@@ -1362,6 +1362,19 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("IllegalSignature.06") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |
+        |    pub def f(x: C.T[a]): String
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """
