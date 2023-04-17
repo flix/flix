@@ -1132,6 +1132,37 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate that an associated type definition is not allowed.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalAssocTypeDef(loc: SourceLocation) extends ResolutionError {
+    override def summary: String = "Illegal associated type definition."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal associated type in associated type definition.
+         |
+         |${code(loc, "illegal associated type definition.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """The definition of an associate type may only contain associated types applied to variables.
+        |
+        |For example:
+        |
+        |instance C[List[a]] {
+        |    type T1[List[a]] = String            // OK
+        |    type T2[List[a]] = a                 // OK
+        |    type T3[List[a]] = D.T0[a]           // OK
+        |    type T4[List[a]] = D.T0[Option[a]]   // Not OK. Option[a] is not a variable.
+        |""".stripMargin
+    })
+  }
+
+  /**
     * Removes all access modifiers from the given string `s`.
     */
   private def stripAccessModifier(s: String): String =
