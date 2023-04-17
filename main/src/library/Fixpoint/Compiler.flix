@@ -22,8 +22,8 @@ mod Fixpoint {
     use Fixpoint.Ast.Constraint.Constraint
     use Fixpoint.Ast.HeadPredicate.HeadAtom
     use Fixpoint.Ast.BodyPredicate.{BodyAtom}
+    use Fixpoint.Ast.BodyPredicate.{Functional}
     use Fixpoint.Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint.Ast.BodyPredicate.{Loop}
     use Fixpoint.Ast.isRelational
     use Fixpoint.Shared.PredSym
     use Fixpoint.Shared.PredSym.PredSym
@@ -137,9 +137,9 @@ mod Fixpoint {
                     case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
                         let arity1 = List.length(terms);
                         RelOp.Search(rowVar, RamSym.Full(bodySym, arity1, den), acc)
-                    case Loop(_, f, freeVars) =>
+                    case Functional(_, f, freeVars) =>
                         let terms = Vector.map(v -> unwrap(Map.get(v, env)), freeVars);
-                        RelOp.Loop(rowVar, f, terms, acc)
+                        RelOp.Functional(rowVar, f, terms, acc)
                     case _ => acc
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
@@ -198,9 +198,9 @@ mod Fixpoint {
                                 RamSym.Full(bodySym, arity1, den)
                             };
                             RelOp.Search(rowVar, ramSym, acc)
-                        case Loop(_, f, freeVars) =>
+                        case Functional(_, f, freeVars) =>
                             let terms = Vector.map(v -> unwrap(Map.get(v, env)), freeVars);
-                            RelOp.Loop(rowVar, f, terms, acc)
+                            RelOp.Functional(rowVar, f, terms, acc)
                         case _ => acc
                     }, loopBody, augBody) |>
                     RamStmt.Insert;
@@ -263,7 +263,7 @@ mod Fixpoint {
     def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar)] =
         List.mapWithIndex(i -> atom -> match atom {
             case BodyAtom(predSym, _, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
-            case Loop(_, _, _)                                 => (atom, RowVar.Named("l$${i}"))
+            case Functional(_, _, _)                                 => (atom, RowVar.Named("l$${i}"))
             case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body)
 
@@ -294,15 +294,15 @@ mod Fixpoint {
                     case _ => x -> x
                 }, acc)
             case BodyAtom(_, _, Polarity.Negative, _, _) => acc
+            case Functional(boundVars, _, _) =>
+                Vector.mapWithIndex(i -> var -> (var, i), boundVars) |>
+                Vector.foldRight(match (var, i) -> Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i)), acc)
             case Guard0(_)                               => acc
             case Guard1(_, _)                            => acc
             case Guard2(_, _, _)                         => acc
             case Guard3(_, _, _, _)                      => acc
             case Guard4(_, _, _, _, _)                   => acc
             case Guard5(_, _, _, _, _, _)                => acc
-            case Loop(boundVars, _, _) =>
-                Vector.mapWithIndex(i -> var -> (var, i), boundVars) |>
-                Vector.foldRight(match (var, i) -> Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i)), acc)
         }, Map#{}, body)
 
     ///
@@ -344,6 +344,7 @@ mod Fixpoint {
                     let ramTerms = List.mapWithIndex(compileBodyTerm, terms);
                     let arity = List.length(ramTerms);
                     BoolExp.NotMemberOf(ramTerms, RamSym.Full(bodySym, arity, denotation)) :: acc
+                case Functional(_, _, _) => acc
                 case Guard0(f) =>
                     BoolExp.Guard0(f) :: acc
                 case Guard1(f, v) =>
@@ -371,7 +372,6 @@ mod Fixpoint {
                     let t4 = unwrap(Map.get(v4, env));
                     let t5 = unwrap(Map.get(v5, env));
                     BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
-                case Loop(_, _, _) => acc
             }, Nil, body)
 
     def unwrap(o: Option[a]): a = match o {

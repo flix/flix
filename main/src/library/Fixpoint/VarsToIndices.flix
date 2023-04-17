@@ -43,16 +43,16 @@ mod Fixpoint {
                 let newVars = Map.insert(var, newVar, rowVars);
                 let newQuery = List.map(match (j, t) -> (j, lowerTerm(rowVars, t)), prefixQuery);
                 RelOp.Query(newVar, ramSym, newQuery, lowerOp(body, newVars, depth + 1))
+            case RelOp.Functional(rowVar, f, terms, body) =>
+                let newVar = RowVar.Index(depth);
+                let newVars = Map.insert(rowVar, newVar, rowVars);
+                let newTerms = terms |> Vector.map(lowerTerm(rowVars));
+                let newBody = lowerOp(body, newVars, depth + 1);
+                RelOp.Functional(newVar, f, newTerms, newBody)
             case RelOp.Project(terms, ramSym) =>
                  RelOp.Project(List.map(lowerTerm(rowVars), terms), ramSym)
             case RelOp.If(test, then) =>
                  RelOp.If(List.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
-            case RelOp.Loop(rowVar, f, terms, body) =>
-                let newVar = RowVar.Index(depth);
-                let newVars = Map.insert(rowVar, newVar, rowVars);
-                let newTerms = terms |> Vector.map(lowerTerm(rowVars)); // TODO: rowVars or newVars?
-                let newBody = lowerOp(body, newVars, depth + 1);
-                RelOp.Loop(newVar, f, newTerms, newBody)
         }
 
     def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
