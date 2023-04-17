@@ -637,6 +637,30 @@ object Resolver {
     */
   private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+
+      // TODO ASSOC-TYPES roll into visitType check
+      def checkAssocTypes(t: UnkindedType): Validation[Unit, ResolutionError] = t match {
+        case Var(sym, loc) => ().toSuccess
+        case Cst(tc, loc) => ().toSuccess
+        case Enum(sym, loc) => ().toSuccess
+        case RestrictableEnum(sym, loc) => ().toSuccess
+        case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) => traverseX(pur.toList ::: eff.getOrElse(Nil))(checkAssocTypes)
+        case ReadWrite(tpe, loc) => checkAssocTypes(tpe)
+        case CaseSet(cases, loc) => ().toSuccess
+        case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
+        case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case CaseIntersection(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case Ascribe(tpe, kind, loc) => checkAssocTypes(tpe)
+        case Alias(cst, args, tpe, loc) => traverseX(args)(checkAssocTypes)
+
+        case AssocType(cst, UnkindedType.Var(_, _), loc) => ().toSuccess
+        case AssocType(cst, _, loc) => ResolutionError.IllegalAssocTypeDef(loc).toFailure
+
+        case UnappliedAlias(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
+        case UnappliedAssocType(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
+      }
+
       // For now we don't add any tvars from the args. We should have gotten those directly from the instance
       val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
       val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
@@ -646,10 +670,13 @@ object Resolver {
         case None => ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc).toFailure
         case Some(sym) => sym.toSuccess
       }
-      mapN(symVal, argVal, tpeVal) {
+      flatMapN(symVal, argVal, tpeVal) {
         case (sym, arg, tpe) =>
-          val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
-          ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, symUse, arg, tpe, loc)
+          mapN(checkAssocTypes(tpe)) {
+            case _ =>
+              val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
+              ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, symUse, arg, tpe, loc)
+          }
       }
   }
 
@@ -3213,7 +3240,7 @@ object Resolver {
                    UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
                    UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
                    UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
-                   UnkindedType.Cst(TypeConstructor.Regex, _) |UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+                   UnkindedType.Cst(TypeConstructor.Regex, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
