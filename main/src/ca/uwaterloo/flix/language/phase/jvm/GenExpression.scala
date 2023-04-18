@@ -73,7 +73,6 @@ object GenExpression {
         compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
         visitor.visitInsn(IAND)
 
-
       case Int16Op.And | Int32Op.And
            | Int64Op.And | BigIntOp.And
            | Int8Op.Or | Int16Op.Or | Int32Op.Or
