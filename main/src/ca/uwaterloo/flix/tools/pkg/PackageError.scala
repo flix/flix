@@ -68,10 +68,11 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class DownloadError(asset: Asset) extends PackageError {
+  case class DownloadError(asset: Asset, errorString: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""
          | A download error occurred while downloading ${f.bold(asset.name)}
+         | $errorString
          |""".stripMargin
   }
 
