@@ -130,7 +130,7 @@ object GenExpression {
         visitor.visitInsn(NOP)
 
       // TODO: The following two cases are not handled by compileExponentiateExpr?
-      case BigIntOp.Exp | BigDecimalOp.Exp => compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+      case BigIntOp.Exp | BigDecimalOp.Exp => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc) // compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
       case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     }
