@@ -68,6 +68,70 @@ object GenExpression {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(orEnd)
 
+      case Float32Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(F2D) // Sign extend to double
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(F2D) // Sign extend to double
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2F)
+        visitor.visitInsn(NOP) // Question: Does this add no instruction to the visitor or are there invariants to maintain on the JVM??? If so remove all NOPs
+
+      case Float64Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(NOP)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(NOP)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(NOP)
+        visitor.visitInsn(NOP)
+
+      case Int8Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+        visitor.visitInsn(I2B)
+
+      case Int16Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+        visitor.visitInsn(I2S)
+
+
+      case Int32Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+        visitor.visitInsn(NOP)
+
+      case Int64Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(L2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(L2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2L)
+        visitor.visitInsn(NOP)
+
+      // TODO: The following two cases are not handled by compileExponentiateExpr?
+      case BigIntOp.Exp | BigDecimalOp.Exp => compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+
       case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     }
 
@@ -1338,9 +1402,6 @@ object GenExpression {
          | Int8Op.Rem | Int16Op.Rem | Int16Op.Rem
          | Int32Op.Rem | Int64Op.Rem
          | BigIntOp.Rem | StringOp.Concat => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-
-    case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
-         Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp => compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
     case BoolOp.Eq | CharOp.Eq
          | Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
