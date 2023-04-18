@@ -26,7 +26,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "1.0.0"
+          |"github:flix/museum-clerk" = "1.1.0"
           |
           |[dev-dependencies]
           |
@@ -44,7 +44,7 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg")
+        case Ok(l) => l.head.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -62,10 +62,10 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "1.0.0"
+          |"github:flix/museum-giftshop" = "1.1.0"
           |
           |[dev-dependencies]
-          |"github:magnus-madsen/helloworld" = "1.1.0"
+          |"github:flix/museum-clerk" = "1.1.0"
           |
           |[mvn-dependencies]
           |
@@ -81,8 +81,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg") &&
-                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.1.0${s}helloworld-1.1.0.fpkg")
+        case Ok(l) => l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
+                      l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
         case Err(e) => e
       }
     })
@@ -100,7 +100,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "1.0.0"
+          |"github:flix/museum-clerk" = "1.1.0"
           |
           |[dev-dependencies]
           |
@@ -121,7 +121,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "1.1.0"
+          |"github:flix/museum-giftshop" = "1.1.0"
           |
           |[dev-dependencies]
           |
@@ -143,8 +143,8 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest1, manifest2), path)(System.out) match {
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg") &&
-                      l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.1.0${s}helloworld-1.1.0.fpkg")
+        case Ok(l) => l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
+                      l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
         case Err(e) => e.message(f)
       }
     })
@@ -162,7 +162,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "1.0.0"
+          |"github:flix/museum-giftshop" = "1.1.0"
           |
           |[dev-dependencies]
           |
@@ -181,7 +181,7 @@ class TestFlixPackageManager extends FunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path)(System.out) //installs the dependency
       FlixPackageManager.installAll(List(manifest), path)(System.out) match { //does nothing
-        case Ok(l) => l.head.endsWith(s"magnus-madsen${s}helloworld${s}1.0.0${s}helloworld-1.0.0.fpkg")
+        case Ok(l) => l.head.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -199,7 +199,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/hellouniverse" = "1.0.0"
+          |"github:flix/museum-entrance" = "1.2.0"
           |
           |[dev-dependencies]
           |
@@ -217,7 +217,7 @@ class TestFlixPackageManager extends FunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.findTransitiveDependencies(manifest, path)(System.out) match {
-        case Ok(l) => l.contains(manifest) && l.exists(m => m.name == "helloworld")
+        case Ok(l) => l.contains(manifest) && l.exists(m => m.name == "museum-clerk")
         case Err(e) => e.message(f)
       }
     })
@@ -260,7 +260,7 @@ class TestFlixPackageManager extends FunSuite {
   }
 
   test("Give error for missing version") {
-    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, Some(1), None, None), Project("magnus-madsen", "helloworld")).message(f))(actual = {
+    assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, Some(1), None, None), Project("flix", "museum")).message(f))(actual = {
       val toml = {
         """
           |[package]
@@ -271,7 +271,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/helloworld" = "0.0.1"
+          |"github:flix/museum" = "0.0.1"
           |
           |[dev-dependencies]
           |
@@ -307,7 +307,7 @@ class TestFlixPackageManager extends FunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:magnus-madsen/hellouniverse" = "1.0.0"
+          |"github:flix/museum" = "1.4.0"
           |
           |""".stripMargin
       }
@@ -323,9 +323,12 @@ class TestFlixPackageManager extends FunSuite {
         case Err(e) => fail(e.message(f))
       }
       FlixPackageManager.installAll(manifests, path)(System.out) match {
-        case Ok(l) =>
-          l.head.endsWith(s"magnus-madsen${s}hellouniverse${s}1.0.0${s}hellouniverse-1.0.0.fpkg") &&
-          l(1).endsWith(s"magnus-madsen${s}helloworld${s}1.3.0${s}helloworld-1.3.0.fpkg")
+        case Ok(l) => println(l) //TODO: remove
+          l.exists(p => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg")) &&
+          l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")) &&
+          l.exists(p => p.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg")) &&
+          l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
+          l.exists(p => p.endsWith(s"flix${s}museum-restaurant${s}1.1.0${s}museum-restaurant-1.1.0.fpkg"))
         case Err(e) => e.message(f)
       }
     })
