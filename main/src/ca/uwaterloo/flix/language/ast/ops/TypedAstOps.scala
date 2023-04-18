@@ -104,6 +104,7 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointInject(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.Instanceof(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.Error(_, _, _, _) => Set.empty
   }
 
@@ -384,6 +385,9 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expression.Instanceof(exp, _, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.Error(_, _, _, _) =>

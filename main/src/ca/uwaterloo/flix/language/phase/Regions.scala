@@ -298,6 +298,9 @@ object Regions {
     case Expression.FixpointProject(_, exp, tpe, _, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
+    case Expression.Instanceof(exp, _, tpe, _, _, loc) =>
+      visitExp(exp) ++ checkType(tpe, loc)
+
     case Expression.Error(_, _, _, _) =>
       Nil
 

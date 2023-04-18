@@ -407,6 +407,8 @@ object PrettyPrinter {
 
         case Expression.Force(exp, tpe, loc) => "force " + visitExp(exp)
 
+        case Expression.Instanceof(exp, cls, _, _) => visitExp(exp) + " instanceof " + cls
+
         case Expression.HoleError(sym, tpe, loc) => formatter.red("HoleError")
 
         case Expression.MatchError(tpe, loc) => formatter.red("MatchError")
