@@ -68,6 +68,23 @@ object GenExpression {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(orEnd)
 
+      case Int8Op.And =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(IAND)
+
+
+      case Int16Op.And | Int32Op.And
+           | Int64Op.And | BigIntOp.And
+           | Int8Op.Or | Int16Op.Or | Int32Op.Or
+           | Int64Op.Or | BigIntOp.Or
+           | Int8Op.Xor | Int16Op.Xor | Int32Op.Xor
+           | Int64Op.Xor | BigIntOp.Xor
+           | Int8Op.Shl | Int16Op.Shl | Int32Op.Shl
+           | Int64Op.Shl | BigIntOp.Shl
+           | Int8Op.Shr | Int16Op.Shr | Int32Op.Shr
+           | Int64Op.Shr | BigIntOp.Shr => compileBitwiseExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+
       case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     }
 
