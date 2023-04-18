@@ -87,9 +87,22 @@ object CompletionProvider {
       case Some(context) =>
         root match {
           case Some(nonOptionRoot) =>
-            (getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
-            FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
-              map (comp => comp.toCompletionItem(context)))
+            // Get all completions
+            val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
+              FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
+            // Find the best completion
+            val best = CompletionRanker.findBest(completions, index, deltaContext) match {
+              case None =>
+                // No best completion
+                Nil
+              case Some(best) =>
+                // We have a better completion, boost that to top priority
+                val compForBoost = best.toCompletionItem(context)
+                // Boosting by changing priority in sortText
+                val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1))
+                List(boostedComp)
+            }
+            best ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
     }

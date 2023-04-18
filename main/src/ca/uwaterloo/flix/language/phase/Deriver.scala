@@ -56,7 +56,6 @@ object Deriver {
       lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
       lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
-      lazy val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
       sequence(derives.map {
@@ -64,7 +63,6 @@ object Deriver {
         case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == boxableSym => mkBoxableInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
         case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
         case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym", SourceLocation.Unknown)
@@ -712,45 +710,6 @@ object Deriver {
       }
 
       KindedAst.MatchRule(pat, None, exp)
-  }
-
-  /**
-    * Creates a Boxable instance for the given enum.
-    *
-    * {{{
-    * enum E[a] with Boxable {
-    *   case C0
-    *   case C1(a)
-    *   case C2(a, a)
-    * }
-    * }}}
-    *
-    * yields
-    *
-    * {{{
-    * instance Boxable[E[a]]
-    * }}}
-    *
-    * The instance is empty because the class has default definitions.
-    */
-  private def mkBoxableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
-    case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val boxableClassSym = PredefinedClasses.lookupClassSym("Boxable", root)
-
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, boxableClassSym, loc)
-
-      KindedAst.Instance(
-        doc = Ast.Doc(Nil, loc),
-        ann = Ast.Annotations.Empty,
-        mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(boxableClassSym, loc),
-        tpe = tpe,
-        tconstrs = tconstrs,
-        assocs = Nil,
-        defs = Nil,
-        ns = Name.RootNS,
-        loc = loc
-      ).toSuccess
   }
 
   /**

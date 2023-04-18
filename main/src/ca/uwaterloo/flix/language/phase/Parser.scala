@@ -409,7 +409,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int | Literals.Regex
   }
 
   object Literals {
@@ -440,6 +440,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
     def Str: Rule1[ParsedAst.Literal.Str] = rule {
       SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+    }
+
+    def Regex: Rule1[ParsedAst.Literal.Regex] = rule {
+      SP ~ "regex\"" ~ zeroOrMore(!("\"") ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Regex
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
@@ -1340,7 +1344,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Loop
+    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Functional
   }
 
   object Predicates {
@@ -1369,12 +1373,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-
-      // TODO: Allow single variable
-      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = {
+      def Functional: Rule1[ParsedAst.Predicate.Body.Functional] = {
         def Single: Rule1[Seq[Name.Ident]] = rule {
           Names.Variable ~> ((ident: Name.Ident) => Seq(ident))
         }
@@ -1384,8 +1383,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
         }
+      }
+
+      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
       }
     }
 

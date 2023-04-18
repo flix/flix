@@ -292,9 +292,9 @@ object KindedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Body
 
-      case class Guard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Guard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
 
     }
 

@@ -453,7 +453,7 @@ object TypedAstOps {
         case (acc, term) => acc ++ freeVars(term)
       }
     case Body.Guard(exp, _) => freeVars(exp)
-    case Body.Loop(_, exp, _) => freeVars(exp)
+    case Body.Functional(_, exp, _) => freeVars(exp)
   }
 
 

@@ -23,60 +23,60 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object ErasedAst {
 
-  case class Root(defs: Map[Symbol.DefnSym, ErasedAst.Def],
-                  enums: Map[Symbol.EnumSym, ErasedAst.Enum],
+  case class Root(defs: Map[Symbol.DefnSym, Def],
+                  enums: Map[Symbol.EnumSym, Enum],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   closures: Set[ClosureInfo],
                   anonClasses: Set[AnonClassInfo])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam], exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation) {
     var method: Method = _
   }
 
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, ErasedAst.Case], tpeDeprecated: MonoType, loc: SourceLocation)
+  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpeDeprecated: MonoType, loc: SourceLocation)
 
-  sealed trait Expression {
+  sealed trait Expr {
     def tpe: MonoType
 
     def loc: SourceLocation
   }
 
-  object Expression {
+  object Expr {
 
-    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOperator, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Binary(sop: SemanticOperator, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: ErasedAst.Expression, branches: Map[Symbol.LabelSym, ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class JumpTo(sym: Symbol.LabelSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: ErasedAst.Expression, rules: List[ErasedAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[ErasedAst.JvmMethod], loc: SourceLocation) extends Expression
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Instanceof(exp: ErasedAst.Expression, className: String, tpe: MonoType, loc: SourceLocation) extends ErasedAst.Expression
+    case class Instanceof(exp: Expr, className: String, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic0(op: ErasedAst.IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1(op: ErasedAst.IntrinsicOperator1, exp: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic2(op: ErasedAst.IntrinsicOperator2, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic3(op: ErasedAst.IntrinsicOperator3, exp1: ErasedAst.Expression, exp2: ErasedAst.Expression, exp3: ErasedAst.Expression, tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic3(op: IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IntrinsicN(op: ErasedAst.IntrinsicOperatorN, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class IntrinsicN(op: IntrinsicOperatorN, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic1N(op: ErasedAst.IntrinsicOperator1N, exp: ErasedAst.Expression, exps: List[ErasedAst.Expression], tpe: MonoType, loc: SourceLocation) extends Expression
+    case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
   }
 
@@ -204,7 +204,7 @@ object ErasedAst {
 
     case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ErasedAst.FormalParam]) extends IntrinsicOperatorN
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends IntrinsicOperatorN
 
     case object Tuple extends IntrinsicOperatorN
 
@@ -230,9 +230,9 @@ object ErasedAst {
 
   case class Case(sym: Symbol.CaseSym, tpeDeprecated: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[ErasedAst.FormalParam], clo: ErasedAst.Expression, retTpe: MonoType, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ErasedAst.Expression)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 }

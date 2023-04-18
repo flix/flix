@@ -93,7 +93,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current delta context. Initially has no changes.
     */
-  private var delta: DeltaContext = DeltaContext(Nil)
+  private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
@@ -365,7 +365,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
-    this.delta = Differ.difference(oldRoot, root)
+    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
     this.currentErrors = errors.toList
 

@@ -303,9 +303,9 @@ object NamedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 

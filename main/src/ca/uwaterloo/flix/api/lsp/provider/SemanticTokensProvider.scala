@@ -643,6 +643,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
+    case TypeConstructor.Regex => true
     case TypeConstructor.Sender => true
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
@@ -777,12 +778,12 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 
+    case Body.Functional(outVars, exp, loc) =>
+      val ts = outVars.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
+      visitExp(exp) ++ ts
+
     case Body.Guard(exp, _) =>
       visitExp(exp)
-
-    case Body.Loop(varSyms, exp, loc) =>
-      val ts = varSyms.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
-      visitExp(exp) ++ ts
   }
 
   /**

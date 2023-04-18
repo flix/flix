@@ -34,4 +34,31 @@ mod Test.Dec.AssocType {
 
     @test
     def testHead01(): Bool = Coll.head("ABC") == Some('A')
+
+    def testRecordHelper01(): {x = Coll.Elem[String]} = {x = 'a'}
+
+    @test
+    def testRecord01(): Bool =  testRecordHelper01().x == 'a'
+
+    class Iterable2[a] {
+        type Eff[a]: Bool
+        type Elem[a]: Type
+
+        pub def iterator(rh: Region[r], x: a): Iterator[Iterable2.Elem[a], Iterable2.Eff[a] and r, r] & Iterable2.Eff[a] and r
+    }
+
+    instance Iterable2[String] {
+        type Eff[String] = Pure
+        type Elem[String] = Char
+
+        pub def iterator(rh: Region[r], x: String): Iterator[Char, r, r] \ r = String.iterator(rh, x)
+    }
+
+    instance Iterable2[MutList[a, r]] {
+        type Eff[MutList[a, r]] = r
+        type Elem[MutList[a, r]] = a
+
+        pub def iterator(rh: Region[r2], x: MutList[a, r]): Iterator[a, r and r2, r2] & r and r2 = MutList.iterator(rh, x)
+    }
+
 }

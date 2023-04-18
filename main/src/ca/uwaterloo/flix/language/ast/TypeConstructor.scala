@@ -99,9 +99,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represent the type of strings.
+    * A type constructor that represents the type of strings.
     */
   case object Str extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of regex patterns.
+    */
+  case object Regex extends TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
