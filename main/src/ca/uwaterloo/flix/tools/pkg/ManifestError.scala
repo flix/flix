@@ -28,18 +28,24 @@ sealed trait ManifestError {
 
 object ManifestError {
 
-  case class MissingRequiredProperty(path: Path, property: String) extends ManifestError {
+  case class MissingRequiredProperty(path: Path, property: String, errorString: Option[String]) extends ManifestError {
     override def message(f: Formatter): String =
     s"""
-      | The toml file does not contain a property called ${f.bold(property)}. This is required.
+      | The toml file does not contain a required property called ${f.bold(property)}.
+      | ${
+      errorString match {
+        case Some(e) => e
+        case None => ""
+      }}
       | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
       |""".stripMargin
   }
 
-  case class RequiredPropertyHasWrongType(path: Path, property: String, requiredType: String) extends ManifestError {
+  case class RequiredPropertyHasWrongType(path: Path, property: String, requiredType: String, errorString: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
         | The property ${f.bold(property)} is required to have a value of type ${f.bold(requiredType)}.
+        | $errorString
         | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
         |""".stripMargin
   }
@@ -64,10 +70,11 @@ object ManifestError {
     }
   }
 
-  case class VersionNumberWrong(path: Path, version: String) extends ManifestError {
+  case class VersionNumberWrong(path: Path, version: String, errorString: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
          | This toml file has a version number which includes things that are not numbers: ${f.red(version)}.
+         | $errorString
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -90,18 +97,20 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class DependencyFormatError(path: Path, depVer: AnyRef) extends ManifestError {
+  case class DependencyFormatError(path: Path, errorString: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | All versions should be of type String. Instead found: $depVer.
+         | All versions should be of type String:
+         | $errorString
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
 
-  case class AuthorNameError(path: Path) extends ManifestError {
+  case class AuthorNameError(path: Path, errorString: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | There was an author name which was not of type String.
+         | There was an author name which was not of type String:
+         | $errorString
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -134,10 +143,11 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class IOError(path: Path) extends ManifestError {
+  case class IOError(path: Path, errorString: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | An I/O error occured while parsing the toml file.
+         | An I/O error occured while parsing the toml file:
+         | $errorString
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
