@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.DefCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
 
 object DefRanker {
 
