@@ -192,6 +192,14 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name + " "),
         detail = None,
         kind = CompletionItemKind.Variable)
+    case Completion.EnumTagCompletion() =>
+      // TODO:
+      val name = "TODO"
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name + " "),
+        detail = None,
+        kind = CompletionItemKind.Enum) // Choose correct kind
   }
 }
 
@@ -381,4 +389,9 @@ object Completion {
     * @param name the name of the fromError completion.
     */
   case class FromErrorsCompletion(name: String) extends Completion
+
+  /**
+    * Represents an EnumTag completion
+    */
+  case class EnumTagCompletion() extends Completion
 }
