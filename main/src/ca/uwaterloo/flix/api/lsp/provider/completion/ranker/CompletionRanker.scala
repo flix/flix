@@ -34,21 +34,11 @@ object CompletionRanker {
     */
   def findBest(completions: Iterable[Completion], index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
-    VarRanker.findBest(completions, index.varUses) match {
-      case None => FieldRanker.findBest(completions, index.fieldUses) match {
-        case None => MatchRanker.findBest(completions) match {
-          case None => TypeEnumRanker.findBest(completions, index.enumUses) match {
-            case None => EnumTagRanker.findBest(completions, index.tagUses) match {
-              case None => DefRanker.findBest(completions, deltaContext)
-              case comp => comp
-            }
-            case comp => comp
-          }
-          case comp => comp
-        }
-        case comp => comp
-      }
-      case comp => comp
-    }
+    VarRanker.findBest(completions, index.varUses)
+      .orElse(FieldRanker.findBest(completions, index.fieldUses))
+      .orElse(MatchRanker.findBest(completions))
+      .orElse(TypeEnumRanker.findBest(completions, index.enumUses))
+      .orElse(EnumTagRanker.findBest(completions, index.tagUses))
+      .orElse(DefRanker.findBest(completions, deltaContext))
   }
 }
