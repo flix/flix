@@ -301,9 +301,9 @@ object LoweredAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
-      case class Guard(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
+      case class Guard(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
     }
 

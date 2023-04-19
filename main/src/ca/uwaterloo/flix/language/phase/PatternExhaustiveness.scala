@@ -268,7 +268,7 @@ object PatternExhaustiveness {
   private def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp, root)
-    case TypedAst.Predicate.Body.Loop(_, exp, _) => visitExp(exp, root)
+    case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp, root)
   }
 
   /**

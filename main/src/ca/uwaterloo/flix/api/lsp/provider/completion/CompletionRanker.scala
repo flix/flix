@@ -17,8 +17,6 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.collection.MultiMap
 
 /**
   * CompletionRanker
@@ -36,20 +34,9 @@ object CompletionRanker {
     */
   def findBest(completions: Iterable[Completion], index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
-    findBestVarCompletion(completions, index.varUses) match {
+    VarRanker.findBest(completions, index.varUses) match {
       case None => DefRanker.findBest(completions, deltaContext)
       case comp => comp
     }
-  }
-
-  /**
-    * Find the best var completion.
-    *
-    * @param completions  the list of completions.
-    * @param varUses      a map consisting of VarSym and its SourceLocations
-    * @return             Some(Completion) if a better completion is possible, else none.
-    */
-  private def findBestVarCompletion(completions: Iterable[Completion], varUses: MultiMap[Symbol.VarSym, SourceLocation]): Option[Completion] = {
-    None
   }
 }
