@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
+import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, DeltaContext}
 
 /**
   * CompletionRanker
@@ -29,14 +30,15 @@ object CompletionRanker {
     * Calculate the best 1st completion in popup-pane
     *
     * @param completions  the list of decided completions.
-    * @param deltaContext current list of delta's.
     * @return             Some(Completion) if a better completion is possible, else none.
     */
   def findBest(completions: Iterable[Completion], index: Index, deltaContext: DeltaContext): Option[Completion] = {
     // TODO: Prioritize which completion is most important
-    VarRanker.findBest(completions, index.varUses) match {
-      case None => DefRanker.findBest(completions, deltaContext)
-      case comp => comp
-    }
+    VarRanker.findBest(completions, index.varUses)
+      .orElse(FieldRanker.findBest(completions, index.fieldUses))
+      .orElse(MatchRanker.findBest(completions))
+      .orElse(TypeEnumRanker.findBest(completions, index.enumUses))
+      .orElse(EnumTagRanker.findBest(completions, index.tagUses))
+      .orElse(DefRanker.findBest(completions, deltaContext))
   }
 }

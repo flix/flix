@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.MultiMap

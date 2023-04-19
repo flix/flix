@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api.lsp.provider.completion
+package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 
 object Differ {
