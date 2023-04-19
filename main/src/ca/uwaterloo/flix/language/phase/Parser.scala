@@ -1340,7 +1340,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Loop
+    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Functional
   }
 
   object Predicates {
@@ -1369,12 +1369,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-
-      // TODO: Allow single variable
-      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = {
+      def Functional: Rule1[ParsedAst.Predicate.Body.Functional] = {
         def Single: Rule1[Seq[Name.Ident]] = rule {
           Names.Variable ~> ((ident: Name.Ident) => Seq(ident))
         }
@@ -1384,8 +1379,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
         }
+      }
+
+      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
       }
     }
 

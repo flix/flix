@@ -1062,17 +1062,18 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
+    case TypedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val inVars = quantifiedVars(cparams0, exp0)
+      val exp = visitExp(exp0)
+      mkFunctional(outVars, inVars, exp, loc)
+
     case TypedAst.Predicate.Body.Guard(exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       val exp = visitExp(exp0)
       mkGuard(quantifiedFreeVars, exp, loc)
 
-    case TypedAst.Predicate.Body.Loop(boundVars, exp0, loc) =>
-      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
-      val freeVars = quantifiedVars(cparams0, exp0)
-      val exp = visitExp(exp0)
-      mkLoop(boundVars, freeVars, exp, loc)
   }
 
   /**
@@ -1320,28 +1321,28 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.LoopX`.
+    * Returns a `Fixpoint.Ast.BodyPredicate.Functional`.
     */
-  private def mkLoop(boundVars: List[Symbol.VarSym], freeVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
-    // Compute the number of bound and free variables.
-    val numberOfBoundsVars = boundVars.length
-    val numberOfFreeVars = freeVars.length
+  private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
+    // Compute the number of in and out variables.
+    val numberOfInVars = inVars.length
+    val numberOfOutVars = outVars.length
 
-    if (numberOfBoundsVars == 0) {
-      throw InternalCompilerException("Requires at least one bound variable.", loc)
+    if (numberOfInVars == 0) {
+      throw InternalCompilerException("Requires at least one in variable.", loc)
     }
-    if (numberOfBoundsVars > 5) {
-      throw InternalCompilerException("Does not support more than 5 bound variables.", loc)
+    if (numberOfInVars > 5) {
+      throw InternalCompilerException("Does not support more than 5 in variables.", loc)
     }
-    if (numberOfFreeVars == 0) {
-      throw InternalCompilerException("Requires at least one free variable.", loc)
+    if (numberOfOutVars == 0) {
+      throw InternalCompilerException("Requires at least one out variable.", loc)
     }
-    if (numberOfFreeVars > 5) {
-      throw InternalCompilerException("Does not support more than 5 free variables.", loc)
+    if (numberOfOutVars > 5) {
+      throw InternalCompilerException("Does not support more than 5 out variables.", loc)
     }
 
-    // Introduce a fresh variable for each free variable.
-    val freshVars = freeVars.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+    // Introduce a fresh variable for each in variable.
+    val freshVars = inVars.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
       case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
     }
 
@@ -1349,7 +1350,7 @@ object Lowering {
     val freshExp = substExp(exp, freshVars)
 
     // Curry `freshExp` in a lambda expression for each free variable.
-    val lambdaExp = freeVars.foldRight(freshExp) {
+    val lambdaExp = inVars.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
         val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
@@ -1358,13 +1359,13 @@ object Lowering {
     }
 
     // Lift the lambda expression to operate on boxed values.
-    val liftedExp = liftXY(boundVars, lambdaExp, freeVars.map(_._2), exp.tpe, exp.loc)
+    val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), exp.tpe, exp.loc)
 
     // Construct the `Fixpoint.Ast.BodyPredicate` value.
-    val boundVarVector = mkVector(boundVars.map(mkVarSym), Types.VarSym, loc)
-    val freeVarVector = mkVector(freeVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
+    val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
+    val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
     val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
-    mkTag(Enums.BodyPredicate, s"Loop", innerExp, Types.BodyPredicate, loc)
+    mkTag(Enums.BodyPredicate, s"Functional", innerExp, Types.BodyPredicate, loc)
   }
 
   /**
@@ -1572,14 +1573,14 @@ object Lowering {
   /**
     * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
     */
-  private def liftXY(varSyms: List[Symbol.VarSym], exp0: LoweredAst.Expression, argTypes: List[Type], resultType: Type, loc: SourceLocation): LoweredAst.Expression = {
+  private def liftXY(outVars: List[Symbol.VarSym], exp0: LoweredAst.Expression, argTypes: List[Type], resultType: Type, loc: SourceLocation): LoweredAst.Expression = {
     // Compute the number of bound ("output") and free ("input") variables.
-    val numberOfBoundVars = varSyms.length
-    val numberOfFreeVars = argTypes.length
+    val numberOfInVars = argTypes.length
+    val numberOfOutVars = outVars.length
 
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
-    val sym = Symbol.mkDefnSym(s"Boxable.lift${numberOfFreeVars}X${numberOfBoundVars}")
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${numberOfInVars}X${numberOfOutVars}")
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
