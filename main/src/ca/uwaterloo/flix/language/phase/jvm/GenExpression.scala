@@ -261,8 +261,12 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expr.Instanceof(exp, className, _, loc) =>
-      AsmOps.compileThrowHoleError(visitor, "TODO", loc)
+    case Expr.Instanceof(exp, name, _, loc) =>
+      addSourceLine(visitor, loc)
+      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
+      println(className);
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
     case Expr.Intrinsic0(op, tpe, loc) => op match {
 
