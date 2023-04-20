@@ -144,6 +144,7 @@ object EntryPoint {
       flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
         // Case 1: Unit -> XYZ. We can ignore the args.
         case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg), classEnv, ListMap.empty) =>
+          // TODO ASSOC-TYPES better eqEnv
           ().toSuccess
 
         // Case 2: Bad arguments. Error
