@@ -62,7 +62,7 @@ object Index {
   /**
     * Returns an index for the given `alias0`.
     */
-  def occurrenceOf(assoc: AssociatedTypeSig): Index = empty + Entity.AssocType(assoc)
+  def occurrenceOf(assoc: AssocTypeSig): Index = empty + Entity.AssocType(assoc)
 
   /**
     * Returns an index for the given `exp0`.
