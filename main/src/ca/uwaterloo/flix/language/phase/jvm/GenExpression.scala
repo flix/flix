@@ -83,12 +83,6 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
           AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
 
-      case BigDecimalOp.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigDecimal.jvmName.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.BigDecimal), JvmType.BigDecimal), false)
-
       case Int8Op.Exp =>
         compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
         visitor.visitInsn(I2D)
@@ -126,12 +120,6 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
           AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
         visitor.visitInsn(D2L)
-
-      case BigIntOp.Exp =>
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-        visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName, "pow",
-          AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
 
       case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     }

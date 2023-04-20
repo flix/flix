@@ -803,17 +803,6 @@ object Typer {
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-        case SemanticOperator.BigDecimalOp.Exp =>
-          for {
-            (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-            lhs <- expectTypeM(expected = Type.BigDecimal, actual = tpe1, exp1.loc)
-            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
-            resultTyp <- unifyTypeM(tvar, Type.BigDecimal, loc)
-            resultPur = Type.mkAnd(pur1, pur2, loc)
-            resultEff = Type.mkUnion(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
-
         case SemanticOperator.Int8Op.Add | SemanticOperator.Int8Op.Sub | SemanticOperator.Int8Op.Mul | SemanticOperator.Int8Op.Div
              | SemanticOperator.Int8Op.Rem | SemanticOperator.Int8Op.Exp
              | SemanticOperator.Int8Op.And | SemanticOperator.Int8Op.Or | SemanticOperator.Int8Op.Xor =>
@@ -873,17 +862,6 @@ object Typer {
             (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
             lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
             rhs <- expectTypeM(expected = Type.BigInt, actual = tpe2, exp2.loc)
-            resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
-            resultPur = Type.mkAnd(pur1, pur2, loc)
-            resultEff = Type.mkUnion(eff1, eff2, loc)
-          } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
-
-        case SemanticOperator.BigIntOp.Exp =>
-          for {
-            (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
-            (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
-            lhs <- expectTypeM(expected = Type.BigInt, actual = tpe1, exp1.loc)
-            rhs <- expectTypeM(expected = Type.Int32, actual = tpe2, exp2.loc)
             resultTyp <- unifyTypeM(tvar, Type.BigInt, loc)
             resultPur = Type.mkAnd(pur1, pur2, loc)
             resultEff = Type.mkUnion(eff1, eff2, loc)
