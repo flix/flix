@@ -194,7 +194,7 @@ object Lowering {
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
+        case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
       }
       val defs = defs0.map(visitDef)
       LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
@@ -303,7 +303,7 @@ object Lowering {
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc)
+        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)

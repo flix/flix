@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestDeriver extends FunSuite with TestUtils {
+class TestDeriver extends AnyFunSuite with TestUtils {
   test("DerivationError.EmptyEnum.Eq") {
     val compiled = compile("enum E with Eq", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)

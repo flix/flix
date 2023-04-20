@@ -144,8 +144,8 @@ object Resolver {
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
     case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
-    case ResolvedAst.Declaration.AssociatedTypeSig(_, _, sym, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
-    case ResolvedAst.Declaration.AssociatedTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
+    case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
 
   /**
@@ -623,19 +623,19 @@ object Resolver {
   /**
     * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeSig, ResolutionError] = s0 match {
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, loc) =>
       val tparamVal = Params.resolveTparam(tparam0, env, ns0, root)
       val kindVal = resolveKind(kind0, env, ns0, root)
       mapN(tparamVal, kindVal) {
-        case (tparam, kind) => ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, kind, loc)
+        case (tparam, kind) => ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
   }
 
   /**
     * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
     */
-  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssociatedTypeDef, ResolutionError] = d0 match {
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
 
       // TODO ASSOC-TYPES roll into visitType check
@@ -675,7 +675,7 @@ object Resolver {
           mapN(checkAssocTypes(tpe)) {
             case _ =>
               val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
-              ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, symUse, arg, tpe, loc)
+              ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
           }
       }
   }

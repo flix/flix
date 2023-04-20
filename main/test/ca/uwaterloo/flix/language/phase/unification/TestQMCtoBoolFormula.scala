@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.phase.unification.BoolFormula._
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestQMCtoBoolFormula extends FunSuite {
+class TestQMCtoBoolFormula extends AnyFunSuite {
 
   val alg: BoolFormulaAlg = new BoolFormulaAlg()
 

@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, RigidityEnv, SourceLocat
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.collection.ListMap
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestAssocTypeUnification extends FunSuite with TestUtils {
+class TestAssocTypeUnification extends AnyFunSuite with TestUtils {
 
   private implicit val flix: Flix = new Flix()
   private val loc: SourceLocation = SourceLocation.Unknown

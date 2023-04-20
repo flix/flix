@@ -2,10 +2,10 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.sosy_lab.pjbdd.api.{Creator, DD}
 
-class TestBdd extends FunSuite with TestUtils {
+class TestBdd extends AnyFunSuite with TestUtils {
 
   val loc: SourceLocation = SourceLocation.Unknown
   val builder: Creator = BddFormulaAlg.GlobalBddBuilder

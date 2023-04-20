@@ -143,8 +143,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given associated type definition `assoc`.
     */
-  private def visitAssocTypeDef(assoc: AssociatedTypeDef): Index = assoc match {
-    case AssociatedTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
+  private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
+    case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
       val idx1 = Index.useOf(sym, loc)
       val idx2 = visitType(arg)
       val idx3 = visitType(tpe)
@@ -154,8 +154,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given associated type signature `assoc`.
     */
-  private def visitAssocTypeSig(assoc: AssociatedTypeSig): Index = assoc match {
-    case AssociatedTypeSig(_, _, _, tparam, _, _) =>
+  private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
+    case AssocTypeSig(_, _, _, tparam, _, _) =>
       val idx1 = Index.occurrenceOf(assoc)
       val idx2 = visitTypeParam(tparam)
       idx1 ++ idx2
