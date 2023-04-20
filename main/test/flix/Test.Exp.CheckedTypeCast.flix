@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- mod Test/Exp/CheckedTypeCast {
+ mod Test.Exp.CheckedTypeCast {
 
     @test
     def testCheckedTypeCast01(): ##java.lang.Object = checked_cast(null)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- mod Test/Exp/UncheckedEffectCast {
+ mod Test.Exp.UncheckedEffectCast {
 
     pub eff E
 

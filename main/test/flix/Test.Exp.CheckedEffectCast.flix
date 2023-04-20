@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- mod Test/Exp/CheckedEffectCast {
+ mod Test.Exp.CheckedEffectCast {
 
     enum A[a](a)
 

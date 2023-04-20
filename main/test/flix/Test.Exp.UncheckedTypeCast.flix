@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- mod Test/Exp/UncheckedTypeCast {
+ mod Test.Exp.UncheckedTypeCast {
 
     @test
     def testUncheckedTypeCast01(): ##java.lang.Object = unchecked_cast(null as ##java.lang.Object)
