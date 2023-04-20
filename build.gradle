@@ -30,7 +30,7 @@ dependencies {
 
     implementation('io.get-coursier:coursier_2.13:2.1.2')
     implementation('org.tomlj:tomlj:1.1.0')
-    implementation('org.antlr:antlr4-runtime:4.11.1')
+    implementation('org.antlr:antlr4-runtime:4.12.0')
 
     testImplementation('org.scalatest:scalatest_2.13:3.2.15')
 }
