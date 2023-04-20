@@ -20,7 +20,7 @@
 /// equality (`==` and the `Eq` typeclass) consider both value and scale,
 /// numerical equality (are the values the same after the scales have been
 /// normalized) is provided by the function `numericEquals`.
-namespace BigDecimal {
+mod BigDecimal {
 
     ///
     /// Returns the smaller of `x` and `y`.

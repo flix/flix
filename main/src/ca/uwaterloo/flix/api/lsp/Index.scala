@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -58,6 +58,11 @@ object Index {
     * Returns an index for the given `alias0`.
     */
   def occurrenceOf(alias0: TypeAlias): Index = empty + Entity.TypeAlias(alias0)
+
+  /**
+    * Returns an index for the given `alias0`.
+    */
+  def occurrenceOf(assoc: AssocTypeSig): Index = empty + Entity.AssocType(assoc)
 
   /**
     * Returns an index for the given `exp0`.
@@ -144,6 +149,11 @@ object Index {
   /**
     * Returns an index with the symbol `sym` used at location `loc.`
     */
+  def useOf(sym: Symbol.AssocTypeSym, loc: SourceLocation): Index = Index.empty.copy(assocUses = MultiMap.singleton(sym, loc))
+
+  /**
+    * Returns an index with the symbol `sym` used at location `loc.`
+    */
   def useOf(sym: Symbol.VarSym, loc: SourceLocation, parent: Entity): Index =
     Index.empty.copy(varUses = MultiMap.singleton(sym, loc)) + Entity.VarUse(sym, loc, parent)
 
@@ -202,6 +212,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
                  aliasUses: MultiMap[Symbol.TypeAliasSym, SourceLocation],
+                 assocUses: MultiMap[Symbol.AssocTypeSym, SourceLocation],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
@@ -301,6 +312,11 @@ case class Index(m: Map[(String, Int), List[Entity]],
   def usesOf(sym: Symbol.TypeAliasSym): Set[SourceLocation] = aliasUses(sym)
 
   /**
+    * Returns all uses of the given symbol `sym`.
+    */
+  def usesOf(sym: Symbol.AssocTypeSym): Set[SourceLocation] = assocUses(sym)
+
+  /**
     * Returns all uses of the given symbol `sym` and `tag`.
     */
   def usesOf(sym: Symbol.CaseSym): Set[SourceLocation] = tagUses(sym)
@@ -386,6 +402,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.defUses ++ that.defUses,
       this.enumUses ++ that.enumUses,
       this.aliasUses ++ that.aliasUses,
+      this.assocUses ++ that.assocUses,
       this.tagUses ++ that.tagUses,
       this.fieldDefs ++ that.fieldDefs,
       this.fieldUses ++ that.fieldUses,

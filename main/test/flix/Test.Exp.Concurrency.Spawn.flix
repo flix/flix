@@ -1,4 +1,4 @@
-namespace Test/Exp/Concurrency/Spawn {
+mod Test.Exp.Concurrency.Spawn {
 
     @test
     def testSpawn01(): Unit \ IO = region r { spawn () @ r }
@@ -61,7 +61,7 @@ namespace Test/Exp/Concurrency/Spawn {
                 spawn {
                     spawn { String.concat(checked_cast(null), "foo") } @ r
                 } @ r;
-                Thread.sleep(Time/Duration.fromSeconds(1));
+                Thread.sleep(Time.Duration.fromSeconds(1));
                 false
             }
         } catch {
@@ -80,7 +80,7 @@ namespace Test/Exp/Concurrency/Spawn {
                 }
             } @ r
         } @ r;
-        Thread.sleep(Time/Duration.fromSeconds(1));
+        Thread.sleep(Time.Duration.fromSeconds(1));
         true
     }
 }

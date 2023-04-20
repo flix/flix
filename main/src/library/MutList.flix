@@ -25,7 +25,7 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
-namespace MutList {
+mod MutList {
 
     ///
     /// Constant which stores the minimum capacity of a MutList.

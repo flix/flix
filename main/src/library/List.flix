@@ -25,8 +25,6 @@ pub enum List[t] with Sendable {
     case Cons(t, List[t])
 }
 
-instance Boxable[List[t]] with Boxable[t]
-
 instance ToString[List[a]] with ToString[a] {
     pub def toString(l: List[a]): String = List.toString(l)
 }
@@ -126,7 +124,7 @@ instance Iterable[List] {
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
-namespace List {
+mod List {
 
     ///
     /// Renders the list `l` to a String.

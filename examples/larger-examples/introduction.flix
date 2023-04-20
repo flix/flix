@@ -107,8 +107,6 @@ instance Order[Constant] {
     }
 }
 
-instance Boxable[Constant]
-
 //
 // We need an instance of ToString for pretty printing:
 //

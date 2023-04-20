@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.collection.ListMap
-
 import java.nio.file.Path
 import java.util.Objects
 
@@ -131,6 +129,8 @@ object Ast {
     case class BigInt(lit: java.math.BigInteger) extends Constant
 
     case class Str(lit: java.lang.String) extends Constant
+
+    case class Regex(lit: java.util.regex.Pattern) extends Constant
   }
 
   /**
@@ -600,9 +600,15 @@ object Ast {
   }
 
   /**
+    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+    */
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+
+  /**
+    *
     * Represents that `tpe1` and `tpe2` are equivalent types.
     */
-  case class EqualityConstraint(tpe1: Type, tpe2: Type, loc: SourceLocation)
+  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
 
   /**
     * Represents a use of an effect sym.
@@ -628,6 +634,11 @@ object Ast {
     * Represents a use of a class sym.
     */
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
+
+  /**
+    * Represents a use of an associated type sym.
+    */
+  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.

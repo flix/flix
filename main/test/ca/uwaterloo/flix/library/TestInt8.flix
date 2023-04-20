@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestInt8 {
+mod TestInt8 {
 
     use Mul.mul
 
@@ -199,13 +199,13 @@ namespace TestInt8 {
     /////////////////////////////////////////////////////////////////////////////
     @test
     def testBitwiseLeftShift01(): Bool = Int8.leftShift(8i8, 0) == 8i8
-    
+
     @test
     def testBitwiseLeftShift02(): Bool = Int8.leftShift(8i8, 2) == 32i8
-    
+
     @test
     def testBitwiseLeftShift03(): Bool = Int8.leftShift(8i8, 4) == -128i8
-    
+
     @test
     def testBitwiseLeftShift04(): Bool = Int8.leftShift(8i8, 5) == 0i8
 

@@ -36,9 +36,9 @@ object KindedAst {
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[KindedAst.AssociatedTypeSig], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: KindedAst.TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[KindedAst.AssocTypeSig], sigs: Map[Symbol.SigSym, KindedAst.Sig], laws: List[KindedAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[KindedAst.AssociatedTypeDef], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[KindedAst.AssocTypeDef], defs: List[KindedAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: KindedAst.Spec, exp: Option[KindedAst.Expression])
 
@@ -52,9 +52,9 @@ object KindedAst {
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[KindedAst.TypeParam], tpe: Type, loc: SourceLocation)
 
-  case class AssociatedTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparams: List[KindedAst.TypeParam], kind: Kind, loc: SourceLocation)
+  case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: KindedAst.TypeParam, kind: Kind, loc: SourceLocation)
 
-  case class AssociatedTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[Type], tpe: Type, loc: SourceLocation)
+  case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
   case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[KindedAst.Op], loc: SourceLocation)
 
@@ -290,9 +290,9 @@ object KindedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[KindedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends KindedAst.Predicate.Body
 
-      case class Guard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
+      case class Guard(exp: KindedAst.Expression, loc: SourceLocation) extends KindedAst.Predicate.Body
 
     }
 

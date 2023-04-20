@@ -71,6 +71,7 @@ object RenameProvider {
         }
 
         case Entity.Class(_) => mkNotFound(uri, pos)
+        case Entity.AssocType(_) => mkNotFound(uri, pos)
         case Entity.Effect(_) => mkNotFound(uri, pos)
         case Entity.Enum(_) => mkNotFound(uri, pos)
         case Entity.Op(_) => mkNotFound(uri, pos)

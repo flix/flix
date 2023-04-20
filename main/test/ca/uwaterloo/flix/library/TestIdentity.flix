@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestIdentity {
+mod TestIdentity {
     use Identity.Identity
 
 

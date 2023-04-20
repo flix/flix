@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFilterable {
+mod TestFilterable {
 
     use Filterable.{filter, filterMap}
 

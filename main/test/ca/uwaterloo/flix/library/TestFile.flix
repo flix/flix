@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFile {
+mod TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
@@ -64,7 +64,7 @@ namespace TestFile {
     @test
     def testStat02(): Bool \ IO =
         match stat("README.md") {
-            case Ok(v) => v.fileType == File/FileType.File
+            case Ok(v) => v.fileType == File.FileType.File
             case _ => false
         }
 

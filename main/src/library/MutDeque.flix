@@ -31,7 +31,7 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Region[r], Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-namespace MutDeque {
+mod MutDeque {
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestInt32 {
+mod TestInt32 {
 
     use Mul.mul
 
@@ -253,7 +253,7 @@ namespace TestInt32 {
     @test
     def testBitwiseLeftShift08(): Bool = Int32.leftShift(8i32, 29) == 0i32
 
-    
+
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////

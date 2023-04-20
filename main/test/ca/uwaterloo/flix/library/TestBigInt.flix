@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestBigInt {
+mod TestBigInt {
 
     use Mul.mul
 

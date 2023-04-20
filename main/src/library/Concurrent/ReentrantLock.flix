@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-namespace Concurrent {
+mod Concurrent {
     ///
     /// A wrapper around a Java ReentrantLock.
     ///
     @Internal
     pub enum ReentrantLock(##java.util.concurrent.locks.ReentrantLock)
 
-    namespace ReentrantLock {
+    mod ReentrantLock {
         // TODO NS-REFACTOR these imports can be removed
         use Concurrent.ReentrantLock
         use Concurrent.ReentrantLock.ReentrantLock
 
-        use Concurrent/Condition
-        use Concurrent/Condition.Condition
+        use Concurrent.Condition
+        use Concurrent.Condition.Condition
 
 
         ///

@@ -45,9 +45,9 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], assocs: List[ResolvedAst.Declaration.AssociatedTypeSig], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: ResolvedAst.TypeParam, superClasses: List[ResolvedAst.TypeConstraint], assocs: List[ResolvedAst.Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, ResolvedAst.Declaration.Sig], laws: List[ResolvedAst.Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], assocs: List[ResolvedAst.Declaration.AssociatedTypeDef], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[ResolvedAst.TypeConstraint], assocs: List[ResolvedAst.Declaration.AssocTypeDef], defs: List[ResolvedAst.Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: ResolvedAst.Spec, exp: Option[ResolvedAst.Expression]) extends Declaration
 
@@ -63,9 +63,9 @@ object ResolvedAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: ResolvedAst.TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class AssociatedTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparams: ResolvedAst.TypeParams, kind: Kind, loc: SourceLocation) extends Declaration
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: ResolvedAst.TypeParam, kind: Kind, loc: SourceLocation) extends Declaration
 
-    case class AssociatedTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[UnkindedType], tpe: UnkindedType, loc: SourceLocation) extends Declaration
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[ResolvedAst.Declaration.Op], loc: SourceLocation) extends Declaration
 
@@ -304,9 +304,9 @@ object ResolvedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
     }
 
@@ -373,7 +373,7 @@ object ResolvedAst {
 
   case class TypeConstraint(head: Ast.TypeConstraint.Head, tpe: UnkindedType, loc: SourceLocation)
 
-  case class EqualityConstraint(tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: UnkindedType, tpe2: UnkindedType, loc: SourceLocation)
 
   case class ParYieldFragment(pat: ResolvedAst.Pattern, exp: Expression, loc: SourceLocation)
 

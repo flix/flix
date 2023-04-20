@@ -48,7 +48,7 @@ instance Iterable[DelayMap[k]] {
         DelayMap.iterator(rc, m) |> Iterator.map(snd)
 }
 
-namespace DelayMap {
+mod DelayMap {
 
     ///
     /// Returns a string representation of the given `DelayMap` `m`.

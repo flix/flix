@@ -22,7 +22,7 @@ pub enum Benchmark {
     case Benchmark({name = String, f = Unit -> Unit \ IO})
 }
 
-namespace Benchmark {
+mod Benchmark {
 
 
     ///

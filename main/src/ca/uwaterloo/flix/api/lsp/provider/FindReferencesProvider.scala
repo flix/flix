@@ -41,6 +41,8 @@ object FindReferencesProvider {
 
         case Entity.TypeAlias(alias0) => findTypeAliasReferences(alias0.sym)
 
+        case Entity.AssocType(assoc) => findAssocTypeReferences(assoc.sym)
+
         case Entity.Effect(eff0) => findEffectReferences(eff0.sym)
 
         case Entity.Op(op0) => findOpReferences(op0.sym)
@@ -118,6 +120,13 @@ object FindReferencesProvider {
   }
 
   private def findTypeAliasReferences(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Root): JObject = {
+    val defSite = Location.from(sym.loc)
+    val useSites = index.usesOf(sym)
+    val locs = defSite :: useSites.toList.map(Location.from)
+    ("status" -> "success") ~ ("result" -> locs.map(_.toJSON))
+  }
+
+  private def findAssocTypeReferences(sym: Symbol.AssocTypeSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)

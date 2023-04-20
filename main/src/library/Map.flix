@@ -37,8 +37,6 @@ instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
-instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
-
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: Map[k, v]): Int32 =
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
@@ -107,7 +105,7 @@ instance Iterable[Map[k]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
-namespace Map {
+mod Map {
 
     ///
     /// Returns a string representation of the given map `m`.

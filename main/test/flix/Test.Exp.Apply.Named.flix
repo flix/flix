@@ -1,4 +1,4 @@
-namespace Test/Exp/Apply/Named {
+mod Test.Exp.Apply.Named {
     def named(p1: {param1 = Bool}): Bool = p1.param1
 
     def namedNamed(p1: {param1 = Bool}, _p2: {param2 = Bool}): Bool = p1.param1

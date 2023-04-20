@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.TextEdit
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.{Priority}
+import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -146,16 +146,6 @@ object CompletionUtils {
     */
   def getFilterTextForName(name: String): String = {
     s"$name("
-  }
-
-  /**
-    * Converts a namespace into a .-seperated string with a / at the end unless it is the root namespace
-    */
-  private def nsToStringSlash(ns: List[String]): String = {
-    ns match {
-      case Nil => ""
-      case _ => s"${ns.mkString(".")}/"
-    }
   }
 
   /**

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestList {
+mod TestList {
 
     use ToString.toString
     use Hash.hash

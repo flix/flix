@@ -49,9 +49,9 @@ object WeededAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, kind: WeededAst.Kind, loc: SourceLocation)
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: WeededAst.TypeParam, kind: WeededAst.Kind, loc: SourceLocation)
 
-    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[WeededAst.Type], tpe: WeededAst.Type, loc: SourceLocation)
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: WeededAst.Type, tpe: WeededAst.Type, loc: SourceLocation)
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, ops: List[WeededAst.Declaration.Op], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -292,9 +292,9 @@ object WeededAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Loop(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 
@@ -422,7 +422,7 @@ object WeededAst {
 
   case class TypeConstraint(clazz: Name.QName, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class EqualityConstraint(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Name.QName, tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 

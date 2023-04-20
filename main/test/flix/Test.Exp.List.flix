@@ -1,4 +1,4 @@
-namespace Test/Exp/List {
+mod Test.Exp.List {
 
     // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
     pub enum Foo {

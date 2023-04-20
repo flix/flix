@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
 
@@ -121,7 +122,7 @@ object ClassEnvironment {
       // NB: This is different from the THIH implementation.
       // We also check `leq` instead of just `unifies` in order to support complex types in instances.
       for {
-        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty)
+        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
       } yield inst.tconstrs.map(subst(_))
     }
 

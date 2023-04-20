@@ -239,12 +239,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
-    def AssociatedTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
+    def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ ":" ~ optWS ~ Kind ~ SP ~> ParsedAst.Declaration.AssocTypeSig
     }
 
-    def AssociatedTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
+    def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]" ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
@@ -265,7 +265,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("ClassBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssocTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -299,7 +299,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def NonEmptyBody = namedRule("InstanceBody") {
-        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssociatedTypeDef) ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
+        optWS ~ "{" ~ optWS ~ zeroOrMore(Declarations.AssocTypeDef) ~ zeroOrMore(Declarations.Def) ~ optWS ~ "}" ~ SP
       }
 
       rule {
@@ -409,7 +409,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
+    Literals.Null | Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int | Literals.Regex
   }
 
   object Literals {
@@ -440,6 +440,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     // Note that outside of patterns, Strings are parsed as [[Interpolation]]s
     def Str: Rule1[ParsedAst.Literal.Str] = rule {
       SP ~ "\"" ~ zeroOrMore(!("\"" | atomic("${") | atomic("%{")) ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+    }
+
+    def Regex: Rule1[ParsedAst.Literal.Regex] = rule {
+      SP ~ "regex\"" ~ zeroOrMore(!("\"") ~ Chars.CharCode) ~ "\"" ~ SP ~> ParsedAst.Literal.Regex
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
@@ -1336,7 +1340,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Loop
+    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Functional
   }
 
   object Predicates {
@@ -1365,12 +1369,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
-        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
-      }
-
-      // TODO: Allow single variable
-      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = {
+      def Functional: Rule1[ParsedAst.Predicate.Body.Functional] = {
         def Single: Rule1[Seq[Name.Ident]] = rule {
           Names.Variable ~> ((ident: Name.Ident) => Seq(ident))
         }
@@ -1380,8 +1379,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+          SP ~ keyword("let") ~ WS ~ (Multi | Single) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
         }
+      }
+
+      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
       }
     }
 

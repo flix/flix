@@ -1,4 +1,4 @@
-namespace Stratifier {
+mod Stratifier {
     use Int32.max
     use List.{toMap, map, flatMap, partition}
 
@@ -10,7 +10,7 @@ namespace Stratifier {
         case Positive(Atom)
         case Negative(Atom)
     }
-    enum PredicateSymbol(String) with Boxable, ToString, Eq, Order
+    enum PredicateSymbol(String) with ToString, Eq, Order
 
     // A :- B leads to (A, true, B)
     type alias PrecedenceEdge = (PredicateSymbol, Bool, PredicateSymbol)

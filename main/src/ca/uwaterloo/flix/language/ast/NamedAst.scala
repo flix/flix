@@ -53,9 +53,9 @@ object NamedAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparams: NamedAst.TypeParams, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Declaration
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: NamedAst.TypeParam, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, args: List[NamedAst.Type], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: NamedAst.Type, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 
@@ -301,9 +301,9 @@ object NamedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -458,7 +458,7 @@ object NamedAst {
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class EqualityConstraint(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
+  case class EqualityConstraint(qname: Name.QName, tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 

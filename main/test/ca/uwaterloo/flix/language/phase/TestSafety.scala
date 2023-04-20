@@ -103,6 +103,22 @@ class TestSafety extends FunSuite with TestUtils {
     expectError[IllegalNonPositivelyBoundVariable](result)
   }
 
+  test("NonPositivelyBoundVariable.04") {
+    val input =
+      """
+        |def main(): Unit =
+        |    let f = (x, y) -> Vector#{(x, y)};
+        |    let _ = #{
+        |        R(0, 0, 0, 0).
+        |        A(1, 2).
+        |        R(x, y, u, v) :- A(x, y), let (u, v) = f(u, v).
+        |    };
+        |    ()
+    """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[IllegalNonPositivelyBoundVariable](result)
+  }
+
   // TODO NS-REFACTOR find out if wildcard and wild variable are different
   test("NegativelyBoundWildVariable.01") {
     val input =

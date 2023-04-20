@@ -18,9 +18,10 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, EqualityEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Scheme {
 
@@ -82,7 +83,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], tpe0: Type): Scheme = {
+  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type): Scheme = {
     val quantifiers = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     Scheme(quantifiers.toList.map(_.sym), tconstrs, econstrs, tpe0)
   }
@@ -91,15 +92,15 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, classEnv) && lessThanEqual(sc2, sc1, classEnv)
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, classEnv, eqEnv) && lessThanEqual(sc2, sc1, classEnv, eqEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    checkLessThanEqual(sc1, sc2, classEnv) match {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+    checkLessThanEqual(sc1, sc2, classEnv, eqEnv) match {
       case Validation.Success(_) => true
       case _failure => false
     }
@@ -108,7 +109,7 @@ object Scheme {
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     ///
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
@@ -136,8 +137,16 @@ object Scheme {
         val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
         flatMapN(newTconstrs1Val, newTconstrs2Val) {
           case (newTconstrs1, newTconstrs2) =>
-            mapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
-              case _ => subst
+            flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
+              case _ =>
+                val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
+                val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
+                val entailmentVal = Validation.traverse(newEconstrs1) {
+                  case econstr => EqualityEnvironment.entail(newEconstrs2, econstr, eqEnv)
+                }
+                mapN(entailmentVal) {
+                  case _ => subst
+                }
             }
 
         }
@@ -149,7 +158,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.EqualityConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

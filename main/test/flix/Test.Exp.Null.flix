@@ -1,4 +1,4 @@
-namespace Test/Exp/Null {
+mod Test.Exp.Null {
 
     @test
     def testNull01(): Null = null

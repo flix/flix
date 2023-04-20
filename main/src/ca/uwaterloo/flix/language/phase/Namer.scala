@@ -291,8 +291,8 @@ object Namer {
       // Introduce a symbol for every unique ident in the body, removing wildcards
       val idents = bs.flatMap {
         case WeededAst.Predicate.Body.Atom(_, _, _, _, terms, _) => terms.flatMap(freeVars)
+        case WeededAst.Predicate.Body.Functional(idents, _, _) => idents
         case WeededAst.Predicate.Body.Guard(_, _) => Nil
-        case WeededAst.Predicate.Body.Loop(idents, _, _) => idents
       }.distinct.filterNot(_.isWild)
 
       val cparams = idents.map {
@@ -393,20 +393,20 @@ object Namer {
   private def visitAssocTypeSig(s0: WeededAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
-      val tparams = getTypeParams(tparams0)
+      val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc).toSuccess
+      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc).toSuccess
   }
 
   /**
     * Performs naming on the given associated type definition `d0`.
     */
   private def visitAssocTypeDef(d0: WeededAst.Declaration.AssocTypeDef, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeDef, NameError] = d0 match {
-    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, args0, tpe0, loc) =>
-      val argsVal = traverse(args0)(visitType)
+    case WeededAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+      val argVal = visitType(arg0)
       val tpeVal = visitType(tpe0)
-      mapN(argsVal, tpeVal) {
-        case (args, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc)
+      mapN(argVal, tpeVal) {
+        case (arg, tpe) => NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg, tpe, loc)
       }
   }
 
@@ -464,11 +464,11 @@ object Namer {
     * Performs naming on the given equality constraint `econstr`.
     */
   private def visitEqualityConstraint(econstr: WeededAst.EqualityConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.EqualityConstraint, NameError] = econstr match {
-    case WeededAst.EqualityConstraint(tpe1, tpe2, loc) =>
+    case WeededAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
       val t1Val = visitType(tpe1)
       val t2Val = visitType(tpe2)
       mapN(t1Val, t2Val) {
-        case (t1, t2) => NamedAst.EqualityConstraint(t1, t2, loc)
+        case (t1, t2) => NamedAst.EqualityConstraint(qname, t1, t2, loc)
       }
   }
 
@@ -1143,15 +1143,15 @@ object Namer {
       val ts = terms.map(visitPattern)
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
 
+    case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
+      for {
+        e <- visitExp(exp, ns0)
+      } yield NamedAst.Predicate.Body.Functional(idents, e, loc)
+
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
         e <- visitExp(exp, ns0)
       } yield NamedAst.Predicate.Body.Guard(e, loc)
-
-    case WeededAst.Predicate.Body.Loop(idents, exp, loc) =>
-      for {
-        e <- visitExp(exp, ns0)
-      } yield NamedAst.Predicate.Body.Loop(idents, e, loc)
 
   }
 
@@ -1381,6 +1381,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
