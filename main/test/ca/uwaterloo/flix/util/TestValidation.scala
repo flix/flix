@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.util.Validation._
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 
-class TestValidation extends FunSuite {
+class TestValidation extends AnyFunSuite {
 
   test("map01") {
     val result = "foo".toSuccess[String, Exception].map {
