@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
@@ -98,8 +99,17 @@ object CompletionProvider {
               case Some(best) =>
                 // We have a better completion, boost that to top priority
                 val compForBoost = best.toCompletionItem(context)
+                // Change documentation to include "Best pick"
+                val bestPickDocu = compForBoost.documentation match {
+                  case Some(oldDocu) =>
+                    // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
+                    // visible to the user, that it's the best pick.
+                    "Best pick \n\n" + oldDocu
+                  case None => "Best pick"
+                }
                 // Boosting by changing priority in sortText
-                val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1))
+                val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1),
+                  documentation = Some(bestPickDocu))
                 List(boostedComp)
             }
             best ++ completions.map(comp => comp.toCompletionItem(context))

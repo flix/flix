@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation

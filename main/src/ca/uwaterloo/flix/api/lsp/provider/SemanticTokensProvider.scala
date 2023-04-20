@@ -238,8 +238,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
-  private def visitAssocTypeSig(assoc: TypedAst.AssociatedTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssociatedTypeSig(_, _, sym, tparam, _, _) =>
+  private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
+    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitTypeParam(tparam)
@@ -249,8 +249,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type definition `assoc`.
     */
-  private def visitAssocTypeDef(assoc: TypedAst.AssociatedTypeDef): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssociatedTypeDef(_, _, sym, arg, tpe, _) =>
+  private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): Iterator[SemanticToken] = assoc match {
+    case TypedAst.AssocTypeDef(_, _, sym, arg, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitType(arg)

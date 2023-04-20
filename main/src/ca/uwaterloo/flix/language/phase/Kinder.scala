@@ -398,25 +398,25 @@ object Kinder {
   /**
     * Performs kinding on the given associated type signature under the given kind environment.
     */
-  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssociatedTypeSig, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[KindedAst.AssociatedTypeSig, KindError] = s0 match {
-    case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam0, kind, loc) =>
+  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym]): Validation[KindedAst.AssocTypeSig, KindError] = s0 match {
+    case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, loc) =>
       val tparamVal = visitTypeParam(tparam0, kenv, senv)
 
       mapN(tparamVal) {
-        case tparam => KindedAst.AssociatedTypeSig(doc, mod, sym, tparam.head, kind, loc) // TODO ASSOC-TYPES assuming no splitting happening here...
+        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam.head, kind, loc) // TODO ASSOC-TYPES assuming no splitting happening here...
       }
   }
 
   /**
     * Performs kinding on the given associated type definition under the given kind environment.
     */
-  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssociatedTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssociatedTypeDef, KindError] = d0 match {
-    case ResolvedAst.Declaration.AssociatedTypeDef(doc, mod, sym, arg0, tpe0, loc) =>
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, kenv: KindEnv, senv: Map[Symbol.UnkindedTypeVarSym, Symbol.UnkindedTypeVarSym], taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
+    case ResolvedAst.Declaration.AssocTypeDef(doc, mod, sym, arg0, tpe0, loc) =>
       val argVal = visitType(arg0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, senv, taenv, root) // TODO ASSOC-TYPES use expected from signature
 
       mapN(argVal, tpeVal) {
-        case (args, tpe) => KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc)
+        case (args, tpe) => KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
       }
   }
 
@@ -1251,7 +1251,7 @@ object Kinder {
       val clazz = root.classes(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       clazz.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssociatedTypeSig(doc, mod, sym, tparam, k0, loc) =>
+        case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, k0, loc) =>
           // TODO ASSOC-TYPES for now assuming just one type parameter
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
