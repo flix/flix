@@ -4,13 +4,13 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
 
-class TestFlixPackageManager extends FunSuite {
+class TestFlixPackageManager extends AnyFunSuite {
   val s: String = File.separator
   val f: Formatter = Formatter.NoFormatter
 

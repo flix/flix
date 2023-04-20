@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
@@ -12,7 +12,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
-class TestBootstrap extends FunSuite {
+class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 
