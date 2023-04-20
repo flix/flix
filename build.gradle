@@ -16,7 +16,7 @@ dependencies {
     implementation 'org.scala-lang:scala-reflect:2.13.5!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.3')
-    implementation('org.jline:jline:3.5.1')
+    implementation('org.jline:jline:3.23.0')
     implementation('org.json4s:json4s-native_2.13:3.6.12')
     implementation('org.ow2.asm:asm:9.5')
     implementation('org.parboiled:parboiled_2.13:2.4.1')
