@@ -291,8 +291,8 @@ object Namer {
       // Introduce a symbol for every unique ident in the body, removing wildcards
       val idents = bs.flatMap {
         case WeededAst.Predicate.Body.Atom(_, _, _, _, terms, _) => terms.flatMap(freeVars)
+        case WeededAst.Predicate.Body.Functional(idents, _, _) => idents
         case WeededAst.Predicate.Body.Guard(_, _) => Nil
-        case WeededAst.Predicate.Body.Loop(idents, _, _) => idents
       }.distinct.filterNot(_.isWild)
 
       val cparams = idents.map {
@@ -1143,15 +1143,15 @@ object Namer {
       val ts = terms.map(visitPattern)
       NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
 
+    case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
+      for {
+        e <- visitExp(exp, ns0)
+      } yield NamedAst.Predicate.Body.Functional(idents, e, loc)
+
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
         e <- visitExp(exp, ns0)
       } yield NamedAst.Predicate.Body.Guard(e, loc)
-
-    case WeededAst.Predicate.Body.Loop(idents, exp, loc) =>
-      for {
-        e <- visitExp(exp, ns0)
-      } yield NamedAst.Predicate.Body.Loop(idents, e, loc)
 
   }
 
@@ -1381,6 +1381,7 @@ object Namer {
     case WeededAst.Pattern.Cst(Ast.Constant.Int64(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.BigInt(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Str(lit), loc) => Nil
+    case WeededAst.Pattern.Cst(Ast.Constant.Regex(lit), loc) => Nil
     case WeededAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
     case WeededAst.Pattern.Tag(qname, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars

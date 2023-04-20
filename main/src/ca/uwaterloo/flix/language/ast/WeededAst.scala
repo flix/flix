@@ -292,9 +292,9 @@ object WeededAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Loop(idents: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

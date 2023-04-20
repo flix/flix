@@ -122,6 +122,13 @@ case class AssocTypeSubstitution(m: Map[(Symbol.AssocTypeSym, Symbol.KindedTypeV
   }
 
   /**
+    * Applies `this` substitution to the given pair of types `ts`.
+    */
+  def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
+    case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
+  }
+
+  /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.
     */
   def ++(that: AssocTypeSubstitution): AssocTypeSubstitution = {

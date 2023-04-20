@@ -324,6 +324,33 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal regex pattern.
+    *
+    * @param loc the location where the illegal pattern occurs.
+    */
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal Regex pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal Regex pattern.
+         |
+         |${code(loc, "illegal Regex pattern.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A Regex cannot be used as a pattern. It can be used `if` guard with a predicate from the Regex module, e.g `isMatch` or `isSubmatch`."
+    })
+
+  }
+
+  /**
     * An error raised to indicate an illegal jvm field or method name.
     *
     * @param loc the location of the name.
@@ -677,6 +704,32 @@ object WeederError {
       s"${underline("Tip:")} A character literal must consist of a single character."
     })
 
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param patt     the invalid regular expression
+    * @param loc      the location where the error occurred
+    */
+  case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |Pattern compilation error:
+         |${err}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literal must be a valid regular expression."
+    })
   }
 
   /**

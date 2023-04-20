@@ -238,8 +238,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
-  private def visitAssocTypeSig(assoc: TypedAst.AssociatedTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssociatedTypeSig(_, _, sym, tparam, _, _) =>
+  private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
+    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitTypeParam(tparam)
@@ -249,8 +249,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given associated type definition `assoc`.
     */
-  private def visitAssocTypeDef(assoc: TypedAst.AssociatedTypeDef): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssociatedTypeDef(_, _, sym, arg, tpe, _) =>
+  private def visitAssocTypeDef(assoc: TypedAst.AssocTypeDef): Iterator[SemanticToken] = assoc match {
+    case TypedAst.AssocTypeDef(_, _, sym, arg, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       val st1 = Iterator(t)
       val st2 = visitType(arg)
@@ -640,6 +640,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Int64 => true
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
+    case TypeConstructor.Regex => true
     case TypeConstructor.Sender => true
     case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
@@ -774,12 +775,12 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 
+    case Body.Functional(outVars, exp, loc) =>
+      val ts = outVars.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
+      visitExp(exp) ++ ts
+
     case Body.Guard(exp, _) =>
       visitExp(exp)
-
-    case Body.Loop(varSyms, exp, loc) =>
-      val ts = varSyms.map(varSym => SemanticToken(SemanticTokenType.Variable, Nil, varSym.loc))
-      visitExp(exp) ++ ts
   }
 
   /**

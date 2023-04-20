@@ -380,6 +380,8 @@ object Finalize {
 
             case TypeConstructor.Str => MonoType.Str
 
+            case TypeConstructor.Regex => MonoType.Regex
+
             case TypeConstructor.RecordRowEmpty => MonoType.RecordEmpty()
 
             case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe0.loc)

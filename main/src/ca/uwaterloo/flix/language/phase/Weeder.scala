@@ -28,6 +28,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.math.{BigDecimal, BigInteger}
+import java.util.regex.{Pattern => JPattern}
+import java.util.regex.{PatternSyntaxException}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
@@ -2283,7 +2285,7 @@ object Weeder {
     visit(chars0.toList, Nil)
   }
 
-  /**
+    /**
     * Performs weeding on the given literal.
     */
   private def weedLiteral(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[Ast.Constant, WeederError.IllegalLiteral] = lit0 match {
@@ -2349,6 +2351,13 @@ object Weeder {
       weedCharSequence(chars) map {
         string => Ast.Constant.Str(string)
       }
+
+    case ParsedAst.Literal.Regex(sp1, chars, sp2) =>
+      flatMapN(weedCharSequence(chars)) {
+        case string => toRegexPattern(string, mkSL(sp1, sp2)) map {
+            case patt => Ast.Constant.Regex(patt)
+          }
+      }
   }
 
   /**
@@ -2381,6 +2390,7 @@ object Weeder {
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
         flatMapN(weedLiteral(lit): Validation[Ast.Constant, WeederError]) {
           case Ast.Constant.Null => WeederError.IllegalNullPattern(mkSL(sp1, sp2)).toFailure
+          case Ast.Constant.Regex(_) => WeederError.IllegalRegexPattern(mkSL(sp1, sp2)).toFailure
           case l => WeededAst.Pattern.Cst(l, mkSL(sp1, sp2)).toSuccess
         }
 
@@ -2486,14 +2496,14 @@ object Weeder {
           WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
       }
 
+    case ParsedAst.Predicate.Body.Functional(sp1, idents, exp, sp2) =>
+      mapN(visitExp(exp, senv)) {
+        case e => WeededAst.Predicate.Body.Functional(idents.toList, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Predicate.Body.Loop(sp1, idents, exp, sp2) =>
-      mapN(visitExp(exp, senv)) {
-        case e => WeededAst.Predicate.Body.Loop(idents.toList, e, mkSL(sp1, sp2))
       }
 
   }
@@ -3255,6 +3265,16 @@ object Weeder {
     new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
     case _: NumberFormatException => IllegalInt(loc).toFailure
+  }
+
+  /**
+    * Attempts to compile the given regular expression into a Pattern.
+    */
+  private def toRegexPattern(regex: String, loc: SourceLocation): Validation[JPattern, WeederError.InvalidRegularExpression] = try {
+    var patt = JPattern.compile(regex)
+    patt.toSuccess
+  } catch {
+    case ex: PatternSyntaxException => WeederError.InvalidRegularExpression(regex, ex.getMessage, loc).toFailure
   }
 
   /**
