@@ -28,7 +28,7 @@ dependencies {
     // implementation("io.github.p-org.solvers:pjbdd:1.0.10-10-v5")
     implementation files('lib/pjbdd-v1.0.10-9-67-gf113b5a.jar')
 
-    implementation('io.get-coursier:coursier_2.13:2.1.0-RC4')
+    implementation('io.get-coursier:coursier_2.13:2.1.2')
     implementation('org.tomlj:tomlj:1.1.0')
     implementation('org.antlr:antlr4-runtime:4.11.1')
 
