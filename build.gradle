@@ -32,7 +32,7 @@ dependencies {
     implementation('org.tomlj:tomlj:1.1.0')
     implementation('org.antlr:antlr4-runtime:4.11.1')
 
-    testImplementation('org.scalatest:scalatest_2.13:3.0.8')
+    testImplementation('org.scalatest:scalatest_2.13:3.2.15')
 }
 
 tasks.withType(ScalaCompile) {
