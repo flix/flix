@@ -25,7 +25,7 @@ def getEdgesWithColor(): #{ LabelEdge[String] | r } = #{
 
 /// Returns a set of polymorphic rules to compute the transitive
 /// closure of edges with the *same* label.
-def getRules(): #{ LabelEdge[l], LabelPath[l] } with Boxable[l] = #{
+def getRules(): #{ LabelEdge[l], LabelPath[l] } with Order[l] = #{
     LabelPath(x, l, y) :- LabelEdge(x, l, y).
     LabelPath(x, l, z) :- LabelPath(x, l, y), LabelPath(y, l, z).
 }

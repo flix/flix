@@ -213,6 +213,32 @@ object InstanceError {
   }
 
   /**
+    * Error indicating an associated type in an instance type.
+    *
+    * @param assoc the type alias.
+    * @param clazz the class symbol.
+    * @param loc   the location where the error occurred.
+    */
+  case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError {
+    override def summary: String = "Associated type in instance type."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${red(clazz.name)}'.
+         |${code(loc, s"illegal use of associated type")}
+         |""".stripMargin
+
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A type class instance cannot use an associated type. Use the full type."
+    })
+
+  }
+
+  /**
     * Error indicating an orphan instance.
     *
     * @param tpe the instance type.

@@ -163,9 +163,9 @@ object Typer {
       val tparams = getTypeParams(List(tparam))
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeSig(doc, mod, sym, tp, kind, loc) =>
+        case KindedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) =>
           val tps = getTypeParams(List(tp))
-          TypedAst.AssociatedTypeSig(doc, mod, sym, tps.head, kind, loc) // TODO ASSOC-TYPES trivial
+          TypedAst.AssocTypeSig(doc, mod, sym, tps.head, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv))
       val lawsVal = traverse(laws0)(visitDefn(_, List(tconstr), root, classEnv, eqEnv))
@@ -193,7 +193,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
       val assocs = assocs0.map {
-        case KindedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) => TypedAst.AssociatedTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
+        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
       val defsVal = traverse(defs0)(visitDefn(_, tconstrs, root, classEnv, eqEnv))
       mapN(defsVal) {
@@ -602,6 +602,9 @@ object Typer {
 
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
         liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
+
+      case KindedAst.Expression.Cst(Ast.Constant.Regex(_), loc) =>
+        liftM(List.empty, Type.mkRegex(loc.asSynthetic), Type.Pure, Type.Empty)
 
       case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
@@ -1945,10 +1948,10 @@ object Typer {
         val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
-        // Require Boxable and Foldable instances.
-        val boxableSym = PredefinedClasses.lookupClassSym("Boxable", root)
+        // Require Order and Foldable instances.
+        val orderSym = PredefinedClasses.lookupClassSym("Order", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
-        val boxable = Ast.TypeConstraint(Ast.TypeConstraint.Head(boxableSym, loc), freshElmTypeVar, loc)
+        val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
         for {
@@ -1957,7 +1960,7 @@ object Typer {
           resultTyp <- unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
           resultPur = pur
           resultEff = eff
-        } yield (boxable :: foldable :: constrs, resultTyp, resultPur, resultEff)
+        } yield (order :: foldable :: constrs, resultTyp, resultPur, resultEff)
 
       case KindedAst.Expression.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
@@ -2014,8 +2017,8 @@ object Typer {
       (tconstrs, tpe, pur, eff) <- inferExp(exp, root)
       _ <- expectTypeM(expected = tpe0, actual = tpe, exp.loc)
       // TODO Currently disabled due to region issues. See issue #5603
-//      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
-//      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
+      //      _ <- expectTypeM(expected = pur0, actual = pur, exp.loc)
+      //      _ <- expectTypeM(expected = eff0, actual = eff, exp.loc)
     } yield (tconstrs, tpe, pur, eff)
   }
 
@@ -2698,6 +2701,8 @@ object Typer {
 
       case KindedAst.Pattern.Cst(Ast.Constant.Str(s), loc) => liftM(Type.Str)
 
+      case KindedAst.Pattern.Cst(Ast.Constant.Regex(s), loc) => liftM(Type.Regex)
+
       case KindedAst.Pattern.Cst(Ast.Constant.Null, loc) => throw InternalCompilerException("unexpected null pattern", loc)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
@@ -2799,22 +2804,21 @@ object Typer {
           tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
         } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
+      case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
+        val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
+        val expectedType = Type.mkVector(tupleType, loc)
+        for {
+          (constrs, tpe, pur, eff) <- inferExp(exp, root)
+          expTyp <- unifyTypeM(expectedType, tpe, loc)
+          expPur <- unifyBoolM(Type.Pure, pur, loc)
+          expEff <- unifyTypeM(Type.Empty, eff, loc)
+        } yield (constrs, mkAnySchemaRowType(loc))
+
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         for {
           (constrs, tpe, pur, eff) <- inferExp(exp, root)
           expPur <- unifyBoolM(Type.Pure, pur, loc)
           expTyp <- unifyTypeM(Type.Bool, tpe, loc)
-          expEff <- unifyTypeM(Type.Empty, eff, loc)
-        } yield (constrs, mkAnySchemaRowType(loc))
-
-      case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-        // TODO: Use type classes instead of array?
-        val tupleType = Type.mkTuple(varSyms.map(_.tvar), loc)
-        val expectedType = Type.mkArray(tupleType, Type.False, loc)
-        for {
-          (constrs, tpe, pur, eff) <- inferExp(exp, root)
-          expPur <- unifyBoolM(Type.Pure, pur, loc)
-          expTyp <- unifyTypeM(expectedType, tpe, loc)
           expEff <- unifyTypeM(Type.Empty, eff, loc)
         } yield (constrs, mkAnySchemaRowType(loc))
     }
@@ -2828,13 +2832,13 @@ object Typer {
       val ts = terms.map(t => reassemblePattern(t, root, subst0))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst0(tvar), loc)
 
+    case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
+      val e = reassembleExp(exp, root, subst0)
+      TypedAst.Predicate.Body.Functional(outVars, e, loc)
+
     case KindedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, root, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
-
-    case KindedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-      val e = reassembleExp(exp, root, subst0)
-      TypedAst.Predicate.Body.Loop(varSyms, e, loc)
 
   }
 
@@ -2861,8 +2865,8 @@ object Typer {
     */
   private def mkTypeClassConstraintsForRelationalTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Order", root),
     )
     classes.map(clazz => Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe, loc))
   }
@@ -2872,8 +2876,8 @@ object Typer {
     */
   private def mkTypeClassConstraintsForLatticeTerm(tpe: Type, root: KindedAst.Root, loc: SourceLocation): List[Ast.TypeConstraint] = {
     val classes = List(
-      PredefinedClasses.lookupClassSym("Boxable", root),
       PredefinedClasses.lookupClassSym("Eq", root),
+      PredefinedClasses.lookupClassSym("Order", root),
       PredefinedClasses.lookupClassSym("PartialOrder", root),
       PredefinedClasses.lookupClassSym("LowerBound", root),
       PredefinedClasses.lookupClassSym("JoinLattice", root),
@@ -2966,6 +2970,7 @@ object Typer {
     case Constant.Int64(_) => Type.Int64
     case Constant.BigInt(_) => Type.BigInt
     case Constant.Str(_) => Type.Str
+    case Constant.Regex(_) => Type.Regex
   }
 
 

@@ -39,7 +39,38 @@ object GenExpression {
     case Expr.Var(sym, tpe, _) =>
       readVar(sym, tpe, visitor)
 
-    case Expr.Binary(sop, exp1, exp2, _, _) => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+    case Expr.Binary(sop, exp1, exp2, _, _) => sop match {
+      case BoolOp.And =>
+        val andFalseBranch = new Label()
+        val andEnd = new Label()
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(IFEQ, andFalseBranch)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(IFEQ, andFalseBranch)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, andEnd)
+        visitor.visitLabel(andFalseBranch)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(andEnd)
+
+      case BoolOp.Or =>
+        val orTrueBranch = new Label()
+        val orFalseBranch = new Label()
+        val orEnd = new Label()
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(IFNE, orTrueBranch)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitJumpInsn(IFEQ, orFalseBranch)
+        visitor.visitLabel(orTrueBranch)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, orEnd)
+        visitor.visitLabel(orFalseBranch)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(orEnd)
+
+      case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
+    }
+
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
@@ -1131,6 +1162,12 @@ object GenExpression {
       addSourceLine(visitor, loc)
       visitor.visitLdcInsn(s)
 
+    case Ast.Constant.Regex(patt) =>
+      addSourceLine(visitor, loc)
+      visitor.visitLdcInsn(patt.pattern)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Regex.toInternalName, "compile",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Regex), false)
+
   }
 
   /*
@@ -1331,8 +1368,6 @@ object GenExpression {
          | BigDecimalOp.Ge
          | Int8Op.Ge | Int16Op.Ge | Int32Op.Ge
          | Int64Op.Ge | BigIntOp.Ge => compileComparisonExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-
-    case BoolOp.And | BoolOp.Or => compileLogicalExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
     case Int8Op.And | Int16Op.And | Int32Op.And
          | Int64Op.And | BigIntOp.And
@@ -1626,46 +1661,6 @@ object GenExpression {
     case Int64Op.Ge => Some(LCMP, IFLT)
 
     case _ => None
-  }
-
-  /*
-   * Note that LogicalAnd, LogicalOr, and Implication do short-circuit evaluation.
-   * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
-   */
-  private def compileLogicalExpr(e1: Expr,
-                                 e2: Expr,
-                                 currentClassType: JvmType.Reference,
-                                 visitor: MethodVisitor,
-                                 jumpLabels: Map[Symbol.LabelSym, Label],
-                                 entryPoint: Label,
-                                 sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = sop match {
-    case BoolOp.And =>
-      val andFalseBranch = new Label()
-      val andEnd = new Label()
-      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      visitor.visitInsn(ICONST_1)
-      visitor.visitJumpInsn(GOTO, andEnd)
-      visitor.visitLabel(andFalseBranch)
-      visitor.visitInsn(ICONST_0)
-      visitor.visitLabel(andEnd)
-    case BoolOp.Or =>
-      val orTrueBranch = new Label()
-      val orFalseBranch = new Label()
-      val orEnd = new Label()
-      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitJumpInsn(IFNE, orTrueBranch)
-      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
-      visitor.visitJumpInsn(IFEQ, orFalseBranch)
-      visitor.visitLabel(orTrueBranch)
-      visitor.visitInsn(ICONST_1)
-      visitor.visitJumpInsn(GOTO, orEnd)
-      visitor.visitLabel(orFalseBranch)
-      visitor.visitInsn(ICONST_0)
-      visitor.visitLabel(orEnd)
-    case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
   }
 
   /*

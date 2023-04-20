@@ -297,6 +297,11 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str, SourceLocation.Unknown)
 
   /**
+    * Represents the Regex pattern type.
+    */
+  val Regex: Type = Type.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
+
+  /**
     * Represents the Lazy type constructor.
     *
     * NB: This type has kind: * -> *.
@@ -543,6 +548,11 @@ object Type {
     * Returns the String type with the given source location `loc`.
     */
   def mkString(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Str, loc)
+
+  /**
+    * Returns the Regex pattern type with the given source location `loc`.
+    */
+  def mkRegex(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Regex, loc)
 
   /**
     * Returns the True type with the given source location `loc`.
@@ -999,6 +1009,17 @@ object Type {
   }
 
   /**
+    * Returns true if the given type contains an associated type somewhere within it.
+    */
+  def hasAssocType(t: Type): Boolean = t match {
+    case Var(_, _) => false
+    case Cst(_, _) => false
+    case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
+    case Alias(_, _, tpe, _) => hasAssocType(tpe)
+    case AssocType(_, _, _, _) => true
+  }
+
+  /**
     * Returns the Flix Type of a Java Class
     */
   def getFlixType(c: Class[_]): Type = {
@@ -1034,6 +1055,9 @@ object Type {
     }
     else if (c == classOf[java.lang.String]) {
       Type.Str
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      Type.Regex
     }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit

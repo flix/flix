@@ -21,8 +21,6 @@ pub enum Nel[a] with Sendable {
     case Nel(a, List[a])
 }
 
-instance Boxable[Nel[a]] with Boxable[a]
-
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = Nel.toString(l)
 }

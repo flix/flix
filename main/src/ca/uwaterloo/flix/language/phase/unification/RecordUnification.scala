@@ -28,7 +28,7 @@ object RecordUnification {
     *
     * The given types must have kind [[Kind.RecordRow]]
     */
-  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.EqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
+  def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = (tpe1, tpe2) match {
 
     case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv)
 
@@ -53,9 +53,9 @@ object RecordUnification {
   /**
     * Attempts to rewrite the given row type `rewrittenRow` such that it shares a first label with `staticRow`.
     */
-  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type, List[Ast.EqualityConstraint]), UnificationError] = {
+  private def rewriteRecordRow(rewrittenRow: Type, staticRow: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    def visit(row: Type): Result[(Substitution, Type, List[Ast.EqualityConstraint]), UnificationError] = (row, staticRow) match {
+    def visit(row: Type): Result[(Substitution, Type, List[Ast.BroadEqualityConstraint]), UnificationError] = (row, staticRow) match {
       case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field2), _), fieldType2, _), restRow2, loc),
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(field1), _), fieldType1, _), _, _)) =>
         // Case 1: The row is of the form { field2 :: fieldType2 | restRow2 }

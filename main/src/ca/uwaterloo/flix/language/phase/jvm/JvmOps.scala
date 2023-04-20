@@ -62,6 +62,7 @@ object JvmOps {
     case MonoType.Int64 => JvmType.PrimLong
     case MonoType.BigInt => JvmType.BigInteger
     case MonoType.Str => JvmType.String
+    case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
 
     // Compound
@@ -541,6 +542,7 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
+    case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.mkRegion(Type.Unit, SourceLocation.Unknown) // hack
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm), Type.Impure, SourceLocation.Unknown)
     case MonoType.Lazy(tpe) => Type.mkLazy(hackMonoType2Type(tpe), SourceLocation.Unknown)
@@ -745,6 +747,7 @@ object JvmOps {
       case MonoType.Int64 => Set(tpe)
       case MonoType.BigInt => Set(tpe)
       case MonoType.Str => Set(tpe)
+      case MonoType.Regex => Set(tpe)
       case MonoType.Region => Set(tpe)
 
       case MonoType.Array(elm) => nestedTypesOf(elm) + tpe

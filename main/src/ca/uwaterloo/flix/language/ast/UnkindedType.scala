@@ -72,28 +72,33 @@ sealed trait UnkindedType {
   }
 
   /**
-    * Returns the type variables in the given type.
+    * Type vars that are certain to appear in the type even after reduction.
+    *
+    * (Boolean variables may appear in this set even if they are not essential.)
     */
-  def typeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
-    case UnkindedType.Var(sym, loc) => SortedSet(sym)
-    case UnkindedType.Cst(tc, loc) => SortedSet.empty
-    case UnkindedType.Enum(sym, loc) => SortedSet.empty
-    case UnkindedType.RestrictableEnum(sym, loc) => SortedSet.empty
-    case UnkindedType.UnappliedAlias(sym, loc) => SortedSet.empty
-    case UnkindedType.UnappliedAssocType(sym, loc) => SortedSet.empty
-    case UnkindedType.Apply(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) =>
-      val p = pur.iterator.flatMap(_.typeVars).to(SortedSet)
-      val e = eff.iterator.flatMap(_.flatMap(_.typeVars)).to(SortedSet)
+  def definiteTypeVars: SortedSet[Symbol.UnkindedTypeVarSym] = this match {
+    case UnkindedType.Var(sym, _) => SortedSet(sym)
+    case UnkindedType.Cst(_, _) => SortedSet.empty
+    case UnkindedType.Enum(_, _) => SortedSet.empty
+    case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.Arrow(UnkindedType.PurityAndEffect(pur, eff), _, _) =>
+      val p = pur.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
+      val e = eff.iterator.flatMap(_.flatMap(_.definiteTypeVars)).to(SortedSet)
       p ++ e
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
-    case UnkindedType.CaseComplement(tpe, loc) => tpe.typeVars
-    case UnkindedType.CaseUnion(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => tpe1.typeVars ++ tpe2.typeVars
-    case UnkindedType.ReadWrite(tpe, loc) => tpe.typeVars
-    case UnkindedType.Ascribe(tpe, kind, loc) => tpe.typeVars
-    case UnkindedType.Alias(cst, args, tpe, loc) => args.flatMap(_.typeVars).to(SortedSet)
-    case UnkindedType.AssocType(cst, arg, loc) => arg.typeVars
+    case UnkindedType.CaseComplement(tpe, _) => tpe.definiteTypeVars
+    case UnkindedType.CaseUnion(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.CaseIntersection(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
+    case UnkindedType.ReadWrite(tpe, _) => tpe.definiteTypeVars
+    case UnkindedType.Ascribe(tpe, _, _) => tpe.definiteTypeVars
+
+    // For aliases we used the reduced type
+    case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
+    // For associated types we cannot yet reduce, so we are conservative and say none.
+    case UnkindedType.AssocType(_, _, _) => SortedSet.empty
   }
 }
 
@@ -566,6 +571,9 @@ object UnkindedType {
     }
     else if (c == classOf[java.lang.String]) {
       UnkindedType.Cst(TypeConstructor.Str, SourceLocation.Unknown)
+    }
+    else if (c == classOf[java.util.regex.Pattern]) {
+      UnkindedType.Cst(TypeConstructor.Regex, SourceLocation.Unknown)
     }
     else if (c == java.lang.Void.TYPE) {
       UnkindedType.Cst(TypeConstructor.Unit, SourceLocation.Unknown)
