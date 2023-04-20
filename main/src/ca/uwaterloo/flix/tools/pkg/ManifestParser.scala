@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
@@ -90,23 +90,26 @@ object ManifestParser {
       authorsList <- convertTomlArrayToStringList(authors, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
-      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, p);
+      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
 
       devDeps <- getOptionalTableProperty("dev-dependencies", parser, p);
-      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, p);
+      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, jarDep = false, p);
 
       mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
-      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, p);
+      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, jarDep = false, p);
 
       devMvnDeps <- getOptionalTableProperty("dev-mvn-dependencies", parser, p);
-      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, p)
+      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, jarDep = false, p);
 
-    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
+      jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
+      jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
+
+    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
-    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies")
+    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
     val illegalKeys = keySet.diff(allowedKeys)
 
     if(illegalKeys.nonEmpty) {
@@ -213,7 +216,7 @@ object ManifestParser {
     * or MavenDependency and `prodDep` decides whether it is for production
     * or development. Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
@@ -221,7 +224,9 @@ object ManifestParser {
         traverse(depsEntries)(entry => {
           val depName = entry.getKey
           val depVer = entry.getValue
-          if (flixDep) {
+          if (jarDep) {
+            createJarDep(depName, p)
+          } else if (flixDep) {
             createFlixDep(depName, depVer, prodDep, p)
           } else {
             createMavenDep(depName, depVer, prodDep, p)
@@ -377,6 +382,14 @@ object ManifestParser {
     }
   }
 
+  private def createJarDep(depName: String, p: Path): Result[JarDependency, ManifestError] = {
+    for (
+      url <- checkNameCharacters(depName, p)
+    ) yield {
+      Dependency.JarDependency(url)
+    }
+  }
+
   /**
     * Converts a TomlArray to a list of Strings. Returns
     * an error if anything in the array is not a String.
@@ -399,7 +412,7 @@ object ManifestParser {
     * Checks that a package name does not include any illegal characters.
     */
   private def checkNameCharacters(name: String, p: Path): Result[String, ManifestError] = {
-    if(name.matches("^[a-zA-Z0-9._-]+$"))
+    if(name.matches("^[a-zA-Z0-9.:/_-]+$"))
       Ok(name)
     else
       Err(ManifestError.IllegalName(p, name))
