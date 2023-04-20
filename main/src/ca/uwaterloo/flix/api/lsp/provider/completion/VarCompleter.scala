@@ -18,6 +18,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Symbol
 
 object VarCompleter extends Completer {
   /**
@@ -32,6 +33,20 @@ object VarCompleter extends Completer {
       case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.sym, fparam.tpe)
     }
 
-    iter.toList
+    iter.toList.filter(comp => matchesVar(comp.sym, context.word))
+  }
+
+  /**
+    * Checks that the varSym matches the prefix
+    *
+    * @param sym  the varSym.
+    * @param word the current prefix.
+    * @return     true, if the var matches prefix, false otherwise.
+    */
+  private def matchesVar(sym: Symbol.VarSym, word: String): Boolean = {
+    if (word.nonEmpty && word.head.isUpper)
+      sym.toString.startsWith(word)
+    else
+      sym.text.startsWith(word)
   }
 }
