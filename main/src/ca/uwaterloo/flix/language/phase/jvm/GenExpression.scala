@@ -68,6 +68,59 @@ object GenExpression {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(orEnd)
 
+      case Float32Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(F2D) // Sign extend to double
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(F2D) // Sign extend to double
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2F)
+
+      case Float64Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+
+      case Int8Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+        visitor.visitInsn(I2B)
+
+      case Int16Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+        visitor.visitInsn(I2S)
+
+      case Int32Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(I2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2I)
+
+      case Int64Op.Exp =>
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(L2D)
+        compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(L2D)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
+        visitor.visitInsn(D2L)
+
       case _ => compileBinaryExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
     }
 
@@ -1339,9 +1392,6 @@ object GenExpression {
          | Int32Op.Rem | Int64Op.Rem
          | BigIntOp.Rem | StringOp.Concat => compileArithmeticExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
 
-    case Float32Op.Exp | Float64Op.Exp | BigDecimalOp.Exp |
-         Int8Op.Exp | Int16Op.Exp | Int32Op.Exp | Int64Op.Exp | BigIntOp.Exp => compileExponentiateExpr(exp1, exp2, currentClass, visitor, lenv0, entryPoint, sop)
-
     case BoolOp.Eq | CharOp.Eq
          | Float32Op.Eq | Float64Op.Eq | BigDecimalOp.Eq
          | Int8Op.Eq | Int16Op.Eq | Int32Op.Eq
@@ -1456,30 +1506,6 @@ object GenExpression {
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
     }
   }
-
-  private def compileExponentiateExpr(exp1: Expr, exp2: Expr, currentClassType: JvmType.Reference, visitor: MethodVisitor, jumpLabels: Map[Symbol.LabelSym, Label], entryPoint: Label, sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    val (castToDouble, castFromDouble) = sop match {
-      case Float32Op.Exp => (F2D, D2F)
-      case Float64Op.Exp => (NOP, NOP) // already a double
-      case Int8Op.Exp | Int16Op.Exp | Int32Op.Exp => (I2D, D2I)
-      case Int64Op.Exp => (L2D, D2L)
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
-    }
-    compileExpression(exp1, visitor, currentClassType, jumpLabels, entryPoint)
-    visitor.visitInsn(castToDouble)
-    compileExpression(exp2, visitor, currentClassType, jumpLabels, entryPoint)
-    visitor.visitInsn(castToDouble)
-    visitor.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
-      AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
-    visitor.visitInsn(castFromDouble)
-    sop match {
-      case Int8Op.Exp => visitor.visitInsn(I2B)
-      case Int16Op.Exp => visitor.visitInsn(I2S)
-      case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
-      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
-    }
-  }
-
 
   private def semanticOperatorArithmeticToOpcode(sop: SemanticOperator): Option[Int] = sop match {
     case Float32Op.Add => Some(FADD)

@@ -32,6 +32,13 @@ mod BigInt {
     pub def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
 
     ///
+    /// Returns `x` raised to the power of `n`.
+    ///
+    pub def exp(n: Int32, x: BigInt): BigInt =
+        import java.math.BigInteger.pow(Int32): ##java.math.BigInteger \ {};
+        pow(x, n)
+
+    ///
     /// Returns the Euclidean modulo of `x` and `n`.
     ///
     pub def mod(x: BigInt, n: BigInt): BigInt =
