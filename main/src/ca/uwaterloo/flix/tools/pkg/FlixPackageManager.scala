@@ -98,14 +98,14 @@ object FlixPackageManager {
                 stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
               }
             } catch {
-              case _: IOException => out.println(s"ERROR."); return Err(PackageError.DownloadError(asset))
+              case e: IOException => out.println(s"ERROR: ${e.getMessage}."); return Err(PackageError.DownloadError(asset, Some(e.getMessage)))
             }
             if(Files.exists(assetPath)) {
               out.println(s"OK.")
               Ok(assetPath)
             } else {
-              out.println(s"ERROR.")
-              Err(PackageError.DownloadError(asset))
+              out.println(s"ERROR: File was not created.")
+              Err(PackageError.DownloadError(asset, None))
             }
           }
         }
