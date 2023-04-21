@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.util
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestGraph extends FunSuite {
+class TestGraph extends AnyFunSuite {
 
   test("topSort.Cycle.01") {
     val graph = Map(1 -> List(1))

@@ -92,27 +92,8 @@ object CompletionProvider {
             val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
               FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
             // Find the best completion
-            val best = CompletionRanker.findBest(completions, index, deltaContext) match {
-              case None =>
-                // No best completion
-                Nil
-              case Some(best) =>
-                // We have a better completion, boost that to top priority
-                val compForBoost = best.toCompletionItem(context)
-                // Change documentation to include "Best pick"
-                val bestPickDocu = compForBoost.documentation match {
-                  case Some(oldDocu) =>
-                    // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
-                    // visible to the user, that it's the best pick.
-                    "Best pick \n\n" + oldDocu
-                  case None => "Best pick"
-                }
-                // Boosting by changing priority in sortText
-                val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1),
-                  documentation = Some(bestPickDocu))
-                List(boostedComp)
-            }
-            best ++ completions.map(comp => comp.toCompletionItem(context))
+            val best = CompletionRanker.findBest(completions, index, deltaContext)
+            boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
     }
@@ -222,6 +203,37 @@ object CompletionProvider {
       FieldCompleter.getCompletions(context) ++
       OpCompleter.getCompletions(context) ++
       MatchCompleter.getCompletions(context)
+  }
+
+  /**
+    * Boosts a best completion to the top of the pop-up-pane.
+    *
+    * @param comp  the completion to boost.
+    * @return      nil, if no we have no completion to boost,
+    *              otherwise a List consisting only of the boosted completion as CompletionItem.
+    */
+  private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
+    comp match {
+      case None =>
+        // No best completion to boost
+        Nil
+      case Some(best) =>
+        // We have a better completion, boost that to top priority
+        val compForBoost = best.toCompletionItem(context)
+        // Change documentation to include "Best pick"
+        val bestPickDocu = compForBoost.documentation match {
+          case Some(oldDocu) =>
+            // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
+            // visible to the user, that it's the best pick.
+            "Best pick \n\n" + oldDocu
+          case None => "Best pick"
+        }
+        // Boosting by changing priority in sortText
+        // This is done by removing the old int at the first position in the string, and changing it to 1
+        val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1)._2,
+          documentation = Some(bestPickDocu))
+        List(boostedComp)
+    }
   }
 
   /**
