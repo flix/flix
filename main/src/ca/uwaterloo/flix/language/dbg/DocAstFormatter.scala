@@ -145,7 +145,7 @@ object DocAstFormatter {
   }
 
   private def formatJavaClass(clazz: Class[_]): Doc =
-    text("##" + clazz.toString)
+    text("##" + clazz.getName)
 
   private def formatJvmMethod(m: JvmMethod)(implicit i: Indent): Doc = {
     val JvmMethod(ident, fparams, clo, _) = m
