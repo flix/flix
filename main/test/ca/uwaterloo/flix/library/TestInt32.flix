@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestInt32 {
+mod TestInt32 {
 
     use Mul.mul
 
@@ -44,13 +44,13 @@ namespace TestInt32 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int32.maxValue() == ~~~(1 <<< 31)
+    def maxValue01(): Bool = Int32.maxValue() == ~~~Int32.leftShift(1, 31)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int32.minValue() == (1 <<< 31)
+    def minValue01(): Bool = Int32.minValue() == Int32.leftShift(1, 31)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -229,20 +229,72 @@ namespace TestInt32 {
     @test
     def signum03(): Bool = Int32.signum(0) == 0
 
+    @test
+    def testBitwiseLeftShift01(): Bool = Int32.leftShift(8, 0) == 8
+
+    @test
+    def testBitwiseLeftShift02(): Bool = Int32.leftShift(8, 16) == 524288
+
+    @test
+    def testBitwiseLeftShift03(): Bool = Int32.leftShift(8, 28) == -2147483648
+
+    @test
+    def testBitwiseLeftShift04(): Bool = Int32.leftShift(8, 29) == 0
+
+    @test
+    def testBitwiseLeftShift05(): Bool = Int32.leftShift(8i32, 0) == 8i32
+
+    @test
+    def testBitwiseLeftShift06(): Bool = Int32.leftShift(8i32, 16) == 524288i32
+
+    @test
+    def testBitwiseLeftShift07(): Bool = Int32.leftShift(8i32, 28) == -2147483648i32
+
+    @test
+    def testBitwiseLeftShift08(): Bool = Int32.leftShift(8i32, 29) == 0i32
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseRightShift01(): Bool = Int32.rightShift(120000, 0) == 120000
+
+    @test
+    def testBitwiseRightShift02(): Bool = Int32.rightShift(120000, 2) == 30000
+
+    @test
+    def testBitwiseRightShift03(): Bool = Int32.rightShift(120000, 31) == 0
+
+    @test
+    def testBitwiseRightShift04(): Bool = Int32.rightShift(-120000, 2) == -30000
+
+    @test
+    def testBitwiseRightShift05(): Bool = Int32.rightShift(120000i32, 0) == 120000i32
+
+    @test
+    def testBitwiseRightShift06(): Bool = Int32.rightShift(120000i32, 2) == 30000i32
+
+    @test
+    def testBitwiseRightShift07(): Bool = Int32.rightShift(120000i32, 31) == 0i32
+
+    @test
+    def testBitwiseRightShift08(): Bool = Int32.rightShift(-120000i32, 2) == -30000i32
+
     /////////////////////////////////////////////////////////////////////////////
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int32.logicalRightShift(dist = 4, 2233) == (2233 >>> 4)
+    def logicalRightShift01(): Bool = Int32.logicalRightShift(dist = 4, 2233) == Int32.rightShift(2233, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int32.logicalRightShift(dist = 33, 223366) == (223366 >>> 33)
+    def logicalRightShift02(): Bool = Int32.logicalRightShift(dist = 33, 223366) == Int32.rightShift(223366, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int32.logicalRightShift(dist = -8, 2233) == (2233 >>> -8)
+    def logicalRightShift03(): Bool = Int32.logicalRightShift(dist = -8, 2233) == Int32.rightShift(2233, -8)
 
     @test
-    def logicalRightShift04(): Bool = Int32.logicalRightShift(dist = 4, 2233) == (2233 >>> 4)
+    def logicalRightShift04(): Bool = Int32.logicalRightShift(dist = 4, 2233) == Int32.rightShift(2233, 4)
 
     @test
     def logicalRightShift05(): Bool = Int32.logicalRightShift(dist = 1, -1) == 2147483647
@@ -401,13 +453,13 @@ namespace TestInt32 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int32.highestOneBit(-1) == (1 <<< 31)
+    def highestOneBit01(): Bool = Int32.highestOneBit(-1) == Int32.leftShift(1, 31)
 
     @test
-    def highestOneBit02(): Bool = Int32.highestOneBit(-2147483000) == (1 <<< 31)
+    def highestOneBit02(): Bool = Int32.highestOneBit(-2147483000) == Int32.leftShift(1, 31)
 
     @test
-    def highestOneBit03(): Bool = Int32.highestOneBit(-77) == (1 <<< 31)
+    def highestOneBit03(): Bool = Int32.highestOneBit(-77) == Int32.leftShift(1, 31)
 
     @test
     def highestOneBit04(): Bool = Int32.highestOneBit(2) == 2
@@ -437,13 +489,13 @@ namespace TestInt32 {
     def numberOfLeadingZeros01(): Bool = Int32.numberOfLeadingZeros(0) == 32
 
     @test
-    def numberOfLeadingZeros02(): Bool = Int32.numberOfLeadingZeros(1 <<< 31) == 0
+    def numberOfLeadingZeros02(): Bool = Int32.numberOfLeadingZeros(Int32.leftShift(1, 31)) == 0
 
     @test
     def numberOfLeadingZeros03(): Bool = Int32.numberOfLeadingZeros(-1) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(~~~(1 <<< 31)) == 1
+    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(~~~Int32.leftShift(1, 31)) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(2 ** 29) == 2
@@ -503,7 +555,7 @@ namespace TestInt32 {
     def lowestOneBit01(): Bool = Int32.lowestOneBit(-1) == 1
 
     @test
-    def lowestOneBit02(): Bool = Int32.lowestOneBit(-2147483648) == (1 <<< 31)
+    def lowestOneBit02(): Bool = Int32.lowestOneBit(-2147483648) == Int32.leftShift(1, 31)
 
     @test
     def lowestOneBit03(): Bool = Int32.lowestOneBit(1) == 1

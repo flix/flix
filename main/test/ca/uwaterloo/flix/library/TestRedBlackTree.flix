@@ -1,4 +1,4 @@
-namespace TestRedBlackTree {
+mod TestRedBlackTree {
 
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestInt8 {
+mod TestInt8 {
 
     use Mul.mul
 
@@ -44,13 +44,13 @@ namespace TestInt8 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int8.maxValue() == ~~~(1i8 <<< 7)
+    def maxValue01(): Bool = Int8.maxValue() == ~~~Int8.leftShift(1i8, 7)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int8.minValue() == (1i8 <<< 7)
+    def minValue01(): Bool = Int8.minValue() == Int8.leftShift(1i8, 7)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -193,20 +193,51 @@ namespace TestInt8 {
     @test
     def signum03(): Bool = Int8.signum(0i8) == 0
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // leftShift                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseLeftShift01(): Bool = Int8.leftShift(8i8, 0) == 8i8
+
+    @test
+    def testBitwiseLeftShift02(): Bool = Int8.leftShift(8i8, 2) == 32i8
+
+    @test
+    def testBitwiseLeftShift03(): Bool = Int8.leftShift(8i8, 4) == -128i8
+
+    @test
+    def testBitwiseLeftShift04(): Bool = Int8.leftShift(8i8, 5) == 0i8
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseRightShift01(): Bool = Int8.rightShift(120i8, 0) == 120i8
+
+    @test
+    def testBitwiseRightShift02(): Bool = Int8.rightShift(120i8, 2) == 30i8
+
+    @test
+    def testBitwiseRightShift03(): Bool = Int8.rightShift(120i8, 7) == 0i8
+
+    @test
+    def testBitwiseRightShift04(): Bool = Int8.rightShift(-120i8, 2) == -30i8
+
     /////////////////////////////////////////////////////////////////////////////
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int8.logicalRightShift(dist = 4, 98i8) == (98i8 >>> 4)
+    def logicalRightShift01(): Bool = Int8.logicalRightShift(dist = 4, 98i8) == Int8.rightShift(98i8, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int8.logicalRightShift(dist = 33, 127i8) == (127i8 >>> 33)
+    def logicalRightShift02(): Bool = Int8.logicalRightShift(dist = 33, 127i8) == Int8.rightShift(127i8, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int8.logicalRightShift(dist = -8, 93i8) == (93i8 >>> -8)
+    def logicalRightShift03(): Bool = Int8.logicalRightShift(dist = -8, 93i8) == Int8.rightShift(93i8, -8)
 
     @test
-    def logicalRightShift04(): Bool = Int8.logicalRightShift(dist = 4, 93i8) == (93i8 >>> 4)
+    def logicalRightShift04(): Bool = Int8.logicalRightShift(dist = 4, 93i8) == Int8.rightShift(93i8, 4)
 
     @test
     def logicalRightShift05(): Bool = Int8.logicalRightShift(dist = 1, -1i8) == 127i8
@@ -431,13 +462,13 @@ namespace TestInt8 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) == (1i8 <<< 7)
+    def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) == Int8.leftShift(1i8, 7)
 
     @test
-    def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) == (1i8 <<< 7)
+    def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) == Int8.leftShift(1i8, 7)
 
     @test
-    def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) == (1i8 <<< 7)
+    def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) == Int8.leftShift(1i8, 7)
 
     @test
     def highestOneBit04(): Bool = Int8.highestOneBit(2i8) == 2i8
@@ -533,7 +564,7 @@ namespace TestInt8 {
     def lowestOneBit01(): Bool = Int8.lowestOneBit(-1i8) == 1i8
 
     @test
-    def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) == (1i8 <<< 7)
+    def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) == Int8.leftShift(1i8, 7)
 
     @test
     def lowestOneBit03(): Bool = Int8.lowestOneBit(1i8) == 1i8
@@ -665,7 +696,7 @@ namespace TestInt8 {
     def clearBit06(): Bool = Int8.clearBit(pos = 30, 0i8) == 0i8
 
     @test
-    def clearBit07(): Bool = Int8.clearBit(pos = 7, 1i8 <<< 7) == 0i8
+    def clearBit07(): Bool = Int8.clearBit(pos = 7, Int8.leftShift(1i8, 7)) == 0i8
 
     @test
     def clearBit08(): Bool = Int8.clearBit(pos = 3, 109i8) == 101i8
@@ -680,7 +711,7 @@ namespace TestInt8 {
     def clearBit11(): Bool = Int8.clearBit(pos = 5, -1i8) == -33i8
 
     @test
-    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == ~~~(1i8 <<< 7)
+    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == ~~~Int8.leftShift(1i8, 7)
 
     @test
     def clearBit13(): Bool = Int8.clearBit(pos = 32, -1i8) == -2i8
@@ -707,7 +738,7 @@ namespace TestInt8 {
     def flipBit06(): Bool = Int8.flipBit(pos = 8, 0i8) == 0i8
 
     @test
-    def flipBit07(): Bool = Int8.flipBit(pos = 7, 1i8 <<< 7) == 0i8
+    def flipBit07(): Bool = Int8.flipBit(pos = 7, Int8.leftShift(1i8, 7)) == 0i8
 
     @test
     def flipBit08(): Bool = Int8.flipBit(pos = 0, -1i8) == -2i8
@@ -719,7 +750,7 @@ namespace TestInt8 {
     def flipBit10(): Bool = Int8.flipBit(pos = 5, -1i8) == -33i8
 
     @test
-    def flipBit11(): Bool = Int8.flipBit(pos = 5, -1i8) == (-1i8-(1i8 <<< 5))
+    def flipBit11(): Bool = Int8.flipBit(pos = 5, -1i8) == (-1i8-Int8.leftShift(1i8, 5))
 
     @test
     def flipBit12(): Bool = Int8.flipBit(pos = 32, -1i8) == -2i8

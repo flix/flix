@@ -68,10 +68,15 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class DownloadError(asset: Asset) extends PackageError {
+  case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
       s"""
          | A download error occurred while downloading ${f.bold(asset.name)}
+         | ${
+         message match {
+           case Some(e) => e
+           case None => ""
+         }}
          |""".stripMargin
   }
 
@@ -80,6 +85,21 @@ object PackageError {
       s"""
          | An error occurred with Coursier:
          | $errorMsg
+         |""".stripMargin
+  }
+
+  case class NoSuchFile(project: String, extension: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+         |""".stripMargin
+  }
+
+  case class TooManyFiles(project: String, extension: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         | There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+         | There should only be one $extension file in each project.
          |""".stripMargin
   }
 

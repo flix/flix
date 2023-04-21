@@ -1,4 +1,4 @@
-namespace Test/Exp/Fixpoint/Solve/Lattice {
+mod Test.Exp.Fixpoint.Solve.Lattice {
 
     enum Constant {
           case Top,
@@ -61,8 +61,6 @@ namespace Test/Exp/Fixpoint/Solve/Lattice {
             case (Constant.Top, Constant.Top)         => Comparison.EqualTo
         }
     }
-
-    instance Boxable[Constant]
 
     instance ToString[Constant] {
         pub def toString(x: Constant): String = match x {

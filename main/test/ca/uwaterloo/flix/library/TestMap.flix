@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestMap {
+mod TestMap {
 
     use ToString.toString
     use Hash.hash
@@ -1833,27 +1833,27 @@ def forEachWithIndex02(): Bool = region r {
 
 @test
 def unfold01(): Bool =
-    Map.unfold(s -> if (true) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{}
+    Map.unfold(s -> if (true) None else Some(s, s + 48, s + 1), 0) == Map#{}
 
 @test
 def unfold02(): Bool =
-    Map.unfold(s -> if (s > 0) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 => '0'}
+    Map.unfold(s -> if (s > 0) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48}
 
 @test
 def unfold03(): Bool =
-    Map.unfold(s -> if (s > 1) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 => '0', 1 => '1'}
+    Map.unfold(s -> if (s > 1) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48, 1 => 49}
 
 @test
 def unfold04(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 0) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 
 @test
 def unfold05(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 1), 5) == Map#{5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 1), 5) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 
 @test
 def unfold06(): Bool =
-    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 2), 0) == Map#{0 => '0', 2 => '2', 4 => '4', 6 => '6', 8 => '8'}
+    Map.unfold(s -> if (s >= 10) None else Some(s, s + 48, s + 2), 0) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //
@@ -1867,7 +1867,7 @@ def unfoldWithIter01(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 1;
             Some(k, v)
         };
@@ -1882,11 +1882,11 @@ def unfoldWithIter02(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 1;
             Some(k, v)
         };
-    Map.unfoldWithIter(step) == Map#{0 => '0'}
+    Map.unfoldWithIter(step) == Map#{0 => 48}
 }
 
 @test
@@ -1897,11 +1897,11 @@ def unfoldWithIter03(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 1;
             Some(k, v)
         };
-    Map.unfoldWithIter(step) == Map#{0 => '0', 1 => '1'}
+    Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
 }
 
 @test
@@ -1912,11 +1912,11 @@ def unfoldWithIter04(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 1;
             Some(k, v)
         };
-    Map.unfoldWithIter(step) == Map#{0 => '0', 1 => '1', 2 => '2', 3 => '3', 4 => '4', 5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 }
 
 @test
@@ -1927,11 +1927,11 @@ def unfoldWithIter05(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 1;
             Some(k, v)
         };
-    Map.unfoldWithIter(step) == Map#{5 => '5', 6 => '6', 7 => '7', 8 => '8', 9 => '9'}
+    Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
 }
 
 @test
@@ -1942,11 +1942,11 @@ def unfoldWithIter06(): Bool = region r {
             None
         else {
             let k = deref x;
-            let v = Char.fromInt32(k + 48);
+            let v = k + 48;
             x := deref x + 2;
             Some(k, v)
         };
-    Map.unfoldWithIter(step) == Map#{0 => '0', 2 => '2', 4 => '4', 6 => '6', 8 => '8'}
+    Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1998,8 +1998,8 @@ def query05(): Bool =
 
 @test
 def query06(): Bool =
-    let m = Map.unfold(s -> if (s > 75) None else Some(s, Char.fromInt32(s + 48), s + 1), 25);
-    Map.query(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Char.fromInt32(x + 48)), List.range(25, 75))
+    let m = Map.unfold(s -> if (s > 75) None else Some(s, Some(s + 48), s + 1), 25);
+    Map.query(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
 
 @test
 def query07(): Bool =

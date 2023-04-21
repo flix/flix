@@ -20,13 +20,13 @@
 /// respectively. These pairs, or triples, represent directed edges while
 /// nodes(vertices) are given implicitly.
 ///
-namespace Graph {
+mod Graph {
 
     ///
     /// Returns the pairs `(a, b)` where `a` can reach `b` through a number of
     /// edges in the directed graph `g`, including zero.
     ///
-    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+    pub def closure(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let res = query edges, nodes(), reachability()
                   select (src, dst)
@@ -38,7 +38,7 @@ namespace Graph {
     /// Returns the nodes that are reachable from `src` in the directed
     /// graph `g`.
     ///
-    pub def reachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def reachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let res = query edges, reachabilityFromSrc(src)
                   select dst
@@ -50,7 +50,7 @@ namespace Graph {
     /// Returns the nodes that are unreachable from `src` in the directed
     /// graph `g`.
     ///
-    pub def unreachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def unreachableFrom(src: t, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let unreachablility = #{
             // If there is a node that is not reachable from `src` then it is
@@ -67,7 +67,7 @@ namespace Graph {
     /// Returns `true` if there is a path from `src` to `dst` in the directed
     /// graph `g`.
     ///
-    pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool with Foldable[m], Boxable[t] =
+    pub def reachable(src: {src = t}, dst: {dst = t}, g: m[(t, t)]): Bool with Foldable[m], Order[t] =
         reachableFrom(src.src, g) |> Set.exists(x -> dst.dst == x)
 
     ///
@@ -75,7 +75,7 @@ namespace Graph {
     /// Two nodes are in the same component if and only if they can both
     /// reach each other.
     ///
-    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Boxable[t] = {
+    pub def stronglyConnectedComponents(g: m[(t, t)]): Set[Set[t]] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let connected = #{
             // If `n1` can reach `n2` and `n2` can reach `n1` then they are part
@@ -98,7 +98,7 @@ namespace Graph {
     /// Returns the graph where all edges in the directed graph `g` have their
     /// nodes flipped.
     ///
-    pub def flipEdges(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+    pub def flipEdges(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let rev = #{
             RevEdge(y, x) :- Edge(x, y).
@@ -115,7 +115,7 @@ namespace Graph {
     ///
     /// OBS: No self-edges are returned no matter the input.
     ///
-    pub def invert(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+    pub def invert(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let inverse = #{
             InvEdge(x, y) :- Node(x), Node(y), not Edge(x, y), if x != y.
@@ -129,7 +129,7 @@ namespace Graph {
     ///
     /// Returns `true` if the directed graph `g` contains at least one cycle.
     ///
-    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Boxable[t] = {
+    pub def isCyclic(g: m[(t, t)]): Bool with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let reachability = #{
             // Reachability given the edges.
@@ -150,7 +150,7 @@ namespace Graph {
     /// weighted directed graph `g`. Returns `None` if `g` contains a
     /// negative cycle.
     ///
-    pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Boxable[t] = {
+    pub def distances(g: m[(t, Int32, t)]): Option[Map[(t, t), Int32]] with Foldable[m], Order[t] = {
         // Algorithm based on floyd-warshall.
         /// Returns the number of items in `s` less than `v`.
         def rank(v, s) = s |> Set.partition(v0 -> v0 < v) |> fst |> Set.size;
@@ -205,7 +205,7 @@ namespace Graph {
     ///
     /// OBS: No negative cycles must be present.
     ///
-    pub def boundedDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Boxable[t] = {
+    pub def boundedDistances(g: m[(t, Int32, t)]): Map[(t, t), Int32] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
             // Initialize all node distances to zero.
@@ -229,7 +229,7 @@ namespace Graph {
     /// Returns the shortest distance from `src` to every other node in the
     /// weighted directed graph `g`.
     ///
-    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+    pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
             Dist(src; Down.Down(0)).
@@ -248,14 +248,14 @@ namespace Graph {
     /// Returns the shortest distance from `src` to `dst` in the weighted
     /// directed graph `g`.
     ///
-    pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Boxable[t] =
+    pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Order[t] =
         distancesFrom(src.src, g) |> Map.get(dst.dst)
 
     ///
     /// Returns a copy of the directed graph `g` where all flipped edges are
     /// added. An undirected graph in directed representation.
     ///
-    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Boxable[t] = {
+    pub def toUndirected(g: m[(t, t)]): Set[(t, t)] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, b) -> Set#{(a, b), (b, a)})
     }
@@ -264,7 +264,7 @@ namespace Graph {
     /// Returns a copy of the weighted directed graph `g` where all flipped
     /// edges are added. An undirected graph in directed representation.
     ///
-    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Boxable[t] = {
+    pub def toUndirectedWeighted(g: m[(t, Int32, t)]): Set[(t, Int32, t)] with Foldable[m], Order[t] = {
         g |> Foldable.toSet
           |> Set.flatMap(match (a, w, b) -> Set#{(a, w, b), (b, w, a)})
     }
@@ -275,7 +275,7 @@ namespace Graph {
     ///
     /// OBS: No negative cycles must be present.
     ///
-    pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def withinDistanceOf(src: t, limit: Int32, g: m[(t, Int32, t)]): Set[t] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
             Dist(src; Down.Down(0)) :- if limit >= 0.
@@ -293,7 +293,7 @@ namespace Graph {
     /// Returns the nodes that are at most `limit` (inclusive) edges away
     /// from `src` in the directed graph `g`.
     ///
-    pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] with Foldable[m], Boxable[t] = {
+    pub def withinEdgesOf(src: t, limit: Int32, g: m[(t, t)]): Set[t] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let nodes = #{
             Dist(src; Down.Down(0)) :- if limit >= 0.
@@ -314,7 +314,7 @@ namespace Graph {
     ///
     /// OBS: No cycles must be present.
     ///
-    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Boxable[t] = region r {
+    pub def topologicalSort(g: m[(t, t)]): List[t] with Foldable[m], Order[t] = region r {
         // https://github.com/souffle-lang/benchmarks/tree/master/benchmarks/topological_ordering
         let edges = inject g into Edge;
         let topSort = #{
@@ -345,7 +345,7 @@ namespace Graph {
     /// Returns the degree of each node in the directed graph `g` (the number of
     /// times a node exists as an endpoint of an edge).
     ///
-    pub def degrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+    pub def degrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let in = #{
@@ -367,7 +367,7 @@ namespace Graph {
     /// Returns a mapping from distances to the set of nodes for which the
     /// shortest path from `src` in the directed graph `g` is of a given length.
     ///
-    pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Boxable[t] = {
+    pub def frontiersFrom(src: t, g: m[(t, t)]): Map[Int32, Set[t]] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let frontiers = #{
             Dist(src; Down.Down(0)).
@@ -404,7 +404,7 @@ namespace Graph {
     /// There will at most be one triple for each pair of nodes (which will
     /// be the maximum `cut` of the possible choices).
     ///
-    pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Boxable[t] = {
+    pub def cutPoints(g: m[(t, t)]): Set[(t, t, t)] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         def unpack(opt) = match opt {
             case Some(v) => v
@@ -431,7 +431,7 @@ namespace Graph {
     /// Returns the in-degree (how many edges end in a given node)
     /// of each node in the directed graph `g`.
     ///
-    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+    pub def inDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let in = #{
@@ -452,7 +452,7 @@ namespace Graph {
     /// Returns the out-degree (how many edges start in a given node)
     /// of each node in the directed graph `g`.
     ///
-    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Boxable[t] = {
+    pub def outDegrees(g: m[(t, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
         use Option.{getWithDefault, map};
         let edges = inject g into Edge;
         let out = #{
@@ -474,7 +474,7 @@ namespace Graph {
     /// The strings of nodes are put in quotes but DOT identifier validity is
     /// up to the caller.
     ///
-    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+    pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region r {
         let sb = StringBuilder.new(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
@@ -490,7 +490,7 @@ namespace Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Boxable[t], ToString[t] = region r {
+    pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region r {
         let sb = StringBuilder.new(r);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
@@ -520,7 +520,7 @@ namespace Graph {
     /// given a set of `Edge` and `Node` facts. Nodes can always reach
     /// themselves.
     ///
-    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Boxable[t] = #{
+    def reachability(): #{ Edge(t, t), Reachable(t, t) | r } with Order[t] = #{
         // All nodes can reach themselves.
         Reachable(n, n) :- Node(n).
         // If `n1` can reach `m` and there is an edge from `m` to `n2` then `n1`
@@ -533,7 +533,7 @@ namespace Graph {
     /// Returns a Datalog program that, when given a set of `Edge` facts,
     /// computes the nodes.
     ///
-    def nodes(): #{ Edge(t, t), Node(t) | r } with Boxable[t] = #{
+    def nodes(): #{ Edge(t, t), Node(t) | r } with Order[t] = #{
         Node(x) :- Edge(x, _).
         Node(x) :- Edge(_, x).
     }
@@ -542,7 +542,7 @@ namespace Graph {
     /// Returns a Datalog program which computes the reachable nodes from `src`
     /// when given a set of `Edge` facts.
     ///
-    def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Boxable[t] = #{
+    def reachabilityFromSrc(src: t): #{ Edge(t, t), Reachable(t) | r } with Order[t] = #{
         // A node can reach itself.
         Reachable(src).
         // If `src` can reach `m` and there is an edge from `m` to `n` then

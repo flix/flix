@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
@@ -23,7 +24,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor, StandardOpenOption}
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor, StandardCopyOption, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable
@@ -81,6 +82,7 @@ object Bootstrap {
     newFileIfAbsent(gitignoreFile) {
       s"""*.fpkg
          |*.jar
+         |artifact/
          |build/
          |lib/
          |""".stripMargin
@@ -114,6 +116,10 @@ object Bootstrap {
     ().toOk
   }
 
+  /**
+    * Returns the path to the artifact directory relative to the given path `p`.
+    */
+  private def getArtifactDirectory(p: Path): Path = p.resolve("./artifact/").normalize()
 
   /**
     * Returns the path to the library directory relative to the given path `p`.
@@ -168,7 +174,7 @@ object Bootstrap {
   /**
     * Returns the path to the jar file based on the given path `p`.
     */
-  private def getJarFile(p: Path): Path = p.resolve(getPackageName(p) + ".jar").normalize()
+  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".jar").normalize()
 
   /**
     * Returns the package name based on the given path `p`.
@@ -178,7 +184,7 @@ object Bootstrap {
   /**
     * Returns the path to the pkg file based on the given path `p`.
     */
-  private def getPkgFile(p: Path): Path = p.resolve(getPackageName(p) + ".fpkg").normalize()
+  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".fpkg").normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
@@ -460,9 +466,9 @@ class Bootstrap(val projectPath: Path) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(o: Options, loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
+  def build(loadClasses: Boolean = true)(implicit flix: Flix): Result[CompilationResult, Int] = {
     // Configure a new Flix object.
-    val newOptions = o.copy(
+    val newOptions = flix.options.copy(
       output = Some(Bootstrap.getBuildDirectory(projectPath)),
       loadClassFiles = loadClasses
     )
@@ -485,6 +491,9 @@ class Bootstrap(val projectPath: Path) {
   def buildJar(o: Options): Result[Unit, Int] = {
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
+
+    // Create the artifact directory, if it does not exist.
+    Files.createDirectories(getArtifactDirectory(projectPath))
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
@@ -521,6 +530,14 @@ class Bootstrap(val projectPath: Path) {
     * Builds a flix package for the project.
     */
   def buildPkg(o: Options): Result[Unit, Int] = {
+    // Check that there is a `flix.toml` file.
+    if (!Files.exists(getManifestFile(projectPath))) {
+      throw new RuntimeException("Cannot create a Flix package without a `flix.toml` file.")
+    }
+
+    // Create the artifact directory, if it does not exist.
+    Files.createDirectories(getArtifactDirectory(projectPath))
+
     // The path to the fpkg file.
     val pkgFile = Bootstrap.getPkgFile(projectPath)
 
@@ -528,6 +545,9 @@ class Bootstrap(val projectPath: Path) {
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
       throw new RuntimeException(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.")
     }
+
+    // Copy the `flix.toml` to the artifact directory.
+    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve("flix.toml"), StandardCopyOption.REPLACE_EXISTING)
 
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
@@ -556,7 +576,7 @@ class Bootstrap(val projectPath: Path) {
     */
   def benchmark(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build(o) map {
+    build() map {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
     }
@@ -568,7 +588,7 @@ class Bootstrap(val projectPath: Path) {
   def run(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
     val res = for {
-      compilationResult <- build(o).toOption
+      compilationResult <- build().toOption
       main <- compilationResult.getMain
     } yield {
       main(Array.empty)
@@ -582,7 +602,7 @@ class Bootstrap(val projectPath: Path) {
     */
   def test(o: Options): Result[Unit, Int] = {
     implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build(o) flatMap {
+    build() flatMap {
       compilationResult =>
         Tester.run(Nil, compilationResult)
         ().toOk

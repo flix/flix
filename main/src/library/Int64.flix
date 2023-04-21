@@ -22,7 +22,7 @@ instance UpperBound[Int64] {
     pub def maxValue(): Int64 = Int64.maxValue()
 }
 
-namespace Int64 {
+mod Int64 {
 
     ///
     /// Returns the number of bits used to represent an `Int64`.
@@ -32,7 +32,7 @@ namespace Int64 {
     ///
     /// Returns the minimum number representable by an `Int64`.
     ///
-    pub def minValue(): Int64 = 1i64 <<< (size() - 1)
+    pub def minValue(): Int64 = leftShift(1i64, size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int64`.
@@ -112,9 +112,9 @@ namespace Int64 {
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
         if (x < 0i64 and Int32.rem(dist.dist, size()) != 0)
-            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
+            rightShift(rightShift(x, 1) &&& maxValue(), (dist.dist - 1))
         else
-            x >>> dist.dist
+            rightShift(x, dist.dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -131,14 +131,14 @@ namespace Int64 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
-        (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
+        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
-        (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
+        (logicalRightShift(dist = -dist.dist, x)) ||| leftShift(x, dist.dist)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -214,7 +214,7 @@ namespace Int64 {
     /// Returns 0 if `position` is outside the range 0-63 inclusive.
     ///
     def bitPositionToInt64(position: Int32): Int64 =
-        if (position < 0 or position > size() - 1) 0i64 else 1i64 <<< position
+        if (position < 0 or position > size() - 1) 0i64 else leftShift(1i64, position)
 
     ///
     /// Returns the number of zero bits preceding the
@@ -238,28 +238,28 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
-        if ((x >>> pos.pos) `rem` 2i64 == 0i64) 0 else 1
+        if (rightShift(x, pos.pos) `rem` 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = x ||| (1i64 <<< pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int64): Int64 = x ||| leftShift(1i64, pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = x &&& ~~~(1i64 <<< pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int64): Int64 = x &&& ~~~leftShift(1i64, pos.pos)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = x ^^^ (1i64 <<< pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int64): Int64 = x ^^^ leftShift(1i64, pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -271,6 +271,16 @@ namespace Int64 {
         } else {
             highestOneBitPosition(x) |> Int32.toInt64
         }
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: Int64, y: Int32): Int64 = $INT64_SHL$(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: Int64, y: Int32): Int64 = $INT64_SHR$(x, y)
 
     ///
     /// Returns the factorial of `x`.

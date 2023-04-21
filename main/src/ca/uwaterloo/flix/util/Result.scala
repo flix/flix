@@ -68,6 +68,12 @@ sealed trait Result[+T, E] {
     case Result.Ok(t) => Some(t)
     case Result.Err(_) => None
   }
+
+  /**
+    * Required for pattern-matching in for-patterns.
+    * Doesn't actually filter anything.
+    */
+  final def withFilter(f: T => Boolean): Result[T, E] = this
 }
 
 object Result {

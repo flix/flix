@@ -353,8 +353,8 @@ object CodeHinter {
     */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
+    case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**
@@ -497,6 +497,7 @@ object CodeHinter {
     case Type.Cst(_, _) => 0
     case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
     case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
+    case Type.AssocType(_, arg, _, _) => numberOfVarOccurs(arg)
   }
 
 }

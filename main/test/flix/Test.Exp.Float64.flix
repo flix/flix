@@ -1,4 +1,4 @@
-namespace Test/Exp/Float64 {
+mod Test.Exp.Float64 {
 
     @test
     def testFloat64_01(): Float64 = 0.0f64

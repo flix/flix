@@ -28,18 +28,24 @@ sealed trait ManifestError {
 
 object ManifestError {
 
-  case class MissingRequiredProperty(path: Path, property: String) extends ManifestError {
+  case class MissingRequiredProperty(path: Path, property: String, message: Option[String]) extends ManifestError {
     override def message(f: Formatter): String =
     s"""
-      | The toml file does not contain a property called ${f.bold(property)}. This is required.
+      | The toml file does not contain a required property called ${f.bold(property)}.
+      | ${
+      message match {
+        case Some(e) => e
+        case None => ""
+      }}
       | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
       |""".stripMargin
   }
 
-  case class RequiredPropertyHasWrongType(path: Path, property: String, requiredType: String) extends ManifestError {
+  case class RequiredPropertyHasWrongType(path: Path, property: String, requiredType: String, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
         | The property ${f.bold(property)} is required to have a value of type ${f.bold(requiredType)}.
+        | $message
         | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
         |""".stripMargin
   }
@@ -58,16 +64,17 @@ object ManifestError {
     override def message(f: Formatter): String = {
       s"""
          | This toml file has a Maven version number of the wrong format: ${f.red(version)}.
-         | A version in Maven should be formatted like so: 'x.x.x', 'x.x' or 'x.x.x-x'.
+         | A version in Maven should be formatted like so: 'x.x.x', 'x.x', 'x.x.x.x' or 'x.x.x-x'.
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
     }
   }
 
-  case class VersionNumberWrong(path: Path, version: String) extends ManifestError {
+  case class VersionNumberWrong(path: Path, version: String, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
          | This toml file has a version number which includes things that are not numbers: ${f.red(version)}.
+         | $message
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -90,18 +97,20 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class DependencyFormatError(path: Path, depVer: AnyRef) extends ManifestError {
+  case class DependencyFormatError(path: Path, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | All versions should be of type String. Instead found: $depVer.
+         | All versions should be of type String:
+         | $message
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
 
-  case class AuthorNameError(path: Path) extends ManifestError {
+  case class AuthorNameError(path: Path, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | There was an author name which was not of type String.
+         | There was an author name which was not of type String:
+         | $message
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -134,11 +143,32 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class IOError(path: Path) extends ManifestError {
+  case class IOError(path: Path, message: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | An I/O error occured while parsing the toml file.
+         | An I/O error occured while parsing the toml file:
+         | $message
          | The toml file was found at ${f.cyan(if(path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class IllegalTableFound(path: Path, tableName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The toml file has a table named ${f.red(tableName)}, which is not allowed.
+         | Allowed table names:
+         |   package, dependencies, dev-dependencies, mvn-dependencies, dev-mvn-dependencies
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
+  case class IllegalPackageKeyFound(path: Path, entryName: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         | The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
+         | Allowed entry names in the package table:
+         |   name, description, version, flix, authors, license
+         | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
 

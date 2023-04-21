@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestIterator {
+mod TestIterator {
     use Iterator.Iterator
 
     /////////////////////////////////////////////////////////////////////////////

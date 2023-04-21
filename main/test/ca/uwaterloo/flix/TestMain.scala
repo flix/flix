@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.util.LibLevel
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestMain extends FunSuite {
+class TestMain extends AnyFunSuite {
 
   test("init") {
     val args = Array("init")
@@ -115,12 +115,6 @@ class TestMain extends FunSuite {
     val args = Array("--lsp", "8080", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.lsp.nonEmpty)
-  }
-
-  test("--output build") {
-    val args = Array("--output", "build", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.output.contains("build"))
   }
 
   test("--test") {

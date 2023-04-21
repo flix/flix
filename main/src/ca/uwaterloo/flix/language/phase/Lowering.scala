@@ -42,6 +42,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object Lowering {
 
   private object Defs {
+    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
+
     lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
     lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
     lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
@@ -97,15 +99,6 @@ object Lowering {
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent/Channel.MpmcAdmin")
 
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
-  }
-
-  private object Sigs {
-    private val SL: SourcePosition = SourcePosition.Unknown
-    private val RootNS: Name.NName = Name.NName(SL, Nil, SL)
-
-    private def mkIdent(s: String): Name.Ident = Name.Ident(SL, s, SL)
-
-    lazy val Box: Symbol.SigSym = Symbol.mkSigSym(Symbol.mkClassSym(RootNS, mkIdent("Boxable")), mkIdent("box"))
   }
 
   private object Types {
@@ -170,7 +163,7 @@ object Lowering {
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
     val classes = ParOps.parMap(root.classes.values)((c: TypedAst.Class) => visitClass(c, newSigs)(root, flix))
     val newClasses = classes.map(kv => kv.sym -> kv).toMap
-    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv).toSuccess
+    LoweredAst.Root(newClasses, newInstances, newSigs, newDefs, newEnums, newEffects, newAliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv).toSuccess
   }
 
   /**
@@ -197,11 +190,14 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
-    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, defs0, ns, loc) =>
+    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = visitType(tpe0)
       val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val assocs = assocs0.map {
+        case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
+      }
       val defs = defs0.map(visitDef)
-      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, defs, ns, loc)
+      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -303,12 +299,15 @@ object Lowering {
     * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
     */
   private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures0, laws0, loc) =>
+    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
+      val assocs = assocs0.map {
+        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+      }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
-      LoweredAst.Class(doc, ann, mod, sym, tparam, superClasses, signatures, laws, loc)
+      LoweredAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc)
   }
 
   /**
@@ -872,10 +871,10 @@ object Lowering {
     * Lowers the given scheme `sc0`.
     */
   private def visitScheme(sc0: Scheme)(implicit root: TypedAst.Root, flix: Flix): Scheme = sc0 match {
-    case Scheme(quantifiers, constraints, base) =>
+    case Scheme(quantifiers, tconstrs, econstrs, base) =>
       // TODO: What about constraints?
       val b = visitType(base)
-      Scheme(quantifiers, constraints, b)
+      Scheme(quantifiers, tconstrs, econstrs, b)
   }
 
   /**
@@ -885,7 +884,7 @@ object Lowering {
     def visit(tpe: Type): Type = tpe match {
       case Type.Var(sym, loc) => sym.kind match {
         case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
-        case _ => tpe0
+        case _ => tpe
       }
 
       // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
@@ -897,7 +896,7 @@ object Lowering {
         val t = visitType(tpe)
         Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
 
-      case Type.Cst(_, _) => tpe0
+      case Type.Cst(_, _) => tpe
 
       case Type.Apply(tpe1, tpe2, loc) =>
         val t1 = visitType(tpe1)
@@ -906,6 +905,8 @@ object Lowering {
 
       case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
 
+      case Type.AssocType(cst, args, kind, loc) =>
+        Type.AssocType(cst, args.map(visit), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
     }
 
     if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
@@ -1061,14 +1062,18 @@ object Lowering {
       val innerExp = mkTuple(predSymExp :: denotationExp :: polarityExp :: fixityExp :: termsExp :: Nil, loc)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
+    case TypedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
+      // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
+      val inVars = quantifiedVars(cparams0, exp0)
+      val exp = visitExp(exp0)
+      mkFunctional(outVars, inVars, exp, loc)
+
     case TypedAst.Predicate.Body.Guard(exp0, loc) =>
       // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
       val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
       val exp = visitExp(exp0)
       mkGuard(quantifiedFreeVars, exp, loc)
 
-    case TypedAst.Predicate.Body.Loop(varSyms, exp, loc) =>
-      ??? // TODO
   }
 
   /**
@@ -1263,14 +1268,12 @@ object Lowering {
   private def box(exp: LoweredAst.Expression)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    val innerExp = LoweredAst.Expression.Sig(Sigs.Box, tpe, loc)
+    val innerExp = LoweredAst.Expression.Def(Defs.Box, tpe, loc)
     LoweredAst.Expression.Apply(innerExp, List(exp), Types.Boxed, Type.Pure, Type.Empty, loc)
   }
 
   /**
     * Returns a `Fixpoint/Ast.BodyPredicate.GuardX`.
-    *
-    * mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
     // Compute the number of free variables.
@@ -1318,9 +1321,55 @@ object Lowering {
   }
 
   /**
+    * Returns a `Fixpoint.Ast.BodyPredicate.Functional`.
+    */
+  private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
+    // Compute the number of in and out variables.
+    val numberOfInVars = inVars.length
+    val numberOfOutVars = outVars.length
+
+    if (numberOfInVars == 0) {
+      throw InternalCompilerException("Requires at least one in variable.", loc)
+    }
+    if (numberOfInVars > 5) {
+      throw InternalCompilerException("Does not support more than 5 in variables.", loc)
+    }
+    if (numberOfOutVars == 0) {
+      throw InternalCompilerException("Requires at least one out variable.", loc)
+    }
+    if (numberOfOutVars > 5) {
+      throw InternalCompilerException("Does not support more than 5 out variables.", loc)
+    }
+
+    // Introduce a fresh variable for each in variable.
+    val freshVars = inVars.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
+      case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
+    }
+
+    // Substitute every symbol in `exp` for its fresh equivalent.
+    val freshExp = substExp(exp, freshVars)
+
+    // Curry `freshExp` in a lambda expression for each free variable.
+    val lambdaExp = inVars.foldRight(freshExp) {
+      case ((oldSym, tpe), acc) =>
+        val freshSym = freshVars(oldSym)
+        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
+        LoweredAst.Expression.Lambda(fparam, acc, lambdaType, loc)
+    }
+
+    // Lift the lambda expression to operate on boxed values.
+    val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), exp.tpe, exp.loc)
+
+    // Construct the `Fixpoint.Ast.BodyPredicate` value.
+    val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
+    val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
+    val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
+    mkTag(Enums.BodyPredicate, s"Functional", innerExp, Types.BodyPredicate, loc)
+  }
+
+  /**
     * Returns a `Fixpoint/Ast.Term.AppX`.
-    *
-    * Note: mkGuard and mkAppTerm are similar and should probably be maintained together.
     */
   private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expression, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expression = {
     // Compute the number of free variables.
@@ -1495,8 +1544,6 @@ object Lowering {
 
   /**
     * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
-    *
-    * Note: liftX and liftXb are similar and should probably be maintained together.
     */
   private def liftXb(exp0: LoweredAst.Expression, argTypes: List[Type]): LoweredAst.Expression = {
     // Compute the liftXb symbol.
@@ -1522,6 +1569,40 @@ object Lowering {
     LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, exp0.loc)
   }
 
+
+  /**
+    * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
+    */
+  private def liftXY(outVars: List[Symbol.VarSym], exp0: LoweredAst.Expression, argTypes: List[Type], resultType: Type, loc: SourceLocation): LoweredAst.Expression = {
+    // Compute the number of bound ("output") and free ("input") variables.
+    val numberOfInVars = argTypes.length
+    val numberOfOutVars = outVars.length
+
+    // Compute the liftXY symbol.
+    // For example, lift3X2 is a function from three arguments to a Vector of pairs.
+    val sym = Symbol.mkDefnSym(s"Boxable.lift${numberOfInVars}X${numberOfOutVars}")
+
+    //
+    // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
+    // returns a function of the form Vector[Boxed] -> Vector[Vector[Boxed]].
+    // That is, the function accepts a *curried* function and an uncurried function that takes
+    // its input as a boxed Vector and return its output as a vector of vectors.
+    //
+
+    // The type of the function argument, i.e. i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)].
+    val argType = Type.mkPureCurriedArrow(argTypes, resultType, loc)
+
+    // The type of the returned function, i.e. Vector[Boxed] -> Vector[Vector[Boxed]].
+    val returnType = Type.mkPureArrow(Type.mkVector(Types.Boxed, loc), Type.mkVector(Type.mkVector(Types.Boxed, loc), loc), loc)
+
+    // The type of the overall liftXY function, i.e. (i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)]) -> (Vector[Boxed] -> Vector[Vector[Boxed]]).
+    val liftType = Type.mkPureArrow(argType, returnType, loc)
+
+    // Construct a call to the liftXY function.
+    val defn = LoweredAst.Expression.Def(sym, liftType, loc)
+    LoweredAst.Expression.Apply(defn, List(exp0), returnType, Type.Pure, Type.Empty, loc)
+  }
+
   /**
     * Returns a list expression constructed from the given `exps` with type list of `elmType`.
     */
@@ -1530,6 +1611,13 @@ object Lowering {
     exps.foldRight(nil) {
       case (e, acc) => mkCons(e, acc, loc)
     }
+  }
+
+  /**
+    * Returns a vector expression constructed from the given `exps` with type list of `elmType`.
+    */
+  private def mkVector(exps: List[LoweredAst.Expression], elmType: Type, loc: SourceLocation): LoweredAst.Expression = {
+    LoweredAst.Expression.VectorLit(exps, Type.mkVector(elmType, loc), Type.Pure, Type.Empty, loc)
   }
 
   /**

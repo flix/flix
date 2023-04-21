@@ -1,4 +1,4 @@
-namespace A {
+mod A {
     pub class FClass[a] {
         pub def f(): a
     }
@@ -8,22 +8,22 @@ namespace A {
     }
 
     @test
-    def testNamespace01(): Bool =
-        use A/FClass.f;
+    def testMod01(): Bool =
+        use A.FClass.f;
         f() == 1
 
     @test
-    def testNamespace02(): Bool =
-        use B/FClass.f;
+    def testMod02(): Bool =
+        use B.FClass.f;
         f() == 2
 
     @test
-    def testNamespace03(): Bool =
-        use C/FClass.f;
+    def testMod03(): Bool =
+        use C.FClass.f;
         f() == 3
 }
 
-namespace B {
+mod B {
     pub class FClass[a] {
         pub def f(): a
     }
@@ -33,23 +33,23 @@ namespace B {
     }
 
     @test
-    def testNamespace04(): Bool =
-        use A/FClass.{f => fa};
+    def testMod04(): Bool =
+        use A.FClass.{f => fa};
         fa() == 1
 
     @test
-    def testNamespace05(): Bool =
-        use B/FClass.{f => fb};
+    def testMod05(): Bool =
+        use B.FClass.{f => fb};
         fb() == 2
 
     @test
-    def testNamespace06(): Bool =
-        use C/FClass.{f => fc};
+    def testMod06(): Bool =
+        use C.FClass.{f => fc};
         fc() == 3
 
 }
 
-namespace C {
+mod C {
     pub class FClass[a] {
         pub def f(): a
     }
@@ -59,30 +59,30 @@ namespace C {
     }
 
     @test
-    def testNamespace07(): Bool =
-        use A/FClass.{f => fa};
-        use B/FClass.{f => fb};
-        use C/FClass.{f => fc};
+    def testMod07(): Bool =
+        use A.FClass.{f => fa};
+        use B.FClass.{f => fb};
+        use C.FClass.{f => fc};
         (fa() + fb() + fc()) == 6
 }
 
-namespace D {
-    use A/FClass.f
-    use B/FClass.{f => fb}
-    use X/Y/GClass.g
-    use X/Y/Z/GClass.{g => gz}
+mod D {
+    use A.FClass.f
+    use B.FClass.{f => fb}
+    use X.Y.GClass.g
+    use X.Y.Z.GClass.{g => gz}
 
     @test
-    def testNamespace08(): Bool = f() == 1
+    def testMod08(): Bool = f() == 1
 
     @test
-    def testNamespace09(): Bool = fb() == 2
+    def testMod09(): Bool = fb() == 2
 
     @test
-    def testNamespace10(): Bool = g() == 6
+    def testMod10(): Bool = g() == 6
 
     @test
-    def testNamespace11(): Bool = gz() == 7
+    def testMod11(): Bool = gz() == 7
 }
 
 pub class GClass[a] {
@@ -93,7 +93,7 @@ instance GClass[Int32] {
     pub def g(): Int32 = 4
 }
 
-namespace X {
+mod X {
     pub class GClass[a] {
         pub def g(): a
     }
@@ -102,7 +102,7 @@ namespace X {
         pub def g(): Int32 = 5
     }
 
-    namespace Y {
+    mod Y {
         pub class GClass[a] {
             pub def g(): a
         }
@@ -111,7 +111,7 @@ namespace X {
             pub def g(): Int32 = 6
         }
 
-        namespace Z {
+        mod Z {
             pub class GClass[a] {
                 pub def g(): a
             }
@@ -123,28 +123,28 @@ namespace X {
     }
 }
 
-namespace Test/Use/Sig {
+mod Test.Use.Sig {
 
     @test
-    def testNamespace12(): Bool =
-        use X/GClass.g;
+    def testMod12(): Bool =
+        use X.GClass.g;
         g() == 5
 
     @test
-    def testNamespace13(): Bool =
-        use X/Y/GClass.g;
+    def testMod13(): Bool =
+        use X.Y.GClass.g;
         g() == 6
 
     @test
-    def testNamespace14(): Bool =
-        use X/Y/Z/GClass.g;
+    def testMod14(): Bool =
+        use X.Y.Z.GClass.g;
         g() == 7
 
     @test
-    def testNamespace15(): Bool =
-        use X/GClass.{g => gx};
-        use X/Y/GClass.{g => gxy};
-        use X/Y/Z/GClass.{g => gxyz};
+    def testMod15(): Bool =
+        use X.GClass.{g => gx};
+        use X.Y.GClass.{g => gxy};
+        use X.Y.Z.GClass.{g => gxyz};
         (gx() + gxy() + gxyz()) == 18
 
 }

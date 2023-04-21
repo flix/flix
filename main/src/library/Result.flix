@@ -47,7 +47,7 @@ instance Monad[Result[e]] {
     pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
 }
 
-namespace Result {
+mod Result {
 
     ///
     /// Returns `true` iff `r` is `Ok(v)`.

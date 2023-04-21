@@ -128,7 +128,7 @@ pub lawful class Order[a] with Eq[a] {
     law compare: forall(x: a, y: a). ((x < y) ==> (Order.compare(x, y) == Comparison.LessThan)) and ((x == y) ==> (Order.compare(x, y) == Comparison.EqualTo)) and ((x > y) ==> (Order.compare(x, y) == Comparison.GreaterThan))
 }
 
-namespace Order {
+mod Order {
 
     ///
     /// Returns the minimum of `x` and `y` according to the given comparator `cmp`.

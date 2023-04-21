@@ -1,4 +1,4 @@
-namespace Test/Derives/Hash {
+mod Test.Derives.Hash {
     use Hash.hash
 
     pub enum Enum with Hash {

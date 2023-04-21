@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace File {
+mod File {
 
     ///
     /// File types.
@@ -30,15 +30,13 @@ namespace File {
     ///
     pub def accessTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeLastAccess = lastAccessTime(fileAttributes);
-            let inMilliSec = toMillis(timeLastAccess);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> lastAccessTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -50,15 +48,13 @@ namespace File {
     ///
     pub def creationTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeCreated = creationTime(fileAttributes);
-            let inMilliSec = toMillis(timeCreated);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> creationTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -70,15 +66,13 @@ namespace File {
     ///
     pub def modificationTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeLastModified = lastModifiedTime(fileAttributes);
-            let inMilliSec = toMillis(timeLastModified);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> lastModifiedTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -90,13 +84,12 @@ namespace File {
     ///
     pub def size(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.size(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let fileSize = size(fileAttributes);
-
-            Ok(fileSize)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                size(fileAttributes)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -129,16 +122,16 @@ namespace File {
     /// Returns the type of the given file `f`.
     ///
     pub def fileType(f: String): Result[String, FileType] \ IO =
-        use Result.flatMap;
-
-        let* isFile = File.isRegularFile(f);
-        let* isDirec = File.isDirectory(f);
-        let* isSymLink = File.isSymbolicLink(f);
-
-        if (isFile)         Ok(FileType.File)
-        else if (isDirec)   Ok(FileType.Directory)
-        else if (isSymLink) Ok(FileType.SymLink)
-        else                Ok(FileType.Other)
+        forM (
+            isFile <- File.isRegularFile(f);
+            isDirec <- File.isDirectory(f);
+            isSymLink <- File.isSymbolicLink(f)
+        ) yield {
+            if (isFile)         FileType.File
+            else if (isDirec)   FileType.Directory
+            else if (isSymLink) FileType.SymLink
+            else                FileType.Other
+        }
 
     ///
     /// Statistical information for a file.
@@ -155,21 +148,20 @@ namespace File {
     /// Returns the statistics of the given file `f`.
     ///
     pub def stat(f: String): Result[String, StatInfo] \ IO =
-        use Result.flatMap;
-
-        let* fileAccessTime = accessTime(f);
-        let* fileCreationTime = creationTime(f);
-        let* fileModificationTime = modificationTime(f);
-        let* fileSize = size(f);
-        let* typeOfFile = fileType(f);
-
-        Ok({
-            accessTime = fileAccessTime,
-            creationTime = fileCreationTime,
-            modificationTime = fileModificationTime,
-            size = fileSize,
-            fileType = typeOfFile
-        })
+        forM (
+            fileAccessTime <- accessTime(f);
+            fileCreationTime <- creationTime(f);
+            fileModificationTime <- modificationTime(f);
+            fileSize <- size(f);
+            typeOfFile <- fileType(f)
+        ) yield
+            {
+                accessTime = fileAccessTime,
+                creationTime = fileCreationTime,
+                modificationTime = fileModificationTime,
+                size = fileSize,
+                fileType = typeOfFile
+            }
 
     ///
     /// Returns `true` if the given file `f` exists.

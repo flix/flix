@@ -39,11 +39,14 @@ jobs:
       max-parallel: 1
       matrix:
         repo:
-          - "flix/museum"
-          - "mlutze/fcwg"
           - "JonathanStarup/Flix-ANSI-Terminal"
-          - "mlutze/flix-json"
+          - "flix/museum"
           - "jaschdoc/flix-parsers"
+          - "magnus-madsen/helloworld"
+          - "mlutze/fcwg"
+          - "mlutze/flix-json"
+          - "mlutze/flixball"
+          - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Java

@@ -1,4 +1,4 @@
-namespace TestGraph {
+mod TestGraph {
 
     ////////////////////////////////////////////////////////////////////////////
     // directed graphs                                                        //

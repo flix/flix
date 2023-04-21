@@ -31,7 +31,7 @@ pub enum MutDeque[a: Type, r: Region] {
     case MutDeque(Region[r], Ref[Array[a, r], r], Ref[Int32, r], Ref[Int32, r])
 }
 
-namespace MutDeque {
+mod MutDeque {
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.
@@ -279,7 +279,7 @@ namespace MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ { Read(r), Write(r) } =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
-        let arr = Array.new(r, c <<< 1);                  // Allocate new array `arr` with double the capacity of `a`.
+        let arr = Array.new(r, Int32.leftShift(c, 1));    // Allocate new array `arr` with double the capacity of `a`.
         copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
         a := arr;                                         // Update references.
         b := computeSize(c, deref f, deref b);
@@ -305,7 +305,7 @@ namespace MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                         // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = Array.new(r, c >>> 1);                  // Allocate new array `arr` with half the capacity of `a`.
+            let arr = Array.new(r, Int32.rightShift(c, 1));   // Allocate new array `arr` with half the capacity of `a`.
             copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
             a := arr;                                         // Update references.
             b := computeSize(c, deref f, deref b);

@@ -257,7 +257,7 @@ object Redundancy {
     }
 
     val defErrors = root.defs.values.flatMap {
-      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.constraints)
+      defn => findRedundantTypeConstraints(defn.spec.declaredScheme.tconstrs)
     }
 
     val classErrors = root.classes.values.flatMap {
@@ -266,7 +266,7 @@ object Redundancy {
     }
 
     val sigErrors = root.sigs.values.flatMap {
-      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.constraints)
+      sig => findRedundantTypeConstraints(sig.spec.declaredScheme.tconstrs)
     }
 
     (instErrors ++ defErrors ++ classErrors ++ sigErrors).toList
@@ -956,13 +956,14 @@ object Redundancy {
         case (acc, term) => acc ++ Used.of(freeVars(term))
       }
 
+    case Body.Functional(outVars, exp, _) =>
+      outVars.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
+        case (acc, varSym) => acc ++ Used.of(varSym)
+      }
+
     case Body.Guard(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Body.Loop(varSyms, exp, _) =>
-      varSyms.foldLeft(visitExp(exp, env0, rc: RecursionContext)) {
-        case (acc, varSym) => acc ++ Used.of(varSym)
-      }
   }
 
   /**

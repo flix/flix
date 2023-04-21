@@ -363,6 +363,7 @@ object Regions {
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
+    case Type.AssocType(_, arg, _, _) => boolTypesOf(arg) // TODO ASSOC-TYPES ???
   }
 
   /**

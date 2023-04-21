@@ -32,10 +32,9 @@ object Indexer {
     val idx4 = traverse(root.instances.values) {
       instances => traverse(instances)(visitInstance)
     }
-    val idx5 = traverse(root.sigs.values)(visitSig)
-    val idx6 = traverse(root.typeAliases.values)(visitTypeAlias)
-    val idx7 = traverse(root.effects.values)(visitEff)
-    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6 ++ idx7
+    val idx5 = traverse(root.typeAliases.values)(visitTypeAlias)
+    val idx6 = traverse(root.effects.values)(visitEff)
+    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
   }
 
   /**
@@ -106,18 +105,28 @@ object Indexer {
   /**
     * Returns a reverse index for the given class `class0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = Index.occurrenceOf(class0)
+  private def visitClass(class0: TypedAst.Class): Index = class0 match {
+    case Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc) =>
+      val idx1 = Index.occurrenceOf(class0)
+      val idx2 = visitTypeParam(tparam)
+      val idx3 = traverse(superClasses)(visitTypeConstraint)
+      val idx4 = traverse(assocs)(visitAssocTypeSig)
+      val idx5 = traverse(signatures)(visitSig)
+      //      val idx6 = laws.map(visitDef) // TODO visit laws?
+      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+  }
 
   /**
     * Returns a reverse index for the given instance `instance0`.
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
-    case Instance(_, _, _, clazz, tpe, tconstrs, defs, _, _) =>
+    case Instance(_, _, _, clazz, tpe, tconstrs, assocs, defs, _, _) =>
       val idx1 = Index.useOf(clazz.sym, clazz.loc)
       val idx2 = visitType(tpe)
       val idx3 = traverse(tconstrs)(visitTypeConstraint)
-      val idx4 = traverse(defs)(visitDef)
-      idx1 ++ idx2 ++ idx3 ++ idx4
+      val idx4 = traverse(assocs)(visitAssocTypeDef)
+      val idx5 = traverse(defs)(visitDef)
+      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
   }
 
   /**
@@ -129,6 +138,27 @@ object Indexer {
       val idx2 = traverse(tparams)(visitTypeParam)
       val idx3 = visitType(tpe)
       idx1 ++ idx2 ++ idx3
+  }
+
+  /**
+    * Returns a reverse index for the given associated type definition `assoc`.
+    */
+  private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
+    case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
+      val idx1 = Index.useOf(sym, loc)
+      val idx2 = visitType(arg)
+      val idx3 = visitType(tpe)
+      idx1 ++ idx2 ++ idx3
+  }
+
+  /**
+    * Returns a reverse index for the given associated type signature `assoc`.
+    */
+  private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
+    case AssocTypeSig(_, _, _, tparam, _, _) =>
+      val idx1 = Index.occurrenceOf(assoc)
+      val idx2 = visitTypeParam(tparam)
+      idx1 ++ idx2
   }
 
   /**
@@ -182,8 +212,8 @@ object Indexer {
     case Expression.OpenAs(_, exp, _, _) => // TODO RESTR-VARS sym
       Index.occurrenceOf(exp0) ++ visitExp(exp)
 
-    case Expression.Use(_, _, _, _) =>
-      Index.occurrenceOf(exp0) // TODO NS-REFACTOR add use of sym
+    case Expression.Use(_, _, exp, _) =>
+      Index.occurrenceOf(exp0) ++ visitExp(exp) // TODO NS-REFACTOR add use of sym
 
     case Expression.Lambda(fparam, exp, _, _) =>
       visitFormalParam(fparam) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -286,7 +316,7 @@ object Indexer {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
 
     case Expression.VectorLit(exps, _, _, _, _) =>
-      visitExps(exps)++ Index.occurrenceOf(exp0)
+      visitExps(exps) ++ Index.occurrenceOf(exp0)
 
     case Expression.VectorLoad(exp1, exp2, _, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
@@ -479,7 +509,7 @@ object Indexer {
   private def visitBody(b0: Predicate.Body): Index = b0 match {
     case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
+    case Body.Functional(_, exp, _) => visitExp(exp)
   }
 
   /**
@@ -522,6 +552,7 @@ object Indexer {
     }
     case Type.Apply(tpe1, tpe2, _) => visitType(tpe1) ++ visitType(tpe2)
     case Type.Alias(Ast.AliasConstructor(sym, loc), args, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ traverse(args)(visitType)
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, _, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc) ++ visitType(arg)
   }
 
   /**

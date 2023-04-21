@@ -122,7 +122,7 @@ pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     law mapCorrespondence: forall(f: a -> b, x: m[a]) with Eq[m[b]] . Functor.map(f, x) == Applicative.ap(Applicative.point(f), x)
 }
 
-namespace Applicative {
+mod Applicative {
 
     ///
     /// Chain two applicative actions, returns the product of their results.

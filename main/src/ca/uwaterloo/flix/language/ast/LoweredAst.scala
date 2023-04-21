@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
 import ca.uwaterloo.flix.language.phase.Monomorph
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.lang.reflect.{Constructor, Field, Method}
 
@@ -32,11 +33,12 @@ object LoweredAst {
                   typeAliases: Map[Symbol.TypeAliasSym, LoweredAst.TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext])
+                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
+                  eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: LoweredAst.TypeParam, superClasses: List[Ast.TypeConstraint], signatures: List[LoweredAst.Sig], laws: List[LoweredAst.Def], loc: SourceLocation)
+  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: LoweredAst.TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[LoweredAst.AssocTypeSig], signatures: List[LoweredAst.Sig], laws: List[LoweredAst.Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], defs: List[LoweredAst.Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[LoweredAst.AssocTypeDef], defs: List[LoweredAst.Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: LoweredAst.Spec, impl: Option[LoweredAst.Impl])
 
@@ -49,6 +51,12 @@ object LoweredAst {
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[LoweredAst.TypeParam], derives: List[Ast.Derivation], cases: Map[Symbol.CaseSym, LoweredAst.Case], tpeDeprecated: Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[LoweredAst.TypeParam], tpe: Type, loc: SourceLocation)
+
+  // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
+  case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypedAst.TypeParam, kind: Kind, loc: SourceLocation)
+
+  // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
+  case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
   case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[LoweredAst.Op], loc: SourceLocation)
 
@@ -179,7 +187,9 @@ object LoweredAst {
 
     case class VectorLength(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Expression {
       def pur: Type = exp.pur
+
       def eff: Type = exp.eff
+
       def tpe: Type = Type.Int32
     }
 
@@ -291,9 +301,9 @@ object LoweredAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[LoweredAst.Pattern], tpe: Type, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
-      case class Guard(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
-      case class Loop(varSyms: List[Symbol.VarSym], exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
+      case class Guard(exp: LoweredAst.Expression, loc: SourceLocation) extends LoweredAst.Predicate.Body
 
     }
 

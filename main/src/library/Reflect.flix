@@ -1,4 +1,4 @@
-namespace Reflect {
+mod Reflect {
 
     ///
     /// Returns a default value for the inferred type.

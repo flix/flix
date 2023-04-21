@@ -1,4 +1,4 @@
-namespace Test/Term/Apply {
+mod Test.Term.Apply {
 
     @test
     def testTermApply01(): #{ R(Int32) } = solve #{
@@ -184,7 +184,7 @@ namespace Test/Term/Apply {
         R(f(x, y)) :- A(x), A(y).
     }
 
-    pub def ho3(f: Int32 -> a): #{A(Int32), P(a) | r} with Boxable[a] = #{
+    pub def ho3(f: Int32 -> a): #{A(Int32), P(a) | r} with Order[a] = #{
         A(1). A(2). A(3).
         P(f(x)) :- A(x).
     }

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint/Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
 
     ///
     /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
@@ -38,28 +38,30 @@ namespace Fixpoint {
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
         case RamStmt.Insert(op) =>
-            use Option.flatMap;
-            let* newOp = simplifyOp(stratum, op);
-            match newOp {
-                // Rewrite join loops that copy one relation into another into a `merge` statement.
-                // search b ∈ B do
-                //   project (b[0], b[1]) into A
-                // end
-                // ==>
-                // merge B into A
-                // If A and B have the same arity.
-                case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
-                    use Fixpoint/Ram.arityOf;
-                    let isCopy =
-                        List.map(t -> match t {
-                            case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
-                            case _ => -1
-                        }, tuple) == List.range(0, arityOf(relB));
-                    if (isCopy)
-                        Some(RamStmt.Merge(relB, relA))
-                    else
-                        Some(RamStmt.Insert(newOp))
-                case _ => Some(RamStmt.Insert(newOp))
+            forM (
+                newOp <- simplifyOp(stratum, op)
+            ) yield {
+                match newOp {
+                    // Rewrite join loops that copy one relation into another into a `merge` statement.
+                    // search b ∈ B do
+                    //   project (b[0], b[1]) into A
+                    // end
+                    // ==>
+                    // merge B into A
+                    // If A and B have the same arity.
+                    case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
+                        use Fixpoint.Ram.arityOf;
+                        let isCopy =
+                            List.map(t -> match t {
+                                case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
+                                case _ => -1
+                            }, tuple) == List.range(0, arityOf(relB));
+                        if (isCopy)
+                            RamStmt.Merge(relB, relA)
+                        else
+                            RamStmt.Insert(newOp)
+                    case _ => RamStmt.Insert(newOp)
+                }
             }
         case RamStmt.Merge(_, _) => Some(stmt)
         case RamStmt.Assign(_, _) => Some(stmt)
@@ -99,28 +101,36 @@ namespace Fixpoint {
             else
                 Some(RelOp.If(newTest, then))
         case RelOp.Search(rowVar, ramSym, body) =>
-            use Option.flatMap;
-            let* newBody = simplifyOp(stratum, body);
-            match ramSym {
+            let f = nb -> match ramSym {
                 case RamSym.Delta(_) =>
                     if (Set.memberOf(ramSym, stratum))
-                        Some(RelOp.Search(rowVar, ramSym, newBody))
+                        Some(RelOp.Search(rowVar, ramSym, nb))
                     else
                         None
-                case _ => Some(RelOp.Search(rowVar, ramSym, newBody))
-            }
+                case _ => Some(RelOp.Search(rowVar, ramSym, nb))
+            };
+            forM (
+                newBody <- simplifyOp(stratum, body);
+                res <- f(newBody)
+            ) yield res
         case RelOp.Query(rowVar, ramSym, query, body) =>
-            use Option.flatMap;
-            let* newBody = simplifyOp(stratum, body);
-            match ramSym {
+            let f = nb -> match ramSym {
                 case RamSym.Delta(_) =>
                     if (Set.memberOf(ramSym, stratum))
-                        Some(RelOp.Query(rowVar, ramSym, query, newBody))
+                        Some(RelOp.Query(rowVar, ramSym, query, nb))
                     else
                         None
-                case _ => Some(RelOp.Query(rowVar, ramSym, query, newBody))
-            }
-        case RelOp.Project(_) => Some(op)
+                case _ => Some(RelOp.Query(rowVar, ramSym, query, nb))
+            };
+            forM (
+                newBody <- simplifyOp(stratum, body);
+                res <- f(newBody)
+            ) yield res
+        case RelOp.Functional(rowVar, f, terms, body) =>
+            forM(
+                newBody <- simplifyOp(stratum, body)
+            ) yield RelOp.Functional(rowVar, f, terms, newBody)
+        case RelOp.Project(_)    => Some(op)
     }
 
     ///

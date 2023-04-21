@@ -1,4 +1,4 @@
-namespace TestWitherable {
+mod TestWitherable {
 
     use Witherable.{wither, sequenceWither};
 

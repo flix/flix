@@ -22,7 +22,7 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-namespace Int32 {
+mod Int32 {
 
     ///
     /// Returns the number of bits used to represent an `Int32`.
@@ -32,7 +32,7 @@ namespace Int32 {
     ///
     /// Returns the minimum number representable by an `Int32`.
     ///
-    pub def minValue(): Int32 = 1 <<< (size() - 1)
+    pub def minValue(): Int32 = leftShift(1, size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int32`.
@@ -112,9 +112,9 @@ namespace Int32 {
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int32): Int32 =
         if (x < 0 and rem(dist.dist, size()) != 0)
-            ((x >>> 1) &&& maxValue()) >>> (dist.dist - 1)
+            rightShift(rightShift(x, 1) &&& maxValue(), dist.dist - 1)
         else
-            x >>> dist.dist
+            rightShift(x, dist.dist)
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -131,14 +131,14 @@ namespace Int32 {
     /// binary representation of `x` right by `dist` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int32): Int32 =
-        (logicalRightShift(dist = dist.dist, x)) ||| (x <<< -dist.dist)
+        (logicalRightShift(dist = dist.dist, x)) ||| leftShift(x, -dist.dist)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `dist` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int32): Int32 =
-        (logicalRightShift(dist = -dist.dist, x)) ||| (x <<< dist.dist)
+        (logicalRightShift(dist = -dist.dist, x)) ||| leftShift(x, dist.dist)
 
     ///
     /// Returns the value obtained by reversing the bits in the
@@ -214,7 +214,7 @@ namespace Int32 {
     /// Returns 0 if `position` is outside the range 0-31 inclusive.
     ///
     def bitPositionToInt32(position: Int32): Int32 =
-        if (position < 0 or position > size() - 1) 0 else 1 <<< position
+        if (position < 0 or position > size() - 1) 0 else leftShift(1, position)
 
     ///
     /// Returns the number of zero bits preceding the
@@ -238,28 +238,28 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
-        if ((x >>> pos.pos) `rem` 2 == 0) 0 else 1
+        if (rightShift(x, pos.pos) `rem` 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = x ||| (1 <<< pos.pos)
+    pub def setBit(pos: {pos = Int32}, x: Int32): Int32 = x ||| leftShift(1, pos.pos)
 
     ///
     /// Returns `x` with the bit at position `pos` cleared (to 0).
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = x &&& ~~~(1 <<< pos.pos)
+    pub def clearBit(pos: {pos = Int32}, x: Int32): Int32 = x &&& ~~~leftShift(1, pos.pos)
 
     ///
     /// Returns `x` with the bit at position `pos` flipped.
     /// Considers the 5 rightmost bits of `pos` (`pos` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
-    pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = x ^^^ (1 <<< pos.pos)
+    pub def flipBit(pos: {pos = Int32}, x: Int32): Int32 = x ^^^ leftShift(1, pos.pos)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -271,6 +271,17 @@ namespace Int32 {
         } else {
             highestOneBitPosition(x)
         }
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: Int32, y: Int32): Int32 = $INT32_SHL$(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: Int32, y: Int32): Int32 = $INT32_SHR$(x, y)
+
 
     ///
     /// Returns the factorial of `x`.

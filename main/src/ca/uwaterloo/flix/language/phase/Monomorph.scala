@@ -22,8 +22,10 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.ReificationError
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -63,11 +65,29 @@ object Monomorph {
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
-  private case class StrictSubstitution(s: Substitution)(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
     /**
       * Returns `true` if this substitution is empty.
       */
     def isEmpty: Boolean = s.isEmpty
+
+    private def default(tpe0: Type): Type = tpe0.kind match {
+      case Kind.Bool =>
+        // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
+        // TODO: In the future we need to decide what should actually happen if such variables occur.
+        // TODO: In particular, it seems there are two cases.
+        // TODO: A. Variables that occur inside the specialized types (those we can erase?)
+        // TODO: B. Variables that occur inside an expression but nowhere else really.
+        if (flix.options.xstrictmono)
+          throw UnexpectedNonConstBool(tpe0, tpe0.loc)
+        else
+          Type.True
+      case Kind.Effect => Type.Empty
+      case Kind.RecordRow => Type.RecordRowEmpty
+      case Kind.SchemaRow => Type.SchemaRowEmpty
+      case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+      case _ => Type.Unit
+    }
 
     /**
       * Applies `this` substitution to the given type `tpe`.
@@ -75,35 +95,57 @@ object Monomorph {
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
     def apply(tpe0: Type): Type = {
-      val t = s(tpe0)
-
-      t.map {
-        case Type.Var(sym, loc) =>
-          sym.kind match {
-            case Kind.Bool =>
-              // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-              // TODO: In the future we need to decide what should actually happen if such variables occur.
-              // TODO: In particular, it seems there are two cases.
-              // TODO: A. Variables that occur inside the specialized types (those we can erase?)
-              // TODO: B. Variables that occur inside an expression but nowhere else really.
-              if (flix.options.xstrictmono)
-                throw UnexpectedNonConstBool(tpe0, loc)
-              else
-                Type.True
-            case Kind.Effect => Type.Empty
-            case Kind.RecordRow => Type.RecordRowEmpty
-            case Kind.SchemaRow => Type.SchemaRowEmpty
-            case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
-            case _ => Type.Unit
+      // NB: The order of cases has been determined by code coverage analysis.
+      def visit(t: Type): Type =
+        t match {
+          // When a substitution is performed, eliminate variables from the result.
+          case x: Type.Var => s.m.get(x.sym) match {
+            case Some(tpe) => tpe.map(default)
+            case None => default(t)
           }
-      }
+          case Type.Cst(tc, _) => t
+          case Type.Apply(t1, t2, loc) =>
+            val y = visit(t2)
+            visit(t1) match {
+              // Simplify boolean equations.
+              case Type.Cst(TypeConstructor.Not, _) => Type.mkNot(y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) => Type.mkAnd(x, y, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) => Type.mkOr(x, y, loc)
+
+              // Simplify set expressions
+              case Type.Cst(TypeConstructor.Complement, _) => SetUnification.mkComplement(y)
+              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => SetUnification.mkIntersection(x, y)
+              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => SetUnification.mkUnion(x, y)
+
+              case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
+              case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
+
+              // Else just apply
+              case x => Type.Apply(x, y, loc)
+            }
+          case Type.Alias(sym, args0, tpe0, loc) =>
+            val args = args0.map(visit)
+            val tpe = visit(tpe0)
+            Type.Alias(sym, args, tpe, loc)
+
+          // Perform reduction on associated types.
+          case Type.AssocType(cst, arg0, _, loc) =>
+            val arg = visit(arg0)
+            EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+              case Ok(t) => t
+              case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
+            }
+        }
+
+      visit(tpe0)
     }
 
     /**
       * Adds the given mapping to the substitution.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
-      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe))
+      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
     }
 
     /**
@@ -204,7 +246,8 @@ object Monomorph {
         val base = Type.mkUncurriedArrowWithEffect(fparams.map(_.tpe), body.pur, Type.freshVar(Kind.Effect, body.loc.asSynthetic), body.tpe, sym.loc.asSynthetic) // TODO use eff
         val tvars = base.typeVars.map(_.sym).toList
         val tconstrs = Nil // type constraints are not used after monomorph
-        val scheme = Scheme(tvars, tconstrs, base)
+        val econstrs = Nil // equality constraints are not used after monomorph
+        val scheme = Scheme(tvars, tconstrs, econstrs, base)
 
         // Reassemble the definition.
         specializedDefns.put(sym, defn.copy(spec = defn.spec.copy(fparams = fparams), impl = defn.impl.copy(exp = body, inferredScheme = scheme)))
@@ -227,7 +270,7 @@ object Monomorph {
 
         // Reassemble the definition.
         // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, List.empty, subst(defn.impl.inferredScheme.base))))
+        val specializedDefn = defn.copy(sym = freshSym, spec = defn.spec.copy(fparams = fparams, tparams = Nil), impl = LoweredAst.Impl(specializedExp, Scheme(Nil, Nil, Nil, subst(defn.impl.inferredScheme.base))))
 
         // Save the specialized function.
         specializedDefns.put(freshSym, specializedDefn)
@@ -371,7 +414,7 @@ object Monomorph {
               // Case 1: types don't unify; just continue
               case Result.Err(_) => None
               // Case 2: types unify; use the substitution in the body
-              case Result.Ok(caseSubst) =>
+              case Result.Ok((caseSubst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
                 // visit the base expression under the initial environment
                 val e = visitExp(exp, env0, subst)
                 // Generate a fresh symbol for the let-bound variable.
@@ -379,10 +422,10 @@ object Monomorph {
                 val env1 = env0 + (sym -> freshSym)
                 val subst1 = caseSubst @@ subst.nonStrict
                 // visit the body under the extended environment
-                val body = visitExp(body0, env1, StrictSubstitution(subst1))
+                val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
                 val pur = Type.mkAnd(exp.pur, body0.pur, loc.asSynthetic)
                 val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
-                Some(Expression.Let(freshSym, Modifiers.Empty, e, body, subst1(tpe), pur, eff, loc))
+                Some(Expression.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), pur, eff, loc))
             }
         }.next() // We are safe to get next() because the last case will always match
 
@@ -618,7 +661,10 @@ object Monomorph {
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type, def2def: Def2Def, defQueue: DefQueue)(implicit root: Root, flix: Flix): Symbol.DefnSym = {
+    // Perform erasure on the type
+    val tpe = eraseType(tpe0)
+
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -628,7 +674,7 @@ object Monomorph {
       inst =>
         inst.defs.find {
           defn =>
-            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty)
+            defn.sym.name == sig.sym.name && Unification.unifiesWith(defn.spec.declaredScheme.base, tpe, RigidityEnv.empty, root.eqEnv)
         }
     }
 
@@ -749,8 +795,8 @@ object Monomorph {
     */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
-      case Result.Ok(subst) =>
-        StrictSubstitution(subst)
+      case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
+        StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }
@@ -761,18 +807,19 @@ object Monomorph {
     *
     * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
     */
-  private def eraseType(tpe: Type)(implicit flix: Flix): Type = tpe match {
+  private def eraseType(tpe: Type)(implicit root: Root, flix: Flix): Type = tpe match {
     case Type.Var(sym, loc) =>
       sym.kind match {
         case Kind.CaseSet(enumSym) =>
           Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case _ =>
+        case Kind.Bool =>
           if (flix.options.xstrictmono)
             throw UnexpectedNonConstBool(tpe, loc)
           else {
             // TODO: We should return Type.ErasedBool or something.
             Type.True
           }
+        case _ => tpe
       }
 
     case Type.Cst(_, _) => tpe
@@ -787,6 +834,9 @@ object Monomorph {
       val t = eraseType(tpe)
       Type.Alias(sym, as, t, loc)
 
+    case Type.AssocType(cst, arg, kind, loc) =>
+      val a = eraseType(arg)
+      EqualityEnvironment.reduceAssocTypeStep(cst, a, root.eqEnv).get
   }
 
 }

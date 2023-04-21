@@ -1,4 +1,4 @@
-namespace Test/Exp/Fixpoint/Constraint {
+mod Test.Exp.Fixpoint.Constraint {
 
     @test
     def testUnitConstraint01(): #{A(Unit), R(Unit)} = #{

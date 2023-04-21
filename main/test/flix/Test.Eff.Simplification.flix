@@ -1,4 +1,4 @@
-namespace Test/Eff/Simplification {
+mod Test.Eff.Simplification {
     @test
     def testPureAndPure(): Unit & Pure and Pure \ {} = pure()
 

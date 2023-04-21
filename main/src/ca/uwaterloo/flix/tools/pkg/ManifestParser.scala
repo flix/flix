@@ -36,7 +36,7 @@ object ManifestParser {
     val parser = try {
       Toml.parse(p)
     } catch {
-      case _: IOException => return Err(ManifestError.IOError(p))
+      case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
     createManifest(parser, p)
   }
@@ -53,7 +53,7 @@ object ManifestParser {
     val parser = try {
       Toml.parse(stringReader)
     } catch {
-      case _: IOException => return Err(ManifestError.IOError(p))
+      case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
     createManifest(parser, p)
   }
@@ -72,6 +72,8 @@ object ManifestParser {
     }
 
     for (
+      _ <- checkKeys(parser, p);
+
       name <- getRequiredStringProperty("package.name", parser, p);
 
       description <- getRequiredStringProperty("package.description", parser, p);
@@ -102,6 +104,26 @@ object ManifestParser {
     ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList)
   }
 
+  private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
+    val keySet: Set[String] = parser.keySet().asScala.toSet
+    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies")
+    val illegalKeys = keySet.diff(allowedKeys)
+
+    if(illegalKeys.nonEmpty) {
+      return Err(ManifestError.IllegalTableFound(p, illegalKeys.head))
+    }
+
+    val dottedKeys = parser.dottedKeySet().asScala.toSet
+    val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.license")
+    val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
+    if (illegalPackageKeys.nonEmpty) {
+      return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
+    }
+
+    ().toOk
+  }
+
   /**
     * Parses a String which should be at `propString`
     * and returns the String or an error if the result
@@ -111,12 +133,12 @@ object ManifestParser {
     try {
       val prop = parser.getString(propString)
       if (prop == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString))
+        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
       }
       Ok(prop)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
     }
   }
 
@@ -130,7 +152,7 @@ object ManifestParser {
       Ok(Option(prop))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
     }
   }
 
@@ -143,12 +165,12 @@ object ManifestParser {
     try {
       val array = parser.getArray(propString)
       if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString))
+        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
       }
       Ok(array)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array"))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
     }
   }
 
@@ -163,7 +185,7 @@ object ManifestParser {
       Ok(Option(table))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table"))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table", e.getMessage))
     }
   }
 
@@ -176,11 +198,11 @@ object ManifestParser {
     try {
       s.split('.') match {
         case Array(major, minor, patch) =>
-          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
+          Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None))
         case _ => Err(ManifestError.FlixVersionHasWrongLength(p, s))
       }
     } catch {
-      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s))
+      case e: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s, e.getMessage))
     }
   }
 
@@ -281,33 +303,34 @@ object ManifestParser {
     try {
       toFlixVer(depVer.asInstanceOf[String], p)
     } catch {
-      case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, depVer))
+      case e: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, e.getMessage))
     }
   }
 
   /**
     * Converts `depVer` to a String and then to a semantic version
     * and returns an error if `depVer` is not of the correct format.
-    * Allowed formats are "x.x", "x.x.x" and "x.x.x-x"
+    * Allowed formats are "x.x", "x.x.x", "x.x.x.x" and "x.x.x-x"
     */
   def getMavenVersion(depVer: AnyRef, p: Path): Result[SemVer, ManifestError] = {
     try {
       val version = depVer.asInstanceOf[String]
       version.split('.') match {
-        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None))
+        case Array(major, minor) => Ok(SemVer(major.toInt, minor.toInt, None, None, None))
         case Array(major, minor, patch) =>
           patch.split('-') match {
-            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None))
-            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build)))
+            case Array(patch) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None))
+            case Array(patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, Some(build)))
           }
+        case Array(major, minor, patch, build) => Ok(SemVer(major.toInt, minor.toInt, Some(patch.toInt), Some(build.toInt), None))
         case _ => Err(ManifestError.MavenVersionHasWrongLength(p, version))
       }
     } catch {
-      case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, depVer))
-      case _: NumberFormatException =>
-        Err(ManifestError.VersionNumberWrong(p, depVer.asInstanceOf[String]))
+      case e: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, e.getMessage))
+      case e: NumberFormatException =>
+        Err(ManifestError.VersionNumberWrong(p, depVer.asInstanceOf[String], e.getMessage))
     }
   }
 
@@ -365,8 +388,8 @@ object ManifestParser {
         val s = array.getString(i)
         stringSet.add(s)
       } catch {
-        case _: TomlInvalidTypeException =>
-          return Err(ManifestError.AuthorNameError(p))
+        case e: TomlInvalidTypeException =>
+          return Err(ManifestError.AuthorNameError(p, e.getMessage))
       }
     }
     Ok(stringSet.toList)

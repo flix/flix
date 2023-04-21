@@ -1,4 +1,4 @@
-namespace Test/Exp/Hole {
+mod Test.Exp.Hole {
 
     @test
     def testHole01(): Int32 = if (true) 42 else ?hole

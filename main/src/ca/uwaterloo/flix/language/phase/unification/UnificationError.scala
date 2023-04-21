@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type}
 
 /**
   * A common super-type for unification errors.
@@ -111,9 +111,25 @@ object UnificationError {
   case class MultipleMatchingInstances(tconstr: Ast.TypeConstraint) extends UnificationError
 
   /**
+    * A unification error resulting from an equality constraint that is not supported by the context.
+    *
+    * @param t1 the first type
+    * @param t2 the second type
+    */
+  case class UnsupportedEquality(t1: Type, t2: Type) extends UnificationError
+
+  /**
+    * A unification error resulting from an associated type expression that cannot be reduced.
+    *
+    * @param sym the associated type symbol
+    * @param t   the type
+    */
+  case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
+
+  /**
     * A unification error to indicate that some hack was not applicable
     */
-    // TODO RESTR-VARS
+  // TODO RESTR-VARS
   case class HackError(message: String) extends UnificationError
 
 }

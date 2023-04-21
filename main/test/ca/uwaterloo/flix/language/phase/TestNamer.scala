@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestNamer extends FunSuite with TestUtils {
+class TestNamer extends AnyFunSuite with TestUtils {
 
   test("DuplicateLowerName.01") {
     val input =
@@ -69,11 +69,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.05") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
+         |mod A {
          |  def f(): Int = 21
          |}
        """.stripMargin
@@ -84,13 +84,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.06") {
     val input =
       s"""
-         |namespace A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
-         |  namespace B {
-         |    namespace C {
+         |mod A {
+         |  mod B {
+         |    mod C {
          |      def f(): Int = 21
          |    }
          |  }
@@ -132,7 +132,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  pub def f(x: a): Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  pub def f(): Int = 21
          |}
        """.stripMargin
@@ -143,12 +143,12 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.10") {
     val input =
       s"""
-         |namespace A/B/C {
+         |mod A.B.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
-         |  namespace B {
+         |mod A {
+         |  mod B {
          |    class C[a] {
          |      pub def f(x: a): Int
          |    }
@@ -162,11 +162,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.11") {
     val input =
       s"""
-         |namespace A/C {
+         |mod A.C {
          |  def f(): Int = 42
          |}
          |
-         |namespace A {
+         |mod A {
          |  class C[a] {
          |    pub def f(x: a): Int
          |  }
@@ -179,7 +179,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateLowerName.12") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    def f(): Int32 = 123
         |}
         |
@@ -227,11 +227,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.03") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
        """.stripMargin
@@ -267,11 +267,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.06") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -315,13 +315,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.09") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case A
          |  }
          |}
          |
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case B
          |  }
@@ -355,11 +355,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.12") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias USD = Int
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -397,13 +397,13 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.15") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum USD {
          |    case A
          |  }
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -435,11 +435,11 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUpperName.18") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
          |
-         |namespace A {
+         |mod A {
          |  class USD[a]
          |}
        """.stripMargin
@@ -503,7 +503,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateUpperName.24") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.sql.Statement
         |    enum Statement
         |}
@@ -516,7 +516,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateUpperName.25") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    use B.Statement
         |    import java.sql.Statement
         |}
@@ -530,7 +530,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |enum Statement
-        |namespace A {
+        |mod A {
         |    use B.Statement
         |}
         |""".stripMargin
@@ -543,7 +543,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       """
         |enum Statement
-        |namespace A {
+        |mod A {
         |    import B.Statement
         |}
         |""".stripMargin
@@ -615,7 +615,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateImport.03") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.lang.StringBuffer
         |    import java.lang.StringBuffer
         |}
@@ -628,7 +628,7 @@ class TestNamer extends FunSuite with TestUtils {
   ignore("DuplicateImport.04") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    import java.lang.{StringBuffer => StringThingy}
         |    import java.lang.{StringBuilder => StringThingy}
         |}

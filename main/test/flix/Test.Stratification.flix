@@ -1,6 +1,6 @@
-namespace Test/Stratification {
+mod Test.Stratification {
 
-    namespace Test/Stratification/Not {
+    mod Test.Stratification.Not {
 
         //
         //
@@ -321,7 +321,7 @@ namespace Test/Stratification {
             > 0
     }
 
-    namespace Test/Stratification/Fix {
+    mod Test.Stratification.Fix {
 
         //
         //

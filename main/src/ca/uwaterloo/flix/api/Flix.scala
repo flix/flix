@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -37,7 +37,7 @@ object Flix {
   /**
     * The reserved Flix delimiter.
     */
-  val Delimiter: String = "%"
+  val Delimiter: String = "$"
 }
 
 /**
@@ -62,7 +62,7 @@ class Flix {
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -87,8 +87,6 @@ class Flix {
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
     "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
-    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
-    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -112,10 +110,6 @@ class Flix {
     // String
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
 
-    // Boxable
-    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
-    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
-
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
 
@@ -137,6 +131,8 @@ class Flix {
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
+    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
@@ -247,6 +243,7 @@ class Flix {
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
+    "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
   )
 
   /**

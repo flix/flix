@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
@@ -12,7 +12,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
-class TestBootstrap extends FunSuite {
+class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 
@@ -35,7 +35,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
   }
 
   test("build-jar") {
@@ -43,11 +43,11 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val jarPath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
     assert(Files.exists(jarPath))
     assert(jarPath.getFileName.toString.startsWith(ProjectPrefix))
   }
@@ -57,13 +57,13 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+    for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
       assert(formatted.equals("2014-06-27 00:00:00"))
@@ -75,18 +75,18 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val b = Bootstrap.bootstrap(p)(System.out).get
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
-    def hash1 = calcHash(packagePath)
+    def hash1 = calcHash(jarPath)
 
-    b.build(DefaultOptions)
+    b.build()
     b.buildJar(DefaultOptions)
 
-    def hash2 = calcHash(packagePath)
+    def hash2 = calcHash(jarPath)
 
     assert(
       hash1.equals(hash2),
@@ -101,7 +101,7 @@ class TestBootstrap extends FunSuite {
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     assert(Files.exists(packagePath))
     assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
   }
@@ -114,7 +114,7 @@ class TestBootstrap extends FunSuite {
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
@@ -127,7 +127,7 @@ class TestBootstrap extends FunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
     val b = Bootstrap.bootstrap(p)(System.out).get
     b.buildPkg(DefaultOptions)

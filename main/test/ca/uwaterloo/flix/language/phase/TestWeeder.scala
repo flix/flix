@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestWeeder extends FunSuite with TestUtils {
+class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateTag.01") {
     val input =
@@ -860,5 +860,92 @@ class TestWeeder extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalUseAlias](result)
+  }
+
+  test("NonUnaryAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a, b]: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.02") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.03") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    type T[Int32, b] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("IllegalEqualityConstraint.01") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("IllegalEqualityConstraint.02") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Elem[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("InvalidRegularExpression.01") {
+    val input =
+      """
+        |def f(): Regex = regex"[a-*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.02") {
+    val input =
+      """
+        |def f(): Regex = regex"a{}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.03") {
+    val input =
+      """
+        |def f(): Regex = regex"a{-1}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.04") {
+    val input =
+      """
+        |def f(): Regex = regex"\\p{InvalidGroupName}*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
   }
 }

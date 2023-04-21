@@ -1,4 +1,4 @@
-namespace Test/Exp/Fixpoint/Compose {
+mod Test.Exp.Fixpoint.Compose {
 
     @test
     def testFixpointCompose01(): #{ A(Int32, Int32, Int32) } =

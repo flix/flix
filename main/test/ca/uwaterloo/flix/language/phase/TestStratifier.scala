@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestStratifier extends FunSuite with TestUtils {
+class TestStratifier extends AnyFunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
 
@@ -84,7 +84,7 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.05") {
     val input =
       """
-        |pub def f(): #{A(t), B(t), C(t), X(t)} with Boxable[t] = #{
+        |pub def f(): #{A(t), B(t), C(t), X(t)} with Order[t] = #{
         |  C(c) :- X(c), not A(c).
         |  A(c) :- B(c), C(c).
         |}
@@ -96,7 +96,7 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.06") {
     val input =
       """
-        |pub def f(): #{A(t), B(t), X(t)} with Boxable[t] = #{
+        |pub def f(): #{A(t), B(t), X(t)} with Order[t] = #{
         |  A(c) :- X(c), not A(c).
         |  B(c) :- X(c), not B(c).
         |}
@@ -152,7 +152,7 @@ class TestStratifier extends FunSuite with TestUtils {
         |pub def f(): Bool =
         |    fHelper(12)
         |
-        |def fHelper(v: v): Bool with Boxable[v] =
+        |def fHelper(v: v): Bool with Order[v] =
         |    let p1 = #{
         |        B302(Some(v)).
         |        A302(x) :- B302(x).

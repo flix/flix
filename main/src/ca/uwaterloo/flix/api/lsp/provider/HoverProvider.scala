@@ -69,6 +69,7 @@ object HoverProvider {
     case Entity.Effect(_) => mkNotFound(uri, pos)
     case Entity.Enum(_) => mkNotFound(uri, pos)
     case Entity.TypeAlias(_) => mkNotFound(uri, pos)
+    case Entity.AssocType(_) => mkNotFound(uri, pos)
     case Entity.Field(_) => mkNotFound(uri, pos)
     case Entity.Op(_) => mkNotFound(uri, pos)
     case Entity.Sig(_) => mkNotFound(uri, pos)

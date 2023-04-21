@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
     ///
     /// Represents the denotation of a predicate symbol.
@@ -58,7 +58,7 @@ namespace Fixpoint/Ast {
     /// Boxes the lattice components inside the given denotation `d`.
     ///
     @Internal
-    pub def box(d: Denotation[t]): Denotation[Boxed] with Boxable[t] = match d {
+    pub def box(d: Denotation[t]): Denotation[Boxed] with Order[t] = match d {
         case Denotation.Relational => Denotation.Relational
         case Denotation.Latticenal(bot, leq, lub, glb) =>
             Denotation.Latticenal(

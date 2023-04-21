@@ -38,14 +38,13 @@ object Resolver {
   /**
     * Symbols of classes that are derivable.
     */
-  private val BoxableSym = new Symbol.ClassSym(Nil, "Boxable", SourceLocation.Unknown)
   private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
   private val OrderSym = new Symbol.ClassSym(Nil, "Order", SourceLocation.Unknown)
   private val ToStringSym = new Symbol.ClassSym(Nil, "ToString", SourceLocation.Unknown)
   private val HashSym = new Symbol.ClassSym(Nil, "Hash", SourceLocation.Unknown)
   private val SendableSym = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
-  val DerivableSyms: List[Symbol.ClassSym] = List(BoxableSym, EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
+  val DerivableSyms: List[Symbol.ClassSym] = List(EqSym, OrderSym, ToStringSym, HashSym, SendableSym)
 
   /**
     * Java classes for primitives and Object
@@ -145,6 +144,8 @@ object Resolver {
     case ResolvedAst.Declaration.RestrictableCase(sym, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
     case ResolvedAst.Declaration.Op(sym, spec) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
     case ResolvedAst.Declaration.Sig(sym, spec, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", spec.loc)
+    case ResolvedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $sym", sym.loc)
+    case ResolvedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => throw InternalCompilerException(s"Unexpected declaration: $ident", ident.loc)
   }
 
   /**
@@ -252,6 +253,7 @@ object Resolver {
     case _: UnkindedType.Var => Nil
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
+    case _: UnkindedType.UnappliedAssocType => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -263,6 +265,7 @@ object Resolver {
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.RestrictableEnum => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
+    case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
   }
 
   /**
@@ -343,9 +346,9 @@ object Resolver {
             case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
           }
       }
-    case clazz@NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) =>
+    case clazz@NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
       resolveClass(clazz, env0, taenv, ns0, root)
-    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) =>
+    case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
       resolveInstance(inst, env0, taenv, ns0, root)
     case defn@NamedAst.Declaration.Def(sym, spec, exp) =>
       resolveDef(defn, None, env0, taenv, ns0, root)
@@ -361,6 +364,8 @@ object Resolver {
     case NamedAst.Declaration.Sig(sym, spec, exp) => throw InternalCompilerException("unexpected sig", sym.loc)
     case NamedAst.Declaration.Case(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => throw InternalCompilerException("unexpected case", sym.loc)
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", ident.loc)
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => throw InternalCompilerException("unexpected associated type signature", sym.loc)
   }
 
   /**
@@ -424,20 +429,21 @@ object Resolver {
     * Resolves all the classes in the given root.
     */
   def resolveClass(c0: NamedAst.Declaration.Class, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Class, ResolutionError] = c0 match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, signatures, laws0, loc) =>
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, signatures, laws0, loc) =>
       val tparamVal = Params.resolveTparam(tparam0, env0, ns0, root)
       flatMapN(tparamVal) {
         case tparam =>
           val env = env0 ++ mkTypeParamEnv(List(tparam))
-          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           // ignore the parameter of the super class; we don't use it
           val superClassesVal = traverse(superClasses0)(tconstr => resolveSuperClass(tconstr, env, taenv, ns0, root))
           val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), UnkindedType.Var(tparam.sym, tparam.sym.loc), sym.loc)
+          val assocsVal = traverse(assocs0)(resolveAssocTypeSig(_, env, taenv, ns0, root))
+          val sigsListVal = traverse(signatures)(resolveSig(_, sym, tparam.sym, env, taenv, ns0, root))
           val lawsVal = traverse(laws0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-          mapN(sigsListVal, superClassesVal, lawsVal) {
-            case (sigsList, superClasses, laws) =>
+          mapN(superClassesVal, assocsVal, sigsListVal, lawsVal) {
+            case (superClasses, assocs, sigsList, laws) =>
               val sigs = sigsList.map(sig => (sig.sym, sig)).toMap
-              ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc)
+              ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
           }
       }
   }
@@ -446,7 +452,7 @@ object Resolver {
     * Performs name resolution on the given instance `i0` in the given namespace `ns0`.
     */
   def resolveInstance(i0: NamedAst.Declaration.Instance, env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.Instance, ResolutionError] = i0 match {
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, defs0, ns, loc) =>
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz0, tparams0, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       // TODO NS-REFACTOR pull tparams all the way through phases
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
@@ -457,12 +463,13 @@ object Resolver {
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
           flatMapN(clazzVal, tpeVal, tconstrsVal) {
             case (clazz, tpe, tconstrs) =>
+              val assocsVal = traverse(assocs0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
-              mapN(defsVal) {
-                case defs =>
+              mapN(defsVal, assocsVal) {
+                case (defs, assocs) =>
                   val classUse = Ast.ClassSymUse(clazz.sym, clazz0.loc)
-                  ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, defs, Name.mkUnlocatedNName(ns), loc)
+                  ResolvedAst.Declaration.Instance(doc, ann, mod, classUse, tpe, tconstrs, assocs, defs, Name.mkUnlocatedNName(ns), loc)
               }
           }
       }
@@ -508,7 +515,7 @@ object Resolver {
     * Performs name resolution on the given spec `s0` in the given namespace `ns0`.
     */
   def resolveSpec(s0: NamedAst.Spec, tconstr: Option[ResolvedAst.TypeConstraint], env0: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Spec, ResolutionError] = s0 match {
-    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, loc) =>
+    case NamedAst.Spec(doc, ann, mod, tparams0, fparams0, tpe0, purAndEff0, tconstrs0, econstrs0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns0, root)
       flatMapN(tparamsVal) {
         case tparams =>
@@ -520,11 +527,12 @@ object Resolver {
               val tpeVal = resolveType(tpe0, Wildness.AllowWild, env, taenv, ns0, root)
               val purAndEffVal = resolvePurityAndEffect(purAndEff0, Wildness.AllowWild, env, taenv, ns0, root)
               val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
+              val econstrsVal = traverse(econstrs0)(resolveEqualityConstraint(_, env, taenv, ns0, root))
 
-              mapN(tpeVal, purAndEffVal, tconstrsVal) {
-                case (tpe, purAndEff, tconstrs) =>
+              mapN(tpeVal, purAndEffVal, tconstrsVal, econstrsVal) {
+                case (tpe, purAndEff, tconstrs, econstrs) =>
                   // add the inherited type constraint to the the list
-                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, loc)
+                  ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstr.toList ::: tconstrs, econstrs, loc)
               }
           }
       }
@@ -613,14 +621,74 @@ object Resolver {
   }
 
   /**
+    * Performs name resolution on the given associated type signature `s0` in the given namespace `ns0`.
+    */
+  private def resolveAssocTypeSig(s0: NamedAst.Declaration.AssocTypeSig, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeSig, ResolutionError] = s0 match {
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind0, loc) =>
+      val tparamVal = Params.resolveTparam(tparam0, env, ns0, root)
+      val kindVal = resolveKind(kind0, env, ns0, root)
+      mapN(tparamVal, kindVal) {
+        case (tparam, kind) => ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given associated type definition `d0` in the given namespace `ns0`.
+    */
+  private def resolveAssocTypeDef(d0: NamedAst.Declaration.AssocTypeDef, clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.AssocTypeDef, ResolutionError] = d0 match {
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, arg0, tpe0, loc) =>
+
+      // TODO ASSOC-TYPES roll into visitType check
+      def checkAssocTypes(t: UnkindedType): Validation[Unit, ResolutionError] = t match {
+        case Var(sym, loc) => ().toSuccess
+        case Cst(tc, loc) => ().toSuccess
+        case Enum(sym, loc) => ().toSuccess
+        case RestrictableEnum(sym, loc) => ().toSuccess
+        case Apply(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case Arrow(UnkindedType.PurityAndEffect(pur, eff), arity, loc) => traverseX(pur.toList ::: eff.getOrElse(Nil))(checkAssocTypes)
+        case ReadWrite(tpe, loc) => checkAssocTypes(tpe)
+        case CaseSet(cases, loc) => ().toSuccess
+        case CaseComplement(tpe, loc) => checkAssocTypes(tpe)
+        case CaseUnion(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case CaseIntersection(tpe1, tpe2, loc) => traverseX(List(tpe1, tpe2))(checkAssocTypes)
+        case Ascribe(tpe, kind, loc) => checkAssocTypes(tpe)
+        case Alias(cst, args, tpe, loc) => traverseX(args)(checkAssocTypes)
+
+        case AssocType(cst, UnkindedType.Var(_, _), loc) => ().toSuccess
+        case AssocType(cst, _, loc) => ResolutionError.IllegalAssocTypeDef(loc).toFailure
+
+        case UnappliedAlias(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
+        case UnappliedAssocType(sym, loc) => throw InternalCompilerException("unexpected unresolved type", loc)
+      }
+
+      // For now we don't add any tvars from the args. We should have gotten those directly from the instance
+      val argVal = resolveType(arg0, Wildness.ForbidWild, env, taenv, ns0, root)
+      val tpeVal = resolveType(tpe0, Wildness.ForbidWild, env, taenv, ns0, root)
+      val symVal = clazz.assocs.collectFirst {
+        case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) if sym.name == ident.name => sym
+      } match {
+        case None => ResolutionError.UndefinedAssocType(Name.mkQName(ident), ident.loc).toFailure
+        case Some(sym) => sym.toSuccess
+      }
+      flatMapN(symVal, argVal, tpeVal) {
+        case (sym, arg, tpe) =>
+          mapN(checkAssocTypes(tpe)) {
+            case _ =>
+              val symUse = Ast.AssocTypeSymUse(sym, ident.loc)
+              ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg, tpe, loc)
+          }
+      }
+  }
+
+  /**
     * Checks that the signature spec is legal.
     *
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
-      val tvars = tpes.flatMap(_.typeVars).to(SortedSet)
+      val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {
@@ -640,13 +708,15 @@ object Resolver {
           case "Predicate" => Kind.Predicate.toSuccess
           case "Region" => Kind.Bool.toSuccess
           case _ =>
-            mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
-              case enum => Kind.CaseSet(enum.sym)
+            lookupRestrictableEnum(qname, env, ns0, root) match {
+              case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
+              case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
             }
         }
       } else {
-        mapN(lookupRestrictableEnum(qname, env, ns0, root)) {
-          case enum => Kind.CaseSet(enum.sym)
+        lookupRestrictableEnum(qname, env, ns0, root) match {
+          case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
+          case _failure => ResolutionError.UndefinedKind(qname, ns0, loc).toFailure
         }
       }
     case NamedAst.Kind.Arrow(k10, k20, loc) =>
@@ -1725,17 +1795,17 @@ object Resolver {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
 
+        case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
+          val varsVal = traverse(idents)(lookupVar(_, env))
+          val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
+          mapN(varsVal, eVal) {
+            case (outVars, e) => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+          }
+
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
           mapN(eVal) {
             e => ResolvedAst.Predicate.Body.Guard(e, loc)
-          }
-
-        case NamedAst.Predicate.Body.Loop(idents, exp, loc) =>
-          val varsVal = traverse(idents)(lookupVar(_, env))
-          val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
-          mapN(varsVal, eVal) {
-            case (vars, e) => ResolvedAst.Predicate.Body.Loop(vars, e, loc)
           }
       }
     }
@@ -1875,6 +1945,23 @@ object Resolver {
   }
 
   /**
+    * Performs name resolution on the given equality constraint `econstr0`.
+    */
+  def resolveEqualityConstraint(tconstr0: NamedAst.EqualityConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.EqualityConstraint, ResolutionError] = tconstr0 match {
+    case NamedAst.EqualityConstraint(qname, tpe1, tpe2, loc) =>
+      val assocVal = lookupAssocType(qname, env, ns0, root)
+
+      val t1Val = resolveType(tpe1, Wildness.ForbidWild, env, taenv, ns0, root)
+      val t2Val = resolveType(tpe2, Wildness.ForbidWild, env, taenv, ns0, root)
+
+      mapN(assocVal, t1Val, t2Val) {
+        case (assoc, t1, t2) =>
+          val head = Ast.AssocTypeConstructor(assoc.sym, qname.loc)
+          ResolvedAst.EqualityConstraint(head, t1, t2, loc)
+      }
+  }
+
+  /**
     * Performs name resolution on the given superclass constraint `tconstr0`.
     */
   def resolveSuperClass(tconstr0: NamedAst.TypeConstraint, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.TypeConstraint, ResolutionError] = tconstr0 match {
@@ -1907,19 +1994,7 @@ object Resolver {
         } yield ResolutionError.DuplicateDerivation(sym1, loc1, loc2).toFailure
 
         Validation.sequenceX(failures) map {
-          _ =>
-            // if the enum derives Eq, Order, and ToString
-            // AND it does not already derive Boxable
-            // then add Boxable to its derivations
-            // otherwise just use the given list of derivations
-            val classesImplyingBoxable = List(EqSym, OrderSym, ToStringSym)
-            val deriveSyms = derives.map(_.clazz)
-            if (classesImplyingBoxable.forall(deriveSyms.contains) && !deriveSyms.contains(BoxableSym)) {
-              val loc = derives.map(_.loc).min
-              Ast.Derivation(BoxableSym, loc) :: derives
-            } else {
-              derives
-            }
+          _ => derives
         }
     }
   }
@@ -2147,6 +2222,7 @@ object Resolver {
         case "Int64" => UnkindedType.Cst(TypeConstructor.Int64, loc).toSuccess
         case "BigInt" => UnkindedType.Cst(TypeConstructor.BigInt, loc).toSuccess
         case "String" => UnkindedType.Cst(TypeConstructor.Str, loc).toSuccess
+        case "Regex" => UnkindedType.Cst(TypeConstructor.Regex, loc).toSuccess
         case "Sender" => UnkindedType.Cst(TypeConstructor.Sender, loc).toSuccess
         case "Receiver" => UnkindedType.Cst(TypeConstructor.Receiver, loc).toSuccess
         case "Lazy" => UnkindedType.Cst(TypeConstructor.Lazy, loc).toSuccess
@@ -2163,6 +2239,7 @@ object Resolver {
             case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
+            case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
             case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
           }
       }
@@ -2175,6 +2252,7 @@ object Resolver {
           case TypeLookupResult.TypeAlias(typeAlias) => getTypeAliasTypeIfAccessible(typeAlias, ns0, root, loc)
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
+          case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
           case TypeLookupResult.NotFound => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         }
 
@@ -2380,6 +2458,24 @@ object Resolver {
           }
         }
 
+      case UnkindedType.UnappliedAssocType(sym, loc) =>
+        targs match {
+          // Case 1: The associated type is under-applied.
+          case Nil => ResolutionError.UnderAppliedAssocType(sym, loc).toFailure
+
+          // Case 2: The type alias is fully applied.
+          // Apply the types first type inside the assoc type, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val cst = Ast.AssocTypeConstructor(sym, loc)
+                val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
+                UnkindedType.mkApply(assoc, targTl, tpe0.loc)
+            }
+        }
+
       case _: UnkindedType.Var =>
         traverse(targs)(finishResolveType(_, taenv)) map {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -2451,6 +2547,7 @@ object Resolver {
 
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
+      case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
     }
   }
 
@@ -2512,6 +2609,7 @@ object Resolver {
       case res: TypeLookupResult.TypeAlias => res
       case res: TypeLookupResult.Effect => res
       case res: TypeLookupResult.JavaClass => res
+      case res: TypeLookupResult.AssocType => res
       case TypeLookupResult.NotFound => other
     }
   }
@@ -2543,6 +2641,11 @@ object Resolver {
     case class JavaClass(clazz: Class[_]) extends TypeLookupResult
 
     /**
+      * The result is an associated type constructor.
+      */
+    case class AssocType(assoc: NamedAst.Declaration.AssocTypeSig) extends TypeLookupResult
+
+    /**
       * The type cannot be found.
       */
     case object NotFound extends TypeLookupResult
@@ -2566,6 +2669,9 @@ object Resolver {
       case Resolution.Declaration(effect: NamedAst.Declaration.Effect) =>
         // Case 4: found an effect
         TypeLookupResult.Effect(effect)
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) =>
+        // Case 5: found an associated type
+        TypeLookupResult.AssocType(assoc)
       case Resolution.JavaClass(clazz) =>
         // Case 5: found a Java class
         TypeLookupResult.JavaClass(clazz)
@@ -2580,6 +2686,17 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+  }
+
+  /**
+    * Optionally returns the associated type signature with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupAssocType(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+    val symOpt = tryLookupName(qname, env, ns0, root)
+
+    symOpt.collectFirst {
+      case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
     }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
   }
 
@@ -2688,7 +2805,7 @@ object Resolver {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
@@ -2697,7 +2814,7 @@ object Resolver {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
         case Declaration.Namespace(sym, usesAndImports, decls, loc) => sym.ns
-        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym.namespace :+ sym.name
+        case Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym.namespace :+ sym.name
         case Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.namespace :+ sym.name
         case Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.namespace :+ sym.name
@@ -3001,6 +3118,31 @@ object Resolver {
   }
 
   /**
+    * Successfully returns the given associated type `assoc0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An associated type is accessible from a namespace `ns0` if:
+    *
+    * (a) its class is marked public, or
+    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  private def getAssocTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.AssocTypeSig, ResolutionError] = {
+    assoc0.toSuccess // TODO ASSOC-TYPES check class accessibility
+  }
+
+  /**
+    * Successfully returns the type of the given associtated type `assoc0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
+    getAssocTypeIfAccessible(assoc0, ns0, loc) map {
+      assoc => mkUnappliedAssocType(assoc0.sym, loc)
+    }
+  }
+
+  /**
     * Successfully returns the given `eff0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
@@ -3098,7 +3240,7 @@ object Resolver {
                    UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
                    UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
                    UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
-                   UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+                   UnkindedType.Cst(TypeConstructor.Regex, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
@@ -3182,6 +3324,8 @@ object Resolver {
         case TypeConstructor.BigInt => Class.forName("java.math.BigInteger").toSuccess
 
         case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
+
+        case TypeConstructor.Regex => Class.forName("java.util.regex.Pattern").toSuccess
 
         case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
 
@@ -3286,10 +3430,12 @@ object Resolver {
       case _: UnkindedType.CaseComplement => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseUnion => ResolutionError.IllegalType(tpe, loc).toFailure
       case _: UnkindedType.CaseIntersection => ResolutionError.IllegalType(tpe, loc).toFailure
+      case _: UnkindedType.AssocType => ResolutionError.IllegalType(tpe, loc).toFailure
 
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.UnappliedAlias => throw InternalCompilerException(s"unexpected type: $t", loc)
+      case t: UnkindedType.UnappliedAssocType => throw InternalCompilerException(s"unexpected type: $t", loc)
       case t: UnkindedType.Alias => throw InternalCompilerException(s"unexpected type: $t", loc)
     }
   }
@@ -3321,21 +3467,28 @@ object Resolver {
   def mkUnappliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAlias(sym, loc)
 
   /**
+    * Construct the associated type constructor for the given symbol `sym` with the given kind `k`.
+    */
+  def mkUnappliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation): UnkindedType = UnkindedType.UnappliedAssocType(sym, loc)
+
+  /**
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => sym
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, sigs, laws, loc) => sym
+    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, _, sigs, laws, loc) => sym
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym
     case NamedAst.Declaration.Case(sym, tpe, _) => sym
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym
-    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
+    case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("unexpected associated type definition", loc)
+    case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, _, defs, ns, loc) => throw InternalCompilerException("unexpected instance", loc)
   }
 
   /**
@@ -3350,6 +3503,7 @@ object Resolver {
     case sym: Symbol.ClassSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.SigSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.TypeAliasSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
+    case sym: Symbol.AssocTypeSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.EffectSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
@@ -3431,7 +3585,7 @@ object Resolver {
     * Creates an environment from the given spec.
     */
   private def mkSpecEnv(spec: ResolvedAst.Spec): ListMap[String, Resolution] = spec match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, loc) =>
+    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, purAndEff, tconstrs, econstrs, loc) =>
       mkTypeParamEnv(tparams.tparams) ++ mkFormalParamEnv(fparams)
   }
 
@@ -3489,6 +3643,7 @@ object Resolver {
     case "java.math.BigDecimal" => UnkindedType.Cst(TypeConstructor.BigDecimal, loc)
     case "java.math.BigInteger" => UnkindedType.Cst(TypeConstructor.BigInt, loc)
     case "java.lang.String" => UnkindedType.Cst(TypeConstructor.Str, loc)
+    case "java.util.regex.Pattern" => UnkindedType.Cst(TypeConstructor.Regex, loc)
     case "java.util.function.Function" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkObject(loc), loc)
     case "java.util.function.Consumer" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkUnit(loc), loc)
     case "java.util.function.Predicate" => UnkindedType.mkImpureArrow(UnkindedType.mkObject(loc), UnkindedType.mkBool(loc), loc)

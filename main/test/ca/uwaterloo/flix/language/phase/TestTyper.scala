@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestTyper extends FunSuite with TestUtils {
+class TestTyper extends AnyFunSuite with TestUtils {
 
   test("TestLeq01") {
     val input =
@@ -358,7 +358,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    expectError[TypeError.MissingEq](result)
   }
 
   test("MissingEq.01") {

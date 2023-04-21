@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestInt64 {
+mod TestInt64 {
 
     use Mul.mul
 
@@ -44,13 +44,13 @@ namespace TestInt64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int64.maxValue() == ~~~(1i64 <<< 63)
+    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 63)
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def minValue01(): Bool = Int64.minValue() == (1i64 <<< 63)
+    def minValue01(): Bool = Int64.minValue() == Int64.leftShift(1i64, 63)
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
@@ -193,20 +193,51 @@ namespace TestInt64 {
     @test
     def signum03(): Bool = Int64.signum(0i64) == 0
 
+
+    /////////////////////////////////////////////////////////////////////////////
+    // leftShift                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseLeftShift01(): Bool = Int64.leftShift(8i64, 0) == 8i64
+
+    @test
+    def testBitwiseLeftShift02(): Bool = Int64.leftShift(8i64, 32) == 34359738368i64
+
+    @test
+    def testBitwiseLeftShift03(): Bool = Int64.leftShift(8i64, 60) == -9223372036854775808i64
+
+    @test
+    def testBitwiseLeftShift04(): Bool = Int64.leftShift(8i64, 61) == 0i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // rightShift                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def testBitwiseRightShift01(): Bool = Int64.rightShift(12000000000i64, 0) == 12000000000i64
+
+    @test
+    def testBitwiseRightShift02(): Bool = Int64.rightShift(12000000000i64, 2) == 3000000000i64
+
+    @test
+    def testBitwiseRightShift03(): Bool = Int64.rightShift(12000000000i64, 63) == 0i64
+
+    @test
+    def testBitwiseRightShift04(): Bool = Int64.rightShift(-12000000000i64, 2) == -3000000000i64
+
     /////////////////////////////////////////////////////////////////////////////
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def logicalRightShift01(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == (2233i64 >>> 4)
+    def logicalRightShift01(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 4)
 
     @test
-    def logicalRightShift02(): Bool = Int64.logicalRightShift(dist = 33, 22336688888i64) == (22336688888i64 >>> 33)
+    def logicalRightShift02(): Bool = Int64.logicalRightShift(dist = 33, 22336688888i64) == Int64.rightShift(22336688888i64, 33)
 
     @test
-    def logicalRightShift03(): Bool = Int64.logicalRightShift(dist = -8, 2233i64) == (2233i64 >>> -8)
+    def logicalRightShift03(): Bool = Int64.logicalRightShift(dist = -8, 2233i64) == Int64.rightShift(2233i64, -8)
 
     @test
-    def logicalRightShift04(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == (2233i64 >>> 4)
+    def logicalRightShift04(): Bool = Int64.logicalRightShift(dist = 4, 2233i64) == Int64.rightShift(2233i64, 4)
 
     @test
     def logicalRightShift05(): Bool = Int64.logicalRightShift(dist = 1, -1i64) == 9223372036854775807i64
@@ -401,13 +432,13 @@ namespace TestInt64 {
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def highestOneBit01(): Bool = Int64.highestOneBit(-1i64) == (1i64 <<< 63)
+    def highestOneBit01(): Bool = Int64.highestOneBit(-1i64) == Int64.leftShift(1i64, 63)
 
     @test
-    def highestOneBit02(): Bool = Int64.highestOneBit(-9223372036854775808i64) == (1i64 <<< 63)
+    def highestOneBit02(): Bool = Int64.highestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 63)
 
     @test
-    def highestOneBit03(): Bool = Int64.highestOneBit(-778899i64) == (1i64 <<< 63)
+    def highestOneBit03(): Bool = Int64.highestOneBit(-778899i64) == Int64.leftShift(1i64, 63)
 
     @test
     def highestOneBit04(): Bool = Int64.highestOneBit(2i64) == 2i64
@@ -443,7 +474,7 @@ namespace TestInt64 {
     def numberOfLeadingZeros03(): Bool = Int64.numberOfLeadingZeros(-1i64) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~(1i64 <<< 63)) == 1
+    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 63)) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(2i64 ** 62i64) == 1
@@ -503,7 +534,7 @@ namespace TestInt64 {
     def lowestOneBit01(): Bool = Int64.lowestOneBit(-1i64) == 1i64
 
     @test
-    def lowestOneBit02(): Bool = Int64.lowestOneBit(-9223372036854775808i64) == (1i64 <<< 63)
+    def lowestOneBit02(): Bool = Int64.lowestOneBit(-9223372036854775808i64) == Int64.leftShift(1i64, 63)
 
     @test
     def lowestOneBit03(): Bool = Int64.lowestOneBit(1i64) == 1i64
@@ -614,7 +645,7 @@ namespace TestInt64 {
     def setBit10(): Bool = Int64.setBit(pos = 30, -17i64) == -17i64
 
     @test
-    def setBit11(): Bool = Int64.setBit(pos = 63, 0i64) == (1i64 <<< 63)
+    def setBit11(): Bool = Int64.setBit(pos = 63, 0i64) == Int64.leftShift(1i64, 63)
 
     @test
     def setBit12(): Bool = Int64.setBit(pos = 64, 0i64) == 1i64
@@ -641,7 +672,7 @@ namespace TestInt64 {
     def clearBit06(): Bool = Int64.clearBit(pos = 30, 0i64) == 0i64
 
     @test
-    def clearBit07(): Bool = Int64.clearBit(pos = 63, 1i64 <<< 63) == 0i64
+    def clearBit07(): Bool = Int64.clearBit(pos = 63, Int64.leftShift(1i64, 63)) == 0i64
 
     @test
     def clearBit08(): Bool = Int64.clearBit(pos = 27, 442931848i64) == 308714120i64
@@ -656,7 +687,7 @@ namespace TestInt64 {
     def clearBit11(): Bool = Int64.clearBit(pos = 5, -1i64) == -33i64
 
     @test
-    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == ~~~(1i64 <<< 63)
+    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == ~~~Int64.leftShift(1i64, 63)
 
     @test
     def clearBit13(): Bool = Int64.clearBit(pos = 64, -1i64) == -2i64
@@ -683,7 +714,7 @@ namespace TestInt64 {
     def flipBit06(): Bool = Int64.flipBit(pos = 30, 0i64) == 1073741824i64
 
     @test
-    def flipBit07(): Bool = Int64.flipBit(pos = 63, 1i64 <<< 63) == 0i64
+    def flipBit07(): Bool = Int64.flipBit(pos = 63, Int64.leftShift(1i64, 63)) == 0i64
 
     @test
     def flipBit08(): Bool = Int64.flipBit(pos = 0, -1i64) == -2i64
@@ -695,7 +726,7 @@ namespace TestInt64 {
     def flipBit10(): Bool = Int64.flipBit(pos = 5, -1i64) == -33i64
 
     @test
-    def flipBit11(): Bool = Int64.flipBit(pos = 31, -1i64) == (-1i64-(1i64 <<< 31))
+    def flipBit11(): Bool = Int64.flipBit(pos = 31, -1i64) == (-1i64-Int64.leftShift(1i64, 31))
 
     @test
     def flipBit12(): Bool = Int64.flipBit(pos = 64, -1i64) == -2i64

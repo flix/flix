@@ -1,11 +1,11 @@
-namespace Test/Kind/TypeAlias {
-    namespace Implicit {
+mod Test.Kind.TypeAlias {
+    mod Implicit {
         type alias TStar[a] = a
 
         type alias EStarStar[a, b] = (a, b)
     }
 
-    namespace Explicit {
+    mod Explicit {
         rel R(i: Int32)
 
         type alias TStar[a: Type] = a

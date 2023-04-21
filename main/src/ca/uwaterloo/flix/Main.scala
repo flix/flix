@@ -91,7 +91,7 @@ object Main {
       json = cmdOpts.json,
       progress = true,
       installDeps = cmdOpts.installDeps,
-      output = cmdOpts.output.map(s => Paths.get(s)),
+      output = None,
       target = Options.Default.target,
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
@@ -156,7 +156,7 @@ object Main {
           Bootstrap.bootstrap(cwd)(System.out) match {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
-              val result = bootstrap.build(options, loadClasses = false)
+              val result = bootstrap.build(loadClasses = false)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -270,7 +270,6 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
-                     output: Option[String] = None,
                      test: Boolean = false,
                      threads: Option[Int] = None,
                      xbenchmarkCodeSize: Boolean = false,
@@ -404,9 +403,6 @@ object Main {
       opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
-
-      opt[String]("output").action((s, c) => c.copy(output = Some(s))).
-        text("specifies the output directory for JVM bytecode.")
 
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
