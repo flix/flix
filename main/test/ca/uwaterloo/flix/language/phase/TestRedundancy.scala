@@ -3,9 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{RedundancyError, TypeError}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestRedundancy extends FunSuite with TestUtils {
+class TestRedundancy extends AnyFunSuite with TestUtils {
 
   test("HiddenVarSym.Let.01") {
     val input =

@@ -3,12 +3,12 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.nio.file.Files
 
-class TestMavenPackageManager extends FunSuite {
+class TestMavenPackageManager extends AnyFunSuite {
   val s: String = File.separator
   val f: Formatter = Formatter.NoFormatter
 
