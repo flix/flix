@@ -293,6 +293,8 @@ object DocAstFormatter {
         }
       case Type.Native(clazz) =>
         formatJavaClass(clazz)
+      case Type.Meta(s) =>
+        text(meta(s))
     }
     tpe match {
       case _: Type.Composite if paren => parens(d)

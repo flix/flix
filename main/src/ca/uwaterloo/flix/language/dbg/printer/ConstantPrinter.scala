@@ -38,6 +38,7 @@ object ConstantPrinter {
     case Constant.Int64(lit) => Expression.AsIs(s"${lit}i64")
     case Constant.BigInt(lit) => Expression.AsIs(s"${lit}ii")
     case Constant.Str(lit) => Expression.AsIs("\"\"\"" + lit + "\"\"\"")
+    case Constant.Regex(lit) => Expression.Regex(lit)
   }
 
 }

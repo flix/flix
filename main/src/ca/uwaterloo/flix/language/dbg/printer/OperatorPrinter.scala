@@ -192,12 +192,10 @@ object OperatorPrinter {
          BigIntOp.Div => div
     case Float32Op.Exp |
          Float64Op.Exp |
-         BigDecimalOp.Exp |
          Int8Op.Exp |
          Int16Op.Exp |
          Int32Op.Exp |
-         Int64Op.Exp |
-         BigIntOp.Exp => exp
+         Int64Op.Exp => exp
     case Float32Op.Neg |
          Float64Op.Neg |
          BigDecimalOp.Neg |

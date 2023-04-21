@@ -107,6 +107,9 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
+    val Unknown: Expression =
+      Meta("unknown exp")
+
     def Var(sym: Symbol.VarSym): Expression =
       AsIs(sym.toString)
 
@@ -229,6 +232,9 @@ object DocAst {
     def RecordSelect(field: Name.Field, d: Expression): Expression =
       Dot(d, AsIs(field.name))
 
+    def Regex(p: java.util.regex.Pattern): Expression =
+      App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
+
   }
 
   sealed trait Type
@@ -259,6 +265,11 @@ object DocAst {
 
     case class Native(clazz: Class[_]) extends Atom
 
+    /** inserted string printed as-is (assumed not to require parenthesis) */
+    case class Meta(s: String) extends Atom
+
+    val Unknown: Type = Meta("unknown type")
+
     val Bool: Type = AsIs("Bool")
 
     val Char: Type = AsIs("Char")
@@ -280,6 +291,8 @@ object DocAst {
     val BigInt: Type = AsIs("BigInt")
 
     val Str: Type = AsIs("String")
+
+    val Regex: Type = AsIs("Regex")
 
     val Region: Type = AsIs("Region")
 
