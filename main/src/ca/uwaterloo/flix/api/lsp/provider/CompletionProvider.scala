@@ -221,7 +221,8 @@ object CompletionProvider {
       SignatureCompleter.getCompletions(context) ++
       FieldCompleter.getCompletions(context) ++
       OpCompleter.getCompletions(context) ++
-      MatchCompleter.getCompletions(context)
+      MatchCompleter.getCompletions(context) ++
+      EnumTagCompleter.getCompletions(context)
   }
 
   /**
