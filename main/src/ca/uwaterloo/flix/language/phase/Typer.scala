@@ -126,7 +126,7 @@ object Typer {
         (classSym, _) <- classes0
         inst <- instances0.getOrElse(classSym, Nil)
         assoc <- inst.assocs
-      } yield (assoc.sym.sym , Ast.AssocTypeDef(assoc.arg, assoc.tpe))
+      } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
 
 
       assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
@@ -792,8 +792,7 @@ object Typer {
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
-        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div
-             | SemanticOperator.BigDecimalOp.Exp =>
+        case SemanticOperator.BigDecimalOp.Add | SemanticOperator.BigDecimalOp.Sub | SemanticOperator.BigDecimalOp.Mul | SemanticOperator.BigDecimalOp.Div =>
           for {
             (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)
@@ -857,8 +856,7 @@ object Typer {
           } yield (constrs1 ++ constrs2, resultTyp, resultPur, resultEff)
 
         case SemanticOperator.BigIntOp.Add | SemanticOperator.BigIntOp.Sub | SemanticOperator.BigIntOp.Mul | SemanticOperator.BigIntOp.Div
-             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.Exp
-             | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
+             | SemanticOperator.BigIntOp.Rem | SemanticOperator.BigIntOp.And | SemanticOperator.BigIntOp.Or | SemanticOperator.BigIntOp.Xor =>
           for {
             (constrs1, tpe1, pur1, eff1) <- visitExp(exp1)
             (constrs2, tpe2, pur2, eff2) <- visitExp(exp2)

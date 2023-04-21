@@ -1675,7 +1675,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantCheckedTypeCast.02") {
     val input =
       """
-        |def f(): Unit & Impure =
+        |def f(): Unit \ IO =
         |    let _ =
         |        if (true)
         |            checked_cast(x -> x + 1)
@@ -1765,6 +1765,98 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantCheckedTypeCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(x -> x)
+        |        else
+        |            x -> x;
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(())
+        |        else
+        |            region r {
+        |                let _ = $ARRAY_NEW$(r, 8, 8);
+        |                ()
+        |            };
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let _ =
+        |        if (true)
+        |            checked_ecast((1, "a"))
+        |        else
+        |            (1, "a");
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.04") {
+    val input =
+      """
+        |def f(): Unit \ IO =
+        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
+        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
+        |    let _ =
+        |        if (true)
+        |            checked_cast((newObject(), newObject()))
+        |        else
+        |            (newObject(), newObject());
+        |    ()
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
+  }
+
+  ignore("RedundantCheckedEffectCast.05") {
+    val input =
+      """
+        |pub eff A
+        |pub eff B
+        |pub eff C
+        |
+        |def f(): Unit =
+        |    let f = () -> unchecked_cast(() as _ \ { A, B, C });
+        |    let g = () -> unchecked_cast(() as _ \ { A, B, C });
+        |    let _ =
+        |        if (true)
+        |            checked_ecast(f)
+        |        else
+        |            g;
+        |    ()
+        |
+        |""".stripMargin
+
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.RedundantCheckedEffectCast](result)
   }
 
   test("TestParYield.01") {

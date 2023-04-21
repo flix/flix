@@ -228,7 +228,7 @@ object Safety {
           case CheckedCastType.TypeCast =>
             val from = Type.eraseAliases(exp.tpe)
             val to = Type.eraseAliases(tpe)
-            val errors = verifyCheckedTypeCast(from, to, root, loc)
+            val errors = verifyCheckedTypeCast(from, to, loc)
             visit(exp) ++ errors
 
           case CheckedCastType.EffectCast =>
@@ -360,7 +360,7 @@ object Safety {
   /**
     * Checks if the given type cast is legal.
     */
-  private def verifyCheckedTypeCast(from: Type, to: Type, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
     (from.baseType, to.baseType) match {
 
       // Allow casting Null to a Java type.
