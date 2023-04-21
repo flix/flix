@@ -3,12 +3,12 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.nio.file.Paths
 
-class TestManifestParser extends FunSuite {
+class TestManifestParser extends AnyFunSuite {
 
   val f: Formatter = Formatter.NoFormatter
   val s: String = File.separator

@@ -47,7 +47,3 @@ instance Exp[Int32] {
 instance Exp[Int64] {
     pub def exp(b: Int64, n: Int64): Int64 = $INT64_EXP$(b, n)
 }
-
-instance Exp[BigInt] {
-    pub def exp(b: BigInt, n: BigInt): BigInt = $BIGINT_EXP$(b, n)
-}
