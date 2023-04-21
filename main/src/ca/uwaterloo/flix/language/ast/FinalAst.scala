@@ -139,7 +139,7 @@ object FinalAst {
 
     case class Force(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Instanceof(exp: FinalAst.Expression, className: String, loc: SourceLocation) extends FinalAst.Expression {
+    case class Instanceof(exp: FinalAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends FinalAst.Expression {
       final val tpe: MonoType = MonoType.Bool
     }
 

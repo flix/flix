@@ -314,9 +314,9 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expr.Instanceof(exp, name, loc) =>
+    case Expr.Instanceof(exp, clazz, loc) =>
       addSourceLine(visitor, loc)
-      val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
+      val className = asm.Type.getInternalName(clazz)
       println(className);
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(INSTANCEOF, className.toString)

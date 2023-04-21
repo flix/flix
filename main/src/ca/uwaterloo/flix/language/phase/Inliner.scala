@@ -408,9 +408,9 @@ object Inliner {
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Force(e, tpe, loc)
 
-    case OccurrenceAst.Expression.Instanceof(exp, className, loc) =>
+    case OccurrenceAst.Expression.Instanceof(exp, clazz, loc) =>
       val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Instanceof(e, className, loc)
+      LiftedAst.Expression.Instanceof(e, clazz, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 

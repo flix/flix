@@ -218,7 +218,7 @@ object KindedAst {
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
-    case class Instanceof(exp: KindedAst.Expression, className: String, loc: SourceLocation) extends KindedAst.Expression
+    case class Instanceof(exp: KindedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
 
     case class Error(m: CompilationMessage, tpe: Type.Var, pur: Type.Var, eff: Type.Var) extends KindedAst.Expression {
       override def loc: SourceLocation = m.loc

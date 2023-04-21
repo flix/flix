@@ -182,7 +182,7 @@ object SimplifiedAst {
       def purity: Purity = Pure
     }
 
-    case class Instanceof(exp: SimplifiedAst.Expression, className: String, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Instanceof(exp: SimplifiedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
 
       def purity: Purity = exp.purity

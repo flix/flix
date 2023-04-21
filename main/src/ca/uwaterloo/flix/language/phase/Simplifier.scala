@@ -281,9 +281,9 @@ object Simplifier {
       case LoweredAst.Expression.TypeMatch(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
 
-      case LoweredAst.Expression.Instanceof(exp, className, loc) =>
+      case LoweredAst.Expression.Instanceof(exp, clazz, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Instanceof(e, className, loc)
+        SimplifiedAst.Expression.Instanceof(e, clazz, loc)
     }
 
     /**

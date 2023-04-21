@@ -1664,8 +1664,10 @@ object Resolver {
 
         case NamedAst.Expression.Instanceof(exp, className, loc) =>
           val eVal = visitExp(exp, env0)
+          /// TODO make exception safe...
+          val clazz = Class.forName(className)
           mapN(eVal) {
-            e => ResolvedAst.Expression.Instanceof(e, className, loc)
+            e => ResolvedAst.Expression.Instanceof(e, clazz, loc)
           }
 
         case NamedAst.Expression.Error(m) =>

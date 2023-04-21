@@ -2614,9 +2614,9 @@ object Typer {
         val solveExp = TypedAst.Expression.FixpointSolve(mergeExp, stf, e1.tpe, pur, eff, loc)
         TypedAst.Expression.FixpointProject(pred, solveExp, tpe, pur, eff, loc)
 
-      case KindedAst.Expression.Instanceof(exp, className, loc) =>
+      case KindedAst.Expression.Instanceof(exp, clazz, loc) =>
         val e1 = visitExp(exp, subst0)
-        TypedAst.Expression.Instanceof(e1, className, loc)
+        TypedAst.Expression.Instanceof(e1, clazz, loc)
 
       case KindedAst.Expression.Error(m, tvar, pvar, evar) =>
         val tpe = subst0(tvar)

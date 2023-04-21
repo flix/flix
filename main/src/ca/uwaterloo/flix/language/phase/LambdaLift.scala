@@ -321,9 +321,9 @@ object LambdaLift {
         val e = visitExp(exp)
         LiftedAst.Expression.Force(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Instanceof(exp, className, loc) =>
+      case SimplifiedAst.Expression.Instanceof(exp, clazz, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Instanceof(e, className, loc)
+        LiftedAst.Expression.Instanceof(e, clazz, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         LiftedAst.Expression.HoleError(sym, tpe, loc)

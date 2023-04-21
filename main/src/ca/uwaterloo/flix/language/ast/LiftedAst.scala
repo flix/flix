@@ -169,7 +169,7 @@ object LiftedAst {
       def purity: Purity = Pure
     }
 
-    case class Instanceof(exp: LiftedAst.Expression, className: String, loc: SourceLocation) extends LiftedAst.Expression {
+    case class Instanceof(exp: LiftedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LiftedAst.Expression {
       def purity: Purity = exp.purity
 
       def tpe: Type = Type.Bool

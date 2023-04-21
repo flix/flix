@@ -170,7 +170,7 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class Instanceof(exp: OccurrenceAst.Expression, className: String, loc: SourceLocation) extends OccurrenceAst.Expression {
+    case class Instanceof(exp: OccurrenceAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = exp.purity
 
       def tpe: Type = Type.Bool

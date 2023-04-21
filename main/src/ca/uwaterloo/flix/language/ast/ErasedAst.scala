@@ -64,7 +64,7 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Instanceof(exp: Expr, className: String, loc: SourceLocation) extends Expr {
+    case class Instanceof(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr {
       def tpe: MonoType = MonoType.Bool
     }
 
