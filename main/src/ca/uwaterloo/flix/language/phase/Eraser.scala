@@ -39,17 +39,7 @@ object Eraser {
     val defs = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
 
-    val res = ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.closures.toSet, ctx.anonClasses.toSet).toSuccess
-
-    // print AST
-    res.map(erasedRoot => {
-      AstPrinter.printAst(
-        this.getClass.getSimpleName.dropRight(1),
-        ErasedAstPrinter.print(erasedRoot)
-      )
-    })
-
-    res
+    ErasedAst.Root(defs, enums, root.entryPoint, root.sources, ctx.closures.toSet, ctx.anonClasses.toSet).toSuccess
   }
 
   /**

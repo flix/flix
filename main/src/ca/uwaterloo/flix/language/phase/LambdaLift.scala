@@ -48,22 +48,12 @@ object LambdaLift {
       case (sym, enum0) => sym -> visitEnum(enum0)
     }
 
-    val res = LiftedAst.Root(
+    LiftedAst.Root(
       newDefs ++ m,
       newEnums,
       root.entryPoint,
       root.sources
     ).toSuccess
-
-    // print AST
-    res.map(liftedRoot => {
-      AstPrinter.printAst(
-        this.getClass.getSimpleName.dropRight(1),
-        LiftedAstPrinter.print(liftedRoot)
-      )
-    })
-
-    res
   }
 
   /**

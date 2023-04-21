@@ -36,17 +36,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum)
     }
 
-    val res = FinalAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
-
-    // print AST
-    res.map(erasedRoot => {
-      AstPrinter.printAst(
-        this.getClass.getSimpleName.dropRight(1),
-        FinalAstPrinter.print(erasedRoot)
-      )
-    })
-
-    res
+    FinalAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
   }
 
   private def visitDef(def0: LiftedAst.Def)(implicit flix: Flix): FinalAst.Def = {
