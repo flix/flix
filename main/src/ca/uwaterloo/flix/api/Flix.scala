@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, FinalAstPrinter, LiftedAstPrinter}
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -540,12 +542,15 @@ class Flix {
       afterSimplifier <- Simplifier.run(afterMonomorph)
       afterClosureConv <- ClosureConv.run(afterSimplifier)
       afterLambdaLift <- LambdaLift.run(afterClosureConv)
+      _ = AstPrinter.printAst(LambdaLift.toString, LiftedAstPrinter.print(afterLambdaLift))
       afterTailrec <- Tailrec.run(afterLambdaLift)
       afterOptimizer <- Optimizer.run(afterTailrec)
       afterLateTreeShaker <- LateTreeShaker.run(afterOptimizer)
       afterVarNumbering <- VarNumbering.run(afterLateTreeShaker)
       afterFinalize <- Finalize.run(afterVarNumbering)
+      _ = AstPrinter.printAst(Finalize.toString, FinalAstPrinter.print(afterFinalize))
       afterEraser <- Eraser.run(afterFinalize)
+      _ = AstPrinter.printAst(Eraser.toString, ErasedAstPrinter.print(afterEraser))
       afterJvmBackend <- JvmBackend.run(afterEraser)
       afterFinish <- Finish.run(afterJvmBackend)
     } yield afterFinish

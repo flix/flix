@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-object Finalize {
+case object Finalize {
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Finalize") {
 

@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-object LambdaLift {
+case object LambdaLift {
 
   /**
     * Mutable map of top level definitions.

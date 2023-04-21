@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-object Eraser {
+case object Eraser {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[ErasedAst.Root, CompilationMessage] = flix.phase("Eraser") {
 
