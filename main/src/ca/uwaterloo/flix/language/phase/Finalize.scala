@@ -316,10 +316,9 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Force(e, t, loc)
 
-      case LiftedAst.Expression.Instanceof(exp, className, tpe, loc) =>
+      case LiftedAst.Expression.Instanceof(exp, className, loc) =>
         val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.Instanceof(e, className, t, loc)
+        FinalAst.Expression.Instanceof(e, className, loc)
 
       case LiftedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)

@@ -264,9 +264,9 @@ object ClosureConv {
       val e = visitExp(exp)
       Expression.Force(e, tpe, loc)
 
-    case Expression.Instanceof(exp, className, tpe, loc) =>
+    case Expression.Instanceof(exp, className, loc) =>
       val e = visitExp(exp)
-      Expression.Instanceof(e, className, tpe, loc)
+      Expression.Instanceof(e, className, loc)
 
     case Expression.HoleError(_, _, _) => exp0
 
@@ -430,7 +430,7 @@ object ClosureConv {
 
     case Expression.Force(exp, _, _) => freeVars(exp)
 
-    case Expression.Instanceof(exp, _, _, _) => freeVars(exp)
+    case Expression.Instanceof(exp, _, _) => freeVars(exp)
 
     case Expression.HoleError(_, _, _) => SortedSet.empty
 
@@ -692,9 +692,9 @@ object ClosureConv {
         val e = visitExp(exp)
         Expression.Force(e, tpe, loc)
 
-      case Expression.Instanceof(exp, clsName, tpe, loc) =>
+      case Expression.Instanceof(exp, clsName, loc) =>
         val e = visitExp(exp)
-        Expression.Instanceof(e, clsName, tpe, loc)
+        Expression.Instanceof(e, clsName, loc)
 
       case Expression.HoleError(_, _, _) => e
 

@@ -345,7 +345,7 @@ object Safety {
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.Instanceof(exp, _, _, _, _, _) =>
+      case Expression.Instanceof(exp, _, _) =>
         visit(exp)
 
       case Expression.Error(_, _, _, _) =>

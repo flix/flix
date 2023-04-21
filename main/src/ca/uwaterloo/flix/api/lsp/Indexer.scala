@@ -458,7 +458,7 @@ object Indexer {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expression.Instanceof(exp, _, _, _, _, _) =>
+    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Error(_, _, _, _) =>

@@ -88,7 +88,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointFilter(pred, exp, _, _, _, _) => s"FixpointFilter($pred, $exp)"
     case TypedAst.Expression.FixpointInject(exp, pred, _, _, _, _) => s"FixpointInject($exp, $pred)"
     case TypedAst.Expression.FixpointProject(pred, exp, _, _, _, _) => s"FixpointProject($pred, $exp)"
-    case TypedAst.Expression.Instanceof(exp, cls, _, _, _, _) => s"Instanceof($exp, $cls)"
+    case TypedAst.Expression.Instanceof(exp, cls, _) => s"Instanceof($exp, $cls)"
     case TypedAst.Expression.Error(m, _, _, _) => s"Error(${m.kind})"
 
   }

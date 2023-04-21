@@ -247,7 +247,7 @@ object PatternExhaustiveness {
       case Expression.FixpointFilter(_, exp, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointInject(exp, _, _, _, _, _) => visitExp(exp, root)
       case Expression.FixpointProject(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Instanceof(exp, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.Instanceof(exp, _, _) => visitExp(exp, root)
       case Expression.Error(_, _, _, _) => Nil
     }
   }

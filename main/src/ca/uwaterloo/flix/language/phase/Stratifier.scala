@@ -505,9 +505,9 @@ object Stratifier {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
       }
 
-    case Expression.Instanceof(exp, className, tpe, pur, eff, loc) =>
+    case Expression.Instanceof(exp, className, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Instanceof(e, className, tpe, pur, eff, loc)
+        case e => Expression.Instanceof(e, className, loc)
       }
 
     case Expression.Error(m, tpe, pur, eff) =>
@@ -825,7 +825,7 @@ object Stratifier {
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Instanceof(exp, _, _, _, _, _) =>
+    case Expression.Instanceof(exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Error(_, _, _, _) =>

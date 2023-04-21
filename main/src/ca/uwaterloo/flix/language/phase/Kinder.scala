@@ -978,7 +978,7 @@ object Kinder {
     case ResolvedAst.Expression.Instanceof(exp0, className, loc) =>
       val expVal = visitExp(exp0, kenv0, senv, taenv, henv0, root)
       mapN(expVal) {
-        exp => KindedAst.Expression.Instanceof(exp, className, Type.freshVar(Kind.Star, loc.asSynthetic), loc)
+        exp => KindedAst.Expression.Instanceof(exp, className, loc)
       }
 
     case ResolvedAst.Expression.Error(m) =>

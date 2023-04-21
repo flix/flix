@@ -609,9 +609,9 @@ object Monomorph {
         val e = visitExp(exp, env0, subst)
         Expression.Force(e, subst(tpe), pur, eff, loc)
 
-      case Expression.Instanceof(exp, className, tpe, pur, eff, loc) =>
+      case Expression.Instanceof(exp, className, loc) =>
         val e = visitExp(exp, env0, subst)
-        Expression.Instanceof(e, className, subst(tpe), pur, eff, loc)
+        Expression.Instanceof(e, className, loc)
     }
 
     /**

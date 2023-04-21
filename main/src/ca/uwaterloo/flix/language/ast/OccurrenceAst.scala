@@ -170,8 +170,10 @@ object OccurrenceAst {
       def purity: Purity = Pure
     }
 
-    case class Instanceof(exp: OccurrenceAst.Expression, className: String, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
+    case class Instanceof(exp: OccurrenceAst.Expression, className: String, loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = exp.purity
+
+      def tpe: Type = Type.Bool
     }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {

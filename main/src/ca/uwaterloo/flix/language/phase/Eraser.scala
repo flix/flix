@@ -277,8 +277,8 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperator1.Force
       ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
 
-    case FinalAst.Expression.Instanceof(exp, className, tpe, loc) =>
-      ErasedAst.Expr.Instanceof(visitExp(exp), className, tpe, loc)
+    case FinalAst.Expression.Instanceof(exp, className, loc) =>
+      ErasedAst.Expr.Instanceof(visitExp(exp), className, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator0.HoleError(sym)

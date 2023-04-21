@@ -156,7 +156,7 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Instanceof(exp, cls, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.Instanceof(exp, cls, loc) => visitExp(exp)
       case Expression.Error(_, _, _, _) => Counter.empty
     }
 
