@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
 package ca.uwaterloo.flix.api.lsp.provider.completion
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.{Entity, Index}
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.VarCompletion
@@ -28,25 +30,18 @@ object VarCompleter extends Completer {
     ///
     /// Find all local variables in the current uri with a given range.
     ///
-    val iter = index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
+    index.queryWithRange(context.uri, queryLine = context.range.start.line, beforeLine = 20, afterLine = 10).collect {
       case Entity.LocalVar(sym, tpe) => Completion.VarCompletion(sym, tpe)
       case Entity.FormalParam(fparam) => Completion.VarCompletion(fparam.sym, fparam.tpe)
-    }
-
-    iter.toList.filter(comp => matchesVar(comp.sym, context.word))
+    }.filter(comp => matchesVar(comp.sym, context.word))
   }
 
   /**
-    * Checks that the varSym matches the prefix
+    * Checks that the varSym matches the word that the users is typing.
     *
     * @param sym  the varSym.
-    * @param word the current prefix.
-    * @return     true, if the var matches prefix, false otherwise.
+    * @param word the current word.
+    * @return     true, if the var matches word, false otherwise.
     */
-  private def matchesVar(sym: Symbol.VarSym, word: String): Boolean = {
-    if (word.nonEmpty && word.head.isUpper)
-      sym.toString.startsWith(word)
-    else
-      sym.text.startsWith(word)
-  }
+  private def matchesVar(sym: Symbol.VarSym, word: String): Boolean = sym.toString.startsWith(word)
 }
