@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestKinder extends FunSuite with TestUtils {
+class TestKinder extends AnyFunSuite with TestUtils {
 
   private val DefaultOptions = Options.TestWithLibNix
 

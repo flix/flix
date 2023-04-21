@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestWeeder extends FunSuite with TestUtils {
+class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateTag.01") {
     val input =
