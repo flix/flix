@@ -317,7 +317,6 @@ object GenExpression {
     case Expr.Instanceof(exp, clazz, loc) =>
       addSourceLine(visitor, loc)
       val className = asm.Type.getInternalName(clazz)
-      println(className);
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
