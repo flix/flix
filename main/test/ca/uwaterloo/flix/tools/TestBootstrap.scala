@@ -26,7 +26,7 @@ class TestBootstrap extends AnyFunSuite {
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.check(DefaultOptions)
   }
 
@@ -34,7 +34,7 @@ class TestBootstrap extends AnyFunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
   }
 
@@ -42,7 +42,7 @@ class TestBootstrap extends AnyFunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -56,7 +56,7 @@ class TestBootstrap extends AnyFunSuite {
     implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -77,7 +77,7 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.build()
     b.buildJar(DefaultOptions)
 
@@ -97,7 +97,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -110,7 +110,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
@@ -129,7 +129,7 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.buildPkg(DefaultOptions)
 
     def hash1 = calcHash(packagePath)
@@ -146,21 +146,21 @@ class TestBootstrap extends AnyFunSuite {
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.benchmark(DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.run(DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
-    val b = Bootstrap.bootstrap(p)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
     b.test(DefaultOptions)
   }
 

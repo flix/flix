@@ -51,10 +51,13 @@ object GitHub {
   /**
     * Lists the project's releases.
     */
-  def getReleases(project: Project): Result[List[Release], PackageError] = {
+  def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
     val json = try {
-      val stream = url.openStream()
+      val conn = url.openConnection()
+      // add the API key as bearer if needed
+      apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
+      val stream = conn.getInputStream
       StreamOps.readAll(stream)
     } catch {
       case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
@@ -79,8 +82,8 @@ object GitHub {
   /**
     * Gets the project release with the highest semantic version.
     */
-  def getLatestRelease(project: Project): Result[Release, PackageError] = {
-    getReleases(project).flatMap {
+  def getLatestRelease(project: Project, apiKey: Option[String]): Result[Release, PackageError] = {
+    getReleases(project, apiKey).flatMap {
       releases =>
         releases.maxByOption(_.version) match {
           case None => Err(PackageError.NoReleasesFound(project))
@@ -92,8 +95,8 @@ object GitHub {
   /**
     * Gets the project release with the relevant semantic version.
     */
-  def getSpecificRelease(project: Project, version: SemVer): Result[Release, PackageError] = {
-    getReleases(project).flatMap {
+  def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
+    getReleases(project, apiKey).flatMap {
       releases =>
         releases.find(r => r.version == version) match {
           case None => Err(PackageError.VersionDoesNotExist(version, project))

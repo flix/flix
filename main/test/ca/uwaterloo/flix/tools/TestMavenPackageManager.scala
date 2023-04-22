@@ -112,7 +112,7 @@ class TestMavenPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path)(System.out) match {
+      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(System.out) match {
         case Ok(l) => l
         case Err(e) => fail(e.message(f))
       }
