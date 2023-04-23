@@ -71,11 +71,12 @@ object Parser {
       case scala.util.Success(ast) =>
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        val possibleContexts = parseTraces(e.traces)
+        val mostLikelyContext = possibleContexts.maxBy(_._2)._1
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        println(parseTraces(e.traces))
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), Some(mostLikelyContext), loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, None, SourceLocation.Unknown).toFailure
     }
   }
 
@@ -117,14 +118,12 @@ object Parser {
     */
   private def syntacticContextOf(name: String): SyntacticContext = {
     name match {
-      case "Class" => SyntacticContext.Class
-      case "Enum" => SyntacticContext.Enum
+      case "Class" => SyntacticContext.ClassDecl
+      case "Enum" => SyntacticContext.EnumDecl
       case "Expression" => SyntacticContext.Expr
-      case "Instance" => SyntacticContext.Instance
+      case "Instance" => SyntacticContext.InstanceDecl
       case "Type" => SyntacticContext.Type
-      case _ =>
-        println(name)
-        SyntacticContext.Unknown
+      case _ => SyntacticContext.Unknown
     }
   }
 

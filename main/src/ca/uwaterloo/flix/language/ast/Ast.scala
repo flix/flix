@@ -792,22 +792,22 @@ object Ast {
     /**
       * Inside an class declaration.
       */
-    case object Class extends SyntacticContext
+    case object ClassDecl extends SyntacticContext
 
     /**
       * Inside an enum declaration.
       */
-    case object Enum extends SyntacticContext
+    case object EnumDecl extends SyntacticContext
+
+    /**
+      * Inside an instance declaration.
+      */
+    case object InstanceDecl extends SyntacticContext
 
     /**
       * Inside an expression.
       */
     case object Expr extends SyntacticContext
-
-    /**
-      * Inside an instance declaration.
-      */
-    case object Instance extends SyntacticContext
 
     /**
       * Inside a type.
