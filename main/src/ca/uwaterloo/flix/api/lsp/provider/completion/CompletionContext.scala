@@ -31,6 +31,4 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
   * @param prefix       The text from the start of the line up to the cursor
   * @param errors       The current compilation errors
   */
-case class CompletionContext(uri: String, pos: Position, range: Range, sctx: SyntacticContext, word: String, previousWord: String, prefix: String, errors: List[CompilationMessage]) {
-  def isCurrent: Boolean = errors.isEmpty
-}
+case class CompletionContext(uri: String, pos: Position, range: Range, sctx: SyntacticContext, word: String, previousWord: String, prefix: String, errors: List[CompilationMessage])
