@@ -302,9 +302,11 @@ object CompletionProvider {
     * We have to check that the syntax error occurs in the same place as the completion.
     */
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
-    errors.collectFirst({
-      case ParseError(_, ctx, loc) if loc.beginLine == pos.line => ctx
-      case ResolutionError.UndefinedType(_, _, loc) if loc.beginLine == pos.line => SyntacticContext.Type
+    errors.filter({
+      case err => err.loc.beginLine == pos.line
+    }).collectFirst({
+      case ParseError(_, ctx, loc) => ctx
+      case ResolutionError.UndefinedType(_, _, loc) == pos.line => SyntacticContext.Type
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
