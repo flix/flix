@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestRegions extends FunSuite with TestUtils {
+class TestRegions extends AnyFunSuite with TestUtils {
 
   test("RegionVarEscapes.01") {
     val input =
