@@ -1,8 +1,8 @@
-namespace Test/Kind/Def {
+mod Test.Kind.Def {
 
-    namespace Implicit {
+    mod Implicit {
 
-        namespace FormalParams {
+        mod FormalParams {
             rel R(i: Int32)
 
             pub def star(x: a): Int32 = ???
@@ -16,13 +16,13 @@ namespace Test/Kind/Def {
             pub def starToStar(x: a[Int32]): Int32 = ???
         }
 
-        namespace Return {
+        mod Return {
             rel R(i: Int32)
 
             pub def star(): a = ???
         }
 
-        namespace TypeConstraint {
+        mod TypeConstraint {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
 
@@ -31,7 +31,7 @@ namespace Test/Kind/Def {
             pub def starToStar(x: a[Int32]): Int32 with CStarToStar[a] = ???
         }
 
-        namespace Enum {
+        mod Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
             pub enum ERecordRow[_a: RecordRow]
@@ -48,26 +48,26 @@ namespace Test/Kind/Def {
             pub def starStar(x: a, y: EStar[a]): Int32 = ???
         }
 
-        namespace Effect {
+        mod Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool(): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def bool(): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def func(x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def enum_(x: EBool[ef]): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def enum_(x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
-        namespace Exp {
+        mod Exp {
             rel R(i: Int32)
 
             pub def star(x: a): Int32 = let _: a = ???; ???
         }
     }
 
-    namespace Explicit {
+    mod Explicit {
 
-        namespace FormalParams {
+        mod FormalParams {
             rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = ???
@@ -81,13 +81,13 @@ namespace Test/Kind/Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 = ???
         }
 
-        namespace Return {
+        mod Return {
             rel R(i: Int32)
 
             pub def star[a: Type](): a = ???
         }
 
-        namespace TypeConstraint {
+        mod TypeConstraint {
             class CStar[a: Type]
             class CStarToStar[a: Type -> Type]
             class CBoolToStar[a: Bool -> Type]
@@ -97,10 +97,10 @@ namespace Test/Kind/Def {
             pub def starToStar[a: Type -> Type](x: a[Int32]): Int32 with CStarToStar[a] = ???
 
             // cannot be inferred
-            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unsafe_cast ??? as _ \ ef
+            pub def boolToStar[a: Bool -> Type, ef: Bool](x: a[ef]): Int32 \ ef with CBoolToStar[a] = unchecked_cast(??? as _ \ ef)
         }
 
-        namespace Enum {
+        mod Enum {
             pub enum EStar[_a: Type]
             pub enum EBool[_a: Bool]
             pub enum ERecordRow[_a: RecordRow]
@@ -117,36 +117,35 @@ namespace Test/Kind/Def {
             pub def starStar[a: Type](x: a, y: EStar[a]): Int32 = ???
         }
 
-        namespace Effect {
+        mod Effect {
             pub enum EBool[_a: Bool]
 
-            pub def bool[ef: Bool](): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def bool[ef: Bool](): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def func[ef: Bool](x: Int32 -> Int32 \ ef): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def func[ef: Bool](x: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(??? as _ \ ef)
 
-            pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = unsafe_cast ??? as _ \ ef
+            pub def enum_[ef: Bool](x: EBool[ef]): Int32 \ ef = unchecked_cast(??? as _ \ ef)
         }
 
-        namespace Exp {
+        mod Exp {
             rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = let _: a = ???; ???
         }
     }
 
-    namespace Regression {
-        namespace Test01 {
+    mod Regression {
+        mod Test01 {
             pub enum Func[ef : Bool] {
                 case Function(Int32 -> Int32 \ ef)
             }
             pub def func(f: Int32 -> Int32 \ ef, g: Func[ef]): Int32 = ???
         }
 
-        namespace Test02 {
-            pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] = ???
+        mod Test02 {
+            pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Order[t1], Order[t2], Order[t3], Foldable[f] = ???
 
             pub enum PredSym
-            pub class Boxable[a]
             pub enum Datalog[_a]
             pub class Foldable[a: Type -> Type]
         }

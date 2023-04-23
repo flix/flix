@@ -30,7 +30,12 @@ pub eff NonDet
 ///
 /// The identity function.
 ///
-pub def identity(x: a): a = x
+pub def identity(x: a): a \ ef = checked_ecast(x)
+
+///
+/// The constant function.
+///
+pub def constant(x: a): b -> a \ ef = _ -> checked_ecast(x)
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -103,12 +108,9 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     x |> ToString.toString |> println(getOut())
 
 ///
-/// Prints the stringified representation of `x`.
+/// Touches the given region capability `rc`.
 ///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 
 ///
 /// Prints the stringified representation of `x`.
@@ -116,7 +118,7 @@ def debug(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+def debug(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
 
 ///
 /// Prints the stringified representation of `x`.
@@ -124,12 +126,20 @@ def debug!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
 /// WARNING: The debug function is pure hence if the
 /// result is unused it may be removed by the compiler!
 ///
-def debug!!(x: a): a = unsafe_cast Debug.debugWithPrefix("", x) as _ \ {}
+def debug!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
+
+///
+/// Prints the stringified representation of `x`.
+///
+/// WARNING: The debug function is pure hence if the
+/// result is unused it may be removed by the compiler!
+///
+def debug!!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
 
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = unsafe_cast {
+pub def bug!(m: String): a = masked_cast({
     import static get java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
     import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String \ {};
@@ -141,20 +151,12 @@ pub def bug!(m: String): a = unsafe_cast {
     prt(repeat("*", 80));
     prt("");
     ?panic
-} as _ \ {}
+})
 
 ///
 /// Asserts that this expression is unreachable. Crashes if not.
 ///
 pub def unreachable!(): a = bug!("Reached unreachable expression.")
-
-///
-/// Casts a pure function to `ef`.
-///
-/// `upcast` is safe to use anywhere.
-///
-pub def upcast(f: a -> b): a -> b \ ef =
-    x -> unsafe_cast f(x) as _ \ ef
 
 ///
 /// Prints the argument unless it is ().

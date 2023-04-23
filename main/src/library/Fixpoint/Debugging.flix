@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ast.Datalog
-    use Fixpoint/Ram.RamStmt
-    use Fixpoint/Shared.PredSym
+    use Fixpoint.Ast.Datalog
+    use Fixpoint.Ram.RamStmt
+    use Fixpoint.Shared.PredSym
 
     ///
     /// Invoked before the fixpoint computation.

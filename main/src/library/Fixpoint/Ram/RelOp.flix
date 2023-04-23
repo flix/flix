@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     @Internal
     pub enum RelOp[v] {
         case Search(RowVar, RamSym[v], RelOp[v])
         case Query(RowVar, RamSym[v], List[(Int32, RamTerm[v])], RelOp[v])
+        case Functional(RowVar, Vector[v] -> Vector[Vector[v]], Vector[RamTerm[v]], RelOp[v])
         case Project(List[RamTerm[v]], RamSym[v])
         case If(List[BoolExp[v]], RelOp[v])
     }
@@ -35,6 +36,8 @@ namespace Fixpoint/Ram {
                         ToString.toString(BoolExp.Eq(RamTerm.RowLoad(var, i), term))
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
+                case RelOp.Functional(rowVar, _, terms, body) =>
+                    "loop(${rowVar} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, ramSym) =>
                     "project (${terms |> List.join(", ")}) into ${ramSym}"
                 case RelOp.If(test, then) =>

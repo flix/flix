@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -27,10 +27,11 @@ import ca.uwaterloo.flix.util._
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
+import java.io.PrintStream
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
-class Shell(sourceProvider: SourceProvider, options: Options) {
+class Shell(bootstrap: Bootstrap, options: Options) {
 
   /**
     * The mutable list of source code fragments.
@@ -48,11 +49,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private var root: Option[Root] = None
 
   /**
-    * The source files currently loaded.
-    */
-  private val sourceFiles = new SourceFiles(sourceProvider)
-
-  /**
     * Is this the first compile
     */
   private var isFirstCompile = true
@@ -60,7 +56,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   /**
     * Remove any line continuation backslashes from the given string
     */
-  def unescapeLine(s: String): String = {
+  private def unescapeLine(s: String): String = {
 
     // (?s) enables dotall mode (so . matches newlines)
     val twoBackslashes = raw"(?s)\\\\\n(.*)\n\\\\".r
@@ -164,8 +160,13 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     case Command.Praise => execPraise()
     case Command.Eval(s) => execEval(s)
     case Command.ReloadAndEval(s) => execReloadAndEval(s)
+    case Command.Init => Bootstrap.init(bootstrap.projectPath, flix.options)(new PrintStream(terminal.output()))
+    case Command.Build => bootstrap.build()(flix)
+    case Command.Check => bootstrap.check(flix.options)
+    case Command.BuildJar => bootstrap.buildJar(flix.options)
+    case Command.BuildPkg => bootstrap.buildPkg(flix.options)
+    case Command.Test => bootstrap.test(flix.options)
     case Command.Unknown(s) => execUnknown(s)
-    case _ => sourceProvider.execute(cmd, options)
   }
 
   /**
@@ -174,7 +175,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
   private def execReload()(implicit terminal: Terminal): Unit = {
 
     // Scan the disk to find changes, and add source to the flix object
-    sourceFiles.addSourcesAndPackages(flix)
+    bootstrap.reconfigureFlix(flix)
 
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
@@ -241,7 +242,6 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
-    w.println("  :benchmark :bench           Runs the benchmarks for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
@@ -297,7 +297,7 @@ class Shell(sourceProvider: SourceProvider, options: Options) {
         // Cast the println to allow escaping effects
         val src =
           s"""def ${main.name}(): Unit \\ IO =
-             |unsafe_cast println($s) as _ \\ IO
+             |unchecked_cast(println($s) as _ \\ IO)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)
         run(main)

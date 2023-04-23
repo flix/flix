@@ -35,23 +35,19 @@ pub lawful class Functor[m : Type -> Type] {
     law composition: forall(f: b -> c, g: a -> b, v: m[a]) with Eq[m[c]] . Functor.map(g >> f, v) == Functor.map(f, Functor.map(g, v))
 }
 
-namespace Functor {
-    ///
-    /// Lifts the function `f` into the functor.
-    ///
-    pub def lift[a: Type, b: Type, ef: Bool, m: Type -> Type](f: a -> b \ ef): m[a] -> m[b] \ ef with Functor[m] = Functor.map(f)
+mod Functor {
 
     ///
     /// Replaces the value `a` in `s` by the given value `x` preserving the structure of `s`.
     ///
-    pub def as[a: Type, b: Type, m: Type -> Type](s: m[a], x: b): m[b] with Functor[m] = Functor.map(_ -> x, s)
+    pub def replace[a: Type, b: Type, m: Type -> Type](s: m[a], x: b): m[b] with Functor[m] = Functor.map(_ -> x, s)
 
     ///
     /// Replaces the value `a` in `s` with `Unit` preserving the structure of `s`.
     ///
     /// This function is typically used to discard the return value of computing `s`.
     ///
-    pub def ignore(s: m[a]): m[Unit] with Functor[m] = s `Functor.as` ()
+    pub def ignore(s: m[a]): m[Unit] with Functor[m] = s `Functor.replace` ()
 
     ///
     /// `<$>` is an operator alias for `map`.
@@ -64,13 +60,13 @@ namespace Functor {
     pub def <$$>(x: m[a], f: a -> b \ ef): m[b] \ ef with Functor[m]= Functor.map(f, x)
 
     ///
-    /// `<$` is an operator alias for `as`.
-    ///
-    pub def <$(x: a, ma: f[b]): f[a] with Functor[f] = Functor.as(ma, x)
-
-    ///
     /// `<$` is the operator `$>` with its arguments flipped.
     ///
-    pub def $>(ma: f[a], x: b): f[b] with Functor[f] = Functor.as(ma, x)
+    pub def <$(x: a, ma: f[b]): f[a] with Functor[f] = Functor.replace(ma, x)
+
+    ///
+    /// `$>` is an operator alias for `replace`.
+    ///
+    pub def $>(ma: f[a], x: b): f[b] with Functor[f] = Functor.replace(ma, x)
 
 }

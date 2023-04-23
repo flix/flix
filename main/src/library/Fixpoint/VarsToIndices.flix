@@ -17,9 +17,9 @@
 /// The purpose of this phase is to lower row variables in searches and queries to array indices.
 /// This implies substituting named references to row variables with indices
 /// in where clauses, range queries and project operations.
-namespace Fixpoint {
+mod Fixpoint {
 
-    use Fixpoint/Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     @Internal
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
@@ -43,6 +43,12 @@ namespace Fixpoint {
                 let newVars = Map.insert(var, newVar, rowVars);
                 let newQuery = List.map(match (j, t) -> (j, lowerTerm(rowVars, t)), prefixQuery);
                 RelOp.Query(newVar, ramSym, newQuery, lowerOp(body, newVars, depth + 1))
+            case RelOp.Functional(rowVar, f, terms, body) =>
+                let newVar = RowVar.Index(depth);
+                let newVars = Map.insert(rowVar, newVar, rowVars);
+                let newTerms = terms |> Vector.map(lowerTerm(rowVars));
+                let newBody = lowerOp(body, newVars, depth + 1);
+                RelOp.Functional(newVar, f, newTerms, newBody)
             case RelOp.Project(terms, ramSym) =>
                  RelOp.Project(List.map(lowerTerm(rowVars), terms), ramSym)
             case RelOp.If(test, then) =>

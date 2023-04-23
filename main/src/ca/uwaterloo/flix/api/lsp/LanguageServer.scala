@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider._
-import ca.uwaterloo.flix.api.lsp.provider.completion.{DeltaContext, Differ}
+import ca.uwaterloo.flix.api.lsp.provider.completion.DeltaContext
+import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.Differ
 import ca.uwaterloo.flix.api.{CrashHandler, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
@@ -37,8 +38,9 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
 
 import java.io.ByteArrayInputStream
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URI}
 import java.nio.charset.Charset
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
@@ -92,7 +94,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * The current delta context. Initially has no changes.
     */
-  private var delta: DeltaContext = DeltaContext(Nil)
+  private var delta: DeltaContext = DeltaContext(Map.empty)
 
   /**
     * A Boolean that records if the root AST is current (i.e. up-to-date).
@@ -187,6 +189,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("lsp/uses") => Request.parseUses(json)
       case JString("lsp/semanticTokens") => Request.parseSemanticTokens(json)
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
+      case JString("lsp/showAst") => Request.parseShowAst(json)
 
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -251,7 +254,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.AddJar(id, uri) =>
-      flix.addJar(uri)
+      val path = Path.of(new URI(uri))
+      flix.addJar(path)
       ("id" -> id) ~ ("status" -> "success")
 
     case Request.RemJar(id, uri) =>
@@ -315,9 +319,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       else
         ("id" -> id) ~ ("status" -> "success") ~ ("result" -> Nil)
 
-    case Request.ListPhases(id) =>
-      ("id" -> id) ~ ("status" -> "success") ~ ("result" -> ListPhasesProvider.phases.map(JString))
-
   }
 
   /**
@@ -365,7 +366,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
-    this.delta = Differ.difference(oldRoot, root)
+    this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
     this.currentErrors = errors.toList
 

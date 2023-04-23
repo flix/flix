@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestDelayList {
+mod TestDelayList {
     use DelayList.{ENil, ECons, LCons, LList}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -371,19 +371,19 @@ namespace TestDelayList {
 
     @test
     def mapImpure01(): Bool \ IO =
-        Nil |> List.toDelayList |> DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |> DelayList.toList == Nil
+        Nil |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == Nil
 
     @test
     def mapImpure02(): Bool \ IO =
-        (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |> DelayList.toList == 2 :: Nil
+        (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: Nil
 
     @test
     def mapImpure03(): Bool \ IO =
-        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |> DelayList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: 3 :: Nil
 
     @test
     def mapImpure04(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |> DelayList.toList == 2 :: 3 :: 4 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: 3 :: 4 :: Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -402,7 +402,7 @@ namespace TestDelayList {
     def mapMap02(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
-            DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |>
+            DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |>
             DelayList.map(x -> x * 2)             |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
@@ -411,15 +411,15 @@ namespace TestDelayList {
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
             DelayList.map(x -> x + 1)             |>
-            DelayList.map(x -> unsafe_cast x * 2 as _ \ IO) |>
+            DelayList.map(x -> unchecked_cast(x * 2 as _ \ IO)) |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
     @test
     def mapMap04(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                     |>
             List.toDelayList                      |>
-            DelayList.map(x -> unsafe_cast x + 1 as _ \ IO) |>
-            DelayList.map(x -> unsafe_cast x * 2 as _ \ IO) |>
+            DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |>
+            DelayList.map(x -> unchecked_cast(x * 2 as _ \ IO)) |>
             DelayList.toList == 4 :: 6 :: 8 :: Nil
 
 
@@ -439,10 +439,10 @@ namespace TestDelayList {
     @test
     def mapFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(x -> unsafe_cast { l := "a" :: deref l; x } as _ \ {}) |>
-        DelayList.map(x -> unsafe_cast { l := "b" :: deref l; x } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.map(x -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
+        DelayList.map(x -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -481,27 +481,27 @@ namespace TestDelayList {
 
     @test
     def filterImpure01(): Bool \ IO =
-        Nil |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 100 as _ \ IO) |> DelayList.toList == Nil
+        Nil |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 100 as _ \ IO)) |> DelayList.toList == Nil
 
     @test
     def filterImpure02(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 0 as _ \ IO) |> DelayList.toList == 1 :: 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 0 as _ \ IO)) |> DelayList.toList == 1 :: 2 :: 3 :: Nil
 
     @test
     def filterImpure03(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 1 as _ \ IO) |> DelayList.toList == 2 :: 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |> DelayList.toList == 2 :: 3 :: Nil
 
     @test
     def filterImpure04(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 2 as _ \ IO) |> DelayList.toList == 3 :: Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 2 as _ \ IO)) |> DelayList.toList == 3 :: Nil
 
     @test
     def filterImpure05(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 3 as _ \ IO) |> DelayList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 3 as _ \ IO)) |> DelayList.toList == Nil
 
     @test
     def filterImpure06(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unsafe_cast x > 100 as _ \ IO) |> DelayList.toList == Nil
+        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 100 as _ \ IO)) |> DelayList.toList == Nil
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -520,7 +520,7 @@ namespace TestDelayList {
     def filterFilter02(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                                 |>
             List.toDelayList                                 |>
-            DelayList.filter(x -> unsafe_cast x > 1 as _ \ IO) |>
+            DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |>
             DelayList.filter(x -> x < 3)                     |>
             DelayList.toList == 2 :: Nil
 
@@ -529,15 +529,15 @@ namespace TestDelayList {
         (1 :: 2 :: 3 :: Nil)                                 |>
             List.toDelayList                                 |>
             DelayList.filter(x -> x > 1)                     |>
-            DelayList.filter(x -> unsafe_cast x < 3 as _ \ IO) |>
+            DelayList.filter(x -> unchecked_cast(x < 3 as _ \ IO)) |>
             DelayList.toList == 2 :: Nil
 
     @test
     def filterFilter04(): Bool \ IO =
         (1 :: 2 :: 3 :: Nil)                                 |>
             List.toDelayList                                 |>
-            DelayList.filter(x -> unsafe_cast x > 1 as _ \ IO) |>
-            DelayList.filter(x -> unsafe_cast x < 3 as _ \ IO) |>
+            DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |>
+            DelayList.filter(x -> unchecked_cast(x < 3 as _ \ IO)) |>
             DelayList.toList == 2 :: Nil
 
 
@@ -557,10 +557,10 @@ namespace TestDelayList {
     @test
     def filterFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
-        DelayList.filter(_x -> unsafe_cast { l := "a" :: deref l; true } as _ \ {}) |>
-        DelayList.filter(_x -> unsafe_cast { l := "b" :: deref l; true } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
+        DelayList.filter(_x -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
+        DelayList.filter(_x -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -580,10 +580,10 @@ namespace TestDelayList {
     @test
     def mapFilterFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.map(   x -> unsafe_cast { l := "a" :: deref l; x }    as _ \ {}) |>
-        DelayList.filter(_ -> unsafe_cast { l := "b" :: deref l; true } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.map(   x -> unchecked_cast({ l := "a" :: deref l; x }    as _ \ {})) |>
+        DelayList.filter(_ -> unchecked_cast({ l := "b" :: deref l; true } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -603,10 +603,10 @@ namespace TestDelayList {
     @test
     def filterThenMapFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filter(_ -> unsafe_cast { l := "a" :: deref l; true } as _ \ {}) |>
-        DelayList.map(   x -> unsafe_cast { l := "b" :: deref l; x    } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.filter(_ -> unchecked_cast({ l := "a" :: deref l; true } as _ \ {})) |>
+        DelayList.map(   x -> unchecked_cast({ l := "b" :: deref l; x    } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -731,7 +731,7 @@ namespace TestDelayList {
     @test
     def forEach01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -740,7 +740,7 @@ namespace TestDelayList {
     @test
     def forEach02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -749,7 +749,7 @@ namespace TestDelayList {
     @test
     def forEach03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -758,7 +758,7 @@ namespace TestDelayList {
     @test
     def forEach04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -767,7 +767,7 @@ namespace TestDelayList {
     @test
     def forEach05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -780,7 +780,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex01(): Bool = region r {
         let l = ENil;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -789,7 +789,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex02(): Bool = region r {
         let l = LList(lazy ENil);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -798,7 +798,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex03(): Bool = region r {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -807,7 +807,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex04(): Bool = region r {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -816,7 +816,7 @@ namespace TestDelayList {
     @test
     def forEachWithIndex05(): Bool = region r {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
@@ -905,7 +905,7 @@ namespace TestDelayList {
     	let l = ENil: DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -916,7 +916,7 @@ namespace TestDelayList {
     	let l = LList(lazy ENil): DelayList[Int32];
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
 
@@ -927,7 +927,7 @@ namespace TestDelayList {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(r, l);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);
@@ -1045,64 +1045,6 @@ namespace TestDelayList {
     @test
     def count08(): Bool =
         DelayList.count(x -> x > 3, ECons(8, ECons(1, ENil))) == 1
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        List.toDelayList(Nil) |> DelayList.product == 1
-
-    @test
-    def product02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.product == 1
-
-    @test
-    def product03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.product == 6
-
-    @test
-    def product04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.product == -18
-
-    @test
-    def product05(): Bool =
-        List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.product == 24
-
-    @test
-    def product06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.product == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        List.toDelayList(Nil) |> DelayList.productWith(x -> x + 1) == 1
-
-    @test
-    def productWith02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.productWith(x -> x + 1) == 2
-
-    @test
-    def productWith03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.productWith(x -> x + 1) == -48
-
-    @test
-    def productWith05(): Bool =
-        List.toDelayList(-2 :: -3 :: -4 :: -5 :: Nil) |> DelayList.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.productWith(x -> x + 1) == -99
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1481,31 +1423,31 @@ namespace TestDelayList {
 
     @test
     def zipWithImpure01(): Bool \ IO =
-        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ENil: DelayList[Int32]) == ENil
+        ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
 
     @test
     def zipWithImpure02(): Bool \ IO =
-    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ENil: DelayList[Int32]) == ENil
+    	LList(lazy (ENil: DelayList[Int32])) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
 
     @test
     def zipWithImpure03(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ENil: DelayList[Int32]) == ENil
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ENil: DelayList[Int32]) == ENil
 
     @test
     def zipWithImpure04(): Bool \ IO =
-    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ENil))) == ENil
+    	ENil: DelayList[Int32] |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ENil))) == ENil
 
     @test
     def zipWithImpure05(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ENil))) == ECons(2, ECons(4, ENil))
+    	ECons(1, ECons(2, ENil)) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ENil))) == ECons(2, ECons(4, ENil))
 
     @test
     def zipWithImpure06(): Bool \ IO =
-    	ECons(1, ENil) |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ENil))) == ECons(2, ENil)
+    	ECons(1, ENil) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ENil))) == ECons(2, ENil)
 
     @test
     def zipWithImpure07(): Bool \ IO =
-    	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
+    	 LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))) |> DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil))))) == ECons(2, ECons(4, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1521,20 +1463,20 @@ namespace TestDelayList {
     @test
     def zipWithZipWith02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ECons(3, ENil)))) |>
+            DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))) |>
             DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
     @test
     def zipWithZipWith03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.zipWith((x, y) -> x + y, ECons(1, ECons(2, ECons(3, ENil)))) |>
-            DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
+            DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
     @test
     def zipWithZipWith04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ECons(3, ENil)))) |>
-            DelayList.zipWith((x, y) -> unsafe_cast x + y as _ \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
+            DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))) |>
+            DelayList.zipWith((x, y) -> unchecked_cast(x + y as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))) == ECons(3, ECons(6, ECons(9, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1553,10 +1495,10 @@ namespace TestDelayList {
     @test
     def zipWithFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.zipWith((x, y) -> unsafe_cast { l := "a" :: deref l; (x, y) } as _ \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.zipWith((x, y) -> unsafe_cast { l := "b" :: deref l; (x, y) } as _ \ {}, ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.zipWith((x, y) -> unchecked_cast({ l := "a" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.zipWith((x, y) -> unchecked_cast({ l := "b" :: deref l; (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -1787,19 +1729,19 @@ namespace TestDelayList {
 
     @test
     def flatMapImpure01(): Bool \ IO =
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO, ENil: DelayList[Int32]) == ENil
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ENil: DelayList[Int32]) == ENil
 
     @test
     def flatMapImpure02(): Bool \ IO =
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def flatMapImpure03(): Bool \ IO =
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
     @test
     def flatMapImpure04(): Bool \ IO =
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO, ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))) == ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1818,7 +1760,7 @@ namespace TestDelayList {
     @test
     def flatMapFlatMap02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO) |>
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
@@ -1828,7 +1770,7 @@ namespace TestDelayList {
     def flatMapFlatMap03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                           |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             |>
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO) ==
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
@@ -1836,8 +1778,8 @@ namespace TestDelayList {
     @test
     def flatMapFlatMap04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO) |>
-        DelayList.flatMap(i -> unsafe_cast DelayList.repeat(i) |> DelayList.take(i) as _ \ IO) ==
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) |>
+        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
                     ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
@@ -1859,10 +1801,10 @@ namespace TestDelayList {
     @test
     def flatMapFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.flatMap(i -> unsafe_cast { l := "a" :: deref l; ECons(i, ENil) } as _ \ {}) |>
-        DelayList.flatMap(i -> unsafe_cast { l := "b" :: deref l; ECons(i, ENil) } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.flatMap(i -> unchecked_cast({ l := "a" :: deref l; ECons(i, ENil) } as _ \ {})) |>
+        DelayList.flatMap(i -> unchecked_cast({ l := "b" :: deref l; ECons(i, ENil) } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -2049,27 +1991,27 @@ namespace TestDelayList {
 
     @test
     def mapWithIndexImpure01(): Bool \ IO =
-    	ENil |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ENil
+    	ENil |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ENil
 
     @test
     def mapWithIndexImpure02(): Bool \ IO =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ECons(1, ENil)
+    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ENil)
 
     @test
     def mapWithIndexImpure03(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ECons(1, ECons(3, ENil))
+    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ENil))
 
     @test
     def mapWithIndexImpure04(): Bool \ IO =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ECons(1, ECons(3, ECons(5, ENil)))
+    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ENil)))
 
     @test
     def mapWithIndexImpure05(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
     @test
     def mapWithIndexImpure06(): Bool \ IO =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2085,20 +2027,20 @@ namespace TestDelayList {
     @test
     def mapWithIndexMapWithIndex02(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) |>
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
             DelayList.mapWithIndex((i, x) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
     def mapWithIndexMapWithIndex03(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> x + i) |>
-            DelayList.mapWithIndex((i, x) -> unsafe_cast x * i as _ \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)) == ECons(0, ECons(3, ECons(10, ENil)))
 
     @test
     def mapWithIndexMapWithIndex04(): Bool \ IO =
         ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((i, x) -> unsafe_cast x + i as _ \ IO) |>
-            DelayList.mapWithIndex((i, x) -> unsafe_cast x * i as _ \ IO) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)) == ECons(0, ECons(3, ECons(10, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2118,10 +2060,10 @@ namespace TestDelayList {
     @test
     def mapWithIndexFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "a" :: deref l; x } as _ \ {}) |>
-        DelayList.mapWithIndex((_, x) -> unsafe_cast { l := "b" :: deref l; x } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "a" :: deref l; x } as _ \ {})) |>
+        DelayList.mapWithIndex((_, x) -> unchecked_cast({ l := "b" :: deref l; x } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -2270,39 +2212,39 @@ namespace TestDelayList {
 
     @test
     def takeWhileImpure01(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ENil) == ENil
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil) == ENil
 
     @test
     def takeWhileImpure02(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ENil)) == ENil
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)) == ENil
 
     @test
     def takeWhileImpure03(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(4, ENil)) == ECons(4, ENil)
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)) == ECons(4, ENil)
 
     @test
     def takeWhileImpure04(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ECons(2, ENil))) == ENil
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))) == ENil
 
     @test
     def takeWhileImpure05(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ECons(5, ENil))) == ENil
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))) == ENil
 
     @test
     def takeWhileImpure06(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))) == ECons(5, ENil)
 
     @test
     def takeWhileImpure07(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
 
     @test
     def takeWhileImpure08(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
 
     @test
     def takeWhileImpure09(): Bool \ IO =
-        DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
+        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2318,20 +2260,20 @@ namespace TestDelayList {
     @test
     def takeWhileTakeWhile02(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))                      |>
-            DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO) |>
+            DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
             DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
 
     @test
     def takeWhileTakeWhile03(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> i > 3) |>
-            DelayList.takeWhile(i -> unsafe_cast i < 5 as _ \ IO) == ECons(4, ENil)
+            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)) == ECons(4, ENil)
 
     @test
     def takeWhileTakeWhile04(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.takeWhile(i -> unsafe_cast i > 3 as _ \ IO) |>
-            DelayList.takeWhile(i -> unsafe_cast i < 5 as _ \ IO) == ECons(4, ENil)
+            DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
+            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)) == ECons(4, ENil)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2350,30 +2292,30 @@ namespace TestDelayList {
     @test
     def takeWhileFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 4 } as _ \ {}) |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 4 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     @test
     def takeWhileFusion03(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 2 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 2 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: Nil)
     }
 
     @test
     def takeWhileFusion04(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.takeWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.takeWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
     }
 
@@ -2424,39 +2366,39 @@ namespace TestDelayList {
 
     @test
     def dropWhileImpure01(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ENil) == ENil
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil) == ENil
 
     @test
     def dropWhileImpure02(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def dropWhileImpure03(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(4, ENil)) == ENil
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)) == ENil
 
     @test
     def dropWhileImpure04(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
 
     @test
     def dropWhileImpure05(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
 
     @test
     def dropWhileImpure06(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))) == ECons(1, ENil)
 
     @test
     def dropWhileImpure07(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(5, ECons(8, ENil))) == ENil
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))) == ENil
 
     @test
     def dropWhileImpure08(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
 
     @test
     def dropWhileImpure09(): Bool \ IO =
-        DelayList.dropWhile(i -> unsafe_cast i > 3 as _ \ IO, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2472,20 +2414,20 @@ namespace TestDelayList {
     @test
     def dropWhileDropWhile02(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> unsafe_cast i < 5 as _ \ IO) |>
+            DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
             DelayList.dropWhile(i -> i > 1) == ECons(1, ENil)
 
     @test
     def dropWhileDropWhile03(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))     |>
             DelayList.dropWhile(i -> i < 5)     |>
-            DelayList.dropWhile(i -> unsafe_cast i > 1 as _ \ IO) == ECons(1, ENil)
+            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)) == ECons(1, ENil)
 
     @test
     def dropWhileDropWhile04(): Bool \ IO =
         ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> unsafe_cast i < 5 as _ \ IO) |>
-            DelayList.dropWhile(i -> unsafe_cast i > 1 as _ \ IO) == ECons(1, ENil)
+            DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
+            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)) == ECons(1, ENil)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2504,30 +2446,30 @@ namespace TestDelayList {
     @test
     def dropWhileFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 4 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 4 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "a" :: "a" :: "b" :: Nil)
     }
 
     @test
     def dropWhileFusion03(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 1 } as _ \ {}) |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 1 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "b" :: "b" :: Nil)
     }
 
     @test
     def dropWhileFusion04(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "a" :: deref l; i < 2 } as _ \ {}) |>
-        DelayList.dropWhile(i -> unsafe_cast { l := "b" :: deref l; i < 3 } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "a" :: deref l; i < 2 } as _ \ {})) |>
+        DelayList.dropWhile(i -> unchecked_cast({ l := "b" :: deref l; i < 3 } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "a" :: "b" :: "b" :: Nil)
     }
 
@@ -2628,39 +2570,39 @@ namespace TestDelayList {
 
     @test
     def filterMapImpure01(): Bool \ IO =
-        DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ENil) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
 
     @test
     def filterMapImpure02(): Bool \ IO =
-        DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(1, ENil)) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
 
     @test
     def filterMapImpure03(): Bool \ IO =
-        DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(2, ENil)) == ECons(1, ENil)
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
 	def filterMapImpure04(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(1, ECons(3, ENil))) == ENil
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
 
 	@test
 	def filterMapImpure05(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
 	def filterMapImpure06(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
 	def filterMapImpure07(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
 	def filterMapImpure08(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
 	def filterMapImpure09(): Bool \ IO =
-		DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO,
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO),
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2681,20 +2623,20 @@ namespace TestDelayList {
     @test
     def filterMapFilterMap02(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
             DelayList.filterMap(i ->             if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap03(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i ->             if (i `Int32.rem` 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> unsafe_cast if (i > 1)                Some(i * 3) else None as _ \ IO) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap04(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unsafe_cast if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO) |>
-            DelayList.filterMap(i -> unsafe_cast if (i > 1)                Some(i * 3) else None as _ \ IO) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2713,10 +2655,10 @@ namespace TestDelayList {
     @test
     def filterMapFusion02(): Bool \ IO = region r {
         let l = ref Nil @ r;
-        discard unsafe_cast (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-        DelayList.filterMap(x -> unsafe_cast { l := "a" :: deref l; Some(x) } as _ \ {}) |>
-        DelayList.filterMap(x -> unsafe_cast { l := "b" :: deref l; Some(x) } as _ \ {}) |>
-        DelayList.toList as _ \ IO;
+        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        DelayList.filterMap(x -> unchecked_cast({ l := "a" :: deref l; Some(x) } as _ \ {})) |>
+        DelayList.filterMap(x -> unchecked_cast({ l := "b" :: deref l; Some(x) } as _ \ {})) |>
+        DelayList.toList as _ \ IO);
         List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
     }
 
@@ -2840,8 +2782,8 @@ namespace TestDelayList {
     //    let l = ref Nil @ r;
     //    let _ =
     //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-    //    DelayList.span(x -> unsafe_cast { l := "a" :: deref l; x < 3 } as _ \ {}) |> fst |>
-    //    DelayList.span(x -> unsafe_cast { l := "b" :: deref l; x < 3 } as _ \ {}) |> fst |>
+    //    DelayList.span(x -> unchecked_cast({ l := "a" :: deref l; x < 3 } as _ \ {})) |> fst |>
+    //    DelayList.span(x -> unchecked_cast({ l := "b" :: deref l; x < 3 } as _ \ {})) |> fst |>
     //    DelayList.toList;
     //    List.reverse(deref l) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
     //}

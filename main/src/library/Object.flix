@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Object {
+mod Object {
 
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
     pub def isNull(x: a): Bool =
-        import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
         typematch x {
             case _: Bool => false
             case _: Char => false
@@ -29,7 +28,9 @@ namespace Object {
             case _: Int16 => false
             case _: Int32 => false
             case _: Int64 => false
-            case _: _ => isNull(unsafe_cast x as ##java.lang.Object)
+            case _: _ =>
+                import static java.util.Objects.isNull(##java.lang.Object): Bool \ {};
+                isNull(unchecked_cast(x as ##java.lang.Object))
         }
 
     ///
@@ -37,13 +38,5 @@ namespace Object {
     ///
     pub def toOption(x: a): Option[a] =
         if (isNull(x)) None else Some(x)
-
-    ///
-    /// Unsafely converts `x` to a string using Java's built-in toString.
-    ///
-    @Unsafe
-    pub def toString(x: a): String =
-        import static java.util.Objects.toString(##java.lang.Object): String \ {};
-        toString(unsafe_cast x as ##java.lang.Object)
 
 }

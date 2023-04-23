@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-namespace String {
+mod String {
+
+    use Regex.Flag
 
     ///
     /// Returns the character at position `i` in the string `s`.
@@ -109,6 +111,41 @@ namespace String {
         Array.init(r, i -> charAt(i, s), length(s))
 
     ///
+    /// Compile the regular expression `regex` into a Regex object (internally
+    /// a Regex is `java.util.regex.Pattern`).
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// The syntax of regular expressions is the same as Java, see the JDK Javadocs
+    /// of the class `util.regex.Pattern` for reference.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegex`.
+    /// Regex literals are checked at compile time.
+    ///
+    pub def toRegex(regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String): ##java.util.regex.Pattern \ {};
+            compile(regex)
+        })
+
+
+    ///
+    /// Compile the regular expression `regex` into a Regex with the supplied flags.
+    ///
+    /// Returns `Err` if the regex is ill-formed and cannot be compiled.
+    ///
+    /// Warning: It is strongly recommended to use a Regex literal instead of `toRegexWithFlags`.
+    /// Regex literals are checked at compile time. See the JDK documentation of
+    /// `java.util.regex.Pattern` for guidance on enabling flags with embedded flag expressions.
+    ///
+    pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
+        Result.tryCatch(_ -> {
+            import static java.util.regex.Pattern.compile(String, Int32): ##java.util.regex.Pattern \ {};
+            compile(regex, Regex.sumFlags(flags))
+        })
+
+
+    ///
     /// Build a string of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> Char \ ef, len: Int32): String \ ef =
@@ -120,7 +157,7 @@ namespace String {
     /// Assumes that `len > 0`.
     ///
     def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def loop(i) = {
             if (i >= len)
                 StringBuilder.toString(sb)
@@ -137,7 +174,7 @@ namespace String {
     /// Concatenate a list of strings into a single string.
     ///
     pub def flatten(xs: List[String]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
@@ -147,7 +184,7 @@ namespace String {
     /// each pair of strings.
     ///
     pub def intercalate(sep: String, xs: List[String]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let arr = List.toArray(r, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
@@ -160,7 +197,7 @@ namespace String {
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
         case x :: rs => region r {
-            let sb = new StringBuilder(r);
+            let sb = StringBuilder.new(r);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.forEach(appendStep, rs);
@@ -258,7 +295,7 @@ namespace String {
         let _ = r; // This avoids a redundancy error.
         try {
             let p1 = compile(pattern);
-            let m1 = matcher(p1, upcast s);
+            let m1 = matcher(p1, checked_cast(s));
             find(m1, 0)
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
@@ -568,7 +605,7 @@ namespace String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -591,7 +628,7 @@ namespace String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -610,7 +647,7 @@ namespace String {
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
     pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -633,7 +670,7 @@ namespace String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -729,7 +766,7 @@ namespace String {
     ///
     pub def replace(from: {from = String}, to: {to = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, upcast from.from, upcast to.to)
+        replace(s, checked_cast(from.from), checked_cast(to.to))
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
@@ -797,7 +834,7 @@ namespace String {
     /// Helper function for `indent`.
     ///
     def indentHelper(n: Int32, s: String): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -827,7 +864,7 @@ namespace String {
     /// Helper function for `stripIndent`.
     ///
     def stripIndentHelper(n: Int32, s: String): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -862,7 +899,7 @@ namespace String {
     /// ending the result string with the system dependent line separator.
     ///
     pub def unlines(a: List[String]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
@@ -883,7 +920,7 @@ namespace String {
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
         case x :: xs => region r {
-            let sb = new StringBuilder(r);
+            let sb = StringBuilder.new(r);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
             List.forEach(f, xs);

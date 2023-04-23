@@ -47,7 +47,7 @@ instance Monad[Result[e]] {
     pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
 }
 
-namespace Result {
+mod Result {
 
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
@@ -160,24 +160,6 @@ namespace Result {
         foldLeft((acc, x) -> acc + f(x), 0, r)
 
     ///
-    /// Returns `v` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def product(r: Result[e, Int32]): Int32 =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, r)
-
-    ///
-    /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
-    ///
-    pub def productWith(f: t -> Int32 \ ef, r: Result[e, t]): Int32 \ ef =
-        if (isErr(r))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, r)
-
-    ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
@@ -209,7 +191,7 @@ namespace Result {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, upcast(_ -> z))
+        case Ok(v)  => f(v, constant(z))
         case Err(_) => z
     }
 
@@ -289,7 +271,7 @@ namespace Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, upcast(s1 -> Ok(s1)))
+        loop(l, s1 -> checked_ecast(Ok(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
@@ -330,6 +312,15 @@ namespace Result {
     }
 
     ///
+    /// Returns a `Success(v)` if `r` is `Ok(v)`. Otherwise returns a
+    /// `Failure(Nec.singleton(t))` if `r` is `Err(t)`.
+    ///
+    pub def toValidation(r: Result[e, t]): Validation[e, t] = match r {
+        case Ok(v) => Validation.Success(v)
+        case Err(t) => Validation.Failure(Nec.singleton(t))
+    }
+
+    ///
     /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
     ///
     pub def forEach(f: t -> Unit \ ef, r: Result[e, t]): Unit \ ef = match r {
@@ -353,7 +344,7 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if either of `r1` and `r2` are `Err(e)`.
     ///
-    pub def lift2(f: (t1, t2) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2]): Result[e, u] \ ef =
+    pub def map2(f: (t1, t2) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2]): Result[e, u] \ ef =
         ap(map(f, r1), r2)
 
     ///
@@ -361,64 +352,64 @@ namespace Result {
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2` and `r3` are `Err(e)`.
     ///
-    pub def lift3(f: (t1, t2, t3) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3]): Result[e, u] \ ef =
-        ap(lift2(f, r1, r2), r3)
+    pub def map3(f: (t1, t2, t3) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3]): Result[e, u] \ ef =
+        ap(map2(f, r1, r2), r3)
 
     ///
     /// Applies the 4-ary function `f` to the values in `r1`, `r2`, `r3` and `r4`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, `r3` and `r4` are `Err(e)`.
     ///
-    pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4]): Result[e, u] \ ef =
-        ap(lift3(f, r1, r2, r3), r4)
+    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4]): Result[e, u] \ ef =
+        ap(map3(f, r1, r2, r3), r4)
 
     ///
     /// Applies the 5-ary function `f` to the values in `r1`, `r2`, ... `r5`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r5` are `Err(e)`.
     ///
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5]): Result[e, u] \ ef =
-        ap(lift4(f, r1, r2, r3, r4), r5)
+    pub def map5(f: (t1, t2, t3, t4, t5) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5]): Result[e, u] \ ef =
+        ap(map4(f, r1, r2, r3, r4), r5)
 
     ///
     /// Applies the 6-ary function `f` to the values in `r1`, `r2`, ... `r6`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r6` are `Err(e)`.
     ///
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6]): Result[e, u] \ ef =
-        ap(lift5(f, r1, r2, r3, r4, r5), r6)
+    pub def map6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6]): Result[e, u] \ ef =
+        ap(map5(f, r1, r2, r3, r4, r5), r6)
 
     ///
     /// Applies the 7-ary function `f` to the values in `r1`, `r2`, ... `r7`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
     ///
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
-        ap(lift6(f, r1, r2, r3, r4, r5, r6), r7)
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7]): Result[e, u] \ ef=
+        ap(map6(f, r1, r2, r3, r4, r5, r6), r7)
 
     ///
     /// Applies the 8-ary function `f` to the values in `r1`, `r2`, ... `r8`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r8` are `Err(e)`.
     ///
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8]): Result[e, u] \ ef =
-        ap(lift7(f, r1, r2, r3, r4, r5, r6, r7), r8)
+    pub def map8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8]): Result[e, u] \ ef =
+        ap(map7(f, r1, r2, r3, r4, r5, r6, r7), r8)
 
     ///
     /// Applies the 9-ary function `f` to the values in `r1`, `r2`, ... `r9`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r9` are `Err(e)`.
     ///
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9]): Result[e, u] \ ef =
-        ap(lift8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
+    pub def map9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9]): Result[e, u] \ ef =
+        ap(map8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
 
     ///
     /// Applies the 10-ary function `f` to the values in `r1`, `r2`, ... `r10`.
     ///
     /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r10` are `Err(e)`.
     ///
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9], r10: Result[e, t10]): Result[e, u] \ ef =
-        ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
+    pub def map10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, r1: Result[e, t1], r2: Result[e, t2], r3: Result[e, t3], r4: Result[e, t4], r5: Result[e, t5], r6: Result[e, t6], r7: Result[e, t7], r8: Result[e, t8], r9: Result[e, t9], r10: Result[e, t10]): Result[e, u] \ ef =
+        ap(map9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
 
     ///
     /// Returns an iterator over `r` with 1 element or an empty iterator if `r` is `Err`.
@@ -437,14 +428,14 @@ namespace Result {
     ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
     ///
-    /// If `f` throws a Java `RuntimeException`, `Err(e)` is returned
+    /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def try(f: Unit -> a \ ef): Result[String, a] \ ef =
+    pub def tryCatch(f: Unit -> a \ ef): Result[String, a] \ ef =
         try {
             Ok(f())
         } catch {
-            case e: ##java.lang.RuntimeException =>
+            case e: ##java.lang.Exception =>
                 import java.lang.Throwable.getMessage(): String \ {};
                 Err(getMessage(e))
         }

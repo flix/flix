@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Array {
+mod Array {
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -42,7 +42,7 @@ namespace Array {
     /// Returns a string representation of the given array `a`.
     ///
     pub def toString(a: Array[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = new StringBuilder(r2);
+        let sb = StringBuilder.new(r2);
         let first = ref true @ r2;
 
         StringBuilder.appendString!("Array#{", sb);
@@ -186,7 +186,7 @@ namespace Array {
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(r1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+        let d = MutDeque.new(r1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -195,7 +195,7 @@ namespace Array {
     ///
     pub def toVector(a: Array[a, r]): Vector[a] \ Read(r) = region rc {
         let arr1 = copyOfRange(rc, 0, length(a), a);
-        unsafe_cast arr1 as Vector[a]
+        unchecked_cast(arr1 as Vector[a])
     }
 
     ///
@@ -877,24 +877,6 @@ namespace Array {
         foldLeft((acc, x) -> acc + f(x), 0, a)
 
     ///
-    /// Returns the product of all elements in the array `a`.
-    ///
-    pub def product(a: Array[Int32, r]): Int32 \ Read(r) =
-        if (isEmpty(a))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, a)
-
-    ///
-    /// Returns the product of all elements in the array `a` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, a: Array[a, r]): Int32 \ { ef, Read(r) } =
-        if (isEmpty(a))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, a)
-
-    ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     pub def flatten(r1: Region[r1], arrs: Array[Array[a, r], r]) : Array[a, r1] \ { Read(r), Write(r1) } =
@@ -1340,7 +1322,7 @@ namespace Array {
     ///
     pub def findIndices(r2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, Read(r1), Write(r2) } =
         let len = length(a);
-        let l = new MutList(r2);
+        let l = MutList.new(r2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1473,7 +1455,7 @@ namespace Array {
     pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, Read(r) } = region r1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r1);
+        let sb = StringBuilder.new(r1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -1614,46 +1596,52 @@ namespace Array {
     /// and include the specified range of `a`.
     ///
     pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { Read(r1), Write(r2) } =
+        // All of the below casts are required to cast the type to `Array[a, ...]`.
         typematch a {
             case arr: Array[Unit, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
+                unchecked_cast(copy(arg, b, e) as Array[a, r2])
             case arr: Array[Bool, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Bool, r1], Int32, Int32): Array[Bool, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Char, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Char, r1], Int32, Int32): Array[Char, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Float32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float32, r1], Int32, Int32): Array[Float32, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Float64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Float64, r1], Int32, Int32): Array[Float64, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[BigDecimal, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
+                unchecked_cast(copy(arg, b, e) as Array[a, r2])
             case arr: Array[Int8, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int8, r1], Int32, Int32): Array[Int8, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Int16, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int16, r1], Int32, Int32): Array[Int16, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Int32, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int32, r1], Int32, Int32): Array[Int32, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[Int64, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[Int64, r1], Int32, Int32): Array[Int64, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(arr, b, e) as Array[a, r2]
+                unchecked_cast(copy(arr, b, e) as Array[a, r2])
             case arr: Array[BigInt, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
+                unchecked_cast(copy(arg, b, e) as Array[a, r2])
             case arr: Array[String, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
+                unchecked_cast(copy(arg, b, e) as Array[a, r2])
             case arr: Array[a, r1] =>
                 import static java.util.Arrays.copyOfRange(Array[##java.lang.Object, r1], Int32, Int32): Array[##java.lang.Object, r2] \ { Read(r1), Write(r2) } as copy;
-                unsafe_cast copy(unsafe_cast arr as Array[##java.lang.Object, r1], b, e) as Array[a, r2]
+                let arg = unchecked_cast(arr as Array[##java.lang.Object, r1]);
+                unchecked_cast(copy(arg, b, e) as Array[a, r2])
             case _: _ => unreachable!()
         }
 

@@ -48,14 +48,14 @@ instance Iterable[DelayMap[k]] {
         DelayMap.iterator(rc, m) |> Iterator.map(snd)
 }
 
-namespace DelayMap {
+mod DelayMap {
 
     ///
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -860,44 +860,6 @@ namespace DelayMap {
                     sw()
             case _: (k, v) -> Int32 \ ef => sw()
             case _: _                    => unreachable!()
-        }
-
-    ///
-    /// Returns the product of all keys in the DelayMap `m`.
-    ///
-    @Experimental @Parallel
-    pub def productKeys(m: DelayMap[Int32, v]): Int32 =
-        productWith((k, _) -> k, m)
-
-    ///
-    /// Returns the product of all values in the DelayMap `m`.
-    ///
-    @Experimental @Parallel
-    pub def productValues(m: DelayMap[k, Int32]): Int32 =
-        productWith((_, v) -> v, m)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the DelayMap `m`
-    /// according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @Experimental @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: DelayMap[k, v]): Int32 \ ef =
-        let DMap(t) = m;
-        def pw() = {
-            let _ = parallelForce(m);
-            RedBlackTree.productWith((k, v) -> f(k, force v), t)
-        };
-        typematch f {
-            case g: (k, v) -> Int32 \ {} =>
-                if (useParallelEvaluation(m))
-                    let h = (k, v) -> g(k, force v);
-                    RedBlackTree.parProductWith(threads() - 1, h, t)
-                else
-                    pw()
-            case _: (k, v) -> Int32 \ ef => pw()
-            case _: _ => unreachable!()
         }
 
     ///

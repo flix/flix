@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
@@ -67,6 +68,12 @@ sealed trait Result[+T, E] {
     case Result.Ok(t) => Some(t)
     case Result.Err(_) => None
   }
+
+  /**
+    * Required for pattern-matching in for-patterns.
+    * Doesn't actually filter anything.
+    */
+  final def withFilter(f: T => Boolean): Result[T, E] = this
 }
 
 object Result {
@@ -100,6 +107,46 @@ object Result {
     }
 
     visit(xs, Nil)
+  }
+
+  /**
+    * Applies f to each element in the list.
+    *
+    * Fails at the first error found, or returns the new list.
+    */
+  def traverse[T, S, E](xs: Iterable[T])(f: T => Result[S, E]): Result[List[S], E] = {
+    val res = ArrayBuffer.empty[S]
+
+    for (x <- xs) {
+      f(x) match {
+        // Case 1: Ok. Add to the list.
+        case Ok(ok) => res.append(ok)
+        // Case 2: Error. Short-circuit.
+        case Err(err) => return Err(err)
+      }
+    }
+
+    Ok(res.toList)
+  }
+
+  /**
+    * Applies f to each element in the list and flattens the results.
+    *
+    * Fails at the first error found, or returns the new list.
+    */
+  def flatTraverse[T, S, E](xs: Iterable[T])(f: T => Result[List[S], E]): Result[List[S], E] = {
+    val res = ArrayBuffer.empty[S]
+
+    for (x <- xs) {
+      f(x) match {
+        // Case 1: Ok. Add to the list.
+        case Ok(ok) => res.addAll(ok)
+        // Case 2: Error. Short-circuit.
+        case Err(err) => return Err(err)
+      }
+    }
+
+    Ok(res.toList)
   }
 
   /**

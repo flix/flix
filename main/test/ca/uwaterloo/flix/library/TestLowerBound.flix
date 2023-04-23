@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestLowerBound {
+mod TestLowerBound {
     use LowerBound.minValue
 
     @test
@@ -42,7 +42,7 @@ namespace TestLowerBound {
     def testFloat64(): Bool = minValue() == Float64.minValue()
 
     @test
-    def testChar(): Bool = minValue() == Char.fromInt32(0)
+    def testChar(): Bool = minValue() == Char.minValue()
 
     @test
     def testTuple2(): Bool = minValue() == ('\u0000', '\u0000')

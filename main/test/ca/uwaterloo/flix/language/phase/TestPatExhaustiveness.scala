@@ -21,9 +21,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestPatExhaustiveness extends FunSuite with TestUtils {
+class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
 
   test("Pattern.Literal.Char.01") {
     val input =

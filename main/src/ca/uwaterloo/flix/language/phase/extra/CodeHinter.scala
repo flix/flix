@@ -97,7 +97,7 @@ object CodeHinter {
 
     case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
 
-    case Expression.Use(_, exp, _) => visitExp(exp)
+    case Expression.Use(_, _, exp, _) => visitExp(exp)
 
     case Expression.Cst(_, _, _) => Nil
 
@@ -218,19 +218,13 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Of(_, exp, _, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expression.Cast(exp, _, _, _, tpe, pur, _, loc) =>
-      checkCast(tpe, pur, loc) ++ visitExp(exp)
-
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, tpe, pur, _, loc) =>
       visitExp(exp)
 
-    case Expression.Upcast(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       visitExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -359,8 +353,8 @@ object CodeHinter {
     */
   private def visitBodyPredicate(p: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[CodeHint] = p match {
     case Body.Atom(_, _, _, _, _, _, _) => Nil
+    case Body.Functional(_, exp, _) => visitExp(exp)
     case Body.Guard(exp, _) => visitExp(exp)
-    case Body.Loop(_, exp, _) => visitExp(exp)
   }
 
   /**
@@ -488,16 +482,6 @@ object CodeHinter {
   }
 
   /**
-    * Checks whether a cast to the given `tpe` and `eff` is an unsafe purity cast.
-    */
-  private def checkCast(tpe: Type, eff: Type, loc: SourceLocation): List[CodeHint] = {
-    eff.typeConstructor match {
-      case Some(TypeConstructor.True) => CodeHint.UnsafePurityCast(eff.loc) :: Nil
-      case _ => Nil
-    }
-  }
-
-  /**
     * Returns `true` if the given function type `tpe` is pure.
     */
   private def isPureFunction(tpe: Type): Boolean = tpe.typeConstructor match {
@@ -513,6 +497,7 @@ object CodeHinter {
     case Type.Cst(_, _) => 0
     case Type.Apply(tpe1, tpe2, _) => numberOfVarOccurs(tpe1) + numberOfVarOccurs(tpe2)
     case Type.Alias(_, _, tpe, _) => numberOfVarOccurs(tpe)
+    case Type.AssocType(_, arg, _, _) => numberOfVarOccurs(arg)
   }
 
 }

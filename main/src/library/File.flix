@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace File {
+mod File {
 
     ///
     /// File types.
@@ -30,15 +30,13 @@ namespace File {
     ///
     pub def accessTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastAccessTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeLastAccess = lastAccessTime(fileAttributes);
-            let inMilliSec = toMillis(timeLastAccess);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> lastAccessTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -50,15 +48,13 @@ namespace File {
     ///
     pub def creationTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.creationTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeCreated = creationTime(fileAttributes);
-            let inMilliSec = toMillis(timeCreated);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> creationTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -70,15 +66,13 @@ namespace File {
     ///
     pub def modificationTime(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.lastModifiedTime(): ##java.nio.file.attribute.FileTime \ IO;
             import java.nio.file.attribute.FileTime.toMillis(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let timeLastModified = lastModifiedTime(fileAttributes);
-            let inMilliSec = toMillis(timeLastModified);
-
-            Ok(inMilliSec)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                fileAttributes |> lastModifiedTime |> toMillis
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -90,13 +84,12 @@ namespace File {
     ///
     pub def size(f: String): Result[String, Int64] \ IO =
         try {
-            use Result.flatMap;
             import java.nio.file.attribute.BasicFileAttributes.size(): Int64 \ IO;
 
-            let* fileAttributes = getAttributes(f);
-            let fileSize = size(fileAttributes);
-
-            Ok(fileSize)
+            forM (
+                fileAttributes <- getAttributes(f)
+            ) yield
+                size(fileAttributes)
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
@@ -129,16 +122,16 @@ namespace File {
     /// Returns the type of the given file `f`.
     ///
     pub def fileType(f: String): Result[String, FileType] \ IO =
-        use Result.flatMap;
-
-        let* isFile = File.isRegularFile(f);
-        let* isDirec = File.isDirectory(f);
-        let* isSymLink = File.isSymbolicLink(f);
-
-        if (isFile)         Ok(FileType.File)
-        else if (isDirec)   Ok(FileType.Directory)
-        else if (isSymLink) Ok(FileType.SymLink)
-        else                Ok(FileType.Other)
+        forM (
+            isFile <- File.isRegularFile(f);
+            isDirec <- File.isDirectory(f);
+            isSymLink <- File.isSymbolicLink(f)
+        ) yield {
+            if (isFile)         FileType.File
+            else if (isDirec)   FileType.Directory
+            else if (isSymLink) FileType.SymLink
+            else                FileType.Other
+        }
 
     ///
     /// Statistical information for a file.
@@ -155,21 +148,20 @@ namespace File {
     /// Returns the statistics of the given file `f`.
     ///
     pub def stat(f: String): Result[String, StatInfo] \ IO =
-        use Result.flatMap;
-
-        let* fileAccessTime = accessTime(f);
-        let* fileCreationTime = creationTime(f);
-        let* fileModificationTime = modificationTime(f);
-        let* fileSize = size(f);
-        let* typeOfFile = fileType(f);
-
-        Ok({
-            accessTime = fileAccessTime,
-            creationTime = fileCreationTime,
-            modificationTime = fileModificationTime,
-            size = fileSize,
-            fileType = typeOfFile
-        })
+        forM (
+            fileAccessTime <- accessTime(f);
+            fileCreationTime <- creationTime(f);
+            fileModificationTime <- modificationTime(f);
+            fileSize <- size(f);
+            typeOfFile <- fileType(f)
+        ) yield
+            {
+                accessTime = fileAccessTime,
+                creationTime = fileCreationTime,
+                modificationTime = fileModificationTime,
+                size = fileSize,
+                fileType = typeOfFile
+            }
 
     ///
     /// Returns `true` if the given file `f` exists.
@@ -414,7 +406,7 @@ namespace File {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], r, r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIter(r: Region[r], f: String): Iterator[Result[String, String], false, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -429,11 +421,11 @@ namespace File {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := unsafe_cast readLine(reader) as _ \ Read(r);
+                        line := readLine(reader);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := unsafe_cast null as String;
+                            line := checked_cast(null);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(getMessage(ex)))
                         }
@@ -446,7 +438,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.singleton(r, Err(getMessage(ex)))
+                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
@@ -454,7 +446,7 @@ namespace File {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], r, r] \ { Read(r), Write(r), IO } =
+    pub def readLinesIterWith(r: Region[r], opts: {charSet = String}, f: String): Iterator[Result[String, String], false, r] \ { Read(r), Write(r), IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -470,11 +462,11 @@ namespace File {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := unsafe_cast readLine(reader) as _ \ Read(r);
+                        line := readLine(reader);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := unsafe_cast null as String;
+                            line := checked_cast(null);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(getMessage(ex)))
                         }
@@ -487,7 +479,7 @@ namespace File {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.singleton(r, Err(getMessage(ex)))
+                Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
         }
 
     ///
@@ -565,7 +557,7 @@ namespace File {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], r, r] \ IO =
+    pub def readChunks(r: Region[r], chunkSize: Int32, f: String): Iterator[Result[String, Array[Int8, r]], false, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -575,14 +567,14 @@ namespace File {
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.new(r, chunkSize) @ r;
-                let numberRead = ref unsafe_cast read(stream, deref bytes) as _ \ Read(r) @ r;
+                let numberRead = ref read(stream, deref bytes) @ r;
                 let next = () -> {
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
                             bytes := Array.new(r, chunkSize);
                             let accRead = deref numberRead;
-                            numberRead := unsafe_cast read(stream, deref bytes) as _ \ Read(r);
+                            numberRead := read(stream, deref bytes);
                             Some(Ok(readBytesWithHelper(r, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: ##java.io.IOException => {
@@ -599,12 +591,10 @@ namespace File {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.singleton(r, Err(getMessage(ex)))
+                    Iterator.iterate(r, constant(Some(Err(getMessage(ex)))))
             }
-        } else if (chunkSize == 0) {
-            Iterator.empty(r)
         } else {
-            Iterator.singleton(r, Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))
+            Iterator.iterate(r, constant(Some(Err("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`."))))
         }
 
     ///
@@ -696,7 +686,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileWriter);
+            let printWriter = newPrintWriter(checked_cast(fileWriter));
 
             println(printWriter, "${data}");
             close(printWriter);
@@ -732,7 +722,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileWriter = newFileWriter(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileWriter);
+            let printWriter = newPrintWriter(checked_cast(fileWriter));
 
             Foldable.forEach(line -> println(printWriter, line), data);
             close(printWriter);
@@ -769,7 +759,7 @@ namespace File {
 
             let javaFile = newFile(f);
             let fileStream = newFileStream(javaFile);
-            let printWriter = newPrintWriter(upcast fileStream);
+            let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
@@ -807,7 +797,7 @@ namespace File {
             let javaFile = newFile(f);
             // 2nd parameter `true` is for append.
             let fileStream = newFileStream(javaFile, true);
-            let printWriter = newPrintWriter(upcast fileStream);
+            let printWriter = newPrintWriter(checked_cast(fileStream));
 
             let dataAsArray = Foldable.toArray(r, data);
             write(fileStream, dataAsArray);
@@ -968,7 +958,7 @@ namespace File {
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let javaStream = walk(javaPath, Array#{} @ r);
-            let javaIter = iterator(upcast javaStream);
+            let javaIter = iterator(checked_cast(javaStream));
 
             let iter = fromJavaIter(r, javaIter);
             Ok(Iterator.map(pathToString, iter))
@@ -1074,7 +1064,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard move(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
+            discard move(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ r);
 
             Ok()
         } catch {
@@ -1165,7 +1155,7 @@ namespace File {
 
             let srcFile = newFile(src.src);
             let srcPath = toPath(srcFile);
-            discard copy(srcPath, dstPath, Array#{upcast getOverwrite()} @ r);
+            discard copy(srcPath, dstPath, Array#{checked_cast(getOverwrite())} @ r);
 
             Ok()
         } catch {

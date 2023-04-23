@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.shell.{Shell, SourceProvider}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util.Result.{ToErr, ToOk}
 import ca.uwaterloo.flix.util._
@@ -64,9 +64,15 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      val shell = new Shell(SourceProvider.ProjectPath(cwd), options)
-      shell.loop()
-      System.exit(0)
+      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
+        case Result.Ok(bootstrap) =>
+          val shell = new Shell(bootstrap, options)
+          shell.loop()
+          System.exit(0)
+        case Result.Err(e) =>
+          println(e.message(Formatter.getDefault))
+          System.exit(1)
+      }
     }
 
     // configure Flix and add the paths.
@@ -75,16 +81,16 @@ object SimpleRunner {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addSourcePath(file.toPath)
-        case "fpkg" => flix.addSourcePath(file.toPath)
+        case "flix" => flix.addFlix(file.toPath)
+        case "fpkg" => flix.addPkg(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>
           Console.println(s"Unrecognized file extension: '$ext'.")
           System.exit(1)
       }
     }
-    if (Formatter.hasColorSupport)
-      flix.setFormatter(AnsiTerminalFormatter)
+
+    flix.setFormatter(Formatter.getDefault)
 
     // evaluate main.
     val timer = new Timer(flix.compile())

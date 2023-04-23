@@ -46,12 +46,11 @@ def typeCheck(e: Expr[()]): Expr[(tpe = Type)] = match e {
 }
 
 /// We can now type check a simple expression:
-def main(): Unit \ IO =
+def run(): Type =
     let e = Expr.Ite({exp1 = Expr.True,
                  exp2 = Expr.Cst({value = 123}),
                  exp3 = Expr.Cst({value = 456})});
-    let _h = typeOf(typeCheck(e));
-    unsafe_cast () as _ \ IO // exit code
+    typeOf(typeCheck(e))
 
 /// We can extend the function above to be one that is polymorphic
 /// in whatever other fields an expression may be decorated with:

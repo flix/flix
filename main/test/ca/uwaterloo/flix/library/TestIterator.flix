@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestIterator {
+mod TestIterator {
     use Iterator.Iterator
 
     /////////////////////////////////////////////////////////////////////////////
@@ -178,76 +178,6 @@ namespace TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool = region rc {
-        Iterator.empty(rc) |> Iterator.product == 1
-    }
-
-    @test
-    def product02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.product == 1
-    }
-
-    @test
-    def product03(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.product == 6
-    }
-
-    @test
-    def product04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.product == -18
-    }
-
-    @test
-    def product05(): Bool = region rc {
-        List.iterator(rc, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.product == 24
-    }
-
-    @test
-    def product06(): Bool = region rc {
-        List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.product == -100
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool = region rc {
-        Iterator.empty(rc) |> Iterator.productWith(x -> x + 1) == 1
-    }
-
-    @test
-    def productWith02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.productWith(x -> x + 1) == 2
-    }
-
-    @test
-    def productWith03(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
-    }
-
-    @test
-    def productWith04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.productWith(x -> x + 1) == -48
-    }
-
-    @test
-    def productWith05(): Bool = region rc {
-        List.iterator(rc, -2 :: -3 :: -4 :: -5 :: Nil) |> Iterator.productWith(x -> x + 1) == 24
-    }
-
-    @test
-    def productWith06(): Bool = region rc {
-        List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.productWith(x -> x + 1) == -99
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -368,14 +298,14 @@ namespace TestIterator {
     @test
     def toMutDeque01(): Bool = region rc {
         let iter = Iterator.empty(rc): Iterator[Int32, rc, rc];
-        let d = new MutDeque(rc): MutDeque[Int32, _];
+        let d = MutDeque.new(rc): MutDeque[Int32, _];
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -383,7 +313,7 @@ namespace TestIterator {
     @test
     def toMutDeque03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -391,7 +321,7 @@ namespace TestIterator {
     @test
     def toMutDeque04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }

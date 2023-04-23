@@ -1,4 +1,4 @@
-namespace Test/Equality/Char {
+mod Test.Equality.Char {
 
     @test
     def testEqChar01(): Bool = 'a' == 'a'

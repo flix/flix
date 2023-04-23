@@ -3,9 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestParser extends FunSuite with TestUtils {
+class TestParser extends AnyFunSuite with TestUtils {
 
   test("ParseError.Int.01") {
     val input =
@@ -419,15 +419,6 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.ForEachYield.01") {
-    val input =
-      """
-        |def f(): List[Int32] = foreach () yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

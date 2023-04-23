@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.tools
 
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
 import java.security.{DigestInputStream, MessageDigest}
@@ -11,7 +12,7 @@ import java.util.zip.ZipFile
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
-class TestPackager extends FunSuite {
+class TestBootstrap extends AnyFunSuite {
 
   private val ProjectPrefix: String = "flix-project-"
 
@@ -19,43 +20,50 @@ class TestPackager extends FunSuite {
 
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
   }
 
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.check(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.check(DefaultOptions)
   }
 
   test("build") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.build()
   }
 
   test("build-jar") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.build()
+    b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val jarPath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
     assert(Files.exists(jarPath))
     assert(jarPath.getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("build-jar generates ZIP entries with fixed time") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.build()
+    b.buildJar(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
+    for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
       assert(formatted.equals("2014-06-27 00:00:00"))
@@ -63,42 +71,50 @@ class TestPackager extends FunSuite {
   }
 
   test("build-jar always generates package that is byte-for-byte exactly the same") {
+    implicit val flix: Flix = new Flix()
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
-    def hash1 = calcHash(packagePath)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.build()
+    b.buildJar(DefaultOptions)
 
-    Packager.build(p, DefaultOptions)
-    Packager.buildJar(p, DefaultOptions)
-    def hash2 = calcHash(packagePath)
+    def hash1 = calcHash(jarPath)
+
+    b.build()
+    b.buildJar(DefaultOptions)
+
+    def hash2 = calcHash(jarPath)
 
     assert(
       hash1.equals(hash2),
-      s"Two file hashes are not same: ${hash1} and ${hash2}")
+      s"Two file hashes are not same: $hash1 and $hash2")
   }
 
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.buildPkg(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     assert(Files.exists(packagePath))
     assert(packagePath.getFileName.toString.startsWith(ProjectPrefix))
   }
 
   test("build-pkg generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.buildPkg(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.buildPkg(DefaultOptions)
 
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
@@ -109,44 +125,50 @@ class TestPackager extends FunSuite {
 
   test("build-pkg always generates package that is byte-for-byte exactly the same") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
     val packageName = p.getFileName.toString
-    val packagePath = p.resolve(packageName + ".fpkg")
+    val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    Packager.buildPkg(p, DefaultOptions)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.buildPkg(DefaultOptions)
+
     def hash1 = calcHash(packagePath)
 
-    Packager.buildPkg(p, DefaultOptions)
+    b.buildPkg(DefaultOptions)
+
     def hash2 = calcHash(packagePath)
 
     assert(
       hash1.equals(hash2),
-      s"Two file hashes are not same: ${hash1} and ${hash2}")
+      s"Two file hashes are not same: $hash1 and $hash2")
   }
 
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.benchmark(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.benchmark(DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.run(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.run(DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    Packager.init(p, DefaultOptions)
-    Packager.test(p, DefaultOptions)
+    Bootstrap.init(p, DefaultOptions)(System.out)
+    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    b.test(DefaultOptions)
   }
 
   def calcHash(p: Path): String = {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) { }
+      while (input.read(buffer) != -1) {}
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }

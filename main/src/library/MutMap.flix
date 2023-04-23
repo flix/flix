@@ -21,17 +21,13 @@ pub enum MutMap[k: Type, v: Type, r: Region] {
     case MutMap(Region[r], Ref[Map[k, v], r])
 }
 
-instance Newable[MutMap[k, v]] {
-    pub def new(r: Region[r]): MutMap[k, v, r] \ Write(r) = MutMap.new(r)
-}
-
-namespace MutMap {
+mod MutMap {
 
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ Read(r) with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -498,29 +494,6 @@ namespace MutMap {
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
         let MutMap(_, mm) = m;
         Map.sumWith(f, deref mm)
-
-    ///
-    /// Returns the product of all keys in the mutable map `m`.
-    ///
-    pub def productKeys(m: MutMap[Int32, v, r]): Int32 \ Read(r) =
-        let MutMap(_, mm) = m;
-        Map.productKeys(deref mm)
-
-    ///
-    /// Returns the product of all values in the mutable map `m`.
-    ///
-    pub def productValues(m: MutMap[k, Int32, r]): Int32 \ Read(r) =
-        let MutMap(_, mm) = m;
-        Map.productValues(deref mm)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the mutable map `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, Read(r) } =
-        let MutMap(_, mm) = m;
-        Map.productWith(f, deref mm)
 
     ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.

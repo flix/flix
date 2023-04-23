@@ -14,59 +14,59 @@
  *  limitations under the License.
  */
 
-namespace TestFunctor {
+mod TestFunctor {
 
-    use Functor.{lift, ignore}
+    use Functor.{map, ignore}
     use Functor.{<$>, <$$>, <$, $>}
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // lift                                                                    //
+    // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def lift01(): Bool =
-        lift(x -> x + 1, None) == None
+    def map01(): Bool =
+        map(x -> x + 1, None) == None
 
     @test
-    def lift02(): Bool =
-        lift(x -> x + 1, Some(1)) == Some(2)
+    def map02(): Bool =
+        map(x -> x + 1, Some(1)) == Some(2)
 
     @test
-    def lift03(): Bool =
-        lift(x -> x + 1, Nil) == Nil
+    def map03(): Bool =
+        map(x -> x + 1, Nil) == Nil
 
     @test
-    def lift04(): Bool =
-        lift(x -> x + 1, 1 :: Nil) == 2 :: Nil
+    def map04(): Bool =
+        map(x -> x + 1, 1 :: Nil) == 2 :: Nil
 
     @test
-    def lift05(): Bool =
-        lift(x -> x + 1, 1 :: 2 :: Nil) == 2 :: 3 :: Nil
+    def map05(): Bool =
+        map(x -> x + 1, 1 :: 2 :: Nil) == 2 :: 3 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
-    // as                                                                      //
+    // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def as01(): Bool =
-        Functor.as(None, 'A') == None
+    def replace01(): Bool =
+        Functor.replace(None, 'A') == None
 
     @test
-    def as02(): Bool =
-        Functor.as(Some(1), 'A') == Some('A')
+    def replace02(): Bool =
+        Functor.replace(Some(1), 'A') == Some('A')
 
     @test
-    def as03(): Bool =
-        Functor.as(Nil, 'A') == Nil
+    def replace03(): Bool =
+        Functor.replace(Nil, 'A') == Nil
 
     @test
-    def as04(): Bool =
-        Functor.as(1 :: Nil, 'A') == 'A' :: Nil
+    def replace04(): Bool =
+        Functor.replace(1 :: Nil, 'A') == 'A' :: Nil
 
     @test
-    def as05(): Bool =
-        Functor.as(1 :: 2 :: Nil, 'A') == 'A' :: 'A' :: Nil
+    def replace05(): Bool =
+        Functor.replace(1 :: 2 :: Nil, 'A') == 'A' :: 'A' :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // ignore                                                                  //

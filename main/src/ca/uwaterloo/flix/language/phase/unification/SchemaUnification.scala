@@ -30,9 +30,9 @@ object SchemaUnification {
     */
   def unifyRows(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
 
-    case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv)
+    case (tvar: Type.Var, tpe) => Unification.unifyVar(tvar, tpe, renv).map(_._1) // TODO ASSOC-TYPES
 
-    case (tpe, tvar: Type.Var) => Unification.unifyVar(tvar, tpe, renv)
+    case (tpe, tvar: Type.Var) => Unification.unifyVar(tvar, tpe, renv).map(_._1) // TODO ASSOC-TYPES
 
     case (Type.SchemaRowEmpty, Type.SchemaRowEmpty) => Ok(Substitution.empty)
 
@@ -43,7 +43,7 @@ object SchemaUnification {
       rewriteSchemaRow(row2, row1, renv) flatMap {
         case (subst1, restRow2) =>
           unifyTypes(subst1(restRow1), subst1(restRow2), renv) flatMap {
-            case subst2 => Result.Ok(subst2 @@ subst1)
+            case (subst2, econstrs) => Result.Ok(subst2 @@ subst1) // TODO ASSOC-TYPES
           }
       }
 
@@ -63,7 +63,7 @@ object SchemaUnification {
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
           for {
-            subst <- unifyTypes(fieldType1, fieldType2, renv)
+            (subst, econstrs) <- unifyTypes(fieldType1, fieldType2, renv) // TODO ASSOC-TYPES consider econstrs
           } yield (subst, restRow2)
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.

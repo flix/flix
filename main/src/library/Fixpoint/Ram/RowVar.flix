@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     @Internal
     pub enum RowVar with Eq {

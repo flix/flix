@@ -9,7 +9,7 @@ def slowFunction(): String = {
 /// The idea is that we add the message to some buffer.
 /// Later, we can force the evaluation and store it permanently.
 /// For this example we just return the unit value.
-def log(_: Lazy[String]): Unit \ IO = unsafe_cast () as _ \ IO
+def log(_: Lazy[String]): Unit \ IO = checked_ecast(())
 
 /// Writes a message to the log.
 /// The slow function will not be evaluated.

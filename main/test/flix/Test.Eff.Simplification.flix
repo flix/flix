@@ -1,4 +1,4 @@
-namespace Test/Eff/Simplification {
+mod Test.Eff.Simplification {
     @test
     def testPureAndPure(): Unit & Pure and Pure \ {} = pure()
 
@@ -21,5 +21,5 @@ namespace Test/Eff/Simplification {
     def pure(): Unit \ {} = ()
 
     /// an impure function
-    def impure(): Unit & Impure \ {} = unsafe_cast () as _ \ IO
+    def impure(): Unit & Impure \ {} = unchecked_cast(() as _ \ IO)
 }

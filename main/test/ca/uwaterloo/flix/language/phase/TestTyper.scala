@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestTyper extends FunSuite with TestUtils {
+class TestTyper extends AnyFunSuite with TestUtils {
 
   test("TestLeq01") {
     val input =
@@ -358,7 +358,7 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.MissingInstance](result)
+    expectError[TypeError.MissingEq](result)
   }
 
   test("MissingEq.01") {
@@ -1040,10 +1040,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        relational_choose x {
-        |            case Absent     => unsafe_cast 1 as _ \ IO
+        |            case Absent     => 1
         |        };
         |        relational_choose x {
-        |            case Present(_) => unsafe_cast 2 as _ \ IO
+        |            case Present(_) => 2
         |        }
         |    };
         |    f(Absent)
@@ -1064,10 +1064,10 @@ class TestTyper extends FunSuite with TestUtils {
         |def foo(): Unit =
         |    let f = x -> {
         |        relational_choose x {
-        |            case Absent     => unsafe_cast 1 as _ \ IO
+        |            case Absent     => 2
         |        };
         |        relational_choose x {
-        |            case Present(_) => unsafe_cast 2 as _ \ IO
+        |            case Present(_) => 2
         |        }
         |    };
         |    f(Present(123))
@@ -1158,7 +1158,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.01") {
     val input =
       """
-        |pub def f(): Int32 = unsafe_cast 123 as _ \ IO
+        |pub def f(): Int32 = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1168,7 +1168,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("Test.ImpureDeclaredAsPure.02") {
     val input =
       """
-        |def f(): Int32 & Pure = unsafe_cast 123 as _ \ IO
+        |def f(): Int32 & Pure = unchecked_cast(123 as _ \ IO)
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1406,82 +1406,7 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError.GeneralizationError](result)
   }
 
-  test("TestUpcast.01") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    let f =
-        |        if (true)
-        |            upcast x -> (unsafe_cast x + 1 as _ & ef)
-        |        else
-        |            x -> x + 1;
-        |    let _ = f(1);
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestUpcast.02") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let _ =
-        |        if (true)
-        |            newStringBuilder()
-        |        else
-        |            upcast newObject();
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestUpcast.03") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
-        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestUpcast.04") {
-    val input =
-      """
-        |def f(): Unit & ef =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder & Impure as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object & Impure as newObject;
-        |    let f = (_: ##java.lang.StringBuilder) -> newObject(); // sb  -> obj
-        |    let g = (_: ##java.lang.Object) -> newStringBuilder(); // obj -> sb
-        |    let _ =
-        |        if (true)
-        |            f
-        |        else
-        |            upcast g;
-        |    ()
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.EffectGeneralizationError](result)
-  }
-
-  test("TestPossibleUpcast.01") {
+  test("Test.PossibleCheckedTypeCast.01") {
     val input =
       """
         |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
@@ -1491,7 +1416,7 @@ class TestTyper extends FunSuite with TestUtils {
       """.stripMargin
 
     val result = compile(input, Options.TestWithLibMin)
-    expectError[TypeError.PossibleUpcast](result)
+    expectError[TypeError.PossibleCheckedTypeCast](result)
   }
 
   test("TestPar.01") {
@@ -1542,7 +1467,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unsafe_cast 1 as _ & Impure }) yield x;
+        |     let _ = par (x <- { unchecked_cast(1 as _ & Impure) }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1553,7 +1478,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (x <- { unsafe_cast 1 as _ \ Impure }) yield x;
+        |     let _ = par (x <- { unchecked_cast(1 as _ \ Impure) }) yield x;
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1564,7 +1489,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """
         | def f(g: Unit -> Unit \ Impure): Unit \ Impure =
-        |     let _ = par (a <- 1; b <- { unsafe_cast 1 as _ \ Impure }) yield (a, b);
+        |     let _ = par (a <- 1; b <- { unchecked_cast(1 as _ \ Impure) }) yield (a, b);
         |     g()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1885,7 +1810,7 @@ class TestTyper extends FunSuite with TestUtils {
         |    case Color.Blue => Color.Blue
         |}
         |""".stripMargin
-    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 
   test("TestCaseSetAnnotation.03") {
@@ -1914,6 +1839,6 @@ class TestTyper extends FunSuite with TestUtils {
         |// Wrong minus parsing
         |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
         |""".stripMargin
-    expectError[TypeError.GeneralizationError](compile(input, Options.TestWithLibNix))
+    expectError[TypeError.MismatchedBools](compile(input, Options.TestWithLibNix))
   }
 }

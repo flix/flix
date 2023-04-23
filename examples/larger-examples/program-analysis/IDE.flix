@@ -20,7 +20,7 @@
 ///
 /// Written by Magnus Madsen, Ondřej Lhoták.
 ///
-namespace IDE {
+mod IDE {
 
     ///
     /// An IDE instance where:
@@ -38,6 +38,7 @@ namespace IDE {
         callGraph       = List[(n, p)],
         eshIntra        = List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
         eshCallStart    = List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
+        eshCallStartFn  = (n, d, p) -> Vector[(d, f)],
         eshEndReturn    = List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
         id              = f,
         apply           = (f, l) -> l,
@@ -47,10 +48,10 @@ namespace IDE {
     ///
     /// Solves the given IDE instances.
     ///
-    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)] \ IO
+    pub def run(ide: IDE[p, n, d, f, l]): List[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
              LowerBound[l], JoinLattice[l], MeetLattice[l],
-             Boxable[n], Boxable[d], Boxable[p], Boxable[f],  Boxable[l] =
+             Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
         let main = ide.main;
@@ -66,6 +67,9 @@ namespace IDE {
             // nodes in a given procedure
             InProc(p, start) :- StartNode(p, start).
             InProc(p, m) :- InProc(p, n), CFG(n, m).
+
+            // procedures in the program.
+            Proc(p) :- InProc(p, _).
 
             // intraproc
             JumpFn(d1, m, d3; compose(long, short)) :-
@@ -107,6 +111,12 @@ namespace IDE {
                 Results(call, d; v),
                 EshCallStart(call, d, proc, dp, cs).
 
+            // Variant by Magnus that uses the functional.
+            ResultProc(proc, dp; apply(cs,v)) :-
+                Proc(proc),
+                Results(call, d; v),
+                let (dp, cs) = ide.eshCallStartFn(call, d, proc).
+
             // TODO: Ondrej: Add comment.
             EshIntra(n, ide.zero, ide.zero, ide.id) :- CFG(n,_).
 
@@ -128,10 +138,6 @@ namespace IDE {
         let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
         let f2 = inject ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
-        let m = solve p, f1, f2;
-
-        Fixpoint.unsafePrint(m); // NB: Just for debugging.
-
         query p, f1, f2 select (n, d, l) from Results(n, d; l)
 
 }
@@ -146,7 +152,7 @@ namespace IDE {
 ///
 /// We begin by defining the lattice and its associated operations.
 ///
-namespace ConstantProp {
+mod ConstantProp {
 
     ///            Top
     ///
@@ -358,7 +364,7 @@ def main(): Unit \ IO =
         ("p","ep") :: Nil;
 
     let eshIntra =
-        ("smain","zero","x", ConstantProp/MicroFunction.Bot) ::
+        ("smain","zero","x", ConstantProp.MicroFunction.Bot) ::
         ("n2","x","x", ConstantProp.id()) ::
         ("n3","x","x", ConstantProp.id()) ::
 
@@ -366,39 +372,50 @@ def main(): Unit \ IO =
         ("sp","x","x", ConstantProp.id()) ::
         ("n4","a","a", ConstantProp.id()) ::
         ("n4","x","x", ConstantProp.id()) ::
-        ("n5","a","a", ConstantProp/MicroFunction.NonBot(1,-2, ConstantProp/Const.Bot)) ::
+        ("n5","a","a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot)) ::
         ("n5","x","x", ConstantProp.id()) ::
         ("n6","a","a", ConstantProp.id()) ::
         ("n7","a","a", ConstantProp.id()) ::
         ("n7","x","x", ConstantProp.id()) ::
-        ("n8","a","a", ConstantProp/MicroFunction.NonBot(1,2, ConstantProp/Const.Bot)) ::
+        ("n8","a","a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot)) ::
         ("n8","x","x", ConstantProp.id()) ::
         ("n9","a","a", ConstantProp.id()) ::
-        ("n9","a","x", ConstantProp/MicroFunction.NonBot(-2,5, ConstantProp/Const.Bot)) :: Nil;
+        ("n9","a","x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot)) :: Nil;
 
     let eshCallStart =
-        ("n1","zero","p","a",ConstantProp/MicroFunction.NonBot(0,7,ConstantProp/Const.Bot)) ::
+        ("n1","zero","p","a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot)) ::
         ("n1","x","p","x",ConstantProp.id()) ::
         ("n6","a","p","a",ConstantProp.id()) ::
         ("n6","x","p","x",ConstantProp.id()) :: Nil;
+
+    // As a functional.
+    // Does this function need to be paramterized over the call graph (???)
+    def eshCallStartFn(n, d, p) = match (n, d, p) {
+        case ("n1", "zero", "p")    => Vector#{("a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot))}
+        case ("n1","x","p")         => Vector#{("x",ConstantProp.id())}
+        case ("n6","a","p")         => Vector#{("a",ConstantProp.id())}
+        case ("n6","x","p")         => Vector#{("x",ConstantProp.id())}
+        case _ => Vector#{}
+    };
 
     let eshEndReturn =
         ("p", "x", "n1", "x", ConstantProp.id()) ::
         ("p", "x", "n6", "x", ConstantProp.id()) :: Nil;
 
     let result = IDE.run({
-        zero         = "zero",
-        main         = "smain",
-        cfg          = cfg,
-        startNodes   = startNodes,
-        endNodes     = endNodes,
-        callGraph    = callGraph,
-        eshIntra     = eshIntra,
-        eshCallStart = eshCallStart,
-        eshEndReturn = eshEndReturn,
-        id           = ConstantProp.id(),
-        apply        = ConstantProp.apply,
-        compose      = ConstantProp.compose
+        zero            = "zero",
+        main            = "main",
+        cfg             = cfg,
+        startNodes      = startNodes,
+        endNodes        = endNodes,
+        callGraph       = callGraph,
+        eshIntra        = eshIntra,
+        eshCallStart    = eshCallStart,         // Right now both are used, but obv. only the functional should be.
+        eshCallStartFn  = eshCallStartFn,       // Right now both are used, but obv. only the functional should be.
+        eshEndReturn    = eshEndReturn,
+        id              = ConstantProp.id(),
+        apply           = ConstantProp.apply,
+        compose         = ConstantProp.compose
         });
 
     println(result)

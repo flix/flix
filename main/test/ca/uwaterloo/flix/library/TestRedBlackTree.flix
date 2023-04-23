@@ -1,4 +1,4 @@
-namespace TestRedBlackTree {
+mod TestRedBlackTree {
 
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
@@ -250,8 +250,8 @@ namespace TestRedBlackTree {
     def mapWithKey06(): Bool = region r {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
-        let a = new MutList(r);
-        discard Map.mapWithKey((k, v) -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
+        let a = MutList.new(r);
+        discard Map.mapWithKey((k, v) -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); v }, m);
         MutList.toList(a) == range
     }
 
@@ -581,126 +581,6 @@ namespace TestRedBlackTree {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // productValues                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productValues01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productValues == 1
-
-    @test
-    def productValues02(): Bool =
-        let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.productValues(t) == 1
-
-    @test
-    def productValues03(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.productValues(t) == 6
-
-    @test
-    def productValues04(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.productValues(t) == -18
-
-    @test
-    def productValues05(): Bool =
-        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
-        RedBlackTree.productValues(t) == 24
-
-    @test
-    def productValues06(): Bool =
-        let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.productValues(t) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productKeys                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productKeys01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productKeys == 1
-
-    @test
-    def productKeys02(): Bool =
-        let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.productKeys(t) == 1
-
-    @test
-    def productKeys03(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.productKeys(t) == 6
-
-    @test
-    def productKeys04(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.productKeys(t) == -18
-
-    @test
-    def productKeys05(): Bool =
-        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
-        RedBlackTree.productKeys(t) == 40
-
-    @test
-    def productKeys06(): Bool =
-        let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.productKeys(t) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.productWith((k, v) -> k + v) == 1
-
-    @test
-    def productWith02(): Bool =
-        let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.productWith((k, v) -> k + v, t) == 2
-
-    @test
-    def productWith03(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.productWith((k, v) -> k + v, t) == 48
-
-    @test
-    def productWith04(): Bool =
-        let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.productWith((k, v) -> k + v, t) == -288
-
-    @test
-    def productWith05(): Bool =
-        let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
-        RedBlackTree.productWith((k, v) -> k + v, t) == 384
-
-    @test
-    def productWith06(): Bool =
-        let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.productWith((k, v) -> k + v, t) == -400
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // parProductWith                                                          //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def parProductWith01(): Bool =
-        let l = List.range(1, 2001);
-        let Map.Map(t) = List.zip(l, l) |> List.toMap;
-        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l) * List.product(l)
-
-    @test
-    def parProductWith02(): Bool =
-        let l1 = List.range(1, 2001);
-        let l2 = List.range(-2000, 0);
-        let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
-        RedBlackTree.parProductWith(threads() - 1, (k, v) -> k * v, t) == List.product(l1) * List.product(l2)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -816,7 +696,7 @@ namespace TestRedBlackTree {
         let t = RedBlackTree.empty(): RedBlackTree[Int32, Int32];
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -826,7 +706,7 @@ namespace TestRedBlackTree {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, 1), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -838,7 +718,7 @@ namespace TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((2, 2), d2);
         MutDeque.pushBack((3, 3), d2);
         MutDeque.pushBack((4, 4), d2);
@@ -853,7 +733,7 @@ namespace TestRedBlackTree {
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
         let d1 = RedBlackTree.toMutDeque(r, t);
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushFront((4, 'd'), d2);
         MutDeque.pushFront((3, 'c'), d2);
         MutDeque.pushFront((2, 'b'), d2);

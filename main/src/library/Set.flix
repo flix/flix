@@ -23,8 +23,6 @@ pub enum Set[t] with Sendable {
     case Set(RedBlackTree[t, Unit])
 }
 
-instance Boxable[Set[t]] with Boxable[t]
-
 instance Eq[Set[a]] with Eq[a] {
     pub def eq(s1: Set[a], s2: Set[a]): Bool =
         Set.toList(s1) == Set.toList(s2)
@@ -97,13 +95,13 @@ instance Iterable[Set] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ Write(r) = Set.iterator(rc, s)
 }
 
-namespace Set {
+mod Set {
 
     ///
     /// Returns a string representation of the given set `s`.
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -391,31 +389,6 @@ namespace Set {
         }
 
     ///
-    /// Returns the product of all elements in the set `s`.
-    ///
-    pub def product(s: Set[Int32]): Int32 =
-        Foldable.product(s)
-
-    ///
-    /// Returns the product of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
-        let Set(t) = s;
-        def pw() = RedBlackTree.productWith((k, _) -> f(k), t);
-        typematch f {
-            case g: a -> Int32 \ {} =>
-                if (useParallelEvaluation(s))
-                    RedBlackTree.parProductWith(threads() - 1, (k, _) -> g(k), t)
-                else
-                    pw()
-            case _: a -> Int32 \ ef => pw()
-            case _: _ => pw()
-        }
-
-    ///
     /// Returns the union of the elements in `s`.
     ///
     pub def flatten(s: Set[Set[a]]): Set[a] with Order[a] =
@@ -553,7 +526,7 @@ namespace Set {
     /// Returns `s` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], s: Set[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
 

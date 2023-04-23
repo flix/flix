@@ -147,15 +147,4 @@ object CodeHint {
     def severity: Severity = Severity.Info
   }
 
-  /**
-    * A code hint that indicates an unsafe cast to pure.
-    *
-    * @param loc the location of the expression.
-    */
-  case class UnsafePurityCast(loc: SourceLocation) extends CodeHint {
-    def summary: String = s"Unsafe cast to pure."
-
-    def severity: Severity = Severity.Info
-  }
-
 }

@@ -51,15 +51,22 @@ object GitHub {
   /**
     * Lists the project's releases.
     */
-  def getReleases(project: Project): Result[List[Release], PackageError] = {
+  def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
+    val json = try {
+      val conn = url.openConnection()
+      // add the API key as bearer if needed
+      apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
+      val stream = conn.getInputStream
+      StreamOps.readAll(stream)
+    } catch {
+      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+    }
     val releaseJsons = try {
-      val stream = url.openStream()
-      val json = StreamOps.readAll(stream)
       parse(json).asInstanceOf[JArray]
     } catch {
-      case _: IOException => return Err(PackageError.ProjectNotFound(s"Could not open stream to $url"))
-      case _: ClassCastException => return Err(PackageError.JsonError(s"Could not parse $url as JSON array"))
+
+      case _: ClassCastException => return Err(PackageError.JsonError(json, project))
     }
     Ok(releaseJsons.arr.map(parseRelease))
   }
@@ -75,11 +82,11 @@ object GitHub {
   /**
     * Gets the project release with the highest semantic version.
     */
-  def getLatestRelease(project: Project): Result[Release, PackageError] = {
-    getReleases(project).flatMap {
+  def getLatestRelease(project: Project, apiKey: Option[String]): Result[Release, PackageError] = {
+    getReleases(project, apiKey).flatMap {
       releases =>
         releases.maxByOption(_.version) match {
-          case None => Err(PackageError.NoReleasesFound(s"No releases available for project ${project}"))
+          case None => Err(PackageError.NoReleasesFound(project))
           case Some(latest) => Ok(latest)
         }
     }
@@ -88,11 +95,11 @@ object GitHub {
   /**
     * Gets the project release with the relevant semantic version.
     */
-  def getSpecificRelease(project: Project, version: SemVer): Result[Release, PackageError] = {
-    getReleases(project).flatMap {
+  def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
+    getReleases(project, apiKey).flatMap {
       releases =>
         releases.find(r => r.version == version) match {
-          case None => Err(PackageError.VersionDoesNotExist(s"Version ${version.toString} of project ${project.toString} does not exist"))
+          case None => Err(PackageError.VersionDoesNotExist(version, project))
           case Some(release) => Ok(release)
         }
     }
@@ -138,7 +145,7 @@ object GitHub {
   private def parseSemVer(string: String): SemVer = {
     val semVer = """v(\d+)\.(\d+)\.(\d+)""".r
     string match {
-      case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, patch.toInt)
+      case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, Some(patch.toInt), None, None)
       case _ => throw new RuntimeException(s"Invalid semantic version: $string")
     }
   }

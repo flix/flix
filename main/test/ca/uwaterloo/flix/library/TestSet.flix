@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestSet {
+mod TestSet {
 
     use ToString.toString
     use Hash.hash
@@ -520,8 +520,8 @@ def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 def count08(): Bool = region r {
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = new MutList(r);
-    discard Set.count(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    let a = MutList.new(r);
+    discard Set.count(x -> { let b = MutList.new(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
 }
 
@@ -591,75 +591,8 @@ def count08(): Bool = region r {
     def sumWith08(): Bool = region r {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = new MutList(r);
-        discard Set.sumWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
-        MutList.toList(a) == range
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Set.product(Set.empty()) == 1
-
-    @test
-    def product02(): Bool =
-       Set#{1} |> Set.product == 1
-
-    @test
-    def product03(): Bool =
-        Set#{1, 2, 3} |> Set.product == 6
-
-    @test
-    def product04(): Bool =
-        Set#{1, 2, 3, -3} |> Set.product == -18
-
-    @test
-    def product05(): Bool =
-        Set#{-1, -2, -3, -4} |> Set.product == 24
-
-    @test
-    def product06(): Bool =
-        Set#{10, -10} |> Set.product == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Set#{} |> Set.productWith(x -> x + 1) == 1
-
-    @test
-    def productWith02(): Bool =
-        Set#{1} |> Set.productWith(x -> x + 1) == 2
-
-    @test
-    def productWith03(): Bool =
-        Set#{1, 2, 3} |> Set.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith04(): Bool =
-        Set#{1, 2, 3, -3} |> Set.productWith(x -> x + 1) == -48
-
-    @test
-    def productWith05(): Bool =
-        Set#{-2, -3, -4, -5} |> Set.productWith(x -> x + 1) == 24
-
-    @test
-    def productWith06(): Bool =
-        Set#{10, -10} |> Set.productWith(x -> x + 1) == -99
-
-    @test
-    def productWith08(): Bool = region r {
-        let range = List.range(0, 2000);
-        let m = range |> List.toSet;
-        let a = new MutList(r);
-        discard Set.productWith(k -> { let b = new MutList(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.new(r);
+        discard Set.sumWith(k -> { let b = MutList.new(r); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -1013,8 +946,8 @@ def map15(): Bool = Set.map(x -> x `Int32.rem` 9, Set#{0, 5, 1, 10, 7, 19, 28, 2
 def map16(): Bool = region r {
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = new MutList(r);
-    discard Set.map(x -> { let b = new MutList(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    let a = MutList.new(r);
+    discard Set.map(x -> { let b = MutList.new(r); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
 }
 
@@ -1233,7 +1166,7 @@ def toMutDeque01(): Bool = region r {
     let s: Set[Int32] = Set#{};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
 
     d1 `MutDeque.sameElements` d2
 }
@@ -1243,7 +1176,7 @@ def toMutDeque02(): Bool = region r {
     let s = Set#{1};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(1, d2);
 
     d1 `MutDeque.sameElements` d2
@@ -1254,7 +1187,7 @@ def toMutDeque03(): Bool = region r {
     let s = Set#{1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushBack(3, d2);
     MutDeque.pushBack(6, d2);
     MutDeque.pushFront(1, d2);
@@ -1267,7 +1200,7 @@ def toMutDeque04(): Bool = region r {
     let s = Set#{7, 1, 3, 6};
     let d1 = Set.toMutDeque(r, s);
 
-    let d2 = new MutDeque(r);
+    let d2 = MutDeque.new(r);
     MutDeque.pushFront(7, d2);
     MutDeque.pushFront(6, d2);
     MutDeque.pushFront(3, d2);
@@ -1378,27 +1311,27 @@ def forEachWithIndex02(): Bool = region r {
 
 @test
 def unfold01(): Bool =
-    Set.unfold(s -> if (true) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Set#{}
+    Set.unfold(s -> if (true) None else Some(s + 48, s + 1), 0) == Set#{}
 
 @test
 def unfold02(): Bool =
-    Set.unfold(s -> if (s > 0) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Set#{'0'}
+    Set.unfold(s -> if (s > 0) None else Some(s + 48, s + 1), 0) == Set#{48}
 
 @test
 def unfold03(): Bool =
-    Set.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Set#{'0', '1'}
+    Set.unfold(s -> if (s > 1) None else Some(s + 48, s + 1), 0) == Set#{48, 49}
 
 @test
 def unfold04(): Bool =
-    Set.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+    Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 0) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 
 @test
 def unfold05(): Bool =
-    Set.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 5) == Set#{'5', '6', '7', '8', '9'}
+    Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 1), 5) == Set#{53, 54, 55, 56, 57}
 
 @test
 def unfold06(): Bool =
-    Set.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == Set#{'0', '2', '4', '6', '8'}
+    Set.unfold(s -> if (s >= 10) None else Some(s + 48, s + 2), 0) == Set#{48, 50, 52, 54, 56}
 
 /////////////////////////////////////////////////////////////////////////////
 // unfoldWithIter                                                          //
@@ -1411,9 +1344,9 @@ def unfoldWithIter01(): Bool = region r {
         if (true)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
-            Some(c)
+            c
         };
     Set.unfoldWithIter(step) == Set#{}
 }
@@ -1425,11 +1358,11 @@ def unfoldWithIter02(): Bool = region r {
         if (deref x > 0)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
-            Some(c)
+            c
         };
-    Set.unfoldWithIter(step) == Set#{'0'}
+    Set.unfoldWithIter(step) == Set#{48}
 }
 
 @test
@@ -1439,11 +1372,11 @@ def unfoldWithIter03(): Bool = region r {
         if (deref x > 1)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
-            Some(c)
+            c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '1'}
+    Set.unfoldWithIter(step) == Set#{48, 49}
 }
 
 @test
@@ -1453,11 +1386,11 @@ def unfoldWithIter04(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
-            Some(c)
+            c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 }
 
 @test
@@ -1467,11 +1400,11 @@ def unfoldWithIter05(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 1;
-            Some(c)
+            c
         };
-    Set.unfoldWithIter(step) == Set#{'5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{53, 54, 55, 56, 57}
 }
 
 @test
@@ -1481,11 +1414,11 @@ def unfoldWithIter06(): Bool = region r {
         if (deref x >= 10)
             None
         else {
-            let c = Char.fromInt32(deref x + 48);
+            let c = Some(deref x + 48);
             x := deref x + 2;
-            Some(c)
+            c
         };
-    Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
+    Set.unfoldWithIter(step) == Set#{48, 50, 52, 54, 56}
 }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1566,8 +1499,8 @@ def unfoldWithIter06(): Bool = region r {
     @test
     def minimumBy05(): Bool = region r {
         let s = List.range(0, 2000) |> List.toSet;
-        let a = new MutList(r);
-        discard Set.minimumBy((x, y) -> { let b = new MutList(r); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        let a = MutList.new(r);
+        discard Set.minimumBy((x, y) -> { let b = MutList.new(r); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

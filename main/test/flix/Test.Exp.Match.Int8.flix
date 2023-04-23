@@ -1,4 +1,4 @@
-namespace Test/Exp/Match/Int8 {
+mod Test.Exp.Match.Int8 {
 
     @test
     def testMatchInt8_01(): Bool = match 0i8 {

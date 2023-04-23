@@ -1,4 +1,4 @@
-namespace Test/Exp/Effect {
+mod Test.Exp.Effect {
 
     // no test annotations for now
     // just making it public for redundancy purposes
@@ -23,14 +23,14 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def perform01(): Unit \ Fail = {
-        do Test/Exp/Effect/Fail.fail(":(")
+        do Test.Exp.Effect.Fail.fail(":(")
     }
 
     // @test
     pub def perform02(): Bool = {
         try {
-            do Test/Exp/Effect/Console.println("hi");
-            do Test/Exp/Effect/Console.println("bye");
+            do Test.Exp.Effect.Console.println("hi");
+            do Test.Exp.Effect.Console.println("bye");
             true
         } with Console {
             def println(_) = resume()
@@ -39,7 +39,7 @@ namespace Test/Exp/Effect {
 
     // @test
     pub def handlePerform01(): Unit = {
-        try do Test/Exp/Effect/Fail.fail("rats") with Fail {
+        try do Test.Exp.Effect.Fail.fail("rats") with Fail {
             def fail(_) = ()
         }
     }
@@ -47,7 +47,7 @@ namespace Test/Exp/Effect {
     // @test
     pub def handlePerform02(): Bool = {
         try {
-            let _ = do Test/Exp/Effect/Console.println("It was the best of times");
+            let _ = do Test.Exp.Effect.Console.println("It was the best of times");
             true
         } with Console {
             def println(_) = resume()
@@ -58,37 +58,37 @@ namespace Test/Exp/Effect {
 
     pub def without02(): Bool = true without {Fail, Console}
 
-    pub def singleEffect(): Bool \ Fail = unsafe_cast ??? as _ \ Fail
+    pub def singleEffect(): Bool \ Fail = checked_ecast(???)
 
-    pub def complementEffect(): Bool \ ~Fail = unsafe_cast ??? as _ \ ~Fail
+    pub def complementEffect(): Bool \ ~Fail = checked_ecast(???)
 
-    pub def unionEffect(): Bool \ Fail + Fail = unsafe_cast ??? as _ \ Fail + Fail
+    pub def unionEffect(): Bool \ Fail + Fail = checked_ecast(???)
 
-    pub def intersectionEffect(): Bool \ Fail & Fail = unsafe_cast ??? as _ \ Fail & Fail
+    pub def intersectionEffect(): Bool \ Fail & Fail = checked_ecast(???)
 
     pub def differenceEffect(): Bool \ Fail - Fail = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = unsafe_cast ??? as _ \ ef1
+    pub def singlePolyEffect(): Bool \ ef1 = checked_ecast(???)
 
-    pub def complementPolyEffect(): Bool \ ~ef1 = unsafe_cast ??? as _ \ ~ef1
+    pub def complementPolyEffect(): Bool \ ~ef1 = checked_ecast(???)
 
-    pub def unionPolyEffect(): Bool \ ef1 + ef2 = unsafe_cast ??? as _ \ ef1 + ef2
+    pub def unionPolyEffect(): Bool \ ef1 + ef2 = checked_ecast(???)
 
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = unsafe_cast ??? as _ \ ef1 & ef2
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = checked_ecast(???)
 
-    pub def differencePolyEffect(): Bool \ ef1 - ef2 = unsafe_cast ??? as _ \ ef1 - ef2
+    pub def differencePolyEffect(): Bool \ ef1 - ef2 = checked_ecast(???)
 
-    pub def effectSet01(): Bool \ { Fail } = unsafe_cast ??? as _ \ { Fail }
+    pub def effectSet01(): Bool \ { Fail } = checked_ecast(???)
 
-    pub def effectSet02(): Bool \ { Fail, Fail } = unsafe_cast ??? as _ \ { Fail, Fail }
+    pub def effectSet02(): Bool \ { Fail, Fail } = checked_ecast(???)
 
-    pub def effectSet03(): Bool \ { Fail, Fail, Console } = unsafe_cast ??? as _ \ { Fail, Fail, Console }
+    pub def effectSet03(): Bool \ { Fail, Fail, Console } = checked_ecast(???)
 
     pub def effectSet04(): Bool \ {} = ???
 
-    pub def polyEffectSet01[ef: Eff](): Bool \ ef = unsafe_cast ??? as _ \ ef
+    pub def polyEffectSet01[ef: Eff](): Bool \ ef = checked_ecast(???)
 
-    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = unsafe_cast ??? as _ \ { ef, Fail }
+    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = checked_ecast(???)
 
     pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
 

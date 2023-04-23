@@ -1,4 +1,4 @@
-namespace Test/Dec/TypeAlias {
+mod Test.Dec.TypeAlias {
 
     /**
      * A type alias for degrees celsius.
@@ -162,5 +162,5 @@ namespace Test/Dec/TypeAlias {
     type alias If[cond: Bool, t: Bool, f: Bool] = (cond and t) or (not cond and f)
 
     @test
-    def testTypeAlias28(): Bool & If[e1, e2, e3] = unsafe_cast true as _ & If[e1, e2, e3]
+    def testTypeAlias28(): Bool & If[e1, e2, e3] = unchecked_cast(true as _ & If[e1, e2, e3])
 }

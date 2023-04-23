@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestMultiMap {
+mod TestMultiMap {
 
     use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 
@@ -997,71 +997,6 @@ namespace TestMultiMap {
         MultiMap.sumWith((k, v) -> if (v > k) 10 else 0,
             singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 10
 
-    /////////////////////////////////////////////////////////////////////////////
-    // productKeys                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productKeys01(): Bool = MultiMap.productKeys(empty(): MultiMap[Int32, Int32]) == 1
-
-    @test
-    def productKeys02(): Bool = MultiMap.productKeys(singleton(1, 2)) == 1
-
-    @test
-    def productKeys03(): Bool = MultiMap.productKeys(singleton(1, 4) |> insert(2, 4)) == 2
-
-    @test
-    def productKeys04(): Bool =
-        MultiMap.productKeys(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 2
-
-    @test
-    def productKeys05(): Bool =
-        MultiMap.productKeys(singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 6
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productValues                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productValues01(): Bool = MultiMap.productValues(empty(): MultiMap[Int32, Int32]) == 1
-
-    @test
-    def productValues02(): Bool = MultiMap.productValues(singleton(1, 2)) == 2
-
-    @test
-    def productValues03(): Bool = MultiMap.productValues(singleton(1, 4) |> insert(2, 4)) == 16
-
-    @test
-    def productValues04(): Bool =
-        MultiMap.productValues(singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 8
-
-    @test
-    def productValues05(): Bool =
-        MultiMap.productValues(singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 24
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool = MultiMap.productWith((k, v) -> if (v > k) 10 else 1, empty(): MultiMap[Int32, Int32]) == 1
-
-    @test
-    def productWith02(): Bool = MultiMap.productWith((k, v) -> if (v > k) 10 else 1, singleton(1, 2)) == 10
-
-    @test
-    def productWith03(): Bool =
-        MultiMap.productWith((k, v) -> if (v > k) 10 else 1, singleton(1, 4) |> insert(2, 4)) == 100
-
-    @test
-    def productWith04(): Bool =
-        MultiMap.productWith((k, v) -> if (v > k) 10 else 1,
-            singleton(1, 4) |> insert(2, 2) |> insert(1, 1)) == 10
-
-    @test
-    def productWith05(): Bool =
-        MultiMap.productWith((k, v) -> if (v > k) 10 else 1,
-            singleton(1, 4) |> insert(2, 2) |> insert(1, 1) |> insert(3, 3)) == 10
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -1311,7 +1246,7 @@ namespace TestMultiMap {
     @test
     def toMutDeque01(): Bool = region r {
         let d1 = MultiMap.toMutDeque(r, empty(): MultiMap[Int32, Int32]);
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1320,7 +1255,7 @@ namespace TestMultiMap {
     def toMutDeque02(): Bool = region r {
         let d1 = MultiMap.toMutDeque(r, singleton(1, 4));
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, Set#{4}), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1330,7 +1265,7 @@ namespace TestMultiMap {
     def toMutDeque03(): Bool = region r {
         let d1 = MultiMap.toMutDeque(r, singleton(1, 4) |> insert(2, 4));
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, Set#{4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
 
@@ -1341,7 +1276,7 @@ namespace TestMultiMap {
     def toMutDeque04(): Bool = region r {
         let d1 = MultiMap.toMutDeque(r, singleton(1, 4) |> insert(2, 4) |> insert(1, 1));
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, Set#{1, 4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
 
@@ -1352,7 +1287,7 @@ namespace TestMultiMap {
     def toMutDeque05(): Bool = region r {
         let d1 = MultiMap.toMutDeque(r, singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3));
 
-        let d2 = new MutDeque(r);
+        let d2 = MutDeque.new(r);
         MutDeque.pushBack((1, Set#{1, 4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
         MutDeque.pushBack((3, Set#{3}), d2);

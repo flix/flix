@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-namespace TestToString {
+mod TestToString {
 
     use ToString.toString
 
@@ -366,39 +366,5 @@ namespace TestToString {
     @test
     def tuple10ToString04(): Bool =
         toString(((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))) == "((1, 2, 4, 7), (1, 2), (1, 2, 4), 4, (1, 2, 3, 4, 5, 9, 1, 42, false, true))"
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Array                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def arrayToString01(): Bool = region r {
-        toString(Array.range(r, 0, 5)) == "[0, 1, 2, 3, 4]"
-    }
-
-    @test
-    def arrayToString02(): Bool = region r {
-        toString(Array.range(r, 0, 1)) == "[0]"
-    }
-
-    @test
-    def arrayToString03(): Bool = region r {
-        toString(Array.repeat(r, 3, 'a')) == "[a, a, a]"
-    }
-
-    @test
-    def arrayToString04(): Bool = region r {
-        toString(Array.range(r, 1, 3)) == "[1, 2]"
-    }
-
-    @test
-    def arrayToString05(): Bool = region r {
-        toString(Array.repeat(r, 3, Array#{1, 2, 3} @ r)) == "[[1, 2, 3], [1, 2, 3], [1, 2, 3]]"
-    }
-
-    @test
-    def arrayToString06(): Bool = region r {
-        toString(Array.range(r, 0, 0)) == "[]"
-    }
 
 }

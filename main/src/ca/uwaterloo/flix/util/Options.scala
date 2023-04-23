@@ -30,6 +30,7 @@ object Options {
     documentor = false,
     entryPoint = None,
     explain = false,
+    githubKey = None,
     installDeps = false,
     incremental = true,
     json = false,
@@ -89,6 +90,7 @@ object Options {
   * @param documentor          enables generation of flixdoc.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
+  * @param githubKey           the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -115,6 +117,7 @@ case class Options(lib: LibLevel,
                    documentor: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
+                   githubKey: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,

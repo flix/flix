@@ -21,8 +21,6 @@ pub enum Nel[a] with Sendable {
     case Nel(a, List[a])
 }
 
-instance Boxable[Nel[a]] with Boxable[a]
-
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
@@ -116,14 +114,14 @@ instance Iterable[Nel] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ Write(r) = Nel.iterator(rc, l)
 }
 
-namespace Nel {
+mod Nel {
 
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
     pub def toString(l: Nel[a]): String with ToString[a] = region r {
         let Nel(x, xs) = l;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -282,7 +280,7 @@ namespace Nel {
         };
         match f {
             case Nel(f1, Nil) => map(f1, l)
-            case Nel(f1, rs)  => loop(f1, rs, upcast(identity))
+            case Nel(f1, rs)  => loop(f1, rs, identity)
         }
 
     ///
@@ -402,7 +400,7 @@ namespace Nel {
             case _        => unreachable!()
         };
         let Nel(x, xs) = l;
-        loop(x :: xs, ks -> unsafe_cast ks as _ & (ef1 and ef2) \ (ef1_ + ef2_))
+        loop(x :: xs, identity)
 
     ///
     /// Applies `combine` to all elements in `l` until a single value is obtained.
@@ -450,18 +448,6 @@ namespace Nel {
     ///
     pub def sumWith(f: a -> Int32 \ ef, l: Nel[a]): Int32 \ ef =
         Foldable.sumWith(f, l)
-
-    ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(l: Nel[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, l: Nel[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -566,7 +552,7 @@ namespace Nel {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: Nel[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

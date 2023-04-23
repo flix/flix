@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestArray {
+mod TestArray {
 
     use Array.sameElements
 
@@ -234,7 +234,7 @@ namespace TestArray {
     @test
     def toMutDeque01(): Bool = region r {
         let a = (Array#{} @ r): Array[Int32, _];
-        let d = new MutDeque(r): MutDeque[Int32, _];
+        let d = MutDeque.new(r): MutDeque[Int32, _];
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
     }
@@ -243,7 +243,7 @@ namespace TestArray {
     def toMutDeque02(): Bool = region r {
         let a = (Array#{1} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(1, d);
 
         Array.toMutDeque(r, a) `MutDeque.sameElements` d
@@ -253,7 +253,7 @@ namespace TestArray {
     def toMutDeque03(): Bool = region r {
         let a = (Array#{1, 2, 3} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -265,7 +265,7 @@ namespace TestArray {
     def toMutDeque04(): Bool = region r {
         let a = (Array#{1, 2, 3, 4, 5} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -279,7 +279,7 @@ namespace TestArray {
     def toMutDeque05(): Bool = region r {
         let a = (Array#{'a', 'b', 'c'} @ r);
 
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -2689,75 +2689,6 @@ namespace TestArray {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool = region r {
-        Array.product(Array#{} @ r) == 1
-    }
-
-    @test
-    def product02(): Bool = region r {
-        Array.product(Array#{1} @ r) == 1
-    }
-
-    @test
-    def product03(): Bool = region r {
-        Array.product(Array#{1, 2, 3} @ r) == 6
-    }
-
-    @test
-    def product04(): Bool = region r {
-        Array.product(Array#{1, 2, 3, -3} @ r) == -18
-    }
-
-    @test
-    def product05(): Bool = region r {
-        Array.product(Array#{-1, -2, -3, -4} @ r) == 24
-    }
-
-    @test
-    def product06(): Bool = region r {
-        Array.product(Array#{10, -10} @ r) == -100
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{} @ r) == 1
-    }
-
-    @test
-    def productWith02(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{1} @ r) == 2
-    }
-
-    @test
-    def productWith03(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{1, 2, 3} @ r) == 24
-    }
-
-    @test
-    def productWith04(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{1, 2, 3, -3} @ r) == -48
-    }
-
-    @test
-    def productWith05(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{-2, -3, -4, -5} @ r) == 24
-    }
-
-    @test
-    def productWith06(): Bool = region r {
-        Array.productWith(x -> x + 1, Array#{10, -10} @ r) == -99
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -4613,7 +4544,7 @@ namespace TestArray {
     @test
     def forEach01(): Bool = region r {
         let a = (Array#{} @ r): Array[Int32, _];
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4622,7 +4553,7 @@ namespace TestArray {
     @test
     def forEach02(): Bool = region r {
         let a = Array#{0} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4631,7 +4562,7 @@ namespace TestArray {
     @test
     def forEach03(): Bool = region r {
         let a = Array#{1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
@@ -4640,7 +4571,7 @@ namespace TestArray {
     @test
     def forEach04(): Bool = region r {
         let a = Array#{0,1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4653,7 +4584,7 @@ namespace TestArray {
     @test
     def forEachWithIndex01(): Bool = region r {
         let a = (Array#{} @ r): Array[Float32, _];
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4662,7 +4593,7 @@ namespace TestArray {
     @test
     def forEachWithIndex02(): Bool = region r {
         let a = Array#{0.0} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4671,7 +4602,7 @@ namespace TestArray {
     @test
     def forEachWithIndex03(): Bool = region r {
         let a = Array#{0.0, 0.1} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4680,7 +4611,7 @@ namespace TestArray {
     @test
     def forEachWithIndex04(): Bool = region r {
         let a = Array#{0.0, 0.1, 0.2} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
@@ -4689,7 +4620,7 @@ namespace TestArray {
     @test
     def forEachWithIndex05(): Bool = region r {
         let a = Array#{0.0, 0.1, 0.2, 0.3} @ r;
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
@@ -5990,19 +5921,19 @@ namespace TestArray {
 
     @test
     def toMutList01(): Bool = region r {
-        MutList.sameElements(Array.toMutList(r, (Array#{} @ r): Array[Int32, r]), new MutList(r))
+        MutList.sameElements(Array.toMutList(r, (Array#{} @ r): Array[Int32, r]), MutList.new(r))
     }
 
     @test
     def toMutList02(): Bool = region r {
-        let v = new MutList(r);
+        let v = MutList.new(r);
         MutList.push!(1, v);
         MutList.sameElements(Array.toMutList(r, Array#{1} @ r), v)
     }
 
     @test
     def toMutList03(): Bool = region r {
-        let v = new MutList(r);
+        let v = MutList.new(r);
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);

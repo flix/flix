@@ -1,4 +1,4 @@
-namespace TestDebug {
+mod TestDebug {
     use Debug.stringify;
 
     /////////////////////////////////////////////////////////////////////////////
@@ -199,19 +199,19 @@ namespace TestDebug {
 
      @test
      def testNullStringify02(): Bool = {
-         let s = stringify(unsafe_cast null as String);
+         let s = stringify(unchecked_cast(null as String));
          s == "null"
      }
 
      @test
      def testNullStringify03(): Bool = {
-         let s = stringify(unsafe_cast null as BigInt);
+         let s = stringify(unchecked_cast(null as BigInt));
          s == "null"
      }
 
     @test
     def testNullStringify04(): Bool = {
-        let s = stringify(Poly.This(unsafe_cast null as String));
+        let s = stringify(Poly.This(unchecked_cast(null as String)));
         s == "This"
     }
 
@@ -223,13 +223,13 @@ namespace TestDebug {
 
     @test
     def testNullStringify06(): Bool = region r {
-        let s = stringify(Array#{unsafe_cast null as String, "42"} @ r);
+        let s = stringify(Array#{unchecked_cast(null as String), "42"} @ r);
         s == "[null, 42]"
     }
 
     @test
     def testNullStringify07(): Bool = {
-        let s = stringify({field = unsafe_cast null as String});
+        let s = stringify({field = unchecked_cast(null as String)});
         s == "{field = null}"
     }
 }

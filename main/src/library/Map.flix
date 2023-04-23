@@ -37,8 +37,6 @@ instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
 
-instance Boxable[Map[k, v]] with Boxable[k], Boxable[v]
-
 instance Hash[Map[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: Map[k, v]): Int32 =
         Map.foldLeftWithKey((acc, k, v) -> acc `Hash.combine` Hash.hash(k) `Hash.combine` Hash.hash(v), Hash.magic(), m)
@@ -107,13 +105,13 @@ instance Iterable[Map[k]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ Write(r) = Map.iteratorValues(rc, m)
 }
 
-namespace Map {
+mod Map {
 
     ///
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -632,39 +630,6 @@ namespace Map {
         }
 
     ///
-    /// Returns the product of all keys in the map `m`.
-    ///
-    pub def productKeys(m: Map[Int32, v]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productKeys(t)
-
-    ///
-    /// Returns the product of all values in the map `m`.
-    ///
-    pub def productValues(m: Map[k, Int32]): Int32 =
-        let Map(t) = m;
-        RedBlackTree.productValues(t)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the map `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: Map[k, v]): Int32 \ ef =
-        let Map(t) = m;
-        def pw() = RedBlackTree.productWith(f, t);
-        typematch f {
-            case g: (k, v) -> Int32 \ {} =>
-                if (useParallelEvaluation(m))
-                    RedBlackTree.parProductWith(threads() - 1, g, t)
-                else
-                    pw()
-            case _: (k, v) -> Int32 \ ef => pw()
-            case _: _ => unreachable!()
-        }
-
-    ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
     ///
     /// Returns `false` if `m` is the empty map.
@@ -841,7 +806,7 @@ namespace Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
@@ -867,7 +832,7 @@ namespace Map {
     ///
     /// `f` should return `None` to signal the end of building the map.
     ///
-    pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k,v] \ ef with Order[k] =
+    pub def unfold(f: s -> Option[(k, v, s)] \ ef, st: s): Map[k, v] \ ef with Order[k] =
         def loop(sst, m) = match f(sst) {
             case None            => m
             case Some(k, v, st1) => loop(st1, insert(k, v, m))

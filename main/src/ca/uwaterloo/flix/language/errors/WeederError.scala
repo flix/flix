@@ -324,6 +324,33 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal regex pattern.
+    *
+    * @param loc the location where the illegal pattern occurs.
+    */
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal Regex pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal Regex pattern.
+         |
+         |${code(loc, "illegal Regex pattern.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A Regex cannot be used as a pattern. It can be used `if` guard with a predicate from the Regex module, e.g `isMatch` or `isSubmatch`."
+    })
+
+  }
+
+  /**
     * An error raised to indicate an illegal jvm field or method name.
     *
     * @param loc the location of the name.
@@ -680,6 +707,32 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param patt     the invalid regular expression
+    * @param loc      the location where the error occurred
+    */
+  case class InvalidRegularExpression(patt: String, err: String, loc: SourceLocation) extends IllegalLiteral {
+    def summary: String = s"The pattern literal '${patt}' is not a valid regular expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Invalid regular expression pattern literal.
+         |
+         |${code(loc, "The pattern literal is not a well-formed regular expression.")}
+         |
+         |Pattern compilation error:
+         |${err}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"A pattern literal must be a valid regular expression."
+    })
+  }
+
+  /**
     * An error raised to indicate an empty interpolated expression (`"${}"`)
     *
     * @param loc the location where the error occurred.
@@ -932,4 +985,106 @@ object WeederError {
          |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that a loop does not contain any fragments.
+    *
+    * @param loc the location of the for-loop with no fragments.
+    */
+  case class IllegalEmptyForFragment(loc: SourceLocation) extends WeederError {
+    def summary: String = "A loop must iterate over some collection."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop does not iterate over any collection.
+         |
+         |${code(loc, "Loop does not iterate over any collection.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""A loop must contain a collection comprehension.
+         |
+         |A minimal loop is written as follows:
+         |
+         |    foreach (x <- xs) yield x
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that the case of an alias does not match the case of the original value.
+    *
+    * @param fromName the original name
+    * @param toName   the alias
+    * @param loc      the location where the error occurred
+    */
+  case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError {
+    def summary: String = s"The case of '${fromName}' does not match the case of '${toName}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched alias case.
+         |
+         |${code(loc, s"The case of '${fromName}' does not match the case of '${toName}'.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      s"""An alias must match the case of the name it replaces.
+         |
+         |If a name is lowercase, the alias must be lowercase.
+         |If a name is uppercase, the alias must be uppercase.
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate a non-unary associated type.
+    *
+    * @param numParams the number of parameters of the associated type.
+    * @param loc       the location where the error occurred.
+    */
+  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError {
+    override def summary: String = "Non-unary associated type signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Non-unary associated type signature.
+         |
+         |${code(loc, s"Associated types must have exactly one parameter, but ${numParams} are given here.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an ill-formed equality constraint.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal equality constraint."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal equality constraint.
+         |
+         |${code(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
 }

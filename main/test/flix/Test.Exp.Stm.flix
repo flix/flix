@@ -1,4 +1,4 @@
-namespace Test/Exp/Stm {
+mod Test.Exp.Stm {
 
     @test
     def testStm01(): Int32 \ IO =
@@ -88,10 +88,10 @@ namespace Test/Exp/Stm {
         h();
         x
 
-    def f(): Unit \ IO = unsafe_cast () as _ \ IO
+    def f(): Unit \ IO = checked_ecast(())
 
-    def g(): Unit \ IO = unsafe_cast () as _ \ IO
+    def g(): Unit \ IO = checked_ecast(())
 
-    def h(): Unit \ IO = unsafe_cast () as _ \ IO
+    def h(): Unit \ IO = checked_ecast(())
 
 }

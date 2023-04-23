@@ -77,6 +77,8 @@ object PatternExhaustiveness {
 
     case object Str extends TyCon
 
+    case object Regex extends TyCon
+
     case object Wild extends TyCon
 
     case class Tuple(args: List[TyCon]) extends TyCon
@@ -141,7 +143,7 @@ object PatternExhaustiveness {
       case Expression.Hole(_, _, _) => Nil
       case Expression.HoleWithExp(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.OpenAs(_, exp, _, _) => visitExp(exp, root)
-      case Expression.Use(_, exp, _) => visitExp(exp, root)
+      case Expression.Use(_, _, exp, _) => visitExp(exp, root)
       case Expression.Cst(_, _, _) => Nil
       case Expression.Lambda(_, body, _, _) => visitExp(body, root)
       case Expression.Apply(exp, exps, _, _, _, _) => (exp :: exps).flatMap(visitExp(_, root))
@@ -195,11 +197,9 @@ object PatternExhaustiveness {
       case Expression.Deref(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Assign(exp1, exp2, _, _, _, _) => List(exp1, exp2).flatMap(visitExp(_, root))
       case Expression.Ascribe(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Cast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
-      case Expression.Mask(exp, _, _, _, _) => visitExp(exp, root)
-      case Expression.Upcast(exp, _, _) => visitExp(exp, root)
-      case Expression.Supercast(exp, _, _) => visitExp(exp, root)
+      case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) => visitExp(exp, root)
+      case Expression.UncheckedMaskingCast(exp, _, _, _, _) => visitExp(exp, root)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp, root)
 
       case Expression.TryCatch(exp, rules, _, _, _, _) =>
@@ -268,7 +268,7 @@ object PatternExhaustiveness {
   private def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): List[NonExhaustiveMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp, root)
-    case TypedAst.Predicate.Body.Loop(_, exp, _) => visitExp(exp, root)
+    case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp, root)
   }
 
   /**
@@ -572,6 +572,7 @@ object PatternExhaustiveness {
     case TyCon.Float32 => 0
     case TyCon.Float64 => 0
     case TyCon.Str => 0
+    case TyCon.Regex => 0
     case TyCon.Wild => 0
     case TyCon.Tuple(args) => args.size
     case TyCon.Array => 0
@@ -583,6 +584,7 @@ object PatternExhaustiveness {
     * @param tpe the type to count
     * @return the number of arguments a type constructor expects
     */
+  // TODO: Maybe we can use the kind instead?
   private def countTypeArgs(tpe: Type): Int = tpe.typeConstructor match {
     case None => 0
     case Some(TypeConstructor.Unit) => 0
@@ -597,6 +599,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Int64) => 0
     case Some(TypeConstructor.BigInt) => 0
     case Some(TypeConstructor.Str) => 0
+    case Some(TypeConstructor.Regex) => 0
     case Some(TypeConstructor.Relation) => 0
     case Some(TypeConstructor.Lattice) => 0
     case Some(TypeConstructor.RecordRowEmpty) => 0
@@ -605,6 +608,7 @@ object PatternExhaustiveness {
     case Some(TypeConstructor.Schema) => 0
     case Some(TypeConstructor.Arrow(length)) => length
     case Some(TypeConstructor.Array) => 1
+    case Some(TypeConstructor.Vector) => 1
     case Some(TypeConstructor.Ref) => 0
     case Some(TypeConstructor.Lazy) => 1
     case Some(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
@@ -635,6 +639,7 @@ object PatternExhaustiveness {
     case TyCon.Float32 => "Float32"
     case TyCon.Float64 => "Float64"
     case TyCon.Str => "Str"
+    case TyCon.Regex => "Regex"
     case TyCon.Wild => "_"
     case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
     case TyCon.Array => "Array"
@@ -680,6 +685,7 @@ object PatternExhaustiveness {
     case Pattern.Cst(Ast.Constant.Int64(_), _, _) => TyCon.Int64
     case Pattern.Cst(Ast.Constant.BigInt(_), _, _) => TyCon.BigInt
     case Pattern.Cst(Ast.Constant.Str(_), _, _) => TyCon.Str
+    case Pattern.Cst(Ast.Constant.Regex(_), _, _) => throw InternalCompilerException("unexpected regex pattern", pattern.loc)
     case Pattern.Cst(Ast.Constant.Null, _, _) => throw InternalCompilerException("unexpected null pattern", pattern.loc)
     case Pattern.Tag(Ast.CaseSymUse(sym, _), pat, _, _) => {
       val (args, numArgs) = pat match {

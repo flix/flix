@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.RigidityEnv
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -33,7 +33,7 @@ object InferMonad {
   /**
     * Lifts the given value `x` into the type inference monad.
     */
-  def point[A](x: A): InferMonad[A] = InferMonad { case (s, renv) => Ok((s, renv, x)) }
+  def point[A](x: A): InferMonad[A] = InferMonad { case (s, econstrs, renv) => Ok((s, econstrs, renv, x)) }
 
   /**
     * Lifts the given error `err` into the type inference monad.
@@ -69,15 +69,15 @@ object InferMonad {
 /**
   * A type inference state monad that maintains the current substitution and rigidity environment.
   */
-case class InferMonad[+A](run: (Substitution, RigidityEnv) => Result[(Substitution, RigidityEnv, A), TypeError]) {
+case class InferMonad[+A](run: (Substitution, List[Ast.BroadEqualityConstraint], RigidityEnv) => Result[(Substitution, List[Ast.BroadEqualityConstraint], RigidityEnv, A), TypeError]) {
   /**
     * Applies the given function `f` to the value in the monad.
     */
   def map[B](f: A => B): InferMonad[B] = {
-    def runNext(s0: Substitution, renv0: RigidityEnv): Result[(Substitution, RigidityEnv, B), TypeError] = {
+    def runNext(s0: Substitution, econstrs0: List[Ast.BroadEqualityConstraint], renv0: RigidityEnv): Result[(Substitution, List[Ast.BroadEqualityConstraint], RigidityEnv, B), TypeError] = {
       // Run the original function and map over its result (since it may have error'd).
-      run(s0, renv0) map {
-        case (s, renv, a) => (s, renv, f(a))
+      run(s0, econstrs0, renv0) map {
+        case (s, econstrs, renv, a) => (s, econstrs, renv, f(a))
       }
     }
 
@@ -88,12 +88,12 @@ case class InferMonad[+A](run: (Substitution, RigidityEnv) => Result[(Substituti
     * Applies the given function `f` to the value in the monad.
     */
   def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
-    def runNext(s0: Substitution, renv0: RigidityEnv): Result[(Substitution, RigidityEnv, B), TypeError] = {
+    def runNext(s0: Substitution, econstrs0: List[Ast.BroadEqualityConstraint], renv0: RigidityEnv): Result[(Substitution, List[Ast.BroadEqualityConstraint], RigidityEnv, B), TypeError] = {
       // Run the original function and flatMap over its result (since it may have error'd).
-      run(s0, renv0) flatMap {
-        case (s, renv, a) => f(a) match {
+      run(s0, econstrs0, renv0) flatMap {
+        case (s, econstrs, renv, a) => f(a) match { // TODO ASSOC-TYPES throwing econstrs away???
           // Unwrap the returned monad and apply the inner function g.
-          case InferMonad(g) => g(s, renv)
+          case InferMonad(g) => g(s, econstrs, renv)
         }
       }
     }
@@ -105,8 +105,8 @@ case class InferMonad[+A](run: (Substitution, RigidityEnv) => Result[(Substituti
     * Applies the given function `f` to transform an error in the monad.
     */
   def transformError[B](f: TypeError => TypeError): InferMonad[A] = {
-    def runNext(s0: Substitution, renv0: RigidityEnv): Result[(Substitution, RigidityEnv, A), TypeError] = {
-      run(s0, renv0) match {
+    def runNext(s0: Substitution, econstrs0: List[Ast.BroadEqualityConstraint], renv0: RigidityEnv): Result[(Substitution, List[Ast.BroadEqualityConstraint], RigidityEnv, A), TypeError] = {
+      run(s0, econstrs0, renv0) match {
         case Ok(t) => Ok(t)
         case Err(e) => Err(f(e))
       }
@@ -118,8 +118,8 @@ case class InferMonad[+A](run: (Substitution, RigidityEnv) => Result[(Substituti
   // TODO: Necessary for pattern matching?
   // TODO: What should this return?
   def withFilter(f: A => Boolean): InferMonad[A] = InferMonad {
-    case (x, renv0) => run(x, renv0) match {
-      case Ok((subst, renv, t)) => if (f(t)) Ok((subst, renv, t)) else Ok((subst, renv, t))
+    case (x, econstrs0, renv0) => run(x, econstrs0, renv0) match {
+      case Ok((subst, econstrs, renv, t)) => if (f(t)) Ok((subst, econstrs, renv, t)) else Ok((subst, econstrs, renv, t))
       case Err(e) => Err(e)
     }
   }

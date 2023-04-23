@@ -28,12 +28,18 @@ object FormatScheme {
     val mainPart = formatSchemeWithoutConstraints(sc)
 
     val tconstrPart =
-      if (sc.constraints.isEmpty)
+      if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraint).mkString(", ")
 
-    mainPart + tconstrPart
+    val econstrPart =
+      if (sc.econstrs.isEmpty)
+        ""
+      else
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraint).mkString(", ")
+
+    mainPart + tconstrPart + econstrPart
   }
 
   /**
@@ -44,12 +50,18 @@ object FormatScheme {
     val mainPart = formatSchemeWithoutConstraintsWithOptions(sc, fmt)
 
     val tconstrPart =
-      if (sc.constraints.isEmpty)
+      if (sc.tconstrs.isEmpty)
         ""
       else
-        " with " + sc.constraints.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
+        " with " + sc.tconstrs.map(FormatTypeConstraint.formatTypeConstraintWithOptions(_, fmt)).mkString(", ")
 
-    mainPart + tconstrPart
+    val econstrPart =
+      if (sc.econstrs.isEmpty)
+        ""
+      else
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
+
+    mainPart + tconstrPart + econstrPart
   }
 
   /**
@@ -74,5 +86,29 @@ object FormatScheme {
     val typePart = FormatType.formatTypeWithOptions(sc.base, fmt)
 
     quantifiersPart + typePart
+  }
+
+  /**
+    * Construct a string representation of the type scheme, including equality constraints but excluding type constraints, e.g.,
+    * `∀(a, b).a -> Int -> b where Elem[a] ~ String`
+    */
+  def formatSchemeWithOnlyEqualityConstraints(sc: Scheme)(implicit flix: Flix): String = {
+    val fmt = flix.getFormatOptions
+    // TODO ASSOC-TYPES just make a helper for each "part" and call them
+    val quantifiersPart =
+      if (sc.quantifiers.isEmpty)
+        ""
+      else
+        "∀(" + sc.quantifiers.map(FormatType.formatTypeVarSymWithOptions(_, fmt)).mkString(", ") + "). "
+
+    val typePart = FormatType.formatTypeWithOptions(sc.base, fmt)
+
+    val econstrPart =
+      if (sc.econstrs.isEmpty)
+        ""
+      else
+        " where " + sc.econstrs.map(FormatEqualityConstraint.formatEqualityConstraintWithOptions(_, fmt)).mkString(", ")
+
+    quantifiersPart + typePart + econstrPart
   }
 }

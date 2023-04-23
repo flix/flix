@@ -62,31 +62,31 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a variable has been shadowed.
+    * An error raised to indicate that a name has been shadowed.
     *
-    * @param sym1 the shadowed variable.
-    * @param sym2 the shadowing variable.
+    * @param shadowed the shadowed name.
+    * @param shadowing the shadowing name.
     */
-  case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
-    def summary: String = "Shadowed variable."
+  case class ShadowedName(name: String, shadowed: SourceLocation, shadowing: SourceLocation) extends RedundancyError {
+    def summary: String = "Shadowed name."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Shadowed variable '${red(sym1.text)}'.
+         |>> Shadowed name '${red(name)}'.
          |
-         |${code(sym2.loc, "shadowing variable.")}
+         |${code(shadowing, "shadowing name.")}
          |
-         |The shadowed variable was declared here:
+         |The shadowed name was declared here:
          |
-         |${code(sym1.loc, "shadowed variable.")}
+         |${code(shadowed, "shadowed name.")}
          |
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = None
 
-    def loc: SourceLocation = sym1.loc min sym2.loc
+    def loc: SourceLocation = shadowed min shadowing
   }
 
   /**
@@ -553,17 +553,17 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an effect cast is redundant.
+    * An error raised to indicate that a checked type cast is redundant.
     *
-    * @param loc the source location of the cast.
+    * @param loc the source location of the redundant cast.
     */
-  case class RedundantEffectCast(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect cast. The expression already has the same effect."
+  case class RedundantCheckedTypeCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant type cast. The expression already has the required type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant effect cast. The expression already has the same effect.
+         |>> Redundant type cast. The expression already has the required type.
          |
          |${code(loc, "redundant cast.")}
          |
@@ -574,61 +574,26 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an upcast is redundant.
+    * An error raised to indicate that a checked effect cast is redundant.
     *
-    * @param loc the source location of the upcast.
+    * @param loc the source location of the cast.
     */
-  case class RedundantUpcast(loc: SourceLocation) extends RedundancyError {
-
-    def summary: String = "Redundant upcast. The expression already has the expected type and effect."
+  case class RedundantCheckedEffectCast(loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Redundant effect cast. The expression already has the required effect."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Redundant upcast. The expression already has the expected type and effect.
+         |>> Redundant effect cast. The expression already has the required effect.
          |
-         |${code(loc, "redundant upcast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""If you try to upcast an expression that already has the same type, purity
-         |and effect as expected the upcast is redundant.
-         |""".stripMargin
-    })
-
-  }
-
-  /**
-    * An error raised to indicate that a supercast is redundant.
-    *
-    * @param tpe the type attempted to supercast to.
-    * @param loc the source location of the upcast.
-    */
-  case class RedundantSupercast(tpe: Type, loc: SourceLocation) extends RedundancyError {
-
-    def summary: String = s"Redundant supercast. The expression already has the expected type $tpe."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant supercast. The expression already has the expected type.
-         |
-         |${code(loc, "redundant supercast.")}
+         |${code(loc, "redundant cast.")}
          |
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""If you try to supercast a value that already has the
-         |expected type the supercast is considered redundant.
-         |
-         |Tip: remove the supercast.
-         |""".stripMargin
-    })
-
+    def explain(formatter: Formatter): Option[String] = None
   }
+
 
   /**
     * An error raised to indicate a redundant type constraint.

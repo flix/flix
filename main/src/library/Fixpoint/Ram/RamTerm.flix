@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ram {
+mod Fixpoint.Ram {
 
     ///
     /// Represents a RAM term.

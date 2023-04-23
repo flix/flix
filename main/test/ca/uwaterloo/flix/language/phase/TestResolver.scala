@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestResolver extends FunSuite with TestUtils {
+class TestResolver extends AnyFunSuite with TestUtils {
 
   // TODO NS-REFACTOR impossible after refactor
   ignore("AmbiguousTag.01") {
@@ -62,11 +62,11 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleDef.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(): Int32 = 42
          |}
          |
-         |namespace B {
+         |mod B {
          |  def g(): Int32 = A.f()
          |}
        """.stripMargin
@@ -77,10 +77,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleDef.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): Int32 = A/B/C.g()
+         |mod A {
+         |  def f(): Int32 = A.B.C.g()
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    def g(): Int32 = A.f()
          |  }
          |}
@@ -92,14 +92,14 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleEnum.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum Color {
          |    case Blu,
          |    case Red
          |  }
          |}
          |
-         |namespace B {
+         |mod B {
          |  def g(): A.Color = A/Color.Red
          |}
        """.stripMargin
@@ -110,10 +110,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleEnum.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |mod A {
+         |  def f(): A.B.C.Color = A.B.C.Color.Blu
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    enum Color {
          |      case Blu,
          |      case Red
@@ -129,15 +129,15 @@ class TestResolver extends FunSuite with TestUtils {
   ignore("OpaqueEnum.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  pub opaque enum Color {
          |    case Blu,
          |    case Red
          |  }
          |}
          |
-         |namespace B {
-         |  def g(): A.Color = A/Color.Red
+         |mod B {
+         |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -148,10 +148,10 @@ class TestResolver extends FunSuite with TestUtils {
   ignore("OpaqueEnum.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |mod A {
+         |  def f(): A.B.C.Color = A.B.C.Color.Blu
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    pub opaque enum Color {
          |      case Blu,
          |      case Red
@@ -166,14 +166,14 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleType.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum Color {
          |    case Blu,
          |    case Red
          |  }
          |}
          |
-         |namespace B {
+         |mod B {
          |  def g(): A.Color = ???
          |}
        """.stripMargin
@@ -184,10 +184,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleType.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): A/B/C.Color = ???
+         |mod A {
+         |  def f(): A.B.C.Color = ???
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    enum Color {
          |      case Blu,
          |      case Red
@@ -202,11 +202,11 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleTypeAlias.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  type alias Color = Int32
          |}
          |
-         |namespace B {
+         |mod B {
          |  def g(): A.Color = 123
          |}
        """.stripMargin
@@ -217,10 +217,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleTypeAlias.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): A/B/C.Color = 123
+         |mod A {
+         |  def f(): A.B.C.Color = 123
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    type alias Color = Int32
          |  }
          |}
@@ -232,13 +232,13 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleClass.01") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  class Show[a] {
          |    pub def show(x: a): String
          |  }
          |}
          |
-         |namespace B {
+         |mod B {
          |  def g(x: a): Int32 with A.Show[a] = ???
          |}
        """.stripMargin
@@ -249,10 +249,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleClass.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(x: a): Int32 with A/B/C.Show[a] = ???
+         |mod A {
+         |  def f(x: a): Int32 with A.B.C.Show[a] = ???
          |
-         |  namespace B/C {
+         |  mod B.C {
          |    class Show[a] {
          |      pub def show(x: a): String
          |    }
@@ -266,11 +266,11 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleClass.03") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    class C[a]
         |}
         |
-        |namespace O {
+        |mod O {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
@@ -281,11 +281,11 @@ class TestResolver extends FunSuite with TestUtils {
   test("InaccessibleClass.04") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    class C[a]
         |}
         |
-        |namespace O {
+        |mod O {
         |    class D[a] with N.C[a]
         |}
         |""".stripMargin
@@ -296,11 +296,11 @@ class TestResolver extends FunSuite with TestUtils {
   test("SealedClass.01") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    pub sealed class C[a]
         |}
         |
-        |namespace O {
+        |mod O {
         |    instance N.C[Int32]
         |}
         |""".stripMargin
@@ -311,10 +311,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("SealedClass.02") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    sealed class C[a]
         |
-        |    namespace O {
+        |    mod O {
         |        instance N.C[Int32]
         |    }
         |}
@@ -326,10 +326,10 @@ class TestResolver extends FunSuite with TestUtils {
   test("SealedClass.03") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    sealed class C[a]
         |
-        |    namespace O {
+        |    mod O {
         |        class D[a] with N.C[a]
         |    }
         |}
@@ -421,7 +421,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedName.02") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(x: Int32, y: Int32): Int32 = x + y + z
          |}
        """.stripMargin
@@ -441,13 +441,13 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedName.04") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |    class C[a] {
          |        pub def f(x: a): a
          |    }
          |}
          |
-         |namespace B {
+         |mod B {
          |    use A.f
          |    def g(): Int32 = f(1)
          |}
@@ -823,7 +823,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedTag.02") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum B {
          |    case Foo,
          |    case Bar
@@ -839,7 +839,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedTag.03") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  enum B {
          |    case Foo,
          |    case Bar
@@ -862,7 +862,7 @@ class TestResolver extends FunSuite with TestUtils {
 
   test("UndefinedType.02") {
     val input =
-      s"""namespace A {
+      s"""mod A {
          |  def foo(bar: Baz, baz: Baz): Qux = bar
          |}
        """.stripMargin
@@ -873,7 +873,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedType.03") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(): Int32 = Foo.Bar
          |}
        """.stripMargin
@@ -884,7 +884,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedType.04") {
     val input =
       s"""
-         |namespace A {
+         |mod A {
          |  def f(): Int32 = Foo/Bar.Qux(true)
          |}
        """.stripMargin
@@ -1020,6 +1020,32 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
   }
 
+  test("UnderAppliedAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |def f(x: C.T): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
+  test("UndefinedAssocType.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[String] {
+        |    type T[String] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("IllegalDerivation.01") {
     val input =
       """
@@ -1077,9 +1103,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("ParentNamespaceNotVisible.01") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    pub enum X
-        |    namespace B {
+        |    mod B {
         |        def foo(): X = ???
         |    }
         |}
@@ -1091,9 +1117,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("ParentNamespaceNotVisible.02") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    pub type alias X = Int32
-        |    namespace B {
+        |    mod B {
         |        def foo(): X = ???
         |    }
         |}
@@ -1105,9 +1131,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("ParentNamespaceNotVisible.03") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    pub class X[a]
-        |    namespace B {
+        |    mod B {
         |        enum Y
         |        instance X[Y]
         |    }
@@ -1120,9 +1146,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("ParentNamespaceNotVisible.04") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |    pub def x(): Int32 = ???
-        |    namespace B {
+        |    mod B {
         |        def foo(): Int32 = x()
         |    }
         |}
@@ -1135,10 +1161,10 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |use A.X
-        |namespace A {
+        |mod A {
         |  enum X
         |}
-        |namespace B {
+        |mod B {
         |  def foo(): X = ???
         |}
         |""".stripMargin
@@ -1149,12 +1175,12 @@ class TestResolver extends FunSuite with TestUtils {
   test("UseClearedInNamespace.02") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |  enum X
         |}
-        |namespace B {
+        |mod B {
         |  use A.X
-        |  namespace C {
+        |  mod C {
         |     def foo(): X = ???
         |  }
         |}
@@ -1167,7 +1193,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       """
         |import java.lang.StringBuffer
-        |namespace A {
+        |mod A {
         |  def foo(): StringBuffer = ???
         |}
         |""".stripMargin
@@ -1178,9 +1204,9 @@ class TestResolver extends FunSuite with TestUtils {
   test("ImportClearedInNamespace.02") {
     val input =
       """
-        |namespace A {
+        |mod A {
         |  import java.lang.StringBuffer
-        |  namespace B {
+        |  mod B {
         |     def foo(): StringBuffer = ???
         |  }
         |}
@@ -1336,6 +1362,19 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("IllegalSignature.06") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |
+        |    pub def f(x: C.T[a]): String
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """
@@ -1368,7 +1407,7 @@ class TestResolver extends FunSuite with TestUtils {
   test("IllegalWildType.04") {
     val input =
       """
-        |def foo(): String = unsafe_cast 123 as _
+        |def foo(): String = unchecked_cast(123 as _)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
@@ -1429,5 +1468,47 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedKind.01") {
+    val input =
+      """
+        |class C[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.02") {
+    val input =
+      """
+        |enum E[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.03") {
+    val input =
+      """
+        |def f[a: Blah](x: a): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("IllegalAssocTypeDef.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = C.T[String]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeDef](result)
   }
 }

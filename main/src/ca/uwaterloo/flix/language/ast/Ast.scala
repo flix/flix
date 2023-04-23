@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.collection.ListMap
-
 import java.nio.file.Path
 import java.util.Objects
 
@@ -82,6 +80,25 @@ object Ast {
   }
 
   /**
+    * A common supertype for casts.
+    */
+  sealed trait CheckedCastType
+
+  object CheckedCastType {
+
+    /**
+      * Represents a checked type cast.
+      */
+    case object TypeCast extends CheckedCastType
+
+    /**
+      * Represents a checked effect cast.
+      */
+    case object EffectCast extends CheckedCastType
+
+  }
+
+  /**
     * A common supertype for constant values.
     */
   sealed trait Constant
@@ -112,6 +129,8 @@ object Ast {
     case class BigInt(lit: java.math.BigInteger) extends Constant
 
     case class Str(lit: java.lang.String) extends Constant
+
+    case class Regex(lit: java.util.regex.Pattern) extends Constant
   }
 
   /**
@@ -581,6 +600,17 @@ object Ast {
   }
 
   /**
+    * Represents that `cst[tpe1]` and `tpe2` are equivalent types.
+    */
+  case class EqualityConstraint(cst: Ast.AssocTypeConstructor, tpe1: Type, tpe2: Type, loc: SourceLocation)
+
+  /**
+    *
+    * Represents that `tpe1` and `tpe2` are equivalent types.
+    */
+  case class BroadEqualityConstraint(tpe1: Type, tpe2: Type) // TODO ASSOC-TYPES not really an AST feature
+
+  /**
     * Represents a use of an effect sym.
     */
   case class EffectSymUse(sym: Symbol.EffectSym, loc: SourceLocation)
@@ -606,6 +636,11 @@ object Ast {
   case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
 
   /**
+    * Represents a use of an associated type sym.
+    */
+  case class AssocTypeSymUse(sym: Symbol.AssocTypeSym, loc: SourceLocation)
+
+  /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
@@ -614,6 +649,13 @@ object Ast {
     * Represents the super classes and instances available for a particular class.
     */
   case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
+
+  /**
+    * Represents the definition of an associated type.
+    * If this associated type is named `Assoc`, then
+    * Assoc[arg] = ret.
+    */
+  case class AssocTypeDef(arg: Type, ret: Type)
 
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
@@ -714,6 +756,11 @@ object Ast {
     * A constructor for a type alias. (Not a valid type by itself).
     */
   case class AliasConstructor(sym: Symbol.TypeAliasSym, loc: SourceLocation)
+
+  /**
+    * A constructor for an associated type. (Not a valid type by itself).
+    */
+  case class AssocTypeConstructor(sym: Symbol.AssocTypeSym, loc: SourceLocation)
 
   /**
     * A use of a Flix symbol or import of a Java class.

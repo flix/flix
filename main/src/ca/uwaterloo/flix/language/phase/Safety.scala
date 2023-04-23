@@ -2,14 +2,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation
 
 import java.math.BigInteger
@@ -20,8 +19,8 @@ import scala.annotation.tailrec
   *
   *  - Datalog constraints.
   *  - New object expressions.
-  *  - Upcast expressions.
-  *  - Supercast expressions.
+  *  - CheckedCast expressions.
+  *  - UncheckedCast expressions.
   *  - TypeMatch expressions.
   */
 object Safety {
@@ -52,7 +51,7 @@ object Safety {
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
-      case Instance(_, _, _, _, tpe, _, _, _, loc) =>
+      case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Bool))
           List(SafetyError.SendableError(tpe, loc))
         else
@@ -106,7 +105,7 @@ object Safety {
       case Expression.OpenAs(_, exp, _, _) =>
         visit(exp)
 
-      case Expression.Use(_, exp, _) =>
+      case Expression.Use(_, _, exp, _) =>
         visit(exp)
 
       case Expression.Lambda(_, exp, _, _) =>
@@ -224,23 +223,27 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
-      case Expression.Of(_, exp, _, _, _, _) =>
+      case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
+        cast match {
+          case CheckedCastType.TypeCast =>
+            val from = Type.eraseAliases(exp.tpe)
+            val to = Type.eraseAliases(tpe)
+            val errors = verifyCheckedTypeCast(from, to, loc)
+            visit(exp) ++ errors
+
+          case CheckedCastType.EffectCast =>
+            val from = Type.eraseAliases(exp.pur)
+            val to = Type.eraseAliases(pur)
+            val errors = verifyCheckedEffectCast(from, to, renv, loc)
+            visit(exp) ++ errors
+        }
+
+      case e@Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
+        val errors = verifyUncheckedCast(e)
+        visit(exp) ++ errors
+
+      case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
         visit(exp)
-
-      case e@Expression.Cast(exp, _, _, _, _, _, _, _) =>
-        val errors = checkCastSafety(e)
-        visit(exp) ++ errors
-
-      case Expression.Mask(exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expression.Upcast(exp, tpe, loc) =>
-        val errors = checkUpcastSafety(exp, tpe, renv, root, loc)
-        visit(exp) ++ errors
-
-      case Expression.Supercast(exp, tpe, loc) =>
-        val errors = checkSupercastSafety(exp, tpe, loc)
-        visit(exp) ++ errors
 
       case Expression.Without(exp, _, _, _, _, _) =>
         visit(exp)
@@ -352,14 +355,74 @@ object Safety {
   }
 
   /**
-    * Performs basic checks on the type cast `cast`. Returns a list of safety errors if there are
-    * any impossible casts.
-    *
-    * No primitive type can be cast to a reference type and vice-versa.
-    *
-    * No Bool type can be cast to a non-Bool type  and vice-versa.
+    * Checks if the given type cast is legal.
     */
-  private def checkCastSafety(cast: Expression.Cast)(implicit flix: Flix): List[SafetyError] = {
+  private def verifyCheckedTypeCast(from: Type, to: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    (from.baseType, to.baseType) match {
+
+      // Allow casting Null to a Java type.
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => Nil
+      case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => Nil
+
+      // Allow casting one Java type to another if there is a sub-type relationship.
+      case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Similar, but for String.
+      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Similar, but for Regex.
+      case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Similar, but for BigInt.
+      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Similar, but for BigDecimal.
+      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+
+      // Disallow casting a type variable.
+      case (src@Type.Var(_, _), _) =>
+        IllegalCastFromVar(src, to, loc) :: Nil
+
+      // Disallow casting a type variable (symmetric case)
+      case (_, dst@Type.Var(_, _)) =>
+        IllegalCastToVar(from, dst, loc) :: Nil
+
+      // Disallow casting a Java type to any other type.
+      case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
+        IllegalCastToNonJava(clazz, to, loc) :: Nil
+
+      // Disallow casting a Java type to any other type (symmetric case).
+      case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
+        IllegalCastFromNonJava(from, clazz, loc) :: Nil
+
+      // Disallow all other casts.
+      case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
+    }
+  }
+
+  /**
+    * Checks if the given effect cast is legal.
+    */
+  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
+    // Effect casts are -- by construction in the Typer -- safe.
+    Nil
+  }
+
+  /**
+    * Checks if there are any impossible casts, i.e. casts that always fail.
+    *
+    * - No primitive type can be cast to a reference type and vice-versa.
+    * - No Bool type can be cast to a non-Bool type  and vice-versa.
+    */
+  private def verifyUncheckedCast(cast: Expression.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -367,198 +430,35 @@ object Safety {
       Type.Unit :: Type.Bool :: Type.Char ::
         Type.Float32 :: Type.Float64 :: Type.Int8 ::
         Type.Int16 :: Type.Int32 :: Type.Int64 ::
-        Type.Str :: Type.BigInt :: Type.BigDecimal :: Nil
+        Type.Str :: Type.Regex :: Type.BigInt :: Type.BigDecimal :: Nil
     }
 
     (tpe1, tpe2) match {
-
-      // Allow anything with type variables
+      // Allow casts where one side is a type variable.
       case (Type.Var(_, _), _) => Nil
       case (_, Some(Type.Var(_, _))) => Nil
 
-      // Allow anything with Java interop
+      // Allow casts between Java types.
       case (Type.Cst(TypeConstructor.Native(_), _), _) => Nil
       case (_, Some(Type.Cst(TypeConstructor.Native(_), _))) => Nil
 
-      // Boolean primitive to other primitives
+      // Disallow casting a Boolean to another primitive type.
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // Symmetric case
+      // Disallow casting a Boolean to another primitive type (symmetric case).
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // JVM Reference types and primitives
+      // Disallowing casting a non-primitive type to a primitive type.
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      // Symmetric case
+      // Disallowing casting a non-primitive type to a primitive type (symmetric case).
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
         ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
-    }
-  }
-
-  /**
-    * Checks that `tpe1` is a subtype of `tpe2`.
-    *
-    * `tpe1` is a subtype of `tpe2` if:
-    *
-    * (a) `tpe1` has the exact same flix type as `tpe2`
-    *
-    * (b) both types are java types and `tpe1` is a subtype of `tpe2`
-    *
-    * (c) both types are functions and `tpe1` is a subtype of `tpe2`
-    *
-    * AND
-    *
-    * the purity of the expression is being cast from `pure` -> `ef` -> `impure`.
-    *
-    * OR
-    *
-    * the effect set of the expression is a subset of the effect set being cast to.
-    *
-    */
-  private def isSubtypeOf(tpe1: Type, tpe2: Type, renv: RigidityEnv, root: Root)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.Empty, _) => true
-    case (Type.True, _) => true
-    case (Type.Var(_, _), Type.False) => true
-
-    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(left)
-
-    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.lang.String])
-
-    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.math.BigInteger])
-
-    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      right.isAssignableFrom(classOf[java.math.BigDecimal])
-
-    case (Type.Cst(TypeConstructor.Arrow(n1), _), Type.Cst(TypeConstructor.Arrow(n2), _)) if n1 == n2 =>
-      // purities
-      val pur1 = tpe1.arrowPurityType
-      val pur2 = tpe2.arrowPurityType
-      val subTypePurity = isSubtypeOf(pur1, pur2, renv, root)
-
-      // set effects
-      // The rule for effect sets is:
-      // S1 < S2 <==> exists S3 . S1 U S3 == S2
-      val loc = tpe1.loc.asSynthetic
-      val s1 = tpe1.arrowEffectType
-      val s2 = tpe2.arrowEffectType
-      val s3 = Type.freshVar(Kind.Effect, loc)
-      val s1s3 = Type.mkUnion(s1, s3, loc)
-      val isEffSubset = Unification.unifiesWith(s1s3, s2, renv)
-
-      // check that parameters are supertypes
-      val args1 = tpe1.arrowArgTypes
-      val args2 = tpe2.arrowArgTypes
-      val superTypeArgs = args1.zip(args2).forall {
-        case (t1, t2) =>
-          isSubtypeOf(t2, t1, renv, root)
-      }
-
-      // check that result is a subtype
-      val expectedResTpe = tpe1.arrowResultType
-      val actualResTpe = tpe2.arrowResultType
-      val subTypeResult = isSubtypeOf(expectedResTpe, actualResTpe, renv, root)
-
-      subTypePurity && isEffSubset && superTypeArgs && subTypeResult
-
-    case _ => tpe1 == tpe2
-
-  }
-
-  /**
-    * Returns true if `tpe1` and `tpe2` are both Java types
-    * and `tpe1` is a subtype of `tpe2`.
-    * Note that `tpe1` is also allowed to be a Flix string
-    * or BigInt/BigDecimal while `tpe2` is a supertype of this.
-    */
-  private def isJavaSubtypeOf(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = (tpe1.baseType, tpe2.baseType) match {
-    case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(left)) true else false
-
-    case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.lang.String])) true else false
-
-    case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigInteger])) true else false
-
-    case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-      if (right.isAssignableFrom(classOf[java.math.BigDecimal])) true else false
-
-    case (Type.Var(_, _), _) | (_, Type.Var(_, _)) =>
-      false
-
-    case (Type.Cst(TypeConstructor.Native(_), _), _) | (_, Type.Cst(TypeConstructor.Native(_), _)) =>
-      false
-
-    case _ => false
-  }
-
-  /**
-    * Returns a list of errors if the the upcast is invalid.
-    */
-  private def checkUpcastSafety(exp: Expression, tpe: Type, renv: RigidityEnv, root: Root, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe)
-    val tpe2 = Type.eraseAliases(tpe)
-    if (isSubtypeOf(tpe1, tpe2, renv, root))
-      Nil
-    else
-      UnsafeUpcast(exp.tpe, tpe, loc) :: Nil
-  }
-
-  /**
-    * Returns a list of errors if the the supercast is invalid.
-    */
-  private def checkSupercastSafety(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe)
-    val tpe2 = Type.eraseAliases(tpe)
-    if (isJavaSubtypeOf(tpe1, tpe2))
-      Nil
-    else
-      collectSupercastErrors(exp, tpe, loc)
-  }
-
-  /**
-    * Returns a list of supercast errors.
-    */
-  private def collectSupercastErrors(exp: Expression, tpe: Type, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    val tpe1 = Type.eraseAliases(exp.tpe)
-    val tpe2 = Type.eraseAliases(tpe)
-
-    (tpe1.baseType, tpe2.baseType) match {
-
-      case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (Type.Var(_, _), _) =>
-        FromTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (_, Type.Var(_, _)) =>
-        ToTypeVariableSupercast(exp.tpe, tpe, loc) :: Nil
-
-      case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        ToNonJavaTypeSupercast(clazz, tpe, loc) :: Nil
-
-      case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        FromNonJavaTypeSupercast(exp.tpe, clazz, loc) :: Nil
-
-      case _ => UnsafeSupercast(exp.tpe, tpe, loc) :: Nil
-
     }
   }
 
@@ -658,9 +558,15 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
+    case Predicate.Body.Functional(outVars, exp, loc) =>
+      // check for non-positively in variables (free variables in exp).
+      val inVars = freeVars(exp).keySet intersect quantVars
+      val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
+
+      err1 ::: visitExp(exp, renv, root)
+
     case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
 
-    case Predicate.Body.Loop(_, exp, _) => visitExp(exp, renv, root)
   }
 
   /**
@@ -690,9 +596,12 @@ object Safety {
         Set.empty
     }
 
+    case Predicate.Body.Functional(_, _, _) =>
+      // A functional does not positively bind any variables. Not even its outVars.
+      Set.empty
+
     case Predicate.Body.Guard(_, _) => Set.empty
 
-    case Predicate.Body.Loop(_, _, _) => Set.empty
   }
 
   /**

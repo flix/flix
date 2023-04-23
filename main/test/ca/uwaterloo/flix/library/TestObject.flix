@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestObject {
+mod TestObject {
 
     /////////////////////////////////////////////////////////////////////////////
     // isNull                                                                  //
@@ -23,7 +23,7 @@ namespace TestObject {
     def isNullUnit01(): Bool = not Object.isNull(())
 
     @test
-    def isNullUnit02(): Bool = Object.isNull(unsafe_cast null as Unit)
+    def isNullUnit02(): Bool = Object.isNull(unchecked_cast(null as Unit))
 
     @test
     def isNullBool01(): Bool = not Object.isNull(true)
@@ -53,13 +53,13 @@ namespace TestObject {
     def isNullBigInt01(): Bool = not Object.isNull(123ii)
 
     @test
-    def isNullBigInt02(): Bool = Object.isNull(unsafe_cast null as BigInt)
+    def isNullBigInt02(): Bool = Object.isNull(unchecked_cast(null as BigInt))
 
     @test
     def isNullString01(): Bool = not Object.isNull("hello")
 
     @test
-    def isNullString02(): Bool = Object.isNull(unsafe_cast null as String)
+    def isNullString02(): Bool = Object.isNull(unchecked_cast(null as String))
 
     @test
     def isNullArray01(): Bool \ IO = not Object.isNull(Array#{} @ Static)
@@ -67,20 +67,20 @@ namespace TestObject {
     @test
     def isNullArray02(): Bool = region r {
         let _ = r;
-        Object.isNull(unsafe_cast null as Array[Int32, r])
+        Object.isNull(unchecked_cast(null as Array[Int32, r]))
     }
 
     @test
     def isNullOther01(): Bool = not Object.isNull(1 :: 2 :: Nil)
 
     @test
-    def isNullOther02(): Bool = Object.isNull(unsafe_cast null as List[Int32])
+    def isNullOther02(): Bool = Object.isNull(unchecked_cast(null as List[Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toOption01(): Bool = Object.toOption(unsafe_cast null as String) == None
+    def toOption01(): Bool = Object.toOption(unchecked_cast(null as String)) == None
 
     @test
     def toOption02(): Bool = Object.toOption("") == Some("")

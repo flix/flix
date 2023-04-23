@@ -97,7 +97,7 @@ instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -118,7 +118,9 @@ instance Iterable[Chain] {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ Write(r) = Chain.iterator(rc, c)
 }
 
-namespace Chain {
+mod Chain {
+    use ViewLeft.{NoneLeft, SomeLeft}
+    use ViewRight.{NoneRight, SomeRight}
 
     ///
     /// A datatype for pattern matching on a chain (traversing left-to-right).
@@ -441,18 +443,6 @@ namespace Chain {
         Foldable.sumWith(f, c)
 
     ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(c: Chain[Int32]): Int32 =
-        Foldable.product(c)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, c: Chain[a]): Int32 \ ef =
-        Foldable.productWith(f, c)
-
-    ///
     /// Returns the concatenation of the elements in `c`.
     ///
     pub def flatten(c: Chain[Chain[a]]): Chain[a] =
@@ -688,7 +678,7 @@ namespace Chain {
             case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
             case (_, _)                             => k(point(empty()))
         };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+        loop(viewLeft(xs), viewLeft(ys), identity)
 
 
     ///
@@ -758,7 +748,7 @@ namespace Chain {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], c: Chain[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -919,7 +909,7 @@ namespace Chain {
     ///
     pub def traverse(f: a -> m[b] \ ef, c: Chain[a]): m[Chain[b]] \ ef with Applicative[m] =
         def loop(v, acc) = match v {
-            case ViewLeft.NoneLeft        => upcast(() -> acc)()
+            case ViewLeft.NoneLeft        => acc
             case ViewLeft.SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
         };
         loop(viewLeft(c), Applicative.point(empty()))

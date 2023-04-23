@@ -18,22 +18,22 @@ namespace Reachable/Imperative {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         region r {
             // collect edge lists
-            let edgeMap = new MutMap(r);
+            let edgeMap = MutMap.new(r);
             foreach((start, end) <- Foldable.iterator(r, edges)) {
-                let startEdges = MutMap.getOrElsePut!(start, new MutList(r), edgeMap);
+                let startEdges = MutMap.getOrElsePut!(start, MutList.new(r), edgeMap);
                 MutList.push!(end, startEdges)
             };
             // define the reachable set
-            let reachable = new MutSet(r);
+            let reachable = MutSet.new(r);
             // explore graph depth first by task list
-            let taskList = new MutDeque(r);
+            let taskList = MutDeque.new(r);
             taskList |> MutDeque.pushFront(origin);
             def whileLoop() = {
                 MutDeque.popFront(taskList) |> Option.forEach(node -> {
                     // this node has now been reached
                     reachable |> MutSet.add!(node);
                     // add all non-reached end points to tasklist
-                    let endPoints = MutMap.getWithDefault(node, new MutList(r), edgeMap);
+                    let endPoints = MutMap.getWithDefault(node, MutList.new(r), edgeMap);
                     foreach(nextNode <- Iterable.iterator(endPoints)) {
                         let alreadyReached = MutSet.memberOf(nextNode, reachable);
                         if (not alreadyReached)
@@ -76,8 +76,7 @@ namespace Reachable/Functional {
 }
 
 namespace Reachable/Logic {
-    // Note that Boxable includes Order
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Boxable[n] =
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         let edgeFacts = project edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
         let reachable = #{

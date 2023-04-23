@@ -45,7 +45,7 @@ object JvmBackend {
       //
       // Compute the set of closures in the program.
       //
-      val closures = JvmOps.closuresOf(root)
+      val closures = root.closures
 
       //
       // Compute the set of namespaces in the program.
@@ -53,14 +53,14 @@ object JvmBackend {
       val namespaces = JvmOps.namespacesOf(root)
 
       //
-      // Compute the set of instantiated tags in the program.
-      //
-      val tags = JvmOps.tagsOf(root)
-
-      //
       // Compute the set of types in the program.
       //
       val types = JvmOps.typesOf(root)
+
+      //
+      // Compute the set of instantiated tags in the program.
+      //
+      val tags = JvmOps.tagsOf(types)
 
       val erasedRefTypes: Iterable[BackendObjType.Ref] = JvmOps.getRefsOf(types)
       val erasedExtendTypes: Iterable[BackendObjType.RecordExtend] = JvmOps.getRecordExtendsOf(types)
@@ -72,7 +72,7 @@ object JvmBackend {
       //
       // Compute the set of anonymous classes (NewObjects) in the program.
       //
-      val anonClassDefs = JvmOps.anonClassesOf(root)
+      val anonClassDefs = root.anonClasses
 
       //
       // Generate the main class.

@@ -21,17 +21,13 @@ pub enum MutSet[t: Type, r: Region] {
     case MutSet(Region[r], Ref[Set[t], r])
 }
 
-instance Newable[MutSet[t]] {
-    pub def new(r: Region[r]): MutSet[t, r] \ { Write(r) } = MutSet.new(r)
-}
-
-namespace MutSet {
+mod MutSet {
 
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
     pub def toString(s: MutSet[a, r]): String \Read(r) with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -306,22 +302,6 @@ namespace MutSet {
     pub def sumWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
         let MutSet(_, ms) = s;
         Set.sumWith(f, deref ms)
-
-    ///
-    /// Returns the product of all elements in the set `s`.
-    ///
-    pub def product(s: MutSet[Int32, r]): Int32 \ { Read(r) } =
-        let MutSet(_, ms) = s;
-        Set.product(deref ms)
-
-    ///
-    /// Returns the product of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, Read(r) } =
-        let MutSet(_, ms) = s;
-        Set.productWith(f, deref ms)
 
     ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.

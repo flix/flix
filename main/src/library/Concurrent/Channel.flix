@@ -16,15 +16,15 @@
 // limitations under the License.
 //
 
-namespace Concurrent/Channel {
-    use Concurrent/ReentrantLock.lock
-    use Concurrent/ReentrantLock
-    use Concurrent/ReentrantLock.newLock
-    use Concurrent/Condition
-    use Concurrent/ReentrantLock.newCondition
-    use Concurrent/CyclicBarrier
-    use Concurrent/CyclicBarrier.newCyclicBarrier
-    use Concurrent/CyclicBarrier.awaitBarrier
+mod Concurrent.Channel {
+    use Concurrent.ReentrantLock.lock
+    use Concurrent.ReentrantLock
+    use Concurrent.ReentrantLock.newLock
+    use Concurrent.Condition
+    use Concurrent.ReentrantLock.newCondition
+    use Concurrent.CyclicBarrier
+    use Concurrent.CyclicBarrier.newCyclicBarrier
+    use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
     /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
@@ -148,11 +148,11 @@ namespace Concurrent/Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                new MutList(Static),
+                MutList.new(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            new MutDeque(Static)
+            MutDeque.new(Static)
         )
 
     ///
@@ -455,19 +455,19 @@ namespace Concurrent/Channel {
 
 
     ///
-    /// Unsafe wrapper for `Concurrent/Condition.await(c)` 
+    /// Unsafe wrapper for `Concurrent.Condition.await(c)`
     /// The channel lock is expected to be held.
     ///
     def awaitCondition(c: Condition): Unit \ IO =
-        Concurrent/Condition.await(c)
+        Concurrent.Condition.await(c)
 
     ///
-    /// Unsafe wrapper for `Concurrent/Condition.signalAll(c)` that handles
+    /// Unsafe wrapper for `Concurrent.Condition.signalAll(c)` that handles
     /// `Err` with `bug!`.
     /// The condition lock is expected to be held.
     ///
     def signalCondition(c: Condition): Unit \ IO =
-        match Concurrent/Condition.signalAll(c) {
+        match Concurrent.Condition.signalAll(c) {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: awaiting without holding the corresponding lock
@@ -475,12 +475,12 @@ namespace Concurrent/Channel {
         }
 
     ///
-    /// Unsafe wrapper for `Concurrent/ReentrantLock.unlock(l)` that handles
+    /// Unsafe wrapper for `Concurrent.ReentrantLock.unlock(l)` that handles
     /// `Err` with `bug!`.
     /// The lock is expected to be held.
     ///
     def unlock(l: ReentrantLock): Unit \ IO =
-        match Concurrent/ReentrantLock.unlock(l) {
+        match Concurrent.ReentrantLock.unlock(l) {
             case Ok(_) => ()
             case Err(_) =>
                 // Error: unlock without holding the lock

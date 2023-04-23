@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace System {
+mod System {
 
     ///
     /// Operations on the Standard Input Stream.
     ///
-    namespace StdIn {
+    mod StdIn {
 
         ///
         /// Returns an iterator over lines from the standard input stream.
@@ -30,20 +30,20 @@ namespace System {
         ///
         /// See also `Console.readLine` for reading from the console.
         ///
-        pub def readLines(r: Region[r]): Iterator[String, r, r] \ { Read(r), Write(r), IO } =
+        pub def readLines(r: Region[r]): Iterator[String, false, r] \ { Read(r), Write(r), IO } =
             import static get java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
             import new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
             import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
             // note: BufferedReader.readLine can block
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
-            let br = newBufferedReader(upcast newInputStream(getSystemIn())); // up-cast to superclass
+            let br = newBufferedReader(checked_cast(newInputStream(getSystemIn()))); // up-cast to superclass
             let nextLine = ref None @ r;
             let next = () -> {
                 let l = match deref nextLine {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
-                        let n = unsafe_cast brReadLine(br) as _ \ Read(r);
+                        let n = brReadLine(br);
                         nextLine := Some(n);
                         if (Object.isNull(n)) None else Some(n)
                 };
@@ -51,13 +51,13 @@ namespace System {
                 l
             };
             Iterator.iterate(r, next)
-        
+
     }
 
     ///
     /// Operations on the Standard Output Stream.
     ///
-    namespace StdOut {
+    mod StdOut {
 
         ///
         /// Prints the given string `s` to the standard output stream.
@@ -99,7 +99,7 @@ namespace System {
     ///
     /// Operations on the Standard Error Stream.
     ///
-    namespace StdErr {
+    mod StdErr {
 
         ///
         /// Prints the given string `s` to the standard error stream.

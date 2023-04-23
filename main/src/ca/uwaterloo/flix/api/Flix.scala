@@ -26,11 +26,10 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
-import java.net.URI
 import java.nio.charset.Charset
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -38,7 +37,7 @@ object Flix {
   /**
     * The reserved Flix delimiter.
     */
-  val Delimiter: String = "%"
+  val Delimiter: String = "$"
 }
 
 /**
@@ -63,7 +62,7 @@ class Flix {
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
-  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, MultiMap.empty)
+  private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -88,8 +87,6 @@ class Flix {
     "BitwiseAnd.flix" -> LocalResource.get("/src/library/BitwiseAnd.flix"),
     "BitwiseOr.flix" -> LocalResource.get("/src/library/BitwiseOr.flix"),
     "BitwiseXor.flix" -> LocalResource.get("/src/library/BitwiseXor.flix"),
-    "BitwiseShl.flix" -> LocalResource.get("/src/library/BitwiseShl.flix"),
-    "BitwiseShr.flix" -> LocalResource.get("/src/library/BitwiseShr.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
     // Channels and Threads
@@ -113,15 +110,14 @@ class Flix {
     // String
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
 
-    // Boxable
-    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
-    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
-
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
 
     // Debug
     "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
+
+    // References
+    "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
 
   /**
@@ -135,6 +131,8 @@ class Flix {
     "Benchmark.flix" -> LocalResource.get("/src/library/Benchmark.flix"),
     "BigDecimal.flix" -> LocalResource.get("/src/library/BigDecimal.flix"),
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
+    "Boxable.flix" -> LocalResource.get("/src/library/Boxable.flix"),
+    "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
@@ -155,7 +153,6 @@ class Flix {
     "Map.flix" -> LocalResource.get("/src/library/Map.flix"),
     "Nec.flix" -> LocalResource.get("/src/library/Nec.flix"),
     "Nel.flix" -> LocalResource.get("/src/library/Nel.flix"),
-    "Newable.flix" -> LocalResource.get("/src/library/Newable.flix"),
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
@@ -244,10 +241,9 @@ class Flix {
 
     "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
 
-    "Fixpoint/Tuple/Tuple.flix" -> LocalResource.get("/src/library/Fixpoint/Tuple/Tuple.flix"),
-
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
+    "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
   )
 
   /**
@@ -258,12 +254,12 @@ class Flix {
   /**
     * The current phase we are in. Initially null.
     */
-  var currentPhase: PhaseTime = _
+  private var currentPhase: PhaseTime = _
 
   /**
     * The progress bar.
     */
-  val progressBar: ProgressBar = new ProgressBar
+  private val progressBar: ProgressBar = new ProgressBar
 
   /**
     * The default assumed charset.
@@ -278,7 +274,7 @@ class Flix {
   /**
     * The fork join pool for `this` Flix instance.
     */
-  var forkJoinPool: java.util.concurrent.ForkJoinPool = _
+  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The fork join task support for `this` Flix instance.
@@ -299,13 +295,6 @@ class Flix {
     * A class loader for loading external JARs.
     */
   val jarLoader = new ExternalJarLoader
-
-  /**
-    * Adds the given string `s` to the list of strings to be parsed.
-    */
-  def addSourceCode(s: String): Flix = {
-    addSourceCode("<unnamed>", s)
-  }
 
   /**
     * Adds the given string `text` with the given `name`.
@@ -330,19 +319,58 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
+    * Adds the given path `p` as Flix source file.
     */
-  def addSourcePath(p: String): Flix = {
+  def addFlix(p: Path): Flix = {
     if (p == null)
-      throw new IllegalArgumentException("'p' must be non-null.")
-    addSourcePath(Paths.get(p))
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    addInput(p.toString, Input.TxtFile(p))
     this
   }
 
   /**
-    * Adds the given path `p` to the list of paths to be parsed.
+    * Adds the given path `p` as a Flix package file.
     */
-  def addSourcePath(p: Path): Flix = {
+  def addPkg(p: Path): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    if (!p.getFileName.toString.endsWith(".fpkg"))
+      throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
+
+    addInput(p.toString, Input.PkgFile(p))
+    this
+  }
+
+  /**
+    * Removes the given path `p` as a Flix source file.
+    */
+  def remFlix(p: Path): Flix = {
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    remInput(p.toString, Input.TxtFile(p))
+    this
+  }
+
+  /**
+    * Adds the JAR file at path `p` to the class loader.
+    */
+  def addJar(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -352,29 +380,7 @@ class Flix {
     if (!Files.isReadable(p))
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
 
-    if (p.getFileName.toString.endsWith(".flix")) {
-      addInput(p.toString, Input.TxtFile(p))
-    } else if (p.getFileName.toString.endsWith(".fpkg")) {
-      addInput(p.toString, Input.PkgFile(p))
-    } else {
-      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
-    }
-
-    this
-  }
-
-  /**
-    * Removes the given path `p` to the list of paths to be parsed.
-    */
-  def remSourcePath(p: Path): Flix = {
-    if (p.getFileName.toString.endsWith(".flix")) {
-      remInput(p.toString, Input.TxtFile(p))
-    } else if (p.getFileName.toString.endsWith(".fpkg")) {
-      remInput(p.toString, Input.PkgFile(p))
-    } else {
-      throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
-    }
-
+    jarLoader.addURL(p.toUri.toURL)
     this
   }
 
@@ -399,32 +405,6 @@ class Flix {
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
       inputs += name -> Input.Text(name, "", stable = false)
-  }
-
-  /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
-  def addJar(p: String): Flix = {
-    val uri = new URI(p)
-    val path = Path.of(uri)
-    addJar(path)
-  }
-
-  /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
-  def addJar(p: Path): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-
-    jarLoader.addURL(p.toUri.toURL)
-    this
   }
 
   /**
@@ -506,8 +486,8 @@ class Flix {
       afterStatistics <- Statistics.run(afterEntryPoint)
       _ <- Instances.run(afterStatistics, cachedTypedAst, changeSet)
       afterStratifier <- Stratifier.run(afterStatistics)
-      afterRegions <- Regions.run(afterStratifier)
-      afterPatMatch <- PatternExhaustiveness.run(afterRegions)
+      _ <- Regions.run(afterStratifier)
+      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
@@ -529,7 +509,7 @@ class Flix {
     progressBar.complete()
 
     // Print summary?
-    if (options.xsummary){
+    if (options.xsummary) {
       Summary.printSummary(result)
     }
 

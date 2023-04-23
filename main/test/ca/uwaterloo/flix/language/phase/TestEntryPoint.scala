@@ -19,14 +19,14 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestEntryPoint extends FunSuite with TestUtils {
+class TestEntryPoint extends AnyFunSuite with TestUtils {
 
   test("Test.IllegalEntryPointArg.Main.01") {
     val input =
       """
-        |def main(blah: Array[String, _]): Unit \ IO = unsafe_cast ??? as _ \ IO
+        |def main(blah: Array[String, _]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -35,7 +35,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.02") {
     val input =
       """
-        |def main(blah: Array[a, _]): Unit \ IO = unsafe_cast ??? as _ \ IO
+        |def main(blah: Array[a, _]): Unit \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -46,7 +46,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |def main(blah: Array[a, _]): Unit \ IO with C[a] = unsafe_cast ??? as _ \ IO
+        |def main(blah: Array[a, _]): Unit \ IO with C[a] = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointArgs](result)
@@ -82,7 +82,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.IllegalEntryPointResult.Main.01") {
     val input =
       """
-        |def main(): a \ IO = unsafe_cast ??? as _ \ IO
+        |def main(): a \ IO = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.IllegalEntryPointResult](result)
@@ -129,7 +129,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.01") {
     val input =
       """
-        |def main(): Unit \ ef = unsafe_cast ??? as _ \ ef
+        |def main(): Unit \ ef = checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -147,7 +147,7 @@ class TestEntryPoint extends FunSuite with TestUtils {
     test("Test.ValidEntryPoint.Main.03") {
       val input =
         """
-          |def main(): Int64 \ IO = unsafe_cast ??? as _ \ IO
+          |def main(): Int64 \ IO = checked_ecast(42i64)
           |""".stripMargin
       val result = compile(input, Options.TestWithLibMin)
       expectSuccess(result)

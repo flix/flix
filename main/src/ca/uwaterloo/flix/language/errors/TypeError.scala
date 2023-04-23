@@ -40,19 +40,19 @@ object TypeError {
     * @param loc      the location where the error occurred.
     */
   case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithoutConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithoutConstraints(declared)}'."
+    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared)}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The type scheme: '${red(FormatScheme.formatSchemeWithoutConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithoutConstraints(declared))}'.
+         |>> The type scheme: '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}'.
          |
          |${code(loc, "unable to generalize the type scheme.")}
          |
          |The declared type does not match the inferred type:
          |
-         |  Declared: ${cyan(FormatScheme.formatSchemeWithoutConstraints(declared))}
-         |  Inferred: ${magenta(FormatScheme.formatSchemeWithoutConstraints(inferred))}
+         |  Declared: ${cyan(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}
+         |  Inferred: ${magenta(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}
          |""".stripMargin
     }
 
@@ -187,14 +187,14 @@ object TypeError {
   }
 
   /**
-    * Unexpected type, but upcast might work.
+    * Unexpected type, but a checked type cast might work.
     *
     * @param expected the expected type.
     * @param inferred the inferred type.
     * @param renv     the rigidity environment.
     * @param loc      the location of the inferred type.
     */
-  case class PossibleUpcast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class PossibleCheckedTypeCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -205,17 +205,17 @@ object TypeError {
          |${code(loc, "expression has unexpected type.")}
          |
          |'${formatType(expected, Some(renv))}' appears to be assignable from '${formatType(inferred, Some(renv))}'.
-         |Consider using 'upcast'?
+         |Consider using 'checked_cast'?
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
          |
-         |Nevertheless, 'upcast' is way to use both in a safe manner, for example:
+         |Nevertheless, 'checked_cast' is way to use both in a safe manner, for example:
          |
          |    let s = "Hello World";
-         |    let o: ##java.lang.Object = upcast s;
+         |    let o: ##java.lang.Object = checked_cast(s);
          |""".stripMargin
     )
   }

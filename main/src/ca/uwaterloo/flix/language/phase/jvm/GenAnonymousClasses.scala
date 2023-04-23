@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.ast.ErasedAst._
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.{MethodDescriptor, RootPackage}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for anonymous classes (created through NewObject)
@@ -33,7 +33,7 @@ object GenAnonymousClasses {
   /**
     * Returns the set of anonymous classes for the given set of objects
     */
-  def gen(objs: Set[Expression.NewObject])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(objs: Set[AnonClassInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate an anonymous class for each object and collect the results in a map.
     //
@@ -49,18 +49,18 @@ object GenAnonymousClasses {
   /**
     * Returns the bytecode for the anonoymous class
     */
-  private def genByteCode(className: JvmName, obj: Expression.NewObject)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(className: JvmName, obj: AnonClassInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     val visitor = AsmOps.mkClassWriter()
 
-    val superClass = if (obj.clazz.isInterface()) 
-        BackendObjType.JavaObject.jvmName.toInternalName 
-      else 
-        asm.Type.getInternalName(obj.clazz)
+    val superClass = if (obj.clazz.isInterface())
+      BackendObjType.JavaObject.jvmName.toInternalName
+    else
+      asm.Type.getInternalName(obj.clazz)
 
-    val interfaces = if (obj.clazz.isInterface()) 
-        Array(asm.Type.getInternalName(obj.clazz)) 
-      else
-        Array[String]()
+    val interfaces = if (obj.clazz.isInterface())
+      Array(asm.Type.getInternalName(obj.clazz))
+    else
+      Array[String]()
 
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       superClass, interfaces)
@@ -93,7 +93,7 @@ object GenAnonymousClasses {
 
   /**
     * Returns a JVM type descriptor for the given `MonoType`
-    * 
+    *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   def getDescriptorHacked(tpe: MonoType)(implicit root: Root, flix: Flix): String = tpe match {
@@ -104,7 +104,7 @@ object GenAnonymousClasses {
 
   /**
     * Returns a JVM method descriptor for the given parameters and return types
-    * 
+    *
     * Hacked to half-work for array types. In the new backend we should handle all types, including multidim arrays.
     */
   def getMethodDescriptorHacked(paramTypes: List[MonoType], retType: MonoType)(implicit root: Root, flix: Flix): String = {
@@ -138,7 +138,7 @@ object GenAnonymousClasses {
 
       // Push arguments onto the stack
       var offset = 0
-      fparams.zipWithIndex.foreach { case (arg, i) => 
+      fparams.zipWithIndex.foreach { case (arg, i) =>
         methodVisitor.visitInsn(DUP)
         val argType = JvmOps.getJvmType(arg.tpe)
         methodVisitor.visitVarInsn(AsmOps.getLoadInstruction(argType), offset)

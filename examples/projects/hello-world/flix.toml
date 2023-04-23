@@ -4,4 +4,4 @@ description = "A simple program"                # The description of the package
 version     = "0.1.0"                           # The semantic version of the package.
 flix        = "0.33.0"                          # The required version of the Flix compiler.
 license     = "Apache-2.0"                      # The license applicable to this project (see also LICENSE.md).
-authors     = ["John Doe <john@example.com"]    # The authors of this project.
+authors     = ["John Doe <john@example.com>"]   # The authors of this project.

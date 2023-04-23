@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestWeeder extends FunSuite with TestUtils {
+class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateTag.01") {
     val input =
@@ -773,7 +773,7 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32): List[Int32] = foreach (if x > 0) yield 1
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
   }
 
@@ -782,7 +782,170 @@ class TestWeeder extends FunSuite with TestUtils {
       """
         |def f(x: Int32, ys: List[Int32]): List[Int32] = foreach (if x > 0; y <- ys) yield y
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.01") {
+    val input =
+      """
+        |def f(): List[Int32] = foreach () 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.02") {
+    val input =
+      """
+        |def f(): List[Int32] = foreach () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.03") {
+    val input =
+      """
+        |def f(): List[Int32] = forM () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.04") {
+    val input =
+      """
+        |def f(): List[Int32] = forA () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalEmptyForFragment.05") {
+    val input =
+      """
+        |def f(): Chain[String] = for () yield "a"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyForFragment](result)
+  }
+
+  test("IllegalUseAlias.01") {
+    val input =
+      """
+        |mod M {
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{foo => Foo}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUseAlias](result)
+  }
+
+  test("IllegalUseAlias.02") {
+    val input =
+      """
+        |mod M {
+        |    enum Enum1
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{Enum1 => enum1}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUseAlias](result)
+  }
+
+  test("NonUnaryAssocType.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a, b]: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.02") {
+    val input =
+      """
+        |class C[a] {
+        |    type T: Type
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.03") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    type T[Int32, b] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("IllegalEqualityConstraint.01") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("IllegalEqualityConstraint.02") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Elem[a] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
+  test("InvalidRegularExpression.01") {
+    val input =
+      """
+        |def f(): Regex = regex"[a-*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.02") {
+    val input =
+      """
+        |def f(): Regex = regex"a{}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.03") {
+    val input =
+      """
+        |def f(): Regex = regex"a{-1}"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
+  }
+
+  test("InvalidRegularExpression.04") {
+    val input =
+      """
+        |def f(): Regex = regex"\\p{InvalidGroupName}*"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.InvalidRegularExpression](result)
   }
 }

@@ -1,4 +1,4 @@
-namespace Test/Exp/Concurrency/Select {
+mod Test.Exp.Concurrency.Select {
 
     @test
     def testSelectBuffered01(): Bool \ IO = region r {
@@ -144,7 +144,7 @@ namespace Test/Exp/Concurrency/Select {
     @test
     def testSelectDefault03(): Unit \ IO =
       // This test is from a bug report so its form is subtle and intentional
-      unsafe_cast println(mainx()) as _ \ IO
+      unchecked_cast(println(mainx()) as _ \ IO)
 
     @test
     def testSelectRandom01(): Unit \ IO = region r {

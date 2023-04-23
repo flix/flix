@@ -1,4 +1,4 @@
-namespace Test/Eff/Advanced {
+mod Test.Eff.Advanced {
 
     // NB: Due to monomorphization some of these test cases are erased and never executed.
     // That is acceptable; we just want to ensure that they type check.

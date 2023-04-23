@@ -71,10 +71,10 @@ instance Applicative[Option] {
     pub def ap(f: Option[a -> b \ ef], x: Option[a]) : Option[b] \ ef = Option.ap(f, x)
 
     // Same as the default implementation using `map` and `ap` but with less indirection.
-    override pub def liftA2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.lift2(f, x1, x2)
-    override pub def liftA3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.lift3(f, x1, x2, x3)
-    override pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.lift4(f, x1, x2, x3, x4)
-    override pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.lift5(f, x1, x2, x3, x4, x5)
+    override pub def map2(f: t1 -> t2 -> r \ ef, x1: Option[t1], x2: Option[t2]): Option[r] \ ef = Option.map2(f, x1, x2)
+    override pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3]): Option[r] \ ef = Option.map3(f, x1, x2, x3)
+    override pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4]): Option[r] \ ef = Option.map4(f, x1, x2, x3, x4)
+    override pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: Option[t1], x2: Option[t2], x3: Option[t3], x4: Option[t4], x5: Option[t5]): Option[r] \ ef = Option.map5(f, x1, x2, x3, x4, x5)
 }
 
 instance Monad[Option] {
@@ -86,8 +86,8 @@ instance MonadZero[Option] {
 }
 
 instance MonadZip[Option] {
-    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.liftA2(f, ma, mb)
-    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.liftA2((x, y) -> (x, y), ma, mb)
+    pub def zipWith(f: (a, b) -> c \ ef, ma: Option[a], mb: Option[b]): Option[c] \ ef = Applicative.map2(f, ma, mb)
+    pub override def zip(ma: Option[a], mb: Option[b]): Option[(a, b)] = Applicative.map2((x, y) -> (x, y), ma, mb)
 
     pub def zipWithA(f: (a, b) -> f[c] \ ef, x: Option[a], y: Option[b]): f[Option[c]] \ ef with Applicative[f] =
         use Functor.{<$>};
@@ -153,7 +153,7 @@ instance Iterable[Option] {
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ Write(r) = Option.iterator(rc, o)
 }
 
-namespace Option {
+mod Option {
 
     ///
     /// Returns `true` iff `o` is `None`.
@@ -268,18 +268,6 @@ namespace Option {
         Foldable.sumWith(f, o)
 
     ///
-    /// Returns `v` if `o` is `Some(v)` else `0`.
-    ///
-    pub def product(o: Option[Int32]): Int32 =
-        Foldable.product(o)
-
-    ///
-    /// Returns `f(v)` if `o` is `Some(v)` else `0`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, o: Option[a]): Int32 \ ef =
-        Foldable.productWith(f, o)
-
-    ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
     /// The function `f` must be pure.
@@ -325,7 +313,7 @@ namespace Option {
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
-        case Some(v) => f(v, upcast(_ -> z))
+        case Some(v) => f(v, constant(z))
     }
 
     ///
@@ -408,7 +396,7 @@ namespace Option {
                 case None     => None
             })
         };
-        loop(l, upcast(s1 -> Some(s1)))
+        loop(l, s1 -> checked_ecast(Some(s1)))
 
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
@@ -502,7 +490,7 @@ namespace Option {
     ///
     /// Returns `None` if either `o1` or `o2` are `None`.
     ///
-    pub def lift2(f: (t1, t2) -> u \ ef, o1: Option[t1], o2: Option[t2]): Option[u] \ ef =
+    pub def map2(f: (t1, t2) -> u \ ef, o1: Option[t1], o2: Option[t2]): Option[u] \ ef =
         ap(map(f, o1), o2)
 
     ///
@@ -510,64 +498,64 @@ namespace Option {
     ///
     /// Returns `None` if any of `o1`, `o2` and `o3` are `None`.
     ///
-    pub def lift3(f: (t1, t2, t3) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3]): Option[u] \ ef =
-        ap(lift2(f, o1, o2), o3)
+    pub def map3(f: (t1, t2, t3) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3]): Option[u] \ ef =
+        ap(map2(f, o1, o2), o3)
 
     ///
     /// Applies the 4-ary function `f` to the values in `o1`, `o2`, `o3` and `o4`.
     ///
     /// Returns `None` if any of `o1`, `o2`, `o3` and `o4` are `None`.
     ///
-    pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4]): Option[u] \ ef =
-        ap(lift3(f, o1, o2, o3), o4)
+    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4]): Option[u] \ ef =
+        ap(map3(f, o1, o2, o3), o4)
 
     ///
     /// Applies the 5-ary function `f` to the values in `o1`, `o2`, ... `o5`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o5` are `None`.
     ///
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5]): Option[u] \ ef =
-        ap(lift4(f, o1, o2, o3, o4), o5)
+    pub def map5(f: (t1, t2, t3, t4, t5) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5]): Option[u] \ ef =
+        ap(map4(f, o1, o2, o3, o4), o5)
 
     ///
     /// Applies the 6-ary function `f` to the values in `o1`, `o2`, ... `o6`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o6` are `None`.
     ///
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6]): Option[u] \ ef =
-        ap(lift5(f, o1, o2, o3, o4, o5), o6)
+    pub def map6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6]): Option[u] \ ef =
+        ap(map5(f, o1, o2, o3, o4, o5), o6)
 
     ///
     /// Applies the 7-ary function `f` to the values in `o1`, `o2`, ... `o7`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o7` are `None`.
     ///
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
-        ap(lift6(f, o1, o2, o3, o4, o5, o6), o7)
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7]): Option[u] \ ef=
+        ap(map6(f, o1, o2, o3, o4, o5, o6), o7)
 
     ///
     /// Applies the 8-ary function `f` to the values in `o1`, `o2`, ... `o8`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o8` are `None`.
     ///
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8]): Option[u] \ ef =
-        ap(lift7(f, o1, o2, o3, o4, o5, o6, o7), o8)
+    pub def map8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8]): Option[u] \ ef =
+        ap(map7(f, o1, o2, o3, o4, o5, o6, o7), o8)
 
     ///
     /// Applies the 9-ary function `f` to the values in `o1`, `o2`, ... `o9`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o9` are `None`.
     ///
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9]): Option[u] \ ef =
-        ap(lift8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
+    pub def map9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9]): Option[u] \ ef =
+        ap(map8(f, o1, o2, o3, o4, o5, o6, o7, o8), o9)
 
     ///
     /// Applies the 10-ary function `f` to the values in `o1`, `o2`, ... `o10`.
     ///
     /// Returns `None` if any of `o1`, `o2`, ... `o10` are `None`.
     ///
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] \ ef =
-        ap(lift9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
+    pub def map10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, o1: Option[t1], o2: Option[t2], o3: Option[t3], o4: Option[t4], o5: Option[t5], o6: Option[t6], o7: Option[t7], o8: Option[t8], o9: Option[t9], o10: Option[t10]): Option[u] \ ef =
+        ap(map9(f, o1, o2, o3, o4, o5, o6, o7, o8, o9), o10)
 
     ///
     /// Returns an iterator over `o` with 1 element or an empty iterator if `o` is `None`.

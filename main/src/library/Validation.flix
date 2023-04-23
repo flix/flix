@@ -53,7 +53,7 @@ instance Applicative[Validation[e]] {
 }
 
 
-namespace Validation {
+mod Validation {
 
     ///
     /// Applies the function in `v1` to the value in `v2`.
@@ -224,7 +224,7 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if either or both of `v1` or `v2` are `Failure(xs1)`.
     ///
-    pub def lift2(f: (t1, t2) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2]): Validation[e, u] \ ef =
+    pub def map2(f: (t1, t2) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2]): Validation[e, u] \ ef =
         ap(map(f, v1), v2)
 
     ///
@@ -232,63 +232,63 @@ namespace Validation {
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2` and `v3` are `Failure(xs1)`.
     ///
-    pub def lift3(f: (t1, t2, t3) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3]): Validation[e, u] \ ef =
-        ap(lift2(f, v1, v2), v3)
+    pub def map3(f: (t1, t2, t3) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3]): Validation[e, u] \ ef =
+        ap(map2(f, v1, v2), v3)
 
     ///
     /// Applies the 4-ary function `f` to the values in `v1`, `v2`, `v3` and `v4`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, `v3` and `v4` are `Failure(xs1)`.
     ///
-    pub def lift4(f: (t1, t2, t3, t4) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4]): Validation[e, u] \ ef=
-        ap(lift3(f, v1, v2, v3), v4)
+    pub def map4(f: (t1, t2, t3, t4) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4]): Validation[e, u] \ ef=
+        ap(map3(f, v1, v2, v3), v4)
 
     ///
     /// Applies the 5-ary function `f` to the values in `v1`, `v2`, ... `v5`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v5` are `Failure(xs1)`.
     ///
-    pub def lift5(f: (t1, t2, t3, t4, t5) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5]): Validation[e, u] \ ef =
-        ap(lift4(f, v1, v2, v3, v4), v5)
+    pub def map5(f: (t1, t2, t3, t4, t5) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5]): Validation[e, u] \ ef =
+        ap(map4(f, v1, v2, v3, v4), v5)
 
     ///
     /// Applies the 6-ary function `f` to the values in `v1`, `v2`, ... `v6`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v6` are `Failure(xs1)`.
     ///
-    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6]): Validation[e, u] \ ef =
-        ap(lift5(f, v1, v2, v3, v4, v5), v6)
+    pub def map6(f: (t1, t2, t3, t4, t5, t6) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6]): Validation[e, u] \ ef =
+        ap(map5(f, v1, v2, v3, v4, v5), v6)
 
     ///
     /// Applies the 7-ary function `f` to the values in `v1`, `v2`, ... `v7`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v7` are `Failure(xs1)`.
     ///
-    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7]): Validation[e, u] \ ef=
-        ap(lift6(f, v1, v2, v3, v4, v5, v6), v7)
+    pub def map7(f: (t1, t2, t3, t4, t5, t6, t7) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7]): Validation[e, u] \ ef=
+        ap(map6(f, v1, v2, v3, v4, v5, v6), v7)
 
     ///
     /// Applies the 8-ary function `f` to the values in `v1`, `v2`, ... `v8`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v8` are `Failure(xs1)`.
     ///
-    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8]): Validation[e, u] \ ef =
-        ap(lift7(f, v1, v2, v3, v4, v5, v6, v7), v8)
+    pub def map8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8]): Validation[e, u] \ ef =
+        ap(map7(f, v1, v2, v3, v4, v5, v6, v7), v8)
 
     ///
     /// Applies the 9-ary function `f` to the values in `v1`, `v2`, ... `v9`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v9` are `Failure(xs1)`.
     ///
-    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8], v9: Validation[e, t9]): Validation[e, u] \ ef =
-        ap(lift8(f, v1, v2, v3, v4, v5, v6, v7, v8), v9)
+    pub def map9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8], v9: Validation[e, t9]): Validation[e, u] \ ef =
+        ap(map8(f, v1, v2, v3, v4, v5, v6, v7, v8), v9)
 
     ///
     /// Applies the 10-ary function `f` to the values in `v1`, `v2`, ... `v10`.
     ///
     /// Returns the concatenation of all the failures as `Failure(xs)` if any of `v1`, `v2`, ... `v10` are `Failure(xs1)`.
     ///
-    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8], v9: Validation[e, t9], v10: Validation[e, t10]): Validation[e, u] \ ef =
-        ap(lift9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9), v10)
+    pub def map10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u \ ef, v1: Validation[e, t1], v2: Validation[e, t2], v3: Validation[e, t3], v4: Validation[e, t4], v5: Validation[e, t5], v6: Validation[e, t6], v7: Validation[e, t7], v8: Validation[e, t8], v9: Validation[e, t9], v10: Validation[e, t10]): Validation[e, u] \ ef =
+        ap(map9(f, v1, v2, v3, v4, v5, v6, v7, v8, v9), v10)
 
 }

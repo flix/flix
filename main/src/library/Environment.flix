@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Environment {
+mod Environment {
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -136,10 +136,10 @@ namespace Environment {
         import java.util.Map$Entry.getKey(): ##java.lang.Object \ {};
         import java.util.Map$Entry.getValue(): ##java.lang.Object \ {};
         if (hasNext(iter))
-            let entry = unsafe_cast next(iter) as ##java.util.Map$Entry;
-            let key = unsafe_cast getKey(entry) as String;
-            let value = unsafe_cast getValue(entry) as String;
-            getEnvHelper(iter, Map.insert(key, value, m))
+            let e = unchecked_cast(next(iter) as ##java.util.Map$Entry);
+            let k = unchecked_cast(getKey(e) as String);
+            let v = unchecked_cast(getValue(e) as String);
+            getEnvHelper(iter, Map.insert(k, v, m))
         else
             m
 

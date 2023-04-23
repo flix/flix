@@ -189,6 +189,13 @@ object Symbol {
   }
 
   /**
+    * Returns the associated type symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
+    */
+  def mkAssocTypeSym(classSym: ClassSym, ident: Name.Ident): AssocTypeSym = {
+    new AssocTypeSym(classSym, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the type alias symbol for the given fully qualified name
     */
   def mkTypeAliasSym(fqn: String): TypeAliasSym = split(fqn) match {
@@ -626,6 +633,34 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = name
+  }
+
+  /**
+    * Associated Type Symbol.
+    */
+  final class AssocTypeSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) extends Symbol {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: AssocTypeSym => this.clazz == that.clazz && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(clazz, name)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = clazz.toString + "." + name
+
+    /**
+      * The symbol's namespace.
+      */
+    def namespace: List[String] = clazz.namespace :+ clazz.name
   }
 
   /**

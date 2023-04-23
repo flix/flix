@@ -25,11 +25,7 @@ pub enum MutList[a: Type, r: Region] {
     case MutList(Region[r], Ref[Array[a, r], r], Ref[Int32, r])
 }
 
-instance Newable[MutList[a]] {
-    pub def new(r: Region[r]): MutList[a, r] \ Write(r) = MutList.new(r)
-}
-
-namespace MutList {
+mod MutList {
 
     ///
     /// Constant which stores the minimum capacity of a MutList.
@@ -41,7 +37,7 @@ namespace MutList {
     /// Returns a string representation of the given MutList `l`.
     ///
     pub def toString(l: MutList[a, r]): String \ Read(r) with ToString[a] = region r2 {
-        let sb = new StringBuilder(r2);
+        let sb = StringBuilder.new(r2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -151,24 +147,6 @@ namespace MutList {
     ///
     pub def sumWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
         foldLeft((acc, x) -> acc + f(x), 0, v)
-
-    ///
-    /// Returns the product of all elements in the mutable list `v`.
-    ///
-    pub def product(v: MutList[Int32, r]): Int32 \ Read(r) =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, v)
-
-    ///
-    /// Returns the product of all elements in the mutable list `v` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, v: MutList[a, r]): Int32 \ { ef, Read(r) } =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, v)
 
     ///
     /// Returns `true` if the given predicate `f` holds for at least one element of the given mutable list `v`.
@@ -362,7 +340,7 @@ namespace MutList {
     ///
     pub def map(r1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r1)
+            MutList.new(r1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -386,7 +364,7 @@ namespace MutList {
     ///
     pub def mapWithIndex(r1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, Read(r), Write(r1) } =
         if (isEmpty(v))
-            new MutList(r1)
+            MutList.new(r1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -639,7 +617,7 @@ namespace MutList {
     ///
     pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ { Read(r), Write(r) } =
         let MutList(r, a1, l1) = v;
-        let l = new MutList(r);
+        let l = MutList.new(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
         a1 := deref a2;
@@ -759,7 +737,7 @@ namespace MutList {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(r1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { Read(r2), Write(r1) }  =
-        let d = new MutDeque(r1);
+        let d = MutDeque.new(r1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -795,7 +773,7 @@ namespace MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, Read(r) } = region r1 {
-        let sb = new StringBuilder(r1);
+        let sb = StringBuilder.new(r1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)

@@ -27,8 +27,6 @@ pub enum MultiMap[k, v] with Sendable {
     case MultiMap(Map[k, Set[v]])
 }
 
-instance Boxable[MultiMap[k, v]] with Boxable[k], Boxable[v]
-
 instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
 }
@@ -75,13 +73,13 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
-namespace MultiMap {
+mod MultiMap {
 
     ///
     /// Returns a string representation of `m`.
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
         Map.forEachWithIndex((i, k, v) -> {
@@ -427,29 +425,6 @@ namespace MultiMap {
         let MultiMap(m1) = m;
         let outer = (k, vs) -> Set.sumWith(v -> f(k, v), vs);
         Map.sumWith(outer, m1)
-
-    ///
-    /// Returns the product of all keys in the MultiMap `m`.
-    ///
-    pub def productKeys(m: MultiMap[Int32, v]): Int32 =
-        productWith((k, _) -> k, m)
-
-    ///
-    /// Returns the product of all values in the MultiMap `m`.
-    ///
-    pub def productValues(m: MultiMap[k, Int32]): Int32 =
-        productWith((_, v) -> v, m)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the MultiMap `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def productWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
-        let MultiMap(m1) = m;
-        let outer = (k, vs) -> Set.productWith(v -> f(k, v), vs);
-        Map.productWith(outer, m1)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.

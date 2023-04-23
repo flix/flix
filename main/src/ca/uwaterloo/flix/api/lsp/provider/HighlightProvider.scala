@@ -38,6 +38,8 @@ object HighlightProvider {
 
         case Entity.TypeAlias(alias) => highlightTypeAlias(alias.sym)
 
+        case Entity.AssocType(assoc) => highlightAssocType(assoc.sym)
+
         case Entity.Effect(eff) => highlightEffect(eff.sym)
 
         case Entity.Op(op) => highlightOp(op.sym)
@@ -115,6 +117,12 @@ object HighlightProvider {
   }
 
   private def highlightTypeAlias(sym: Symbol.TypeAliasSym)(implicit index: Index, root: Option[Root]): JObject = {
+    val write = (sym.loc, DocumentHighlightKind.Write)
+    val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
+    highlight(write :: reads)
+  }
+
+  private def highlightAssocType(sym: Symbol.AssocTypeSym)(implicit index: Index, root: Option[Root]): JObject = {
     val write = (sym.loc, DocumentHighlightKind.Write)
     val reads = index.usesOf(sym).toList.map(loc => (loc, DocumentHighlightKind.Read))
     highlight(write :: reads)

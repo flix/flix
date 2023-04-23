@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestVector {
+mod TestVector {
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
@@ -230,14 +230,14 @@ namespace TestVector {
     @test
     def toMutDeque01(): Bool = region rc {
         let v = Vector#{}: Vector[Int32];
-        let d = new MutDeque(rc): MutDeque[Int32, _];
+        let d = MutDeque.new(rc): MutDeque[Int32, _];
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let v = Vector#{1};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
@@ -245,7 +245,7 @@ namespace TestVector {
     @test
     def toMutDeque03(): Bool = region rc {
         let v = Vector#{1, 2, 3};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -255,7 +255,7 @@ namespace TestVector {
     @test
     def toMutDeque04(): Bool = region rc {
         let v = Vector#{1, 2, 3, 4, 5};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -267,7 +267,7 @@ namespace TestVector {
     @test
     def toMutDeque05(): Bool = region rc {
         let v = Vector#{'a', 'b', 'c'};
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -1963,63 +1963,6 @@ namespace TestVector {
         Vector.count(i -> i > 3, Vector#{6, 7}) == 2
 
     /////////////////////////////////////////////////////////////////////////////
-    // product                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def product01(): Bool =
-        Vector.product(Vector#{}) == 1
-
-    @test
-    def product02(): Bool =
-        Vector.product(Vector#{1}) == 1
-
-    @test
-    def product03(): Bool =
-        Vector.product(Vector#{1, 2, 3}) == 6
-
-    @test
-    def product04(): Bool =
-        Vector.product(Vector#{1, 2, 3, -3}) == -18
-
-    @test
-    def product05(): Bool =
-        Vector.product(Vector#{-1, -2, -3, -4}) == 24
-
-    @test
-    def product06(): Bool =
-        Vector.product(Vector#{10, -10}) == -100
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // productWith                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def productWith01(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{}) == 1
-
-    @test
-    def productWith02(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1}) == 2
-
-    @test
-    def productWith03(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1, 2, 3}) == 24
-
-    @test
-    def productWith04(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{1, 2, 3, -3}) == -48
-
-    @test
-    def productWith05(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{-2, -3, -4, -5}) == 24
-
-    @test
-    def productWith06(): Bool =
-        Vector.productWith(x -> x + 1, Vector#{10, -10}) == -99
-
-    /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -3568,7 +3511,7 @@ namespace TestVector {
     @test
     def forEach01(): Bool = region rc {
         let v = Vector#{}: Vector[Int32];
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3577,7 +3520,7 @@ namespace TestVector {
     @test
     def forEach02(): Bool = region rc {
         let v = Vector#{0};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3586,7 +3529,7 @@ namespace TestVector {
     @test
     def forEach03(): Bool = region rc {
         let v = Vector#{1};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "T"
@@ -3595,7 +3538,7 @@ namespace TestVector {
     @test
     def forEach04(): Bool = region rc {
         let v = Vector#{0, 1};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3608,7 +3551,7 @@ namespace TestVector {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let v = (Vector#{}): Vector[Float32];
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3617,7 +3560,7 @@ namespace TestVector {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let v = Vector#{0.0f32};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3626,7 +3569,7 @@ namespace TestVector {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3635,7 +3578,7 @@ namespace TestVector {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTT"
@@ -3644,7 +3587,7 @@ namespace TestVector {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32, 0.3f32};
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTTT"
@@ -4242,19 +4185,19 @@ namespace TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), new MutList(rc))
+        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), MutList.new(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let l = new MutList(rc);
+        let l = MutList.new(rc);
         MutList.push!(1, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let l = new MutList(rc);
+        let l = MutList.new(rc);
         MutList.push!(1, l);
         MutList.push!(2, l);
         MutList.push!(3, l);

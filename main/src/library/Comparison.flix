@@ -20,7 +20,7 @@ pub enum Comparison with Eq, ToString, Sendable {
     case GreaterThan
 }
 
-namespace Comparison {
+mod Comparison {
 
     ///
     /// Converts a `Comparison` value to an integer.

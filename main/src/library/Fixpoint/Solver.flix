@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-namespace Fixpoint {
+mod Fixpoint {
 
     use Boxable.{box, unbox}
-    use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, Denotation}
-    use Fixpoint/Ast.Datalog.{Datalog, Model, Join}
-    use Fixpoint/Ast.Constraint.Constraint
-    use Fixpoint/Ast.HeadPredicate.HeadAtom
-    use Fixpoint/Ast.Denotation.{Relational, Latticenal}
-    use Fixpoint/Ram.RamSym
-    use Fixpoint/Shared.PredSym
-    use Fixpoint/Shared.PredSym.PredSym
+    use Fixpoint.Ast.{Datalog, Constraint, HeadTerm, Denotation}
+    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.Constraint.Constraint
+    use Fixpoint.Ast.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Denotation.{Relational, Latticenal}
+    use Fixpoint.Ram.RamSym
+    use Fixpoint.Shared.PredSym
+    use Fixpoint.Shared.PredSym.PredSym
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -41,8 +41,8 @@ namespace Fixpoint {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = unsafe_cast {
-        notifyPreSolve(d, stf);
+    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+        masked_cast(notifyPreSolve(d, stf));
         let compiler = cs ->
             compile(cs, stf) |>
             simplifyStmt |>
@@ -59,9 +59,9 @@ namespace Fixpoint {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        notifyPostSolve(model);
+        masked_cast(notifyPostSolve(model));
         model
-    } as _ \ {} // This casts away the impure effect of notify
+    }
 
     ///
     /// Returns the pairwise union of `d1` and `d2`.
@@ -73,7 +73,7 @@ namespace Fixpoint {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(List.append(edb1, edb2), List.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            use Fixpoint/Ram.toDenotation;
+            use Fixpoint.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
                 case Relational => Map.union
                 case Latticenal(_, _, lub, _) => Map.unionWith(lub)
@@ -113,9 +113,9 @@ namespace Fixpoint {
     /// Renames every predicate symbol in `d` with a fresh name, except for those in `preds`.
     ///
     @Internal
-    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = unsafe_cast {
-        use Fixpoint/PredSymsOf.predSymsOf;
-        use Fixpoint/SubstitutePredSym.substitute;
+    pub def rename(preds: List[PredSym], d: Datalog[v]): Datalog[v] with Order[v] = {
+        use Fixpoint.PredSymsOf.predSymsOf;
+        use Fixpoint.SubstitutePredSym.substitute;
 
         // Import a function that can create new ids.
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
@@ -131,7 +131,8 @@ namespace Fixpoint {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let newPredSym = PredSym(name, unsafe_cast (newId() + 1i64) as _ \ {}); // We add one because the counter starts at zero.
+                let nextId = unchecked_cast((newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
+                let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
         };
@@ -141,15 +142,13 @@ namespace Fixpoint {
         let r = substitute(d, s);
 
         // Debugging
-        let _ = if (enableDebugging()) {
-            println(s);
-            println(d);
-            println(r)
-        } else ();
+        // println(s);
+        // println(d);
+        // println(r)
 
         // Return the result.
         r
-    } as _ \ {} // This casts away the impure effect of debugging
+    }
 
     ///
     /// Insert all facts in the given sequence `f` into the given relation `p`.
@@ -159,7 +158,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto1[f: Type -> Type, t1: Type](p: PredSym, ts: f[(t1)]):
-        Datalog[Boxed] with Boxable[t1], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Foldable[f] =
         injectIntoX(match (v1) ->
             box(v1) ::
             Nil
@@ -173,7 +172,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto2[f: Type -> Type, t1: Type, t2: Type](p: PredSym, ts: f[(t1, t2)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Foldable[f] =
         injectIntoX(match (v1, v2) ->
             box(v1) ::
             box(v2) ::
@@ -188,7 +187,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto3[f: Type -> Type, t1: Type, t2: Type, t3: Type](p: PredSym, ts: f[(t1, t2, t3)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Foldable[f] =
         injectIntoX(match (v1, v2, v3) ->
             box(v1) ::
             box(v2) ::
@@ -205,7 +204,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto4[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type](p: PredSym, ts: f[(t1, t2, t3, t4)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4) ->
             box(v1) ::
             box(v2) ::
@@ -223,7 +222,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto5[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5) ->
             box(v1) ::
             box(v2) ::
@@ -242,7 +241,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto6[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6) ->
             box(v1) ::
             box(v2) ::
@@ -262,7 +261,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto7[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7) ->
             box(v1) ::
             box(v2) ::
@@ -284,7 +283,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto8[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8) ->
             box(v1) ::
             box(v2) ::
@@ -307,7 +306,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto9[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9) ->
             box(v1) ::
             box(v2) ::
@@ -333,7 +332,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto10[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) ->
             box(v1) ::
             box(v2) ::
@@ -360,7 +359,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto11[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) ->
             box(v1) ::
             box(v2) ::
@@ -388,7 +387,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto12[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) ->
             box(v1) ::
             box(v2) ::
@@ -417,7 +416,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto13[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) ->
             box(v1) ::
             box(v2) ::
@@ -447,7 +446,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto14[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) ->
             box(v1) ::
             box(v2) ::
@@ -478,7 +477,7 @@ namespace Fixpoint {
     ///
     @Internal
     pub def injectInto15[f: Type -> Type, t1: Type, t2: Type, t3: Type, t4: Type, t5: Type, t6: Type, t7: Type, t8: Type, t9: Type, t10: Type, t11: Type, t12: Type, t13: Type, t14: Type, t15: Type](p: PredSym, ts: f[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)]):
-        Datalog[Boxed] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15], Foldable[f] =
+        Datalog[Boxed] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15], Foldable[f] =
         injectIntoX(match (v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) ->
             box(v1) ::
             box(v2) ::
@@ -500,13 +499,13 @@ namespace Fixpoint {
 
     def injectIntoX[f: Type -> Type, t: Type, ef: Bool](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
         region r {
-            let db = new MutMap(r);
+            let db = MutMap.new(r);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, new MutMap(r), db);
-                MutMap.put!(Fixpoint/Tuple.new(vs), Reflect.default(), rel)
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(r), db);
+                MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
         }
@@ -515,15 +514,15 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
-        factsOf(_ -> unsafe_cast () as v, p, d)
-
+    pub def facts0(p: PredSym, d: Datalog[Boxed]): List[v] with Order[v] =
+        // Unsafe cast is required. If a predicate is nullary then its values must be Unit.
+        factsOf(_ -> unchecked_cast(() as v), p, d)
 
     ///
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts1(p: PredSym, d: Datalog[Boxed]): List[v] with Boxable[v] =
+    pub def facts1(p: PredSym, d: Datalog[Boxed]): List[v] with Order[v] =
         let f = terms -> match terms {
             case hd :: _ =>
                 unbox(hd)
@@ -535,7 +534,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts2(p: PredSym, d: Datalog[Boxed]): List[(t1, t2)] with Boxable[t1], Boxable[t2] =
+    pub def facts2(p: PredSym, d: Datalog[Boxed]): List[(t1, t2)] with Order[t1], Order[t2] =
         let f = terms -> match terms {
             case v0 :: v1 :: _ =>
                 (unbox(v0), unbox(v1))
@@ -547,7 +546,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts3(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3)] with Boxable[t1], Boxable[t2], Boxable[t3] =
+    pub def facts3(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3)] with Order[t1], Order[t2], Order[t3] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2))
@@ -559,7 +558,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts4(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4] =
+    pub def facts4(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4)] with Order[t1], Order[t2], Order[t3], Order[t4] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3))
@@ -571,7 +570,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts5(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5] =
+    pub def facts5(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4))
@@ -583,7 +582,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts6(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6] =
+    pub def facts6(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5))
@@ -595,7 +594,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts7(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7] =
+    pub def facts7(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6))
@@ -607,7 +606,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts8(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8] =
+    pub def facts8(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7))
@@ -619,7 +618,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts9(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9] =
+    pub def facts9(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8))
@@ -631,7 +630,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts10(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10] =
+    pub def facts10(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9))
@@ -643,7 +642,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts11(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11] =
+    pub def facts11(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10))
@@ -655,7 +654,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts12(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12] =
+    pub def facts12(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11))
@@ -667,7 +666,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts13(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13] =
+    pub def facts13(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12))
@@ -679,7 +678,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts14(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14] =
+    pub def facts14(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13))
@@ -691,7 +690,7 @@ namespace Fixpoint {
     /// Returns all facts in `d` associated with the predicate symbol `p`.
     ///
     @Internal
-    pub def facts15(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Boxable[t1], Boxable[t2], Boxable[t3], Boxable[t4], Boxable[t5], Boxable[t6], Boxable[t7], Boxable[t8], Boxable[t9], Boxable[t10], Boxable[t11], Boxable[t12], Boxable[t13], Boxable[t14], Boxable[t15] =
+    pub def facts15(p: PredSym, d: Datalog[Boxed]): List[(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)] with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5], Order[t6], Order[t7], Order[t8], Order[t9], Order[t10], Order[t11], Order[t12], Order[t13], Order[t14], Order[t15] =
         let f = terms -> match terms {
             case v0 :: v1 :: v2 :: v3 :: v4 :: v5 :: v6 :: v7 :: v8 :: v9 :: v10 :: v11 :: v12 :: v13 :: v14 :: _ =>
                 (unbox(v0), unbox(v1), unbox(v2), unbox(v3), unbox(v4), unbox(v5), unbox(v6), unbox(v7), unbox(v8), unbox(v9), unbox(v10), unbox(v11), unbox(v12), unbox(v13), unbox(v14))
@@ -704,7 +703,7 @@ namespace Fixpoint {
     ///
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): List[t] \ ef = match d {
         case Datalog(_, cs) => region r {
-            let pFacts = new MutList(r);
+            let pFacts = MutList.new(r);
             List.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), Nil) =>
                     if (headPred == p)
@@ -716,8 +715,8 @@ namespace Fixpoint {
             pFacts |> MutList.toList
         }
         case Model(db) => region r {
-            use Fixpoint/Ram.toDenotation;
-            let pFacts = new MutList(r);
+            use Fixpoint.Ram.toDenotation;
+            let pFacts = MutList.new(r);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
@@ -727,13 +726,13 @@ namespace Fixpoint {
             };
             Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
-                    Map.forEach((tuple, _) -> MutList.push!(f(Fixpoint/Tuple.toList(tuple)), pFacts), rel)
+                    Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
                     Map.forEach((tuple, lat) -> {
-                        let it = Iterator.range(r, 0, Fixpoint/Tuple.length(tuple) + 1);
+                        let it = Iterator.range(r, 0, Vector.length(tuple) + 1);
                         let vs = it |> Iterator.map(i -> {
-                            if (i < Fixpoint/Tuple.length(tuple))
-                                Fixpoint/Tuple.valueAt(tuple, i)
+                            if (i < Vector.length(tuple))
+                                Vector.get(i, tuple)
                             else
                                 lat
                         }) |> Iterator.toList;
@@ -756,18 +755,8 @@ namespace Fixpoint {
     }
 
     ///
-    /// Unsafely casts and prints the given Datalog program `d`.
+    /// Returns the given database `db` as a Datalog value.
     ///
-    @Internal @Unsafe
-    pub def unsafePrint(d: a): Unit \ IO =
-        println(unsafeCast(d))
-
-    ///
-    /// Unsafely casts the given value `d` to a Datalog program.
-    ///
-    @Internal @Unsafe
-    pub def unsafeCast(v: a): Datalog[Boxed] = unsafe_cast v as Datalog[Boxed]
-
     def toModel(db: Database[v, r]): Datalog[v] \ Read(r) =
         MutMap.toMap(db) |>
         Map.map(MutMap.toMap) |>

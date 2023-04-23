@@ -105,7 +105,7 @@ object SemanticOperator {
     /**
       * Negation.
       */
-    case object Neg extends Float64Op
+    case object Neg extends Float32Op
 
     /**
       * Addition.
@@ -264,11 +264,6 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends BigDecimalOp
-
-    /**
-      * Exponentiate.
-      */
-    case object Exp extends BigDecimalOp
 
     /**
       * Equality.
@@ -733,7 +728,7 @@ object SemanticOperator {
     /**
       * Bitwise Not.
       */
-    case object Not extends Int64Op
+    case object Not extends BigIntOp
 
     /**
       * Addition.
@@ -759,11 +754,6 @@ object SemanticOperator {
       * Remainder.
       */
     case object Rem extends BigIntOp
-
-    /**
-      * Exponentiate.
-      */
-    case object Exp extends BigIntOp
 
     /**
       * Bitwise And.
@@ -915,9 +905,9 @@ object SemanticOperatorOps {
          | SemanticOperator.Int32Op.Rem | SemanticOperator.Int64Op.Rem
          | SemanticOperator.BigIntOp.Rem => BinaryOperator.Remainder
 
-    case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp | SemanticOperator.BigDecimalOp.Exp
-         | SemanticOperator.Int8Op.Exp  | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp
-         | SemanticOperator.Int32Op.Exp | SemanticOperator.Int64Op.Exp | SemanticOperator.BigIntOp.Exp => BinaryOperator.Exponentiate
+    case SemanticOperator.Float32Op.Exp | SemanticOperator.Float64Op.Exp
+         | SemanticOperator.Int8Op.Exp | SemanticOperator.Int16Op.Exp | SemanticOperator.Int16Op.Exp
+         | SemanticOperator.Int32Op.Exp | SemanticOperator.Int64Op.Exp => BinaryOperator.Exponentiate
 
     case SemanticOperator.Int8Op.And | SemanticOperator.Int16Op.And | SemanticOperator.Int32Op.And
          | SemanticOperator.Int64Op.And | SemanticOperator.BigIntOp.And => BinaryOperator.BitwiseAnd

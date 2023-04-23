@@ -1,4 +1,4 @@
-namespace Test/Equality/Tuple {
+mod Test.Equality.Tuple {
 
     @test
     def testEqTuple01(): Bool = () == ()

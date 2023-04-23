@@ -91,7 +91,7 @@ instance Iterable[RedBlackTree[k]] {
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }
 
-namespace RedBlackTree {
+mod RedBlackTree {
 
     ///
     /// The color of a red-black tree node.
@@ -269,7 +269,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, upcast(identity))
+        loop(t, identity)
 
     ///
     /// Optionally returns the first key-value pair in `t` that satisfies the predicate `f` when searching from right to left.
@@ -285,7 +285,7 @@ namespace RedBlackTree {
             })
             case _ => sk(None)
         };
-        loop(t, upcast(identity))
+        loop(t, identity)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `t` going from left to right.
@@ -578,7 +578,7 @@ namespace RedBlackTree {
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region r {
-        let buffer = new MutList(r);
+        let buffer = MutList.new(r);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         queryWith(p, g, t);
         MutList.toList(buffer)
@@ -791,86 +791,6 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Returns the product of all keys in the tree `t`.
-    ///
-    pub def productKeys(t: RedBlackTree[Int32, v]): Int32 =
-        productWith((k, _) -> k, t)
-
-    ///
-    /// Returns the product of all values in the tree `t`.
-    ///
-    pub def productValues(t: RedBlackTree[k, Int32]): Int32 =
-        productWith((_, v) -> v, t)
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the tree `t`
-    /// according to the function `f`.
-    ///
-    pub def productWith(f: (k, v) -> Int32 \ ef, t: RedBlackTree[k, v]): Int32 \ ef =
-        def loop(tt) = match tt {
-            case Leaf                => 1
-            case DoubleBlackLeaf     => 1
-            case Node(_, a, k, v, b) =>
-                let x = loop(a);
-                let y = f(k, v);
-                let z = loop(b);
-                x * y * z
-        };
-        match t {
-            case Leaf            => 1
-            case DoubleBlackLeaf => 1
-            case _               => loop(t)
-        }
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the tree `t`
-    /// according to the function `f`.
-    ///
-    /// The implementation spawns `n` threads each applying `f` sequentially
-    /// from left to right on some subtree that is disjoint from the rest of
-    /// the threads.
-    ///
-    @Parallel
-    pub def parProductWith(n: Int32, f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 = {
-        if (n <= 1)
-            seqProductWith(f, t)
-        else
-            match t {
-                case Leaf                   => 1
-                case DoubleBlackLeaf        => 1
-                case Node(_, a, k, v, b)    =>
-                par (
-                    l  <- parProductWith((n - 2) / 2, f, a); // We divide the rest of the threads as follows:
-                    r  <- parProductWith((n - 2) / 2, f, b); // We spawn two new threads leaving us with n - 2
-                    v1 <- f(k, v)                            // that we distribute over the two spanned threads.
-                ) yield l * v1 * r
-            }
-    }
-
-    ///
-    /// Returns the product of all key-value pairs `k => v` in the tree `t`
-    /// according to the function `f`.
-    ///
-    /// Note that this is equivalent to `productWith` but for performance reasons -- to avoid
-    /// megamorphic calls -- we use a copy here.
-    ///
-    def seqProductWith(f: (k, v) -> Int32, t: RedBlackTree[k, v]): Int32 =
-        def loop(tt) = match tt {
-            case Leaf                => 1
-            case DoubleBlackLeaf     => 1
-            case Node(_, a, k, v, b) =>
-                let x = loop(a);
-                let y = f(k, v);
-                let z = loop(b);
-                x * y * z
-        };
-        match t {
-            case Leaf            => 0
-            case DoubleBlackLeaf => 0
-            case _               => loop(t)
-        }
-
-    ///
     /// Returns the tree `t` as a list. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
@@ -880,7 +800,7 @@ namespace RedBlackTree {
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toMutDeque(r: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
@@ -902,7 +822,7 @@ namespace RedBlackTree {
             case Node(color, left, key, v, right) => loop(left, kl -> {let ans = f(key, v); loop(right, kr -> k(nodeA(color, kl, key, ans, kr)))})
             case _                                => k(Applicative.point(Leaf))
         };
-        loop(t, upcast(identity))
+        loop(t, identity)
 
 
     ///
@@ -1001,7 +921,7 @@ namespace RedBlackTree {
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

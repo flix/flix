@@ -36,7 +36,7 @@ object TypedAstOps {
     case Expression.Hole(_, _, _) => Set.empty
     case Expression.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.OpenAs(_, exp, _, _) => sigSymsOf(exp)
-    case Expression.Use(_, exp, _) => sigSymsOf(exp)
+    case Expression.Use(_, _, exp, _) => sigSymsOf(exp)
     case Expression.Lambda(_, exp, _, _) => sigSymsOf(exp)
     case Expression.Apply(exp, exps, _, _, _, _) => sigSymsOf(exp) ++ exps.flatMap(sigSymsOf)
     case Expression.Unary(_, exp, _, _, _, _) => sigSymsOf(exp)
@@ -72,11 +72,9 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Of(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Cast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Mask(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Upcast(exp, _, _) => sigSymsOf(exp)
-    case Expression.Supercast(exp, _, _) => sigSymsOf(exp)
+    case Expression.CheckedCast(_, exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Without(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.TryCatch(exp, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expression.TryWith(exp, _, rules, _, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
@@ -142,7 +140,7 @@ object TypedAstOps {
     case Expression.OpenAs(_, exp, _, _) =>
       freeVars(exp)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, _, exp, _) =>
       freeVars(exp)
 
     case Expression.Lambda(fparam, exp, _, _) =>
@@ -272,22 +270,16 @@ object TypedAstOps {
     case Expression.Ascribe(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Of(_, exp, _, _, _, _) =>
-      freeVars(exp)
-
     case Expression.Without(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Mask(exp, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expression.Upcast(exp, _, _) =>
-      freeVars(exp)
-
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _, _) =>
@@ -461,7 +453,7 @@ object TypedAstOps {
         case (acc, term) => acc ++ freeVars(term)
       }
     case Body.Guard(exp, _) => freeVars(exp)
-    case Body.Loop(_, exp, _) => freeVars(exp)
+    case Body.Functional(_, exp, _) => freeVars(exp)
   }
 
 

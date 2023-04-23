@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object Instances {
@@ -34,7 +35,7 @@ object Instances {
     val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
     errs match {
       case Nil => ().toSuccess
-      case es => Validation.Failure(LazyList.from(es))
+      case es => Validation.SoftFailure((), LazyList.from(es))
     }
   }
 
@@ -48,7 +49,7 @@ object Instances {
       */
     def checkLawApplication(class0: TypedAst.Class): List[InstanceError] = class0 match {
       // Case 1: lawful class
-      case TypedAst.Class(_, _, mod, _, _, _, sigs, laws, _) if mod.isLawful =>
+      case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
         val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
           case (acc, TypedAst.Def(_, _, TypedAst.Impl(exp, _))) => acc ++ TypedAstOps.sigSymsOf(exp)
         }
@@ -57,7 +58,7 @@ object Instances {
           sig => InstanceError.UnlawfulSignature(sig, sig.loc)
         }
       // Case 2: non-lawful class
-      case TypedAst.Class(_, _, mod, _, _, _, _, _, _) => Nil
+      case TypedAst.Class(_, _, _, _, _, _, _, _, _, _) => Nil
     }
 
     /**
@@ -83,7 +84,7 @@ object Instances {
       * * The same namespace as its type.
       */
     def checkOrphan(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, ns, _) => tpe.typeConstructor match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, ns, _) => tpe.typeConstructor match {
         // Case 1: Enum type in the same namespace as the instance: not an orphan
         case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
         // Case 2: Any type in the class namespace: not an orphan
@@ -99,7 +100,7 @@ object Instances {
       * * all type arguments are variables or booleans
       */
     def checkSimple(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _) => tpe match {
+      case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
         case _: Type.Cst => Nil
         case _: Type.Var => List(InstanceError.ComplexInstanceType(tpe, clazz.sym, clazz.loc))
         case _: Type.Apply =>
@@ -121,6 +122,7 @@ object Instances {
           }
           errs0
         case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
+        case Type.AssocType(assoc, _, _, loc) => List(InstanceError.IllegalAssocTypeInstance(assoc.sym, clazz.sym, loc))
       }
     }
 
@@ -148,6 +150,7 @@ object Instances {
       case t: Type.Cst => t
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(generifyBools(tpe1), generifyBools(tpe2), loc)
       case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(generifyBools), generifyBools(tpe), loc)
+      case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(generifyBools), kind, loc)
     }
 
     /**
@@ -171,7 +174,7 @@ object Instances {
             // Case 5: there is an implementation with the right modifier
             case (Some(defn), _) =>
               val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv)) {
+              if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, root.eqEnv)) {
                 // Case 5.1: the schemes match. Success!
                 Nil
               } else {
@@ -199,7 +202,9 @@ object Instances {
       val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
       // lazily find the instance whose type unifies and save the substitution
       superInsts.iterator.flatMap {
-        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map((superInst, _))
+        superInst => Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
+          case (subst, econstrs) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
+        }
       }.nextOption()
     }
 
@@ -208,7 +213,7 @@ object Instances {
       * and that the constraints on `inst` entail the constraints on the super instance.
       */
     def checkSuperInstances(inst: TypedAst.Instance): List[InstanceError] = inst match {
-      case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _) =>
+      case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
         val superClasses = root.classEnv(clazz.sym).superClasses
         superClasses flatMap {
           superClass =>

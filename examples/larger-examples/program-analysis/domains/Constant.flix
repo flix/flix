@@ -135,12 +135,12 @@ namespace Domain/Constant {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//    #safe2((x, y) -> x rem y)
+//    #safe2((x, y) -> x `rem` y)
 //    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 rem n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 `rem` n2)
         case _                  => Top
     }
 
@@ -194,12 +194,12 @@ namespace Domain/Constant {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-//    #safe2((x, y) -> x <<< y)
+//    #safe2((x, y) -> Int32.shiftLeft(x, y))
 //    #strict2 #monotone2
     pub def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 <<< n2)
+        case (Cst(n1), Cst(n2)) => Cst(Int32.shiftLeft(n1, n2))
         case _                  => Top
     }
 
@@ -207,12 +207,12 @@ namespace Domain/Constant {
     /// Over-approximates `bitwise right shift`.
     ///
     ///
-//    #safe2((x, y) -> x >>> y)
+//    #safe2((x, y) -> Int32.shiftRight(x, y))
 //    #strict2 #monotone2
     pub def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 >>> n2)
+        case (Cst(n1), Cst(n2)) => Cst(Int32.shiftRight(n1, n2))
         case _                  => Top
     }
 

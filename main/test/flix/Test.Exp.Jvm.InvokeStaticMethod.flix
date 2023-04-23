@@ -1,4 +1,4 @@
-namespace Test/Exp/Jvm/InvokeStaticMethod {
+mod Test.Exp.Jvm.InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethod01(): Bool \ IO =
@@ -46,7 +46,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
         try {
             of1("end", Array#{"p1", "p2", "p3"} @ r)
         } catch {
-            case _: ##java.nio.file.InvalidPathException => unsafe_cast null as ##java.nio.file.Path
+            case _: ##java.nio.file.InvalidPathException => checked_cast(null)
         }
     }
 
@@ -59,7 +59,7 @@ namespace Test/Exp/Jvm/InvokeStaticMethod {
     def testInvokeStaticMethodWithArrayParam(): Bool \ IO = region r {
         import static java.util.Arrays.fill(Array[##java.lang.Object, r], ##java.lang.Object): Unit \ IO;
         let a = Array#{"this", "that"} @ r;
-        fill(unsafe_cast a as Array[##java.lang.Object, r], super_cast "foo");
+        fill(unchecked_cast(a as Array[##java.lang.Object, r]), checked_cast("foo"));
         true
     }
 }

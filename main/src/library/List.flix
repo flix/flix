@@ -25,8 +25,6 @@ pub enum List[t] with Sendable {
     case Cons(t, List[t])
 }
 
-instance Boxable[List[t]] with Boxable[t]
-
 instance ToString[List[a]] with ToString[a] {
     pub def toString(l: List[a]): String = List.toString(l)
 }
@@ -126,13 +124,13 @@ instance Iterable[List] {
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ Write(r) = List.iterator(rc, l)
 }
 
-namespace List {
+mod List {
 
     ///
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -257,7 +255,7 @@ namespace List {
             case Nil     => k()
             case x :: xs => loop(xs, () -> if (f(x)) Some(x) else k())
         };
-        loop(l, upcast(() -> None))
+        loop(l, constant(None))
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -316,7 +314,7 @@ namespace List {
                 case ss :: _ => k(f(x, ss) :: ks)
                 case _       => unreachable!()})
         };
-        loop(l, upcast(identity))
+        loop(l, identity)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -352,7 +350,7 @@ namespace List {
     /// For argument lists `l1 = x1, x2, ...` and `l2 = y1, y2, ...` the results appear in the order
     /// `f(x1,y1), f(x1,y2), ..., f(x2,y1), f(x2,y2), ...`.
     ///
-    pub def lift2(f: t1 -> t2 -> r \ ef, l1: List[t1], l2: List[t2]): List[r] \ ef = Applicative.liftA2(f, l1, l2)
+    pub def map2(f: t1 -> t2 -> r \ ef, l1: List[t1], l2: List[t2]): List[r] \ ef = Applicative.map2(f, l1, l2)
 
     ///
     /// Lift a ternary function to work on lists of its original arguments, returning a list
@@ -366,15 +364,15 @@ namespace List {
     /// ...
     /// ```
     ///
-    pub def lift3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.liftA3(f, l1, l2, l3)
+    pub def map3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.map3(f, l1, l2, l3)
 
     /// Lift a 4-ary function to work on lists of its original arguments, returning a list
-    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.liftA4(f, l1, l2, l3, l4)
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.map4(f, l1, l2, l3, l4)
 
     /// Lift a 5-ary function to work on lists of its original arguments, returning a list
-    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `lift3`.
-    pub def lift5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.liftA5(f, l1, l2, l3, l4, l5)
+    /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.map5(f, l1, l2, l3, l4, l5)
 
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
@@ -640,8 +638,7 @@ namespace List {
             case Nil     => k(s)
             case x :: xs => loop(xs, ks -> k(f(x, ks)))
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
+        loop(l, identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -681,25 +678,13 @@ namespace List {
                 case Some(v) => Some(f(x, v))
             }))
         };
-        loop(l, upcast(identity))
+        loop(l, identity)
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
     ///
     pub def count(f: a -> Bool \ ef, l: List[a]): Int32 \ ef =
         foldLeft((acc, x) -> if (f(x)) acc + 1 else acc, 0, l)
-
-    ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(l: List[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, l: List[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -739,8 +724,8 @@ namespace List {
             case Nil     => k(Nil)
             case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic
+        loop(l, identity)
+
     ///
     /// Returns the sublist of `l` without the last element.
     /// Returns `None` if the list `l` is `Nil`.
@@ -954,7 +939,7 @@ namespace List {
             case (x :: rs1, y :: rs2) => loop(rs1, rs2, ks -> k(((z, zs) -> z :: zs) <$> f(x, y) <*> ks))
             case (_, _)               => k(Applicative.point(Nil))
         };
-        loop(xs, ys, upcast(identity))
+        loop(xs, ys, identity)
 
 
 
@@ -1032,7 +1017,7 @@ namespace List {
         };
         let len1 = length(l1);
         let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), upcast(identity))
+        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), identity)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -1098,7 +1083,7 @@ namespace List {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: List[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1377,7 +1362,7 @@ namespace List {
             case Nil     => k(Applicative.point(Nil))
             case x :: xs => {let ans = f(x); loop(xs, ks -> k(consA(ans, ks)))}
         };
-        loop(l, upcast(identity))
+        loop(l, identity)
 
     ///
     /// Merges the two lists `l1` and `l2`. Assuming they are both sorted.

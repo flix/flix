@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace BigInt {
+mod BigInt {
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -30,6 +30,13 @@ namespace BigInt {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
+
+    ///
+    /// Returns `x` raised to the power of `n`.
+    ///
+    pub def exp(n: Int32, x: BigInt): BigInt =
+        import java.math.BigInteger.pow(Int32): ##java.math.BigInteger \ {};
+        pow(x, n)
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
@@ -74,7 +81,7 @@ namespace BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
-        if ((x >>> position) `rem` 2ii == 0ii) 0 else 1
+        if (rightShift(x, position) `rem` 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
@@ -84,17 +91,17 @@ namespace BigInt {
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     ///
-    pub def setBit(x: BigInt, position: Int32): BigInt = x ||| (1ii <<< position)
+    pub def setBit(x: BigInt, position: Int32): BigInt = x ||| leftShift(1ii, position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     ///
-    pub def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~(1ii <<< position)
+    pub def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~leftShift(1ii, position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     ///
-    pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
+    pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ leftShift(1ii, position)
 
     ///
     /// Returns the integer binary logarithm of `x`.
@@ -102,6 +109,17 @@ namespace BigInt {
     pub def log2(x: BigInt): Int32 =
         import java.math.BigInteger.bitLength(): Int32 \ {};
         bitLength(x)
+
+    ///
+    /// Returns `x` with the bits shifted left by `y` places
+    ///
+    pub def leftShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHL$(x, y)
+
+    ///
+    /// Returns `x` with the bits shifted right by `y` places
+    ///
+    pub def rightShift(x: BigInt, y: Int32): BigInt = $BIGINT_SHR$(x, y)
+
 
     ///
     /// Return a string representation of `x`.
@@ -195,17 +213,15 @@ namespace BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let xd = newBigDecimal(x);
         let d = floatValue(xd);
-        let* f32min = Float32.tryToBigInt(Float32.minValue());
-        let* f32max = Float32.tryToBigInt(Float32.maxValue());
-        if (x < f32min or x > f32max)
-            None
-        else
-            Some(d)
+        forM (
+            f32min <- Float32.tryToBigInt(Float32.minValue());
+            f32max <- Float32.tryToBigInt(Float32.maxValue());
+            if f32min <= x and x <= f32max
+        ) yield d
 
     ///
     /// Convert `x` to an `Option[Float64]`.
@@ -218,18 +234,15 @@ namespace BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let xd = newBigDecimal(x);
         let d = doubleValue(xd);
-        let* f64min = Float64.tryToBigInt(Float64.minValue());
-        let* f64max = Float64.tryToBigInt(Float64.maxValue());
-        if (x < f64min or x > f64max)
-            None
-        else
-            Some(d)
-
+        forM (
+            f64min <- Float64.tryToBigInt(Float64.minValue());
+            f64max <- Float64.tryToBigInt(Float64.maxValue());
+            if f64min <= x and x <= f64max
+        ) yield d
 
     ///
     /// Convert `x` to an `BigDecimal`.
@@ -320,15 +333,17 @@ namespace BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
-            let* f32min = Float32.tryToBigInt(minimum);
-            let* f32max = Float32.tryToBigInt(maximum);
-            let x1 = clamp(x, f32min, f32max);
-            let xd = newBigDecimal(x1);
-            Some(floatValue(xd))
+            forM (
+                f32min <- Float32.tryToBigInt(minimum);
+                f32max <- Float32.tryToBigInt(maximum)
+            ) yield {
+                let x1 = clamp(x, f32min, f32max);
+                let xd = newBigDecimal(x1);
+                floatValue(xd)
+            }
         };
         match step() {
             case None => Float32.nan()
@@ -341,15 +356,17 @@ namespace BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
-        use Option.flatMap;
         import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
-            let* f64min = Float64.tryToBigInt(minimum);
-            let* f64max = Float64.tryToBigInt(maximum);
-            let x1 = clamp(x, f64min, f64max);
-            let xd = newBigDecimal(x1);
-            Some(doubleValue(xd))
+            forM (
+                f64min <- Float64.tryToBigInt(minimum);
+                f64max <- Float64.tryToBigInt(maximum)
+            ) yield {
+                let x1 = clamp(x, f64min, f64max);
+                let xd = newBigDecimal(x1);
+                doubleValue(xd)
+            }
         };
         match step() {
             case None => Float64.nan()

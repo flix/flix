@@ -24,7 +24,6 @@ object NamedAst {
 
   case class Root(symbols: Map[Name.NName, Map[String, List[NamedAst.Declaration]]],
                   instances: Map[Name.NName, Map[String, List[NamedAst.Declaration.Instance]]],
-                  cases: Map[Name.NName, Map[String, List[NamedAst.Declaration.Case]]],
                   uses: Map[Name.NName, List[NamedAst.UseOrImport]],
                   units: Map[Ast.Source, NamedAst.CompilationUnit],
                   entryPoint: Option[Symbol.DefnSym],
@@ -40,9 +39,9 @@ object NamedAst {
 
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[NamedAst.UseOrImport], decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
+    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: NamedAst.TypeParam, superClasses: List[NamedAst.TypeConstraint], assocs: List[NamedAst.Declaration.AssocTypeSig], sigs: List[NamedAst.Declaration.Sig], laws: List[NamedAst.Declaration.Def], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, tconstrs: List[NamedAst.TypeConstraint], assocs: List[NamedAst.Declaration.AssocTypeDef], defs: List[NamedAst.Declaration.Def], ns: List[String], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: NamedAst.Spec, exp: Option[NamedAst.Expression]) extends NamedAst.Declaration
 
@@ -54,6 +53,10 @@ object NamedAst {
 
     case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: NamedAst.TypeParams, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: NamedAst.TypeParam, kind: NamedAst.Kind, loc: SourceLocation) extends NamedAst.Declaration
+
+    case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: NamedAst.Type, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+
     case class Effect(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[NamedAst.Declaration.Op], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Op(sym: Symbol.OpSym, spec: NamedAst.Spec) extends NamedAst.Declaration
@@ -63,7 +66,7 @@ object NamedAst {
     case class RestrictableCase(sym: Symbol.RestrictableCaseSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
   }
 
-  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], loc: SourceLocation)
+  case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: NamedAst.TypeParams, fparams: List[NamedAst.FormalParam], retTpe: NamedAst.Type, purAndEff: PurityAndEffect, tconstrs: List[NamedAst.TypeConstraint], econstrs: List[NamedAst.EqualityConstraint], loc: SourceLocation)
 
 
   sealed trait UseOrImport {
@@ -142,8 +145,6 @@ object NamedAst {
 
     case class RecordRestrict(field: Name.Field, rest: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class New(qname: Name.QName, exp: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
-
     case class ArrayLit(exps: List[NamedAst.Expression], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayNew(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -160,7 +161,7 @@ object NamedAst {
 
     case class VectorLength(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ref(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class Ref(exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
@@ -168,15 +169,11 @@ object NamedAst {
 
     case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Of(qname: Name.QName, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class CheckedCast(cast: Ast.CheckedCastType, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
+    case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Mask(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Upcast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Supercast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class UncheckedMaskingCast(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Without(exp: NamedAst.Expression, eff: Name.QName, loc: SourceLocation) extends NamedAst.Expression
 
@@ -304,9 +301,9 @@ object NamedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(idents: List[Name.Ident], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -460,6 +457,8 @@ object NamedAst {
   }
 
   case class TypeConstraint(clazz: Name.QName, tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class EqualityConstraint(qname: Name.QName, tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation)
 
   case class PurityAndEffect(pur: Option[Type], eff: Option[List[Type]])
 

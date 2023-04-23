@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestKinder extends FunSuite with TestUtils {
+class TestKinder extends AnyFunSuite with TestUtils {
 
   private val DefaultOptions = Options.TestWithLibNix
 
@@ -273,7 +273,7 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("IllegalUninhabitedType.08") {
-    val input = "def f(): Int32 = unsafe_cast 1 as Pure"
+    val input = "def f(): Int32 = unchecked_cast(1 as Pure)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -285,7 +285,7 @@ class TestKinder extends FunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(): Int32 = unsafe_cast 1 as E[Int32]""".stripMargin
+        |def f(): Int32 = unchecked_cast(1 as E[Int32])""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -309,13 +309,13 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("IllegalEffect.01") {
-    val input = "def f(): Int32 = unsafe_cast 1 as _ & Int32"
+    val input = "def f(): Int32 = unchecked_cast(1 as _ & Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.02") {
-    val input = "def f(): Int32 = unsafe_cast 1 as Int32 & Int32"
+    val input = "def f(): Int32 = unchecked_cast(1 as Int32 & Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -376,19 +376,19 @@ class TestKinder extends FunSuite with TestUtils {
   }
 
   test("IllegalTypeApplication.05") {
-    val input = "def f(): Int32 = unsafe_cast 1 as Int32 & Int32 and true"
+    val input = "def f(): Int32 = unchecked_cast(1 as Int32 & Int32 and true)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.06") {
-    val input = "def f(): Int32 = unsafe_cast 1 as Int32 & true or Int32"
+    val input = "def f(): Int32 = unchecked_cast(1 as Int32 & true or Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalTypeApplication.07") {
-    val input = "def f(): Int32 = unsafe_cast 1 as Int32 & not Int32"
+    val input = "def f(): Int32 = unchecked_cast(1 as Int32 & not Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -496,7 +496,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.01") {
     val input =
       """
-        |def f(): Int32 = unsafe_cast 1 as Pure
+        |def f(): Int32 = unchecked_cast(1 as Pure)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -505,7 +505,7 @@ class TestKinder extends FunSuite with TestUtils {
   test("KindError.Def.Expression.Cast.02") {
     val input =
       """
-        |def f(): Int32 = unsafe_cast 1 as _ & Unit
+        |def f(): Int32 = unchecked_cast(1 as _ & Unit)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -516,7 +516,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E
         |
-        |pub def foo(): Int32 = unsafe_cast 0 as E[Int32]
+        |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -527,7 +527,7 @@ class TestKinder extends FunSuite with TestUtils {
       """
         |enum E[a, b]
         |
-        |pub def foo(): Int32 = unsafe_cast 0 as E[Int32]
+        |pub def foo(): Int32 = unchecked_cast(0 as E[Int32])
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)

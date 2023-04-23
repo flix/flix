@@ -1,19 +1,19 @@
-// NB: These tests must be in the root namespace.
+// NB: These tests must be in the root module.
 pub type alias T = Int32
-namespace N {
+mod N {
     pub enum T
 
     pub def f(): T = ???
 }
 
 pub enum U
-namespace M {
+mod M {
     pub type alias U = Int32
 
     pub def f(): U = ???
 }
 
-namespace Test/Integ/Enum/TypeAlias {
+mod Test.Integ.Enum.TypeAlias {
     pub type alias T[ef: Region] = Unit -> Bool \ ef
     pub enum E[ef: Region] {
         case E(T[ef])

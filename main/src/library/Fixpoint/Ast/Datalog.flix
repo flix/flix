@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ast {
+mod Fixpoint.Ast {
 
     use Fixpoint.PredSymsOf
-    use Fixpoint/PredSymsOf.predSymsOf
+    use Fixpoint.PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
-    use Fixpoint/SubstitutePredSym.substitute
-    use Fixpoint/Tuple.Tuple
-    use Fixpoint/Shared.PredSym
-    use Fixpoint/Ram.RamSym
+    use Fixpoint.SubstitutePredSym.substitute
+    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ram.RamSym
 
     @Internal
     pub enum Datalog[v] {
         case Datalog(List[Constraint[v]], List[Constraint[v]])
-        case Model(Map[RamSym[v], Map[Tuple[v], v]])
+        case Model(Map[RamSym[v], Map[Vector[v], v]])
         case Join(Datalog[v], Datalog[v])
     }
 
@@ -61,29 +60,29 @@ namespace Fixpoint/Ast {
     instance ToString[Datalog[v]] {
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog.Datalog(facts, rules) => region r {
-                let sb = new StringBuilder(r);
+                let sb = StringBuilder.new(r);
                 let appendConstraint = f -> StringBuilder.appendLineWith!(ToString.toString, f, sb);
                 foreach (f <- facts) appendConstraint(f);
                 foreach (ru <- rules) appendConstraint(ru);
                 StringBuilder.toString(sb)
             }
             case Datalog.Model(db) => region r {
-                use Fixpoint/Ram.toDenotation;
-                let sb = new StringBuilder(r);
+                use Fixpoint.Ram.toDenotation;
+                let sb = StringBuilder.new(r);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}).", sb)
                     }, rel)
                     case Denotation.Latticenal(_) => Map.forEach((tuple, lat) -> {
-                        let tupleString = Fixpoint/Tuple.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
+                        let tupleString = Vector.toList(tuple) |> List.map(Debug.stringify) |> List.join(", ");
                         StringBuilder.appendLine!("${ramSym}(${tupleString}; %{lat}).", sb)
                     }, rel)
                 }, db);
                 StringBuilder.toString(sb)
             }
             case Datalog.Join(d1, d2) => region r {
-                let sb = new StringBuilder(r);
+                let sb = StringBuilder.new(r);
                 StringBuilder.appendLine!(ToString.toString(d1), sb);
                 StringBuilder.appendLine!(ToString.toString(d2), sb);
                 StringBuilder.toString(sb)

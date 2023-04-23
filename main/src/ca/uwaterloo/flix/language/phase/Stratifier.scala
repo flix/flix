@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
@@ -117,7 +118,10 @@ object Stratifier {
         case e => Expression.OpenAs(sym, e, tpe, loc)
       }
 
-    case Expression.Use(_, exp, _) => visitExp(exp)
+    case Expression.Use(sym, alias, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Use(sym, alias, e, loc)
+      }
 
     case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
@@ -310,26 +314,18 @@ object Stratifier {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
       }
 
-    case Expression.Of(sym, exp, tpe, pur, eff, loc) =>
+    case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
+      mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, pur, eff, loc))
+
+    case Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Of(sym, e, tpe, pur, eff, loc)
+        case e => Expression.UncheckedCast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
       }
 
-    case Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
+    case Expression.UncheckedMaskingCast(exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
+        case e => Expression.UncheckedMaskingCast(e, tpe, pur, eff, loc)
       }
-
-    case Expression.Mask(exp, tpe, pur, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Mask(e, tpe, pur, eff, loc)
-      }
-
-    case Expression.Upcast(exp, tpe, loc) =>
-      mapN(visitExp(exp))(Expression.Upcast(_, tpe, loc))
-
-    case Expression.Supercast(exp, tpe, loc) =>
-      mapN(visitExp(exp))(Expression.Supercast(_, tpe, loc))
 
     case Expression.Without(exp, sym, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -524,23 +520,24 @@ object Stratifier {
   }
 
   /**
-    * Reorders a constraint such that its negated atoms occur last.
+    * Reorders a constraint such that its negated atoms and loop predicates occur last.
     */
   private def reorder(c0: Constraint): Constraint = {
     /**
       * Returns `true` if the body predicate is negated.
       */
-    def isNegative(p: Predicate.Body): Boolean = p match {
+    def isNegativeOrLoop(p: Predicate.Body): Boolean = p match {
       case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) => true
+      case Predicate.Body.Functional(_, _, _) => true
       case _ => false
     }
 
-    // Collect all the negated and non-negated predicates.
-    val negated = c0.body filter isNegative
-    val nonNegated = c0.body filterNot isNegative
+    // Order the predicates from first to last.
+    val last = c0.body filter isNegativeOrLoop
+    val first = c0.body filterNot isNegativeOrLoop
 
     // Reassemble the constraint.
-    c0.copy(body = nonNegated ::: negated)
+    c0.copy(body = first ::: last)
   }
 
   /**
@@ -571,7 +568,7 @@ object Stratifier {
     case Expression.OpenAs(_, exp, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Use(_, exp, _) =>
+    case Expression.Use(_, _, exp, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Lambda(_, exp, _, _) =>
@@ -704,19 +701,13 @@ object Stratifier {
     case Expression.Ascribe(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Of(_, exp, _, _, _, _) =>
+    case Expression.CheckedCast(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Cast(exp, _, _, _, _, _, _, _) =>
+    case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
-    case Expression.Mask(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expression.Upcast(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expression.Supercast(exp, _, _) =>
+    case Expression.UncheckedMaskingCast(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Without(exp, _, _, _, _, _) =>
@@ -888,8 +879,8 @@ object Stratifier {
         case (edges, body) => body match {
           case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
             edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
+          case Body.Functional(_, _, _) => edges
           case Body.Guard(_, _) => edges
-          case Body.Loop(_, _, _) => edges
         }
       }
 
@@ -925,7 +916,7 @@ object Stratifier {
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty)
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty) // TODO ASSOC-TYPES empty right?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes

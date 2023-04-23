@@ -28,11 +28,11 @@
 /// latter case a function is applied. A `List[a -> b]` is an applicative that contains a list of functions,
 /// which are all to be applied to all arguments contained in the arguments list.
 ///
-/// A minimal implementation must define `point` and at least one of `ap` and `liftA2` (if `liftA2` is implemented,
-/// `ap` can be defined based on `liftA2` as shown below). If both `ap` and `liftA2` are defined,
+/// A minimal implementation must define `point` and at least one of `ap` and `map2` (if `map2` is implemented,
+/// `ap` can be defined based on `map2` as shown below). If both `ap` and `map2` are defined,
 /// they must be equivalent to their default definitions:
-///     `ap(f: m[a -> b & e], x: m[a]): m[b] \ ef = liftA2(identity, f, x)`
-///     `liftA2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
+///     `ap(f: m[a -> b & e], x: m[a]): m[b] \ ef = map2(identity, f, x)`
+///     `map2(f: a -> b -> c & e, x: m[a], y: m[b]): m[c] \ ef = ap(Functor.map(f, x), y)`
 ///
 pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     ///
@@ -50,28 +50,28 @@ pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     /// Instances can define more efficient implementations than the default implementation
     /// (which is `Applicative.ap(Functor.map(f, x1), x2)`).
     ///
-    pub def liftA2(f: t1 -> t2 -> r \ ef, x1: m[t1], x2: m[t2]): m[r] \ ef = Applicative.ap(Functor.map(f, x1), x2)
+    pub def map2(f: t1 -> t2 -> r \ ef, x1: m[t1], x2: m[t2]): m[r] \ ef = Applicative.ap(Functor.map(f, x1), x2)
 
     ///
     /// Lift a ternary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
-    /// (which is `Applicative.ap(Applicative.liftA2(f, x1, x2), x3)`).
+    /// (which is `Applicative.ap(Applicative.map2(f, x1, x2), x3)`).
     ///
-    pub def liftA3(f: t1 -> t2 -> t3 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3]): m[r] \ ef = Applicative.ap(Applicative.liftA2(f, x1, x2), x3)
+    pub def map3(f: t1 -> t2 -> t3 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3]): m[r] \ ef = Applicative.ap(Applicative.map2(f, x1, x2), x3)
 
     ///
     /// Lift a 4-ary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
-    /// (which is `Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)`).
+    /// (which is `Applicative.ap(Applicative.map3(f, x1, x2, x3), x4)`).
     ///
-    pub def liftA4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[r] \ ef = Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)
+    pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[r] \ ef = Applicative.ap(Applicative.map3(f, x1, x2, x3), x4)
 
     ///
     /// Lift a 5-ary function to work on `Applicative`s.
     /// Instances can define more efficient implementations than the default implementation
-    /// (which is `Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)`).
+    /// (which is `Applicative.ap(Applicative.map3(f, x1, x2, x3), x4)`).
     ///
-    pub def liftA5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[r] \ ef = Applicative.ap(Applicative.liftA4(f, x1, x2, x3, x4), x5)
+    pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[r] \ ef = Applicative.ap(Applicative.map4(f, x1, x2, x3, x4), x5)
 
     ///
     /// Applying the identity function wrapped into an applicative preserves every applicative value.
@@ -96,24 +96,24 @@ pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     law interchange: forall(f: m[a -> b], x: a) with Eq[m[b]] . Applicative.ap(f, Applicative.point(x)) == Applicative.ap(Applicative.point(f -> f(x)), f)
 
     ///
-    /// `liftA2` is equivalent to its default implementation.
+    /// `map2` is equivalent to its default implementation.
     ///
-    law liftA2Correspondence: forall(f: t1 -> t2 -> r, x1: m[t1], x2: m[t2]) with Eq[m[r]] . Applicative.liftA2(f, x1, x2) == Applicative.ap(Functor.map(f, x1), x2)
+    law map2Correspondence: forall(f: t1 -> t2 -> r, x1: m[t1], x2: m[t2]) with Eq[m[r]] . Applicative.map2(f, x1, x2) == Applicative.ap(Functor.map(f, x1), x2)
 
     ///
-    /// `liftA3` is equivalent to its default implementation.
+    /// `map3` is equivalent to its default implementation.
     ///
-    law liftA3Correspondence: forall(f: t1 -> t2 -> t3 -> r, x1: m[t1], x2: m[t2], x3: m[t3]) with Eq[m[r]] . Applicative.liftA3(f, x1, x2, x3) == Applicative.ap(Applicative.liftA2(f, x1, x2), x3)
+    law map3Correspondence: forall(f: t1 -> t2 -> t3 -> r, x1: m[t1], x2: m[t2], x3: m[t3]) with Eq[m[r]] . Applicative.map3(f, x1, x2, x3) == Applicative.ap(Applicative.map2(f, x1, x2), x3)
 
     ///
-    /// `liftA4` is equivalent to its default implementation.
+    /// `map4` is equivalent to its default implementation.
     ///
-    law liftA4Correspondence: forall(f: t1 -> t2 -> t3 -> t4 -> r, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]) with Eq[m[r]] . Applicative.liftA4(f, x1, x2, x3, x4) == Applicative.ap(Applicative.liftA3(f, x1, x2, x3), x4)
+    law map4Correspondence: forall(f: t1 -> t2 -> t3 -> t4 -> r, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]) with Eq[m[r]] . Applicative.map4(f, x1, x2, x3, x4) == Applicative.ap(Applicative.map3(f, x1, x2, x3), x4)
 
     ///
-    /// `liftA5` is equivalent to its default implementation.
+    /// `map5` is equivalent to its default implementation.
     ///
-    law liftA5Correspondence: forall(f: t1 -> t2 -> t3 -> t4 -> t5 -> r, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]) with Eq[m[r]] . Applicative.liftA5(f, x1, x2, x3, x4, x5) == Applicative.ap(Applicative.liftA4(f, x1, x2, x3, x4), x5)
+    law map5Correspondence: forall(f: t1 -> t2 -> t3 -> t4 -> t5 -> r, x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]) with Eq[m[r]] . Applicative.map5(f, x1, x2, x3, x4, x5) == Applicative.ap(Applicative.map4(f, x1, x2, x3, x4), x5)
 
     ///
     /// Mapping a function over an applicative (with `Functor.map`) is the same as putting the function
@@ -122,43 +122,43 @@ pub lawful class Applicative[m : Type -> Type] with Functor[m] {
     law mapCorrespondence: forall(f: a -> b, x: m[a]) with Eq[m[b]] . Functor.map(f, x) == Applicative.ap(Applicative.point(f), x)
 }
 
-namespace Applicative {
+mod Applicative {
 
     ///
     /// Chain two applicative actions, returns the product of their results.
     ///
     pub def product(fa: m[a], fb: m[b]): m[(a, b)] with Applicative[m] =
-        Applicative.liftA2((a, b) -> (a, b), fa, fb)
+        Applicative.map2((a, b) -> (a, b), fa, fb)
 
     ///
     /// Chain two applicative actions, return only the result of the first.
     ///
     pub def productLeft(fa: m[a], fb: m[b]): m[a] with Applicative[m] =
-        Applicative.liftA2((a, _) -> a, fa, fb)
+        Applicative.map2((a, _) -> a, fa, fb)
 
     ///
     /// Chain two applicative actions, return only the result of the second.
     ///
     pub def productRight(fa: m[a], fb: m[b]): m[b] with Applicative[m] =
-        Applicative.liftA2((_, b) -> b, fa, fb)
+        Applicative.map2((_, b) -> b, fa, fb)
 
     ///
     /// Chain three applicative actions, return the 3-tuple of their results.
     ///
     pub def product3(x1: m[t1], x2: m[t2], x3: m[t3]): m[(t1, t2, t3)] with Applicative[m] =
-        Applicative.liftA3((a, b, c) -> (a, b, c), x1, x2, x3)
+        Applicative.map3((a, b, c) -> (a, b, c), x1, x2, x3)
 
     ///
     /// Chain four applicative actions, return the 4-tuple of their results.
     ///
     pub def product4(x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4]): m[(t1, t2, t3, t4)] with Applicative[m] =
-        Applicative.liftA4((a, b, c, d) -> (a, b, c, d), x1, x2, x3, x4)
+        Applicative.map4((a, b, c, d) -> (a, b, c, d), x1, x2, x3, x4)
 
     ///
     /// Chain five applicative actions, return the 5-tuple of their results.
     ///
     pub def product5(x1: m[t1], x2: m[t2], x3: m[t3], x4: m[t4], x5: m[t5]): m[(t1, t2, t3, t4, t5)] with Applicative[m] =
-        Applicative.liftA5((a, b, c, d, e) -> (a, b, c, d, e), x1, x2, x3, x4, x5)
+        Applicative.map5((a, b, c, d, e) -> (a, b, c, d, e), x1, x2, x3, x4, x5)
 
     ///
     /// `<*>` is an operator alias for `ap`.
@@ -170,7 +170,7 @@ namespace Applicative {
     ///
     /// The order of evaluation is `ma` then `mf`.
     ///
-    pub def <**>(ma: m[a], mf: m[a -> b \ ef]): m[b] \ ef with Applicative[m] = Applicative.liftA2((a, f) -> f(a), ma, mf)
+    pub def <**>(ma: m[a], mf: m[a -> b \ ef]): m[b] \ ef with Applicative[m] = Applicative.map2((a, f) -> f(a), ma, mf)
 
     ///
     /// `<*` is an operator alias for `productLeft`.

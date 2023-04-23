@@ -19,10 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.util.{Formatter, Options}
-import org.scalatest.FunSuite
+import ca.uwaterloo.flix.util.Options
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestInstances extends FunSuite with TestUtils {
+class TestInstances extends AnyFunSuite with TestUtils {
 
   test("Test.OverlappingInstance.01") {
     val input =
@@ -352,7 +352,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as _ \ IO
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -367,7 +367,7 @@ class TestInstances extends FunSuite with TestUtils {
         |}
         |
         |instance C[Bool] {
-        |    pub def f(x: Bool, y: Int32): Int32 \ IO = unsafe_cast 123 as _ \ IO
+        |    pub def f(x: Bool, y: Int32): Int32 \ IO = checked_ecast(123)
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -392,7 +392,7 @@ class TestInstances extends FunSuite with TestUtils {
       """
         |class C[a]
         |
-        |namespace C {
+        |mod C {
         |    instance C[Int32]
         |}
         |""".stripMargin
@@ -403,7 +403,7 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OrphanInstance.02") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    pub class C[a]
         |}
         |
@@ -416,10 +416,10 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OrphanInstance.03") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    class C[a]
         |
-        |    namespace C {
+        |    mod C {
         |        instance N.C[Int32]
         |    }
         |}
@@ -431,10 +431,10 @@ class TestInstances extends FunSuite with TestUtils {
   test("Test.OrphanInstance.04") {
     val input =
       """
-        |namespace N {
+        |mod N {
         |    class C[a]
         |
-        |    namespace O {
+        |    mod O {
         |        instance N.C[Int32]
         |    }
         |}
@@ -598,6 +598,21 @@ class TestInstances extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[InstanceError.IllegalTypeAliasInstance](result)
+  }
+
+  test("Test.AssocTypeInstance.01") {
+    val input =
+      """
+        |class C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |class D[a]
+        |
+        |instance D[C.T[a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.IllegalAssocTypeInstance](result)
   }
 
   test("Test.MissingConstraint.01") {

@@ -1,4 +1,4 @@
-namespace Test/Dec/Effect {
+mod Test.Dec.Effect {
     pub eff Console {
         pub def println(s: String): Unit
     }

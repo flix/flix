@@ -58,24 +58,6 @@ pub class Foldable[t : Type -> Type] {
         Foldable.foldLeft((acc, x) -> acc + f(x), 0, t)
 
     ///
-    /// Returns the product of all elements in `t`.
-    ///
-    pub def product(t: t[Int32]): Int32 =
-        if (Foldable.isEmpty(t))
-            1
-        else
-            Foldable.foldLeft((acc, x) -> acc * x, 1, t)
-
-    ///
-    /// Returns the product of all elements in `t` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, t: t[a]): Int32 \ ef =
-        if (Foldable.isEmpty(t))
-            1
-        else
-            Foldable.foldLeft((acc, x) -> acc * f(x), 1, t)
-
-    ///
     /// Returns `true` if and only if at least one element in `t` satisfies the predicate `f`.
     ///
     /// Returns `false` if `t` is empty.
@@ -211,7 +193,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(r: Region[r], t: t[a]): Array[a, r] \ Write(r) = region r2 {
-        let l = new MutList(r2);
+        let l = MutList.new(r2);
         Foldable.forEach(a -> MutList.push!(a, l), t);
         MutList.toArray(r, l)
     }
@@ -220,7 +202,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutDeque`.
     ///
     pub def toMutDeque(r: Region[r], t: t[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
         d
 
@@ -241,7 +223,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(r: Region[r], t: t[a]): MutSet[a, r] \ Write(r) with Order[a] =
-        let s = new MutSet(r);
+        let s = MutSet.new(r);
         Foldable.forEach(x -> MutSet.add!(x, s), t);
         s
 
@@ -267,7 +249,7 @@ pub class Foldable[t : Type -> Type] {
     /// Returns `t` as a `MutMap`.
     ///
     pub def toMutMap(r: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ Write(r) with Order[k] =
-        let m = new MutMap(r);
+        let m = MutMap.new(r);
         Foldable.forEach(x -> let (k, v) = x; MutMap.put!(k, v, m), t);
         m
 
@@ -329,7 +311,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def foldLeftM(f: (b, a) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
         let f1 = (x, acc) -> z -> Monad.flatMap(acc, f(z, x));
-        s |> Foldable.foldRight(f1, upcast x1 -> Applicative.point(x1): m[b], t)
+        s |> Foldable.foldRight(f1, x1 -> checked_ecast(Applicative.point(x1)), t)
 
     ///
     /// A monadic version of `foldRight`.
@@ -339,7 +321,7 @@ pub class Foldable[t : Type -> Type] {
     ///
     pub def foldRightM(f: (a, b) -> m[b] \ ef, s: b, t: t[a]): m[b] \ ef with Monad[m] =
         let f1 = (k, x) -> z -> Monad.flatMap(k, f(x, z));
-        s |> Foldable.foldLeft(f1, upcast(x1 -> Applicative.point(x1)), t)
+        s |> Foldable.foldLeft(f1, x1 -> checked_ecast(Applicative.point(x1)), t)
 
     ///
     /// A monadic version of `forEach`.
@@ -365,14 +347,14 @@ pub class Foldable[t : Type -> Type] {
     pub def joinWith(f: a -> String \ ef, sep: String, t: t[a]): String \ ef = region r {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         t |> Foldable.forEach(x -> { append!(f(x), sb); append!(sep, sb) });
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
 
 }
 
-namespace Foldable {
+mod Foldable {
 
     use Applicative.{*>}
 

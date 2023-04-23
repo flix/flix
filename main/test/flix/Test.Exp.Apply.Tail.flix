@@ -1,4 +1,4 @@
-namespace Test/Exp/Apply/Tail {
+mod Test.Exp.Apply.Tail {
 
     @test
     def testApplyTail01(): Bool = odd(1)

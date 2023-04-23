@@ -122,7 +122,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -139,7 +139,9 @@ instance Iterable[Nec] {
     pub def iterator(r: Region[r], l: Nec[a]): Iterator[a, r, r] \ Write(r) = Nec.iterator(r, l)
 }
 
-namespace Nec {
+mod Nec {
+    use ViewLeft.{OneLeft, SomeLeft}
+    use ViewRight.{OneRight, SomeRight}
 
     use Functor.{<$>}
     use Applicative.{<*>}
@@ -364,7 +366,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(cons(a, ks))})
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
@@ -376,7 +378,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(i, x); k(NecOne(a))}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, i+1, ks -> {let a = f(i, x); k(cons(a, ks))})
         };
-        loop(c, 0, upcast(identity))
+        loop(c, 0, identity)
 
     ///
     /// Apply every function from `f` to every argument from `x` and return a Nec with all results.
@@ -388,7 +390,7 @@ namespace Nec {
             case ViewLeft.OneLeft(f2)      => k(map(f2, c))
             case ViewLeft.SomeLeft(f2, rs) => loop(rs, ks -> k(map(f2, c) `append` ks))
         };
-        loop(f, upcast(identity))
+        loop(f, identity)
 
     ///
     /// Returns the result of applying `f` to every element in `c` and concatenating the results.
@@ -398,7 +400,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => {let a = f(x); k(a)}
             case ViewLeft.SomeLeft(x, rs) => loop(rs, ks -> {let a = f(x); k(append(a, ks))})
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
     ///
     /// Returns the reverse of `c`.
@@ -499,18 +501,6 @@ namespace Nec {
         Foldable.sumWith(f, c)
 
     ///
-    /// Returns the product of all elements in the list `l`.
-    ///
-    pub def product(c: Nec[Int32]): Int32 =
-        Foldable.product(c)
-
-    ///
-    /// Returns the product of all elements in the list `l` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, c: Nec[a]): Int32 \ ef =
-        Foldable.productWith(f, c)
-
-    ///
     /// Returns the concatenation of the elements in `c`.
     ///
     pub def flatten(c: Nec[Nec[a]]): Nec[a] = match viewLeft(c) {
@@ -546,7 +536,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else loop(rs, k)
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
 
 
@@ -588,7 +578,7 @@ namespace Nec {
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, upcast(_ -> z))
+        case ViewLeft.OneLeft(x)      => f(x, constant(z))
         case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
     }
 
@@ -612,7 +602,7 @@ namespace Nec {
                 case None    => loop(rs, k)
             }
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `c`.
@@ -658,7 +648,7 @@ namespace Nec {
                 loop(rs, qs, ks -> k(cons(a, ks)))
             }
         };
-        loop(c1, c2, upcast(identity))
+        loop(c1, c2, identity)
 
     ///
     /// Returns a pair of Necs, the first containing all first components in `c`
@@ -692,7 +682,7 @@ namespace Nec {
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => k(singleton <$> f(x,y))
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => k(singleton <$> f(x,y))
         };
-        loop(viewLeft(xs), viewLeft(ys), upcast(identity))
+        loop(viewLeft(xs), viewLeft(ys), identity)
 
     ///
     /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -709,7 +699,7 @@ namespace Nec {
                 loop(s2, rs, match (s3, ks) -> k((s3, cons(x1, ks))))
             }
         };
-        loop(start, c, upcast(identity))
+        loop(start, c, identity)
 
     ///
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
@@ -726,7 +716,7 @@ namespace Nec {
                 loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, x1))))
            }
         };
-        loop(start, c, upcast(identity))
+        loop(start, c, identity)
 
     ///
     /// Applies `f` to every element of `c`.
@@ -756,7 +746,7 @@ namespace Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], c: Nec[a]): MutDeque[a, r] \ Write(r)  =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -915,7 +905,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => k(NecOne <$> f(x))
             case ViewLeft.SomeLeft(x, rs) => {let ans = f(x); loop(rs, ks -> k(consA(ans, ks)))}
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
     ///
     /// Returns the concatenation of the string representation
@@ -1008,7 +998,7 @@ namespace Nec {
             case ViewLeft.OneLeft(x)      => if (f(x)) k(x :: Nil) else k(Nil)
             case ViewLeft.SomeLeft(x, rs) => if (f(x)) loop(rs, ks -> k(x :: ks)) else k(Nil)
         };
-        loop(c, upcast(identity))
+        loop(c, identity)
 
 
     ///

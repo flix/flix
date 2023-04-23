@@ -101,7 +101,7 @@ instance Iterable[Vector] {
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ Write(r) = Vector.iterator(rc, v)
 }
 
-namespace Vector {
+mod Vector {
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -129,7 +129,7 @@ namespace Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         let first = ref true @ rc;
 
         StringBuilder.appendString!("Vector#{", sb);
@@ -265,7 +265,7 @@ namespace Vector {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ Write(r)   =
-        let d = new MutDeque(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -491,14 +491,14 @@ namespace Vector {
         let len = length(v);
         let arr = Array.new(rc, len);
         def loop(i, k) = {
-            if (i == len) 
+            if (i == len)
                 k(Applicative.point(arr))
             else {
                 let mx = get(i, v);
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -516,13 +516,13 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
     /// Helper for `sequence`, `traverse` and `zipWithA`.
     ///
-    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] = 
+    def putA!(mx: m[a], i: Int32, marr: m[Array[a, r]]): m[Array[a, r]] \ Write(r) with Applicative[m] =
         use Functor.{<$>};
         use Applicative.{<*>};
         (((x, arr) -> {Array.put(x, i, arr); arr}) <$> mx) <*> marr
@@ -542,7 +542,7 @@ namespace Vector {
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
-        Functor.map(Array.toVector, loop(0, upcast(identity)))
+        Functor.map(Array.toVector, loop(0, identity))
     }
 
     ///
@@ -902,24 +902,6 @@ namespace Vector {
     ///
     pub def sumWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
         foldLeft((acc, x) -> acc + f(x), 0, v)
-
-    ///
-    /// Returns the product of all elements in the vector `v`.
-    ///
-    pub def product(v: Vector[Int32]): Int32 =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * x, 1, v)
-
-    ///
-    /// Returns the product of all elements in the vector `v` according to the function `f`.
-    ///
-    pub def productWith(f: a -> Int32 \ ef, v: Vector[a]): Int32 \ ef =
-        if (isEmpty(v))
-            1
-        else
-            foldLeft((acc, x) -> acc * f(x), 1, v)
 
     ///
     /// Returns the concatenation of all the vectors in the vector `vs`.
@@ -1339,16 +1321,10 @@ namespace Vector {
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
-        unsafe_cast findIndicesHelper(rc, f, v) as Vector[Int32] \ ef
-    }
-
-    ///
-    /// Helper for `findIndices`.
-    ///
-    def findIndicesHelper(rc: Region[r], f: a -> Bool \ ef, v: Vector[a]): Array[Int32, r] \ { ef, Write(r) } =
         let l = MutList.new(rc);
         forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
-        MutList.toArray(rc, l)
+        MutList.toVector(l)
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1452,7 +1428,7 @@ namespace Vector {
     pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = new StringBuilder(rc);
+        let sb = StringBuilder.new(rc);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

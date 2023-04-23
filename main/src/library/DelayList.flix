@@ -123,7 +123,7 @@ instance Iterable[DelayList] {
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ Write(r) = DelayList.iterator(rc, l)
 }
 
-namespace DelayList {
+mod DelayList {
 
     ///
     /// Returns a string representation of `l`.
@@ -132,7 +132,7 @@ namespace DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region r {
-        let sb = new StringBuilder(r);
+        let sb = StringBuilder.new(r);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -259,24 +259,6 @@ namespace DelayList {
     @Experimental
     pub def sumWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
         Foldable.sumWith(f ,l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def product(l: DelayList[Int32]): Int32 =
-        Foldable.product(l)
-
-    ///
-    /// Returns the product of all elements in the DelayList `l` according to the function `f`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def productWith(f: a -> Int32 \ ef, l: DelayList[a]): Int32 \ ef =
-        Foldable.productWith(f, l)
 
     ///
     /// Returns the concatenation of the elements in `l`.
@@ -630,8 +612,7 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, ks -> k(f(x, ks)))
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
+        loop(l, identity)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -717,8 +698,8 @@ namespace DelayList {
             case LList(xs)    => loop(force xs, k)
             case _            => unreachable!()
         };
-        if (isEmpty(l)) None else Some(loop(l, upcast(identity))) // NB: Cast required because the identity continuation is pure,
-                                                                  // but the intermediate continuations are effect polymorphic.
+        if (isEmpty(l)) None else Some(loop(l, identity))
+
     ///
     /// Returns a `DelayList` with every element in `l` that satisfies the predicate `f`.
     ///
@@ -851,8 +832,8 @@ namespace DelayList {
             case LCons(x, xs) => loop(force xs, () -> if (f(x)) Some(x) else k())
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(() -> None)) // NB: Cast required because the identity continuation is pure,
-                                    // but the intermediate continuations are effect polymorphic.
+        loop(l, constant(None))
+
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
     ///
@@ -1262,7 +1243,7 @@ namespace DelayList {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(r: Region[r], l: DelayList[a]): MutDeque[a, r] \ Write(r) =
-        let d = new MutDeque(r);
+        let d = MutDeque.new(r);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1354,8 +1335,7 @@ namespace DelayList {
             case LCons(x, xs) => {let ans = f(x); loop(force xs, ks -> k(consA(ans, ks)))}
             case LList(xs)    => loop(force xs, k)
         };
-        loop(l, upcast(identity)) // NB: Cast required because the identity continuation is pure,
-                                  // but the intermediate continuations are effect polymorphic.
+        loop(l, identity)
 
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.

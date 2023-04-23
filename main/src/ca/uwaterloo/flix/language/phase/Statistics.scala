@@ -88,7 +88,7 @@ object Statistics {
       case Expression.Hole(sym, tpe, loc) => Counter.empty
       case Expression.HoleWithExp(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.OpenAs(_, exp, _, _) => visitExp(exp)
-      case Expression.Use(_, exp, _) => visitExp(exp)
+      case Expression.Use(_, _, exp, _) => visitExp(exp)
       case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
       case Expression.Apply(exp, exps, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(exps.map(visitExp))
       case Expression.Unary(sop, exp, tpe, pur, eff, loc) => visitExp(exp)
@@ -124,11 +124,9 @@ object Statistics {
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Of(_, exp, _, _, _, _) => visitExp(exp)
-      case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Mask(exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Upcast(exp, _, _) => visitExp(exp)
-      case Expression.Supercast(exp, _, _) => visitExp(exp)
+      case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp)
+      case Expression.UncheckedCast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.UncheckedMaskingCast(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Without(exp, _, _, _, _, _) => visitExp(exp)
       case Expression.TryCatch(exp, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitCatchRule))
       case Expression.TryWith(exp, sym, rules, tpe, pur, eff, loc) => visitExp(exp) ++ Counter.merge(rules.map(visitHandlerRule))
@@ -233,8 +231,8 @@ object Statistics {
     */
   private def visitBodyPredicate(body: Predicate.Body): Counter = body match {
     case Body.Atom(_, _, _, _, _, _, _) => Counter.empty
-    case Body.Guard(exp, loc) => visitExp(exp)
-    case Body.Loop(varSyms, exp, loc) => visitExp(exp)
+    case Body.Functional(_, exp, _) => visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
   }
 
   /**

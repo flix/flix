@@ -93,6 +93,12 @@ instance ToString[BigDecimal] {
         toString(x)
 }
 
+instance ToString[Regex] {
+    pub def toString(x: Regex): String =
+        import java.util.regex.Pattern.toString(): String \ {};
+        toString(x)
+}
+
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
     pub def toString(t: (a1, a2)): String = match t {
         case (x1, x2) =>
@@ -189,17 +195,4 @@ instance ToString[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, 
         case (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15) =>
             "(${x1}, ${x2}, ${x3}, ${x4}, ${x5}, ${x6}, ${x7}, ${x8}, ${x9}, ${x10}, ${x11}, ${x12}, ${x13}, ${x14}, ${x15})"
     }
-}
-
-instance ToString[Array[a, r]] with ToString[a] {
-    pub def toString(a: Array[a, r]): String =
-        def loop(i, acc) =
-            // NB: we use the intrinsic $ARRAY_LENGTH$ since Array.flix is not in the MinLib
-            if (i < $ARRAY_LENGTH$(a)) {
-                if (i == 0) unsafe_cast loop(i + 1, "${$ARRAY_LOAD$(a, i)}") as _ \ {}
-                else unsafe_cast loop(i + 1, "${acc}, ${$ARRAY_LOAD$(a, i)}") as _ \ {}
-            } else {
-                "[${acc}]"
-            };
-        loop(0, "")
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace TestFile {
+mod TestFile {
 
     use File.{exists, isDirectory, isRegularFile, isReadable, isSymbolicLink,
         isWritable, isExecutable, readLines, readLinesWith, read, readWith,
@@ -64,7 +64,7 @@ namespace TestFile {
     @test
     def testStat02(): Bool \ IO =
         match stat("README.md") {
-            case Ok(v) => v.fileType == File/FileType.File
+            case Ok(v) => v.fileType == File.FileType.File
             case _ => false
         }
 
@@ -228,7 +228,7 @@ namespace TestFile {
     @test
     def testReadLinesIterWithWith01(): Bool \ IO = region r {
         let iter = readLinesIterWith(r, {charSet = "utf8"}, "./LICENSE.md");
-        match Iterator.next(iter) { 
+        match Iterator.next(iter) {
             case Some(Ok(_)) => true
             case _           => false
         }
@@ -320,16 +320,16 @@ namespace TestFile {
     @test
     def testReadChunks03(): Bool \ IO = region r {
         let iter = readChunks(r, 0, "./LICENSE.md");
-        match Iterator.next(iter) { 
-            case None => true
-            case _    => false
+        match Iterator.next(iter) {
+            case Some(Err(_)) => true
+            case _            => false
         }
     }
 
     @test
     def testReadChunks04(): Bool \ IO = region r {
         let iter = readChunks(r, -10, "./LICENSE.md");
-        match Iterator.next(iter) { 
+        match Iterator.next(iter) {
             case Some(Err(_)) => true
             case _            => false
         }
