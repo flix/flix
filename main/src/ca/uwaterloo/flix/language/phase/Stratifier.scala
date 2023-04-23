@@ -314,6 +314,11 @@ object Stratifier {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
       }
 
+    case Expression.InstanceOf(exp, clazz, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.InstanceOf(e, clazz, loc)
+      }
+
     case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, pur, eff, loc))
 
@@ -503,11 +508,6 @@ object Stratifier {
     case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.FixpointProject(pred, e, tpe, pur, eff, loc)
-      }
-
-    case Expression.Instanceof(exp, className, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Instanceof(e, className, loc)
       }
 
     case Expression.Error(m, tpe, pur, eff) =>
@@ -706,6 +706,9 @@ object Stratifier {
     case Expression.Ascribe(exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      labelledGraphOfExp(exp)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       labelledGraphOfExp(exp)
 
@@ -823,9 +826,6 @@ object Stratifier {
       labelledGraphOfExp(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.Error(_, _, _, _) =>

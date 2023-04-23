@@ -573,6 +573,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
 
+    case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -830,10 +834,6 @@ object Lowering {
       val defExp = LoweredAst.Expression.Def(sym, defTpe, loc)
       val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
       LoweredAst.Expression.Apply(defExp, argExps, tpe, pur, eff, loc)
-
-    case TypedAst.Expression.Instanceof(exp, clazz, loc) =>
-      val e = visitExp(exp)
-      LoweredAst.Expression.Instanceof(e, clazz, loc)
 
     case TypedAst.Expression.Error(m, _, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)
@@ -2086,6 +2086,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Ascribe(e, tpe, pur, eff, loc)
 
+    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
     case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
@@ -2157,9 +2161,6 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
 
-    case LoweredAst.Expression.Instanceof(exp, className, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expression.Instanceof(e, className, loc)
   }
 
   /**

@@ -1329,6 +1329,13 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
+        case NamedAst.Expression.InstanceOf(exp, className, loc) =>
+          val eVal = visitExp(exp, env0)
+          val clazzVal = lookupJvmClass(className, loc);
+          mapN(eVal, clazzVal) {
+            (e, clazz) => ResolvedAst.Expression.InstanceOf(e, clazz, loc)
+          }
+
         case NamedAst.Expression.CheckedCast(c, exp, loc) =>
           mapN(visitExp(exp, env0)) {
             case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
@@ -1660,13 +1667,6 @@ object Resolver {
           val e2Val = visitExp(exp2, env0)
           mapN(e1Val, e2Val) {
             case (e1, e2) => ResolvedAst.Expression.FixpointProject(pred, e1, e2, loc)
-          }
-
-        case NamedAst.Expression.Instanceof(exp, className, loc) =>
-          val eVal = visitExp(exp, env0)
-          val clazzVal = lookupJvmClass(className, loc);
-          mapN(eVal, clazzVal) {
-            (e, clazz) => ResolvedAst.Expression.Instanceof(e, clazz, loc)
           }
 
         case NamedAst.Expression.Error(m) =>

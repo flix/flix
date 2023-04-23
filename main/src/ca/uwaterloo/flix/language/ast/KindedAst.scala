@@ -154,6 +154,8 @@ object KindedAst {
 
     case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedPur: Option[Type], expectedEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class InstanceOf(exp: KindedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
@@ -217,8 +219,6 @@ object KindedAst {
     case class FixpointInject(exp: KindedAst.Expression, pred: Name.Pred, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: KindedAst.Expression, exp2: KindedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
-
-    case class Instanceof(exp: KindedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
 
     case class Error(m: CompilationMessage, tpe: Type.Var, pur: Type.Var, eff: Type.Var) extends KindedAst.Expression {
       override def loc: SourceLocation = m.loc

@@ -124,6 +124,7 @@ object Statistics {
       case Expression.Deref(exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, pur, eff, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
+      case Expression.InstanceOf(exp, _, _) => visitExp(exp)
       case Expression.CheckedCast(_, exp, _, _, _, _) => visitExp(exp)
       case Expression.UncheckedCast(exp, _, _, _, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.UncheckedMaskingCast(exp, tpe, pur, eff, loc) => visitExp(exp)
@@ -156,7 +157,6 @@ object Statistics {
       case Expression.FixpointFilter(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointInject(exp, pred, tpe, pur, eff, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, pur, eff, loc) => visitExp(exp)
-      case Expression.Instanceof(exp, cls, loc) => visitExp(exp)
       case Expression.Error(_, _, _, _) => Counter.empty
     }
 

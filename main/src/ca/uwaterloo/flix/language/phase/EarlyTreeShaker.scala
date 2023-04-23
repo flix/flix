@@ -242,6 +242,9 @@ object EarlyTreeShaker {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
@@ -291,9 +294,6 @@ object EarlyTreeShaker {
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expression.Without(exp, _, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp)
   }
 

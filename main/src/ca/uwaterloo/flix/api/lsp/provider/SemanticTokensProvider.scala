@@ -435,6 +435,9 @@ object SemanticTokensProvider {
     case Expression.Ascribe(exp, tpe, _, _, _) =>
       visitExp(exp) ++ visitType(tpe)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -557,9 +560,6 @@ object SemanticTokensProvider {
       visitExp(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Error(_, _, _, _) =>

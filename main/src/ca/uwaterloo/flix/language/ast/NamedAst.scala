@@ -169,6 +169,8 @@ object NamedAst {
 
     case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
 
+    case class InstanceOf(exp: NamedAst.Expression, className: String, loc: SourceLocation) extends NamedAst.Expression
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class UncheckedCast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: NamedAst.PurityAndEffect, loc: SourceLocation) extends NamedAst.Expression
@@ -232,8 +234,6 @@ object NamedAst {
     case class FixpointInject(exp: NamedAst.Expression, pred: Name.Pred, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
-
-    case class Instanceof(exp: NamedAst.Expression, className: String, loc: SourceLocation) extends NamedAst.Expression
 
     case class Error(m: CompilationMessage) extends NamedAst.Expression {
       override def loc: SourceLocation = m.loc

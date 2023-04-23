@@ -336,6 +336,9 @@ object Indexer {
     case Expression.Ascribe(exp, tpe, pur, _, _) =>
       visitExp(exp) ++ visitType(tpe) ++ visitType(pur) ++ Index.occurrenceOf(exp0)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp) ++ Index.occurrenceOf(exp0)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
@@ -456,9 +459,6 @@ object Indexer {
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expression.Error(_, _, _, _) =>

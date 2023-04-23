@@ -223,6 +223,9 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.InstanceOf(exp, _, _) =>
+        visit(exp)
+
       case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
@@ -343,9 +346,6 @@ object Safety {
         visit(exp)
 
       case Expression.FixpointProject(_, exp, _, _, _, _) =>
-        visit(exp)
-
-      case Expression.Instanceof(exp, _, _) =>
         visit(exp)
 
       case Expression.Error(_, _, _, _) =>

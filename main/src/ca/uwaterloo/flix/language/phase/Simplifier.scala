@@ -195,6 +195,10 @@ object Simplifier {
 
       case LoweredAst.Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
 
+      case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
+
       case LoweredAst.Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
@@ -280,10 +284,6 @@ object Simplifier {
 
       case LoweredAst.Expression.TypeMatch(_, _, _, _, _, loc) =>
         throw InternalCompilerException(s"Unexpected expression: $exp0.", loc)
-
-      case LoweredAst.Expression.Instanceof(exp, clazz, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Instanceof(e, clazz, loc)
     }
 
     /**
@@ -784,6 +784,10 @@ object Simplifier {
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
 
+      case SimplifiedAst.Expression.InstanceOf(exp, clsname, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.InstanceOf(e, clsname, loc)
+
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, purity, loc)
@@ -842,10 +846,6 @@ object Simplifier {
       case SimplifiedAst.Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Force(e, tpe, loc)
-
-      case SimplifiedAst.Expression.Instanceof(exp, clsname, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.Instanceof(e, clsname, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
 

@@ -200,6 +200,10 @@ object ClosureConv {
       val e2 = visitExp(exp2)
       Expression.Assign(e1, e2, tpe, loc)
 
+    case Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      Expression.InstanceOf(e, clazz, loc)
+
     case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       Expression.Cast(e, tpe, purity, loc)
@@ -263,10 +267,6 @@ object ClosureConv {
     case Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Force(e, tpe, loc)
-
-    case Expression.Instanceof(exp, className, loc) =>
-      val e = visitExp(exp)
-      Expression.Instanceof(e, className, loc)
 
     case Expression.HoleError(_, _, _) => exp0
 
@@ -397,6 +397,8 @@ object ClosureConv {
 
     case Expression.Assign(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
 
+    case Expression.InstanceOf(exp, _, _) => freeVars(exp)
+
     case Expression.Cast(exp, _, _, _) => freeVars(exp)
 
     case Expression.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
@@ -429,8 +431,6 @@ object ClosureConv {
     case Expression.Lazy(exp, _, _) => freeVars(exp)
 
     case Expression.Force(exp, _, _) => freeVars(exp)
-
-    case Expression.Instanceof(exp, _, _) => freeVars(exp)
 
     case Expression.HoleError(_, _, _) => SortedSet.empty
 
@@ -633,6 +633,10 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
 
+      case Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        Expression.InstanceOf(e, clazz, loc)
+
       case Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
         Expression.Cast(e, tpe, purity, loc)
@@ -691,10 +695,6 @@ object ClosureConv {
       case Expression.Force(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Force(e, tpe, loc)
-
-      case Expression.Instanceof(exp, clsName, loc) =>
-        val e = visitExp(exp)
-        Expression.Instanceof(e, clsName, loc)
 
       case Expression.HoleError(_, _, _) => e
 

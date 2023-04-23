@@ -1427,13 +1427,6 @@ object Weeder {
         case (e, rs) => WeededAst.Expression.TypeMatch(e, rs, loc)
       }
 
-    case ParsedAst.Expression.Instanceof(exp, name, sp2) =>
-      val sp1 = leftMostSourcePosition(exp)
-      val loc = mkSL(sp1, sp2)
-      visitExp(exp, senv) map {
-        case e => WeededAst.Expression.Instanceof(e, name.toString, loc)
-      }
-
     case ParsedAst.Expression.RelationalChoose(sp1, star, exps, rules, sp2) =>
       //
       // Check for mismatched arity of `exps` and `rules`.
@@ -1727,6 +1720,13 @@ object Weeder {
       val f = visitPurityAndEffect(expectedEff)
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
+      }
+
+    case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
+      val loc = mkSL(sp1, sp2)
+      visitExp(exp, senv) map {
+        case e => WeededAst.Expression.InstanceOf(e, className.toString, loc)
       }
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
@@ -3318,6 +3318,7 @@ object Weeder {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.InstanceOf(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.UncheckedCast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, _, _) => sp1
     case ParsedAst.Expression.CheckedTypeCast(sp1, _, _) => sp1
@@ -3339,7 +3340,6 @@ object Weeder {
     case ParsedAst.Expression.FixpointInjectInto(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, _, _, _, _, _) => sp1
-    case ParsedAst.Expression.Instanceof(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Debug(sp1, _, _, _) => sp1
   }
 

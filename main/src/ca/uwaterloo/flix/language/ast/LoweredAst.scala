@@ -201,6 +201,14 @@ object LoweredAst {
 
     case class Ascribe(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
+    case class InstanceOf(exp: LoweredAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LoweredAst.Expression {
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+
+      def tpe: Type = Type.Bool
+    }
+
     case class Cast(exp: LoweredAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
 
     case class Without(exp: LoweredAst.Expression, effUse: Ast.EffectSymUse, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
@@ -244,14 +252,6 @@ object LoweredAst {
     }
 
     case class Force(exp: LoweredAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends LoweredAst.Expression
-
-    case class Instanceof(exp: LoweredAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends LoweredAst.Expression {
-      def pur: Type = exp.pur
-
-      def eff: Type = exp.eff
-
-      def tpe: Type = Type.Bool
-    }
 
   }
 

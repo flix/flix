@@ -72,6 +72,7 @@ object TypedAstOps {
     case Expression.Deref(exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.Assign(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expression.Ascribe(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expression.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expression.CheckedCast(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.UncheckedCast(exp, _, _, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.UncheckedMaskingCast(exp, _, _, _, _) => sigSymsOf(exp)
@@ -104,7 +105,6 @@ object TypedAstOps {
     case Expression.FixpointFilter(_, exp, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointInject(exp, _, _, _, _, _) => sigSymsOf(exp)
     case Expression.FixpointProject(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expression.Instanceof(exp, _, _) => sigSymsOf(exp)
     case Expression.Error(_, _, _, _) => Set.empty
   }
 
@@ -274,6 +274,9 @@ object TypedAstOps {
     case Expression.Without(exp, _, _, _, _, _) =>
       freeVars(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      freeVars(exp)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       freeVars(exp)
 
@@ -385,9 +388,6 @@ object TypedAstOps {
       freeVars(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      freeVars(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       freeVars(exp)
 
     case Expression.Error(_, _, _, _) =>

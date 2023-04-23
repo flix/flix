@@ -637,6 +637,9 @@ object Redundancy {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp, env0, rc)
+
     case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
@@ -816,9 +819,6 @@ object Redundancy {
       visitExp(exp, env0, rc)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expression.Error(_, _, _, _) =>

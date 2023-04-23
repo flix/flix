@@ -229,6 +229,14 @@ object TypedAst {
 
     case class Ascribe(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class InstanceOf(exp: TypedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+
+      def tpe: Type = Type.Bool
+    }
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class UncheckedCast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -312,14 +320,6 @@ object TypedAst {
     case class FixpointInject(exp: TypedAst.Expression, pred: Name.Pred, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointProject(pred: Name.Pred, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class Instanceof(exp: TypedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends TypedAst.Expression {
-      def pur: Type = exp.pur
-
-      def eff: Type = exp.eff
-
-      def tpe: Type = Type.Bool
-    }
 
     case class Error(m: CompilationMessage, tpe: Type, pur: Type, eff: Type) extends TypedAst.Expression {
       override def loc: SourceLocation = m.loc

@@ -218,6 +218,9 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -322,9 +325,6 @@ object CodeHinter {
       visitExp(exp)
 
     case Expression.FixpointProject(_, exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp)
 
     case Expression.Error(_, _, _, _) =>

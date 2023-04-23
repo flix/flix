@@ -842,6 +842,11 @@ object Namer {
         case err: NameError.TypeNameError => NamedAst.Expression.Error(err)
       }
 
+    case WeededAst.Expression.InstanceOf(exp, className, loc) =>
+      visitExp(exp, ns0) map {
+        case e => NamedAst.Expression.InstanceOf(e, className, loc)
+      }
+
     case WeededAst.Expression.CheckedCast(c, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expression.CheckedCast(c, e, loc)
@@ -1079,11 +1084,6 @@ object Namer {
     case WeededAst.Expression.FixpointProject(pred, exp1, exp2, loc) =>
       mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
         case (e1, e2) => NamedAst.Expression.FixpointProject(pred, e1, e2, loc)
-      }
-
-    case WeededAst.Expression.Instanceof(exp, className, loc) =>
-      visitExp(exp, ns0) map {
-        case e => NamedAst.Expression.Instanceof(e, className, loc)
       }
 
     case WeededAst.Expression.Error(m) =>
