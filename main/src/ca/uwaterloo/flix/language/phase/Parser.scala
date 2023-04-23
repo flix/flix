@@ -644,7 +644,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Instanceof: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(WS ~ operatorX("instanceof") ~ WS ~ Names.JavaName ~ SP ~> ParsedAst.Expression.Instanceof)
+      LogicalOr ~ optional(WS ~ operatorX("instanceof") ~ WS ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Expression.Instanceof)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
