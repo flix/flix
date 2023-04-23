@@ -141,7 +141,7 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    // We try to syntactic context (from the parser) first.
+    // First, we try to get the syntactic context from the parser or from an error message.
     context.sctx match {
       case SyntacticContext.ClassDecl => return Nil
       case SyntacticContext.Type => return TypeCompleter.getCompletions(context)
