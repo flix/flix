@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -143,7 +143,9 @@ object CompletionProvider {
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // We try to syntactic context (from the parser) first.
     context.sctx match {
+      case SyntacticContext.ClassDecl => return Nil
       case SyntacticContext.Type => return TypeCompleter.getCompletions(context)
+      // TODO: SYNTACTIC-CONTEXT
       case _ => // fallthrough
     }
 
@@ -302,6 +304,8 @@ object CompletionProvider {
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errors.collectFirst({
       case ParseError(_, ctx, loc) if loc.beginLine == pos.line => ctx
+      case ResolutionError.UndefinedType(_, _, loc) if loc.beginLine == pos.line => SyntacticContext.Type
+      // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
 }
