@@ -3,12 +3,12 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
 import java.nio.file.Files
 
-class TestMavenPackageManager extends FunSuite {
+class TestMavenPackageManager extends AnyFunSuite {
   val s: String = File.separator
   val f: Formatter = Formatter.NoFormatter
 
@@ -112,7 +112,7 @@ class TestMavenPackageManager extends FunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path)(System.out) match {
+      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(System.out) match {
         case Ok(l) => l
         case Err(e) => fail(e.message(f))
       }

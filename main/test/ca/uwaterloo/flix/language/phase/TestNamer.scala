@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestNamer extends FunSuite with TestUtils {
+class TestNamer extends AnyFunSuite with TestUtils {
 
   test("DuplicateLowerName.01") {
     val input =

@@ -36,7 +36,7 @@ object ManifestParser {
     val parser = try {
       Toml.parse(p)
     } catch {
-      case _: IOException => return Err(ManifestError.IOError(p))
+      case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
     createManifest(parser, p)
   }
@@ -53,7 +53,7 @@ object ManifestParser {
     val parser = try {
       Toml.parse(stringReader)
     } catch {
-      case _: IOException => return Err(ManifestError.IOError(p))
+      case e: IOException => return Err(ManifestError.IOError(p, e.getMessage))
     }
     createManifest(parser, p)
   }
@@ -133,12 +133,12 @@ object ManifestParser {
     try {
       val prop = parser.getString(propString)
       if (prop == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString))
+        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
       }
       Ok(prop)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
     }
   }
 
@@ -152,7 +152,7 @@ object ManifestParser {
       Ok(Option(prop))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String"))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
     }
   }
 
@@ -165,12 +165,12 @@ object ManifestParser {
     try {
       val array = parser.getArray(propString)
       if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString))
+        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
       }
       Ok(array)
     } catch {
-      case _: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString))
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array"))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
     }
   }
 
@@ -185,7 +185,7 @@ object ManifestParser {
       Ok(Option(table))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case _: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table"))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table", e.getMessage))
     }
   }
 
@@ -202,7 +202,7 @@ object ManifestParser {
         case _ => Err(ManifestError.FlixVersionHasWrongLength(p, s))
       }
     } catch {
-      case _: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s))
+      case e: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s, e.getMessage))
     }
   }
 
@@ -303,8 +303,8 @@ object ManifestParser {
     try {
       toFlixVer(depVer.asInstanceOf[String], p)
     } catch {
-      case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, depVer))
+      case e: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, e.getMessage))
     }
   }
 
@@ -327,10 +327,10 @@ object ManifestParser {
         case _ => Err(ManifestError.MavenVersionHasWrongLength(p, version))
       }
     } catch {
-      case _: ClassCastException =>
-        Err(ManifestError.DependencyFormatError(p, depVer))
-      case _: NumberFormatException =>
-        Err(ManifestError.VersionNumberWrong(p, depVer.asInstanceOf[String]))
+      case e: ClassCastException =>
+        Err(ManifestError.DependencyFormatError(p, e.getMessage))
+      case e: NumberFormatException =>
+        Err(ManifestError.VersionNumberWrong(p, depVer.asInstanceOf[String], e.getMessage))
     }
   }
 
@@ -388,8 +388,8 @@ object ManifestParser {
         val s = array.getString(i)
         stringSet.add(s)
       } catch {
-        case _: TomlInvalidTypeException =>
-          return Err(ManifestError.AuthorNameError(p))
+        case e: TomlInvalidTypeException =>
+          return Err(ManifestError.AuthorNameError(p, e.getMessage))
       }
     }
     Ok(stringSet.toList)
