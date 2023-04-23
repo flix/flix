@@ -25,10 +25,10 @@ import ca.uwaterloo.flix.util.Formatter
   * An error raised to indicate a parse error.
   *
   * @param msg the error message.
-  * @param ctx the optional syntactic context.
+  * @param ctx the syntactic context.
   * @param loc the source location.
   */
-case class ParseError(msg: String, ctx: Option[SyntacticContext], loc: SourceLocation) extends CompilationMessage {
+case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage {
   val kind = "Parse Error"
 
   def summary: String = msg

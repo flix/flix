@@ -143,7 +143,7 @@ object CompletionProvider {
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // We try to syntactic context (from the parser) first.
     context.sctx match {
-      case Some(SyntacticContext.Type) => return TypeCompleter.getCompletions(context)
+      case SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _ => // fallthrough
     }
 
@@ -299,9 +299,9 @@ object CompletionProvider {
     *
     * We have to check that the syntax error occurs in the same place as the completion.
     */
-  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): Option[SyntacticContext] =
+  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errors.collectFirst({
-      case ParseError(_, Some(ctx), loc) if loc.beginLine == pos.line => ctx
-    })
+      case ParseError(_, ctx, loc) if loc.beginLine == pos.line => ctx
+    }).getOrElse(SyntacticContext.Unknown)
 
 }
