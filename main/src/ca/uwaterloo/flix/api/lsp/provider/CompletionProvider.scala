@@ -305,8 +305,8 @@ object CompletionProvider {
     errors.filter({
       case err => err.loc.beginLine == pos.line
     }).collectFirst({
-      case ParseError(_, ctx, loc) => ctx
-      case ResolutionError.UndefinedType(_, _, loc) => SyntacticContext.Type
+      case ParseError(_, ctx, _) => ctx
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
