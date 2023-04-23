@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestInstances extends FunSuite with TestUtils {
+class TestInstances extends AnyFunSuite with TestUtils {
 
   test("Test.OverlappingInstance.01") {
     val input =
