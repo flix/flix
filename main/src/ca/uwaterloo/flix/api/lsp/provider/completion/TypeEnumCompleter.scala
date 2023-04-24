@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.TypeEnumCompletion
 import ca.uwaterloo.flix.api.lsp.provider.completion.TypeCompleter.{formatTParams, formatTParamsSnippet, getInternalPriority, priorityBoostForTypes}
 import ca.uwaterloo.flix.api.lsp.{Index, TextEdit}
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 
 object TypeEnumCompleter extends Completer {
   /**
@@ -27,11 +27,20 @@ object TypeEnumCompleter extends Completer {
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[TypeEnumCompletion] = {
     root.enums.collect {
-      case (_, t) if !t.ann.isInternal =>
+      case (_, t) if !t.ann.isInternal & matchesTypeEnum(t.sym, context.word) =>
         val name = t.sym.name
         val internalPriority = getInternalPriority(t.loc, t.sym.namespace)(context)
         Completion.TypeEnumCompletion(t.sym, formatTParams(t.tparams), priorityBoostForTypes(internalPriority(name))(context),
           TextEdit(context.range, s"$name${formatTParamsSnippet(t.tparams)}"), Some(t.doc.text))
     }
   }
+
+  /**
+    * Checks that the enumSym matches the word that the users is typing.
+    *
+    * @param sym  the enumSym.
+    * @param word the current word.
+    * @return     true, if the enum matches word, false otherwise.
+    */
+  private def matchesTypeEnum(sym: Symbol.EnumSym, word: String): Boolean = sym.toString.startsWith(word)
 }
