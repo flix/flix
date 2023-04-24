@@ -123,7 +123,7 @@ object Typer {
     flix.subphase("EqualityEnv") {
 
       val assocs = for {
-        (classSym, _) <- classes0
+        (classSym, _) <- classes0.iterator
         inst <- instances0.getOrElse(classSym, Nil)
         assoc <- inst.assocs
       } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
