@@ -17,16 +17,16 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file._
-import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor, StandardCopyOption, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
+import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable
 import scala.util.{Failure, Success, Using}
 
