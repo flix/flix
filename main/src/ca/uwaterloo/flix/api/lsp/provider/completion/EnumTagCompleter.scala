@@ -46,8 +46,12 @@ object EnumTagCompleter extends Completer {
           case (caseSym, _) =>
             tagName match {
               case None => Some(EnumTagCompletion(enumSym, caseSym))
-              case Some(tag) if matchesTag(caseSym, tag) =>
-                Some(EnumTagCompletion(enumSym, caseSym))
+              case Some(tag) =>
+                if (matchesTag(caseSym, tag)) {
+                  Some(EnumTagCompletion(enumSym, caseSym))
+                } else {
+                  None
+                }
             }
         }
     }
