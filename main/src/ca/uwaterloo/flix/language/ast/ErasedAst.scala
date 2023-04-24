@@ -82,6 +82,20 @@ object ErasedAst {
 
   }
 
+  sealed trait Stmt
+
+  object Stmt {
+
+    case class Ret(exp: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
+
+    case class Let(sym: Symbol.VarSym, exp1: Stmt, exp2: Stmt, tpe: MonoType, loc: SourceLocation) extends Stmt
+
+    case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Stmt
+
+    case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
+
+  }
+
   sealed trait IntrinsicOperator0
 
   object IntrinsicOperator0 {

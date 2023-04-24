@@ -154,7 +154,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p, DefaultOptions)(System.out)
     val b = Bootstrap.bootstrap(p, None)(System.out).get
-    b.run(DefaultOptions)
+    b.run(DefaultOptions, Array("arg0", "arg1"))
   }
 
   test("test") {
