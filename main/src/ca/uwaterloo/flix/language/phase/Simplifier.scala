@@ -784,9 +784,9 @@ object Simplifier {
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
 
-      case SimplifiedAst.Expression.InstanceOf(exp, clsname, loc) =>
+      case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.InstanceOf(e, clsname, loc)
+        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)
