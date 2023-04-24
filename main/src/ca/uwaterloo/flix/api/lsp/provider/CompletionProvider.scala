@@ -57,9 +57,9 @@ object CompletionProvider {
   // 9: Low: completions that are unlikely to be relevant unless within a specific context
   //
   object Priority {
-    def high(name: String): String = "1" + name
+    def high(name: String): String = "2" + name
 
-    def boost(name: String): String = "2" + name
+    def boost(name: String): String = "3" + name
 
     def snippet(name: String): String = "4" + name
 
