@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.api.lsp.provider.completion
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.EnumTagCompletion
@@ -39,19 +39,15 @@ object EnumTagCompleter extends Completer {
     */
   private def getEnumTagCompletions(enumName: String, tagName: Option[String])(implicit root: TypedAst.Root): Iterable[EnumTagCompletion] = {
     root.enums.filter {
-      case (sym, _) => sym.name == enumName
+      case (enumSym, _) => enumSym.name == enumName
     }.flatMap {
-      case (sym, enm) =>
+      case (enumSym, enm) =>
         enm.cases.flatMap {
           case (caseSym, _) =>
             tagName match {
-              case None => Some(EnumTagCompletion(s"${sym.name}.${caseSym.name}"))
-              case Some(tag) =>
-                // This doesn't work...
-                if (matchesTag(caseSym, tag))
-                  Some(EnumTagCompletion(s"${sym.name}.${caseSym.name}"))
-                else
-                  None
+              case None => Some(EnumTagCompletion(enumSym, caseSym))
+              case Some(tag) if matchesTag(caseSym, tag) =>
+                Some(EnumTagCompletion(enumSym, caseSym))
             }
         }
     }
@@ -65,6 +61,10 @@ object EnumTagCompleter extends Completer {
     * @return     true, if the var matches prefix, false otherwise.
     */
   private def matchesTag(sym: Symbol.CaseSym, word: String): Boolean = {
-    word.nonEmpty && word.head.isUpper && sym.toString.startsWith(word)
+    if (word.nonEmpty) {
+      word.head.isUpper && sym.name.startsWith(word)
+    } else {
+      sym.name.startsWith(word)
+    }
   }
 }
