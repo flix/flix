@@ -60,11 +60,6 @@ object EnumTagCompleter extends Completer {
     * @param word the current prefix.
     * @return     true, if the var matches prefix, false otherwise.
     */
-  private def matchesTag(sym: Symbol.CaseSym, word: String): Boolean = {
-    if (word.nonEmpty) {
-      word.head.isUpper && sym.name.startsWith(word)
-    } else {
-      sym.name.startsWith(word)
-    }
-  }
+  private def matchesTag(sym: Symbol.CaseSym, word: String): Boolean =
+    word.nonEmpty && word.head.isUpper && sym.name.startsWith(word)
 }
