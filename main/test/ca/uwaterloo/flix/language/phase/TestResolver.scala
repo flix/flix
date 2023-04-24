@@ -1511,4 +1511,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeDef](result)
   }
+
+  test("UndefinedInstanceOf.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof ##org.undefined.BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
 }
