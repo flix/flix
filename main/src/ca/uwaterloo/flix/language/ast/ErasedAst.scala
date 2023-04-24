@@ -64,10 +64,6 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Instanceof(exp: Expr, clazz: java.lang.Class[_], loc: SourceLocation) extends Expr {
-      def tpe: MonoType = MonoType.Bool
-    }
-
     case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
@@ -125,6 +121,8 @@ object ErasedAst {
     case class Tag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
     case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
+
+    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator1
 
     case object Cast extends IntrinsicOperator1
 

@@ -698,8 +698,6 @@ object JvmOps {
             sacc ++ fs ++ visitExp(clo)
         }
 
-      case Expr.Instanceof(exp, _, _) => visitExp(exp)
-
       case Expr.Intrinsic0(_, tpe, _) => Set(tpe)
 
       case Expr.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe

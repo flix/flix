@@ -138,6 +138,12 @@ object OccurrenceAst {
       def purity: Purity = Impure
     }
 
+    case class InstanceOf(exp: OccurrenceAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends OccurrenceAst.Expression {
+      def purity: Purity = exp.purity
+
+      def tpe: Type = Type.Bool
+    }
+
     case class Cast(exp: OccurrenceAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class TryCatch(exp: OccurrenceAst.Expression, rules: List[OccurrenceAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
@@ -168,12 +174,6 @@ object OccurrenceAst {
 
     case class Force(exp: OccurrenceAst.Expression, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {
       def purity: Purity = Pure
-    }
-
-    case class Instanceof(exp: OccurrenceAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = exp.purity
-
-      def tpe: Type = Type.Bool
     }
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends OccurrenceAst.Expression {

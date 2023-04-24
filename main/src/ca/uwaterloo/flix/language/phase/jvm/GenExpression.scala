@@ -314,12 +314,6 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
-    case Expr.Instanceof(exp, clazz, loc) =>
-      addSourceLine(visitor, loc)
-      val className = asm.Type.getInternalName(clazz)
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(INSTANCEOF, className.toString)
-
     case Expr.Intrinsic0(op, tpe, loc) => op match {
 
       case IntrinsicOperator0.Cst(cst) =>
@@ -428,6 +422,12 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.InstanceOf(clazz) =>
+        addSourceLine(visitor, loc)
+        val className = asm.Type.getInternalName(clazz)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
       case IntrinsicOperator1.Cast =>
         addSourceLine(visitor, loc)

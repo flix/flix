@@ -314,6 +314,8 @@ object PrettyPrinter {
 
         case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + " := " + visitExp(exp2)
 
+        case Expression.InstanceOf(exp, clazz, _) => visitExp(exp) + " instanceof " + clazz
+
         case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
             " as " +
@@ -406,8 +408,6 @@ object PrettyPrinter {
         case Expression.Lazy(exp, tpe, loc) => "lazy " + visitExp(exp)
 
         case Expression.Force(exp, tpe, loc) => "force " + visitExp(exp)
-
-        case Expression.Instanceof(exp, cls, _) => visitExp(exp) + " instanceof " + cls
 
         case Expression.HoleError(sym, tpe, loc) => formatter.red("HoleError")
 

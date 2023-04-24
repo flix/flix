@@ -264,7 +264,7 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
         val e = visitExp(exp)
-        LiftedAst.Expression.Instanceof(e, clazz, loc)
+        LiftedAst.Expression.InstanceOf(e, clazz, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)

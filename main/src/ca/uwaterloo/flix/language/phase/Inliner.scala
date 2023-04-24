@@ -343,6 +343,10 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
+    case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp, subst0)
+      LiftedAst.Expression.InstanceOf(e, clazz, loc)
+
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Cast(e, tpe, purity, loc)
@@ -407,10 +411,6 @@ object Inliner {
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expression.Force(e, tpe, loc)
-
-    case OccurrenceAst.Expression.Instanceof(exp, clazz, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expression.Instanceof(e, clazz, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 
@@ -681,6 +681,10 @@ object Inliner {
       val e2 = substituteExp(exp2, env0)
       LiftedAst.Expression.Assign(e1, e2, tpe, loc)
 
+    case OccurrenceAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = substituteExp(exp, env0)
+      LiftedAst.Expression.InstanceOf(e, clazz, loc)
+
     case OccurrenceAst.Expression.Cast(exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Cast(e, tpe, purity, loc)
@@ -747,10 +751,6 @@ object Inliner {
     case OccurrenceAst.Expression.Force(exp, tpe, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expression.Force(e, tpe, loc)
-
-    case OccurrenceAst.Expression.Instanceof(exp, className, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expression.Instanceof(e, className, loc)
 
     case OccurrenceAst.Expression.HoleError(sym, tpe, loc) => LiftedAst.Expression.HoleError(sym, tpe, loc)
 

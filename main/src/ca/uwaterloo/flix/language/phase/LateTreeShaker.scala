@@ -198,6 +198,9 @@ object LateTreeShaker {
     case Expression.Assign(exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp)
 
@@ -235,9 +238,6 @@ object LateTreeShaker {
       visitExp(exp)
 
     case Expression.Force(exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Instanceof(exp, _, _) =>
       visitExp(exp)
 
     case Expression.HoleError(_, _, _) =>

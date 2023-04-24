@@ -217,6 +217,11 @@ object Eraser {
       val op = ErasedAst.IntrinsicOperator2.Assign
       ErasedAst.Expr.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
+    case FinalAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val op = ErasedAst.IntrinsicOperator1.InstanceOf(clazz)
+      val tpe = MonoType.Bool
+      ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
+
     case FinalAst.Expression.Cast(exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Cast
       ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
@@ -276,9 +281,6 @@ object Eraser {
     case FinalAst.Expression.Force(exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Force
       ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
-
-    case FinalAst.Expression.Instanceof(exp, clazz, loc) =>
-      ErasedAst.Expr.Instanceof(visitExp(exp), clazz, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator0.HoleError(sym)
