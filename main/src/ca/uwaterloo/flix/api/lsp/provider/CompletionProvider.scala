@@ -49,8 +49,8 @@ object CompletionProvider {
   // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
   // are boosted if the cursor is preceded by a ":")
   //
-  // 1: High: completions which are only available within a very specific context
-  // 2: Boost: completions which are normally low priority, but the context makes them more likely
+  // 2: High: completions which are only available within a very specific context
+  // 3: Boost: completions which are normally low priority, but the context makes them more likely
   // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
   // 5: Local: local variables
   // 7: Normal: completions that are relevant within no particular context
