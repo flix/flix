@@ -146,7 +146,7 @@ object CompletionProvider {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
-      // TODO: SYNTACTIC-CONTEXT
+      case _: SyntacticContext.Pat => return Nil
       case _ => // fallthrough
     }
 
@@ -195,7 +195,6 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        PredicateCompleter.getCompletions(context) ++
         TypeCompleter.getCompletions(context) ++
         EffectCompleter.getCompletions(context)
     }
@@ -307,7 +306,7 @@ object CompletionProvider {
       case err => err.loc.beginLine == pos.line
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
-      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.AnyType
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
