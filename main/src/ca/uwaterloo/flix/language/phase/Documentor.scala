@@ -196,7 +196,7 @@ object Documentor {
     if (namespace == Nil)
       RootNS
     else
-      namespace.mkString("/")
+      namespace.mkString(".")
   }
 
   /**
@@ -206,7 +206,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given enum `decl`.
@@ -215,7 +215,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given definition `decl`.
@@ -224,7 +224,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the namespace of the given type alias `decl`.
@@ -233,7 +233,7 @@ object Documentor {
     if (decl.sym.namespace == Nil)
       RootNS
     else
-      decl.sym.namespace.mkString("/")
+      decl.sym.namespace.mkString(".")
 
   /**
     * Returns the given definition `defn0` as a JSON object.
