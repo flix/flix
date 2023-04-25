@@ -187,7 +187,12 @@ object Main {
         case Command.Run =>
           Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = bootstrap.run(options)
+              // Compute the arguments to be passed to main.
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
+              }
+              val result = bootstrap.run(options, args)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))

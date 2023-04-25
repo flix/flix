@@ -18,11 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
+
+import scala.annotation.tailrec
 
 /**
   * A phase to transform source files into abstract syntax trees.
@@ -69,10 +71,59 @@ object Parser {
       case scala.util.Success(ast) =>
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        val possibleContexts = parseTraces(e.traces)
+        val mostLikelyContext = if (possibleContexts.isEmpty) SyntacticContext.Unknown else possibleContexts.maxBy(_._2)._1
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown).toFailure
+    }
+  }
+
+  /**
+    * Computes the nearest syntactic contexts from the given traces.
+    */
+  private def parseTraces(traces: Seq[RuleTrace]): Map[SyntacticContext, Int] =
+    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).foldLeft(Map.empty[SyntacticContext, Int]) {
+      case (macc, ctx) => macc.updated(ctx, macc.getOrElse(ctx, 0) + 1)
+    }
+
+  /**
+    * Computes the nearest syntactic context from the given list of non-terminals.
+    */
+  @tailrec
+  private def parseRuleTrace(trace: List[RuleTrace.NonTerminal]): SyntacticContext = trace match {
+    case Nil => SyntacticContext.Unknown
+    case RuleTrace.NonTerminal(key, _) :: rest => key match {
+      case RuleTrace.Named(name) =>
+        // Case 1: We have a named rule application. Determine if we know it.
+        syntacticContextOf(name) match {
+          case SyntacticContext.Unknown =>
+            // Case 1.1: The named rule is not one of the contexts. Continue recursively.
+            parseRuleTrace(rest)
+          case result =>
+            // Case 2.2: We have found a named rule we know. Return it.
+            result
+        }
+      case _ =>
+        // Case 2: We have non-named rule application. Continue recursively.
+        parseRuleTrace(rest)
+    }
+  }
+
+  /**
+    * Returns the syntactic context of the given `name`.
+    *
+    * Returns [[SyntacticContext.Unknown]] if the context cannot be determined.
+    */
+  private def syntacticContextOf(name: String): SyntacticContext = {
+    name match {
+      case "Class" => SyntacticContext.ClassDecl
+      case "Enum" => SyntacticContext.EnumDecl
+      case "Expression" => SyntacticContext.Expr
+      case "Instance" => SyntacticContext.InstanceDecl
+      case "Type" => SyntacticContext.Type
+      case _ => SyntacticContext.Unknown
     }
   }
 
