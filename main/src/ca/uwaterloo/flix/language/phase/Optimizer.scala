@@ -41,11 +41,6 @@ object Optimizer {
       }
     }
 
-    // Print the ast if debugging is enabled.
-    if (flix.options.debug) {
-      println(AstPrinter.formatLiftedAst(result))
-    }
-
     result
   }
 
