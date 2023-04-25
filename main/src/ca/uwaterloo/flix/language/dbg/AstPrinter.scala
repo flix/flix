@@ -32,7 +32,7 @@ object AstPrinter {
     * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */
-  def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
+  private def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
     val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
     val filePath = buildAstsPath.resolve(s"$fileName.$IrFileExtension")
     Files.createDirectories(buildAstsPath)
