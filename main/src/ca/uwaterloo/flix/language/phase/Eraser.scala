@@ -159,8 +159,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic(op, visitExp(exp) :: Nil, tpe, loc)
 
     case FinalAst.Expression.Index(base, idx, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator1.Index(idx)
-      ErasedAst.Expr.Intrinsic1(op, visitExp(base), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.Index(idx)
+      ErasedAst.Expr.Intrinsic(op, visitExp(base) :: Nil, tpe, loc)
 
     case FinalAst.Expression.Tuple(exps, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperatorN.Tuple
