@@ -17,28 +17,37 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter extends Completer {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
-    // Find all def and use sites of predicate symbols.
-    val defs = index.predDefs
-    val uses = index.predUses
+    //
+    // Find all predicates together with their type and source location.
+    //
+    val predsWithTypeAndLoc = index.predTypes
 
-    // Merge them into one map.
-    val defsAndUses = defs ++ uses
-
-    // We select all predicate symbols:
-    // - (a) from the same source file, and
-    // - (b) with a non-zero arity.
+    //
+    // Select all predicate symbols that occur in the same file.
+    //
     for (
-      (pred, arityAndLocs) <- defsAndUses.m;
-      (arity, loc) <- arityAndLocs;
-      if arity > 0 && loc.source.name == context.uri
-    ) yield Completion.PredicateCompletion(pred.name, arity)
+      (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
+      (tpe, loc) <- arityAndLocs;
+      if loc.source.name == context.uri
+    ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
+  }
+
+  /**
+    * Returns the arity of the given predicate type `tpe`
+    */
+  private def arityOf(tpe: Type): Int = {
+    // We know that a Relation or Lattice has exactly one type argument.
+    tpe.typeArguments.head.typeConstructor match {
+      case Some(TypeConstructor.Tuple(l)) => l
+      case _ => 1
+    }
   }
 
 }
