@@ -17,11 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -31,12 +29,12 @@ object ClosureConv {
   /**
     * Performs closure conversion on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("ClosureConv") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
     val newDefs = root.defs.map {
       case (sym, decl) => sym -> visitDef(decl)
     }
 
-    root.copy(defs = newDefs).toSuccess
+    root.copy(defs = newDefs)
   }
 
   /**

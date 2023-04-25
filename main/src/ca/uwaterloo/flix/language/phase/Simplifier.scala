@@ -21,8 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
@@ -33,7 +32,7 @@ object Simplifier {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
-  def run(root: LoweredAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationMessage] = flix.phase("Simplifier") {
+  def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     //
     // A mutable map to contain fresh top-level definitions.
     //
@@ -669,7 +668,7 @@ object Simplifier {
         k -> SimplifiedAst.Enum(ann, mod, sym, cases, enumType, loc)
     }
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, root.entryPoint, root.sources)
   }
 
   /**
