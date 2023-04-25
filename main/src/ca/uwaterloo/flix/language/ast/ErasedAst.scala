@@ -122,6 +122,8 @@ object ErasedAst {
 
     case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator1
 
+    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator1
+
     case object Cast extends IntrinsicOperator1
 
     case class Index(idx: Int) extends IntrinsicOperator1

@@ -46,7 +46,7 @@ object Weeder {
     "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
     "Read", "RecordRow", "Region", "SchemaRow", "Type", "Write", "^^^", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
-    "if", "import", "inline", "instance", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
+    "if", "import", "inline", "instance", "instanceof", "into", "lat", "law", "lawful", "lazy", "let", "let*", "match",
     "null", "opaque", "override", "pub", "ref", "region",
     "rel", "sealed", "set", "spawn", "Static", "true",
     "type", "use", "where", "with", "|||", "~~~", "discard", "object"
@@ -90,24 +90,45 @@ object Weeder {
   }
 
   /**
+    * Is successful if all parts in `names` begin with uppercase letters.
+    * Returns a SoftFailure otherwise.
+    */
+  private def visitModuleName(names: Name.NName): Validation[Unit, WeederError.IllegalModuleName] = {
+    names.idents.foldLeft(().toSuccess[Unit, WeederError.IllegalModuleName]) {
+      case (acc, i) => flatMapN(acc) {
+        _ =>
+          val s = i.name
+          val first = s.substring(0, 1)
+          if (first.toUpperCase != first)
+            ().toSoftFailure(WeederError.IllegalModuleName(s, i.loc))
+          else
+            ().toSuccess
+      }
+    }
+  }
+
+  /**
     * Compiles the given parsed declaration `past` to a list of weeded declarations.
     */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
     case ParsedAst.Declaration.Namespace(sp1, names, usesOrImports, decls, sp2) =>
-      val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
+      flatMapN(visitModuleName(names): Validation[Unit, WeederError]) {
+        case _ =>
+          val usesAndImportsVal = traverse(usesOrImports)(visitUseOrImport)
 
-      val declarationsVal = traverse(decls)(visitDecl)
+          val declarationsVal = traverse(decls)(visitDecl)
 
-      mapN(usesAndImportsVal, declarationsVal) {
-        case (us, ds) =>
-          // TODO can improve SL by starting from ident
-          val loc = mkSL(sp1, sp2)
+          mapN(usesAndImportsVal, declarationsVal) {
+            case (us, ds) =>
+              // TODO can improve SL by starting from ident
+              val loc = mkSL(sp1, sp2)
 
-          val base = WeededAst.Declaration.Namespace(names.idents.last, us.flatten, ds.flatten, mkSL(sp1, sp2))
-          val ns = names.idents.init.foldRight(base: WeededAst.Declaration) {
-            case (ident, acc) => WeededAst.Declaration.Namespace(ident, Nil, List(acc), loc)
+              val base = WeededAst.Declaration.Namespace(names.idents.last, us.flatten, ds.flatten, mkSL(sp1, sp2))
+              val ns = names.idents.init.foldRight(base: WeededAst.Declaration) {
+                case (ident, acc) => WeededAst.Declaration.Namespace(ident, Nil, List(acc), loc)
+              }
+              List(ns)
           }
-          List(ns)
       }
 
     case d: ParsedAst.Declaration.Def => visitTopDef(d)
@@ -1722,6 +1743,13 @@ object Weeder {
         case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
+    case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
+      val loc = mkSL(sp1, sp2)
+      visitExp(exp, senv) map {
+        case e => WeededAst.Expression.InstanceOf(e, className.toString, loc)
+      }
+
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
         case e => WeededAst.Expression.CheckedCast(Ast.CheckedCastType.TypeCast, e, mkSL(sp1, sp2))
@@ -3311,6 +3339,7 @@ object Weeder {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.InstanceOf(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.UncheckedCast(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.UncheckedMaskingCast(sp1, _, _) => sp1
     case ParsedAst.Expression.CheckedTypeCast(sp1, _, _) => sp1

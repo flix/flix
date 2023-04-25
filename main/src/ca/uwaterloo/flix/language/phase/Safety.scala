@@ -223,6 +223,9 @@ object Safety {
       case Expression.Ascribe(exp, _, _, _, _) =>
         visit(exp)
 
+      case Expression.InstanceOf(exp, _, _) =>
+        visit(exp)
+
       case Expression.CheckedCast(cast, exp, tpe, pur, _, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>

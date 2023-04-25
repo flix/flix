@@ -315,6 +315,7 @@ object GenExpression {
       }
 
     case Expr.Intrinsic0(op, tpe, loc) => op match {
+
       case IntrinsicOperator0.Cst(cst) =>
         compileConstant(visitor, cst, tpe, loc)
 
@@ -421,6 +422,12 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive
         AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+      case IntrinsicOperator1.InstanceOf(clazz) =>
+        addSourceLine(visitor, loc)
+        val className = asm.Type.getInternalName(clazz)
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        visitor.visitTypeInsn(INSTANCEOF, className.toString)
 
       case IntrinsicOperator1.Cast =>
         addSourceLine(visitor, loc)
