@@ -64,6 +64,8 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    case class Intrinsic(op: IntrinsicOperator, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+
     case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
@@ -89,6 +91,12 @@ object ErasedAst {
     case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Stmt
 
     case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
+
+  }
+
+  sealed trait IntrinsicOperator
+
+  case object IntrinsicOperator {
 
   }
 
@@ -249,4 +257,5 @@ object ErasedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
+
 }

@@ -314,6 +314,14 @@ object GenExpression {
         visitor.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(m.clo.tpe).toDescriptor)
       }
 
+    case Expr.Intrinsic(op, exps, tpe, loc) => exps match {
+      case Nil => ???
+      case e1 :: Nil => ???
+      case e1 :: e2 :: Nil => ???
+      case e1 :: e2 :: e3 :: Nil => ???
+      case e1 :: es => ???
+    }
+
     case Expr.Intrinsic0(op, tpe, loc) => op match {
 
       case IntrinsicOperator0.Cst(cst) =>
