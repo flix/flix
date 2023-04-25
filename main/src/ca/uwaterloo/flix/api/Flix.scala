@@ -71,6 +71,11 @@ class Flix {
   private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
 
   /**
+    * Returns the cached LiftedAST.
+    */
+  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
+
+  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     *
     * The core library *must* be present for any program to compile.
