@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.dbg.FormatSourceLocation
 import org.parboiled2.ParserInput
 
 /**
@@ -129,10 +128,5 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
         this.endCol == that.endCol
     case _ => false
   }
-
-  /**
-    * Returns a human-readable string representation for debugging.
-    */
-  override def toString: String = FormatSourceLocation.format(this)
 
 }
