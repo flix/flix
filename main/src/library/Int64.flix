@@ -295,7 +295,7 @@ mod Int64 {
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
+    pub def bitwiseOr(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.

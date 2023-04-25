@@ -44,7 +44,7 @@ mod TestInt32 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int32.maxValue() == ~~~Int32.leftShift(1, 31)
+    def maxValue01(): Bool = Int32.maxValue() == Int32.bitwiseNot(Int32.leftShift(1, 31))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -495,7 +495,7 @@ mod TestInt32 {
     def numberOfLeadingZeros03(): Bool = Int32.numberOfLeadingZeros(-1) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(~~~Int32.leftShift(1, 31)) == 1
+    def numberOfLeadingZeros04(): Bool = Int32.numberOfLeadingZeros(Int32.bitwiseNot(Int32.leftShift(1, 31))) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int32.numberOfLeadingZeros(2 ** 29) == 2

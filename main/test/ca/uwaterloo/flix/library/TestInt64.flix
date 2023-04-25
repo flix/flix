@@ -44,7 +44,7 @@ mod TestInt64 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int64.maxValue() == ~~~Int64.leftShift(1i64, 63)
+    def maxValue01(): Bool = Int64.maxValue() == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -474,7 +474,7 @@ mod TestInt64 {
     def numberOfLeadingZeros03(): Bool = Int64.numberOfLeadingZeros(-1i64) == 0
 
     @test
-    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(~~~Int64.leftShift(1i64, 63)) == 1
+    def numberOfLeadingZeros04(): Bool = Int64.numberOfLeadingZeros(Int64.bitwiseNot(Int64.leftShift(1i64, 63))) == 1
 
     @test
     def numberOfLeadingZeros05(): Bool = Int64.numberOfLeadingZeros(2i64 ** 62i64) == 1
@@ -687,7 +687,7 @@ mod TestInt64 {
     def clearBit11(): Bool = Int64.clearBit(pos = 5, -1i64) == -33i64
 
     @test
-    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == ~~~Int64.leftShift(1i64, 63)
+    def clearBit12(): Bool = Int64.clearBit(pos = 63, -1i64) == Int64.bitwiseNot(Int64.leftShift(1i64, 63))
 
     @test
     def clearBit13(): Bool = Int64.clearBit(pos = 64, -1i64) == -2i64

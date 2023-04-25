@@ -44,7 +44,7 @@ mod TestInt8 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int8.maxValue() == ~~~Int8.leftShift(1i8, 7)
+    def maxValue01(): Bool = Int8.maxValue() == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -711,7 +711,7 @@ mod TestInt8 {
     def clearBit11(): Bool = Int8.clearBit(pos = 5, -1i8) == -33i8
 
     @test
-    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == ~~~Int8.leftShift(1i8, 7)
+    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
 
     @test
     def clearBit13(): Bool = Int8.clearBit(pos = 32, -1i8) == -2i8

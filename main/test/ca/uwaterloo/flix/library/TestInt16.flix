@@ -44,7 +44,7 @@ mod TestInt16 {
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def maxValue01(): Bool = Int16.maxValue() == ~~~Int16.leftShift(1i16, 15)
+    def maxValue01(): Bool = Int16.maxValue() == Int16.bitwiseNot(Int16.leftShift(1i16, 15))
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
@@ -714,7 +714,7 @@ mod TestInt16 {
     def clearBit11(): Bool = Int16.clearBit(pos = 5, -1i16) == -33i16
 
     @test
-    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == ~~~Int16.leftShift(1i16, 15)
+    def clearBit12(): Bool = Int16.clearBit(pos = 15, -1i16) == Int16.bitwiseNot(Int16.leftShift(1i16, 15))
 
     @test
     def clearBit13(): Bool = Int16.clearBit(pos = 32, -1i16) == -2i16
