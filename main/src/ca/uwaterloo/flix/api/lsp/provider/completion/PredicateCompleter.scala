@@ -40,4 +40,5 @@ object PredicateCompleter extends Completer {
       if arity > 0 && loc.source.name == context.uri
     ) yield Completion.PredicateCompletion(pred.name, arity)
   }
+
 }
