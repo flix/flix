@@ -17,14 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Finalize {
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, CompilationMessage] = flix.phase("Finalize") {
+  def run(root: LiftedAst.Root)(implicit flix: Flix): FinalAst.Root = flix.phase("Finalize") {
 
     val defs = root.defs.map {
       case (k, v) => k -> visitDef(v)
@@ -34,7 +32,7 @@ object Finalize {
       case (sym, enum) => sym -> visitEnum(enum)
     }
 
-    FinalAst.Root(defs, enums, root.entryPoint, root.sources).toSuccess
+    FinalAst.Root(defs, enums, root.entryPoint, root.sources)
   }
 
   private def visitDef(def0: LiftedAst.Def)(implicit flix: Flix): FinalAst.Def = {

@@ -17,11 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 import scala.annotation.tailrec
 
@@ -38,13 +35,13 @@ object VarNumbering {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("VarNumbering") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarNumbering") {
     // Compute stack offset for each definition.
     for ((_, defn) <- root.defs) {
       number(defn)
     }
 
-    root.toSuccess
+    root
   }
 
   /**
