@@ -251,8 +251,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
 
     case FinalAst.Expression.GetStaticField(field, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.GetStaticField(field)
-      ErasedAst.Expr.Intrinsic0(op, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.GetStaticField(field)
+      ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
 
     case FinalAst.Expression.PutStaticField(field, exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.PutStaticField(field)

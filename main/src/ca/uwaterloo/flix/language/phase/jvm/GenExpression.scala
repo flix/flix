@@ -329,6 +329,11 @@ object GenExpression {
           // Instantiating a new object of tuple
           visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
 
+        case IntrinsicOperator.GetStaticField(field) =>
+          addSourceLine(visitor, loc)
+          val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+          visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
       }
 
       case e1 :: Nil => ???
@@ -342,11 +347,6 @@ object GenExpression {
       case IntrinsicOperator0.Region =>
         //!TODO: For now, just emit unit
         compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-      case IntrinsicOperator0.GetStaticField(field) =>
-        addSourceLine(visitor, loc)
-        val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-        visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
       case IntrinsicOperator0.HoleError(sym) =>
         addSourceLine(visitor, loc)
