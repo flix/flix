@@ -43,6 +43,16 @@ object Flix {
     * The file extension for intermediate representation files.
     */
   val IrFileExtension = "flixir"
+
+  /**
+    * The maximum width of the intermediate representation files.
+    */
+  val IrFileWidth = 80
+
+  /**
+    * The number of spaces per indentation in the intermediate representation files.
+    */
+  val IrFileIndentation = 4
 }
 
 /**
