@@ -136,8 +136,8 @@ object Eraser {
       ErasedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, loc)
 
     case FinalAst.Expression.Region(tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.Region
-      ErasedAst.Expr.Intrinsic0(op, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.Region
+      ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
 
     case FinalAst.Expression.Scope(sym, exp, tpe, loc) =>
       ErasedAst.Expr.Scope(sym, visitExp(exp), tpe, loc)

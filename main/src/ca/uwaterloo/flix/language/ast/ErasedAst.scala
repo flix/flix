@@ -102,7 +102,7 @@ object ErasedAst {
 
     case class Cst(cst: Ast.Constant) extends IntrinsicOperator
 
-    // case object Region extends IntrinsicOperator // (depends on intrinsic2.spawn)
+    case object Region extends IntrinsicOperator
 
     case object RecordEmpty extends IntrinsicOperator
 
@@ -141,7 +141,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator0
 
   object IntrinsicOperator0 {
-    case object Region extends IntrinsicOperator0
   }
 
   sealed trait IntrinsicOperator1

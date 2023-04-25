@@ -321,6 +321,10 @@ object GenExpression {
         case IntrinsicOperator.Cst(cst) =>
           compileConstant(visitor, cst, tpe, loc)
 
+        case IntrinsicOperator.Region =>
+          //!TODO: For now, just emit unit
+          compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
+
         case IntrinsicOperator.RecordEmpty =>
           // Adding source line number for debugging
           addSourceLine(visitor, loc)
@@ -354,7 +358,7 @@ object GenExpression {
 
           e2 match {
             // The expression represents the `Static` region, just start a thread directly
-            case Expr.Intrinsic0(IntrinsicOperator0.Region, tpe, loc) =>
+            case Expr.Intrinsic(IntrinsicOperator.Region, _, tpe, loc) =>
 
               // Compile the expression, putting a function implementing the Runnable interface on the stack
               compileExpression(e1, visitor, currentClass, lenv0, entryPoint)
@@ -396,13 +400,7 @@ object GenExpression {
       case e1 :: es => ???
     }
 
-    case Expr.Intrinsic0(op, tpe, loc) => op match {
-
-      case IntrinsicOperator0.Region =>
-        //!TODO: For now, just emit unit
-        compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-    }
+    case Expr.Intrinsic0(op, tpe, loc) => ???
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
 
