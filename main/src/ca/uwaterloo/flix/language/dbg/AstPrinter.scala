@@ -24,7 +24,7 @@ object AstPrinter {
   /**
     * Writes all the formatted asts to disk.
     */
-  private def printAllAsts()(implicit flix: Flix): Unit = {
+  def printAllAsts()(implicit flix: Flix): Unit = {
     AstPrinter.writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
   }
 

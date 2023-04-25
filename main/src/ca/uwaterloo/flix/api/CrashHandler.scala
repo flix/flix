@@ -38,12 +38,14 @@ object CrashHandler {
       case Some(path) =>
         try {
           Files.writeString(path, report)
-          AstPrinter.printAsts()
         } catch {
           case _: IOException =>
             println(s"Unable to write crash report to: '$path'.")
         }
     }
+
+    // Print asts.
+    AstPrinter.printAllAsts()
   }
 
   /**
