@@ -40,7 +40,7 @@ object ShowAstProvider {
       flix.codeGen(r)
 
       phase match {
-        case "Lifted Ast" =>
+        case "TypedAst" =>
           val text = formatLiftedAst(flix.getLiftedAst)
           ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
         case _ =>
