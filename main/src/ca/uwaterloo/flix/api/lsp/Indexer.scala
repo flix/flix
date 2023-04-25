@@ -503,14 +503,14 @@ object Indexer {
     * Returns a reverse index for the given head predicate `h0`.
     */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case Head.Atom(pred, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred, terms.length) ++ visitExps(terms)
+    case Head.Atom(pred, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitExps(terms)
   }
 
   /**
     * Returns a reverse index for the given body predicate `b0`.
     */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred, terms.length) ++ visitPats(terms)
+    case Body.Atom(pred, _, _, _, terms, tpe, _) => Index.occurrenceOf(pred, tpe) ++ Index.useOf(pred) ++ visitPats(terms)
     case Body.Guard(exp, _) => visitExp(exp)
     case Body.Functional(_, exp, _) => visitExp(exp)
   }
@@ -535,7 +535,7 @@ object Indexer {
     */
   private def visitPredicateParam(pparam0: PredicateParam): Index = pparam0 match {
     case PredicateParam(pred, tpe, _) =>
-      Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred, 0) ++ visitType(tpe)
+      Index.occurrenceOf(pred, tpe) ++ Index.defOf(pred) ++ visitType(tpe)
   }
 
   /**
@@ -548,7 +548,7 @@ object Indexer {
         // We do not index arrow constructors.
         Index.empty
       case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
-      case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred, 0)
+      case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
       case TypeConstructor.Enum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case _ => Index.occurrenceOf(tpe0)

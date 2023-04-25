@@ -27,7 +27,7 @@ object Index {
     */
   val empty: Index = Index(Map.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty,
-    MultiMap.empty, MultiMap.empty, MultiMap.empty)
+    MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
     * Returns an index for the given `class0`.
@@ -87,7 +87,7 @@ object Index {
   /**
     * Returns an index for the given atom `a0`.
     */
-  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = empty + Entity.Pred(pred, tpe0)
+  def occurrenceOf(pred: Name.Pred, tpe0: Type): Index = Index.empty.copy(predTypes = MultiMap.singleton(pred, (tpe0, pred.loc))) + Entity.Pred(pred, tpe0)
 
   /**
     * Returns an index for the given type `t`.
@@ -185,12 +185,12 @@ object Index {
   /**
     * Returns an index with a def of the predicate `pred`.
     */
-  def defOf(pred: Name.Pred, arity: Int): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, (arity, pred.loc)))
+  def defOf(pred: Name.Pred): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, pred.loc))
 
   /**
     * Returns an index with a use of the predicate `pred`.
     */
-  def useOf(pred: Name.Pred, arity: Int): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, (arity, pred.loc)))
+  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
 
   /**
     * Applies `f` to each element in `xs` and merges the result into a single index.
@@ -216,8 +216,9 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
-                 predDefs: MultiMap[Name.Pred, (Int, SourceLocation)],
-                 predUses: MultiMap[Name.Pred, (Int, SourceLocation)],
+                 predDefs: MultiMap[Name.Pred, SourceLocation],
+                 predUses: MultiMap[Name.Pred, SourceLocation],
+                 predTypes: MultiMap[Name.Pred, (Type, SourceLocation)],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation],
                  tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation],
                  effUses: MultiMap[Symbol.EffectSym, SourceLocation],
@@ -354,12 +355,12 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Returns all defs of the given predicate `pred`.
     */
-  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred).map(_._2)
+  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
 
   /**
     * Returns all uses of the given predicate `pred`.
     */
-  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred).map(_._2)
+  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
 
   /**
     * Adds the given entity `exp0` to `this` index.
@@ -408,6 +409,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
       this.fieldUses ++ that.fieldUses,
       this.predDefs ++ that.predDefs,
       this.predUses ++ that.predUses,
+      this.predTypes ++ that.predTypes,
       this.varUses ++ that.varUses,
       this.tvarUses ++ that.tvarUses,
       this.effUses ++ that.effUses,
