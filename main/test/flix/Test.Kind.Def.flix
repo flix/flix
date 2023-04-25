@@ -3,13 +3,12 @@ mod Test.Kind.Def {
     mod Implicit {
 
         mod FormalParams {
-            rel R(i: Int32)
 
             pub def star(x: a): Int32 = ???
 
             pub def recordRow(x: { l = Int32 | a }): Int32 = ???
 
-            pub def schemaRow(x: #{ R | a }): Int32 = ???
+            //pub def schemaRow(x: #{ R | a }): Int32 = ???
 
             pub def bool(x: Int32 -> Int32 \ a): Int32 = ???
 
@@ -17,7 +16,7 @@ mod Test.Kind.Def {
         }
 
         mod Return {
-            rel R(i: Int32)
+            //rel R(i: Int32)
 
             pub def star(): a = ???
         }
@@ -59,7 +58,6 @@ mod Test.Kind.Def {
         }
 
         mod Exp {
-            rel R(i: Int32)
 
             pub def star(x: a): Int32 = let _: a = ???; ???
         }
@@ -68,13 +66,13 @@ mod Test.Kind.Def {
     mod Explicit {
 
         mod FormalParams {
-            rel R(i: Int32)
+            //rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = ???
 
             pub def recordRow[a: RecordRow](x: { l = Int32 | a }): Int32 = ???
 
-            pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
+            //pub def schemaRow[a: SchemaRow](x: #{ R | a }): Int32 = ???
 
             pub def bool[a: Bool](x: Int32 -> Int32 \ a): Int32 = ???
 
@@ -82,7 +80,7 @@ mod Test.Kind.Def {
         }
 
         mod Return {
-            rel R(i: Int32)
+            //rel R(i: Int32)
 
             pub def star[a: Type](): a = ???
         }
@@ -128,7 +126,7 @@ mod Test.Kind.Def {
         }
 
         mod Exp {
-            rel R(i: Int32)
+           // rel R(i: Int32)
 
             pub def star[a: Type](x: a): Int32 = let _: a = ???; ???
         }

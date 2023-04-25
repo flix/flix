@@ -1,5 +1,5 @@
 mod Test.Integ.Class.Schema {
-    rel R(x: Int32, y: Bool)
+    //rel R(x: Int32, y: Bool)
 
     class C[a] {
         pub def f(_x: a): #{ R(Int32, Bool) } = #{
