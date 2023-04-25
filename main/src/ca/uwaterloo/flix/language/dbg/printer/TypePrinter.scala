@@ -21,6 +21,6 @@ import ca.uwaterloo.flix.language.dbg.DocAst
 
 object TypePrinter {
 
-  def print(tpe: Type): DocAst.Type = DocAst.Type.AsIs("unknown")
+  def print(tpe: Type): DocAst.Type = DocAst.Type.AsIs("TODO: TypePrinter")
 
 }
