@@ -497,6 +497,31 @@ object GenExpression {
           visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
             AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
+        case IntrinsicOperator.Ref =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // JvmType of the reference class
+          val classType = JvmOps.getRefClassType(tpe)
+
+          // the previous function is already partial
+          val MonoType.Ref(refValueType) = tpe
+          val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+
+          // Create a new reference object
+          visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+          // Duplicate it since one instance will get consumed by constructor
+          visitor.visitInsn(DUP)
+          // Call the constructor
+          visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+          // Duplicate it since one instance will get consumed by putfield
+          visitor.visitInsn(DUP)
+          // Evaluate the underlying expression
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          // Erased type of the value of the reference
+          val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
+          // set the field with the ref value
+          visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -551,31 +576,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      case IntrinsicOperator1.Ref =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(tpe)
-
-        // the previous function is already partial
-        val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
-        // Create a new reference object
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        // Duplicate it since one instance will get consumed by constructor
-        visitor.visitInsn(DUP)
-        // Call the constructor
-        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-        // Duplicate it since one instance will get consumed by putfield
-        visitor.visitInsn(DUP)
-        // Evaluate the underlying expression
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Erased type of the value of the reference
-        val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
-        // set the field with the ref value
-        visitor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
 
       case IntrinsicOperator1.Deref =>
         // Adding source line number for debugging
