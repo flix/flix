@@ -97,6 +97,7 @@ object ErasedAst {
   sealed trait IntrinsicOperator
 
   case object IntrinsicOperator {
+    case class Cst(cst: Ast.Constant) extends IntrinsicOperator
 
   }
 
@@ -104,7 +105,6 @@ object ErasedAst {
 
   object IntrinsicOperator0 {
 
-    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
 
     case object Region extends IntrinsicOperator0
 

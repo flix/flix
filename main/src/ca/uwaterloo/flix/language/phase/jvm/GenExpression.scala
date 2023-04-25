@@ -315,7 +315,14 @@ object GenExpression {
       }
 
     case Expr.Intrinsic(op, exps, tpe, loc) => exps match {
-      case Nil => ???
+
+      case Nil => op match {
+
+        case IntrinsicOperator.Cst(cst) =>
+          compileConstant(visitor, cst, tpe, loc)
+
+      }
+
       case e1 :: Nil => ???
       case e1 :: e2 :: Nil => ???
       case e1 :: e2 :: e3 :: Nil => ???
@@ -323,9 +330,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic0(op, tpe, loc) => op match {
-
-      case IntrinsicOperator0.Cst(cst) =>
-        compileConstant(visitor, cst, tpe, loc)
 
       case IntrinsicOperator0.Region =>
         //!TODO: For now, just emit unit

@@ -72,8 +72,8 @@ object Eraser {
     */
   private def visitExp(exp0: FinalAst.Expression)(implicit ctx: Context): ErasedAst.Expr = exp0 match {
     case FinalAst.Expression.Cst(cst, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.Cst(cst)
-      ErasedAst.Expr.Intrinsic0(op, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.Cst(cst)
+      ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
 
     case FinalAst.Expression.Var(sym, tpe, loc) =>
       ErasedAst.Expr.Var(sym, tpe, loc)
