@@ -66,8 +66,6 @@ object ErasedAst {
 
     case class Intrinsic(op: IntrinsicOperator, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
-
     case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
@@ -136,11 +134,6 @@ object ErasedAst {
 
     // Intrinsic1N
 
-  }
-
-  sealed trait IntrinsicOperator0
-
-  object IntrinsicOperator0 {
   }
 
   sealed trait IntrinsicOperator1

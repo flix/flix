@@ -700,8 +700,6 @@ object JvmOps {
 
       case Expr.Intrinsic(_, exps, tpe, _) => visitExps(exps) + tpe
 
-      case Expr.Intrinsic0(_, tpe, _) => Set(tpe)
-
       case Expr.Intrinsic1(_, exp, tpe, _) => visitExp(exp) + tpe
 
       case Expr.Intrinsic2(_, exp1, exp2, tpe, _) => visitExp(exp1) ++ visitExp(exp2) + tpe

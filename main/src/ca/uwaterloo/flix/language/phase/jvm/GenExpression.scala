@@ -400,8 +400,6 @@ object GenExpression {
       case e1 :: es => ???
     }
 
-    case Expr.Intrinsic0(op, tpe, loc) => ???
-
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
 
       case IntrinsicOperator1.Unary(sop) =>
