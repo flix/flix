@@ -120,9 +120,9 @@ object Weeder {
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
-    case d: ParsedAst.Declaration.Relation => visitRelation(d)
+//    case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
-    case d: ParsedAst.Declaration.Lattice => visitLattice(d)
+//    case d: ParsedAst.Declaration.Lattice => visitLattice(d)
 
     case d: ParsedAst.Declaration.Class => visitClass(d)
 
@@ -485,44 +485,44 @@ object Weeder {
   /**
     * Rewrites the given relation declaration `r0` to a type alias.
     */
-  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
-      val doc = visitDoc(doc0)
-      val loc = mkSL(sp1, sp2)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparamsVal = visitTypeParams(tparams0)
-
-      //
-      // Rewrite the relation declaration to a type alias.
-      //
-      mapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
-          val termTypes = attr.map(a => visitType(a.tpe))
-          val tpe = WeededAst.Type.Relation(termTypes.toList, ident.loc)
-          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
-      }
-  }
+//  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
+//    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
+//      val doc = visitDoc(doc0)
+//      val loc = mkSL(sp1, sp2)
+//      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+//      val tparamsVal = visitTypeParams(tparams0)
+//
+//      //
+//      // Rewrite the relation declaration to a type alias.
+//      //
+//      mapN(modVal, tparamsVal) {
+//        case (mod, tparams) =>
+//          val termTypes = attr.map(a => visitType(a.tpe))
+//          val tpe = WeededAst.Type.Relation(termTypes.toList, ident.loc)
+//          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
+//      }
+//  }
 
   /**
     * Performs weeding on the given lattice `r0`.
     */
-  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = l0 match {
-    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
-      val doc = visitDoc(doc0)
-      val loc = mkSL(sp1, sp2)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparamsVal = visitTypeParams(tparams0)
-
-      //
-      // Rewrite the lattice declaration to a type alias.
-      //
-      mapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
-          val termTypes = attr.map(a => visitType(a.tpe))
-          val tpe = WeededAst.Type.Lattice(termTypes.toList, ident.loc)
-          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
-      }
-  }
+//  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = l0 match {
+//    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
+//      val doc = visitDoc(doc0)
+//      val loc = mkSL(sp1, sp2)
+//      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+//      val tparamsVal = visitTypeParams(tparams0)
+//
+//      //
+//      // Rewrite the lattice declaration to a type alias.
+//      //
+//      mapN(modVal, tparamsVal) {
+//        case (mod, tparams) =>
+//          val termTypes = attr.map(a => visitType(a.tpe))
+//          val tpe = WeededAst.Type.Lattice(termTypes.toList, ident.loc)
+//          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
+//      }
+//  }
 
   /**
     * Performs weeding on the given use or import `u0`.

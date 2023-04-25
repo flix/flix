@@ -212,7 +212,7 @@ object ParsedAst {
       * @param attr    the attributes (columns) of the relation.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+//    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Lattice Declaration.
@@ -225,7 +225,7 @@ object ParsedAst {
       * @param attr    the attributes (columns) of the relation.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+//    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Typeclass Declaration.
