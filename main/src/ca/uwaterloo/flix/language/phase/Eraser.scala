@@ -268,8 +268,9 @@ object Eraser {
       ErasedAst.Expr.NewObject(name, clazz, tpe, methods, loc)
 
     case FinalAst.Expression.Spawn(exp1, exp2, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator2.Spawn
-      ErasedAst.Expr.Intrinsic2(op, visitExp(exp1), visitExp(exp2), tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.Spawn
+      val exps = visitExp(exp1) :: visitExp(exp2) :: Nil
+      ErasedAst.Expr.Intrinsic(op, exps, tpe, loc)
 
     case FinalAst.Expression.Lazy(exp, tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator1.Lazy
