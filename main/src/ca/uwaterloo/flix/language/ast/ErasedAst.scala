@@ -108,6 +108,9 @@ object ErasedAst {
 
     case class GetStaticField(field: Field) extends IntrinsicOperator
 
+    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator
+
+
     // Intrinsic1
 
     // Intrinsic2
@@ -128,7 +131,6 @@ object ErasedAst {
     case object Region extends IntrinsicOperator0
 
 
-    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
 
     case object MatchError extends IntrinsicOperator0
 

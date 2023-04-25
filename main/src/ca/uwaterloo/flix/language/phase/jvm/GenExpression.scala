@@ -334,6 +334,10 @@ object GenExpression {
           val declaration = asm.Type.getInternalName(field.getDeclaringClass)
           visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
+        case IntrinsicOperator.HoleError(sym) =>
+          addSourceLine(visitor, loc)
+          AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
+
       }
 
       case e1 :: Nil => ???
@@ -347,10 +351,6 @@ object GenExpression {
       case IntrinsicOperator0.Region =>
         //!TODO: For now, just emit unit
         compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-      case IntrinsicOperator0.HoleError(sym) =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
       case IntrinsicOperator0.MatchError =>
         addSourceLine(visitor, loc)

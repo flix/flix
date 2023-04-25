@@ -280,8 +280,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic1(op, visitExp(exp), tpe, loc)
 
     case FinalAst.Expression.HoleError(sym, tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.HoleError(sym)
-      ErasedAst.Expr.Intrinsic0(op, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.HoleError(sym)
+      ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
       val op = ErasedAst.IntrinsicOperator0.MatchError
