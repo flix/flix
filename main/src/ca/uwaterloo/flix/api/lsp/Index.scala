@@ -185,12 +185,12 @@ object Index {
   /**
     * Returns an index with a def of the predicate `pred`.
     */
-  def defOf(pred: Name.Pred): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, pred.loc))
+  def defOf(pred: Name.Pred, arity: Int): Index = Index.empty.copy(predDefs = MultiMap.singleton(pred, (arity, pred.loc)))
 
   /**
     * Returns an index with a use of the predicate `pred`.
     */
-  def useOf(pred: Name.Pred): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, pred.loc))
+  def useOf(pred: Name.Pred, arity: Int): Index = Index.empty.copy(predUses = MultiMap.singleton(pred, (arity, pred.loc)))
 
   /**
     * Applies `f` to each element in `xs` and merges the result into a single index.
@@ -216,8 +216,8 @@ case class Index(m: Map[(String, Int), List[Entity]],
                  tagUses: MultiMap[Symbol.CaseSym, SourceLocation],
                  fieldDefs: MultiMap[Name.Field, SourceLocation],
                  fieldUses: MultiMap[Name.Field, SourceLocation],
-                 predDefs: MultiMap[Name.Pred, SourceLocation],
-                 predUses: MultiMap[Name.Pred, SourceLocation],
+                 predDefs: MultiMap[Name.Pred, (Int, SourceLocation)],
+                 predUses: MultiMap[Name.Pred, (Int, SourceLocation)],
                  varUses: MultiMap[Symbol.VarSym, SourceLocation],
                  tvarUses: MultiMap[Symbol.KindedTypeVarSym, SourceLocation],
                  effUses: MultiMap[Symbol.EffectSym, SourceLocation],
@@ -354,12 +354,12 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Returns all defs of the given predicate `pred`.
     */
-  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred)
+  def defsOf(pred: Name.Pred): Set[SourceLocation] = predDefs(pred).map(_._2)
 
   /**
     * Returns all uses of the given predicate `pred`.
     */
-  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred)
+  def usesOf(pred: Name.Pred): Set[SourceLocation] = predUses(pred).map(_._2)
 
   /**
     * Adds the given entity `exp0` to `this` index.

@@ -27,16 +27,19 @@ object PredicateCompleter extends Completer {
     //
     // Find all definition and use sites of predicate symbols.
     //
-    val defs = index.predDefs.m
-    val uses = index.predUses.m
+    val defs = index.predDefs
+    val uses = index.predUses
 
+    // Merge them into one map.
+    val defsAndUses = defs ++ uses
 
-
-    defs.concat(uses).map {
-        case (pred, locs) =>
-          val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
-          val name = pred.name
-          Completion.PredicateCompletion(name, priority(name))
-      }
+    // We select all predicate symbols:
+    // - from the same source file,
+    // - and with a non-zero arity.
+    for (
+      (pred, arityAndLocs) <- defsAndUses.m;
+      (arity, loc) <- arityAndLocs;
+      if arity > 0 && loc.source.name == context.uri
+    ) yield Completion.PredicateCompletion(pred.name, arity)
   }
 }
