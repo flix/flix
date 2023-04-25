@@ -200,6 +200,10 @@ object ClosureConv {
       val e2 = visitExp(exp2)
       Expression.Assign(e1, e2, tpe, loc)
 
+    case Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      Expression.InstanceOf(e, clazz, loc)
+
     case Expression.Cast(exp, tpe, purity, loc) =>
       val e = visitExp(exp)
       Expression.Cast(e, tpe, purity, loc)
@@ -392,6 +396,8 @@ object ClosureConv {
     case Expression.Deref(exp, _, _) => freeVars(exp)
 
     case Expression.Assign(exp1, exp2, _, _) => freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.InstanceOf(exp, _, _) => freeVars(exp)
 
     case Expression.Cast(exp, _, _, _) => freeVars(exp)
 
@@ -626,6 +632,10 @@ object ClosureConv {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
+
+      case Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        Expression.InstanceOf(e, clazz, loc)
 
       case Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)

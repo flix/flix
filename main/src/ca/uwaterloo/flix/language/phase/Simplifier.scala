@@ -195,6 +195,10 @@ object Simplifier {
 
       case LoweredAst.Expression.Ascribe(exp, tpe, pur, eff, loc) => visitExp(exp)
 
+      case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
+
       case LoweredAst.Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Cast(e, tpe, simplifyPurity(pur), loc)
@@ -779,6 +783,10 @@ object Simplifier {
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
+
+      case SimplifiedAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.InstanceOf(e, clazz, loc)
 
       case SimplifiedAst.Expression.Cast(exp, tpe, purity, loc) =>
         val e = visitExp(exp)

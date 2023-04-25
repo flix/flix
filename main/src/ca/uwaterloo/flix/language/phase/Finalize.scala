@@ -244,6 +244,10 @@ object Finalize {
         val t = visitType(tpe)
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
+      case LiftedAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.InstanceOf(e, clazz, loc)
+
       case LiftedAst.Expression.Cast(exp, tpe, _, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
