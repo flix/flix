@@ -102,6 +102,10 @@ object ErasedAst {
 
     case class Cst(cst: Ast.Constant) extends IntrinsicOperator
 
+    // case object Region extends IntrinsicOperator // (depends on intrinsic2.spawn)
+
+    case object RecordEmpty extends IntrinsicOperator
+
     // Intrinsic1
 
     // Intrinsic2
@@ -121,7 +125,6 @@ object ErasedAst {
 
     case object Region extends IntrinsicOperator0
 
-    case object RecordEmpty extends IntrinsicOperator0
 
     case class GetStaticField(field: Field) extends IntrinsicOperator0
 

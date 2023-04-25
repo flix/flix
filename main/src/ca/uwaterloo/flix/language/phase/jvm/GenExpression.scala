@@ -321,6 +321,14 @@ object GenExpression {
         case IntrinsicOperator.Cst(cst) =>
           compileConstant(visitor, cst, tpe, loc)
 
+        case IntrinsicOperator.RecordEmpty =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // We get the JvmType of the class for the RecordEmpty
+          val classType = JvmOps.getRecordEmptyClassType()
+          // Instantiating a new object of tuple
+          visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
+
       }
 
       case e1 :: Nil => ???
@@ -334,14 +342,6 @@ object GenExpression {
       case IntrinsicOperator0.Region =>
         //!TODO: For now, just emit unit
         compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
-
-      case IntrinsicOperator0.RecordEmpty =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the JvmType of the class for the RecordEmpty
-        val classType = JvmOps.getRecordEmptyClassType()
-        // Instantiating a new object of tuple
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.InstanceField.name, classType.toDescriptor)
 
       case IntrinsicOperator0.GetStaticField(field) =>
         addSourceLine(visitor, loc)
