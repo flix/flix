@@ -34,7 +34,12 @@ import scala.collection.immutable.SortedSet
   */
 object Regions {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Regions"
+
+  def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase(phaseName) {
     val errs = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
 
     // TODO: Instances
@@ -108,14 +113,14 @@ object Regions {
       val matchErrors = visitExp(exp)
       val rulesErrors = rules.flatMap {
         case MatchRule(pat, guard, body) => guard.map(visitExp).getOrElse(Nil) ++ visitExp(body)
-        }
+      }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
 
     case Expression.TypeMatch(exp, rules, tpe, _, _, loc) =>
       val matchErrors = visitExp(exp)
       val rulesErrors = rules.flatMap {
         case MatchTypeRule(_, _, body) => visitExp(body)
-        }
+      }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
 
     case Expression.RelationalChoose(exps, rules, tpe, _, _, loc) =>
@@ -258,7 +263,7 @@ object Regions {
     case Expression.SelectChannel(rules, default, tpe, _, _, loc) =>
       val rulesErrors = rules.flatMap {
         case SelectChannelRule(sym, chan, exp) => visitExp(chan) ++ visitExp(exp)
-        }
+      }
       val defaultErrors = default.map(visitExp).getOrElse(Nil)
       rulesErrors ++ defaultErrors ++ checkType(tpe, loc)
 

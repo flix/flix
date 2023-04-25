@@ -38,6 +38,11 @@ import scala.collection.mutable
 object Weeder {
 
   /**
+  * The name of the phase.
+  */
+  val phaseName = "Weeder"
+
+  /**
     * Words that the Flix compiler reserves for special expressions.
     * Users must not define fields or variables with these names.
     */
@@ -61,7 +66,7 @@ object Weeder {
     * Weeds the whole program.
     */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
-    flix.phase("Weeder") {
+    flix.phase(phaseName) {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 

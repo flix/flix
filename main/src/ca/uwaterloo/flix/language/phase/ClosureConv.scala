@@ -27,9 +27,14 @@ import scala.collection.mutable
 object ClosureConv {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "ClosureConv"
+
+  /**
     * Performs closure conversion on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
     val newDefs = root.defs.map {
       case (sym, decl) => sym -> visitDef(decl)
     }

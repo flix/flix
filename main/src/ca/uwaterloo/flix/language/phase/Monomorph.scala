@@ -58,6 +58,11 @@ import scala.collection.mutable
 object Monomorph {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Monomorph"
+
+  /**
     * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
     * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
@@ -204,7 +209,7 @@ object Monomorph {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Monomorph") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
 
     implicit val r: Root = root
 

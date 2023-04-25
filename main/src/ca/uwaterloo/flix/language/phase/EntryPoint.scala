@@ -48,6 +48,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object EntryPoint {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "EntryPoint"
+
+  /**
     * The scheme of the entry point function.
     * `Unit -> Unit`
     */
@@ -62,7 +67,7 @@ object EntryPoint {
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase("EntryPoint") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EntryPointError] = flix.phase(phaseName) {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>

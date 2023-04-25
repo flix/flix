@@ -28,9 +28,14 @@ import ca.uwaterloo.flix.language.ast.LiftedAst._
 object Tailrec {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Tailrec"
+
+  /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
     //
     // Rewrite tail calls.
     //

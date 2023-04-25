@@ -11,6 +11,11 @@ import ca.uwaterloo.flix.util.{Duration, Validation}
   */
 object Finish {
 
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Finish"
+
   def run(result: CompilationResult)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
     // Print throughput.
     if (flix.options.debug) {

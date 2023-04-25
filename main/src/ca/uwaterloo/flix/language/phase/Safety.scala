@@ -26,9 +26,14 @@ import scala.annotation.tailrec
 object Safety {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Safety"
+
+  /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Safety") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase(phaseName) {
     //
     // Collect all errors.
     //

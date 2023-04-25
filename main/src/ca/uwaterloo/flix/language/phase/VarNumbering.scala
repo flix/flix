@@ -33,9 +33,14 @@ import scala.annotation.tailrec
 object VarNumbering {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "VarNumbering"
+
+  /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("VarNumbering") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
     // Compute stack offset for each definition.
     for ((_, defn) <- root.defs) {
       number(defn)

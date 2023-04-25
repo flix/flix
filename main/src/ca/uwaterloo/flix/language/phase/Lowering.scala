@@ -39,6 +39,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 object Lowering {
 
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Lowering"
+
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
 
@@ -141,7 +146,7 @@ object Lowering {
   /**
     * Translates internal Datalog constraints into Flix Datalog constraints.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("Lowering") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase(phaseName) {
     val defs = ParOps.parMap(root.defs.values)((d: TypedAst.Def) => visitDef(d)(root, flix))
     val sigs = ParOps.parMap(root.sigs.values)((s: TypedAst.Sig) => visitSig(s)(root, flix))
     val instances = ParOps.parMap(root.instances.values)((insts: List[TypedAst.Instance]) => insts.map(i => visitInstance(i)(root, flix)))

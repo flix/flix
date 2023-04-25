@@ -22,7 +22,12 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Finalize {
 
-  def run(root: LiftedAst.Root)(implicit flix: Flix): FinalAst.Root = flix.phase("Finalize") {
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Finalize"
+
+  def run(root: LiftedAst.Root)(implicit flix: Flix): FinalAst.Root = flix.phase(phaseName) {
 
     val defs = root.defs.map {
       case (k, v) => k -> visitDef(v)

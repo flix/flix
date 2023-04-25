@@ -36,6 +36,11 @@ import scala.collection.immutable.SortedSet
 object Resolver {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Resolver"
+
+  /**
     * Symbols of classes that are derivable.
     */
   private val EqSym = new Symbol.ClassSym(Nil, "Eq", SourceLocation.Unknown)
@@ -75,7 +80,7 @@ object Resolver {
   /**
     * Performs name resolution on the given program `root`.
     */
-  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase("Resolver") {
+  def run(root: NamedAst.Root, oldRoot: ResolvedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ResolvedAst.Root, ResolutionError] = flix.phase(phaseName) {
 
 
     // Get the default uses.

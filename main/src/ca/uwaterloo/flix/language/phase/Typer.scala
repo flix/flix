@@ -40,9 +40,14 @@ import scala.annotation.tailrec
 object Typer {
 
   /**
+  * The name of the phase.
+  */
+  val phaseName = "Typer"
+
+  /**
     * Type checks the given AST root.
     */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase("Typer") {
+  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, CompilationMessage] = flix.phase(phaseName) {
     val classEnv = mkClassEnv(root.classes, root.instances)
     val eqEnv = mkEqualityEnv(root.classes, root.instances)
     val classesVal = visitClasses(root, classEnv, eqEnv, oldRoot, changeSet)

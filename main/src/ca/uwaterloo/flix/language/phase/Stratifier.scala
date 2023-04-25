@@ -44,10 +44,16 @@ import scala.annotation.tailrec
   * Reports a [[StratificationError]] if the constraints cannot be stratified.
   */
 object Stratifier {
+
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Stratifier"
+
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase(phaseName) {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val g = flix.subphase("Compute Global Dependency Graph") {
       val defs = root.defs.values.toList

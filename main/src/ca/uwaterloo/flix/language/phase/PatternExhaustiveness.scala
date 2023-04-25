@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, ParYieldFragment, Pa
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
@@ -40,6 +39,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   *
   */
 object PatternExhaustiveness {
+
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "PatternExhaustiveness"
 
   /**
     * An ADT to make matching Type Constructors easier. We need to
@@ -106,7 +110,7 @@ object PatternExhaustiveness {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
-    flix.phase("PatternExhaustiveness") {
+    flix.phase(phaseName) {
       val defErrs = root.defs.values.flatMap(defn => visitImpl(defn.impl, root))
       val instanceDefErrs = TypedAstOps.instanceDefsOf(root).flatMap(defn => visitImpl(defn.impl, root))
       // Only need to check sigs with implementations

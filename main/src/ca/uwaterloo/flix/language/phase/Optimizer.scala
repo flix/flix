@@ -28,9 +28,14 @@ import ca.uwaterloo.flix.util.Formatter
 object Optimizer {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Optimizer"
+
+  /**
    * Returns an optimized version of the given AST `root`.
    */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
     var result = root
 
     // only perform optimization if it is not disabled

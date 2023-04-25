@@ -24,7 +24,12 @@ import scala.collection.mutable
 
 object Eraser {
 
-  def run(root: FinalAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Eraser"
+
+  def run(root: FinalAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase(phaseName) {
 
     //
     // A mutable set to hold all type information about all closures in the AST.

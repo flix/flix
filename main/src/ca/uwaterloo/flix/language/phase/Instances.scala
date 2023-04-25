@@ -29,9 +29,14 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 object Instances {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Instances"
+
+  /**
     * Validates instances and classes in the given AST root.
     */
-  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Instances") {
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase(phaseName) {
     val errs = visitInstances(root, oldRoot, changeSet) ::: visitClasses(root)
     errs match {
       case Nil => ().toSuccess

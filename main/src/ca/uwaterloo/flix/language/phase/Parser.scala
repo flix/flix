@@ -32,10 +32,15 @@ import scala.annotation.tailrec
 object Parser {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Parser"
+
+  /**
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(root: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], oldRoot: ParsedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[ParsedAst.Root, CompilationMessage] =
-    flix.phase("Parser") {
+    flix.phase(phaseName) {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.sources, oldRoot.units)
 

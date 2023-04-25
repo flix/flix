@@ -46,9 +46,14 @@ import scala.annotation.tailrec
 object Redundancy {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Redundancy"
+
+  /**
     * Checks the given AST `root` for redundancies.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("Redundancy") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase(phaseName) {
     // Return early if the redundancy phase is disabled.
     if (flix.options.xallowredundancies) {
       return root.toSuccess
@@ -324,7 +329,7 @@ object Redundancy {
       // Visit the expression with the extended environment
       val innerUsed = visitExp(exp, env, rc)
 
-     // TODO NS-REFACTOR check for unused syms
+      // TODO NS-REFACTOR check for unused syms
       innerUsed ++ shadowedName
 
     case Expression.Lambda(fparam, exp, _, _) =>

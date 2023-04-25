@@ -63,6 +63,11 @@ import scala.collection.immutable.SortedSet
 object Kinder {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Kinder"
+
+  /**
     * The symbol for the IO effect.
     */
   private val IoSym = new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)
@@ -72,7 +77,7 @@ object Kinder {
     */
   private val NonDetSym = new Symbol.EffectSym(Nil, "NonDet", SourceLocation.Unknown)
 
-  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
+  def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase(phaseName) {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
     flatMapN(visitTypeAliases(root.taOrder, root)) {

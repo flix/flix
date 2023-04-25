@@ -31,9 +31,14 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 object Namer {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Namer"
+
+  /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
-  def run(program: WeededAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
+  def run(program: WeededAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase(phaseName) {
     // compute all the source locations
     val locations = program.units.values.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)

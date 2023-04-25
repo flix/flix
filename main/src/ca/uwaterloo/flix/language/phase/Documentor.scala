@@ -34,6 +34,11 @@ import java.nio.file.{Files, Path, Paths}
 object Documentor {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "Documentor"
+
+  /**
     * The "Pseudo-name" of the root namespace.
     */
   val RootNS: String = "Prelude"
@@ -43,7 +48,7 @@ object Documentor {
     */
   val OutputDirectory: Path = Paths.get("./build/api")
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase("Documentor") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = flix.phase(phaseName) {
     //
     // Determine whether to generate documentation.
     //

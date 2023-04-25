@@ -27,9 +27,14 @@ import java.lang.reflect.InvocationTargetException
 object JvmBackend {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "JvmBackend"
+
+  /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase(phaseName) {
 
     //
     // Put the AST root into implicit scope.

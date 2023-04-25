@@ -31,7 +31,12 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
   */
 object Deriver {
 
-  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Deriver"
+
+  def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase(phaseName) {
     val derivedInstances = traverse(root.enums.values) {
       enum => getDerivedInstances(enum, root)
     }.map(_.flatten)

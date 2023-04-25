@@ -30,9 +30,14 @@ import scala.collection.mutable
   */
 object Simplifier {
 
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Simplifier"
+
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
-  def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
+  def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase(phaseName) {
     //
     // A mutable map to contain fresh top-level definitions.
     //

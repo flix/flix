@@ -26,7 +26,13 @@ import ca.uwaterloo.flix.util.Validation.ToSuccess
   * Collects statistics about the AST and reports them to stdout.
   */
 object Statistics {
-  def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase("Statistics") {
+
+  /**
+    * The name of the phase.
+    */
+  val phaseName = "Statistics"
+
+  def run(root: Root)(implicit flix: Flix): Validation[Root, Nothing] = flix.phase(phaseName) {
     // Return early if stats have not been enabled.
     if (!flix.options.xstatistics) {
       return root.toSuccess

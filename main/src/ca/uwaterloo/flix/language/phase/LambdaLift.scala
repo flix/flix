@@ -25,6 +25,11 @@ import scala.collection.mutable
 object LambdaLift {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "LambdaLift"
+
+  /**
     * Mutable map of top level definitions.
     */
   private type TopLevel = mutable.Map[Symbol.DefnSym, LiftedAst.Def]
@@ -32,7 +37,7 @@ object LambdaLift {
   /**
     * Performs lambda lifting on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase("LambdaLift") {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): LiftedAst.Root = flix.phase(phaseName) {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 

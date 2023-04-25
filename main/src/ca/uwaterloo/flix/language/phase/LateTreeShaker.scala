@@ -35,9 +35,14 @@ import ca.uwaterloo.flix.util.ParOps
 object LateTreeShaker {
 
   /**
+    * The name of the phase.
+    */
+  val phaseName = "LateTreeShaker"
+
+  /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("LateTreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase(phaseName) {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
