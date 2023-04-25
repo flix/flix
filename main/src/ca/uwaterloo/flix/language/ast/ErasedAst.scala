@@ -120,6 +120,8 @@ object ErasedAst {
 
     case class Untag(sym: Symbol.CaseSym) extends IntrinsicOperator
 
+    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator
+
     // Intrinsic2
 
     // case class RecordExtend(field: Name.Field) extends IntrinsicOperator
@@ -147,9 +149,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
-
-
-    case class InstanceOf(clazz: Class[_]) extends IntrinsicOperator1
 
     case object Cast extends IntrinsicOperator1
 
