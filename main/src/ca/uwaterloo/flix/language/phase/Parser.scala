@@ -213,7 +213,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ (keyword("namespace") | keyword("mod")) ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ keyword("mod") ~ WS ~ Names.DotSeparated ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
@@ -1889,19 +1889,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     /**
-      * Namespaces are lower or uppercase.
-      */
-    // TODO NS-REFACTOR remove
-    def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
-        ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
-    }
-
-    /**
       * Dot-separated name.
       */
     def DotSeparated: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy("/" | ".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy(".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
