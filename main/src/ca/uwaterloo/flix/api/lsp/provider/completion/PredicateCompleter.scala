@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object PredicateCompleter extends Completer {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
-    //
-    // Find all definition and use sites of predicate symbols.
-    //
+    // Find all def and use sites of predicate symbols.
     val defs = index.predDefs
     val uses = index.predUses
 
@@ -34,8 +32,8 @@ object PredicateCompleter extends Completer {
     val defsAndUses = defs ++ uses
 
     // We select all predicate symbols:
-    // - from the same source file,
-    // - and with a non-zero arity.
+    // - (a) from the same source file, and
+    // - (b) with a non-zero arity.
     for (
       (pred, arityAndLocs) <- defsAndUses.m;
       (arity, loc) <- arityAndLocs;

@@ -44,8 +44,8 @@ sealed trait Completion {
         kind = CompletionItemKind.Variable)
 
     case Completion.PredicateCompletion(name, arity) =>
-      val args = (0 until arity).map(i => "x" + i).mkString(", ")
-      CompletionItem(label = s"$name/$arity", sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name($args)"), kind = CompletionItemKind.Field)
+      val args = (0 until arity).map(i => s"$${$i:x$i}").mkString(", ")
+      CompletionItem(label = s"$name/$arity", sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name($args)"), kind = CompletionItemKind.Field, insertTextFormat = InsertTextFormat.Snippet)
 
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name,
