@@ -34,8 +34,6 @@ object Optimizer {
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
     var result = root
 
-    throw InternalCompilerException("oops", SourceLocation.Unknown)
-
     // only perform optimization if it is not disabled
     if (!flix.options.xnooptimizer) {
       for (_ <- 1 to 2) {
