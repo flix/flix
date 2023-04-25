@@ -169,6 +169,9 @@ object DocAst {
     def Index(idx: Int, d: Expression): Expression =
       Dot(d, AsIs(s"_$idx"))
 
+    def InstanceOf(d: Expression, clazz: Class[_]): Expression =
+      Binary(d, "instanceof", Native(clazz))
+
     def ClosureLifted(sym: Symbol.DefnSym, ds: List[Expression]): Expression = {
       val defName = AsIs(sym.toString)
       if (ds.isEmpty) defName else App(defName, ds)
@@ -178,7 +181,7 @@ object DocAst {
       InRegion(Keyword("spawn", d1), d2)
 
     def ScopeExit(d1: Expression, d2: Expression): Expression = {
-      DoubleKeyword("add_closer", d1, "to", Left(d2))
+      DoubleKeyword("add_exit_function", d1, "to", Left(d2))
     }
 
     def Cast(d: Expression, tpe: Type): Expression =

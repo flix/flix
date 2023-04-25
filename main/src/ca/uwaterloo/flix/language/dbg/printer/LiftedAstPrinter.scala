@@ -87,7 +87,7 @@ object LiftedAstPrinter {
     case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
     case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
     case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
-    case InstanceOf(_, _, _) => DocAst.Expression.Unknown
+    case InstanceOf(exp, clazz, _) => DocAst.Expression.InstanceOf(print(exp), clazz)
     case Cast(exp, tpe, _, _) => DocAst.Expression.Cast(print(exp), TypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))

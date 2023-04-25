@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
-import ca.uwaterloo.flix.language.dbg.PrettyPrinter
+import ca.uwaterloo.flix.language.dbg.{AstPrinter, PrettyPrinter}
+import ca.uwaterloo.flix.language.dbg.printer.LiftedAstPrinter
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -44,7 +45,7 @@ object Optimizer {
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
+      println(AstPrinter.formatLiftedAst(result))
     }
 
     result
