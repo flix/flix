@@ -11,6 +11,24 @@ import java.nio.file.{Files, LinkOption, Path}
 object AstPrinter {
 
   /**
+    * Writes all the formatted asts, requested by the flix options, to disk.
+    */
+  def printAsts()(implicit flix: Flix): Unit = {
+    val asts = flix.options.xprintasts
+    if (asts.contains("Lifted Ast"))
+      writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
+    else
+      ()
+  }
+
+  /**
+    * Writes all the formatted asts to disk.
+    */
+  private def printAllAsts()(implicit flix: Flix): Unit = {
+    AstPrinter.writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
+  }
+
+  /**
     * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */

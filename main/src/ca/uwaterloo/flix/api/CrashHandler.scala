@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.dbg.AstPrinter.formatLiftedAst
 
 import java.io.{IOException, PrintWriter, StringWriter}
 import java.nio.file.{Files, Path}
@@ -39,7 +38,7 @@ object CrashHandler {
       case Some(path) =>
         try {
           Files.writeString(path, report)
-          printAsts()
+          AstPrinter.printAsts()
         } catch {
           case _: IOException =>
             println(s"Unable to write crash report to: '$path'.")
@@ -106,13 +105,6 @@ object CrashHandler {
       }
     }
     None
-  }
-
-  /**
-    * Write all asts to the build folder.
-    */
-  private def printAsts()(implicit flix: Flix): Unit = {
-    AstPrinter.writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
   }
 
 }
