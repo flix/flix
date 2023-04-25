@@ -284,8 +284,8 @@ object Eraser {
       ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
 
     case FinalAst.Expression.MatchError(tpe, loc) =>
-      val op = ErasedAst.IntrinsicOperator0.MatchError
-      ErasedAst.Expr.Intrinsic0(op, tpe, loc)
+      val op = ErasedAst.IntrinsicOperator.MatchError
+      ErasedAst.Expr.Intrinsic(op, Nil, tpe, loc)
   }
 
   private case class Context(closures: mutable.Set[ClosureInfo], anonClasses: mutable.Set[AnonClassInfo])

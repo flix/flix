@@ -110,6 +110,7 @@ object ErasedAst {
 
     case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator
 
+    case object MatchError extends IntrinsicOperator
 
     // Intrinsic1
 
@@ -126,14 +127,7 @@ object ErasedAst {
   sealed trait IntrinsicOperator0
 
   object IntrinsicOperator0 {
-
-
     case object Region extends IntrinsicOperator0
-
-
-
-    case object MatchError extends IntrinsicOperator0
-
   }
 
   sealed trait IntrinsicOperator1

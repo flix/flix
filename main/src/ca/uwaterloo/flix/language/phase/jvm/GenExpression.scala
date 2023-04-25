@@ -338,6 +338,10 @@ object GenExpression {
           addSourceLine(visitor, loc)
           AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
+        case IntrinsicOperator.MatchError =>
+          addSourceLine(visitor, loc)
+          AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
+
       }
 
       case e1 :: Nil => ???
@@ -352,9 +356,6 @@ object GenExpression {
         //!TODO: For now, just emit unit
         compileConstant(visitor, Ast.Constant.Unit, MonoType.Unit, loc)
 
-      case IntrinsicOperator0.MatchError =>
-        addSourceLine(visitor, loc)
-        AsmOps.compileThrowFlixError(visitor, BackendObjType.MatchError.jvmName, loc)
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
