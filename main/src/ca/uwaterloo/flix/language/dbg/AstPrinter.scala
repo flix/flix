@@ -28,18 +28,30 @@ object AstPrinter {
     AstPrinter.writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
   }
 
+  /**
+    * Formats `root` for display.
+    */
   def formatLiftedAst(root: LiftedAst.Root): String = {
     formatDocProgram(LiftedAstPrinter.print(root))
   }
 
+  /**
+    * Formats `root` for display.
+    */
   def formatErasedAst(root: ErasedAst.Root): String = {
     formatDocProgram(ErasedAstPrinter.print(root))
   }
 
+  /**
+    * Formats `root` for display.
+    */
   def formatFinalAst(root: FinalAst.Root): String = {
     formatDocProgram(FinalAstPrinter.print(root))
   }
 
+  /**
+    * Formats `p` as a [[String]].
+    */
   private def formatDocProgram(p: DocAst.Program): String = {
     implicit val i: Doc.Indent = Doc.indentationLevel(IrFileIndentation)
     val docs = DocAstFormatter.format(p)
