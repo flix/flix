@@ -28,6 +28,24 @@ object AstPrinter {
     AstPrinter.writeToDisk("Lifted Ast", formatLiftedAst(flix.getLiftedAst))
   }
 
+  def formatLiftedAst(root: LiftedAst.Root): String = {
+    formatDocProgram(LiftedAstPrinter.print(root))
+  }
+
+  def formatErasedAst(root: ErasedAst.Root): String = {
+    formatDocProgram(ErasedAstPrinter.print(root))
+  }
+
+  def formatFinalAst(root: FinalAst.Root): String = {
+    formatDocProgram(FinalAstPrinter.print(root))
+  }
+
+  private def formatDocProgram(p: DocAst.Program): String = {
+    implicit val i: Doc.Indent = Doc.indentationLevel(IrFileIndentation)
+    val docs = DocAstFormatter.format(p)
+    docs.map(Doc.pretty(IrFileWidth, _)).mkString("\n\n")
+  }
+
   /**
     * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
@@ -50,24 +68,6 @@ object AstPrinter {
       }
     }
     Files.write(filePath, content.getBytes)
-  }
-
-  def formatLiftedAst(root: LiftedAst.Root): String = {
-    formatDocProgram(LiftedAstPrinter.print(root))
-  }
-
-  def formatErasedAst(root: ErasedAst.Root): String = {
-    formatDocProgram(ErasedAstPrinter.print(root))
-  }
-
-  def formatFinalAst(root: FinalAst.Root): String = {
-    formatDocProgram(FinalAstPrinter.print(root))
-  }
-
-  private def formatDocProgram(p: DocAst.Program): String = {
-    implicit val i: Doc.Indent = Doc.indentationLevel(IrFileIndentation)
-    val docs = DocAstFormatter.format(p)
-    docs.map(Doc.pretty(IrFileWidth, _)).mkString("\n\n")
   }
 
 }
