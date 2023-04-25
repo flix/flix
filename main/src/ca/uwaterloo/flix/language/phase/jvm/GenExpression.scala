@@ -368,6 +368,47 @@ object GenExpression {
           // We check if the enum is `instanceof` the class
           visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
+        // Normal Tag
+        case IntrinsicOperator.Tag(sym) =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // Get the tag info.
+          val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
+          // We get the JvmType of the class for tag
+          val classType = JvmOps.getTagClassType(tagInfo)
+
+          ///
+          /// Special Case: A tag with a single argument: The unit argument.
+          ///
+          // TODO: This is a hack until the new and improved backend arrives.
+          val whitelistedEnums = List(
+            Symbol.mkEnumSym("Comparison"),
+            Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
+            Symbol.mkEnumSym("RedBlackTree.Color"),
+          )
+          if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
+            // TODO: This is could introduce errors by if exp has side effects
+            // Read the "unitInstance" field of the appropriate class.
+            val declaration = classType.name.toInternalName
+            val descriptor = classType.toDescriptor
+            visitor.visitFieldInsn(GETSTATIC, declaration, "unitInstance", descriptor)
+          } else {
+            /*
+           If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
+           there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
+           a new one.
+           */
+            // Creating a new instance of the class
+            visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+            visitor.visitInsn(DUP)
+            // Evaluating the single argument of the class constructor
+            compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+            // Descriptor of the constructor
+            val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+            // Calling the constructor of the class
+            visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+          }
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -422,47 +463,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      // Normal Tag
-      case IntrinsicOperator1.Tag(sym) =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // Get the tag info.
-        val tagInfo = JvmOps.getTagInfo(tpe, sym.name)
-        // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
-
-        ///
-        /// Special Case: A tag with a single argument: The unit argument.
-        ///
-        // TODO: This is a hack until the new and improved backend arrives.
-        val whitelistedEnums = List(
-          Symbol.mkEnumSym("Comparison"),
-          Symbol.mkEnumSym("RedBlackTree.RedBlackTree"),
-          Symbol.mkEnumSym("RedBlackTree.Color"),
-        )
-        if (exp.tpe == MonoType.Unit && whitelistedEnums.contains(sym.enumSym)) {
-          // TODO: This is could introduce errors by if exp has side effects
-          // Read the "unitInstance" field of the appropriate class.
-          val declaration = classType.name.toInternalName
-          val descriptor = classType.toDescriptor
-          visitor.visitFieldInsn(GETSTATIC, declaration, "unitInstance", descriptor)
-        } else {
-          /*
-         If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
-         there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
-         a new one.
-         */
-          // Creating a new instance of the class
-          visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-          visitor.visitInsn(DUP)
-          // Evaluating the single argument of the class constructor
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          // Descriptor of the constructor
-          val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-          // Calling the constructor of the class
-          visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
-        }
 
       case IntrinsicOperator1.Untag(sym) =>
         // Adding source line number for debugging
