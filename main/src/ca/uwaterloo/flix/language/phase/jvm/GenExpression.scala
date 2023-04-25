@@ -355,6 +355,19 @@ object GenExpression {
         case IntrinsicOperator.Unary(sop) =>
           compileUnaryExpr(e1, currentClass, visitor, lenv0, entryPoint, sop)
 
+        case IntrinsicOperator.Is(sym) =>
+          // Adding source line number for debugging
+          addSourceLine(visitor, loc)
+          // We get the `TagInfo` for the tag
+          val tagInfo = JvmOps.getTagInfo(e1.tpe, sym.name)
+          // We get the JvmType of the class for tag
+          val classType = JvmOps.getTagClassType(tagInfo)
+
+          // First we compile the `exp`
+          compileExpression(e1, visitor, currentClass, lenv0, entryPoint)
+          // We check if the enum is `instanceof` the class
+          visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
+
         case _ => throw InternalCompilerException("Unexpected Intrinsic Operator for 1 Expression", loc)
 
       }
@@ -409,19 +422,6 @@ object GenExpression {
     }
 
     case Expr.Intrinsic1(op, exp, tpe, loc) => op match {
-
-      case IntrinsicOperator1.Is(sym) =>
-        // Adding source line number for debugging
-        addSourceLine(visitor, loc)
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, sym.name)
-        // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
-
-        // First we compile the `exp`
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // We check if the enum is `instanceof` the class
-        visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
       // Normal Tag
       case IntrinsicOperator1.Tag(sym) =>
