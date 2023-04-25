@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.dbg.AstPrinter.formatLiftedAst
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -41,7 +41,7 @@ object ShowAstProvider {
 
       phase match {
         case "TypedAst" =>
-          val text = formatLiftedAst(flix.getLiftedAst)
+          val text = AstPrinter.formatLiftedAst(flix.getLiftedAst)
           ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
         case _ =>
           ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> s"Unknown phase: '$phase'.")
