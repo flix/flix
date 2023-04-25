@@ -34,31 +34,6 @@ mod Test.Kind.Enum {
             case CRecordRow1({ l = Int32 | a })
         }
 
-        //pub enum ESchemaRow[a: SchemaRow] {
-            //case CSchemaRow1(#{ R | a })
-        //}
-
-        // TODO disabled during development
-//        pub enum EEffect[a: Eff] {
-//            case CEffect1(Int32 -> Int32 \ a)
-//        }
-
-        // These pass kinding but cause a crash in the Finalizer.
-//        pub enum EStarToStar[a: Type -> Type] {
-//            case CStarToStar1(a[Int32])
-//        }
-//
-//        pub enum EBoolToStar[a: Bool -> Type] {
-//            case CBoolToStar1(a[Pure])
-//        }
-//
-//        pub enum ERecordToStar[a: Record -> Type] {
-//            case CRecordToStar1(a[{}])
-//        }
-//
-//        pub enum ESchemaToStar[a: Schema -> Type] {
-//            case CSchemaToStar1(a[#{}])
-//        }
     }
 
     @test
