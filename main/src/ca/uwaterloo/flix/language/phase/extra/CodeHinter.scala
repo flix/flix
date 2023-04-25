@@ -218,6 +218,9 @@ object CodeHinter {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 

@@ -43,6 +43,7 @@ object IntrinsicOperatorPrinter {
     case IntrinsicOperator1.Is(sym) => Is(sym, d)
     case IntrinsicOperator1.Tag(sym) => Tag(sym, List(d))
     case IntrinsicOperator1.Untag(sym) => Untag(sym, d)
+    case IntrinsicOperator1.InstanceOf(_) => Unknown
     case IntrinsicOperator1.Cast => Cast(d, tpe)
     case IntrinsicOperator1.Index(idx) => Index(idx, d)
     case IntrinsicOperator1.RecordSelect(field) => RecordSelect(field, d)

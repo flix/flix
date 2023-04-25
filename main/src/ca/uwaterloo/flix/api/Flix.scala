@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.dbg.printer.{ErasedAstPrinter, FinalAstPrinter, LiftedAstPrinter}
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -40,6 +38,11 @@ object Flix {
     * The reserved Flix delimiter.
     */
   val Delimiter: String = "$"
+
+  /**
+    * The file extension for intermediate representation files.
+    */
+  val IrFileExtension = "flixir"
 }
 
 /**
@@ -58,13 +61,24 @@ class Flix {
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * A cache of compiled ASTs (for incremental compilation).
+    * A cache of ASTs for incremental compilation.
     */
   private var cachedParsedAst: ParsedAst.Root = ParsedAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedWeededAst: WeededAst.Root = WeededAst.Root(Map.empty, None, MultiMap.empty)
   private var cachedKindedAst: KindedAst.Root = KindedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
   private var cachedResolvedAst: ResolvedAst.Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
   private var cachedTypedAst: TypedAst.Root = TypedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty, MultiMap.empty)
+
+  /**
+    * A cache of ASTs for debugging.
+    */
+  private var cachedLiftedAst: LiftedAst.Root = LiftedAst.Root(Map.empty, Map.empty, None, Map.empty)
+  private var cachedErasedAst: ErasedAst.Root = ErasedAst.Root(Map.empty, Map.empty, None, Map.empty, Set.empty, Set.empty)
+
+  /**
+    * Returns the cached LiftedAST.
+    */
+  def getLiftedAst: LiftedAst.Root = cachedLiftedAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -527,33 +541,27 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
-    import Validation.Implicit.AsMonad
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
     // Initialize fork join pool.
     initForkJoin()
 
-    val result = for {
-      afterDocumentor <- Documentor.run(typedAst)
-      afterLowering <- Lowering.run(afterDocumentor)
-      afterEarlyTreeShaker <- EarlyTreeShaker.run(afterLowering)
-      afterMonomorph <- Monomorph.run(afterEarlyTreeShaker)
-      afterSimplifier <- Simplifier.run(afterMonomorph)
-      afterClosureConv <- ClosureConv.run(afterSimplifier)
-      afterLambdaLift <- LambdaLift.run(afterClosureConv)
-      _ = AstPrinter.printAst(LambdaLift.toString, LiftedAstPrinter.print(afterLambdaLift))
-      afterTailrec <- Tailrec.run(afterLambdaLift)
-      afterOptimizer <- Optimizer.run(afterTailrec)
-      afterLateTreeShaker <- LateTreeShaker.run(afterOptimizer)
-      afterVarNumbering <- VarNumbering.run(afterLateTreeShaker)
-      afterFinalize <- Finalize.run(afterVarNumbering)
-      _ = AstPrinter.printAst(Finalize.toString, FinalAstPrinter.print(afterFinalize))
-      afterEraser <- Eraser.run(afterFinalize)
-      _ = AstPrinter.printAst(Eraser.toString, ErasedAstPrinter.print(afterEraser))
-      afterJvmBackend <- JvmBackend.run(afterEraser)
-      afterFinish <- Finish.run(afterJvmBackend)
-    } yield afterFinish
+    val afterDocumentor = Documentor.run(typedAst)
+    val afterLowering = Lowering.run(afterDocumentor)
+    val afterEarlyTreeShaker = EarlyTreeShaker.run(afterLowering)
+    val afterMonomorph = Monomorph.run(afterEarlyTreeShaker)
+    val afterSimplifier = Simplifier.run(afterMonomorph)
+    val afterClosureConv = ClosureConv.run(afterSimplifier)
+    cachedLiftedAst = LambdaLift.run(afterClosureConv)
+    val afterTailrec = Tailrec.run(cachedLiftedAst)
+    val afterOptimizer = Optimizer.run(afterTailrec)
+    val afterLateTreeShaker = LateTreeShaker.run(afterOptimizer)
+    val afterVarNumbering = VarNumbering.run(afterLateTreeShaker)
+    val afterFinalize = Finalize.run(afterVarNumbering)
+    cachedErasedAst = Eraser.run(afterFinalize)
+    val afterJvmBackend = JvmBackend.run(cachedErasedAst)
+    val result = Finish.run(afterJvmBackend)
 
     // Shutdown fork join pool.
     shutdownForkJoin()

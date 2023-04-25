@@ -18,11 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
+
+import scala.annotation.tailrec
 
 /**
   * A phase to transform source files into abstract syntax trees.
@@ -69,10 +71,60 @@ object Parser {
       case scala.util.Success(ast) =>
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        val possibleContexts = parseTraces(e.traces)
+        val mostLikelyContext = if (possibleContexts.isEmpty) SyntacticContext.Unknown else possibleContexts.maxBy(_._2)._1
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), loc).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown).toFailure
+    }
+  }
+
+  /**
+    * Computes the nearest syntactic contexts from the given traces.
+    */
+  private def parseTraces(traces: Seq[RuleTrace]): Map[SyntacticContext, Int] =
+    traces.map(trace => parseRuleTrace(trace.prefix.reverse)).foldLeft(Map.empty[SyntacticContext, Int]) {
+      case (macc, ctx) => macc.updated(ctx, macc.getOrElse(ctx, 0) + 1)
+    }
+
+  /**
+    * Computes the nearest syntactic context from the given list of non-terminals.
+    */
+  @tailrec
+  private def parseRuleTrace(trace: List[RuleTrace.NonTerminal]): SyntacticContext = trace match {
+    case Nil => SyntacticContext.Unknown
+    case RuleTrace.NonTerminal(key, _) :: rest => key match {
+      case RuleTrace.Named(name) =>
+        // Case 1: We have a named rule application. Determine if we know it.
+        syntacticContextOf(name) match {
+          case SyntacticContext.Unknown =>
+            // Case 1.1: The named rule is not one of the contexts. Continue recursively.
+            parseRuleTrace(rest)
+          case result =>
+            // Case 2.2: We have found a named rule we know. Return it.
+            result
+        }
+      case _ =>
+        // Case 2: We have non-named rule application. Continue recursively.
+        parseRuleTrace(rest)
+    }
+  }
+
+  /**
+    * Returns the syntactic context of the given `name`.
+    *
+    * Returns [[SyntacticContext.Unknown]] if the context cannot be determined.
+    */
+  private def syntacticContextOf(name: String): SyntacticContext = {
+    name match {
+      case "Expression" => SyntacticContext.Expr.AnyExpr
+      case "Constraint" => SyntacticContext.Expr.Constraint
+      case "Class" => SyntacticContext.Decl.Class
+      case "Enum" => SyntacticContext.Decl.Enum
+      case "Instance" => SyntacticContext.Decl.Instance
+      case "Type" => SyntacticContext.Type.AnyType
+      case _ => SyntacticContext.Unknown
     }
   }
 
@@ -162,7 +214,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ (keyword("namespace") | keyword("mod")) ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ keyword("mod") ~ WS ~ Names.DotSeparated ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
@@ -589,7 +641,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      InstanceOf ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def InstanceOf: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(WS ~ operatorX("instanceof") ~ WS ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Expression.InstanceOf)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -1834,19 +1890,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     /**
-      * Namespaces are lower or uppercase.
-      */
-    // TODO NS-REFACTOR remove
-    def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
-        ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
-    }
-
-    /**
       * Dot-separated name.
       */
     def DotSeparated: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy("/" | ".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy(".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 

@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -139,6 +141,17 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    // First, we try to get the syntactic context from the parser or from an error message.
+    context.sctx match {
+      case SyntacticContext.Decl.Class => return Nil
+      case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
+      // TODO: SYNTACTIC-CONTEXT
+      case _ => // fallthrough
+    }
+
+    // No luck, fall back to regular expressions:
+
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
@@ -160,13 +173,12 @@ object CompletionProvider {
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
     // if any of the following matches we know the next must be an expression
-    val channelKeywordRegex = raw".*<-\s*[^\s]*".r
     val doubleColonRegex = raw".*::\s*[^\s]*".r
     val tripleColonRegex = raw".*:::\s*[^\s]*".r
 
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
+      case doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions(context)
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
       case effectRegex() => EffectCompleter.getCompletions(context)
@@ -184,8 +196,8 @@ object CompletionProvider {
       //
       case _ => getExpCompletions() ++
         PredicateCompleter.getCompletions(context) ++
-          TypeCompleter.getCompletions(context) ++
-          EffectCompleter.getCompletions(context)
+        TypeCompleter.getCompletions(context) ++
+        EffectCompleter.getCompletions(context)
     }
   }
 
@@ -208,9 +220,9 @@ object CompletionProvider {
   /**
     * Boosts a best completion to the top of the pop-up-pane.
     *
-    * @param comp  the completion to boost.
-    * @return      nil, if no we have no completion to boost,
-    *              otherwise a List consisting only of the boosted completion as CompletionItem.
+    * @param comp the completion to boost.
+    * @return nil, if no we have no completion to boost,
+    *         otherwise a List consisting only of the boosted completion as CompletionItem.
     */
   private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
     comp match {
@@ -280,7 +292,23 @@ object CompletionProvider {
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      CompletionContext(uri, pos, range, word, previousWord, prefix, errors)
+      val sctx = getSyntacticContext(uri, pos, errors)
+      CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }
   }
+
+  /**
+    * Optionally returns the syntactic context from the given list of errors.
+    *
+    * We have to check that the syntax error occurs in the same place as the completion.
+    */
+  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
+    errors.filter({
+      case err => err.loc.beginLine == pos.line
+    }).collectFirst({
+      case ParseError(_, ctx, _) => ctx
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.AnyType
+      // TODO: SYNTACTIC-CONTEXT
+    }).getOrElse(SyntacticContext.Unknown)
+
 }

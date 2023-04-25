@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.dbg
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.dbg.Doc.Indent
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -16,11 +17,6 @@ object AstPrinter {
   private val Width = 80
 
   /**
-    * The extension of intermediate flix files.
-    */
-  val IrExtension: String = "flixir"
-
-  /**
     * Prints `ast` to `build/ast/<phase>.<AstPrinter.IrExtension>` if
     * `flix.options.xprintasts` contains `phase`.
     *
@@ -30,7 +26,7 @@ object AstPrinter {
     implicit val i: Indent = Doc.indentationLevel(Indent)
     if (flix.options.xprintasts.contains(phase)) {
       val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
-      val filePath = buildAstsPath.resolve(s"$phase.$IrExtension")
+      val filePath = buildAstsPath.resolve(s"$phase.$IrFileExtension")
       Files.createDirectories(buildAstsPath)
 
       // Check if the file already exists.

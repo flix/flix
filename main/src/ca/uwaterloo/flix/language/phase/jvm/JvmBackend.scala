@@ -18,12 +18,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.ErasedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.Validation
 
 import java.lang.reflect.InvocationTargetException
 
@@ -32,7 +29,7 @@ object JvmBackend {
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): CompilationResult = flix.phase("JvmBackend") {
 
     //
     // Put the AST root into implicit scope.
@@ -246,7 +243,7 @@ object JvmBackend {
       //
       // Do not load any classes.
       //
-      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, None, Map.empty, flix.getTotalTime, outputBytes)
     } else {
       //
       // Loads all the generated classes into the JVM and decorates the AST.
@@ -257,7 +254,7 @@ object JvmBackend {
       //
       // Return the compilation result.
       //
-      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes).toSuccess
+      new CompilationResult(root, main, getCompiledDefs(root), flix.getTotalTime, outputBytes)
     }
   }
 

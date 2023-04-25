@@ -88,6 +88,7 @@ object FinalAstPrinter {
     case Ref(exp, _, _) => DocAst.Expression.Ref(print(exp))
     case Deref(exp, _, _) => DocAst.Expression.Deref(print(exp))
     case Assign(exp1, exp2, _, _) => DocAst.Expression.Assign(print(exp1), print(exp2))
+    case InstanceOf(_, _, _) => DocAst.Expression.Unknown
     case Cast(exp, tpe, _) => DocAst.Expression.Cast(print(exp), MonoTypePrinter.print(tpe))
     case TryCatch(exp, rules, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case FinalAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))

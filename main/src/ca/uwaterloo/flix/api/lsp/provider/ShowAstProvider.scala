@@ -16,9 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.dbg.PrettyPrinter
+import ca.uwaterloo.flix.util.Formatter
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -28,17 +30,23 @@ object ShowAstProvider {
     * Returns a JSON object with
     *
     * - `title` (a string like `Namer.flix.ir`)
-    *
     * - `text` (a string with the ir representation).
     */
-  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
+  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = root match {
+    case None =>
+      val text = "No IR available. Does the program not compile?"
+      ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+    case Some(r) =>
+      // We have to compile the program to obtain the relevant AST.
+      flix.codeGen(r)
 
-    // The optional root should be reused if present and the phase is in the
-    // code-gen part of the compiler.
-
-    val text = "def main(): String = \"Work in progress!\"\n"
-
-    ("title" -> s"$phase.${AstPrinter.IrExtension}") ~ ("text" -> text)
+      phase match {
+        case "TypedAst" =>
+          val text = PrettyPrinter.Lifted.fmtRoot(flix.getLiftedAst, Formatter.NoFormatter)
+          ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> text)
+        case _ =>
+          ("title" -> s"$phase.$IrFileExtension") ~ ("text" -> s"Unknown phase: '$phase'.")
+      }
   }
 
 }

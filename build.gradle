@@ -19,7 +19,7 @@ dependencies {
     implementation('org.jline:jline:3.5.1')
     implementation('org.json4s:json4s-native_2.13:3.5.5')
     implementation('org.ow2.asm:asm:9.2')
-    implementation('org.parboiled:parboiled_2.13:2.2.1')
+    implementation('org.parboiled:parboiled_2.13:2.4.1')
     implementation('org.scalactic:scalactic_2.13:3.2.15')
     implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
     implementation('com.github.scopt:scopt_2.13:4.0.1')
