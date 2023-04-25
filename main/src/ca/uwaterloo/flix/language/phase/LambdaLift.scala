@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
-case object LambdaLift {
+object LambdaLift {
 
   /**
     * Mutable map of top level definitions.

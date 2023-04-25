@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.phase.jvm.{AnonClassInfo, ClosureInfo}
 
 import scala.collection.mutable
 
-case object Eraser {
+object Eraser {
 
   def run(root: FinalAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
 

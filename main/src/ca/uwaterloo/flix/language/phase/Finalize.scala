@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-case object Finalize {
+object Finalize {
 
   def run(root: LiftedAst.Root)(implicit flix: Flix): FinalAst.Root = flix.phase("Finalize") {
 
