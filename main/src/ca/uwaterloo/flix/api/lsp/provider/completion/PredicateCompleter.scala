@@ -23,12 +23,16 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object PredicateCompleter extends Completer {
 
-  /**
-    * Returns a List of Completion for predicates.
-    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
-    index.predDefs.m.concat(index.predUses.m)
-      .map {
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
+    //
+    // Find all definition and use sites of predicate symbols.
+    //
+    val defs = index.predDefs.m
+    val uses = index.predUses.m
+
+
+
+    defs.concat(uses).map {
         case (pred, locs) =>
           val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
           val name = pred.name
