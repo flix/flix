@@ -146,7 +146,7 @@ object CompletionProvider {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
-      // TODO: SYNTACTIC-CONTEXT
+      case _: SyntacticContext.Pat => return Nil
       case _ => // fallthrough
     }
 
@@ -195,7 +195,6 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        PredicateCompleter.getCompletions(context) ++
         TypeCompleter.getCompletions(context) ++
         EffectCompleter.getCompletions(context)
     }
@@ -300,14 +299,14 @@ object CompletionProvider {
   /**
     * Optionally returns the syntactic context from the given list of errors.
     *
-    * We have to check that the syntax error occurs in the same place as the completion.
+    * We have to check that the syntax error occurs after the position of the completion.
     */
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errors.filter({
-      case err => err.loc.beginLine == pos.line
+      case err => pos.line <= err.loc.beginLine
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
-      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.AnyType
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 
