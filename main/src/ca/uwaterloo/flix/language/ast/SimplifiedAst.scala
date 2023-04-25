@@ -150,6 +150,12 @@ object SimplifiedAst {
       def purity: Purity = Impure
     }
 
+    case class InstanceOf(exp: SimplifiedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends SimplifiedAst.Expression {
+      def tpe: Type = Type.Bool
+
+      def purity: Purity = exp.purity
+    }
+
     case class Cast(exp: SimplifiedAst.Expression, tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, purity: Purity, loc: SourceLocation) extends SimplifiedAst.Expression

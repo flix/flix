@@ -17,12 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.ParOps
 
 /**
   * The Tree Shaking phase removes all unused function definitions.
@@ -39,7 +37,7 @@ object LateTreeShaker {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("LateTreeShaker") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("LateTreeShaker") {
     // Compute the symbols that are always reachable.
     val initReach = initReachable(root)
 
@@ -52,7 +50,7 @@ object LateTreeShaker {
     }
 
     // Reassemble the AST.
-    root.copy(defs = newDefs).toSuccess
+    root.copy(defs = newDefs)
   }
 
   /**
@@ -197,6 +195,9 @@ object LateTreeShaker {
 
     case Expression.Assign(exp1, exp2, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
+
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
 
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp)

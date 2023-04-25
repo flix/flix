@@ -55,6 +55,7 @@ object FormatExpression {
     case TypedAst.Expression.Deref(exp, _, _, _, _) => s"Deref($exp)"
     case TypedAst.Expression.Assign(exp1, exp2, _, _, _, _) => s"Assign($exp1, $exp2)"
     case TypedAst.Expression.Ascribe(exp, tpe, _, _, _) => s"Ascribe($exp, $tpe)"
+    case TypedAst.Expression.InstanceOf(exp, clazz, _) => s"InstanceOf($exp, $clazz)"
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) => s"CheckedCast($exp)"
     case TypedAst.Expression.UncheckedCast(exp, declaredType, declaredPur, declaredEff, tpe, eff, _, _) => s"UncheckedCast($exp, $declaredType, $declaredPur, $declaredEff, $tpe, $eff)"
     case TypedAst.Expression.UncheckedMaskingCast(exp, _, _, _, _) => s"UncheckedMaskingCast($exp)"
