@@ -97,7 +97,20 @@ object ErasedAst {
   sealed trait IntrinsicOperator
 
   case object IntrinsicOperator {
+
+    // Intrinsic0
+
     case class Cst(cst: Ast.Constant) extends IntrinsicOperator
+
+    // Intrinsic1
+
+    // Intrinsic2
+
+    // Intrinsic3
+
+    // IntrinsicN
+
+    // Intrinsic1N
 
   }
 
