@@ -789,30 +789,36 @@ object Ast {
 
   object SyntacticContext {
 
-    sealed trait Expr extends SyntacticContext
-
-    object Expr {
-      case object AnyExpr extends Expr
-
-      case object Constraint extends Expr
-    }
-
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object AnyDecl extends Decl
-
       case object Class extends Decl
 
       case object Enum extends Decl
 
       case object Instance extends Decl
+
+      case object OtherDecl extends Decl
+    }
+
+    sealed trait Expr extends SyntacticContext
+
+    object Expr {
+      case object Constraint extends Expr
+
+      case object OtherExpr extends Expr
+    }
+
+    sealed trait Pat extends SyntacticContext
+
+    object Pat {
+      case object OtherPat extends Pat
     }
 
     sealed trait Type extends SyntacticContext
 
     object Type {
-      case object AnyType extends Type
+      case object OtherType extends Type
     }
 
     case object Unknown extends SyntacticContext

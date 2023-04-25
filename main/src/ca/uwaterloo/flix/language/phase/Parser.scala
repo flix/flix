@@ -118,12 +118,13 @@ object Parser {
     */
   private def syntacticContextOf(name: String): SyntacticContext = {
     name match {
-      case "Expression" => SyntacticContext.Expr.AnyExpr
+      case "Expression" => SyntacticContext.Expr.OtherExpr
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Class" => SyntacticContext.Decl.Class
       case "Enum" => SyntacticContext.Decl.Enum
+      case "Pattern" => SyntacticContext.Pat.OtherPat
       case "Instance" => SyntacticContext.Decl.Instance
-      case "Type" => SyntacticContext.Type.AnyType
+      case "Type" => SyntacticContext.Type.OtherType
       case _ => SyntacticContext.Unknown
     }
   }
