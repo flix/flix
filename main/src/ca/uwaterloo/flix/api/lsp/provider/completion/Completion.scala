@@ -42,11 +42,11 @@ sealed trait Completion {
         sortText = Priority.high(name),
         textEdit = TextEdit(context.range, s"$name "),
         kind = CompletionItemKind.Variable)
-    case Completion.PredicateCompletion(name, priority) =>
-      CompletionItem(label = name,
-        sortText = priority,
-        textEdit = TextEdit(context.range, s"$name "),
-        kind = CompletionItemKind.Variable)
+
+    case Completion.PredicateCompletion(name, arity) =>
+      val args = (1 until arity + 1).map(i => s"$${$i:x$i}").mkString(", ")
+      CompletionItem(label = s"$name/$arity", sortText = Priority.normal(name), textEdit = TextEdit(context.range, s"$name($args)"), kind = CompletionItemKind.Field, insertTextFormat = InsertTextFormat.Snippet)
+
     case Completion.TypeBuiltinCompletion(name, priority, textEdit, insertTextFormat) =>
       CompletionItem(label = name,
         sortText = priority,
@@ -211,22 +211,21 @@ object Completion {
     */
   case class FieldCompletion(name: String) extends Completion
 
-
   /**
     * Represents a predicate completion.
     *
-    * @param name     the name of the predicate.
-    * @param priority the priority of the predicate.
+    * @param name  the name of the predicate.
+    * @param arity the arity of the predicate.
     */
-  case class PredicateCompletion(name: String, priority: String) extends Completion
+  case class PredicateCompletion(name: String, arity: Int) extends Completion
 
   /**
     * Represents a type completion for builtin
     *
-    * @param name               the name of the BuiltinType.
-    * @param priority           the priority of the BuiltinType.
-    * @param textEdit           the edit which is applied to a document when selecting this completion.
-    * @param insertTextFormat   the format of the insert text.
+    * @param name             the name of the BuiltinType.
+    * @param priority         the priority of the BuiltinType.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    * @param insertTextFormat the format of the insert text.
     */
   case class TypeBuiltinCompletion(name: String, priority: String, textEdit: TextEdit,
                                    insertTextFormat: InsertTextFormat) extends Completion
@@ -267,11 +266,11 @@ object Completion {
   /**
     * Represents a With completion
     *
-    * @param name               the name of the completion.
-    * @param priority           the priority of the completion.
-    * @param textEdit           the edit which is applied to a document when selecting this completion.
-    * @param documentation      a human-readable string that represents a doc-comment.
-    * @param insertTextFormat   the format of the insert text.
+    * @param name             the name of the completion.
+    * @param priority         the priority of the completion.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    * @param documentation    a human-readable string that represents a doc-comment.
+    * @param insertTextFormat the format of the insert text.
     */
   case class WithCompletion(name: String, priority: String, textEdit: TextEdit, documentation: Option[String],
                             insertTextFormat: InsertTextFormat) extends Completion
@@ -280,17 +279,17 @@ object Completion {
   /**
     * Represents an importNew completion (java constructors)
     *
-    * @param constructor      the constructor.
-    * @param clazz            clazz is the clazz in string form.
-    * @param aliasSuggestion  an alias for the function.
+    * @param constructor     the constructor.
+    * @param clazz           clazz is the clazz in string form.
+    * @param aliasSuggestion an alias for the function.
     */
   case class ImportNewCompletion(constructor: Constructor[_], clazz: String, aliasSuggestion: Option[String]) extends Completion
 
   /**
     * Represents an importMethod completion (java methods)
     *
-    * @param method  the method.
-    * @param clazz   clazz is the clazz in string form.
+    * @param method the method.
+    * @param clazz  clazz is the clazz in string form.
     */
   case class ImportMethodCompletion(method: Method, clazz: String) extends Completion
 
@@ -314,18 +313,18 @@ object Completion {
   /**
     * Represents a Snippet completion
     *
-    * @param name           the name of the snippet.
-    * @param snippet        the snippet for TextEdit.
-    * @param documentation  a human-readable string that represents a doc-comment.
+    * @param name          the name of the snippet.
+    * @param snippet       the snippet for TextEdit.
+    * @param documentation a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, snippet: String, documentation: String) extends Completion
 
   /**
     * Represents a Var completion
     *
-    * @param sym      the Var symbol.
-    * @param tpe      the type for FormatType to provide a human-readable string with additional information
-    *                 about the symbol.
+    * @param sym the Var symbol.
+    * @param tpe the type for FormatType to provide a human-readable string with additional information
+    *            about the symbol.
     */
   case class VarCompletion(sym: Symbol.VarSym, tpe: Type) extends Completion
 

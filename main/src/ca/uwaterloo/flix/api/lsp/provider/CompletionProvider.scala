@@ -143,8 +143,9 @@ object CompletionProvider {
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     // First, we try to get the syntactic context from the parser or from an error message.
     context.sctx match {
-      case SyntacticContext.ClassDecl => return Nil
-      case SyntacticContext.Type => return TypeCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Class => return Nil
+      case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       // TODO: SYNTACTIC-CONTEXT
       case _ => // fallthrough
     }
@@ -306,7 +307,7 @@ object CompletionProvider {
       case err => err.loc.beginLine == pos.line
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
-      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.AnyType
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)
 

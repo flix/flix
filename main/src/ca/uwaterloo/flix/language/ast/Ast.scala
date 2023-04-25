@@ -789,34 +789,32 @@ object Ast {
 
   object SyntacticContext {
 
-    /**
-      * Inside an class declaration.
-      */
-    case object ClassDecl extends SyntacticContext
+    sealed trait Expr extends SyntacticContext
 
-    /**
-      * Inside an enum declaration.
-      */
-    case object EnumDecl extends SyntacticContext
+    object Expr {
+      case object AnyExpr extends Expr
 
-    /**
-      * Inside an instance declaration.
-      */
-    case object InstanceDecl extends SyntacticContext
+      case object Constraint extends Expr
+    }
 
-    /**
-      * Inside an expression.
-      */
-    case object Expr extends SyntacticContext
+    sealed trait Decl extends SyntacticContext
 
-    /**
-      * Inside a type.
-      */
-    case object Type extends SyntacticContext
+    object Decl {
+      case object AnyDecl extends Decl
 
-    /**
-      * No known context.
-      */
+      case object Class extends Decl
+
+      case object Enum extends Decl
+
+      case object Instance extends Decl
+    }
+
+    sealed trait Type extends SyntacticContext
+
+    object Type {
+      case object AnyType extends Type
+    }
+
     case object Unknown extends SyntacticContext
   }
 
