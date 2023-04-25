@@ -665,20 +665,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        BitwiseOr ~ zeroOrMore(And ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+        Equality ~ zeroOrMore(And ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
       }
-    }
-
-    def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ operator("|||") ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ operator("^^^") ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
-    }
-
-    def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ operator("&&&") ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
@@ -717,7 +705,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("&&&" | ":::" | "<+>" | "<=>" | "???" | "^^^" | "and" | "mod" | "not" | "rem" | "|||" | "~~~")
+        capture(":::" | "<+>" | "<=>" | "???" | "and" | "mod" | "not" | "rem")
       }
 
       // Match any two character operator which is not reserved.
@@ -753,7 +741,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unary: Rule1[ParsedAst.Expression] = {
       def UnaryOp1: Rule1[ParsedAst.Operator] = rule {
-        operator("-") | operator("~~~")
+        operator("-")
       }
 
       def UnaryOp2: Rule1[ParsedAst.Operator] = rule {

@@ -130,7 +130,7 @@ mod MutDeque {
             if (i == e)
                 acc
             else
-                loop((i + 1) &&& c, e, f(acc, Array.get(i, ar)));
+                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get(i, ar)));
         loop(front, back, s)
 
     ///
@@ -148,7 +148,7 @@ mod MutDeque {
             if (i == e)
                 acc
             else {
-                let j = (i - 1) &&& c;
+                let j = Int32.bitwiseAnd(i - 1, c);
                 loop(j, e, f(Array.get(j, ar), acc))
             };
         loop(back, front, s)
@@ -169,7 +169,7 @@ mod MutDeque {
             if (i == e)
                 s
             else {
-                f(Array.get(i, ar), _ -> loop((i + 1) &&& c, e))
+                f(Array.get(i, ar), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
             };
         loop(front, back)
 
@@ -258,7 +258,7 @@ mod MutDeque {
             None
         else
             let c = capacity(d) - 1;
-            let i = (b1 - 1) &&& c;
+            let i = Int32.bitwiseAnd(b1 - 1, c);
             Some(Array.get(i, deref a))
 
     ///
@@ -408,7 +408,7 @@ mod MutDeque {
         let next = () -> {
             if (deref i < deref b) {
                 let x = Array.get(deref i, deref a);
-                i := deref i + 1 &&& (capacity(d) - 1);
+                i := deref i + Int32.bitwiseAnd(1, capacity(d) - 1);
                 Some(x)
             } else {
                 None
@@ -431,7 +431,7 @@ mod MutDeque {
                     case Some(x) => f(x)
                     case None    => bug!("An error occurred in MutDeque.forEach!")
                 };
-                loop((i + 1) &&& c)
+                loop(Int32.bitwiseAnd(i + 1, c))
             }
         };
         loop(deref front)
