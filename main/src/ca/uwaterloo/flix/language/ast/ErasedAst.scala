@@ -132,6 +132,8 @@ object ErasedAst {
 
     case object Ref extends IntrinsicOperator
 
+    case object Deref extends IntrinsicOperator
+
     // Intrinsic2
 
     // case object ArrayLoad extends IntrinsicOperator
@@ -151,8 +153,6 @@ object ErasedAst {
   sealed trait IntrinsicOperator1
 
   object IntrinsicOperator1 {
-
-    case object Deref extends IntrinsicOperator1
 
     case object ArrayLength extends IntrinsicOperator1
 
