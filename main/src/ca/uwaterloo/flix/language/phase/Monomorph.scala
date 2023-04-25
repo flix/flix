@@ -530,6 +530,10 @@ object Monomorph {
         val e = visitExp(exp, env0, subst)
         Expression.Ascribe(e, subst(tpe), pur, eff, loc)
 
+      case Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp, env0, subst)
+        Expression.InstanceOf(e, clazz, loc)
+
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         // We drop the declaredType and declaredEff here.
         val e = visitExp(exp, env0, subst)

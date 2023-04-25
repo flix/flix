@@ -182,6 +182,9 @@ object VarNumbering {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
+      case Expression.InstanceOf(exp, _, _) =>
+        visitExp(exp, i0)
+
       case Expression.Cast(exp, _, _, _) =>
         visitExp(exp, i0)
 

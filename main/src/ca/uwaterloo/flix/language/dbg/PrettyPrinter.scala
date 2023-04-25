@@ -314,6 +314,8 @@ object PrettyPrinter {
 
         case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) + " := " + visitExp(exp2)
 
+        case Expression.InstanceOf(exp, clazz, _) => visitExp(exp) + " instanceof " + clazz
+
         case Expression.Cast(exp, tpe, _, loc) =>
           visitExp(exp) +
             " as " +

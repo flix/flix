@@ -573,6 +573,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expression.Ascribe(e, t, pur, eff, loc)
 
+    case TypedAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = visitExp(exp)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
     case TypedAst.Expression.CheckedCast(_, exp, _, _, _, _) =>
       visitExp(exp)
 
@@ -2082,6 +2086,10 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expression.Ascribe(e, tpe, pur, eff, loc)
 
+    case LoweredAst.Expression.InstanceOf(exp, clazz, loc) =>
+      val e = substExp(exp, subst)
+      LoweredAst.Expression.InstanceOf(e, clazz, loc)
+
     case LoweredAst.Expression.Cast(exp, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Cast(e, declaredType, declaredPur, declaredEff, tpe, pur, eff, loc)
@@ -2152,6 +2160,7 @@ object Lowering {
     case LoweredAst.Expression.Force(exp, tpe, pur, eff, loc) =>
       val e = substExp(exp, subst)
       LoweredAst.Expression.Force(e, tpe, pur, eff, loc)
+
   }
 
   /**

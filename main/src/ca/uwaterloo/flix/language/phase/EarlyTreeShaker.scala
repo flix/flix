@@ -242,6 +242,9 @@ object EarlyTreeShaker {
     case Expression.Ascribe(exp, _, _, _, _) =>
       visitExp(exp)
 
+    case Expression.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
     case Expression.Cast(exp, _, _, _, _, _, _, _) =>
       visitExp(exp)
 
