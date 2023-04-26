@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -145,6 +145,7 @@ object CompletionProvider {
     context.sctx match {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
       case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
@@ -155,8 +156,6 @@ object CompletionProvider {
 
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val effectRegex = raw".*[\\]\s*[^\s]*".r
-    val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
@@ -175,11 +174,6 @@ object CompletionProvider {
     context.prefix match {
       case withRegex() => WithCompleter.getCompletions(context)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() =>
-        ImportNewCompleter.getCompletions(context) ++
-          ImportMethodCompleter.getCompletions(context) ++
-          ImportFieldCompleter.getCompletions(context) ++
-          ClassCompleter.getCompletions(context)
       case useRegex() => UseCompleter.getCompletions(context)
       case instanceRegex() => InstanceCompleter.getCompletions(context)
       //
@@ -297,6 +291,7 @@ object CompletionProvider {
       case err => pos.line <= err.loc.beginLine
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
+      case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)

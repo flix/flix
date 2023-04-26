@@ -809,6 +809,8 @@ object Ast {
       case object OtherExpr extends Expr
     }
 
+    case object Import extends SyntacticContext
+
     sealed trait Pat extends SyntacticContext
 
     object Pat {
