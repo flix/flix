@@ -7,11 +7,11 @@
 /// Note that the return type is `closed` which means that the
 /// facts can *only* be used within a constraint system that
 /// has labelled edges and paths of ints.
-//def getEdgesWithNumbers(): #{ LabelEdge[Int32], LabelPath[Int32] } = #{
-  //  LabelEdge("a", 1, "b").
+def getEdgesWithNumbers(): #{ LabelEdge(Int32), LabelPath(Int32) } = #{
+    //LabelEdge("a", 1, "b").
     //LabelEdge("b", 1, "c").
     //LabelEdge("c", 2, "d").
-//}
+}
 
 /// Returns a set of edge facts labelled with colors (strings).
 /// Note that the return type is `open` (polymorphic) which
