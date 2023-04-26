@@ -113,6 +113,10 @@ object FinalAst {
 
     case class Assign(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
+    case class InstanceOf(exp: FinalAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends FinalAst.Expression {
+      final val tpe: MonoType = MonoType.Bool
+    }
+
     case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

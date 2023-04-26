@@ -17,22 +17,19 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst.Root
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Expression
-import ca.uwaterloo.flix.language.dbg.PrettyPrinter
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Formatter, Validation}
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 
 /**
- * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
- */
+  * Iterative runs of the optimizer pipeline: OccurrenceAnalyzer -> Inliner -> Reducer.
+  */
 object Optimizer {
 
   /**
-   * Returns an optimized version of the given AST `root`.
-   */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Optimizer") {
+    * Returns an optimized version of the given AST `root`.
+    */
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
     var result = root
 
     // only perform optimization if it is not disabled
@@ -44,22 +41,17 @@ object Optimizer {
       }
     }
 
-    // Print the ast if debugging is enabled.
-    if (flix.options.debug) {
-      println(PrettyPrinter.Lifted.fmtRoot(result, Formatter.AnsiTerminalFormatter))
-    }
-
-    result.toSuccess
+    result
   }
 
   /**
-   * returns `true` if `exp0` is considered a trivial expression.
-   *
-   * An expression is trivial if:
-   * It is either a literal (float, string, int, bool, unit), or it is a variable.
-   *
-   * A pure and trivial expression can always be inlined even without duplicating work.
-   */
+    * returns `true` if `exp0` is considered a trivial expression.
+    *
+    * An expression is trivial if:
+    * It is either a literal (float, string, int, bool, unit), or it is a variable.
+    *
+    * A pure and trivial expression can always be inlined even without duplicating work.
+    */
   def isTrivialExp(exp0: Expression): Boolean = exp0 match {
     case Expression.Constant(_, _, _) => true
     case Expression.Var(_, _, _) => true

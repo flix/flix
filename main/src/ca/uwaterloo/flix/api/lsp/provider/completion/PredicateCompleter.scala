@@ -17,22 +17,37 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider.Priority
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.PredicateCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object PredicateCompleter extends Completer {
 
-  /**
-    * Returns a List of Completion for predicates.
-    */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
-    index.predDefs.m.concat(index.predUses.m)
-      .map {
-        case (pred, locs) =>
-          val priority: String => String = if (locs.exists(loc => loc.source.name == context.uri)) Priority.boost else Priority.low
-          val name = pred.name
-          Completion.PredicateCompletion(name, priority(name))
-      }
+  def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[PredicateCompletion] = {
+    //
+    // Find all predicates together with their type and source location.
+    //
+    val predsWithTypeAndLoc = index.predTypes
+
+    //
+    // Select all predicate symbols that occur in the same file.
+    //
+    for (
+      (pred, arityAndLocs) <- predsWithTypeAndLoc.m;
+      (tpe, loc) <- arityAndLocs;
+      if loc.source.name == context.uri
+    ) yield Completion.PredicateCompletion(pred.name, arityOf(tpe), FormatType.formatType(tpe))
   }
+
+  /**
+    * Returns the arity of the given predicate type `tpe`
+    */
+  private def arityOf(tpe: Type): Int = {
+    // We know that a Relation or Lattice has exactly one type argument.
+    tpe.typeArguments.head.typeConstructor match {
+      case Some(TypeConstructor.Tuple(l)) => l
+      case _ => 1
+    }
+  }
+
 }

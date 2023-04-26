@@ -87,6 +87,7 @@ object Main {
       documentor = cmdOpts.documentor,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
+      githubKey = cmdOpts.githubKey,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
@@ -143,7 +144,7 @@ object Main {
           System.exit(getCode(result))
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.check(options)
               System.exit(getCode(result))
@@ -153,7 +154,7 @@ object Main {
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               implicit val flix: Flix = new Flix().setFormatter(formatter)
               val result = bootstrap.build(loadClasses = false)
@@ -164,7 +165,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildJar(options)
               System.exit(getCode(result))
@@ -174,7 +175,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.buildPkg(options)
               System.exit(getCode(result))
@@ -184,9 +185,14 @@ object Main {
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
-              val result = bootstrap.run(options)
+              // Compute the arguments to be passed to main.
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
+              }
+              val result = bootstrap.run(options, args)
               System.exit(getCode(result))
             case Result.Err(e) =>
               println(e.message(formatter))
@@ -195,7 +201,7 @@ object Main {
 
         case Command.Benchmark =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.benchmark(o)
               System.exit(getCode(result))
@@ -206,7 +212,7 @@ object Main {
 
         case Command.Test =>
           val o = options.copy(progress = false)
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val result = bootstrap.test(o)
               System.exit(getCode(result))
@@ -220,7 +226,7 @@ object Main {
             println("The `repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd)(System.out) match {
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -267,6 +273,7 @@ object Main {
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
+                     githubKey: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      lsp: Option[Int] = None,
@@ -389,7 +396,10 @@ object Main {
         text("specifies the main entry point.")
 
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
-        text("provides suggestions on how to solve a problem")
+        text("provides suggestions on how to solve a problem.")
+
+      opt[String]("github-key").action((s, c) => c.copy(githubKey = Some(s))).
+        text("API key to use for GitHub dependency resolution.")
 
       help("help").text("prints this usage information.")
 
@@ -404,14 +414,14 @@ object Main {
         valueName("<port>").
         text("starts the LSP server and listens on the given port.")
 
+      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
+        text("disables automatic installation of dependencies.")
+
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
-
-      opt[Unit]("no-install").action((_, c) => c.copy(installDeps = false)).
-        text("disables automatic installation of dependencies.")
 
       version("version").text("prints the version number.")
 

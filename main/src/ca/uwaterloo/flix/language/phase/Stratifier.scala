@@ -314,6 +314,11 @@ object Stratifier {
         case e => Expression.Ascribe(e, tpe, pur, eff, loc)
       }
 
+    case Expression.InstanceOf(exp, clazz, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.InstanceOf(e, clazz, loc)
+      }
+
     case Expression.CheckedCast(cast, exp, tpe, pur, eff, loc) =>
       mapN(visitExp(exp))(Expression.CheckedCast(cast, _, tpe, pur, eff, loc))
 
@@ -699,6 +704,9 @@ object Stratifier {
       labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
 
     case Expression.Ascribe(exp, _, _, _, _) =>
+      labelledGraphOfExp(exp)
+
+    case Expression.InstanceOf(exp, _, _) =>
       labelledGraphOfExp(exp)
 
     case Expression.CheckedCast(_, exp, _, _, _, _) =>

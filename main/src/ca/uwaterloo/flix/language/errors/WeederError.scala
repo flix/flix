@@ -1045,6 +1045,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the name of a module does not begin with an uppercase symbol.
+    *
+    * @param name the part of the module name that does not begin with an uppercase symbol.
+    * @param loc  the location where the error occurred
+    */
+  case class IllegalModuleName(name: String, loc: SourceLocation) extends WeederError {
+
+    override def summary: String = s"Module name '$name' does not begin with an uppercase letter."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Lowercase module name.
+         |
+         |${code(loc, s"Module name '$name' does not begin with an uppercase letter.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      "A module name must begin with an uppercase letter."
+    })
+  }
+
+  /**
     * An error raised to indicate a non-unary associated type.
     *
     * @param numParams the number of parameters of the associated type.

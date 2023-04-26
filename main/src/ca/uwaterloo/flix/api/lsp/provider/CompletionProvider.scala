@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.api.lsp._
 import ca.uwaterloo.flix.api.lsp.provider.completion._
 import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -92,27 +94,8 @@ object CompletionProvider {
             val completions = getCompletions()(context, flix, index, nonOptionRoot, deltaContext) ++
               FromErrorsCompleter.getCompletions(context)(flix, index, nonOptionRoot, deltaContext)
             // Find the best completion
-            val best = CompletionRanker.findBest(completions, index, deltaContext) match {
-              case None =>
-                // No best completion
-                Nil
-              case Some(best) =>
-                // We have a better completion, boost that to top priority
-                val compForBoost = best.toCompletionItem(context)
-                // Change documentation to include "Best pick"
-                val bestPickDocu = compForBoost.documentation match {
-                  case Some(oldDocu) =>
-                    // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
-                    // visible to the user, that it's the best pick.
-                    "Best pick \n\n" + oldDocu
-                  case None => "Best pick"
-                }
-                // Boosting by changing priority in sortText
-                val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1),
-                  documentation = Some(bestPickDocu))
-                List(boostedComp)
-            }
-            best ++ completions.map(comp => comp.toCompletionItem(context))
+            val best = CompletionRanker.findBest(completions, index, deltaContext)
+            boostBestCompletion(best)(context, flix) ++ completions.map(comp => comp.toCompletionItem(context))
           case None => Nil
         }
     }
@@ -158,6 +141,17 @@ object CompletionProvider {
   }
 
   private def getCompletions()(implicit context: CompletionContext, flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    // First, we try to get the syntactic context from the parser or from an error message.
+    context.sctx match {
+      case SyntacticContext.Decl.Class => return Nil
+      case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
+      case _: SyntacticContext.Pat => return Nil
+      case _ => // fallthrough
+    }
+
+    // No luck, fall back to regular expressions:
+
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
     val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
@@ -179,13 +173,12 @@ object CompletionProvider {
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
     // if any of the following matches we know the next must be an expression
-    val channelKeywordRegex = raw".*<-\s*[^\s]*".r
     val doubleColonRegex = raw".*::\s*[^\s]*".r
     val tripleColonRegex = raw".*:::\s*[^\s]*".r
 
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case channelKeywordRegex() | doubleColonRegex() | tripleColonRegex() => getExpCompletions()
+      case doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions(context)
       case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
       case effectRegex() => EffectCompleter.getCompletions(context)
@@ -202,9 +195,8 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        PredicateCompleter.getCompletions(context) ++
-          TypeCompleter.getCompletions(context) ++
-          EffectCompleter.getCompletions(context)
+        TypeCompleter.getCompletions(context) ++
+        EffectCompleter.getCompletions(context)
     }
   }
 
@@ -222,6 +214,37 @@ object CompletionProvider {
       FieldCompleter.getCompletions(context) ++
       OpCompleter.getCompletions(context) ++
       MatchCompleter.getCompletions(context)
+  }
+
+  /**
+    * Boosts a best completion to the top of the pop-up-pane.
+    *
+    * @param comp the completion to boost.
+    * @return nil, if no we have no completion to boost,
+    *         otherwise a List consisting only of the boosted completion as CompletionItem.
+    */
+  private def boostBestCompletion(comp: Option[Completion])(implicit context: CompletionContext, flix: Flix): List[CompletionItem] = {
+    comp match {
+      case None =>
+        // No best completion to boost
+        Nil
+      case Some(best) =>
+        // We have a better completion, boost that to top priority
+        val compForBoost = best.toCompletionItem(context)
+        // Change documentation to include "Best pick"
+        val bestPickDocu = compForBoost.documentation match {
+          case Some(oldDocu) =>
+            // Adds "Best pick" at the top of the information pane. Provided with two newlines, to make it more
+            // visible to the user, that it's the best pick.
+            "Best pick \n\n" + oldDocu
+          case None => "Best pick"
+        }
+        // Boosting by changing priority in sortText
+        // This is done by removing the old int at the first position in the string, and changing it to 1
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
+          documentation = Some(bestPickDocu))
+        List(boostedComp)
+    }
   }
 
   /**
@@ -268,7 +291,23 @@ object CompletionProvider {
         case Some(s) => getLastWord(s)
       }
       val range = Range(Position(y, start), Position(y, end))
-      CompletionContext(uri, pos, range, word, previousWord, prefix, errors)
+      val sctx = getSyntacticContext(uri, pos, errors)
+      CompletionContext(uri, pos, range, sctx, word, previousWord, prefix, errors)
     }
   }
+
+  /**
+    * Optionally returns the syntactic context from the given list of errors.
+    *
+    * We have to check that the syntax error occurs after the position of the completion.
+    */
+  private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
+    errors.filter({
+      case err => pos.line <= err.loc.beginLine
+    }).collectFirst({
+      case ParseError(_, ctx, _) => ctx
+      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
+      // TODO: SYNTACTIC-CONTEXT
+    }).getOrElse(SyntacticContext.Unknown)
+
 }
