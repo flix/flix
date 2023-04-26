@@ -125,8 +125,17 @@ object Parser {
       case "Enum" => SyntacticContext.Decl.Enum
       case "Pattern" => SyntacticContext.Pat.OtherPat
       case "Instance" => SyntacticContext.Decl.Instance
+
       case "ImportOne" => SyntacticContext.Import
       case "ImportMany" => SyntacticContext.Import
+      case "Constructor" => SyntacticContext.Import
+      case "Method" => SyntacticContext.Import
+      case "StaticMethod" => SyntacticContext.Import
+      case "GetField" => SyntacticContext.Import
+      case "PutField" => SyntacticContext.Import
+      case "GetStaticField" => SyntacticContext.Import
+      case "PutStaticField" => SyntacticContext.Import
+
       case "EffectSetOrEmpty" => SyntacticContext.Type.Eff
       case "Type" => SyntacticContext.Type.OtherType
       case _ => SyntacticContext.Unknown

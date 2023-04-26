@@ -22,9 +22,15 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 object ImportCompleter {
 
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    val importKeyword = Completion.KeywordCompletion("import")
+    val importKeywords = List(
+      Completion.KeywordCompletion("import"),
+      Completion.KeywordCompletion("new"),
+      Completion.KeywordCompletion("get"),
+      Completion.KeywordCompletion("set"),
+      Completion.KeywordCompletion("static")
+    )
 
-    List(importKeyword) ++
+    importKeywords ++
       ImportNewCompleter.getCompletions(context) ++
       ImportMethodCompleter.getCompletions(context) ++
       ImportFieldCompleter.getCompletions(context) ++
