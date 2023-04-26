@@ -49,17 +49,17 @@ object CompletionProvider {
   // differ depending on the type of completion, and can be boosted depending upon context (e.g. type completions
   // are boosted if the cursor is preceded by a ":")
   //
-  // 2: High: completions which are only available within a very specific context
-  // 3: Boost: completions which are normally low priority, but the context makes them more likely
+  // 1: High: completions which are only available within a very specific context
+  // 2: Boost: completions which are normally low priority, but the context makes them more likely
   // 4: Snippet: snippets are relatively high priority because they're rare, and to be useful at all they need to be available
   // 5: Local: local variables
   // 7: Normal: completions that are relevant within no particular context
   // 9: Low: completions that are unlikely to be relevant unless within a specific context
   //
   object Priority {
-    def high(name: String): String = "2" + name
+    def high(name: String): String = "1" + name
 
-    def boost(name: String): String = "3" + name
+    def boost(name: String): String = "2" + name
 
     def snippet(name: String): String = "4" + name
 
@@ -241,7 +241,7 @@ object CompletionProvider {
         }
         // Boosting by changing priority in sortText
         // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1)._2,
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
           documentation = Some(bestPickDocu))
         List(boostedComp)
     }
