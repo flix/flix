@@ -72,7 +72,7 @@ object Parser {
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
-        val mostLikelyContext = if (possibleContexts.isEmpty) SyntacticContext.Unknown else possibleContexts.maxBy(_._2)._1
+        val mostLikelyContext = possibleContexts.keySet.reduce(SyntacticContext.join)
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
       case scala.util.Failure(e) =>
@@ -99,7 +99,7 @@ object Parser {
         // Case 1: We have a named rule application. Determine if we know it.
         syntacticContextOf(name) match {
           case SyntacticContext.Unknown =>
-            println(name)
+            // println(name)
             // Case 1.1: The named rule is not one of the contexts. Continue recursively.
             parseRuleTrace(rest)
           case result =>
@@ -121,6 +121,7 @@ object Parser {
     name match {
       case "Expression" => SyntacticContext.Expr.OtherExpr
       case "Constraint" => SyntacticContext.Expr.Constraint
+      case "Do" => SyntacticContext.Expr.Do
       case "Class" => SyntacticContext.Decl.Class
       case "Enum" => SyntacticContext.Decl.Enum
       case "Pattern" => SyntacticContext.Pat.OtherPat

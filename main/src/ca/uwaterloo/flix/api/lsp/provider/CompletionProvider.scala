@@ -145,6 +145,7 @@ object CompletionProvider {
     context.sctx match {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Expr.Do => return OpCompleter.getCompletions(context)
       case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
       case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
@@ -180,8 +181,7 @@ object CompletionProvider {
       // The order of this list doesn't matter because suggestions are ordered
       // through sortText
       //
-      case _ => getExpCompletions() ++
-        TypeCompleter.getCompletions(context)
+      case _ => getExpCompletions()
     }
   }
 
@@ -197,7 +197,6 @@ object CompletionProvider {
       DefCompleter.getCompletions(context) ++
       SignatureCompleter.getCompletions(context) ++
       FieldCompleter.getCompletions(context) ++
-      OpCompleter.getCompletions(context) ++
       MatchCompleter.getCompletions(context)
   }
 
