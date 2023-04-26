@@ -283,7 +283,7 @@ object Typer {
     case KindedAst.Spec(doc, ann, mod, tparams0, fparams0, sc, tpe, pur, eff, tconstrs, loc) =>
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst)
-      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, eff, tconstrs, loc)
+      TypedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, pur, tconstrs, loc)
   }
 
   /**
@@ -520,13 +520,13 @@ object Typer {
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] = e0 match {
+    def visitExp(e0: KindedAst.Expression): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = e0 match {
 
       case KindedAst.Expression.Wild(tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure, Type.Empty)
+        liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.Var(sym, loc) =>
-        liftM(List.empty, sym.tvar, Type.Pure, Type.Empty)
+        liftM(List.empty, sym.tvar, Type.Pure)
 
       case KindedAst.Expression.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
@@ -534,7 +534,7 @@ object Typer {
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
-        } yield (tconstrs, resultTyp, Type.Pure, Type.Empty)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
@@ -543,74 +543,72 @@ object Typer {
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
-        } yield (tconstrs, resultTyp, Type.Pure, Type.Empty)
+        } yield (tconstrs, resultTyp, Type.Pure)
 
       case KindedAst.Expression.Hole(_, tvar, _) =>
-        liftM(List.empty, tvar, Type.Pure, Type.Empty)
+        liftM(List.empty, tvar, Type.Pure)
 
       case KindedAst.Expression.HoleWithExp(exp, tvar, pvar, evar, loc) =>
         for {
-          (tconstrs, tpe, pur, eff) <- visitExp(exp)
+          (tconstrs, tpe, pur) <- visitExp(exp)
           // result type is whatever is needed for the hole
           resultTpe = tvar
-          // purity/effect type is AT LEAST the inner expression's purity/effect
+          // purity type is AT LEAST the inner expression's purity/effect
           atLeastPur = Type.mkAnd(pur, Type.freshVar(Kind.Bool, loc.asSynthetic), loc.asSynthetic)
           resultPur <- unifyTypeM(atLeastPur, pvar, loc)
-          atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Effect, loc.asSynthetic), loc.asSynthetic)
-          resultEff <- unifyTypeM(atLeastEff, evar, loc)
-        } yield (tconstrs, resultTpe, resultPur, resultEff)
+        } yield (tconstrs, resultTpe, resultPur)
 
       case e: KindedAst.Expression.OpenAs => RestrictableChooseInference.inferOpenAs(e, root)
 
       case KindedAst.Expression.Use(_, alias, exp, _) => visitExp(exp)
 
       case KindedAst.Expression.Cst(Ast.Constant.Unit, loc) =>
-        liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkUnit(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Null, loc) =>
-        liftM(List.empty, Type.mkNull(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkNull(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Bool(_), loc) =>
-        liftM(List.empty, Type.mkBool(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBool(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Char(_), loc) =>
-        liftM(List.empty, Type.mkChar(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkChar(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Float32(_), loc) =>
-        liftM(List.empty, Type.mkFloat32(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkFloat32(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Float64(_), loc) =>
-        liftM(List.empty, Type.mkFloat64(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkFloat64(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.BigDecimal(_), loc) =>
-        liftM(List.empty, Type.mkBigDecimal(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBigDecimal(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int8(_), loc) =>
-        liftM(List.empty, Type.mkInt8(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt8(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int16(_), loc) =>
-        liftM(List.empty, Type.mkInt16(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt16(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int32(_), loc) =>
-        liftM(List.empty, Type.mkInt32(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt32(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Int64(_), loc) =>
-        liftM(List.empty, Type.mkInt64(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkInt64(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.BigInt(_), loc) =>
-        liftM(List.empty, Type.mkBigInt(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkBigInt(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Str(_), loc) =>
-        liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkString(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Cst(Ast.Constant.Regex(_), loc) =>
-        liftM(List.empty, Type.mkRegex(loc.asSynthetic), Type.Pure, Type.Empty)
+        liftM(List.empty, Type.mkRegex(loc.asSynthetic), Type.Pure)
 
       case KindedAst.Expression.Lambda(fparam, exp, loc) =>
         val argType = fparam.tpe
         val argTypeVar = fparam.sym.tvar
         for {
-          (constrs, bodyType, bodyPur, bodyEff) <- visitExp(exp)
+          (constrs, bodyType, bodyPur) <- visitExp(exp)
           _ <- unifyTypeM(argType, argTypeVar, loc)
           resultTyp = Type.mkArrowWithEffect(argType, bodyPur, bodyEff, bodyType, loc)
         } yield (constrs, resultTyp, Type.Pure, Type.Empty)

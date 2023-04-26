@@ -169,8 +169,8 @@ object Unification {
   /**
     * Lifts the given type constraints, type, purity, and effect into the inference monad.
     */
-  def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type, eff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type, Type)] =
-    InferMonad { case (s, econstrs, renv) => Ok((s, econstrs, renv, (tconstrs.map(s.apply), s(tpe), s(pur), s(eff)))) }
+  def liftM(tconstrs: List[Ast.TypeConstraint], tpe: Type, pur: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] =
+    InferMonad { case (s, econstrs, renv) => Ok((s, econstrs, renv, (tconstrs.map(s.apply), s(tpe), s(pur)))) }
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
