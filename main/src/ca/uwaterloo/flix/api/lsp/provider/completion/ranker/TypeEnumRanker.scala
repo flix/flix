@@ -35,14 +35,14 @@ object TypeEnumRanker {
     getTypeEnumCompletions(completions)
       // Find the typeEnum comp that has 0 Real uses
       .find(typeEnumComp =>
-        hasNoRealSourceKinds(enumUses(typeEnumComp.enumSym)))
+        !hasRealSourceKinds(enumUses(typeEnumComp.enumSym)))
   }
 
   /**
     * Returns a list only consisting of typeEnum completions.
     *
-    * @param completions the list of all possible completions.
-    * @return            a List of TypeEnumCompletion.
+    * @param  completions the list of all possible completions.
+    * @return a List of TypeEnumCompletion.
     */
   private def getTypeEnumCompletions(completions: Iterable[Completion]): Iterable[TypeEnumCompletion] = {
     completions.collect {
@@ -51,11 +51,11 @@ object TypeEnumRanker {
   }
 
   /**
-    * Checks if set[SourceLocation] does not contain any SourceKind.Real
+    * Checks if set[SourceLocation] contain any SourceKind.Real
     *
-    * @param set the set of SourceLocations.
-    * @return    true, if none of the SourceKinds are Real, false otherwise.
+    * @param  set the set of SourceLocations.
+    * @return true, if at least one of the SourceKinds are Real, false otherwise.
     */
-  private def hasNoRealSourceKinds(set: Set[SourceLocation]): Boolean =
-    !set.exists(_.locationKind == SourceKind.Real)
+  private def hasRealSourceKinds(set: Set[SourceLocation]): Boolean =
+    set.exists(_.locationKind == SourceKind.Real)
 }
