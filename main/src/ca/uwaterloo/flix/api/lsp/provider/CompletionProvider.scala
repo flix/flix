@@ -145,6 +145,7 @@ object CompletionProvider {
     context.sctx match {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
       case _ => // fallthrough
@@ -173,7 +174,6 @@ object CompletionProvider {
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
       case withRegex() => WithCompleter.getCompletions(context)
-      case effectRegex() => EffectCompleter.getCompletions(context)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() =>
         ImportNewCompleter.getCompletions(context) ++
@@ -187,8 +187,7 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        TypeCompleter.getCompletions(context) ++
-        EffectCompleter.getCompletions(context)
+        TypeCompleter.getCompletions(context)
     }
   }
 
