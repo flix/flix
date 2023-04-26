@@ -118,11 +118,13 @@ object Parser {
     */
   private def syntacticContextOf(name: String): SyntacticContext = {
     name match {
-      case "Class" => SyntacticContext.ClassDecl
-      case "Enum" => SyntacticContext.EnumDecl
-      case "Expression" => SyntacticContext.Expr
-      case "Instance" => SyntacticContext.InstanceDecl
-      case "Type" => SyntacticContext.Type
+      case "Expression" => SyntacticContext.Expr.OtherExpr
+      case "Constraint" => SyntacticContext.Expr.Constraint
+      case "Class" => SyntacticContext.Decl.Class
+      case "Enum" => SyntacticContext.Decl.Enum
+      case "Pattern" => SyntacticContext.Pat.OtherPat
+      case "Instance" => SyntacticContext.Decl.Instance
+      case "Type" => SyntacticContext.Type.OtherType
       case _ => SyntacticContext.Unknown
     }
   }
@@ -213,7 +215,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ (keyword("namespace") | keyword("mod")) ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ keyword("mod") ~ WS ~ Names.DotSeparated ~ optWS ~ '{' ~ UsesOrImports ~ Decls ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
@@ -640,7 +642,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      InstanceOf ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def InstanceOf: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(WS ~ operatorX("instanceof") ~ WS ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Expression.InstanceOf)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {
@@ -1885,19 +1891,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     /**
-      * Namespaces are lower or uppercase.
-      */
-    // TODO NS-REFACTOR remove
-    def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName).separatedBy("/" | ".") ~ SP ~>
-        ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
-    }
-
-    /**
       * Dot-separated name.
       */
     def DotSeparated: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy("/" | ".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName | LowerCaseName).separatedBy(".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 

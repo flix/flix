@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
-import ca.uwaterloo.flix.language.dbg.{FormatExpression, FormatPattern}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -77,8 +76,6 @@ object TypedAst {
     def eff: Type
 
     def loc: SourceLocation
-
-    final override def toString: String = FormatExpression.format(this)
   }
 
   object Expression {
@@ -229,6 +226,14 @@ object TypedAst {
 
     case class Ascribe(exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class InstanceOf(exp: TypedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends TypedAst.Expression {
+      def pur: Type = exp.pur
+
+      def eff: Type = exp.eff
+
+      def tpe: Type = Type.Bool
+    }
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: TypedAst.Expression, tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class UncheckedCast(exp: TypedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type, pur: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -323,8 +328,6 @@ object TypedAst {
     def tpe: Type
 
     def loc: SourceLocation
-
-    final override def toString: String = FormatPattern.format(this)
   }
 
   object Pattern {

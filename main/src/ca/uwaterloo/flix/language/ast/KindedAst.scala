@@ -154,6 +154,8 @@ object KindedAst {
 
     case class Ascribe(exp: KindedAst.Expression, expectedType: Option[Type], expectedPur: Option[Type], expectedEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
+    case class InstanceOf(exp: KindedAst.Expression, clazz: java.lang.Class[_], loc: SourceLocation) extends KindedAst.Expression
+
     case class CheckedCast(cast: Ast.CheckedCastType, exp: KindedAst.Expression, tvar: Type.Var, pvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends KindedAst.Expression
 
     case class UncheckedCast(exp: KindedAst.Expression, declaredType: Option[Type], declaredPur: Option[Type], declaredEff: Option[Type], tpe: Type.Var, loc: SourceLocation) extends KindedAst.Expression
