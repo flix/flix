@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -38,6 +39,21 @@ object Flix {
     * The reserved Flix delimiter.
     */
   val Delimiter: String = "$"
+
+  /**
+    * The file extension for intermediate representation files.
+    */
+  val IrFileExtension = "flixir"
+
+  /**
+    * The maximum width of the intermediate representation files.
+    */
+  val IrFileWidth = 80
+
+  /**
+    * The number of spaces per indentation in the intermediate representation files.
+    */
+  val IrFileIndentation = 4
 }
 
 /**
@@ -509,6 +525,10 @@ class Flix {
       afterSafety
     }
 
+    // Write formatted asts to disk based on options.
+    // (Possible duplicate files in codeGen will just be empty and overwritten there)
+    AstPrinter.printAsts()
+
     // Shutdown fork join pool.
     shutdownForkJoin()
 
@@ -553,6 +573,9 @@ class Flix {
     cachedErasedAst = Eraser.run(afterFinalize)
     val afterJvmBackend = JvmBackend.run(cachedErasedAst)
     val result = Finish.run(afterJvmBackend)
+
+    // Write formatted asts to disk based on options.
+    AstPrinter.printAsts()
 
     // Shutdown fork join pool.
     shutdownForkJoin()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2023 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.dbg
+package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.dbg.DocAst
 
-object FormatJvmMethod {
+object TypePrinter {
 
-  /**
-    * JvmMethod.
-    */
-  def format(method: TypedAst.JvmMethod): String = method match {
-    case TypedAst.JvmMethod(ident, fparams, exp, _, _, _, _) =>
-      s"JvmMethod($ident, ${fparams.map(FormatFormalParam.format).mkString("(", ", ", ")")}, ${FormatExpression.format(exp)})"
-  }
+  def print(tpe: Type): DocAst.Type = DocAst.Type.AsIs("TODO: TypePrinter")
 
 }

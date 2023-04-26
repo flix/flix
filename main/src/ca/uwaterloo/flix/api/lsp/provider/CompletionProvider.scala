@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.ranker.CompletionRanker
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.{ParseError, ResolutionError, WeederError}
 import ca.uwaterloo.flix.language.fmt.FormatScheme
 import ca.uwaterloo.flix.language.phase.Parser.Letters
 import org.json4s.JsonAST.JObject
@@ -145,6 +145,8 @@ object CompletionProvider {
     context.sctx match {
       case SyntacticContext.Decl.Class => return Nil
       case SyntacticContext.Expr.Constraint => return PredicateCompleter.getCompletions(context)
+      case SyntacticContext.Import => return ImportCompleter.getCompletions(context)
+      case SyntacticContext.Type.Eff => return EffSymCompleter.getCompletions(context)
       case _: SyntacticContext.Type => return TypeCompleter.getCompletions(context)
       case _: SyntacticContext.Pat => return Nil
       case _ => // fallthrough
@@ -154,10 +156,6 @@ object CompletionProvider {
 
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasRegex = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val effectRegex = raw".*[\\]\s*[^\s]*".r
-    val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
     val instanceRegex = raw"\s*instance\s+[^s]*".r
 
@@ -172,22 +170,10 @@ object CompletionProvider {
     val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
-    // if any of the following matches we know the next must be an expression
-    val doubleColonRegex = raw".*::\s*[^\s]*".r
-    val tripleColonRegex = raw".*:::\s*[^\s]*".r
-
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions(context)
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
-      case effectRegex() => EffectCompleter.getCompletions(context)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
-      case importRegex() =>
-        ImportNewCompleter.getCompletions(context) ++
-          ImportMethodCompleter.getCompletions(context) ++
-          ImportFieldCompleter.getCompletions(context) ++
-          ClassCompleter.getCompletions(context)
       case useRegex() => UseCompleter.getCompletions(context)
       case instanceRegex() => InstanceCompleter.getCompletions(context)
       //
@@ -195,8 +181,7 @@ object CompletionProvider {
       // through sortText
       //
       case _ => getExpCompletions() ++
-        TypeCompleter.getCompletions(context) ++
-        EffectCompleter.getCompletions(context)
+        TypeCompleter.getCompletions(context)
     }
   }
 
@@ -241,7 +226,7 @@ object CompletionProvider {
         }
         // Boosting by changing priority in sortText
         // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1)._2,
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
           documentation = Some(bestPickDocu))
         List(boostedComp)
     }
@@ -306,6 +291,7 @@ object CompletionProvider {
       case err => pos.line <= err.loc.beginLine
     }).collectFirst({
       case ParseError(_, ctx, _) => ctx
+      case WeederError.IllegalJavaClass(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
       // TODO: SYNTACTIC-CONTEXT
     }).getOrElse(SyntacticContext.Unknown)

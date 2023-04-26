@@ -71,7 +71,7 @@ object Parser {
       case scala.util.Success(ast) =>
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        val possibleContexts = parseTraces(e.traces)
+        val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = if (possibleContexts.isEmpty) SyntacticContext.Unknown else possibleContexts.maxBy(_._2)._1
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
@@ -99,6 +99,7 @@ object Parser {
         // Case 1: We have a named rule application. Determine if we know it.
         syntacticContextOf(name) match {
           case SyntacticContext.Unknown =>
+            println(name)
             // Case 1.1: The named rule is not one of the contexts. Continue recursively.
             parseRuleTrace(rest)
           case result =>
@@ -124,6 +125,18 @@ object Parser {
       case "Enum" => SyntacticContext.Decl.Enum
       case "Pattern" => SyntacticContext.Pat.OtherPat
       case "Instance" => SyntacticContext.Decl.Instance
+
+      case "ImportOne" => SyntacticContext.Import
+      case "ImportMany" => SyntacticContext.Import
+      case "Constructor" => SyntacticContext.Import
+      case "Method" => SyntacticContext.Import
+      case "StaticMethod" => SyntacticContext.Import
+      case "GetField" => SyntacticContext.Import
+      case "PutField" => SyntacticContext.Import
+      case "GetStaticField" => SyntacticContext.Import
+      case "PutStaticField" => SyntacticContext.Import
+
+      case "EffectSetOrEmpty" => SyntacticContext.Type.Eff
       case "Type" => SyntacticContext.Type.OtherType
       case _ => SyntacticContext.Unknown
     }
