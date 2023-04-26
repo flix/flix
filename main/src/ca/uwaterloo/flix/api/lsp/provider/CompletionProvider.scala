@@ -154,8 +154,6 @@ object CompletionProvider {
 
     // If we match one of the we know what type of completion we need
     val withRegex = raw".*\s*wi?t?h?(?:\s+[^\s]*)?".r
-    val typeRegex = raw".*:\s*(?:[^\s]|(?:\s*,\s*))*".r
-    val typeAliasRegex = raw"\s*type\s+alias\s+.+\s*=\s*(?:[^\s]|(?:\s*,\s*))*".r
     val effectRegex = raw".*[\\]\s*[^\s]*".r
     val importRegex = raw"\s*import\s+.*".r
     val useRegex = raw"\s*use\s+[^\s]*".r
@@ -172,15 +170,9 @@ object CompletionProvider {
     val tripleQuestionMarkRegex = raw"\?|.*\s+\?.*".r
     val underscoreRegex = raw"(?:(?:.*\s+)|)_[^s]*".r
 
-    // if any of the following matches we know the next must be an expression
-    val doubleColonRegex = raw".*::\s*[^\s]*".r
-    val tripleColonRegex = raw".*:::\s*[^\s]*".r
-
     // We check type and effect first because for example following def we do not want completions other than type and effect if applicable.
     context.prefix match {
-      case doubleColonRegex() | tripleColonRegex() => getExpCompletions()
       case withRegex() => WithCompleter.getCompletions(context)
-      case typeRegex() | typeAliasRegex() => TypeCompleter.getCompletions(context)
       case effectRegex() => EffectCompleter.getCompletions(context)
       case defRegex() | enumRegex() | incompleteTypeAliasRegex() | classRegex() | letRegex() | letStarRegex() | modRegex() | underscoreRegex() | tripleQuestionMarkRegex() => Nil
       case importRegex() =>
