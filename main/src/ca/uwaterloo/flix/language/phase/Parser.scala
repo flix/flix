@@ -72,7 +72,7 @@ object Parser {
         (source, ast).toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
-        val mostLikelyContext = possibleContexts.keySet.reduce(SyntacticContext.join)
+        val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
         ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc).toFailure
       case scala.util.Failure(e) =>
