@@ -816,7 +816,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Par | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | ConstraintSingleton | Interpolation | Literal | Resume | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Resume | Do |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -1259,10 +1259,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
       SP ~ keyword("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
-    }
-
-    def ConstraintSingleton: Rule1[ParsedAst.Expression] = rule {
-      atomic("#") ~ optWS ~ SP ~ Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {
