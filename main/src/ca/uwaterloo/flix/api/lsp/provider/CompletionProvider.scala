@@ -241,7 +241,7 @@ object CompletionProvider {
         }
         // Boosting by changing priority in sortText
         // This is done by removing the old int at the first position in the string, and changing it to 1
-        val boostedComp = compForBoost.copy(sortText = "1" + compForBoost.sortText.splitAt(1)._2,
+        val boostedComp = compForBoost.copy(sortText = "0" + compForBoost.sortText.splitAt(1)._2,
           documentation = Some(bestPickDocu))
         List(boostedComp)
     }
