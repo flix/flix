@@ -17,10 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -33,14 +30,14 @@ object Tailrec {
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Tailrec") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
     //
     // Rewrite tail calls.
     //
     val defns = root.defs.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    root.copy(defs = defns).toSuccess
+    root.copy(defs = defns)
   }
 
   /**

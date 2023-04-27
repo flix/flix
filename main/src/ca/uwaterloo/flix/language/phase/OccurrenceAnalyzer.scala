@@ -345,6 +345,10 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.Assign(e1, e2, tpe, loc), o3.increaseSizeByOne())
 
+    case Expression.InstanceOf(exp, clazz, loc) =>
+      val (e, o) = visitExp(sym0, exp)
+      (OccurrenceAst.Expression.InstanceOf(e, clazz, loc), o.increaseSizeByOne())
+
     case Expression.Cast(exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)
       (OccurrenceAst.Expression.Cast(e, tpe, purity, loc), o.increaseSizeByOne())

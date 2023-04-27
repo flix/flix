@@ -123,7 +123,7 @@ object Typer {
     flix.subphase("EqualityEnv") {
 
       val assocs = for {
-        (classSym, _) <- classes0
+        (classSym, _) <- classes0.iterator
         inst <- instances0.getOrElse(classSym, Nil)
         assoc <- inst.assocs
       } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
@@ -1495,6 +1495,14 @@ object Typer {
           resultEff <- expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Effect, loc)), actual = actualEff, loc)
         } yield (constrs, resultTyp, resultPur, resultEff)
 
+      case KindedAst.Expression.InstanceOf(exp, className, loc) =>
+        for {
+          (constrs, tpe, pur, eff) <- visitExp(exp)
+          resultTyp = Type.Bool
+          resultPur <- expectTypeM(expected = Type.Pure, actual = pur, exp.loc)
+          resultEff <- expectTypeM(expected = Type.Empty, actual = eff, exp.loc)
+        } yield (constrs, resultTyp, resultPur, resultEff)
+
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
           case CheckedCastType.TypeCast =>
@@ -2342,6 +2350,10 @@ object Typer {
         val pur = e.pur
         val eff = e.eff
         TypedAst.Expression.Ascribe(e, subst0(tvar), pur, eff, loc)
+
+      case KindedAst.Expression.InstanceOf(exp, clazz, loc) =>
+        val e1 = visitExp(exp, subst0)
+        TypedAst.Expression.InstanceOf(e1, clazz, loc)
 
       case KindedAst.Expression.CheckedCast(cast, exp, tvar, pvar, evar, loc) =>
         cast match {
