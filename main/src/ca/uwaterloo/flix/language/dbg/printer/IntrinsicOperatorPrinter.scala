@@ -26,18 +26,6 @@ object IntrinsicOperatorPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperator0): Expression = op match {
-    case IntrinsicOperator0.Cst(cst) => ConstantPrinter.print(cst)
-    case IntrinsicOperator0.Region => Region
-    case IntrinsicOperator0.RecordEmpty => RecordEmpty
-    case IntrinsicOperator0.GetStaticField(field) => JavaGetStaticField(field)
-    case IntrinsicOperator0.HoleError(sym) => HoleError(sym)
-    case IntrinsicOperator0.MatchError => MatchError
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `op`.
-    */
   def print(op: IntrinsicOperator1, d: Expression, tpe: DocAst.Type): Expression = op match {
     case IntrinsicOperator1.Unary(sop) => Unary(OperatorPrinter.print(sop), d)
     case IntrinsicOperator1.Is(sym) => Is(sym, d)
@@ -96,15 +84,20 @@ object IntrinsicOperatorPrinter {
   /**
     * Returns the [[DocAst.Expression]] representation of `op`.
     */
-  def print(op: IntrinsicOperatorN, ds: List[Expression]): Expression = op match {
-    case IntrinsicOperatorN.Closure(sym) => ClosureLifted(sym, ds)
-    case IntrinsicOperatorN.ApplyDef(sym) => App(sym, ds)
-    case IntrinsicOperatorN.ApplyDefTail(sym) => AppDefTail(sym, ds)
-    case IntrinsicOperatorN.ApplySelfTail(sym, _) => AppSelfTail(sym, ds)
-    case IntrinsicOperatorN.Tuple => Tuple(ds)
-    case IntrinsicOperatorN.ArrayLit => ArrayLit(ds)
-    case IntrinsicOperatorN.InvokeConstructor(constructor) => JavaInvokeConstructor(constructor, ds)
-    case IntrinsicOperatorN.InvokeStaticMethod(method) => JavaInvokeStaticMethod(method, ds)
+  def print(op: IntrinsicOp, ds: List[Expression]): Expression = op match {
+    case IntrinsicOp.Region => Region
+    case IntrinsicOp.RecordEmpty => RecordEmpty
+    case IntrinsicOp.GetStaticField(field) => JavaGetStaticField(field)
+    case IntrinsicOp.HoleError(sym) => HoleError(sym)
+    case IntrinsicOp.MatchError => MatchError
+    case IntrinsicOp.Closure(sym) => ClosureLifted(sym, ds)
+    case IntrinsicOp.ApplyDef(sym) => App(sym, ds)
+    case IntrinsicOp.ApplyDefTail(sym) => AppDefTail(sym, ds)
+    case IntrinsicOp.ApplySelfTail(sym, _) => AppSelfTail(sym, ds)
+    case IntrinsicOp.Tuple => Tuple(ds)
+    case IntrinsicOp.ArrayLit => ArrayLit(ds)
+    case IntrinsicOp.InvokeConstructor(constructor) => JavaInvokeConstructor(constructor, ds)
+    case IntrinsicOp.InvokeStaticMethod(method) => JavaInvokeStaticMethod(method, ds)
   }
 
   /**

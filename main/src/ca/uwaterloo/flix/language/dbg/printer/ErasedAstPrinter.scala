@@ -52,6 +52,7 @@ object ErasedAstPrinter {
     * Returns the [[DocAst.Expression]] representation of `e`.
     */
   def print(e: ErasedAst.Expr): DocAst.Expression = e match {
+    case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case Binary(sop, exp1, exp2, _, _) => DocAst.Expression.Binary(print(exp1), OperatorPrinter.print(sop), print(exp2))
     case IfThenElse(exp1, exp2, exp3, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
@@ -68,11 +69,10 @@ object ErasedAstPrinter {
         case JvmMethod(ident, fparams, clo, retTpe, _) =>
           DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))
       })
-    case Intrinsic0(op, _, _) => IntrinsicOperatorPrinter.print(op)
     case Intrinsic1(op, exp, tpe, _) => IntrinsicOperatorPrinter.print(op, print(exp), MonoTypePrinter.print(tpe))
     case Intrinsic2(op, exp1, exp2, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2))
     case Intrinsic3(op, exp1, exp2, exp3, _, _) => IntrinsicOperatorPrinter.print(op, print(exp1), print(exp2), print(exp3))
-    case IntrinsicN(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
+    case App(op, exps, _, _) => IntrinsicOperatorPrinter.print(op, exps.map(print))
     case Intrinsic1N(op, exp, exps, _, _) => IntrinsicOperatorPrinter.print(op, print(exp), exps.map(print))
   }
 

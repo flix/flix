@@ -44,6 +44,8 @@ object ErasedAst {
 
   object Expr {
 
+    case class Cst(cst: Ast.Constant, tpe: MonoType, loc: SourceLocation) extends Expr
+
     case class Var(sym: Symbol.VarSym, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Binary(sop: SemanticOperator, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
@@ -64,15 +66,13 @@ object ErasedAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class Intrinsic0(op: IntrinsicOperator0, tpe: MonoType, loc: SourceLocation) extends Expr
-
     case class Intrinsic1(op: IntrinsicOperator1, exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic2(op: IntrinsicOperator2, exp1: Expr, exp2: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic3(op: IntrinsicOperator3, exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, loc: SourceLocation) extends Expr
 
-    case class IntrinsicN(op: IntrinsicOperatorN, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
+    case class App(op: IntrinsicOp, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
     case class Intrinsic1N(op: IntrinsicOperator1N, exp: Expr, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Expr
 
@@ -89,24 +89,6 @@ object ErasedAst {
     case class Do(sym: Symbol.OpSym, exps: List[Expr], tpe: MonoType, loc: SourceLocation) extends Stmt
 
     case class Handle(sym: Symbol.OpSym, stmt: Stmt, loc: SourceLocation) extends Stmt
-
-  }
-
-  sealed trait IntrinsicOperator0
-
-  object IntrinsicOperator0 {
-
-    case class Cst(cst: Ast.Constant) extends IntrinsicOperator0
-
-    case object Region extends IntrinsicOperator0
-
-    case object RecordEmpty extends IntrinsicOperator0
-
-    case class GetStaticField(field: Field) extends IntrinsicOperator0
-
-    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOperator0
-
-    case object MatchError extends IntrinsicOperator0
 
   }
 
@@ -208,25 +190,35 @@ object ErasedAst {
 
   }
 
-  sealed trait IntrinsicOperatorN
+  sealed trait IntrinsicOp
 
-  object IntrinsicOperatorN {
+  object IntrinsicOp {
 
-    case class Closure(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+    case object Region extends IntrinsicOp
 
-    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+    case object RecordEmpty extends IntrinsicOp
 
-    case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOperatorN
+    case class GetStaticField(field: Field) extends IntrinsicOp
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends IntrinsicOperatorN
+    case class HoleError(sym: Symbol.HoleSym) extends IntrinsicOp
 
-    case object Tuple extends IntrinsicOperatorN
+    case object MatchError extends IntrinsicOp
 
-    case object ArrayLit extends IntrinsicOperatorN
+    case class Closure(sym: Symbol.DefnSym) extends IntrinsicOp
 
-    case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOperatorN
+    case class ApplyDef(sym: Symbol.DefnSym) extends IntrinsicOp
 
-    case class InvokeStaticMethod(method: Method) extends IntrinsicOperatorN
+    case class ApplyDefTail(sym: Symbol.DefnSym) extends IntrinsicOp
+
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam]) extends IntrinsicOp
+
+    case object Tuple extends IntrinsicOp
+
+    case object ArrayLit extends IntrinsicOp
+
+    case class InvokeConstructor(constructor: Constructor[_]) extends IntrinsicOp
+
+    case class InvokeStaticMethod(method: Method) extends IntrinsicOp
 
   }
 
