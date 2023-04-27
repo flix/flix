@@ -33,18 +33,22 @@ object DefRanker {
     * @return             Some(DefCompletion) if a better completion is possible, else none.
     */
   def findBest(completions: Iterable[Completion], deltaContext: DeltaContext): Option[DefCompletion] = {
-    getDefCompletions(completions).maxByOption(defComp => deltaContext.defs.get(defComp.decl.sym))
+    getDefCompletions(completions)
+      // If the map does not contain any of the keys, it unintentionally returns the first possible def completion.
+      // The filter makes sure, that this does not happen.
+      .filter(defComp => deltaContext.defs.contains(defComp.decl.sym))
+      .maxByOption(defComp => deltaContext.defs.get(defComp.decl.sym))
   }
 
   /**
     * Removes all none Def completions from the list of all possible completions.
     *
     * @param comps the list of all possible completions.
-    * @return a List[DefCompletion] only consisting of Def completions.
+    * @return      a List[DefCompletion] only consisting of Def completions.
     */
   private def getDefCompletions(comps: Iterable[Completion]): Iterable[DefCompletion] = {
     comps.collect {
-      case DefCompletion(decl) => DefCompletion(decl)
+      case defComp: DefCompletion => defComp
     }
   }
 }

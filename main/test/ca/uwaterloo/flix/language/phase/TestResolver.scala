@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class TestResolver extends FunSuite with TestUtils {
+class TestResolver extends AnyFunSuite with TestUtils {
 
   // TODO NS-REFACTOR impossible after refactor
   ignore("AmbiguousTag.01") {
@@ -1510,5 +1510,15 @@ class TestResolver extends FunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalAssocTypeDef](result)
+  }
+
+  test("UndefinedInstanceOf.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof ##org.undefined.BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmClass](result)
   }
 }

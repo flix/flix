@@ -1012,6 +1012,15 @@ object ParsedAst {
     case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], purAndEff: ParsedAst.PurityAndEffect, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * InstanceOf expression.
+      *
+      * @param exp  the expression.
+      * @param name the Java class or interface name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class InstanceOf(exp: ParsedAst.Expression, name: Name.JavaName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Checked Type Cast expression.
       *
       * @param sp1 the position of the first character in the expression.

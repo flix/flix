@@ -17,16 +17,13 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.errors.ReificationError
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, SetUnification, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -207,7 +204,7 @@ object Monomorph {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Monomorph") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Monomorph") {
 
     implicit val r: Root = root
 
@@ -279,9 +276,9 @@ object Monomorph {
       // Reassemble the AST.
       root.copy(
         defs = specializedDefns.toMap
-      ).toSuccess
+      )
     } catch {
-      case UnexpectedNonConstBool(tpe, loc) => ReificationError.UnexpectedNonConstBool(tpe, loc).toFailure
+      case UnexpectedNonConstBool(tpe, loc) => throw InternalCompilerException(s"Unexpected non-const Bool: '$tpe'", loc)
     }
   }
 
@@ -529,6 +526,10 @@ object Monomorph {
       case Expression.Ascribe(exp, tpe, pur, eff, loc) =>
         val e = visitExp(exp, env0, subst)
         Expression.Ascribe(e, subst(tpe), pur, eff, loc)
+
+      case Expression.InstanceOf(exp, clazz, loc) =>
+        val e = visitExp(exp, env0, subst)
+        Expression.InstanceOf(e, clazz, loc)
 
       case Expression.Cast(exp, _, _, _, tpe, pur, eff, loc) =>
         // We drop the declaredType and declaredEff here.

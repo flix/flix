@@ -1329,6 +1329,13 @@ object Resolver {
             case err: ResolutionError => ResolvedAst.Expression.Error(err)
           }
 
+        case NamedAst.Expression.InstanceOf(exp, className, loc) =>
+          val eVal = visitExp(exp, env0)
+          val clazzVal = lookupJvmClass(className, loc);
+          mapN(eVal, clazzVal) {
+            (e, clazz) => ResolvedAst.Expression.InstanceOf(e, clazz, loc)
+          }
+
         case NamedAst.Expression.CheckedCast(c, exp, loc) =>
           mapN(visitExp(exp, env0)) {
             case e => ResolvedAst.Expression.CheckedCast(c, e, loc)
@@ -2095,7 +2102,7 @@ object Resolver {
         ResolvedTerm.RestrictableTag(caze).toSuccess
       // TODO NS-REFACTOR check accessibility
       case Resolution.Var(sym) :: _ => ResolvedTerm.Var(sym).toSuccess
-      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), qname.loc).toFailure
+      case _ => ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc).toFailure
     }
   }
 
@@ -2686,7 +2693,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2697,7 +2704,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
-    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure)
+    }.getOrElse(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure)
   }
 
   /**
@@ -2827,7 +2834,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, qname.loc).toFailure
+      case None => ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc).toFailure
       case Some(decl) => decl.toSuccess
     }
   }
@@ -3520,7 +3527,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, loc).toFailure
+      case Nil => ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc).toFailure
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ => Ast.UseOrImport.Use(getSym(d), alias, loc).toSuccess
