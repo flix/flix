@@ -458,6 +458,81 @@ object GenExpression {
             compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
             visitor.visitInsn(IAND)
 
+          case Int8Op.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IOR)
+
+          case Int8Op.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IXOR)
+
+          case Int8Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHL)
+            visitor.visitInsn(I2B)
+
+          case Int8Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHR)
+
+          case Int16Op.And =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IAND)
+
+          case Int16Op.Or =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IOR)
+
+          case Int16Op.Xor =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(IXOR)
+
+          case Int16Op.Shl =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHL)
+            visitor.visitInsn(I2S)
+
+          case Int16Op.Shr =>
+            compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+            compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+            visitor.visitInsn(ISHR)
+
+          /*
+{
+    compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+    compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+    (semanticOperatorBitwiseToOpcode(sop), semanticOperatorBitwiseToMethod(sop)) match {
+      case (Some(op), _) =>
+        sop match {
+          case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
+            visitor.visitInsn(op)
+            if (op == ISHL) visitor.visitInsn(I2B)
+          case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
+            visitor.visitInsn(op)
+            if (op == ISHL) visitor.visitInsn(I2S)
+          case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr
+               | Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(op)
+          case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+        }
+      case (_, Some(op)) => sop match {
+        case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
+          visitor.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.BigInt.jvmName.toInternalName,
+            op, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+      }
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.", e1.loc)
+    }
+  }
+
+ */
           case Int16Op.And | Int32Op.And
                | Int64Op.And | BigIntOp.And
                | Int8Op.Or | Int16Op.Or | Int32Op.Or
